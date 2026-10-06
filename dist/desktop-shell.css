@@ -6284,3 +6284,31 @@ body[data-theme="light"].areas-docked .area-window{
     drop-shadow(0 0 .7px rgba(4,9,13,.98))
     drop-shadow(0 1px .55px rgba(4,9,13,.78))!important;
 }
+
+/* v118 — One border, one sampled colour. JavaScript composites the solid
+   surface beneath the pointer and assigns that original colour to the outline;
+   the glass interior is the inverse of that surface. */
+.material-cursor{
+  --cursor-border-color:rgb(4 9 13);
+  --cursor-mark-color:rgb(242 251 255);
+}
+.material-cursor .cursor-outline{
+  stroke:var(--cursor-border-color)!important;
+  stroke-width:2.75!important;
+  filter:none!important;
+}
+.material-cursor .cursor-edge{
+  stroke:transparent!important;
+  stroke-width:0!important;
+  filter:none!important;
+}
+.material-cursor .cursor-badge{
+  stroke:var(--cursor-border-color)!important;
+  stroke-width:2.25!important;
+  filter:none!important;
+}
+.material-cursor .cursor-line{
+  stroke:var(--cursor-mark-color)!important;
+  stroke-width:2.45!important;
+  filter:none!important;
+}

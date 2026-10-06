@@ -2649,6 +2649,37 @@ function prepareMaterialCursor() {
   const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-row-resize", "is-diag-resize", "is-grab", "is-grabbing", "is-move", "is-forbidden", "is-help", "is-progress", "is-copy"];
   let lastX = 0;
   let lastY = 0;
+  let lastBorderTarget = null;
+
+  const parseSurfaceColor = value => {
+    const match = String(value || "").match(/rgba?\(([^)]+)\)/i);
+    if (!match) return null;
+    const parts = match[1].trim().split(/[\s,\/]+/).map(Number);
+    if (parts.length < 3 || parts.slice(0, 3).some(Number.isNaN)) return null;
+    return [parts[0], parts[1], parts[2], Number.isFinite(parts[3]) ? parts[3] : 1];
+  };
+  const syncBorderColor = target => {
+    if (!target || target === lastBorderTarget) return;
+    lastBorderTarget = target;
+    const lightTheme = document.body.dataset.theme === "light";
+    let surface = lightTheme ? [226, 232, 235] : [5, 11, 17];
+    const chain = [];
+    for (let node = target; node instanceof Element; node = node.parentElement) chain.push(node);
+    for (let index = chain.length - 1; index >= 0; index -= 1) {
+      const color = parseSurfaceColor(getComputedStyle(chain[index]).backgroundColor);
+      if (!color || color[3] <= 0) continue;
+      const alpha = Math.min(1, Math.max(0, color[3]));
+      surface = color.slice(0, 3).map((channel, channelIndex) => channel * alpha + surface[channelIndex] * (1 - alpha));
+    }
+    const [red, green, blue] = surface.map(channel => Math.round(Math.min(255, Math.max(0, channel))));
+    const linear = [red, green, blue].map(channel => {
+      const value = channel / 255;
+      return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+    });
+    const luminance = linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    cursor.style.setProperty("--cursor-border-color", `rgb(${red} ${green} ${blue})`);
+    cursor.style.setProperty("--cursor-mark-color", luminance > .42 ? "rgb(4 9 13)" : "rgb(242 251 255)");
+  };
 
   const syncButtons = buttons => {
     cursor.classList.toggle("is-left", (buttons & 1) === 1);
@@ -2703,7 +2734,9 @@ function prepareMaterialCursor() {
       cursor.style.setProperty("--cursor-y", event.clientY + "px");
       cursor.classList.add("is-visible");
       syncButtons(event.buttons);
-      syncMode(document.elementFromPoint(event.clientX, event.clientY), event.buttons);
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      syncBorderColor(target);
+      syncMode(target, event.buttons);
     }, {passive:true});
     surface.addEventListener("pointerdown", event => {
       if (event.pointerType && event.pointerType !== "mouse") return;
@@ -2715,7 +2748,12 @@ function prepareMaterialCursor() {
   window.addEventListener("pointerup", release);
   window.addEventListener("pointercancel", release);
   window.addEventListener("blur", release);
-  window.addEventListener("material-cursor-mode", () => syncMode(document.elementFromPoint(lastX, lastY), 0));
+  window.addEventListener("material-cursor-mode", () => {
+    const target = document.elementFromPoint(lastX, lastY);
+    lastBorderTarget = null;
+    syncBorderColor(target);
+    syncMode(target, 0);
+  });
 }
 
 let superKeyAlone = false;
