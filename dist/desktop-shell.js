@@ -1318,10 +1318,6 @@ function areaStateForSize(edge, size) {
   return size <= (vertical ? 152 : 142) ? "rail" : "expanded";
 }
 
-function edgeHasExplicitRail(edge) {
-  return Boolean(dockSizeManual[edge]) && areaStateForSize(edge, dockSizes[edge]) === "rail";
-}
-
 function initialAreaStates(profile) {
   let states;
   if (layoutMode === "manual") {
@@ -1340,12 +1336,6 @@ function initialAreaStates(profile) {
   else if (profile === "desktop") states = { projects: "expanded", apps: "expanded", systems: "expanded" };
   else states = { projects: "expanded", apps: "expanded", systems: "expanded" };
   autoSpatialEdgeStates.forEach((state, edge) => {
-    dockGroup(edge, true).forEach(name => { states[name] = state; });
-  });
-  dockEdges.forEach(edge => {
-    if (!dockSizeManual[edge]) return;
-    const state = areaStateForSize(edge, dockSizes[edge]);
-    if (layoutMode !== "manual" && state !== "rail") return;
     dockGroup(edge, true).forEach(name => { states[name] = state; });
   });
   return states;
@@ -1623,9 +1613,7 @@ function scheduleSpatialAutoLayout() {
 function desiredAutoEdges() {
   const edges = new Set();
   if (layoutMode !== "auto") return edges;
-  autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => {
-    if (!edgeHasExplicitRail(edge)) edges.add(edge);
-  }));
+  autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => edges.add(edge)));
   return edges;
 }
 
@@ -1883,7 +1871,8 @@ function bindDockResize(name, area) {
     event.preventDefault();
     event.stopPropagation();
     const shellRect = $(".desktop-shell").getBoundingClientRect();
-    dockSizeManual[dockState[name].edge] = true;
+    const resizeEdge = dockState[name].edge;
+    dockSizeManual[resizeEdge] = layoutMode === "manual";
     handle.setPointerCapture(event.pointerId);
     area.classList.add("is-area-resizing");
     const move = moveEvent => {
@@ -1892,6 +1881,10 @@ function bindDockResize(name, area) {
       if (edge === "right") dockSizes.right = shellRect.right - moveEvent.clientX;
       if (edge === "top") dockSizes.top = moveEvent.clientY - shellRect.top;
       if (edge === "bottom") dockSizes.bottom = shellRect.bottom - moveEvent.clientY;
+      /* In Auto this is only the immediate drag state. The next spatial pass
+         may expand it again, keep it on the rail, or move it when even the
+         rail does not fit. Manual mode continues to lock the chosen size. */
+      if (layoutMode === "auto") autoSpatialEdgeStates.set(edge, areaStateForSize(edge, dockSizes[edge]));
       layoutDockAreas(false);
     };
     const finish = () => {
@@ -1900,7 +1893,10 @@ function bindDockResize(name, area) {
       handle.removeEventListener("pointercancel", finish);
       area.classList.remove("is-area-resizing");
       saveAreaLayout();
-      if (layoutMode === "auto") scheduleSpatialAutoLayout();
+      if (layoutMode === "auto") {
+        if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+        scheduleSpatialAutoLayout();
+      }
       showToast(areaLabel(name) + " · " + layoutStateLabel(area.dataset.areaState));
     };
     handle.addEventListener("pointermove", move);
@@ -3559,27 +3555,34 @@ function mainDisplayWindowRects() {
   }));
 }
 
-function mainDisplayHasRoomForArea(name, windows, currentSlot) {
-  const area = areaFor(name);
-  const edge = dockState[name].edge;
-  /* Resizing a lane into its rail is an explicit placement decision. Auto may
-     relocate expanded Areas, but it must never reinterpret rail as overflow. */
-  if (edgeHasExplicitRail(edge)) return true;
-  if (!area || area.hidden || !windows.length) return true;
-  if (windows.some(windowInfo => windowInfo.maximized)) return false;
+function areaNamesForEdge(edge) {
+  return areaPriority.filter(name => dockState[name].edge === edge && !areaFor(name)?.hidden);
+}
+
+function mainDisplayFitForEdge(edge, names, windows, currentlyOnMain) {
+  if (!names.length || !windows.length) return { display: 1, state: "expanded" };
+  if (windows.some(windowInfo => windowInfo.maximized)) return { display: 2, state: "expanded" };
   const shellRect = $(".desktop-shell").getBoundingClientRect();
   const clearance = Math.min(...windows.map(windowInfo => clearanceFromEdge(edge, windowInfo.rect, shellRect)));
   const vertical = edge === "left" || edge === "right";
-  const expandedMinimum = vertical
-    ? { projects: 270, apps: 256, systems: 280 }[name]
-    : { projects: 220, apps: 190, systems: 210 }[name];
-  const desiredThickness = Math.max(expandedMinimum, Math.min(340, dockSizes[edge] || expandedMinimum));
-  /* A little hysteresis stops an Area hopping between monitors when a window
-     rests exactly on the threshold. System yields first, then Apps, then the
-     higher-priority Project Space. */
-  const priorityAllowance = { projects: 22, apps: 10, systems: 0 }[name];
-  const threshold = desiredThickness - priorityAllowance + (currentSlot === 1 ? -10 : 6);
-  return clearance >= threshold;
+  const minimumFor = (name, state) => vertical
+    ? stateSideMinimum(name, state)
+    : stateHorizontalMinimum(name, state);
+  const expandedMinimum = Math.max(...names.map(name => minimumFor(name, "expanded")));
+  const railMinimum = Math.max(...names.map(name => minimumFor(name, "rail")));
+  const desiredExpanded = Math.max(expandedMinimum, Math.min(340, dockSizes[edge] || expandedMinimum));
+  const previous = autoSpatialEdgeStates.get(edge) || "expanded";
+  const containsProject = names.includes("projects");
+  const containsApps = names.includes("apps");
+  const priorityAllowance = containsProject ? 22 : containsApps ? 10 : 0;
+  /* Auto tries all useful forms on the main display before spilling the lane
+     to Display 2. Hysteresis keeps it from flickering at either boundary. */
+  const expandThreshold = desiredExpanded - priorityAllowance
+    + (previous === "rail" ? 54 : currentlyOnMain ? -10 : 8);
+  const railThreshold = railMinimum + (currentlyOnMain ? -4 : 8);
+  if (clearance >= expandThreshold) return { display: 1, state: "expanded" };
+  if (clearance >= railThreshold) return { display: 1, state: "rail" };
+  return { display: 2, state: "expanded" };
 }
 
 function rebalanceAreaDisplays() {
@@ -3588,13 +3591,21 @@ function rebalanceAreaDisplays() {
   const assignments = displayAssignmentsFor();
   const windows = mainDisplayWindowRects();
   let changed = false;
-  /* Main-monitor first: every Area returns to Display 1 as soon as its edge has
-     enough real clearance. Only obstructed Areas spill to Display 2. */
-  ["systems", "apps", "projects"].forEach(name => {
-    const current = Math.max(1, Math.min(count, Number(assignments.areas[name]) || 1));
-    const target = mainDisplayHasRoomForArea(name, windows, current) ? 1 : 2;
-    if (target !== current) changed = true;
-    assignments.areas[name] = target;
+  /* Areas sharing an edge are one lane: expand it on the main display when
+     possible, use its rail when space tightens, and move the whole lane only
+     when even the rail would collide. */
+  dockEdges.forEach(edge => {
+    const names = areaNamesForEdge(edge);
+    if (!names.length) return;
+    const currentlyOnMain = names.some(name => Number(assignments.areas[name] || 1) === 1);
+    const fit = mainDisplayFitForEdge(edge, names, windows, currentlyOnMain);
+    if (fit.display === 1) autoSpatialEdgeStates.set(edge, fit.state);
+    else autoSpatialEdgeStates.delete(edge);
+    names.forEach(name => {
+      const current = Math.max(1, Math.min(count, Number(assignments.areas[name]) || 1));
+      if (fit.display !== current) changed = true;
+      assignments.areas[name] = fit.display;
+    });
   });
   if (changed) persistDisplayAssignments();
   return changed;
