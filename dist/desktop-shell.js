@@ -453,7 +453,7 @@ function setDropTarget(zone, active) {
   zone.classList.toggle("is-drop-target", active);
 }
 
-const AREA_BOUNDARY_RESISTANCE = 58;
+const AREA_BOUNDARY_RESISTANCE = 86;
 const AREA_BOUNDARY_INSET = 10;
 
 function ensureAreaBoundaryFeedback() {
@@ -1281,7 +1281,11 @@ function refreshSpatialAutoLayout(sourceFrame = null, sourceRect = null) {
     if (frame.dataset.maximized === "true") return;
     const edges = dockEdges.filter(edge => {
       if (!dockGroup(edge).length) return false;
-      return clearanceFromEdge(edge, rect, shellRect) < edgeMinimumForState(edge, "rail") + 8;
+      const lane = baseDockLaneRects.get(edge);
+      const visibleThickness = lane
+        ? (edge === "left" || edge === "right" ? lane.width : lane.height)
+        : edgeMinimumForState(edge, "rail");
+      return clearanceFromEdge(edge, rect, shellRect) < Math.max(0, visibleThickness - 2);
     });
     if (edges.length) autoWindowAvoidance.set(frame.dataset.appFrame, new Set(edges));
     else autoWindowAvoidance.delete(frame.dataset.appFrame);
