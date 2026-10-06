@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell with portable Workspaces, Projects and persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=74">
+  <link rel="stylesheet" href="desktop-shell.css?v=75">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -131,7 +131,7 @@
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer" title="Focus timer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
         <button class="surface-key system-launcher" data-toast="System settings" title="System Settings"><svg><use href="#i-settings"/></svg><span>System Settings</span></button>
-        <button class="surface-key system-launcher layout-mode-control is-active" id="layoutModeToggle" aria-pressed="true" title="Cycle adaptive area layout"><svg><use href="#i-monitor"/></svg><span>Layout: Auto</span></button>
+        <button class="surface-key system-launcher layout-mode-control is-active" id="layoutModeToggle" aria-pressed="true" title="Auto · Areas yield to windows and can move to a free display"><svg><use href="#i-monitor"/></svg><span>Areas: Auto</span></button>
       </nav>
       <div class="dynamic-widget-stack" id="dynamicWidgetStack" aria-live="polite">
         <section class="system-widget notification-widget dynamic-widget is-visible" id="notificationWidget"><header class="widget-heading"><div><svg><use href="#i-bell"/></svg><h2>Notifications</h2></div><span id="notificationCount">2</span></header><div id="notificationList"><article class="notification"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Download finished</b><small>plasma-shell-study.png · 6.8 MiB</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article><article class="notification"><span class="app-badge violet"><svg><use href="#i-music"/></svg></span><div><b>Elisa is still playing</b><small>running out of time · 1:55</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article></div></section>
@@ -434,6 +434,6 @@
     <div class="context-menu-items" id="contextMenuItems"></div>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=74"></script>
+  <script src="desktop-shell.js?v=75"></script>
 </body>
 </html>
