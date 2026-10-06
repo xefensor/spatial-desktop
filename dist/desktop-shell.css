@@ -11,7 +11,7 @@
 body[data-theme="graphite"]{--bg:#161a1c;--shell-hi:#454c50;--shell:#30363a;--shell-lo:#202528;--well:#15191b;--well-2:#1a1f22;--line:#0e1113;--wallpaper-overlay:linear-gradient(rgba(9,12,14,.12),rgba(9,12,14,.12))}
 body[data-theme="light"]{color-scheme:light;--bg:#d9dde0;--text:#182025;--muted:#626d73;--faint:#7b858a;--shell-hi:#fbfbf8;--shell:#e6e8e5;--shell-lo:#c9cecb;--well:#cbd1d3;--well-2:#dbe0e1;--line:#899093;--soft-line:#fff;--shadow:0 20px 50px rgba(28,38,42,.25);--key-shadow:0 3px 5px rgba(38,42,43,.3),inset 0 1px #fff,inset 0 -1px rgba(70,76,78,.34);--wallpaper-overlay:linear-gradient(rgba(255,255,255,.04),rgba(255,255,255,.04))}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}.icon-sprite{position:absolute;width:0;height:0;overflow:hidden}svg{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.icon-sprite symbol:first-child path{fill:currentColor;stroke:none}
-.desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background-image:var(--wallpaper-overlay),url("wallpaper-river-v34.jpg");background-position:center;background-size:cover;background-repeat:no-repeat;isolation:isolate}
+.desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background:#041a39;isolation:isolate}
 .desktop-shell::before{content:none}
 .zone{min-width:0;height:100%;padding:24px;overflow:hidden;background:linear-gradient(115deg,color-mix(in srgb,var(--shell-hi) 78%,transparent),color-mix(in srgb,var(--shell) 93%,transparent) 45%,color-mix(in srgb,var(--shell-lo) 94%,transparent));box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(0,0,0,.82)}
 .apps-zone{display:flex;flex-direction:column;border-right:1px solid var(--line)}.systems-zone{display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--line);overflow-y:auto;scrollbar-width:none}.systems-zone::-webkit-scrollbar{display:none}
@@ -532,16 +532,12 @@ body[data-theme="light"]{
 .zone-resizer>span i{width:3px;height:1px}
 .zone-resizer:hover>span,.zone-resizer:focus-visible>span,.zone-resizer.is-dragging>span{width:10px;opacity:.92;box-shadow:0 3px 7px rgba(0,0,0,.42),0 0 8px rgba(42,159,255,.18)}
 
-/* User wallpaper, with only enough tint to keep floating windows legible */
+/* Abstract wallpaper base; the animated atmosphere is defined at the end. */
 .desktop-shell{
-  background:
-    linear-gradient(135deg,rgba(3,6,8,.20),rgba(9,5,6,.38)),
-    url("./wallpaper-river-v34.jpg") center center/cover no-repeat;
+  background:#041a39;
 }
 body[data-theme="light"] .desktop-shell{
-  background:
-    linear-gradient(135deg,rgba(244,246,243,.10),rgba(43,31,29,.16)),
-    url("./wallpaper-river-v34.jpg") center center/cover no-repeat;
+  background:#2477b5;
 }
 .desktop-shell::before{content:none}
 
@@ -1942,21 +1938,31 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
    Only transform and opacity animate: the desktop stays live at display cadence
    without repainting the solid application surfaces. */
 .desktop-shell{
-  --ambient-low:.14;
-  --ambient-mid:.22;
-  --ambient-high:.30;
-  --speck-low:.20;
-  --speck-mid:.31;
-  --speck-high:.43;
+  --ambient-low:.26;
+  --ambient-mid:.38;
+  --ambient-high:.52;
+  --speck-low:.24;
+  --speck-mid:.40;
+  --speck-high:.62;
   overflow:hidden;
+  background:
+    radial-gradient(ellipse 74% 82% at 52% 59%,rgba(14,91,183,.72) 0%,rgba(7,53,113,.48) 38%,transparent 72%),
+    radial-gradient(ellipse 47% 50% at 14% 8%,rgba(36,127,232,.34),transparent 68%),
+    radial-gradient(ellipse 54% 62% at 88% 92%,rgba(13,64,148,.44),transparent 72%),
+    linear-gradient(155deg,#06152f 0%,#07336b 42%,#031a3a 72%,#01050d 100%);
 }
 body[data-theme="light"] .desktop-shell{
-  --ambient-low:.08;
-  --ambient-mid:.13;
-  --ambient-high:.19;
-  --speck-low:.12;
-  --speck-mid:.20;
-  --speck-high:.28;
+  --ambient-low:.18;
+  --ambient-mid:.28;
+  --ambient-high:.39;
+  --speck-low:.18;
+  --speck-mid:.31;
+  --speck-high:.48;
+  background:
+    radial-gradient(ellipse 78% 86% at 51% 58%,rgba(62,155,239,.80) 0%,rgba(22,104,190,.53) 39%,transparent 73%),
+    radial-gradient(ellipse 49% 52% at 12% 9%,rgba(131,208,255,.46),transparent 68%),
+    radial-gradient(ellipse 56% 64% at 89% 91%,rgba(33,91,181,.38),transparent 72%),
+    linear-gradient(155deg,#173d70 0%,#287fbd 43%,#124a88 72%,#071a39 100%);
 }
 .desktop-shell::before,
 .desktop-shell::after{
@@ -1971,9 +1977,9 @@ body[data-theme="light"] .desktop-shell{
 .desktop-shell::before{
   inset:-12%;
   background:
-    radial-gradient(ellipse 36% 46% at 18% 28%,rgba(56,170,255,.34),transparent 69%),
-    radial-gradient(ellipse 42% 35% at 76% 71%,rgba(25,118,255,.24),transparent 72%),
-    radial-gradient(ellipse 25% 31% at 55% 18%,rgba(106,210,255,.17),transparent 74%);
+    radial-gradient(ellipse 38% 49% at 19% 27%,rgba(75,184,255,.50),transparent 70%),
+    radial-gradient(ellipse 44% 38% at 77% 70%,rgba(22,125,255,.42),transparent 73%),
+    radial-gradient(ellipse 28% 34% at 55% 17%,rgba(132,222,255,.31),transparent 75%);
   opacity:var(--ambient-low);
   animation:wallpaper-breathe 7.4s cubic-bezier(.45,.05,.55,.95) infinite alternate;
 }
@@ -1981,12 +1987,19 @@ body[data-theme="light"] .desktop-shell{
   inset:-5%;
   background:
     radial-gradient(circle 1.4px at 8% 19%,rgba(221,246,255,.92) 0 55%,transparent 72%),
+    radial-gradient(circle .7px at 13% 46%,rgba(108,203,255,.78) 0 55%,transparent 74%),
     radial-gradient(circle 1px at 19% 67%,rgba(126,209,255,.84) 0 55%,transparent 74%),
+    radial-gradient(circle .8px at 24% 87%,rgba(225,248,255,.86) 0 54%,transparent 72%),
     radial-gradient(circle 1.8px at 31% 38%,rgba(212,244,255,.88) 0 50%,transparent 70%),
+    radial-gradient(circle .6px at 36% 12%,rgba(95,192,255,.82) 0 55%,transparent 74%),
     radial-gradient(circle 1px at 43% 81%,rgba(105,193,255,.82) 0 55%,transparent 73%),
+    radial-gradient(circle .8px at 48% 63%,rgba(235,250,255,.88) 0 52%,transparent 72%),
     radial-gradient(circle 1.3px at 57% 24%,rgba(232,249,255,.90) 0 52%,transparent 71%),
+    radial-gradient(circle .7px at 62% 89%,rgba(102,198,255,.82) 0 55%,transparent 74%),
     radial-gradient(circle .9px at 68% 58%,rgba(113,202,255,.88) 0 55%,transparent 74%),
+    radial-gradient(circle .7px at 73% 36%,rgba(224,247,255,.85) 0 52%,transparent 72%),
     radial-gradient(circle 1.7px at 79% 13%,rgba(211,243,255,.86) 0 50%,transparent 70%),
+    radial-gradient(circle .8px at 84% 48%,rgba(99,194,255,.80) 0 55%,transparent 74%),
     radial-gradient(circle 1.1px at 88% 73%,rgba(117,204,255,.88) 0 55%,transparent 73%),
     radial-gradient(circle .8px at 94% 41%,rgba(225,247,255,.90) 0 55%,transparent 72%),
     radial-gradient(circle 1.2px at 52% 49%,rgba(91,184,255,.76) 0 54%,transparent 73%);
