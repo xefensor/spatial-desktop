@@ -130,6 +130,14 @@ function applyFieldMaterial(field) {
   field.classList.toggle("material-abs-field", Boolean(abs));
 }
 
+function updateRangeLight(range) {
+  const min = Number(range.min || 0);
+  const max = Number(range.max || 100);
+  const value = Number(range.value);
+  const ratio = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
+  range.style.setProperty("--range-progress", (ratio * 100).toFixed(3) + "%");
+}
+
 function applyElementMaterial(element) {
   const surface = nearestMaterialSurface(element);
   const glass = surface?.classList.contains("material-surface-glass");
@@ -158,6 +166,12 @@ function prepareControlSemantics(root = document) {
     }
   });
   matchingNodes(root, materialFieldSelector).forEach(applyFieldMaterial);
+  matchingNodes(root, "input[type=range]").forEach(range => {
+    updateRangeLight(range);
+    if (range.dataset.rangeLightBound) return;
+    range.dataset.rangeLightBound = "true";
+    range.addEventListener("input", () => updateRangeLight(range));
+  });
   matchingNodes(root, materialElementSelector).forEach(applyElementMaterial);
 }
 
@@ -2813,7 +2827,10 @@ function syncMusic() {
     button.classList.toggle("is-active", musicPlaying);
     button.setAttribute("aria-pressed", String(musicPlaying));
   });
-  $$(".track-range").forEach(range => range.value = musicPosition);
+  $$(".track-range").forEach(range => {
+    range.value = musicPosition;
+    updateRangeLight(range);
+  });
   if ($("#elapsedMain")) $("#elapsedMain").textContent = formatTime(musicPosition);
 }
 
