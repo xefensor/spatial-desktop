@@ -1703,9 +1703,7 @@ body[data-theme="light"] .app-frame.is-front{
   box-shadow:0 22px 52px rgba(28,38,42,.25),0 0 0 1px color-mix(in srgb,var(--app-primary) 12%,transparent);
 }
 .app-frame .app-titlebar{
-  background:
-    linear-gradient(90deg,color-mix(in srgb,var(--app-primary) 11%,transparent),transparent 46%),
-    color-mix(in srgb,var(--shell-hi) 18%,transparent);
+  background:color-mix(in srgb,var(--shell-hi) 18%,transparent);
 }
 .app-frame .app-identity small{
   color:color-mix(in srgb,var(--app-primary) 62%,var(--muted));
