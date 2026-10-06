@@ -3791,3 +3791,28 @@ body[data-theme="light"] .context-menu-item:active{box-shadow:inset 0 2px 3px rg
 }
 .project-area[data-area-state="compact"][data-dock-edge="top"] .project-note-widget,
 .project-area[data-area-state="compact"][data-dock-edge="bottom"] .project-note-widget{display:none}
+
+/* v70 — Docked Areas form one continuous desktop surface. There are no
+   decorative wallpaper gutters: each Area fills its allocated slot and the
+   shared one-pixel seams are the only separation from the workspace. */
+body.areas-docked .area-window{
+  border-radius:0;
+  box-shadow:
+    inset 1px 1px rgba(255,255,255,.08),
+    inset -1px -1px var(--acrylic-dark-edge),
+    0 0 0 1px rgba(0,0,0,.26);
+}
+body.areas-docked .area-window::before{
+  inset:2px;
+  border-radius:2px;
+}
+body.areas-docked .desktop-shell>.workspace-zone{
+  border-radius:0;
+}
+body.areas-docked .dock-preview{
+  border-radius:0;
+}
+body.areas-docked .dock-preview[data-edge="left"]{left:0;top:0;bottom:0}
+body.areas-docked .dock-preview[data-edge="right"]{right:0;top:0;bottom:0}
+body.areas-docked .dock-preview[data-edge="top"]{top:0}
+body.areas-docked .dock-preview[data-edge="bottom"]{bottom:0}

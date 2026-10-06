@@ -867,7 +867,7 @@ function minimumWorkspaceWidth(profile, width) {
 function resolvedAreaLayout(width, height) {
   const profile = displayProfileFor(width, height);
   const states = initialAreaStates(profile);
-  const gap = 12;
+  const gap = 0;
   const minimumWorkspace = minimumWorkspaceWidth(profile, width);
   const sideWidth = edge => preferredSideSize(edge, states, profile);
   const occupiedSides = () => ["left", "right"].filter(edge => dockGroup(edge).length);
@@ -933,7 +933,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
 function fitOpposingDockSizes(firstEdge, secondEdge, available, minimumWorkspace, minimumDock) {
   const occupied = [firstEdge, secondEdge].filter(edge => dockGroup(edge).length);
   if (!occupied.length) return;
-  let overflow = occupied.reduce((sum, edge) => sum + dockSizes[edge], 0) + (occupied.length + 1) * 12 + minimumWorkspace - available;
+  let overflow = occupied.reduce((sum, edge) => sum + dockSizes[edge], 0) + minimumWorkspace - available;
   occupied.sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
     if (overflow <= 0) return;
     const reduction = Math.min(overflow, Math.max(0, dockSizes[edge] - minimumDock));
@@ -964,7 +964,7 @@ function layoutDockAreas(save = false) {
   const shell = $(".desktop-shell");
   const width = shell.clientWidth;
   const height = shell.clientHeight;
-  const gap = 12;
+  const gap = 0;
   const resolved = resolvedAreaLayout(width, height);
   const effectiveSizes = resolved.sizes;
   currentDisplayProfile = resolved.profile;
@@ -1117,10 +1117,10 @@ function bindDockResize(name, area) {
     area.classList.add("is-area-resizing");
     const move = moveEvent => {
       const edge = dockState[name].edge;
-      if (edge === "left") dockSizes.left = moveEvent.clientX - shellRect.left - 12;
-      if (edge === "right") dockSizes.right = shellRect.right - moveEvent.clientX - 12;
-      if (edge === "top") dockSizes.top = moveEvent.clientY - shellRect.top - 12;
-      if (edge === "bottom") dockSizes.bottom = shellRect.bottom - moveEvent.clientY - 12;
+      if (edge === "left") dockSizes.left = moveEvent.clientX - shellRect.left;
+      if (edge === "right") dockSizes.right = shellRect.right - moveEvent.clientX;
+      if (edge === "top") dockSizes.top = moveEvent.clientY - shellRect.top;
+      if (edge === "bottom") dockSizes.bottom = shellRect.bottom - moveEvent.clientY;
       layoutDockAreas(false);
     };
     const finish = () => {
