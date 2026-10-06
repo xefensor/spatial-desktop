@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1015">
+  <meta name="description" content="The interactive ABS plastic and edge-lit glass material guide for Spatial Desktop.">
+  <title>Spatial Desktop — Material Guide</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23070b0f'/%3E%3Crect x='8' y='11' width='21' height='42' rx='8' fill='%23252c31' stroke='%235a6870'/%3E%3Crect x='35' y='11' width='21' height='42' fill='%231b3642' fill-opacity='.62' stroke='%237bd9ff'/%3E%3C/svg%3E">
+  <style>
+    :root{
+      color-scheme:dark;
+      --accent:#a483ff;
+      --accent-rgb:164,131,255;
+      --bg:#080c10;
+      --bg-raised:#0f151a;
+      --text:#f0f4f6;
+      --muted:#9ba8af;
+      --faint:#68767e;
+      --line:rgba(205,230,242,.14);
+      --line-strong:rgba(213,238,249,.24);
+      --abs-top:#333b41;
+      --abs-mid:#252c31;
+      --abs-low:#171d21;
+      --abs-well:#11171b;
+      --glass:rgba(25,43,53,.58);
+      --glass-deep:rgba(5,13,18,.64);
+      --glass-edge:rgba(205,238,252,.28);
+      --shadow:0 18px 42px rgba(0,0,0,.38);
+      --window-radius:22px;
+      --inner-radius:12px;
+      --square-radius:2px;
+      --press:8ms;
+      --release:16ms;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-width:320px;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 16% 10%,rgba(42,159,255,.14),transparent 32rem),
+        radial-gradient(circle at 88% 4%,rgba(var(--accent-rgb),.11),transparent 34rem),
+        linear-gradient(145deg,#05080a,var(--bg) 58%,#08131a);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      line-height:1.45;
+    }
+    body::before{
+      content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+      background:linear-gradient(115deg,transparent 0 45%,rgba(101,196,237,.035) 51%,transparent 57%);
+    }
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    a{color:inherit}
+    :focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 72%,white);outline-offset:3px}
+    .topbar{
+      position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+      min-height:58px;padding:8px clamp(14px,3vw,38px);
+      border-bottom:1px solid var(--glass-edge);
+      background:linear-gradient(180deg,rgba(78,124,145,.12),rgba(4,10,14,.06)),rgba(9,18,23,.72);
+      backdrop-filter:blur(24px) saturate(1.25);-webkit-backdrop-filter:blur(24px) saturate(1.25);
+      box-shadow:inset 0 1px rgba(255,255,255,.10),0 8px 24px rgba(0,0,0,.20);
+    }
+    .brand{display:flex;align-items:center;gap:11px;min-width:0}
+    .brand-mark{display:grid;grid-template-columns:9px 9px;gap:3px;width:26px;height:26px;padding:2px}
+    .brand-mark i{display:block;border:1px solid var(--line-strong);background:var(--abs-mid);border-radius:3px;box-shadow:inset 0 1px rgba(255,255,255,.08)}
+    .brand-mark i:last-child{background:rgba(var(--accent-rgb),.18);border-color:color-mix(in srgb,var(--accent) 55%,var(--glass-edge));box-shadow:0 0 8px rgba(var(--accent-rgb),.18),inset 0 1px rgba(255,255,255,.12)}
+    .brand b,.brand small{display:block;white-space:nowrap}.brand b{font-size:15px}.brand small{font-size:12px;color:var(--muted)}
+    .top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .top-link{font-size:13px;text-decoration:none;color:var(--muted);padding:7px 10px;border-radius:5px}.top-link:hover{color:var(--text);background:rgba(255,255,255,.05)}
+    .theme-switch{display:flex;gap:3px;padding:3px;border:1px solid var(--glass-edge);background:rgba(5,12,16,.38);border-radius:4px;box-shadow:inset 0 1px 3px rgba(0,0,0,.32)}
+    .theme-switch button{border:0;border-radius:2px;background:transparent;padding:5px 9px;font-size:12px;color:var(--muted)}
+    .theme-switch button[aria-pressed="true"]{color:var(--text);background:rgba(var(--accent-rgb),.16);box-shadow:inset 0 -2px var(--accent)}
+    .layout{width:min(1440px,100%);margin:0 auto;display:grid;grid-template-columns:235px minmax(0,1fr);gap:26px;padding:28px clamp(16px,3vw,42px) 80px}
+    .guide-nav{position:sticky;top:86px;align-self:start;display:grid;gap:4px;padding:10px;border:1px solid var(--glass-edge);background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:inset 0 1px rgba(255,255,255,.10),var(--shadow);border-radius:0}
+    .guide-nav strong{padding:9px 10px 7px;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint)}
+    .guide-nav a{padding:8px 10px;border-left:2px solid transparent;text-decoration:none;font-size:14px;color:var(--muted)}
+    .guide-nav a:hover,.guide-nav a.is-current{color:var(--text);border-left-color:var(--accent);background:rgba(var(--accent-rgb),.08)}
+    main{min-width:0}
+    .intro{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:18px;margin-bottom:26px}
+    .intro-copy,.rule-card{border:1px solid var(--line);background:linear-gradient(145deg,var(--abs-top),var(--abs-mid) 42%,var(--abs-low));box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.07);border-radius:var(--window-radius)}
+    .intro-copy{padding:clamp(24px,4vw,48px)}
+    .eyebrow{margin:0 0 8px;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent)}
+    h1{margin:0;font-size:clamp(32px,5vw,60px);line-height:1.02;letter-spacing:-.04em}
+    .intro-copy>p:last-child{max-width:720px;margin:20px 0 0;color:var(--muted);font-size:17px}
+    .rule-card{padding:18px 20px;display:grid;align-content:center;gap:13px}
+    .rule{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+    .rule span{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--abs-well);font-weight:700;color:var(--accent)}
+    .rule b,.rule small{display:block}.rule b{font-size:14px}.rule small{margin-top:2px;color:var(--muted);font-size:12px}
+    section{scroll-margin-top:84px;margin-top:34px}
+    .section-head{display:flex;align-items:end;gap:20px;margin:0 0 14px}
+    .section-head div{min-width:0}.section-head h2{margin:0;font-size:25px;letter-spacing:-.02em}.section-head p{margin:4px 0 0;color:var(--muted);font-size:14px}.section-number{margin-left:auto;color:var(--faint);font:600 13px ui-monospace,monospace}
+    .principle-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .principle{padding:18px;border:1px solid var(--line);background:var(--bg-raised);border-radius:14px}
+    .principle b{display:block;margin-bottom:6px}.principle p{margin:0;color:var(--muted);font-size:14px}
+    .material-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .material-card{min-height:330px;padding:24px;display:flex;flex-direction:column;gap:20px}
+    .abs-surface{border:1px solid rgba(205,224,233,.16);border-radius:var(--window-radius);background:linear-gradient(145deg,var(--abs-top),var(--abs-mid) 45%,var(--abs-low));box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.08),inset 0 -1px rgba(0,0,0,.46)}
+    .glass-surface{border:1px solid var(--glass-edge);border-radius:0;background:linear-gradient(145deg,rgba(238,251,255,.09),transparent 31%),linear-gradient(180deg,rgba(85,154,183,.10),rgba(3,9,13,.05)),var(--glass);backdrop-filter:blur(24px) saturate(1.25);-webkit-backdrop-filter:blur(24px) saturate(1.25);box-shadow:var(--shadow),inset 0 1px rgba(245,253,255,.16),inset 1px 0 rgba(205,240,255,.07)}
+    .material-label{display:flex;align-items:center;gap:12px}.material-chip{width:38px;height:38px;border-radius:11px}.material-chip.abs{background:linear-gradient(145deg,var(--abs-top),var(--abs-low));border:1px solid var(--line);box-shadow:0 5px 10px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.09)}.material-chip.glass{border:1px solid var(--glass-edge);border-radius:2px;background:rgba(116,205,242,.09);box-shadow:0 0 12px rgba(76,190,236,.10),inset 0 1px rgba(255,255,255,.18)}
+    .material-label b,.material-label small{display:block}.material-label b{font-size:18px}.material-label small{color:var(--muted)}
+    .material-card>p{margin:0;color:var(--muted);font-size:14px}
+    .use-list{margin:auto 0 0;padding:0;list-style:none;display:grid;gap:8px}.use-list li{display:flex;gap:9px;align-items:center;font-size:13px}.use-list li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.45)}
+    .never{padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--faint)}
+    .specimen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .specimen{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--bg-raised)}
+    .specimen-demo{min-height:190px;padding:24px;display:grid;place-items:center;position:relative}
+    .specimen-copy{padding:16px 18px 18px;border-top:1px solid var(--line)}
+    .specimen-copy h3{margin:0;font-size:16px}.specimen-copy p{margin:6px 0 0;color:var(--muted);font-size:13px}
+    .demo-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;width:100%}
+    .abs-button,.glass-button{position:relative;min-height:42px;padding:0 17px;border-radius:12px;transition:transform var(--release) linear,box-shadow var(--release) linear,background var(--release) linear}
+    .abs-button{border:1px solid rgba(211,231,240,.18);background:linear-gradient(180deg,var(--abs-top),var(--abs-mid) 54%,var(--abs-low));box-shadow:0 5px 10px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.10),inset 0 -1px rgba(0,0,0,.55)}
+    .abs-button:hover{border-color:color-mix(in srgb,var(--accent) 22%,rgba(211,231,240,.18))}
+    .abs-button:active,.abs-button.is-on{transform:translateY(2px);background:linear-gradient(180deg,var(--abs-low),var(--abs-mid));box-shadow:inset 0 3px 5px rgba(0,0,0,.52),0 1px 2px rgba(0,0,0,.25);transition-duration:var(--press)}
+    .glass-button{border:1px solid var(--glass-edge);background:linear-gradient(180deg,rgba(230,248,255,.10),rgba(77,131,154,.06)),rgba(8,21,28,.30);box-shadow:0 4px 10px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.18),inset 0 -1px rgba(0,0,0,.28)}
+    .glass-button:hover{background:linear-gradient(180deg,rgba(230,248,255,.15),rgba(77,131,154,.08)),rgba(8,21,28,.34)}
+    .glass-button:active,.glass-button.is-on{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.30),0 0 8px rgba(var(--accent-rgb),.08);transition-duration:var(--press)}
+    .toggle-button::after{content:"";position:absolute;height:2px;left:9px;right:9px;bottom:3px;border-radius:2px;background:transparent;box-shadow:none}
+    .toggle-button.is-on::after{background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.72)}
+    .tabs{display:flex;gap:7px;align-items:end}.tab{min-width:90px;padding:10px 14px;border:1px solid var(--line);border-radius:11px 11px 4px 4px;background:linear-gradient(180deg,var(--abs-top),var(--abs-mid));box-shadow:0 4px 8px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.07)}.tab[aria-selected="true"]{position:relative;transform:translateY(3px);background:var(--abs-well);box-shadow:inset 0 3px 5px rgba(0,0,0,.48)}.tab[aria-selected="true"]::after{content:"";position:absolute;left:11px;right:11px;bottom:3px;height:2px;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.65)}
+    .field-demo{display:grid;gap:12px;width:min(420px,100%)}.field-demo label{font-size:12px;color:var(--muted)}.recessed-field{width:100%;height:43px;padding:0 13px;border:1px solid color-mix(in srgb,var(--accent) 14%,var(--glass-edge));border-radius:9px;background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(255,255,255,.025)),var(--glass-deep);box-shadow:inset 0 2px 5px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.05)}.recessed-field:focus{border-color:color-mix(in srgb,var(--accent) 50%,var(--glass-edge));box-shadow:inset 0 2px 5px rgba(0,0,0,.38),0 0 0 1px rgba(var(--accent-rgb),.14)}
+    .range-wrap{width:min(440px,100%);display:grid;gap:10px}.range-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.lit-range{--p:42%;width:100%;height:18px;appearance:none;background:transparent}.lit-range::-webkit-slider-runnable-track{height:6px;border:1px solid var(--glass-edge);border-radius:999px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.24) 0 var(--p),transparent var(--p)),linear-gradient(90deg,color-mix(in srgb,var(--accent) 88%,white 12%) 0 var(--p),transparent var(--p)) center/100% 2px no-repeat,var(--glass-deep);box-shadow:inset 0 1px 3px rgba(0,0,0,.40)}.lit-range::-webkit-slider-thumb{appearance:none;width:16px;height:16px;margin-top:-6px;border:1px solid var(--line-strong);border-radius:6px;background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.40),inset 0 1px rgba(255,255,255,.10)}.lit-range::-moz-range-track{height:6px;border:1px solid var(--glass-edge);border-radius:999px;background:var(--glass-deep)}.lit-range::-moz-range-progress{height:2px;background:var(--accent);box-shadow:0 0 5px rgba(var(--accent-rgb),.68)}.lit-range::-moz-range-thumb{width:16px;height:16px;border:1px solid var(--line-strong);border-radius:6px;background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.40)}
+    .menu-demo{width:min(300px,100%);padding:5px;border:1px solid var(--glass-edge);border-radius:0;background:linear-gradient(135deg,rgba(240,252,255,.10),transparent 29%),var(--glass);backdrop-filter:blur(20px);box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.16)}.menu-title{padding:7px 9px;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--line)}.menu-item{display:flex;align-items:center;gap:10px;width:100%;min-height:35px;padding:0 9px;border:1px solid transparent;border-radius:2px;background:transparent;text-align:left}.menu-item:hover{border-color:var(--line);background:rgba(var(--accent-rgb),.09)}.menu-item kbd{margin-left:auto;padding:2px 5px;border:1px solid var(--line);border-radius:2px;background:rgba(255,255,255,.035);color:var(--muted);font-size:10px}
+    .rows{width:min(440px,100%);display:grid}.plain-row{display:grid;grid-template-columns:31px 1fr auto;gap:10px;align-items:center;padding:9px 8px;border-left:3px solid transparent}.plain-row:hover{background:rgba(255,255,255,.035)}.plain-row.is-selected{border-left-color:var(--accent);background:rgba(var(--accent-rgb),.12)}.row-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:rgba(var(--accent-rgb),.15);color:var(--accent)}.plain-row b,.plain-row small{display:block}.plain-row b{font-size:13px}.plain-row small,.plain-row time{color:var(--muted);font-size:11px}
+    .shape-demo{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}.shape-area,.shape-window{min-height:130px;padding:14px}.shape-area{border:1px solid var(--glass-edge);border-radius:0;background:var(--glass);box-shadow:inset 0 1px rgba(255,255,255,.12)}.shape-window{border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,var(--abs-top),var(--abs-low));box-shadow:0 10px 22px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.07)}.shape-demo b,.shape-demo small{display:block}.shape-demo small{margin-top:4px;color:var(--muted);font-size:11px}
+    .token-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--bg-raised);border-radius:14px;overflow:hidden}.token-table th,.token-table td{padding:13px 15px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.token-table th{color:var(--muted);font-weight:500;background:rgba(255,255,255,.025)}.token-table td:first-child{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}.token-table tr:last-child td{border-bottom:0}
+    .accent-picker{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-raised);margin-bottom:14px}.accent-picker strong{margin-right:auto;font-size:13px}.swatch{width:30px;height:30px;padding:0;border:2px solid transparent;border-radius:50%;background:var(--swatch);box-shadow:0 0 8px color-mix(in srgb,var(--swatch) 28%,transparent)}.swatch[aria-pressed="true"]{border-color:white;outline:2px solid var(--swatch);outline-offset:2px}
+    .dos-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.do-card{padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--bg-raised)}.do-card h3{margin:0 0 10px;font-size:15px}.do-card ul{margin:0;padding-left:19px;color:var(--muted);font-size:13px}.do-card li+li{margin-top:7px}.do-card.good h3{color:#7ee3a0}.do-card.bad h3{color:#ff897f}
+    details{border:1px solid var(--line);border-radius:12px;background:var(--bg-raised);overflow:hidden}details+details{margin-top:10px}summary{cursor:pointer;padding:14px 16px;font-weight:650}pre{margin:0;padding:17px;overflow:auto;border-top:1px solid var(--line);background:#070b0e;color:#c9d7de;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .footer{margin-top:36px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    body[data-theme="light"]{color-scheme:light;--bg:#dce7ec;--bg-raised:#eef4f6;--text:#172128;--muted:#53636c;--faint:#73828a;--line:rgba(48,74,86,.16);--line-strong:rgba(42,74,90,.28);--abs-top:#fbfcfc;--abs-mid:#e7ecee;--abs-low:#c8d0d4;--abs-well:#d6dfe3;--glass:rgba(225,240,247,.70);--glass-deep:rgba(151,178,190,.38);--glass-edge:rgba(255,255,255,.80);--shadow:0 16px 36px rgba(41,62,73,.20)}
+    body[data-theme="light"]{background:radial-gradient(circle at 15% 7%,rgba(42,159,255,.18),transparent 32rem),radial-gradient(circle at 88% 4%,rgba(var(--accent-rgb),.12),transparent 34rem),linear-gradient(145deg,#cbdce4,var(--bg) 58%,#d4e7ef)}
+    body[data-theme="light"] .topbar{background:rgba(226,240,246,.76);box-shadow:inset 0 1px white,0 8px 24px rgba(47,69,80,.16)}
+    body[data-theme="light"] .guide-nav{background:rgba(226,240,246,.76)}
+    body[data-theme="light"] .abs-surface,body[data-theme="light"] .intro-copy,body[data-theme="light"] .rule-card{box-shadow:var(--shadow),inset 0 1px white,inset 0 -1px rgba(73,93,103,.18)}
+    body[data-theme="light"] .glass-button,body[data-theme="light"] .menu-demo{background:rgba(242,250,253,.42)}
+    body[data-theme="light"] pre{background:#edf3f5;color:#23323a}
+    @media(max-width:1000px){.layout{grid-template-columns:1fr}.guide-nav{position:static;display:flex;overflow:auto;gap:2px}.guide-nav strong{display:none}.guide-nav a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent}.guide-nav a:hover,.guide-nav a.is-current{border-left:0;border-bottom-color:var(--accent)}.intro{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:720px){.top-link{display:none}.layout{padding-inline:12px}.material-grid,.specimen-grid,.dos-grid{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr}.intro-copy{padding:26px 22px}.section-head{align-items:start}.section-number{display:none}.shape-demo{grid-template-columns:1fr}.token-table th:nth-child(3),.token-table td:nth-child(3){display:none}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+    @media(prefers-reduced-transparency:reduce){.glass-surface,.guide-nav,.topbar,.menu-demo{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg-raised)}}
+  </style>
+</head>
+<body data-theme="dark">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span><b>Spatial Desktop</b><small>Material Guide</small></span></div>
+    <div class="top-actions">
+      <a class="top-link" href="/">Open desktop</a>
+      <div class="theme-switch" aria-label="Theme"><button type="button" data-theme-value="dark" aria-pressed="true">Dark</button><button type="button" data-theme-value="light" aria-pressed="false">Light</button></div>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="guide-nav" aria-label="Guide sections">
+      <strong>Foundation</strong>
+      <a href="#philosophy">Philosophy</a><a href="#materials">Materials</a><a href="#controls">Controls</a><a href="#structure">Structure</a><a href="#tokens">Tokens</a><a href="#templates">Templates</a>
+    </nav>
+    <main>
+      <header class="intro">
+        <div class="intro-copy"><p class="eyebrow">Spatial Desktop design system</p><h1>Material follows interaction.</h1><p>ABS gives pointer-driven controls a physical body. Edge-lit glass carries temporary, ambient and system information. Neither material is decoration: each one explains how an element behaves before it is used.</p></div>
+        <aside class="rule-card" aria-label="Three core rules">
+          <div class="rule"><span>1</span><div><b>Role chooses material</b><small>Persistent and physical uses ABS. Transient and ambient uses glass.</small></div></div>
+          <div class="rule"><span>2</span><div><b>State chooses light</b><small>Persistent light belongs only to toggles, selections and progress.</small></div></div>
+          <div class="rule"><span>3</span><div><b>Object chooses shape</b><small>Desktop Areas are square. Movable app windows are squircles.</small></div></div>
+        </aside>
+      </header>
+
+      <section id="philosophy">
+        <div class="section-head"><div><h2>Philosophy</h2><p>A small set of rules should explain the whole interface.</p></div><span class="section-number">01</span></div>
+        <div class="principle-grid">
+          <article class="principle"><b>Tactile, not ornamental</b><p>Depth must communicate pressability, insertion or stacking. Flat information stays flat.</p></article>
+          <article class="principle"><b>Input-device honesty</b><p>Desktop controls echo mouse and keyboard switches. Touch controls belong to the continuous phone-glass surface.</p></article>
+          <article class="principle"><b>One depth step</b><p>A surface can be raised, level or recessed. Avoid nesting multiple embossed frames around content.</p></article>
+          <article class="principle"><b>Solid working content</b><p>The main content of every app window is always opaque and readable. Glass never sits behind long-form content.</p></article>
+          <article class="principle"><b>Light carries meaning</b><p>App colour marks focus, selection, progress and an active toggle—not every border and icon.</p></article>
+          <article class="principle"><b>Fast mechanical motion</b><p>Buttons move down in 8 ms and release in 16 ms. Toggle buttons click equally fast, then remain physically held.</p></article>
+        </div>
+      </section>
+
+      <section id="materials">
+        <div class="section-head"><div><h2>Two materials, two jobs</h2><p>Mix them only at a deliberate boundary.</p></div><span class="section-number">02</span></div>
+        <div class="material-grid">
+          <article class="material-card abs-surface"><div class="material-label"><span class="material-chip abs"></span><span><b>ABS plastic</b><small>Durable · physical · opaque</small></span></div><p>ABS is the body of applications and controls manipulated with a pointer. It should feel like the shell and buttons of a well-made mouse.</p><ul class="use-list"><li>Movable application windows</li><li>Push and toggle buttons on ABS</li><li>Toolbars, tabs and window chrome</li><li>Solid application content surfaces</li></ul><div class="never">Never make primary reading or working content transparent.</div></article>
+          <article class="material-card glass-surface"><div class="material-label"><span class="material-chip glass"></span><span><b>Edge-lit glass</b><small>Transient · ambient · contextual</small></span></div><p>Glass belongs to the desktop environment around apps. Fine illuminated edges reveal the sheet without turning it into a glowing ornament.</p><ul class="use-list"><li>Docked Apps, Project and System Areas</li><li>Context menus, popovers and toasts</li><li>Overview and search surfaces</li><li>Small displays inserted into ABS</li></ul><div class="never">Glass controls live on glass. ABS controls live on ABS.</div></article>
+        </div>
+      </section>
+
+      <section id="controls">
+        <div class="section-head"><div><h2>Interactive elements</h2><p>Use the controls below—do not reinterpret their states per app.</p></div><span class="section-number">03</span></div>
+        <div class="accent-picker"><strong>Application primary colour</strong><button class="swatch" style="--swatch:#a483ff" data-accent="#a483ff" data-rgb="164,131,255" aria-label="Violet" aria-pressed="true"></button><button class="swatch" style="--swatch:#2a9fff" data-accent="#2a9fff" data-rgb="42,159,255" aria-label="Blue" aria-pressed="false"></button><button class="swatch" style="--swatch:#64d782" data-accent="#64d782" data-rgb="100,215,130" aria-label="Green" aria-pressed="false"></button><button class="swatch" style="--swatch:#ffb553" data-accent="#ffb553" data-rgb="255,181,83" aria-label="Amber" aria-pressed="false"></button></div>
+        <div class="specimen-grid">
+          <article class="specimen"><div class="specimen-demo abs-surface"><div class="demo-row"><button class="abs-button">Push action</button><button class="abs-button toggle-button" data-demo-toggle aria-pressed="false">Toggle action</button></div></div><div class="specimen-copy"><h3>ABS buttons</h3><p>A push button rises again. A toggle clicks at the same speed, stays down and gains the persistent state line.</p></div></article>
+          <article class="specimen"><div class="specimen-demo glass-surface"><div class="demo-row"><button class="glass-button">Push action</button><button class="glass-button toggle-button" data-demo-toggle aria-pressed="false">Toggle action</button></div></div><div class="specimen-copy"><h3>Glass buttons</h3><p>Use only on glass. The etched edge moves by one pixel; the persistent line still belongs only to the active toggle.</p></div></article>
+          <article class="specimen"><div class="specimen-demo abs-surface"><div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Files</button><button class="tab" role="tab" aria-selected="false">Projects</button><button class="tab" role="tab" aria-selected="false">Recent</button></div></div><div class="specimen-copy"><h3>Pressed tabs</h3><p>The selected tab sits lower and darker, like a held keyboard key. Its light line preserves recognition.</p></div></article>
+          <article class="specimen"><div class="specimen-demo abs-surface"><div class="field-demo"><label for="guide-field">Recessed display inside ABS</label><input id="guide-field" class="recessed-field" value="Search files and folders"></div></div><div class="specimen-copy"><h3>Text fields</h3><p>A field is an inset display, not another raised button. Small glass inserts are allowed inside ABS.</p></div></article>
+          <article class="specimen"><div class="specimen-demo abs-surface"><div class="range-wrap"><div class="range-meta"><span>1:55</span><span>3:38</span></div><input class="lit-range" type="range" min="0" max="218" value="115" aria-label="Playback position"></div></div><div class="specimen-copy"><h3>Sliders</h3><p>The filled segment uses the same state light as an active toggle. The rest stays a quiet recessed groove.</p></div></article>
+          <article class="specimen"><div class="specimen-demo"><div class="menu-demo"><div class="menu-title">Window</div><button class="menu-item"><span>Move to Project</span><kbd>⇧P</kbd></button><button class="menu-item"><span>Keep visible</span><kbd>K</kbd></button><button class="menu-item"><span>Close</span><kbd>⌘W</kbd></button></div></div><div class="specimen-copy"><h3>Context menus</h3><p>Temporary UI is square, transparent glass. Rows stay flat until hover; the menu is not an ABS mini-window.</p></div></article>
+          <article class="specimen"><div class="specimen-demo abs-surface"><div class="rows"><div class="plain-row is-selected"><span class="row-icon">F</span><span><b>Downloads</b><small>Selected location</small></span><time>12</time></div><div class="plain-row"><span class="row-icon">D</span><span><b>Documents</b><small>Local folder</small></span><time>8</time></div><div class="plain-row"><span class="row-icon">M</span><span><b>Music</b><small>Local folder</small></span><time>24</time></div></div></div><div class="specimen-copy"><h3>Rows are not buttons</h3><p>Navigation and content rows remain flat. A tint and app-colour edge communicate selection without fake depth.</p></div></article>
+          <article class="specimen"><div class="specimen-demo"><div class="shape-demo"><div class="shape-area"><b>Desktop Area</b><small>Docked · structural · square</small></div><div class="shape-window"><b>App window</b><small>Movable · independent · squircle</small></div></div></div><div class="specimen-copy"><h3>Shape communicates ownership</h3><p>Square objects belong to the desktop structure. Squircles are independent app objects placed above it.</p></div></article>
+        </div>
+      </section>
+
+      <section id="structure">
+        <div class="section-head"><div><h2>Composition rules</h2><p>How the pieces combine without becoming busy.</p></div><span class="section-number">04</span></div>
+        <div class="dos-grid">
+          <article class="do-card good"><h3>Do</h3><ul><li>Keep app content fully opaque.</li><li>Use one dominant material per surface.</li><li>Reserve app colour for meaningful state.</li><li>Let empty space separate groups.</li><li>Keep borders thin and local.</li><li>Use real app icons in launch surfaces.</li></ul></article>
+          <article class="do-card bad"><h3>Do not</h3><ul><li>Put ABS buttons on a glass sheet.</li><li>Wrap every item in a raised card.</li><li>Give push buttons persistent light.</li><li>Blur text-heavy content over wallpaper.</li><li>Stack border inside border inside border.</li><li>Use glow merely to decorate an edge.</li></ul></article>
+        </div>
+      </section>
+
+      <section id="tokens">
+        <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">05</span></div>
+        <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0–2 px</td><td>Docked structural surface</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>Controls and inset displays</td></tr><tr><td>--edge</td><td>1 px</td><td>Material boundary</td></tr><tr><td>--active-line</td><td>2 px</td><td>Toggle, selection and progress state</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop glass only</td></tr></tbody></table>
+      </section>
+
+      <section id="templates">
+        <div class="section-head"><div><h2>Implementation templates</h2><p>Minimal patterns developers can adapt without changing the semantics.</p></div><span class="section-number">06</span></div>
+        <details open><summary>ABS push and toggle</summary><pre>&lt;button class="abs-button"&gt;Push action&lt;/button&gt;
+&lt;button class="abs-button toggle-button" aria-pressed="true"&gt;
+  Toggle action
+&lt;/button&gt;
+
+/* Only a toggle in its ON state receives the persistent line. */
+.toggle-button[aria-pressed="true"]::after {
+  background: var(--app-primary);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--app-primary) 70%, transparent);
+}</pre></details>
+        <details><summary>Glass context menu</summary><pre>&lt;menu class="glass context-menu"&gt;
+  &lt;button class="menu-row"&gt;Move to Project&lt;/button&gt;
+  &lt;button class="menu-row"&gt;Keep visible&lt;/button&gt;
+&lt;/menu&gt;
+
+.context-menu {
+  border-radius: 0;                 /* desktop structure */
+  background: var(--glass-surface);
+  backdrop-filter: blur(24px) saturate(1.25);
+}
+.menu-row { background: transparent; box-shadow: none; }</pre></details>
+        <details><summary>Solid app with a glass insert</summary><pre>&lt;article class="app-window abs"&gt;
+  &lt;header class="app-titlebar"&gt;Dolphin&lt;/header&gt;
+  &lt;div class="glass recessed-field"&gt;Downloads&lt;/div&gt;
+  &lt;main class="app-content solid"&gt;...files...&lt;/main&gt;
+&lt;/article&gt;
+
+/* The content is always opaque—even when the toolbar contains glass. */
+.app-content { background: var(--app-content); opacity: 1; }</pre></details>
+      </section>
+      <footer class="footer">Spatial Desktop Material Guide · ABS plastic for physical interaction · edge-lit glass for spatial context</footer>
+    </main>
+  </div>
+  <script>
+    const root=document.documentElement;
+    document.querySelectorAll('[data-theme-value]').forEach(button=>button.addEventListener('click',()=>{
+      document.body.dataset.theme=button.dataset.themeValue;
+      document.querySelectorAll('[data-theme-value]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+    }));
+    document.querySelectorAll('[data-accent]').forEach(button=>button.addEventListener('click',()=>{
+      root.style.setProperty('--accent',button.dataset.accent);
+      root.style.setProperty('--accent-rgb',button.dataset.rgb);
+      document.querySelectorAll('[data-accent]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+    }));
+    document.querySelectorAll('[data-demo-toggle]').forEach(button=>button.addEventListener('click',()=>{
+      const on=button.getAttribute('aria-pressed')!=='true';
+      button.setAttribute('aria-pressed',String(on));button.classList.toggle('is-on',on);
+    }));
+    document.querySelectorAll('[role="tab"]').forEach(tab=>tab.addEventListener('click',()=>{
+      tab.parentElement.querySelectorAll('[role="tab"]').forEach(item=>item.setAttribute('aria-selected',String(item===tab)));
+    }));
+    document.querySelectorAll('.lit-range').forEach(range=>{
+      const update=()=>{const p=(Number(range.value)-Number(range.min))/(Number(range.max)-Number(range.min))*100;range.style.setProperty('--p',p+'%')};
+      range.addEventListener('input',update);update();
+    });
+    const links=[...document.querySelectorAll('.guide-nav a')];
+    const sections=links.map(link=>document.querySelector(link.hash)).filter(Boolean);
+    const observer=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(!visible)return;links.forEach(link=>link.classList.toggle('is-current',link.hash==='#'+visible.target.id))},{rootMargin:'-18% 0px -68%',threshold:[0,.2,.5]});
+    sections.forEach(section=>observer.observe(section));
+  </script>
+</body>
+</html>
