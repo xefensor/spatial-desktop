@@ -2646,6 +2646,8 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
 
 /* v62 — adaptive Areas preserve the workspace before decorative density. */
 .layout-mode-control{grid-column:1/-1}
+.layout-mode-status{display:flex;align-items:center;justify-content:center;gap:7px;padding:5px 0;color:var(--muted);font-size:11px;line-height:1.4;cursor:default}
+.layout-mode-status svg{width:15px;height:15px;flex:none}
 .layout-mode-control.is-active{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,var(--line))}
 .overview-layout-status{display:inline-flex;align-items:center;gap:6px;margin-top:5px;color:var(--muted);font-size:12px;font-weight:650}.overview-layout-status svg{width:14px;height:14px;color:var(--blue)}
 .universal-search-shell{width:min(100%,1760px);margin-inline:auto}

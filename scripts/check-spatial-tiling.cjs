@@ -120,3 +120,70 @@ assert.equal(vm.runInContext("JSON.stringify(tileSession().root)", sandbox), roo
 sandbox.projectModeId = () => "texturing";
 assert.equal(vm.runInContext("tileSession().root", sandbox), null, "Project modes have independent split trees");
 console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app exclusion, workspace and mode isolation passed.");
+
+// Run the real dock layout/session/resize paths, including legacy Auto data.
+// Window activity must never steal dock space or move Areas to another display.
+const areaFrames = Object.fromEntries(["projects", "apps", "systems"].map(name => [name, {
+  hidden: false, dataset: {}, style: { removeProperty() {} },
+  classList: { add() {}, remove() {} },
+  handle: { listeners: new Map(), setPointerCapture() {},
+    addEventListener(type, fn) { this.listeners.set(type, fn); },
+    removeEventListener(type) { this.listeners.delete(type); }
+  }
+}]));
+const shell = { clientWidth: 1600, clientHeight: 900,
+  getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
+const docks = {
+  tileEngine: T, activeWorkspace: "general", window: { innerWidth: 1600 },
+  document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
+    body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
+  localStorage: sandbox.localStorage, isLocalArea: () => true,
+  $: (selector, scope) => selector === ".desktop-shell" ? shell : scope?.handle,
+  extendedDesktopActive: () => true, localDisplaySlot: () => 1,
+  applyDockRect(name, rect) { areaFrames[name].rect = rect; },
+  captureBaseDockLaneRects() {}, syncAreaControls() {}, syncLayoutModeUI() {},
+  setWorkspaceInsets(left, right, bottom, top) { docks.insets = { left, right, bottom, top }; },
+  showToast() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+  applyExtendedDesktopPartition() { throw Error("Area resized another display"); }
+};
+vm.createContext(docks);
+vm.runInContext(slice("const areaPriority =", "function captureVisibleWindowViewportRects("), docks);
+vm.runInContext(slice("function edgePriority(", "function syncAreaControls("), docks);
+vm.runInContext(slice("function refreshSpatialAutoLayout(", "function relocationShiftFor("), docks);
+vm.runInContext(slice("function applyAutoAvoidance(", "function freezeCurrentAreaLayout("), docks);
+vm.runInContext(slice("function secondaryAreaCanvasNames(", "function applySecondaryAreaCanvas("), docks);
+vm.runInContext(slice("function layoutDockAreas(", "function hideArea("), docks);
+vm.runInContext(slice("function rebalanceAreaDisplays(", "function displayTransferTarget("), docks);
+vm.runInContext(slice("function bindDockResize(", "function prepareAreaWindows("), docks);
+vm.runInContext(`workspaceAreaSessions.general = {
+  layoutMode: "auto", sizes: {left: 320, right: 300, top: 250, bottom: 250},
+  hidden: {projects: false, apps: false, systems: false}
+}; applyAreaSession("general");`, docks);
+assert.equal(vm.runInContext("layoutMode", docks), "manual", "Legacy Auto sessions migrate to fixed Area bounds");
+const beforeDocks = JSON.stringify(Object.values(areaFrames).map(area => area.rect));
+const beforeInsets = JSON.stringify(docks.insets);
+// Even stale state from another tab/version cannot re-enable window avoidance.
+vm.runInContext(`layoutMode = "auto";
+  autoWindowAvoidance.set("dolphin", new Set(["left", "right"]));
+  refreshSpatialAutoLayout({}, {left: 0, right: 1600});
+  setWindowAutoAvoidance("dolphin", ["left"]);
+  applyAutoAvoidance(); layoutDockAreas();`, docks);
+assert.equal(JSON.stringify(Object.values(areaFrames).map(area => area.rect)), beforeDocks, "Window activity leaves all Area rectangles unchanged");
+assert.equal(JSON.stringify(docks.insets), beforeInsets, "Window activity leaves the tile canvas unchanged");
+assert.equal(vm.runInContext("rebalanceAreaDisplays()", docks), false, "Areas never migrate monitors because of windows");
+assert.equal(vm.runInContext("secondaryAreaCanvasNames().length", docks), 0, "Empty secondary displays do not expand Areas automatically");
+vm.runInContext('bindDockResize("projects", areaFor("projects"));', docks);
+const projectHandle = areaFrames.projects.handle;
+projectHandle.listeners.get("pointerdown")({ button: 0, pointerId: 1, preventDefault() {}, stopPropagation() {} });
+projectHandle.listeners.get("pointermove")({ clientX: 78, clientY: 300 });
+projectHandle.listeners.get("pointerup")();
+assert.equal(areaFrames.projects.dataset.areaState, "rail", "An explicit Area border drag still collapses to rail");
+const railRect = JSON.stringify(areaFrames.projects.rect);
+vm.runInContext('refreshSpatialAutoLayout(); layoutDockAreas();', docks);
+assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "The user's rail size stays after release and later window activity");
+vm.runInContext(`workspaceAreaSessions.school = {layoutMode: "auto", sizes: {left: 370, right: 330, top: 250, bottom: 250}};
+  activeWorkspace = "school"; applyAreaSession("school");`, docks);
+assert.equal(areaFrames.projects.rect.width, 370, "Another workspace retains its own explicit size");
+vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', docks);
+assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
+console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");

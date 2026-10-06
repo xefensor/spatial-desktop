@@ -1645,8 +1645,14 @@ const dockState = {
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 const dockSizeManual = { left: false, right: false, top: false, bottom: false };
 let dockPreview;
-const layoutModes = ["auto", "manual"];
-let layoutMode = "auto";
+// Bounded split tiling owns the space BETWEEN Areas, never their geometry.
+// Old saved Auto sessions are treated as Manual without resetting dock sizes,
+// positions, visibility, or explicit display assignments.
+const layoutModes = tileEngine ? ["manual"] : ["auto", "manual"];
+let layoutMode = tileEngine ? "manual" : "auto";
+function areasFollowWindows() {
+  return !tileEngine && layoutMode === "auto";
+}
 let currentDisplayProfile = "desktop";
 let lastDesktopPointerX = window.innerWidth / 2;
 const autoWindowAvoidance = new Map();
@@ -1717,7 +1723,7 @@ function applyAreaSession(workspaceName) {
     if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]);
   });
   if (saved.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
-  if (layoutModes.includes(saved.layoutMode)) layoutMode = saved.layoutMode;
+  layoutMode = layoutModes.includes(saved.layoutMode) ? saved.layoutMode : layoutModes[0];
   dockEdges.forEach(normalizeDockOrder);
   autoSpatialEdgeStates.clear();
   autoWindowAvoidance.clear();
@@ -1799,7 +1805,7 @@ function areaStateForSize(edge, size) {
 
 function initialAreaStates(profile) {
   let states;
-  if (layoutMode === "manual") {
+  if (!areasFollowWindows()) {
     states = { projects: "expanded", apps: "expanded", systems: "expanded" };
     areaPriority.forEach(name => {
       const edge = dockState[name].edge;
@@ -1878,7 +1884,7 @@ function minimumWorkspaceWidth(profile, width) {
 function resolvedAreaLayout(width, height) {
   const profile = displayProfileFor(width, height);
   const states = initialAreaStates(profile);
-  if (layoutMode === "manual") {
+  if (!areasFollowWindows()) {
     return { profile, states, sizes: resolvedManualDockSizes(states), minimumWorkspace: 220 };
   }
   const gap = 0;
@@ -1931,16 +1937,18 @@ function syncAreaControls(states) {
 }
 
 function syncLayoutModeUI(profile = currentDisplayProfile) {
-  const modeLabel = layoutMode[0].toUpperCase() + layoutMode.slice(1);
+  const modeLabel = tileEngine ? "Fixed" : layoutMode[0].toUpperCase() + layoutMode.slice(1);
   const profileLabel = extendedDesktopActive()
     ? "Extended · " + localDisplayRoleLabel()
     : profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
   const control = $("#layoutModeToggle");
   if (control) {
     $("span", control).textContent = "Areas: " + modeLabel;
-    control.classList.toggle("is-active", layoutMode === "auto");
-    control.setAttribute("aria-pressed", String(layoutMode === "auto"));
-    control.title = layoutMode === "auto"
+    control.classList.toggle("is-active", areasFollowWindows());
+    if (control.matches("button")) control.setAttribute("aria-pressed", String(areasFollowWindows()));
+    control.title = tileEngine
+      ? "Areas stay fixed · drag an Area border to resize, or its header to move · " + profileLabel
+      : layoutMode === "auto"
       ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
   }
@@ -2045,7 +2053,7 @@ function contextWindowRects(sourceFrame = null, sourceRect = null) {
 }
 
 function refreshSpatialAutoLayout(sourceFrame = null, sourceRect = null) {
-  if (layoutMode !== "auto") return;
+  if (!areasFollowWindows()) return;
   const shellRect = $(".desktop-shell").getBoundingClientRect();
   const windows = contextWindowRects(sourceFrame, sourceRect);
   let stateChanged = false;
@@ -2091,7 +2099,7 @@ function scheduleSpatialAutoLayout() {
 
 function desiredAutoEdges() {
   const edges = new Set();
-  if (layoutMode !== "auto") return edges;
+  if (!areasFollowWindows()) return edges;
   autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => edges.add(edge)));
   return edges;
 }
@@ -2153,7 +2161,7 @@ function applyAutoAvoidance() {
 }
 
 function setWindowAutoAvoidance(name, edges, sourceFrame = null) {
-  if (layoutMode !== "auto") return;
+  if (!areasFollowWindows()) return;
   const next = new Set(edges);
   if (next.size) autoWindowAvoidance.set(name, next);
   else autoWindowAvoidance.delete(name);
@@ -2183,7 +2191,7 @@ function freezeCurrentAreaLayout() {
 }
 
 function secondaryAreaCanvasNames() {
-  if (layoutMode !== "auto" || !extendedDesktopActive() || localDisplaySlot() === 1) return [];
+  if (!areasFollowWindows() || !extendedDesktopActive() || localDisplaySlot() === 1) return [];
   const hasLocalWindow = Object.keys(appState).some(name => appState[name] === "open" && isLocalApp(name));
   if (hasLocalWindow) return [];
   return areaPriority.filter(name => isLocalArea(name) && !areaFor(name)?.hidden);
@@ -2261,7 +2269,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
     if (!area) return;
     const state = resolved.states[name];
     area.dataset.areaState = state;
-    if (layoutMode === "auto") area.dataset.autoSize = state;
+    if (areasFollowWindows()) area.dataset.autoSize = state;
     else delete area.dataset.autoSize;
   });
   syncAreaControls(resolved.states);
@@ -2312,7 +2320,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   applyAutoAvoidance();
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
-  if (layoutMode === "auto" && fitWindows && !windowViewportLockReady) scheduleWindowFit();
+  if (areasFollowWindows() && fitWindows && !windowViewportLockReady) scheduleWindowFit();
   if (save) saveAreaLayout();
 }
 
@@ -2421,7 +2429,7 @@ function bindDockResize(name, area) {
     event.stopPropagation();
     const shellRect = $(".desktop-shell").getBoundingClientRect();
     const resizeEdge = dockState[name].edge;
-    dockSizeManual[resizeEdge] = layoutMode === "manual";
+    dockSizeManual[resizeEdge] = !areasFollowWindows();
     handle.setPointerCapture(event.pointerId);
     area.classList.add("is-area-resizing");
     const move = moveEvent => {
@@ -2430,10 +2438,10 @@ function bindDockResize(name, area) {
       if (edge === "right") dockSizes.right = shellRect.right - moveEvent.clientX;
       if (edge === "top") dockSizes.top = moveEvent.clientY - shellRect.top;
       if (edge === "bottom") dockSizes.bottom = shellRect.bottom - moveEvent.clientY;
-      /* In Auto this is only the immediate drag state. The next spatial pass
+      /* In legacy Auto this is only the immediate drag state. The next spatial pass
          may expand it again, keep it on the rail, or move it when even the
-         rail does not fit. Manual mode continues to lock the chosen size. */
-      if (layoutMode === "auto") autoSpatialEdgeStates.set(edge, areaStateForSize(edge, dockSizes[edge]));
+         rail does not fit. Bounded tiling always keeps the user's chosen size. */
+      if (areasFollowWindows()) autoSpatialEdgeStates.set(edge, areaStateForSize(edge, dockSizes[edge]));
       layoutDockAreas(false);
     };
     const finish = () => {
@@ -2442,7 +2450,7 @@ function bindDockResize(name, area) {
       handle.removeEventListener("pointercancel", finish);
       area.classList.remove("is-area-resizing");
       saveAreaLayout();
-      if (layoutMode === "auto") {
+      if (areasFollowWindows()) {
         if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
         scheduleSpatialAutoLayout();
       }
@@ -2489,13 +2497,13 @@ function prepareAreaWindows() {
     });
     Object.assign(dockSizes, { left: 310, right: 300, top: 250, bottom: 250 });
     dockEdges.forEach(edge => { dockSizeManual[edge] = false; });
-    layoutMode = "auto";
+    layoutMode = layoutModes[0];
     autoSpatialEdgeStates.clear();
     clearAllAutoAvoidance();
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(true);
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    showToast("Desktop Areas restored to Auto");
+    showToast(tileEngine ? "Desktop Areas restored · borders stay fixed" : "Desktop Areas restored to Auto");
   });
   $$('[data-area-auto]').forEach(button => button.addEventListener("click", event => {
     event.stopPropagation();
@@ -2508,9 +2516,9 @@ function prepareAreaWindows() {
     const savedMode = localStorage.getItem("spatial-layout-mode-v1");
     if (!saved?.layoutMode && layoutModes.includes(savedMode)) layoutMode = savedMode;
   } catch {}
-  if (layoutModes.includes(saved?.layoutMode)) layoutMode = saved.layoutMode;
+  layoutMode = layoutModes.includes(saved?.layoutMode) ? saved.layoutMode : layoutModes.includes(layoutMode) ? layoutMode : layoutModes[0];
   const layoutControl = $("#layoutModeToggle");
-  if (layoutControl) layoutControl.addEventListener("click", () => {
+  if (layoutControl?.matches("button") && layoutModes.length > 1) layoutControl.addEventListener("click", () => {
     const nextMode = layoutModes[(layoutModes.indexOf(layoutMode) + 1) % layoutModes.length];
     if (nextMode === "manual") freezeCurrentAreaLayout();
     layoutMode = nextMode;
@@ -4821,6 +4829,7 @@ function mainDisplayFitForEdge(edge, names, windows, currentlyOnMain) {
 }
 
 function rebalanceAreaDisplays() {
+  if (!areasFollowWindows()) return false;
   const count = activeDisplayRoster().length;
   if (count < 2 || layoutMode !== "auto" || localDisplaySlot() !== 1) return false;
   const assignments = displayAssignmentsFor();
