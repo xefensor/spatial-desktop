@@ -6039,3 +6039,27 @@ body[data-theme="light"].areas-docked .area-window{
 .area-window[data-area-state="rail"][data-dock-edge="bottom"] .area-window-bar{
   margin:-5px 0 -5px -5px!important;
 }
+
+/* v110 — The resize target stays comfortably wide, but it is not material.
+   Only its one-pixel engraved centre line is visible. v108 accidentally filled
+   the complete 11px hit target, which read as a heavy frame around the Area. */
+.area-resize-handle,
+.area-window[data-dock-edge]>.area-resize-handle,
+.area-resize-handle:hover,
+.area-window.is-area-resizing>.area-resize-handle{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+.area-resize-handle::after{
+  background:var(--sd-glass-groove)!important;
+  box-shadow:none!important;
+  opacity:.42!important;
+}
+.area-resize-handle:hover::after,
+.area-window.is-area-resizing>.area-resize-handle::after{
+  background:color-mix(in srgb,var(--area-header-accent) 72%,white 28%)!important;
+  box-shadow:0 0 3px color-mix(in srgb,var(--area-header-accent) 25%,transparent)!important;
+  opacity:.82!important;
+}
