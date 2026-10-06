@@ -1884,6 +1884,7 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
 .material-cursor{
   --cursor-x:-60px;
   --cursor-y:-60px;
+  --cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='white' d='M2 2v28l7-7 6 12 5-3-6-12h11Z'/%3E%3C/svg%3E");
   position:fixed;
   left:0;
   top:0;
@@ -1898,14 +1899,29 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
   transition:opacity 55ms linear;
   will-change:transform;
 }
+.material-cursor::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:rgba(156,214,238,.035);
+  -webkit-backdrop-filter:invert(100%);
+  backdrop-filter:invert(100%);
+  -webkit-mask:var(--cursor-mask) center/100% 100% no-repeat;
+  mask:var(--cursor-mask) center/100% 100% no-repeat;
+}
 .material-cursor.is-visible{opacity:1}
-.cursor-glyph{position:absolute;inset:0;width:22px;height:28px;display:none;overflow:visible;transition:filter 32ms linear}
+.cursor-glyph{position:absolute;inset:0;z-index:1;width:22px;height:28px;display:none;overflow:visible;transition:filter 32ms linear}
 .glyph-arrow{display:block}
-.cursor-glass{fill:rgba(255,255,255,.76);stroke:none;mix-blend-mode:difference}
-.cursor-edge{fill:rgba(174,222,242,.09);stroke:rgba(232,248,255,.86);stroke-width:1.35;stroke-linejoin:round;paint-order:stroke fill;filter:drop-shadow(0 1px .7px rgba(0,0,0,.48))}
+.cursor-glass{fill:rgba(174,222,242,.065);stroke:none}
+.cursor-edge{fill:rgba(174,222,242,.04);stroke:rgba(232,248,255,.78);stroke-width:1.35;stroke-linejoin:round;paint-order:stroke fill;filter:drop-shadow(0 1px .7px rgba(0,0,0,.48))}
 .cursor-side{fill:none;stroke:transparent;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;transition:stroke 34ms linear,filter 34ms linear}
-.cursor-line{fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;mix-blend-mode:difference}
-.material-cursor.is-pointer{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-10px,-2px)}
+.cursor-line{fill:none;stroke:rgba(232,248,255,.72);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px .7px rgba(0,0,0,.48))}
+.material-cursor.is-pointer{--cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='white' d='M9 17V7a2 2 0 0 1 4 0v7-9a2 2 0 0 1 4 0v9-7a2 2 0 0 1 4 0v8-4a2 2 0 0 1 4 0v9c0 8-4 13-11 13h-1c-4 0-6-3-8-6l-3-6a2 2 0 0 1 3-2Z'/%3E%3C/svg%3E");transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-10px,-2px)}
+.material-cursor.is-text{--cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='none' stroke='white' stroke-width='3' stroke-linecap='round' d='M7 4h14M14 4v28M7 32h14'/%3E%3C/svg%3E")}
+.material-cursor.is-col-resize{--cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M2 18h24M2 18l6-6M2 18l6 6M26 18l-6-6M26 18l-6 6'/%3E%3C/svg%3E")}
+.material-cursor.is-diag-resize{--cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M5 29 23 7M5 29v-8M5 29h8M23 7v8M23 7h-8'/%3E%3C/svg%3E")}
+.material-cursor.is-grab,.material-cursor.is-grabbing{--cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='white' d='M5 17v-5a2 2 0 0 1 4 0v4-8a2 2 0 0 1 4 0v8-10a2 2 0 0 1 4 0v10-8a2 2 0 0 1 4 0v9-5a2 2 0 0 1 4 0v9c0 8-4 12-11 12h-1C7 33 5 28 5 23Z'/%3E%3C/svg%3E")}
 .material-cursor.is-text,.material-cursor.is-col-resize,.material-cursor.is-diag-resize,.material-cursor.is-grab,.material-cursor.is-grabbing{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-11px,-14px)}
 .material-cursor.is-pointer .glyph-arrow,.material-cursor.is-text .glyph-arrow,.material-cursor.is-col-resize .glyph-arrow,.material-cursor.is-diag-resize .glyph-arrow,.material-cursor.is-grab .glyph-arrow,.material-cursor.is-grabbing .glyph-arrow{display:none}
 .material-cursor.is-pointer .glyph-pointer,.material-cursor.is-text .glyph-text,.material-cursor.is-col-resize .glyph-col-resize,.material-cursor.is-diag-resize .glyph-diag-resize,.material-cursor.is-grab .glyph-grab,.material-cursor.is-grabbing .glyph-grab{display:block}
