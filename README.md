@@ -2,6 +2,8 @@
 
 **A tactile, project-centred computing environment.**
 
+**Work in progress (WIP).** The design, interactions and documentation are still evolving. This is an experimental browser prototype with simulated apps and integrations.
+
 Spatial Desktop is an interactive browser prototype of a desktop organised around workspaces, projects and docked Areas. It explores how windows, useful app widgets and system tools can share the screen without a conventional taskbar.
 
 [Live demo](https://xefensor.github.io/spatial-desktop/) · [Design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html)
@@ -106,8 +108,8 @@ The connected GitHub interface recreates commit identities and dates, so the imp
 
 See [`docs/history/README.md`](docs/history/README.md) for checking out versions or restoring the original history.
 
-## Prototype scope
+## Work in progress & prototype scope
 
-This is a design demonstration, not a native desktop environment. Its apps, files, system widgets and project/workspace packaging illustrate interactions; they do not provide complete operating-system integrations. Demo data is stored in the browser.
+Spatial Desktop is still under active development. This is a design demonstration, not a native desktop environment. Its apps, files, system widgets and project/workspace packaging illustrate interactions; they do not provide complete operating-system integrations. Demo data is stored in the browser.
 
 See the [UI and UX refinement notes](docs/ui-ux-review.md) for the latest overview and accessibility changes.

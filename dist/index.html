@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07090a">
-  <meta name="description" content="A tactile, project-centred computing environment.">
+  <meta name="description" content="Work in progress: an interactive browser prototype of a tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="desktop-shell.css?v=176">
-  <title>Spatial Desktop</title>
+  <title>Spatial Desktop — WIP Prototype</title>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
   <link rel="stylesheet" href="area-layout.css?v=171">
   <link rel="stylesheet" href="desktop-dialogs.css?v=174">
@@ -76,7 +76,7 @@
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
   </svg>
 
-  <main class="desktop-shell" aria-label="Plasma spatial desktop prototype">
+  <main class="desktop-shell" aria-label="Spatial Desktop prototype (work in progress)">
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
@@ -204,7 +204,7 @@
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true" inert>
     <div class="universal-search-shell">
       <header class="universal-search-header">
-        <div class="universal-search-title"><span class="eyebrow">DESKTOP</span><h2 id="universalSearchTitle">Overview</h2><span class="overview-layout-status"><svg><use href="#i-monitor"/></svg><span id="overviewLayoutStatus">Fixed · Desktop</span></span></div>
+        <div class="universal-search-title"><span class="eyebrow" title="Work in progress: the design and interactions are still evolving.">DESKTOP · WIP PROTOTYPE</span><h2 id="universalSearchTitle">Overview</h2><span class="overview-layout-status"><svg><use href="#i-monitor"/></svg><span id="overviewLayoutStatus">Fixed · Desktop</span></span></div>
         <label class="universal-search-field">
           <svg aria-hidden="true"><use href="#i-search"/></svg>
           <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Search apps, files, settings, actions or the web" aria-label="Search the desktop">
@@ -375,7 +375,7 @@
         <p class="universal-empty" id="universalEmpty" hidden>No local results. Press Enter to search the web.</p>
       </div>
 
-      <footer class="universal-search-footer"><span><kbd>Super</kbd> Close overview</span><span><kbd>Super + 1–9</kbd> App hotbar · Alt fallback</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span><a class="overview-guide-link" href="philosophy.html">Philosophy &amp; guide</a></footer>
+      <footer class="universal-search-footer"><span><kbd>Super</kbd> Close overview</span><span><kbd>Super + 1–9</kbd> App hotbar · Alt fallback</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span><a class="overview-guide-link" href="philosophy.html" title="Work in progress: read the evolving design philosophy and prototype scope.">Philosophy &amp; guide · WIP</a></footer>
     </div>
   </section>
   <section class="project-editor-overlay" id="projectEditorDialog" role="dialog" aria-modal="true" aria-labelledby="projectEditorTitle" aria-hidden="true" inert hidden>
