@@ -5377,3 +5377,103 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   transition-delay:0ms!important;
   transition-timing-function:linear!important;
 }
+
+/* v95 — transient UI belongs to the glass layer. Menus, drawers and feedback
+   float above the desktop as frosted edge-lit sheets; durable app windows stay
+   opaque ABS. */
+.desktop-context-menu.material-surface-glass,
+.all-apps-drawer.material-surface-glass,
+.toast.material-surface-glass{
+  border-color:rgba(205,238,252,.24);
+  background:
+    linear-gradient(135deg,rgba(240,252,255,.105),transparent 29%),
+    linear-gradient(180deg,rgba(79,143,173,.105),rgba(3,9,13,.08)),
+    rgba(6,14,19,.62);
+  -webkit-backdrop-filter:blur(24px) saturate(1.28) contrast(1.06);
+  backdrop-filter:blur(24px) saturate(1.28) contrast(1.06);
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.38),
+    inset 0 1px rgba(240,252,255,.18),
+    inset 1px 0 rgba(205,240,255,.07),
+    inset 0 -1px rgba(0,0,0,.40),
+    0 0 12px rgba(79,190,237,.06);
+}
+.desktop-context-menu.material-surface-glass{padding:5px}
+.desktop-context-menu.material-surface-glass .context-menu-title{
+  border-bottom:1px solid rgba(195,232,248,.09);
+  color:color-mix(in srgb,var(--text) 68%,transparent);
+  text-shadow:0 1px 1px rgba(0,0,0,.45);
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button{
+  min-height:34px;
+  border:1px solid transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--text);
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:hover,
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:focus-visible{
+  border-color:rgba(180,230,250,.15)!important;
+  background:rgba(148,211,238,.105)!important;
+  box-shadow:inset 0 1px rgba(241,252,255,.08)!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:active{
+  transform:translateY(1px) scaleY(.99);
+  border-color:rgba(180,230,250,.20)!important;
+  background:rgba(79,154,187,.16)!important;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.28)!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-item kbd{
+  padding:3px 5px;
+  border:1px solid rgba(199,235,250,.12);
+  background:rgba(164,216,239,.055);
+  box-shadow:inset 0 1px rgba(245,253,255,.06);
+}
+.desktop-context-menu.material-surface-glass .context-menu-separator{
+  background:rgba(190,232,250,.14);
+  box-shadow:0 1px rgba(0,0,0,.28);
+}
+
+.all-apps-drawer.material-surface-glass{
+  border-top-color:rgba(199,236,252,.22);
+  background:
+    linear-gradient(180deg,rgba(91,165,198,.11),rgba(3,9,13,.07)),
+    rgba(6,14,19,.68);
+  box-shadow:0 -14px 30px rgba(0,0,0,.30),inset 0 1px rgba(235,250,255,.15);
+}
+.all-apps-drawer.material-surface-glass .all-apps-heading{background:rgba(116,182,211,.075)}
+.all-apps-drawer.material-surface-glass .launcher-body,
+.all-apps-drawer.material-surface-glass .launcher-results{background:transparent}
+.all-apps-drawer.material-surface-glass .launcher-categories{background:rgba(153,210,234,.04)}
+
+body[data-theme="light"] :is(
+  .desktop-context-menu.material-surface-glass,
+  .all-apps-drawer.material-surface-glass,
+  .toast.material-surface-glass
+){
+  border-color:rgba(255,255,255,.76);
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.58),transparent 31%),
+    linear-gradient(180deg,rgba(151,207,231,.15),rgba(255,255,255,.06)),
+    rgba(226,240,246,.70);
+  box-shadow:
+    0 14px 34px rgba(32,54,65,.20),
+    inset 0 1px rgba(255,255,255,.88),
+    inset 1px 0 rgba(255,255,255,.44),
+    inset 0 -1px rgba(64,91,104,.18);
+}
+body[data-theme="light"] .desktop-context-menu.material-surface-glass .context-menu-title{
+  border-bottom-color:rgba(58,91,108,.10);
+  text-shadow:none;
+}
+body[data-theme="light"] .desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:hover,
+body[data-theme="light"] .desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:focus-visible{
+  border-color:rgba(39,133,176,.16)!important;
+  background:rgba(58,151,193,.10)!important;
+}
+body[data-theme="light"] .desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:active{
+  background:rgba(39,127,168,.15)!important;
+  box-shadow:inset 0 2px 3px rgba(41,66,78,.18)!important;
+}
+body[data-theme="light"] .all-apps-drawer.material-surface-glass .all-apps-heading{background:rgba(255,255,255,.20)}
+body[data-theme="light"] .all-apps-drawer.material-surface-glass .launcher-categories{background:rgba(255,255,255,.16)}

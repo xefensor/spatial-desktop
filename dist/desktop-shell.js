@@ -47,15 +47,16 @@ const glassMaterialSurfaceSelector = [
   ".workspace-home-card",
   ".overview-app-library",
   ".project-module",
+  ".desktop-context-menu",
+  ".all-apps-drawer",
+  ".toast",
   ".app-frame .recessed-field",
   ".app-frame input[type=range]"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
   ".app-frame",
-  ".package-window",
-  ".desktop-context-menu",
-  ".all-apps-drawer"
+  ".package-window"
 ].join(",");
 
 const materialFieldSelector = [
