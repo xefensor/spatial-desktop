@@ -38,7 +38,9 @@ const materialControlSelector = [
   ".project-path",
   ".system-launcher",
   ".overview-launch",
-  ".workspace-status"
+  ".workspace-status",
+  ".overview-close",
+  ".workspace-home-open"
 ].join(",");
 
 const glassMaterialSurfaceSelector = [
@@ -3020,7 +3022,7 @@ function projectLocationMeta(project) {
 }
 
 function slugifyProject(value) {
-  return String(value || "project").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project";
+  return String(value || "project").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "project";
 }
 
 function uniqueProjectId(label, existing = projectSpaces) {
@@ -3744,21 +3746,23 @@ function renderOverviewWindows() {
   if (!target) return;
   const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed");
   $("#workspaceOpenCount").textContent = windowNames.length + (windowNames.length === 1 ? " window" : " windows");
-  const miniature = name => {
-    if (name === "elisa") return '<span class="overview-mini-content overview-mini-music"><i></i><span><b>Evening Light</b><small>Northbound</small><em></em></span></span>';
-    if (name === "browser") return '<span class="overview-mini-content overview-mini-browser"><i></i><i></i><strong></strong><span></span></span>';
-    if (name === "terminal") return '<span class="overview-mini-content overview-mini-terminal"><i></i><i></i><i></i><i></i></span>';
-    if (name === "notes") return '<span class="overview-mini-content overview-mini-notes"><b>Meeting notes</b><i></i><i></i><i></i><i></i></span>';
-    return '<span class="overview-mini-content overview-mini-files"><i></i><span></span><span></span><span></span><span></span></span>';
-  };
   target.innerHTML = windowNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
     const stateLabel = minimized ? "Minimized" : (name === frontApp ? "Active" : "Open");
-    return '<button class="overview-window ' + (name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span>' + miniature(name) + '</button>';
+    return '<button class="overview-window ' + (name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span></button>';
   }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or restore an application and it will appear here.</small></div>';
 
+  refreshWorkspaceContext();
   prepareControlSemantics(target);
+}
+
+function refreshWorkspaceContext() {
+  const profile = workspaceProfiles[activeWorkspace];
+  if (!profile) return;
+  const project = projectSpaces[activeProjectName];
+  $("#workspaceContextMeta").textContent = profile.favorites.length + " favorite apps · private clipboard";
+  $("#workspaceContextTitle").textContent = project ? "Active project: " + project.name : profile.context;
 }
 
 let activeOverviewView = "all";
@@ -3801,6 +3805,7 @@ function renderWorkspace(name, announce = true) {
     const selected = button.dataset.workspace === name;
     button.classList.toggle("is-active", selected);
     button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
   });
   $("#activeWorkspaceLabel").textContent = profile.label;
   $("#openWindowsTitle").textContent = profile.label + " workspace";
@@ -3808,7 +3813,7 @@ function renderWorkspace(name, announce = true) {
   $("#workspaceHomePath").textContent = profile.home;
   $("#workspaceHomeIcon use").setAttribute("href", "#" + profile.icon);
   $("#workspaceContextTitle").textContent = profile.context;
-  $("#workspaceContextMeta").textContent = profile.meta;
+  refreshWorkspaceContext();
   $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail, type = "folder"]) => '<button class="workspace-folder' + (type === "config" ? " workspace-config-file" : "") + '" data-toast="' + escapeHtml(type === "config" ? "Opening " + label : label + " opened") + '"><span>' + icon(type === "config" ? "i-code" : "i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
   $("#workspaceFavorites").innerHTML = profile.favorites.map(workspaceFavoriteMarkup).join("");
   $("#workspaceAgendaHeading").textContent = profile.agenda[0];
@@ -3856,6 +3861,16 @@ function prepareWorkspaces() {
     });
   } catch {}
   $$("[data-workspace]").forEach(button => button.addEventListener("click", () => renderWorkspace(button.dataset.workspace)));
+  $(".workspace-tabs").addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = $$("[role=tab]", event.currentTarget);
+    const index = tabs.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    renderWorkspace(tabs[next].dataset.workspace);
+    tabs[next].focus();
+  });
   $("#workspaceStatus").addEventListener("click", () => setUniversalSearchOpen(true));
   $("#overviewWindowGrid").addEventListener("click", event => {
     const button = event.target.closest("[data-overview-open-app]");
@@ -4073,6 +4088,28 @@ $$("[data-launch-app]").forEach(button => button.addEventListener("click", () =>
 }));
 
 let activeLauncherCategory = "all";
+$("#overviewCategory").addEventListener("change", event => {
+  activeLauncherCategory = event.target.value;
+  $$("[data-category-filter]").forEach(button => {
+    const selected = button.dataset.categoryFilter === activeLauncherCategory;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  filterLauncher();
+});
+$("#overviewClose").addEventListener("click", () => setUniversalSearchOpen(false));
+$("[data-workspace-home]").addEventListener("click", () => {
+  openApp("dolphin");
+  $(".address-bar input").value = workspaceProfiles[activeWorkspace].home;
+  $("#dolphinContext").textContent = workspaceProfiles[activeWorkspace].label + " · Home";
+  setUniversalSearchOpen(false);
+});
+$("#overviewNotificationList").addEventListener("click", event => {
+  const button = event.target.closest("[data-overview-dismiss]");
+  if (!button) return;
+  const notification = $$(".notification", $("#notificationList"))[Number(button.dataset.overviewDismiss)];
+  $(".dismiss-button", notification)?.click();
+});
 
 function filterLauncher() {
   let visible = 0;
@@ -4089,12 +4126,13 @@ function filterLauncher() {
 
 $$("[data-category-filter]").forEach(button => button.addEventListener("click", () => {
   activeLauncherCategory = button.dataset.categoryFilter;
+  $("#overviewCategory").value = activeLauncherCategory;
   $$("[data-category-filter]").forEach(choice => {
     const selected = choice === button;
     choice.classList.toggle("is-active", selected);
     choice.setAttribute("aria-pressed", String(selected));
   });
-  $("#allAppsTitle").textContent = button.textContent.trim();
+
   filterLauncher();
 }));
 
@@ -4102,11 +4140,21 @@ filterLauncher();
 
 let universalLastFocus = null;
 
+function normalizeSearchText(value) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function matchesSearch(value, query) {
+  const text = normalizeSearchText(value);
+  const words = normalizeSearchText(query).split(" ").filter(Boolean);
+  return words.length > 0 && words.every(word => text.includes(word));
+}
+
 function buildUniversalAppResults(query) {
   const target = $("#universalAppResults");
   const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
     const searchable = `${button.textContent} ${button.dataset.category || ""}`.toLowerCase();
-    return searchable.includes(query);
+    return matchesSearch(searchable, query);
   });
 
   target.innerHTML = matches.map(button => {
@@ -4129,6 +4177,7 @@ function filterUniversalSearch() {
   $("#universalResults").hidden = !searching;
 
   if (!searching) {
+    $("#universalSearchStatus").hidden = true;
     $("#universalWebLabel").textContent = "Search the web";
     return;
   }
@@ -4138,8 +4187,8 @@ function filterUniversalSearch() {
   $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
     const isWeb = group === "web";
-    const searchable = (result.dataset.universalSearch || result.textContent).toLowerCase();
-    const matchesQuery = isWeb || searchable.includes(query);
+    const searchable = `${result.dataset.universalSearch || ""} ${result.textContent}`;
+    const matchesQuery = isWeb || matchesSearch(searchable, query);
     result.hidden = !matchesQuery;
     if (!result.hidden && !isWeb) localVisible += 1;
   });
@@ -4150,6 +4199,8 @@ function filterUniversalSearch() {
 
   $("#universalWebLabel").textContent = `Search the web for “${rawQuery}”`;
   $("#universalEmpty").hidden = localVisible !== 0;
+  $("#universalSearchStatus").hidden = false;
+  $("#universalSearchStatus").textContent = localVisible + (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available";
 }
 
 function setUniversalSearchOpen(open) {
@@ -4170,6 +4221,7 @@ function setUniversalSearchOpen(open) {
     $("#allAppsToggle").setAttribute("aria-expanded", "true");
     $("#allAppsToggle").setAttribute("aria-pressed", "true");
     setOverviewView("desktop");
+    syncNotifications();
     filterUniversalSearch();
     requestAnimationFrame(() => {
       $("#universalSearchInput").focus();
@@ -4431,7 +4483,7 @@ document.addEventListener("keydown", event => {
     return;
   }
 
-  if ($("#universalSearch").classList.contains("is-open") && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+  if ($("#universalSearch").classList.contains("is-open") && !$("#universalResults").hidden && (event.target === $("#universalSearchInput") || event.target.closest("#universalResults")) && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
     event.preventDefault();
     const results = $$(".universal-result:not([hidden])", $("#universalResults"));
     if (!results.length) return;
@@ -4441,7 +4493,7 @@ document.addEventListener("keydown", event => {
     results[next].focus();
   }
 
-  if ($("#universalSearch").classList.contains("is-open") && event.key === "Enter" && document.activeElement === $("#universalSearchInput")) {
+  if ($("#universalSearch").classList.contains("is-open") && event.key === "Enter" && !$("#universalResults").hidden && document.activeElement === $("#universalSearchInput")) {
     const first = $(".universal-result:not([hidden])", $("#universalResults"));
     if (first) {
       event.preventDefault();
@@ -4558,6 +4610,7 @@ function updateClock() {
   $("#dateLabel").textContent = date;
   $("#overviewDayLabel").textContent = day;
   $("#overviewDateLabel").textContent = date;
+  $("#overviewAgendaDay").textContent = now.getDate();
   $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
@@ -4701,6 +4754,10 @@ function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
 function syncNotifications() {
   const count = $$(".notification", $("#notificationList")).length;
   $("#notificationCount").textContent = count;
+  $("#overviewNotifications").hidden = count === 0;
+  $("#overviewNotificationCount").textContent = count;
+  $("#overviewNotificationList").innerHTML = $$(".notification", $("#notificationList")).map((item, index) => '<article class="overview-notification"><span><b>' + escapeHtml($("b", item)?.textContent || "Notification") + '</b><small>' + escapeHtml($("small", item)?.textContent || "") + '</small></span><button class="dismiss-button" data-overview-dismiss="' + index + '" aria-label="Dismiss ' + escapeHtml($("b", item)?.textContent || "notification") + '">×</button></article>').join("");
+  prepareControlSemantics($("#overviewNotificationList"));
   if (count) revealDynamicWidget($("#notificationWidget"));
   else concealDynamicWidget($("#notificationWidget"));
 }

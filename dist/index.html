@@ -7,8 +7,9 @@
   <meta name="description" content="A tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=154">
+  <link rel="stylesheet" href="desktop-shell.css?v=155">
   <title>Spatial Desktop</title>
+  <link rel="stylesheet" href="ui-refinements.css?v=155">
 </head>
 <body data-theme="oled">
   <svg class="icon-sprite" aria-hidden="true">
@@ -105,7 +106,7 @@
         <div class="app-toolbar"><div class="key-group"><button class="surface-key compact-key" aria-label="Back" title="Back"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key" aria-label="Forward" title="Forward"><svg><use href="#i-right"/></svg></button></div><label class="recessed-field address-bar"><span class="live-slit"></span><input value="/home/demo/Downloads" aria-label="Location"></label><button class="surface-key compact-key" aria-label="Search files" title="Search files"><svg><use href="#i-search"/></svg></button><button class="surface-key compact-key" aria-label="Change file view" title="Change file view"><svg><use href="#i-grid"/></svg></button></div>
         <div class="dolphin-layout">
           <nav class="places-list" aria-label="Places"><span class="small-heading">PLACES</span><button class="nav-choice"><svg><use href="#i-folder"/></svg>Home</button><button class="nav-choice is-active"><svg><use href="#i-folder"/></svg>Downloads</button><button class="nav-choice"><svg><use href="#i-note"/></svg>Documents</button><button class="nav-choice"><svg><use href="#i-music"/></svg>Music</button><span class="small-heading">REMOTE</span><button class="nav-choice"><svg><use href="#i-web"/></svg>Network</button><button class="nav-choice"><svg><use href="#i-terminal"/></svg>Server</button></nav>
-          <section class="files-module"><div class="folder-tabs" role="tablist"><button class="folder-tab" role="tab" aria-selected="false">Projects<span>×</span></button><button class="folder-tab is-active" role="tab" aria-selected="true">Downloads<span>×</span></button><button class="folder-tab" role="tab" aria-selected="false">Images<span>×</span></button></div><div class="file-well"><div class="file-head"><span>Name</span><span>Size</span><span>Modified</span></div><div class="file-list" role="listbox"><button class="content-row"><span><i class="folder-glyph"></i>Website Launch</span><small>12 items</small><small>today 11:42</small></button><button class="content-row"><span><i class="folder-glyph"></i>Short Film</span><small>84 items</small><small>yesterday</small></button><button class="content-row"><span><i class="folder-glyph"></i>Travel Photos</span><small>231 items</small><small>21 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>meeting-notes.md</span><small>18 KiB</small><small>today 09:16</small></button><button class="content-row"><span><i class="document-glyph image"></i>landscape.jpg</span><small>6.8 MiB</small><small>20 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>project-brief.pdf</span><small>2.1 MiB</small><small>18 Sep</small></button></div></div></section>
+          <section class="files-module"><div class="folder-tabs" role="tablist" aria-label="Choose workspace"><button class="folder-tab" role="tab" aria-selected="false">Projects<span>×</span></button><button class="folder-tab is-active" role="tab" aria-selected="true">Downloads<span>×</span></button><button class="folder-tab" role="tab" aria-selected="false">Images<span>×</span></button></div><div class="file-well"><div class="file-head"><span>Name</span><span>Size</span><span>Modified</span></div><div class="file-list" role="listbox"><button class="content-row"><span><i class="folder-glyph"></i>Website Launch</span><small>12 items</small><small>today 11:42</small></button><button class="content-row"><span><i class="folder-glyph"></i>Short Film</span><small>84 items</small><small>yesterday</small></button><button class="content-row"><span><i class="folder-glyph"></i>Travel Photos</span><small>231 items</small><small>21 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>meeting-notes.md</span><small>18 KiB</small><small>today 09:16</small></button><button class="content-row"><span><i class="document-glyph image"></i>landscape.jpg</span><small>6.8 MiB</small><small>20 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>project-brief.pdf</span><small>2.1 MiB</small><small>18 Sep</small></button></div></div></section>
         </div>
         <footer class="app-status"><span>3 folders, 3 files</span><span>276.8 GiB free</span></footer>
       </article>
@@ -204,6 +205,7 @@
           <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Search apps, files, settings, actions or the web" aria-label="Search the desktop">
           <kbd>Esc</kbd>
         </label>
+        <button class="surface-key overview-close" id="overviewClose" aria-label="Close Overview" title="Close Overview · Esc">×</button>
       </header>
 
       <section class="workspace-switcher" aria-label="Workspaces">
@@ -222,30 +224,31 @@
           <section class="overview-zone-lane overview-project-zone" aria-labelledby="overviewProjectZoneTitle">
             <header class="overview-zone-heading">
               <span class="overview-zone-mark"><svg><use href="#i-folder"/></svg></span>
-              <span><span class="eyebrow">PROJECT ZONE</span><h3 id="overviewProjectZoneTitle">Context and resources</h3></span>
+              <span><span class="eyebrow">PROJECT ZONE</span><h3 id="overviewProjectZoneTitle">Projects and Home</h3></span>
             </header>
           <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
-            <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE ROOT = HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/demo</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
+            <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE ROOT = HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/demo</small></span><button class="workspace-home-open" data-workspace-home aria-label="Open workspace Home in Dolphin" title="Open workspace Home in Dolphin"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
             <div class="workspace-home-body">
               <div class="workspace-folders" id="workspaceFolders" aria-label="Workspace folders"></div>
-              <div class="workspace-context-card"><span class="eyebrow">THIS WORKSPACE</span><b id="workspaceContextTitle">Everyday desktop</b><small id="workspaceContextMeta">5 favourite apps · 2 open projects · private clipboard</small><div class="workspace-favorites" id="workspaceFavorites" aria-label="Favourite applications"></div></div>
+              <div class="workspace-context-card"><span class="eyebrow">THIS WORKSPACE</span><b id="workspaceContextTitle">Everyday desktop</b><small id="workspaceContextMeta">5 favorite apps · private clipboard</small><div class="workspace-favorites" id="workspaceFavorites" aria-label="Favourite applications"></div></div>
               <button class="other-workspaces" data-toast="Showing all Workspace Homes"><span><svg><use href="#i-folder"/></svg><span><b>Other Workspace Homes</b><small>School · Work · Gaming</small></span></span><svg><use href="#i-right"/></svg></button>
             </div>
           </section>
 
           <section class="overview-section overview-projects-section" aria-labelledby="overviewProjectsTitle">
-            <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
+            <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton" aria-label="Create a project" title="Create a project"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
             <div class="overview-project-grid" id="overviewProjectGrid"></div>
           </section>
           </section>
 
+          <section class="overview-section overview-apps-section" aria-labelledby="allAppsTitle">
+            <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
             <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">OPEN WINDOWS</span><h3 id="openWindowsTitle">General workspace</h3></span></div><span id="workspaceOpenCount">2 windows</span></header>
             <div class="overview-open-windows" id="overviewWindowGrid" aria-label="Open and minimized windows"></div>
           </section>
 
-          <section class="overview-section overview-apps-section" aria-labelledby="allAppsTitle">
-            <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
+            <label class="overview-category-field">Category<select id="overviewCategory" aria-label="Application category"><option value="all">All applications</option><option value="favorites">Favorites</option><option value="graphics">Graphics</option><option value="games">Games</option><option value="internet">Internet</option><option value="office">Office</option><option value="multimedia">Multimedia</option><option value="utilities">Utilities</option><option value="system">System</option><option value="education">Education</option><option value="development">Development</option><option value="help">Help</option><option value="lost">Lost &amp; Found</option></select></label>
             <div class="overview-app-library">
               <nav class="launcher-categories" aria-label="Application categories">
                 <button class="launcher-category" data-category-filter="favorites"><svg><use href="#i-star"/></svg><span>Favorites</span></button>
@@ -309,6 +312,7 @@
             <span class="overview-zone-mark"><svg><use href="#i-settings"/></svg></span>
             <span><span class="eyebrow">SYSTEM ZONE</span><h3>State and controls</h3></span>
           </header>
+          <section class="overview-widget overview-notifications-widget" id="overviewNotifications" hidden aria-label="Notifications"><header><h3>Notifications</h3><span id="overviewNotificationCount"></span></header><div id="overviewNotificationList"></div></section>
           <section class="overview-widget overview-clock-widget"><span class="live-time">--:--</span><div><b id="overviewDayLabel">Thursday</b><small id="overviewDateLabel">24 September</small></div></section>
           <section class="overview-widget overview-now-playing">
             <header><span><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Evening Light</b><small>Northbound</small></span></span><small>ELISA</small></header>
@@ -327,11 +331,12 @@
               <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span></div>
             </div>
           </section>
-          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
+          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Phone</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
         </aside>
       </div>
 
+      <div id="universalSearchStatus" class="search-status" role="status" hidden></div>
       <div class="universal-results" id="universalResults" aria-live="polite" hidden>
         <section class="universal-group" data-universal-group="apps">
           <h3>Applications</h3>
@@ -458,6 +463,6 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=153"></script>
   <script src="demo-examples.js?v=154"></script>
-  <script src="desktop-shell.js?v=154"></script>
+  <script src="desktop-shell.js?v=155"></script>
 </body>
 </html>

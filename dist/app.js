@@ -19,6 +19,7 @@ function setTheme(theme) {
   body.dataset.theme = next;
   $$('[data-theme-button]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.themeButton === next);
+    button.setAttribute('aria-pressed', String(button.dataset.themeButton === next));
   });
   $('meta[name="theme-color"]').content = next === 'light' ? '#e7e3db' : next === 'graphite' ? '#161a1c' : '#000000';
   savePreference('material-lab-theme', next);
@@ -29,6 +30,7 @@ function setScene(scene) {
   body.dataset.scene = next;
   $$('[data-scene-button]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.sceneButton === next);
+    button.setAttribute('aria-pressed', String(button.dataset.sceneButton === next));
   });
   savePreference('material-lab-scene', next);
 }
