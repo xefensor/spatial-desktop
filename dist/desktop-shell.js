@@ -3376,6 +3376,247 @@ function prepareContextMenus() {
   window.addEventListener("resize", () => closeDesktopContextMenu());
 }
 
+/* Two browser windows on the same profile can act as one live desktop test
+   session. BroadcastChannel is immediate; the storage message is a fallback
+   for browsers that do not expose it. State remains entirely on this device. */
+const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1";
+const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v1";
+const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+const desktopSyncChannel = "BroadcastChannel" in window ? new BroadcastChannel(DESKTOP_SYNC_CHANNEL) : null;
+const desktopSyncPeers = new Map();
+let desktopSyncApplying = false;
+let desktopSyncTimer = 0;
+let desktopSyncLastStamp = 0;
+let desktopSyncAnnounced = false;
+
+function cloneDesktopState(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function readDesktopStorage(key, fallback = {}) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch { return cloneDesktopState(fallback); }
+}
+
+function captureDesktopSyncState() {
+  const workspaceStates = cloneDesktopState(workspaceAppStates);
+  workspaceStates[activeWorkspace] = { ...appState };
+
+  const areaSessions = cloneDesktopState(workspaceAreaSessions);
+  areaSessions[activeWorkspace] = snapshotAreaLayout();
+
+  const windowLayouts = readDesktopStorage("spatial-workspace-window-layouts-v1");
+  windowLayouts[activeWorkspace] = Object.fromEntries(windowGeometry);
+
+  const projects = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
+    note: project.note,
+    resources: cloneDesktopState(project.resources),
+    keepWindows: project.keepWindows
+  }]));
+
+  return {
+    schema: 1,
+    theme: document.body.dataset.theme,
+    activeWorkspace,
+    workspaceStates,
+    areaSessions,
+    windowLayouts,
+    frontApp,
+    maximized: Object.fromEntries($$("[data-app-frame]").map(frame => [
+      frame.dataset.appFrame,
+      frame.dataset.maximized === "true"
+    ])),
+    activeProjectName,
+    projects,
+    projectWindowSessions: cloneDesktopState(projectWindowSessions),
+    noteDraft,
+    music: { playing: musicPlaying, position: musicPosition },
+    focus: {
+      running: focusRunning,
+      seconds: focusSeconds,
+      visible: !$("#timerWidget").hidden
+    },
+    quickToggles: $$(".quick-toggle").filter(button => button.id !== "themeToggle").map(button => ({
+      label: button.textContent.trim(),
+      active: button.classList.contains("is-active")
+    })),
+    notificationsHtml: $("#notificationList").innerHTML
+  };
+}
+
+function persistIncomingDesktopState(state) {
+  try {
+    localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(state.workspaceStates));
+    localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
+    localStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(state.areaSessions));
+    localStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
+    localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
+    localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
+    localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
+  } catch {}
+}
+
+function applyDesktopSyncState(state) {
+  if (!state || state.schema !== 1 || !workspaceProfiles[state.activeWorkspace]) return;
+  desktopSyncApplying = true;
+  try {
+    Object.entries(state.workspaceStates || {}).forEach(([name, saved]) => {
+      if (workspaceAppStates[name] && saved) workspaceAppStates[name] = { ...workspaceAppStates[name], ...saved };
+    });
+    Object.keys(workspaceAreaSessions).forEach(name => delete workspaceAreaSessions[name]);
+    Object.assign(workspaceAreaSessions, cloneDesktopState(state.areaSessions || {}));
+    Object.keys(projectWindowSessions).forEach(name => delete projectWindowSessions[name]);
+    Object.assign(projectWindowSessions, cloneDesktopState(state.projectWindowSessions || {}));
+    Object.entries(state.projects || {}).forEach(([name, saved]) => {
+      if (!projectSpaces[name] || !saved) return;
+      if (typeof saved.note === "string") projectSpaces[name].note = saved.note;
+      if (Array.isArray(saved.resources)) projectSpaces[name].resources = cloneDesktopState(saved.resources);
+      if (typeof saved.keepWindows === "boolean") projectSpaces[name].keepWindows = saved.keepWindows;
+    });
+
+    noteDraft = typeof state.noteDraft === "string" ? state.noteDraft : noteDraft;
+    document.body.dataset.theme = state.theme || document.body.dataset.theme;
+    persistIncomingDesktopState(state);
+
+    activeWorkspace = state.activeWorkspace;
+    renderWorkspace(activeWorkspace, false);
+
+    activeProjectName = state.activeProjectName && projectSpaces[state.activeProjectName]
+      ? state.activeProjectName
+      : null;
+    if (activeProjectName) renderProjectSpace(activeProjectName);
+    else setProjectClosedState(true);
+
+    const notesField = $(".notes-layout textarea");
+    if (notesField) notesField.value = noteDraft;
+
+    (state.quickToggles || []).forEach(saved => {
+      const button = $$(".quick-toggle").find(candidate => candidate.id !== "themeToggle" && candidate.textContent.trim() === saved.label);
+      if (!button) return;
+      button.classList.toggle("is-active", Boolean(saved.active));
+      button.setAttribute("aria-pressed", String(Boolean(saved.active)));
+    });
+
+    if (typeof state.notificationsHtml === "string") {
+      $("#notificationList").innerHTML = state.notificationsHtml;
+      syncNotifications();
+    }
+
+    if (state.music) {
+      musicPosition = Math.max(0, Math.min(218, Number(state.music.position) || 0));
+      setMusicPlaying(Boolean(state.music.playing));
+    }
+    if (state.focus) {
+      focusSeconds = Math.max(0, Number(state.focus.seconds) || 0);
+      if (state.focus.visible) revealDynamicWidget($("#timerWidget"));
+      else concealDynamicWidget($("#timerWidget"));
+      setFocusRunning(Boolean(state.focus.running));
+    }
+
+    requestAnimationFrame(() => {
+      Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
+        const frame = frameFor(name);
+        if (!frame || appState[name] !== "open") return;
+        if (Boolean(maximized) !== (frame.dataset.maximized === "true")) toggleMaximize(name);
+      });
+      if (state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
+      updateDesktopSyncPresence();
+    });
+  } finally {
+    requestAnimationFrame(() => { desktopSyncApplying = false; });
+  }
+}
+
+function postDesktopSyncMessage(message) {
+  const packet = {
+    ...message,
+    id: desktopSyncSource + ":" + Date.now() + ":" + Math.random().toString(36).slice(2),
+    source: desktopSyncSource,
+    sentAt: Date.now()
+  };
+  if (desktopSyncChannel) desktopSyncChannel.postMessage(packet);
+  else {
+    try { localStorage.setItem(DESKTOP_SYNC_STORAGE_KEY, JSON.stringify(packet)); } catch {}
+  }
+}
+
+function broadcastDesktopState() {
+  if (desktopSyncApplying) return;
+  const stamp = Math.max(Date.now(), desktopSyncLastStamp + 1);
+  desktopSyncLastStamp = stamp;
+  postDesktopSyncMessage({ type: "state", stamp, state: captureDesktopSyncState() });
+}
+
+function queueDesktopStateBroadcast(delay = 55) {
+  if (desktopSyncApplying) return;
+  clearTimeout(desktopSyncTimer);
+  desktopSyncTimer = setTimeout(broadcastDesktopState, delay);
+}
+
+function updateDesktopSyncPresence() {
+  const now = Date.now();
+  desktopSyncPeers.forEach((seen, source) => {
+    if (now - seen > 6500) desktopSyncPeers.delete(source);
+  });
+  const count = desktopSyncPeers.size;
+  document.body.classList.toggle("is-session-synced", count > 0);
+  const context = $("#systemAreaContext");
+  if (context && workspaceProfiles[activeWorkspace]) {
+    context.textContent = workspaceProfiles[activeWorkspace].label + " workspace" + (count ? " · " + (count + 1) + " displays" : "");
+  }
+  const systemArea = areaFor("systems");
+  if (systemArea) {
+    systemArea.setAttribute("aria-label", count ? "System area · " + (count + 1) + " displays synced" : "System area");
+    systemArea.title = count ? (count + 1) + " displays linked in this browser session" : "";
+  }
+  if (count && !desktopSyncAnnounced) {
+    desktopSyncAnnounced = true;
+    showToast("Second display connected · desktop synced");
+  }
+  if (!count) desktopSyncAnnounced = false;
+}
+
+function receiveDesktopSyncMessage(packet) {
+  if (!packet || packet.source === desktopSyncSource) return;
+  desktopSyncPeers.set(packet.source, Date.now());
+  updateDesktopSyncPresence();
+  if (packet.type === "request") {
+    broadcastDesktopState();
+    return;
+  }
+  if (packet.type === "goodbye") {
+    desktopSyncPeers.delete(packet.source);
+    updateDesktopSyncPresence();
+    return;
+  }
+  if (packet.type !== "state" || !Number.isFinite(packet.stamp) || packet.stamp <= desktopSyncLastStamp) return;
+  desktopSyncLastStamp = packet.stamp;
+  applyDesktopSyncState(packet.state);
+}
+
+function prepareCrossDisplaySync() {
+  if (desktopSyncChannel) desktopSyncChannel.addEventListener("message", event => receiveDesktopSyncMessage(event.data));
+  else window.addEventListener("storage", event => {
+    if (event.key !== DESKTOP_SYNC_STORAGE_KEY || !event.newValue) return;
+    try { receiveDesktopSyncMessage(JSON.parse(event.newValue)); } catch {}
+  });
+
+  document.addEventListener("click", () => queueDesktopStateBroadcast());
+  document.addEventListener("change", () => queueDesktopStateBroadcast());
+  document.addEventListener("input", event => {
+    if (!event.target.closest("#universalSearch")) queueDesktopStateBroadcast(90);
+  });
+  window.addEventListener("pointerup", () => queueDesktopStateBroadcast());
+
+  postDesktopSyncMessage({ type: "presence" });
+  postDesktopSyncMessage({ type: "request" });
+  window.setInterval(() => {
+    postDesktopSyncMessage({ type: "presence" });
+    updateDesktopSyncPresence();
+  }, 2000);
+  window.addEventListener("pagehide", () => postDesktopSyncMessage({ type: "goodbye" }));
+}
+
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
@@ -3388,6 +3629,7 @@ prepareControlSemantics();
 observeMaterialInheritance();
 prepareMaterialCursor();
 prepareContextMenus();
+prepareCrossDisplaySync();
 updateClock();
 setInterval(updateClock, 1000);
 renderCalendar();
