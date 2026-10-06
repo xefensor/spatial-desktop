@@ -2377,9 +2377,7 @@ function prepareWorkspaces() {
     if (button) { openApp(button.dataset.overviewOpenApp); setUniversalSearchOpen(false); }
   });
   $("#workspaceFavorites").addEventListener("click", event => {
-    const open = event.target.closest("[data-open-app]");
     const toast = event.target.closest("[data-toast]");
-    if (open) { openApp(open.dataset.openApp); setUniversalSearchOpen(false); }
     if (toast) showToast(toast.dataset.toast);
   });
   $("#workspaceFolders").addEventListener("click", event => {
@@ -2551,10 +2549,15 @@ $("#allAppsToggle").addEventListener("click", () => {
   setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
 });
 
-$$("[data-open-app]").forEach(button => button.addEventListener("click", () => {
+/* App entries are rebuilt whenever a Workspace changes. Keep one delegated
+   launcher so rail icons, Overview entries, favourites and the app grid all
+   continue to work after their markup is replaced. */
+document.addEventListener("click", event => {
+  const button = event.target.closest("[data-open-app]");
+  if (!button) return;
   openApp(button.dataset.openApp);
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
-}));
+});
 
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
   pulseBusyCursor();
