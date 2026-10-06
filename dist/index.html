@@ -19,6 +19,7 @@
       <div class="switcher" role="group" aria-label="Zařízení">
         <button class="switch-option is-active" data-scene-button="desktop">Desktop</button>
         <button class="switch-option" data-scene-button="phone">Telefon</button>
+        <button class="switch-option" data-scene-button="music">Hudba</button>
       </div>
       <div class="switcher theme-switcher" role="group" aria-label="Povrch">
         <button class="switch-option" data-theme-button="light">Light</button>
@@ -180,6 +181,144 @@
             <div><dt>Fokus</dt><dd>osvětlená hrana</dd></div>
           </dl>
         </aside>
+      </div>
+    </section>
+
+    <section class="stage music-stage" aria-label="Interaktivní hudební aplikace">
+      <div class="music-workbench">
+        <article class="music-window">
+          <header class="music-titlebar">
+            <span class="music-app-mark" aria-hidden="true">♫</span>
+            <strong id="musicWindowTitle">running out of time — Elisa</strong>
+            <div class="window-controls">
+              <button aria-label="Minimalizovat">−</button>
+              <button aria-label="Maximalizovat">□</button>
+              <button class="close-button" aria-label="Zavřít">×</button>
+            </div>
+          </header>
+
+          <section class="music-display">
+            <div class="album-art compact-art" aria-label="Obal alba">
+              <span>RUNNING<br>OUT OF TIME</span>
+            </div>
+            <div class="display-copy">
+              <span class="display-label">PRÁVĚ HRAJE</span>
+              <strong class="now-title">running out of time</strong>
+              <span class="now-artist">eenspire · Mix z roku Escape</span>
+            </div>
+            <div class="spectrum" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+          </section>
+
+          <section class="music-transport" aria-label="Přehrávání">
+            <div class="transport-cluster">
+              <button class="music-key previous-track" aria-label="Předchozí skladba">|‹</button>
+              <button class="music-key main-play" aria-label="Přehrát"><span>▶</span></button>
+              <button class="music-key next-track" aria-label="Další skladba">›|</button>
+            </div>
+            <span class="elapsed-time">0:00</span>
+            <label class="music-progress">
+              <span class="sr-only">Pozice skladby</span>
+              <input class="track-progress" type="range" min="0" max="138" value="0">
+            </label>
+            <span class="duration-time">2:18</span>
+            <button class="music-key mode-key shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
+            <button class="music-key mode-key repeat-toggle is-active" aria-label="Opakování">↻</button>
+            <label class="volume-well">
+              <span>◖</span>
+              <input class="volume-range" type="range" min="0" max="100" value="74" aria-label="Hlasitost">
+            </label>
+          </section>
+
+          <div class="music-body">
+            <aside class="music-sidebar">
+              <p class="section-label">Knihovna</p>
+              <nav>
+                <button><span>▤</span>Nyní přehrávám</button>
+                <button><span>◷</span>Nedávno hrané</button>
+                <button><span>▥</span>Často hrané</button>
+                <button class="is-active"><span>▰</span>Alba</button>
+                <button><span>♙</span>Umělci</button>
+                <button><span>♫</span>Skladby</button>
+                <button><span>✦</span>Žánry</button>
+                <button><span>▱</span>Soubory</button>
+              </nav>
+              <div class="library-counter"><b>128</b><span>alb</span></div>
+            </aside>
+
+            <section class="music-library">
+              <div class="library-head">
+                <button class="music-key album-back" aria-label="Zpět">‹</button>
+                <div class="mini-cover album-art"><span>ROT</span></div>
+                <div>
+                  <strong>Mix z roku Escape</strong>
+                  <span>12 skladeb · 48 min</span>
+                </div>
+                <button class="music-key library-play" aria-label="Přehrát album">▶</button>
+                <button class="music-key queue-toggle" aria-label="Zobrazit frontu">▤</button>
+              </div>
+              <label class="recess-field music-search">
+                <span>⌕</span>
+                <input id="musicSearch" placeholder="Hledat skladbu nebo umělce…" aria-label="Hledat v hudbě">
+              </label>
+              <div class="music-table-head music-track-grid">
+                <span>#</span><span>Skladba</span><span>Interpret</span><span>Čas</span>
+              </div>
+              <div class="music-tracks" id="musicTracks" role="listbox" aria-label="Skladby"></div>
+            </section>
+
+            <aside class="music-queue" id="musicQueue">
+              <header>
+                <div><span>FRONTA</span><strong>Následuje</strong></div>
+                <button class="music-key queue-close" aria-label="Skrýt frontu">×</button>
+              </header>
+              <div id="queueTracks"></div>
+              <footer><span id="queueCount">11 skladeb</span><span>47:31</span></footer>
+            </aside>
+          </div>
+        </article>
+
+        <article class="music-phone">
+          <div class="screen-light music-touch-light" aria-hidden="true"></div>
+          <header class="phone-status"><b>11:59</b><span>⌁ ▥ ◉ <strong>83</strong>ϟ</span></header>
+          <div class="mobile-now-label">
+            <span>Právě hraje</span>
+            <strong>Mix z roku Escape</strong>
+          </div>
+          <div class="album-art phone-art" aria-label="Obal alba">
+            <span>RUNNING<br>OUT OF TIME</span>
+          </div>
+          <div class="mobile-track-info">
+            <div><strong class="now-title">running out of time</strong><span class="now-artist">eenspire</span></div>
+            <div class="mobile-actions">
+              <button class="glass-control share-button" aria-label="Sdílet">↗</button>
+              <button class="glass-control like-button" aria-label="Přidat do oblíbených">♡</button>
+            </div>
+          </div>
+          <div class="mobile-progress">
+            <input class="track-progress" type="range" min="0" max="138" value="0" aria-label="Pozice skladby">
+            <div><span class="elapsed-time">0:00</span><span class="duration-time">2:18</span></div>
+          </div>
+          <div class="mobile-transport">
+            <button class="glass-control previous-track" aria-label="Předchozí skladba">|‹</button>
+            <button class="glass-control main-play mobile-main-play" aria-label="Přehrát"><span>▶</span><b>Přehrát</b></button>
+            <button class="glass-control next-track" aria-label="Další skladba">›|</button>
+          </div>
+          <div class="mobile-modes">
+            <button class="glass-control" data-toast="Fronta">♬</button>
+            <button class="glass-control" data-toast="Časovač vypnutí">◔</button>
+            <button class="glass-control shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
+            <button class="glass-control repeat-toggle is-active" aria-label="Opakování">↻</button>
+            <button class="glass-control mobile-queue-toggle" aria-label="Otevřít frontu">⋮</button>
+          </div>
+          <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
+          <section class="mobile-queue-sheet" id="mobileQueueSheet" aria-hidden="true">
+            <div class="sheet-handle"></div>
+            <header><strong>Další skladby</strong><button class="sheet-close" aria-label="Zavřít">×</button></header>
+            <div id="mobileQueue"></div>
+          </section>
+        </article>
       </div>
     </section>
   </main>

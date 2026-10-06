@@ -25,7 +25,7 @@ function setTheme(theme) {
 }
 
 function setScene(scene) {
-  const next = scene === 'phone' ? 'phone' : 'desktop';
+  const next = ['desktop', 'phone', 'music'].includes(scene) ? scene : 'desktop';
   body.dataset.scene = next;
   $$('[data-scene-button]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.sceneButton === next);
@@ -232,9 +232,167 @@ phone.addEventListener('pointermove', event => {
   if (event.buttons) localLight(event);
 });
 window.addEventListener('pointerup', () => $('#screenLight').classList.remove('is-on'));
+const musicPhone = $('.music-phone');
+const musicTouchLight = $('.music-touch-light');
+musicPhone.addEventListener('pointerdown', event => {
+  const rect = musicPhone.getBoundingClientRect();
+  musicTouchLight.style.left = (event.clientX - rect.left) + 'px';
+  musicTouchLight.style.top = (event.clientY - rect.top) + 'px';
+  musicTouchLight.classList.add('is-on');
+});
+musicPhone.addEventListener('pointermove', event => {
+  if (!event.buttons) return;
+  const rect = musicPhone.getBoundingClientRect();
+  musicTouchLight.style.left = (event.clientX - rect.left) + 'px';
+  musicTouchLight.style.top = (event.clientY - rect.top) + 'px';
+});
+window.addEventListener('pointerup', () => musicTouchLight.classList.remove('is-on'));
 window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && keyboard.classList.contains('is-open')) {
     setKeyboard(false);
     $('#phoneSearch').blur();
   }
+  if (body.dataset.scene === 'music' && !event.target.matches('input')) {
+    if (event.code === 'Space') {
+      event.preventDefault();
+      setPlaying(!musicPlaying);
+    }
+    if (event.key === 'ArrowLeft') selectMusicTrack(currentTrackIndex - 1, true);
+    if (event.key === 'ArrowRight') selectMusicTrack(currentTrackIndex + 1, true);
+  }
 });
+
+const musicData = [
+  { title: 'running out of time', artist: 'eenspire', album: 'Mix z roku Escape', seconds: 138 },
+  { title: 'Genesis', artist: 'Justice', album: 'Justice', seconds: 234 },
+  { title: 'Let There Be Light', artist: 'Justice', album: 'Justice', seconds: 295 },
+  { title: 'D.A.N.C.E.', artist: 'Justice', album: 'Justice', seconds: 242 },
+  { title: 'Newjack', artist: 'Justice', album: 'Justice', seconds: 216 },
+  { title: 'Phantom', artist: 'Justice', album: 'Justice', seconds: 262 },
+  { title: 'Phantom Pt. II', artist: 'Justice', album: 'Justice', seconds: 200 },
+  { title: 'Valentine', artist: 'Justice', album: 'Justice', seconds: 176 },
+  { title: 'The Party', artist: 'Justice', album: 'Justice', seconds: 243 },
+  { title: 'DVNO', artist: 'Justice', album: 'Justice', seconds: 236 },
+  { title: 'Stress', artist: 'Justice', album: 'Justice', seconds: 298 },
+  { title: 'Waters of Nazareth', artist: 'Justice', album: 'Justice', seconds: 265 }
+];
+let currentTrackIndex = 0;
+let musicPlaying = false;
+let playbackSeconds = 0;
+let playbackTimer;
+
+function formatTime(total) {
+  const value = Math.max(0, Math.round(total));
+  return Math.floor(value / 60) + ':' + String(value % 60).padStart(2, '0');
+}
+
+function renderMusicTracks() {
+  const query = $('#musicSearch').value.trim().toLocaleLowerCase('cs');
+  const visible = musicData.map((track, index) => ({ track, index })).filter(({ track }) =>
+    (track.title + ' ' + track.artist + ' ' + track.album).toLocaleLowerCase('cs').includes(query)
+  );
+  $('#musicTracks').innerHTML = visible.length ? visible.map(({ track, index }) =>
+    '<button class="music-track music-track-grid' + (index === currentTrackIndex ? ' is-active' : '') + '" data-music-index="' + index + '">' +
+    '<span>' + String(index + 1).padStart(2, '0') + '</span><span>' + track.title + '</span><span>' + track.artist + '</span><span>' + formatTime(track.seconds) + '</span></button>'
+  ).join('') : '<p class="music-empty">Žádná skladba neodpovídá hledání.</p>';
+  $$('.music-track').forEach(row => row.addEventListener('click', () => selectMusicTrack(Number(row.dataset.musicIndex), true)));
+}
+
+function renderQueues() {
+  const queue = musicData.map((track, index) =>
+    '<button class="queue-track' + (index === currentTrackIndex ? ' is-active' : '') + '" data-queue-index="' + index + '">' +
+    '<i class="drag-dots">⁙</i><span>' + track.title + '</span><small>' + formatTime(track.seconds) + '</small></button>'
+  ).join('');
+  $('#queueTracks').innerHTML = queue;
+  $('#mobileQueue').innerHTML = queue;
+  $$('[data-queue-index]').forEach(row => row.addEventListener('click', () => selectMusicTrack(Number(row.dataset.queueIndex), true)));
+  $('#queueCount').textContent = (musicData.length - 1) + ' skladeb';
+}
+
+function syncProgress() {
+  const track = musicData[currentTrackIndex];
+  $$('.track-progress').forEach(range => {
+    range.max = track.seconds;
+    range.value = playbackSeconds;
+  });
+  $$('.elapsed-time').forEach(label => label.textContent = formatTime(playbackSeconds));
+  $$('.duration-time').forEach(label => label.textContent = formatTime(track.seconds));
+}
+
+function syncPlaybackState() {
+  $('.music-window').classList.toggle('is-playing', musicPlaying);
+  $('.music-phone').classList.toggle('is-playing', musicPlaying);
+  $$('.main-play').forEach(button => {
+    $('span', button).textContent = musicPlaying ? '❚❚' : '▶';
+    button.setAttribute('aria-label', musicPlaying ? 'Pozastavit' : 'Přehrát');
+  });
+  $('.mobile-main-play b').textContent = musicPlaying ? 'Pauza' : 'Přehrát';
+}
+
+function setPlaying(playing) {
+  musicPlaying = playing;
+  clearInterval(playbackTimer);
+  if (musicPlaying) {
+    playbackTimer = setInterval(() => {
+      playbackSeconds += 1;
+      if (playbackSeconds >= musicData[currentTrackIndex].seconds) {
+        selectMusicTrack((currentTrackIndex + 1) % musicData.length, true);
+      }
+      syncProgress();
+    }, 1000);
+  }
+  syncPlaybackState();
+}
+
+function selectMusicTrack(index, autoplay = false) {
+  currentTrackIndex = (index + musicData.length) % musicData.length;
+  playbackSeconds = 0;
+  const track = musicData[currentTrackIndex];
+  $$('.now-title').forEach(label => label.textContent = track.title);
+  $$('.now-artist').forEach(label => label.textContent = label.closest('.display-copy') ? track.artist + ' · ' + track.album : track.artist);
+  $('#musicWindowTitle').textContent = track.title + ' — Elisa';
+  renderMusicTracks();
+  renderQueues();
+  syncProgress();
+  if (autoplay) setPlaying(true);
+}
+
+$('#musicSearch').addEventListener('input', renderMusicTracks);
+$$('.main-play').forEach(button => button.addEventListener('click', () => setPlaying(!musicPlaying)));
+$$('.previous-track').forEach(button => button.addEventListener('click', () => selectMusicTrack(currentTrackIndex - 1, true)));
+$$('.next-track').forEach(button => button.addEventListener('click', () => selectMusicTrack(currentTrackIndex + 1, true)));
+$$('.track-progress').forEach(range => range.addEventListener('input', event => {
+  playbackSeconds = Number(event.target.value);
+  syncProgress();
+}));
+$$('.volume-range').forEach(range => range.addEventListener('input', event => {
+  $$('.volume-range').forEach(other => other.value = event.target.value);
+  showToast('Hlasitost ' + event.target.value + ' %');
+}));
+
+for (const selector of ['.shuffle-toggle', '.repeat-toggle']) {
+  $$(selector).forEach(button => button.addEventListener('click', () => {
+    $$(selector).forEach(other => other.classList.toggle('is-active'));
+  }));
+}
+$('.like-button').addEventListener('click', event => {
+  event.currentTarget.classList.toggle('is-active');
+  event.currentTarget.textContent = event.currentTarget.classList.contains('is-active') ? '♥' : '♡';
+});
+$('.queue-toggle').addEventListener('click', () => $('.music-body').classList.toggle('queue-hidden'));
+$('.queue-close').addEventListener('click', () => $('.music-body').classList.add('queue-hidden'));
+$('.mobile-queue-toggle').addEventListener('click', () => {
+  $('#mobileQueueSheet').classList.add('is-open');
+  $('#mobileQueueSheet').setAttribute('aria-hidden', 'false');
+});
+$('.sheet-close').addEventListener('click', () => {
+  $('#mobileQueueSheet').classList.remove('is-open');
+  $('#mobileQueueSheet').setAttribute('aria-hidden', 'true');
+});
+$$('.music-sidebar nav button').forEach(button => button.addEventListener('click', () => {
+  $$('.music-sidebar nav button').forEach(other => other.classList.toggle('is-active', other === button));
+}));
+
+renderMusicTracks();
+renderQueues();
+selectMusicTrack(0);
