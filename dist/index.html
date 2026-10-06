@@ -7,7 +7,7 @@
   <meta name="description" content="A tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=129">
+  <link rel="stylesheet" href="desktop-shell.css?v=130">
   <title>Spatial Desktop</title>
 </head>
 <body data-theme="oled">
@@ -150,13 +150,10 @@
 
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small>Project Space</small></span></div>
+        <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small id="projectAreaContext">Visual Design mode</small></span></div>
         <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
-      <nav class="project-switcher" aria-label="Projects">
-        <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true" title="Plasma Redesign"><i class="project-color project-color-blue"></i><svg class="project-choice-icon" aria-hidden="true"><use href="#i-folder"/></svg><span>Plasma Redesign</span></button>
-        <button class="surface-key project-choice" data-project-select="retold" aria-pressed="false" title="Retold"><i class="project-color project-color-green"></i><svg class="project-choice-icon" aria-hidden="true"><use href="#i-gamepad"/></svg><span>Retold</span></button>
-      </nav>
+      <nav class="project-switcher project-mode-switcher" id="projectModeSwitcher" aria-label="Project modes"></nav>
       <div class="project-space-content" id="projectSpaceContent">
         <section class="project-module project-root-module">
           <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
@@ -180,7 +177,7 @@
         </section>
       </div>
       <section class="project-session-bar" id="projectSessionBar" aria-label="Project window session">
-        <button class="surface-key project-session-toggle is-active" id="projectSessionToggle" data-toggle aria-pressed="true"><span class="session-toggle-icon"><svg><use href="#i-monitor"/></svg></span><span><b>Keep windows with project</b><small id="projectSessionSummary">Close or switch to park open windows here</small></span><i class="session-toggle-light"></i></button>
+        <div class="project-session-toggle project-mode-status is-active" id="projectSessionToggle" role="status"><span class="session-toggle-icon"><svg><use href="#i-monitor"/></svg></span><span><b id="projectActiveModeLabel">Visual Design mode</b><small id="projectSessionSummary">Window layout saves automatically</small></span></div>
         <button class="surface-key project-close-key" id="projectCloseAction"><svg><use href="#i-min"/></svg><span>Close project</span></button>
       </section>
       <section class="project-closed-state" id="projectClosedState" hidden>
@@ -440,6 +437,6 @@
     <div class="context-menu-items" id="contextMenuItems"></div>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=129"></script>
+  <script src="desktop-shell.js?v=130"></script>
 </body>
 </html>

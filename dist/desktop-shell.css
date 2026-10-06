@@ -6371,3 +6371,50 @@ body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::afte
 .area-window.is-on-other-display{
   display:none!important;
 }
+
+/* v130 — One open Project can expose several saved working Modes. Modes are
+   genuine toggle states: their thin LED remains visible, while the status bar
+   is informational rather than another pressable control. */
+.project-mode-switcher[hidden]{display:none!important}
+.project-mode-switcher{
+  align-items:stretch;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+}
+.project-mode-switcher::-webkit-scrollbar{display:none}
+.project-mode-choice{
+  flex:1 1 0;
+  min-width:94px;
+  max-width:170px;
+}
+.project-mode-choice .project-choice-icon{
+  display:block;
+  flex:0 0 15px;
+  width:15px;
+  height:15px;
+  color:var(--project-accent);
+}
+.project-area[data-dock-edge="left"] .project-mode-switcher,
+.project-area[data-dock-edge="right"] .project-mode-switcher{
+  display:flex;
+  grid-template-columns:none;
+  overflow-x:auto;
+}
+.project-mode-status{
+  cursor:default;
+  border:1px solid color-mix(in srgb,var(--project-accent) 18%,transparent);
+  color:var(--text);
+  background:color-mix(in srgb,var(--project-accent) 7%,var(--content-surface));
+  box-shadow:inset 1px 0 color-mix(in srgb,var(--project-accent) 78%,white 22%);
+}
+.project-mode-status:active{transform:none}
+.project-area[data-area-state="rail"] .project-mode-switcher{
+  display:grid;
+  grid-template-columns:1fr;
+  overflow:visible;
+}
+.project-area[data-area-state="rail"] .project-mode-choice{
+  min-width:0;
+  max-width:none;
+}
