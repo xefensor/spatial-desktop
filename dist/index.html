@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=57">
+  <link rel="stylesheet" href="desktop-shell.css?v=58">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -85,70 +85,8 @@
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
         <div class="mini-stack" id="miniStack" aria-live="polite"></div>
       </section>
-      <section class="all-apps-drawer" id="allAppsDrawer" aria-labelledby="allAppsTitle" aria-hidden="true">
-        <header class="all-apps-heading">
-          <h2 id="allAppsTitle">Applications</h2>
-          <span id="allAppsCount">33 apps</span>
-        </header>
-        <div class="launcher-body">
-          <nav class="launcher-categories" aria-label="Application categories">
-            <button class="launcher-category" data-category-filter="favorites"><svg><use href="#i-star"/></svg><span>Favorites</span></button>
-            <button class="launcher-category is-active" data-category-filter="all" aria-pressed="true"><svg><use href="#i-grid"/></svg><span>All applications</span></button>
-            <button class="launcher-category" data-category-filter="graphics"><svg><use href="#i-palette"/></svg><span>Graphics</span></button>
-            <button class="launcher-category" data-category-filter="games"><svg><use href="#i-gamepad"/></svg><span>Games</span></button>
-            <button class="launcher-category" data-category-filter="internet"><svg><use href="#i-web"/></svg><span>Internet</span></button>
-            <button class="launcher-category" data-category-filter="office"><svg><use href="#i-office"/></svg><span>Office</span></button>
-            <button class="launcher-category" data-category-filter="multimedia"><svg><use href="#i-video"/></svg><span>Multimedia</span></button>
-            <button class="launcher-category" data-category-filter="help" data-cursor="help"><svg><use href="#i-help"/></svg><span>Help</span></button>
-            <button class="launcher-category" data-category-filter="utilities"><svg><use href="#i-tools"/></svg><span>Utilities</span></button>
-            <button class="launcher-category" data-category-filter="system"><svg><use href="#i-settings"/></svg><span>System</span></button>
-            <button class="launcher-category" data-category-filter="education"><svg><use href="#i-graduation"/></svg><span>Education</span></button>
-            <button class="launcher-category" data-category-filter="development"><svg><use href="#i-code"/></svg><span>Development</span></button>
-            <button class="launcher-category" data-category-filter="lost"><svg><use href="#i-lost"/></svg><span>Lost &amp; Found</span></button>
-          </nav>
-          <div class="launcher-results">
-            <div class="all-apps-grid" id="allAppsGrid">
-              <button class="launcher-app" data-open-app="dolphin" data-category="utilities" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg></span><span>Dolphin</span></button>
-              <button class="launcher-app" data-open-app="elisa" data-category="multimedia" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg></span><span>Elisa</span></button>
-              <button class="launcher-app" data-open-app="browser" data-category="internet" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg></span><span>Firefox</span></button>
-              <button class="launcher-app" data-open-app="terminal" data-category="system" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg></span><span>Konsole</span></button>
-              <button class="launcher-app" data-open-app="notes" data-category="office" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg></span><span>Notes</span></button>
-              <button class="launcher-app" data-launch-app="Krita" data-category="graphics" data-favorite="true"><span class="launcher-icon app-tile tile-magenta"><svg><use href="#i-palette"/></svg></span><span>Krita</span></button>
-              <button class="launcher-app" data-launch-app="Gwenview" data-category="graphics"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-image"/></svg></span><span>Gwenview</span></button>
-              <button class="launcher-app" data-launch-app="Inkscape" data-category="graphics"><span class="launcher-icon app-tile tile-charcoal"><svg><use href="#i-code"/></svg></span><span>Inkscape</span></button>
-              <button class="launcher-app" data-launch-app="Blender" data-category="graphics"><span class="launcher-icon app-tile tile-orange"><b>B</b></span><span>Blender</span></button>
-              <button class="launcher-app" data-launch-app="Spectacle" data-category="graphics"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-image"/></svg></span><span>Spectacle</span></button>
-              <button class="launcher-app" data-launch-app="Steam" data-category="games"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-gamepad"/></svg></span><span>Steam</span></button>
-              <button class="launcher-app" data-launch-app="Lutris" data-category="games"><span class="launcher-icon app-tile tile-amber"><b>L</b></span><span>Lutris</span></button>
-              <button class="launcher-app" data-launch-app="Thunderbird" data-category="internet"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-mail"/></svg></span><span>Thunderbird</span></button>
-              <button class="launcher-app" data-launch-app="KDE Connect" data-category="internet"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-phone"/></svg></span><span>KDE Connect</span></button>
-              <button class="launcher-app" data-launch-app="LibreOffice Writer" data-category="office"><span class="launcher-icon app-tile tile-blue"><b>W</b></span><span>Writer</span></button>
-              <button class="launcher-app" data-launch-app="LibreOffice Calc" data-category="office"><span class="launcher-icon app-tile tile-green"><b>C</b></span><span>Calc</span></button>
-              <button class="launcher-app" data-launch-app="Kalendar" data-category="office"><span class="launcher-icon app-tile tile-red"><svg><use href="#i-calendar"/></svg></span><span>Kalendar</span></button>
-              <button class="launcher-app" data-launch-app="VLC" data-category="multimedia"><span class="launcher-icon app-tile tile-orange"><svg><use href="#i-play"/></svg></span><span>VLC</span></button>
-              <button class="launcher-app" data-launch-app="Kdenlive" data-category="multimedia"><span class="launcher-icon app-tile tile-violet"><svg><use href="#i-video"/></svg></span><span>Kdenlive</span></button>
-              <button class="launcher-app" data-launch-app="OBS Studio" data-category="multimedia"><span class="launcher-icon app-tile tile-charcoal"><b>O</b></span><span>OBS Studio</span></button>
-              <button class="launcher-app" data-launch-app="Calculator" data-category="utilities"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-calculator"/></svg></span><span>Calculator</span></button>
-              <button class="launcher-app" data-launch-app="Ark" data-category="utilities"><span class="launcher-icon app-tile tile-amber"><svg><use href="#i-archive"/></svg></span><span>Ark</span></button>
-              <button class="launcher-app" data-launch-app="System Settings" data-category="system"><span class="launcher-icon app-tile tile-violet"><svg><use href="#i-settings"/></svg></span><span>Settings</span></button>
-              <button class="launcher-app" data-launch-app="System Monitor" data-category="system"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-monitor"/></svg></span><span>System Monitor</span></button>
-              <button class="launcher-app" data-launch-app="Discover" data-category="system"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-grid"/></svg></span><span>Discover</span></button>
-              <button class="launcher-app" data-launch-app="Partition Manager" data-category="system"><span class="launcher-icon app-tile tile-red"><svg><use href="#i-tools"/></svg></span><span>Partitions</span></button>
-              <button class="launcher-app" data-launch-app="KStars" data-category="education"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-star"/></svg></span><span>KStars</span></button>
-              <button class="launcher-app" data-launch-app="Marble" data-category="education"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-web"/></svg></span><span>Marble</span></button>
-              <button class="launcher-app" data-launch-app="Kate" data-category="development"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-code"/></svg></span><span>Kate</span></button>
-              <button class="launcher-app" data-launch-app="KDevelop" data-category="development"><span class="launcher-icon app-tile tile-blue"><b>K</b></span><span>KDevelop</span></button>
-              <button class="launcher-app" data-launch-app="Qt Creator" data-category="development"><span class="launcher-icon app-tile tile-green"><b>Qt</b></span><span>Qt Creator</span></button>
-              <button class="launcher-app" data-launch-app="Help Center" data-category="help" data-cursor="help"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-help"/></svg></span><span>Help Center</span></button>
-              <button class="launcher-app" data-launch-app="Legacy Tools" data-category="lost"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-lost"/></svg></span><span>Legacy Tools</span></button>
-            </div>
-            <p class="all-apps-empty" id="allAppsEmpty" hidden>No matching apps</p>
-          </div>
-        </div>
-      </section>
       <div class="apps-bottom">
-        <label class="recessed-field app-search"><svg><use href="#i-search"/></svg><input id="appSearch" placeholder="Find an app" aria-label="Find an app"></label>
-        <button class="surface-key icon-key all-apps-toggle" id="allAppsToggle" aria-controls="allAppsDrawer" aria-expanded="false" aria-label="All apps" title="All apps"><svg><use href="#i-grid"/></svg></button>
+        <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Open overview"><svg><use href="#i-grid"/></svg><span>Overview</span><kbd>Super</kbd></button>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag to resize"></button>
     </aside>
@@ -247,59 +185,132 @@
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true">
     <div class="universal-search-shell">
       <header class="universal-search-header">
-        <div class="universal-search-title"><span class="eyebrow">UNIVERSAL SEARCH</span><h2 id="universalSearchTitle">Search everything</h2></div>
+        <div class="universal-search-title"><span class="eyebrow">DESKTOP</span><h2 id="universalSearchTitle">Overview</h2></div>
         <label class="universal-search-field">
           <svg aria-hidden="true"><use href="#i-search"/></svg>
-          <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Apps, files, settings, actions or the web" aria-label="Search everything">
+          <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Search apps, files, settings, actions or the web" aria-label="Search the desktop">
           <kbd>Esc</kbd>
         </label>
       </header>
-      <div class="universal-search-layout">
-        <nav class="universal-search-scopes" aria-label="Search scope">
-          <button class="universal-scope is-active" data-universal-scope="all" aria-pressed="true"><svg><use href="#i-search"/></svg><span>Everything</span></button>
-          <button class="universal-scope" data-universal-scope="apps" aria-pressed="false"><svg><use href="#i-grid"/></svg><span>Applications</span></button>
-          <button class="universal-scope" data-universal-scope="files" aria-pressed="false"><svg><use href="#i-folder"/></svg><span>Files</span></button>
-          <button class="universal-scope" data-universal-scope="settings" aria-pressed="false"><svg><use href="#i-settings"/></svg><span>Settings</span></button>
-          <button class="universal-scope" data-universal-scope="web" aria-pressed="false"><svg><use href="#i-web"/></svg><span>Web</span></button>
-        </nav>
-        <div class="universal-results" id="universalResults" aria-live="polite">
-          <section class="universal-group" data-universal-group="apps">
-            <h3>Applications</h3>
-            <div class="universal-result-grid">
-              <button class="universal-result" data-open-app="dolphin" data-universal-search="dolphin files folders downloads file manager"><svg class="app-art"><use href="#app-dolphin"/></svg><span><b>Dolphin</b><small>File manager</small></span><kbd>Enter</kbd></button>
-              <button class="universal-result" data-open-app="elisa" data-universal-search="elisa music audio player songs"><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Elisa</b><small>Music player</small></span></button>
-              <button class="universal-result" data-open-app="terminal" data-universal-search="konsole terminal command shell"><svg class="app-art"><use href="#app-terminal"/></svg><span><b>Konsole</b><small>Terminal</small></span></button>
+
+      <div class="overview-home" id="overviewHome">
+        <main class="overview-main">
+          <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
+            <header class="overview-section-heading"><div><span class="eyebrow">RUNNING</span><h3 id="openWindowsTitle">Open windows</h3></div><span>2 active</span></header>
+            <div class="overview-window-grid">
+              <button class="overview-window dolphin" data-open-app="dolphin"><span class="overview-window-app"><svg class="app-art"><use href="#app-dolphin"/></svg><span><b>Dolphin</b><small>Downloads</small></span></span><span class="overview-window-preview file-preview"><i></i><i></i><i></i></span></button>
+              <button class="overview-window elisa" data-open-app="elisa"><span class="overview-window-app"><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Elisa</b><small>running out of time</small></span></span><span class="overview-window-preview music-preview"><i></i><b>1:55</b><span></span></span></button>
             </div>
           </section>
-          <section class="universal-group" data-universal-group="files">
-            <h3>Files</h3>
-            <div class="universal-result-grid">
-              <button class="universal-result" data-universal-search="desktop layout notes markdown document" data-toast="Opening desktop-layout-notes.md"><span class="universal-file-icon"><i class="document-glyph"></i></span><span><b>desktop-layout-notes.md</b><small>Documents · modified today</small></span></button>
-              <button class="universal-result" data-universal-search="plasma shell study image png design" data-toast="Opening plasma-shell-study.png"><span class="universal-file-icon"><i class="document-glyph image"></i></span><span><b>plasma-shell-study.png</b><small>Pictures · 6.8 MiB</small></span></button>
-              <button class="universal-result" data-universal-search="retold project folder minecraft" data-toast="Opening Retold"><span class="universal-file-icon"><i class="folder-glyph"></i></span><span><b>Retold</b><small>Projects · 84 items</small></span></button>
+
+          <section class="overview-section overview-apps-section" aria-labelledby="allAppsTitle">
+            <header class="overview-section-heading"><div><span class="eyebrow">LIBRARY</span><h3 id="allAppsTitle">Applications</h3></div><span id="allAppsCount">33 apps</span></header>
+            <div class="overview-app-library">
+              <nav class="launcher-categories" aria-label="Application categories">
+                <button class="launcher-category" data-category-filter="favorites"><svg><use href="#i-star"/></svg><span>Favorites</span></button>
+                <button class="launcher-category is-active" data-category-filter="all" aria-pressed="true"><svg><use href="#i-grid"/></svg><span>All applications</span></button>
+                <button class="launcher-category" data-category-filter="graphics"><svg><use href="#i-palette"/></svg><span>Graphics</span></button>
+                <button class="launcher-category" data-category-filter="games"><svg><use href="#i-gamepad"/></svg><span>Games</span></button>
+                <button class="launcher-category" data-category-filter="internet"><svg><use href="#i-web"/></svg><span>Internet</span></button>
+                <button class="launcher-category" data-category-filter="office"><svg><use href="#i-office"/></svg><span>Office</span></button>
+                <button class="launcher-category" data-category-filter="multimedia"><svg><use href="#i-video"/></svg><span>Multimedia</span></button>
+                <button class="launcher-category" data-category-filter="utilities"><svg><use href="#i-tools"/></svg><span>Utilities</span></button>
+                <button class="launcher-category" data-category-filter="system"><svg><use href="#i-settings"/></svg><span>System</span></button>
+                <button class="launcher-category" data-category-filter="education"><svg><use href="#i-graduation"/></svg><span>Education</span></button>
+                <button class="launcher-category" data-category-filter="development"><svg><use href="#i-code"/></svg><span>Development</span></button>
+                <button class="launcher-category" data-category-filter="help" data-cursor="help"><svg><use href="#i-help"/></svg><span>Help</span></button>
+                <button class="launcher-category" data-category-filter="lost"><svg><use href="#i-lost"/></svg><span>Lost &amp; Found</span></button>
+              </nav>
+              <div class="launcher-results">
+                <div class="all-apps-grid" id="allAppsGrid">
+                  <button class="launcher-app" data-open-app="dolphin" data-category="utilities" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg></span><span>Dolphin</span></button>
+                  <button class="launcher-app" data-open-app="elisa" data-category="multimedia" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg></span><span>Elisa</span></button>
+                  <button class="launcher-app" data-open-app="browser" data-category="internet" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg></span><span>Firefox</span></button>
+                  <button class="launcher-app" data-open-app="terminal" data-category="system" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg></span><span>Konsole</span></button>
+                  <button class="launcher-app" data-open-app="notes" data-category="office" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg></span><span>Notes</span></button>
+                  <button class="launcher-app" data-launch-app="Krita" data-category="graphics" data-favorite="true"><span class="launcher-icon app-tile tile-magenta"><svg><use href="#i-palette"/></svg></span><span>Krita</span></button>
+                  <button class="launcher-app" data-launch-app="Gwenview" data-category="graphics"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-image"/></svg></span><span>Gwenview</span></button>
+                  <button class="launcher-app" data-launch-app="Inkscape" data-category="graphics"><span class="launcher-icon app-tile tile-charcoal"><svg><use href="#i-code"/></svg></span><span>Inkscape</span></button>
+                  <button class="launcher-app" data-launch-app="Blender" data-category="graphics"><span class="launcher-icon app-tile tile-orange"><b>B</b></span><span>Blender</span></button>
+                  <button class="launcher-app" data-launch-app="Spectacle" data-category="graphics"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-image"/></svg></span><span>Spectacle</span></button>
+                  <button class="launcher-app" data-launch-app="Steam" data-category="games"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-gamepad"/></svg></span><span>Steam</span></button>
+                  <button class="launcher-app" data-launch-app="Lutris" data-category="games"><span class="launcher-icon app-tile tile-amber"><b>L</b></span><span>Lutris</span></button>
+                  <button class="launcher-app" data-launch-app="Thunderbird" data-category="internet"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-mail"/></svg></span><span>Thunderbird</span></button>
+                  <button class="launcher-app" data-launch-app="KDE Connect" data-category="internet"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-phone"/></svg></span><span>KDE Connect</span></button>
+                  <button class="launcher-app" data-launch-app="LibreOffice Writer" data-category="office"><span class="launcher-icon app-tile tile-blue"><b>W</b></span><span>Writer</span></button>
+                  <button class="launcher-app" data-launch-app="LibreOffice Calc" data-category="office"><span class="launcher-icon app-tile tile-green"><b>C</b></span><span>Calc</span></button>
+                  <button class="launcher-app" data-launch-app="Kalendar" data-category="office"><span class="launcher-icon app-tile tile-red"><svg><use href="#i-calendar"/></svg></span><span>Kalendar</span></button>
+                  <button class="launcher-app" data-launch-app="VLC" data-category="multimedia"><span class="launcher-icon app-tile tile-orange"><svg><use href="#i-play"/></svg></span><span>VLC</span></button>
+                  <button class="launcher-app" data-launch-app="Kdenlive" data-category="multimedia"><span class="launcher-icon app-tile tile-violet"><svg><use href="#i-video"/></svg></span><span>Kdenlive</span></button>
+                  <button class="launcher-app" data-launch-app="OBS Studio" data-category="multimedia"><span class="launcher-icon app-tile tile-charcoal"><b>O</b></span><span>OBS Studio</span></button>
+                  <button class="launcher-app" data-launch-app="Calculator" data-category="utilities"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-calculator"/></svg></span><span>Calculator</span></button>
+                  <button class="launcher-app" data-launch-app="Ark" data-category="utilities"><span class="launcher-icon app-tile tile-amber"><svg><use href="#i-archive"/></svg></span><span>Ark</span></button>
+                  <button class="launcher-app" data-launch-app="System Settings" data-category="system"><span class="launcher-icon app-tile tile-violet"><svg><use href="#i-settings"/></svg></span><span>Settings</span></button>
+                  <button class="launcher-app" data-launch-app="System Monitor" data-category="system"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-monitor"/></svg></span><span>System Monitor</span></button>
+                  <button class="launcher-app" data-launch-app="Discover" data-category="system"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-grid"/></svg></span><span>Discover</span></button>
+                  <button class="launcher-app" data-launch-app="Partition Manager" data-category="system"><span class="launcher-icon app-tile tile-red"><svg><use href="#i-tools"/></svg></span><span>Partitions</span></button>
+                  <button class="launcher-app" data-launch-app="KStars" data-category="education"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-star"/></svg></span><span>KStars</span></button>
+                  <button class="launcher-app" data-launch-app="Marble" data-category="education"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-web"/></svg></span><span>Marble</span></button>
+                  <button class="launcher-app" data-launch-app="Kate" data-category="development"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-code"/></svg></span><span>Kate</span></button>
+                  <button class="launcher-app" data-launch-app="KDevelop" data-category="development"><span class="launcher-icon app-tile tile-blue"><b>K</b></span><span>KDevelop</span></button>
+                  <button class="launcher-app" data-launch-app="Qt Creator" data-category="development"><span class="launcher-icon app-tile tile-green"><b>Qt</b></span><span>Qt Creator</span></button>
+                  <button class="launcher-app" data-launch-app="Help Center" data-category="help" data-cursor="help"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-help"/></svg></span><span>Help Center</span></button>
+                  <button class="launcher-app" data-launch-app="Legacy Tools" data-category="lost"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-lost"/></svg></span><span>Legacy Tools</span></button>
+                </div>
+                <p class="all-apps-empty" id="allAppsEmpty" hidden>No applications in this category</p>
+              </div>
             </div>
           </section>
-          <section class="universal-group" data-universal-group="settings">
-            <h3>Settings and actions</h3>
-            <div class="universal-result-grid">
-              <button class="universal-result" data-area-show="projects" data-universal-search="show open project space area activity"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Project Space</b><small>Priority 1 area</small></span></button>
-              <button class="universal-result" data-area-show="apps" data-universal-search="show open apps applications area"><span class="universal-symbol blue"><svg><use href="#i-grid"/></svg></span><span><b>Show Apps Area</b><small>Priority 2 area</small></span></button>
-              <button class="universal-result" data-area-show="systems" data-universal-search="show open system area widgets controls"><span class="universal-symbol cyan"><svg><use href="#i-settings"/></svg></span><span><b>Show System Area</b><small>Priority 3 area</small></span></button>
-              <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
-              <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
-              <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
-            </div>
+        </main>
+
+        <aside class="overview-widgets" aria-label="System widgets">
+          <section class="overview-widget overview-clock-widget"><span class="live-time">--:--</span><div><b id="overviewDayLabel">Thursday</b><small id="overviewDateLabel">24 September</small></div></section>
+          <section class="overview-widget overview-now-playing">
+            <header><span><svg class="app-art"><use href="#app-elisa"/></svg><span><b>running out of time</b><small>eenspire</small></span></span><small>ELISA</small></header>
+            <div class="overview-track"><i></i></div>
+            <div class="overview-media-actions"><button class="surface-key" data-toast="Previous track"><svg><use href="#i-prev"/></svg></button><button class="surface-key play-toggle is-active" aria-label="Pause"><svg><use href="#i-pause"/></svg></button><button class="surface-key" data-toast="Next track"><svg><use href="#i-next"/></svg></button></div>
           </section>
-          <section class="universal-group" data-universal-group="web">
-            <h3>Web</h3>
-            <div class="universal-result-grid">
-              <button class="universal-result universal-web-result" id="universalWebResult" data-universal-search="web browser internet search"><span class="universal-symbol cyan"><svg><use href="#i-web"/></svg></span><span><b id="universalWebLabel">Search the web</b><small>Open in your default browser</small></span><svg class="result-arrow"><use href="#i-right"/></svg></button>
-            </div>
+          <section class="overview-widget overview-quick-widget">
+            <header><h3>System</h3><button class="surface-key tiny-key" data-toast="System settings">Settings</button></header>
+            <div class="overview-quick-grid"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" data-toggle aria-pressed="false"><svg><use href="#i-bell"/></svg><span>Focus</span></button></div>
           </section>
-          <p class="universal-empty" id="universalEmpty" hidden>No local results. Press Enter to search the web.</p>
-        </div>
+          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3>Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b>Retold test pass</b><small>14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
+          <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Pixel 8a</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></section>
+        </aside>
       </div>
-      <footer class="universal-search-footer"><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>Enter</kbd> Open</span><span><kbd>Super</kbd><kbd>Space</kbd> Toggle search</span></footer>
+
+      <div class="universal-results" id="universalResults" aria-live="polite" hidden>
+        <section class="universal-group" data-universal-group="apps">
+          <h3>Applications</h3>
+          <div class="universal-result-grid" id="universalAppResults"></div>
+        </section>
+        <section class="universal-group" data-universal-group="files">
+          <h3>Files</h3>
+          <div class="universal-result-grid">
+            <button class="universal-result" data-universal-search="desktop layout notes markdown document" data-toast="Opening desktop-layout-notes.md"><span class="universal-file-icon"><i class="document-glyph"></i></span><span><b>desktop-layout-notes.md</b><small>Documents · modified today</small></span></button>
+            <button class="universal-result" data-universal-search="plasma shell study image png design" data-toast="Opening plasma-shell-study.png"><span class="universal-file-icon"><i class="document-glyph image"></i></span><span><b>plasma-shell-study.png</b><small>Pictures · 6.8 MiB</small></span></button>
+            <button class="universal-result" data-universal-search="retold project folder minecraft" data-toast="Opening Retold"><span class="universal-file-icon"><i class="folder-glyph"></i></span><span><b>Retold</b><small>Projects · 84 items</small></span></button>
+          </div>
+        </section>
+        <section class="universal-group" data-universal-group="settings">
+          <h3>System and actions</h3>
+          <div class="universal-result-grid">
+            <button class="universal-result" data-area-show="projects" data-universal-search="show project space activity area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Project Space</b><small>Desktop area</small></span></button>
+            <button class="universal-result" data-area-show="apps" data-universal-search="show apps area"><span class="universal-symbol blue"><svg><use href="#i-grid"/></svg></span><span><b>Show Apps Area</b><small>Desktop area</small></span></button>
+            <button class="universal-result" data-area-show="systems" data-universal-search="show system widgets area"><span class="universal-symbol cyan"><svg><use href="#i-settings"/></svg></span><span><b>Show System Area</b><small>Desktop area</small></span></button>
+            <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
+            <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
+            <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
+          </div>
+        </section>
+        <section class="universal-group universal-web-group" data-universal-group="web">
+          <h3>Web</h3>
+          <div class="universal-result-grid"><button class="universal-result universal-web-result" id="universalWebResult" data-universal-search="web browser internet search"><span class="universal-symbol cyan"><svg><use href="#i-web"/></svg></span><span><b id="universalWebLabel">Search the web</b><small>Open in your default browser</small></span><svg class="result-arrow"><use href="#i-right"/></svg></button></div>
+        </section>
+        <p class="universal-empty" id="universalEmpty" hidden>No local results. Press Enter to search the web.</p>
+      </div>
+
+      <footer class="universal-search-footer"><span><kbd>Super</kbd> Close overview</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span></footer>
     </div>
   </section>
   <div class="material-cursor" id="materialCursor" aria-hidden="true">
@@ -343,6 +354,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=57"></script>
+  <script src="desktop-shell.js?v=58"></script>
 </body>
 </html>

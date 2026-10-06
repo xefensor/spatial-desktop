@@ -1103,42 +1103,30 @@ function prepareWindows() {
   }));
 }
 
-function setAllAppsOpen(open) {
-  const drawer = $("#allAppsDrawer");
-  const toggle = $("#allAppsToggle");
-  drawer.classList.toggle("is-open", open);
-  drawer.setAttribute("aria-hidden", String(!open));
-  toggle.classList.toggle("is-active", open);
-  toggle.setAttribute("aria-expanded", String(open));
-  toggle.setAttribute("aria-pressed", String(open));
-}
-
 $("#allAppsToggle").addEventListener("click", () => {
-  setAllAppsOpen(!$("#allAppsDrawer").classList.contains("is-open"));
+  setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
 });
 
 $$("[data-open-app]").forEach(button => button.addEventListener("click", () => {
   openApp(button.dataset.openApp);
-  if (button.closest("#allAppsDrawer")) setAllAppsOpen(false);
+  if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 }));
 
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
   pulseBusyCursor();
   showToast(button.dataset.launchApp + " launched");
-  setAllAppsOpen(false);
+  if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 }));
 
 let activeLauncherCategory = "all";
 
 function filterLauncher() {
-  const query = $("#appSearch").value.trim().toLowerCase();
   let visible = 0;
   $$(".launcher-app", $("#allAppsGrid")).forEach(button => {
-    const matchesSearch = !query || button.textContent.trim().toLowerCase().includes(query);
-    const matchesCategory = query || activeLauncherCategory === "all" ||
+    const matchesCategory = activeLauncherCategory === "all" ||
       (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
       button.dataset.category === activeLauncherCategory;
-    button.hidden = !(matchesSearch && matchesCategory);
+    button.hidden = !matchesCategory;
     if (!button.hidden) visible += 1;
   });
   $("#allAppsCount").textContent = visible + (visible === 1 ? " app" : " apps");
@@ -1152,34 +1140,53 @@ $$("[data-category-filter]").forEach(button => button.addEventListener("click", 
     choice.classList.toggle("is-active", selected);
     choice.setAttribute("aria-pressed", String(selected));
   });
-  $("#appSearch").value = "";
   $("#allAppsTitle").textContent = button.textContent.trim();
   filterLauncher();
 }));
 
-$("#appSearch").addEventListener("input", event => {
-  if (event.target.value) setAllAppsOpen(true);
-  const selectedCategory = $("[data-category-filter].is-active");
-  $("#allAppsTitle").textContent = event.target.value ? "Search results" : selectedCategory.textContent.trim();
-  filterLauncher();
-});
-
 filterLauncher();
 
-let activeUniversalScope = "all";
 let universalLastFocus = null;
 
-function filterUniversalSearch() {
-  const query = $("#universalSearchInput").value.trim().toLowerCase();
-  let localVisible = 0;
+function buildUniversalAppResults(query) {
+  const target = $("#universalAppResults");
+  const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
+    const searchable = `${button.textContent} ${button.dataset.category || ""}`.toLowerCase();
+    return searchable.includes(query);
+  });
 
-  $$(".universal-result", $("#universalResults")).forEach(result => {
+  target.innerHTML = matches.map(button => {
+    const action = button.dataset.openApp
+      ? `data-search-open-app="${button.dataset.openApp}"`
+      : `data-search-launch-app="${button.dataset.launchApp}"`;
+    const iconMarkup = $(".launcher-icon", button).innerHTML;
+    const label = button.lastElementChild.textContent.trim();
+    const category = button.dataset.category || "application";
+    return `<button class="universal-result" ${action}><span class="universal-app-icon">${iconMarkup}</span><span><b>${label}</b><small>${category[0].toUpperCase() + category.slice(1)}</small></span></button>`;
+  }).join("");
+  return matches.length;
+}
+
+function filterUniversalSearch() {
+  const rawQuery = $("#universalSearchInput").value.trim();
+  const query = rawQuery.toLowerCase();
+  const searching = query.length > 0;
+  $("#overviewHome").hidden = searching;
+  $("#universalResults").hidden = !searching;
+
+  if (!searching) {
+    $("#universalWebLabel").textContent = "Search the web";
+    return;
+  }
+
+  let localVisible = buildUniversalAppResults(query);
+
+  $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
-    const inScope = activeUniversalScope === "all" || activeUniversalScope === group;
     const isWeb = group === "web";
     const searchable = (result.dataset.universalSearch || result.textContent).toLowerCase();
-    const matchesQuery = !query || isWeb || searchable.includes(query);
-    result.hidden = !(inScope && matchesQuery);
+    const matchesQuery = isWeb || searchable.includes(query);
+    result.hidden = !matchesQuery;
     if (!result.hidden && !isWeb) localVisible += 1;
   });
 
@@ -1187,8 +1194,8 @@ function filterUniversalSearch() {
     group.hidden = !$(".universal-result:not([hidden])", group);
   });
 
-  $("#universalWebLabel").textContent = query ? `Search the web for “${$("#universalSearchInput").value.trim()}”` : "Search the web";
-  $("#universalEmpty").hidden = !(query && localVisible === 0 && activeUniversalScope !== "web");
+  $("#universalWebLabel").textContent = `Search the web for “${rawQuery}”`;
+  $("#universalEmpty").hidden = localVisible !== 0;
 }
 
 function setUniversalSearchOpen(open) {
@@ -1200,43 +1207,35 @@ function setUniversalSearchOpen(open) {
 
   if (open) {
     universalLastFocus = document.activeElement;
-    setAllAppsOpen(false);
-    activeUniversalScope = "all";
     $("#universalSearchInput").value = "";
-    $$('[data-universal-scope]').forEach(choice => {
-      const selected = choice.dataset.universalScope === "all";
-      choice.classList.toggle("is-active", selected);
-      choice.setAttribute("aria-pressed", String(selected));
-    });
+    $("#allAppsToggle").classList.add("is-active");
+    $("#allAppsToggle").setAttribute("aria-expanded", "true");
+    $("#allAppsToggle").setAttribute("aria-pressed", "true");
     filterUniversalSearch();
     requestAnimationFrame(() => {
       $("#universalSearchInput").focus();
       $("#universalSearchInput").select();
     });
-  } else if (universalLastFocus && universalLastFocus.focus) {
-    universalLastFocus.focus({preventScroll:true});
+  } else {
+    $("#allAppsToggle").classList.remove("is-active");
+    $("#allAppsToggle").setAttribute("aria-expanded", "false");
+    $("#allAppsToggle").setAttribute("aria-pressed", "false");
+    if (universalLastFocus && universalLastFocus.focus) universalLastFocus.focus({preventScroll:true});
   }
-}
-
-function openApplicationSearch() {
-  setUniversalSearchOpen(false);
-  showArea("apps", false);
-  setAllAppsOpen(true);
-  requestAnimationFrame(() => $("#appSearch").focus());
 }
 
 $("#universalSearchInput").addEventListener("input", filterUniversalSearch);
 
-$$('[data-universal-scope]').forEach(button => button.addEventListener("click", () => {
-  activeUniversalScope = button.dataset.universalScope;
-  $$('[data-universal-scope]').forEach(choice => {
-    const selected = choice === button;
-    choice.classList.toggle("is-active", selected);
-    choice.setAttribute("aria-pressed", String(selected));
-  });
-  filterUniversalSearch();
-  $("#universalSearchInput").focus();
-}));
+$("#universalAppResults").addEventListener("click", event => {
+  const result = event.target.closest(".universal-result");
+  if (!result) return;
+  if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
+  if (result.dataset.searchLaunchApp) {
+    pulseBusyCursor();
+    showToast(result.dataset.searchLaunchApp + " launched");
+  }
+  setUniversalSearchOpen(false);
+});
 
 $$('.universal-result').forEach(button => button.addEventListener("click", () => setUniversalSearchOpen(false)));
 $("#universalWebResult").addEventListener("click", () => {
@@ -1245,6 +1244,10 @@ $("#universalWebResult").addEventListener("click", () => {
   showToast(query ? `Searching the web for “${query}”` : "Web search opened");
 });
 $("#universalTimer").addEventListener("click", () => $("#launchTimer").click());
+$("#overviewTimer").addEventListener("click", () => {
+  $("#launchTimer").click();
+  setUniversalSearchOpen(false);
+});
 $("#universalSearch").addEventListener("pointerdown", event => {
   if (event.target === $("#universalSearch")) setUniversalSearchOpen(false);
 });
@@ -1350,12 +1353,6 @@ document.addEventListener("keydown", event => {
     return;
   }
 
-  if (event.key === "Escape" && $("#allAppsDrawer").classList.contains("is-open")) {
-    setAllAppsOpen(false);
-    $("#allAppsToggle").focus();
-    return;
-  }
-
   if ($("#universalSearch").classList.contains("is-open") && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
     event.preventDefault();
     const results = $$(".universal-result:not([hidden])", $("#universalResults"));
@@ -1379,7 +1376,7 @@ document.addEventListener("keyup", event => {
   const isSuper = event.key === "Meta" || event.key === "OS";
   if (isSuper && superKeyAlone) {
     event.preventDefault();
-    openApplicationSearch();
+    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
   }
   if (isSuper) superKeyAlone = false;
 });
@@ -1472,8 +1469,12 @@ function updateClock() {
   const now = new Date();
   const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   $$(".live-time").forEach(label => label.textContent = time);
-  $("#dayLabel").textContent = now.toLocaleDateString("en-GB", { weekday: "long" });
-  $("#dateLabel").textContent = now.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  const day = now.toLocaleDateString("en-GB", { weekday: "long" });
+  const date = now.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  $("#dayLabel").textContent = day;
+  $("#dateLabel").textContent = date;
+  $("#overviewDayLabel").textContent = day;
+  $("#overviewDateLabel").textContent = date;
   $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
