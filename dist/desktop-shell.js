@@ -49,6 +49,7 @@ const glassMaterialSurfaceSelector = [
   ".project-module",
   ".desktop-context-menu",
   ".all-apps-drawer",
+  ".project-editor-window",
   ".toast",
   ".app-frame .recessed-field",
   ".app-frame input[type=range]"
@@ -2064,6 +2065,8 @@ const projectSpaces = {
   plasma: {
     name: "Plasma Redesign",
     accent: "#5cbcff",
+    icon: "i-folder",
+    summary: "Desktop shell",
     root: "~/Projects/plasma-redesign",
     files: [["desktop-shell.css", "Modified 8 min ago", "document"], ["interaction-notes.md", "Modified today", "document"]],
     note: "Keep the interaction physical, but let the content stay quiet and readable.",
@@ -2078,6 +2081,8 @@ const projectSpaces = {
   retold: {
     name: "Retold",
     accent: "#65d881",
+    icon: "i-gamepad",
+    summary: "Minecraft mod",
     root: "~/Projects/retold-mod",
     files: [["src/main/java", "Gameplay sources", "folder"], ["gradle.properties", "Modified yesterday", "document"]],
     note: "Test the new movement controller, then record the climbing animation bug.",
@@ -2094,6 +2099,51 @@ const projectSpaces = {
 let activeProjectName = "plasma";
 let projectNoteSaveTimer;
 const projectWindowSessions = {};
+let projectEditorState = null;
+
+function validProject(project) {
+  return project && typeof project.name === "string" && project.name.trim() && project.modes && typeof project.modes === "object" && Object.keys(project.modes).length;
+}
+
+function normalizeProject(project) {
+  if (!validProject(project)) return null;
+  const modes = Object.fromEntries(Object.entries(project.modes).filter(([, mode]) => mode && typeof mode.label === "string" && mode.label.trim()).map(([modeId, mode]) => [modeId, {
+    label: mode.label.trim(),
+    icon: mode.icon || "i-monitor",
+    apps: Array.isArray(mode.apps) ? mode.apps.filter(appName => appInfo[appName]) : [],
+    layout: ["canvas", "build", "review"].includes(mode.layout) ? mode.layout : "canvas"
+  }]));
+  if (!Object.keys(modes).length) return null;
+  const activeMode = modes[project.activeMode] ? project.activeMode : Object.keys(modes)[0];
+  return {
+    name: project.name.trim(),
+    accent: project.accent || "#5cbcff",
+    icon: project.icon || "i-folder",
+    summary: project.summary || "Project",
+    root: project.root || "~/Projects/" + slugifyProject(project.name),
+    files: Array.isArray(project.files) ? project.files : [],
+    note: typeof project.note === "string" ? project.note : "",
+    resources: Array.isArray(project.resources) ? project.resources : [],
+    activeMode,
+    modes
+  };
+}
+
+function slugifyProject(value) {
+  return String(value || "project").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project";
+}
+
+function uniqueProjectId(label, existing = projectSpaces) {
+  const base = slugifyProject(label);
+  let id = base;
+  let suffix = 2;
+  while (existing[id]) id = base + "-" + suffix++;
+  return id;
+}
+
+function uniqueModeId(project, label) {
+  return uniqueProjectId(label, project.modes);
+}
 
 function projectModeId(name) {
   const project = projectSpaces[name];
@@ -2114,12 +2164,21 @@ function persistProjectState() {
       activeMode: projectModeId(name)
     }]));
     localStorage.setItem("spatial-project-content-v1", JSON.stringify(content));
+    localStorage.setItem("spatial-project-spaces-v2", JSON.stringify(projectSpaces));
+    localStorage.setItem("spatial-active-project-v1", activeProjectName || "");
     localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(projectWindowSessions));
   } catch {}
 }
 
 function loadProjectState() {
   try {
+    const savedSpacesRaw = localStorage.getItem("spatial-project-spaces-v2");
+    if (savedSpacesRaw !== null) {
+      const savedSpaces = JSON.parse(savedSpacesRaw || "{}");
+      const normalized = Object.fromEntries(Object.entries(savedSpaces).map(([name, project]) => [name, normalizeProject(project)]).filter(([, project]) => project));
+      Object.keys(projectSpaces).forEach(name => delete projectSpaces[name]);
+      Object.assign(projectSpaces, normalized);
+    }
     const content = JSON.parse(localStorage.getItem("spatial-project-content-v1") || "{}");
     Object.entries(content).forEach(([name, saved]) => {
       if (!projectSpaces[name] || !saved) return;
@@ -2128,6 +2187,8 @@ function loadProjectState() {
       if (typeof saved.activeMode === "string" && projectSpaces[name].modes[saved.activeMode]) projectSpaces[name].activeMode = saved.activeMode;
     });
     Object.assign(projectWindowSessions, JSON.parse(localStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
+    const savedActiveProject = localStorage.getItem("spatial-active-project-v1");
+    if (savedActiveProject !== null) activeProjectName = projectSpaces[savedActiveProject] ? savedActiveProject : null;
   } catch {}
 }
 
@@ -2172,19 +2233,37 @@ function renderProjectModes(name) {
   const project = projectSpaces[name];
   if (!project) return;
   const activeModeId = projectModeId(name);
-  $("#projectModeSwitcher").innerHTML = Object.entries(project.modes).map(([modeId, mode]) => {
+  const modeEntries = Object.entries(project.modes);
+  $("#projectModeSwitcher").innerHTML = modeEntries.map(([modeId, mode]) => {
     const selected = modeId === activeModeId;
     return '<button class="surface-key project-choice project-mode-choice' + (selected ? " is-active" : "") + '" data-project-mode="' + escapeHtml(modeId) + '" aria-pressed="' + selected + '" title="' + escapeHtml(mode.label) + '"><svg class="project-choice-icon" aria-hidden="true"><use href="#' + mode.icon + '"/></svg><span>' + escapeHtml(mode.label) + '</span></button>';
   }).join("");
+  $("#projectModeSwitcher").hidden = modeEntries.length <= 1;
   prepareControlSemantics($("#projectModeSwitcher"));
+}
+
+function renderOverviewProjects() {
+  const grid = $("#overviewProjectGrid");
+  const entries = Object.entries(projectSpaces);
+  $("#overviewProjectCount").textContent = entries.length + (entries.length === 1 ? " project" : " projects");
+  grid.innerHTML = entries.map(([name, project]) => {
+    const selected = activeProjectName === name;
+    const modeCount = Object.keys(project.modes).length;
+    const resourceCount = project.resources.length;
+    const detail = project.summary + " · " + modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
+    return '<button class="overview-project' + (selected ? " is-active" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>';
+  }).join("") || '<div class="overview-project-empty"><svg><use href="#i-folder"/></svg><span><b>No projects yet</b><small>Create one to attach a folder, resources and working Modes.</small></span></div>';
+  prepareControlSemantics(grid);
 }
 
 function setProjectClosedState(closed) {
   $("#projectSpaceContent").hidden = closed;
   $("#projectSessionBar").hidden = closed;
   $("#projectClosedState").hidden = !closed;
-  $("#projectModeSwitcher").hidden = closed;
+  const project = activeProjectName ? projectSpaces[activeProjectName] : null;
+  $("#projectModeSwitcher").hidden = closed || !project || Object.keys(project.modes).length <= 1;
   $("#closeProjectButton").disabled = closed;
+  $("#manageProjectButton").disabled = closed;
   $$(".project-pack-key").forEach(button => { button.disabled = closed; });
   if (closed) {
     $("#projectAreaName").textContent = "Projects";
@@ -2212,11 +2291,7 @@ function renderProjectSpace(name) {
   $("#projectResourceCount").textContent = project.resources.length + (project.resources.length === 1 ? " linked" : " linked");
   setProjectClosedState(false);
   refreshProjectSessionUi(name);
-  $$("[data-overview-project]").forEach(card => {
-    const selected = card.dataset.overviewProject === name;
-    card.classList.toggle("is-active", selected);
-    card.setAttribute("aria-pressed", String(selected));
-  });
+  renderOverviewProjects();
   applyAppPrimaryColors(area);
 }
 
@@ -2372,6 +2447,9 @@ function closeActiveProject() {
   const parked = parkProjectWindows(name, false);
   activeProjectName = null;
   setProjectClosedState(true);
+  persistProjectState();
+  renderOverviewProjects();
+  queueDesktopStateBroadcast(0);
   showToast(project.name + " closed · " + project.modes[projectModeId(name)].label + " mode saved with " + parked + " window" + (parked === 1 ? "" : "s"));
 }
 
@@ -2401,17 +2479,237 @@ function addProjectResource(value) {
   showToast(label + " added to " + projectSpaces[activeProjectName].name);
 }
 
+const projectAccentPalette = ["#5cbcff", "#a88aff", "#65d881", "#ff9b68", "#f4c95d", "#48d1c8"];
+
+function clearProjectSessions(projectName, modeId = null) {
+  Object.keys(projectWindowSessions).forEach(key => {
+    const matchesProject = key.includes(":" + projectName + ":");
+    const matchesMode = modeId === null || key.endsWith(":" + projectName + ":" + modeId);
+    if (matchesProject && matchesMode) delete projectWindowSessions[key];
+  });
+}
+
+function createProjectFromEditor(name, root) {
+  const cleanName = name.trim();
+  if (!cleanName) return;
+  const id = uniqueProjectId(cleanName);
+  const accent = projectAccentPalette[Object.keys(projectSpaces).length % projectAccentPalette.length];
+  projectSpaces[id] = {
+    name: cleanName,
+    accent,
+    icon: "i-folder",
+    summary: "Project",
+    root: root.trim() || "~/Projects/" + id,
+    files: [],
+    note: "",
+    resources: [],
+    activeMode: "default",
+    modes: {
+      default: { label: "Default", icon: "i-monitor", apps: [], layout: "canvas" }
+    }
+  };
+  persistProjectState();
+  renderOverviewProjects();
+  closeProjectEditor();
+  activateProject(id, false);
+  showArea("projects");
+  setUniversalSearchOpen(false);
+  queueDesktopStateBroadcast(0);
+  showToast(cleanName + " created");
+}
+
+function createModeFromEditor(label) {
+  const projectName = projectEditorState?.projectName;
+  const project = projectSpaces[projectName];
+  const cleanLabel = label.trim();
+  if (!project || !cleanLabel || activeProjectName !== projectName) return;
+  const previousMode = projectModeId(projectName);
+  const modeId = uniqueModeId(project, cleanLabel);
+  parkProjectWindows(projectName, false, previousMode);
+  const previousSession = projectSession(projectName, previousMode);
+  project.modes[modeId] = {
+    label: cleanLabel,
+    icon: "i-monitor",
+    apps: previousSession?.apps ? [...previousSession.apps] : [],
+    layout: "canvas"
+  };
+  if (previousSession) projectWindowSessions[projectSessionKey(projectName, modeId)] = cloneDesktopState(previousSession);
+  project.activeMode = modeId;
+  persistProjectState();
+  renderProjectSpace(projectName);
+  restoreProjectWindows(projectName, false, false);
+  closeProjectEditor();
+  queueDesktopStateBroadcast(0);
+  showToast(cleanLabel + " mode created from the current setup");
+}
+
+function deleteProjectMode(projectName, modeId) {
+  const project = projectSpaces[projectName];
+  if (!project?.modes[modeId] || Object.keys(project.modes).length <= 1) return;
+  const label = project.modes[modeId].label;
+  const deletingActive = project.activeMode === modeId;
+  if (deletingActive && activeProjectName === projectName) parkProjectWindows(projectName, false, modeId);
+  clearProjectSessions(projectName, modeId);
+  delete project.modes[modeId];
+  if (deletingActive) project.activeMode = Object.keys(project.modes)[0];
+  persistProjectState();
+  if (activeProjectName === projectName) {
+    renderProjectSpace(projectName);
+    if (deletingActive) restoreProjectWindows(projectName, false, true);
+  } else renderOverviewProjects();
+  queueDesktopStateBroadcast(0);
+  showToast(label + " mode deleted");
+}
+
+function deleteProject(projectName) {
+  const project = projectSpaces[projectName];
+  if (!project) return;
+  const label = project.name;
+  clearProjectSessions(projectName);
+  delete projectSpaces[projectName];
+  if (activeProjectName === projectName) {
+    activeProjectName = null;
+    setProjectClosedState(true);
+  }
+  persistProjectState();
+  renderOverviewProjects();
+  closeProjectEditor();
+  queueDesktopStateBroadcast(0);
+  showToast(label + " removed · folder and files kept");
+}
+
+function renderProjectEditor() {
+  const state = projectEditorState;
+  if (!state) return;
+  const body = $("#projectEditorBody");
+  const project = state.projectName ? projectSpaces[state.projectName] : null;
+  const title = $("#projectEditorTitle");
+  const kicker = $("#projectEditorKicker");
+  if (state.view === "create-project") {
+    kicker.textContent = "PROJECTS";
+    title.textContent = "Create project";
+    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder</span><input name="root" maxlength="160" autocomplete="off" placeholder="~/Projects/my-project"></label><p>The folder is linked, not moved. The new Project starts with one hidden Default mode.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
+  } else if (state.view === "create-mode" && project) {
+    kicker.textContent = project.name.toUpperCase();
+    title.textContent = "Create mode";
+    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="mode"><label><span>Mode name</span><input name="name" maxlength="32" required autocomplete="off" placeholder="Texturing"></label><p>The current open apps, window arrangement and monitor placement become the starting setup for this Mode.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="manage">Back</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create mode</span></button></footer></form>';
+  } else if (state.view === "delete-project" && project) {
+    kicker.textContent = "REMOVE PROJECT";
+    title.textContent = project.name;
+    body.innerHTML = '<section class="project-editor-confirm"><span class="project-editor-warning"><svg><use href="#i-trash"/></svg></span><div><b>Remove this Project from Spatial Desktop?</b><p>The associated folder and files stay untouched. Saved Modes and their window arrangements will be removed.</p></div><footer><button class="surface-key project-editor-secondary" data-project-editor-action="manage">Cancel</button><button class="surface-key project-editor-danger" data-project-editor-action="confirm-delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+  } else if (state.view === "delete-mode" && project?.modes[state.modeId]) {
+    const mode = project.modes[state.modeId];
+    kicker.textContent = project.name.toUpperCase();
+    title.textContent = "Delete " + mode.label;
+    body.innerHTML = '<section class="project-editor-confirm"><span class="project-editor-warning"><svg><use href="#i-trash"/></svg></span><div><b>Delete this Mode?</b><p>Its saved app set and window arrangement will be discarded. Project files, notes, resources and other Modes stay intact.</p></div><footer><button class="surface-key project-editor-secondary" data-project-editor-action="manage">Cancel</button><button class="surface-key project-editor-danger" data-project-editor-action="confirm-delete-mode"><svg><use href="#i-trash"/></svg><span>Delete mode</span></button></footer></section>';
+  } else if (project) {
+    state.view = "manage";
+    const modeEntries = Object.entries(project.modes);
+    kicker.textContent = "PROJECT SETTINGS";
+    title.textContent = project.name;
+    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Modes</b><small>Each Mode keeps its own app set and window layout.</small></div><button class="surface-key project-editor-primary compact" data-project-editor-action="new-mode"><svg><use href="#i-add"/></svg><span>New mode</span></button></header><div class="project-editor-mode-list">' + modeEntries.map(([modeId, mode]) => '<div class="project-editor-mode-row' + (project.activeMode === modeId ? ' is-active' : '') + '"><span class="project-editor-mode-icon"><svg><use href="#' + escapeHtml(mode.icon) + '"/></svg></span><span><b>' + escapeHtml(mode.label) + '</b><small>' + (project.activeMode === modeId ? 'Active now' : ((projectSession(state.projectName, modeId)?.apps?.length || mode.apps.length) + ' saved apps')) + '</small></span><button class="surface-key project-editor-delete-mode" data-project-editor-action="delete-mode" data-mode-id="' + escapeHtml(modeId) + '" aria-label="Delete ' + escapeHtml(mode.label) + ' mode" title="' + (modeEntries.length === 1 ? 'A Project must keep one Mode' : 'Delete mode') + '"' + (modeEntries.length === 1 ? ' disabled' : '') + '><svg><use href="#i-trash"/></svg></button></div>').join("") + '</div><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+  }
+  prepareMaterialSurfaces($("#projectEditorDialog"));
+  prepareControlSemantics($("#projectEditorDialog"));
+}
+
+function openProjectEditor(view, options = {}) {
+  const dialog = $("#projectEditorDialog");
+  projectEditorState = {
+    view,
+    projectName: options.projectName || activeProjectName || null,
+    modeId: options.modeId || null,
+    returnFocus: document.activeElement
+  };
+  renderProjectEditor();
+  dialog.hidden = false;
+  dialog.inert = false;
+  dialog.setAttribute("aria-hidden", "false");
+  document.body.classList.add("project-editor-open");
+  requestAnimationFrame(() => {
+    dialog.classList.add("is-open");
+    const preferred = $("input", dialog) || $("button", $("#projectEditorBody"));
+    preferred?.focus({ preventScroll: true });
+  });
+}
+
+function closeProjectEditor() {
+  const dialog = $("#projectEditorDialog");
+  if (!dialog || dialog.hidden) return;
+  const returnFocus = projectEditorState?.returnFocus;
+  dialog.classList.remove("is-open");
+  dialog.setAttribute("aria-hidden", "true");
+  dialog.inert = true;
+  document.body.classList.remove("project-editor-open");
+  projectEditorState = null;
+  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
+  returnFocus?.focus?.({ preventScroll: true });
+}
+
+function prepareProjectEditor() {
+  const dialog = $("#projectEditorDialog");
+  $("#createProjectButton").addEventListener("click", () => openProjectEditor("create-project"));
+  $("#manageProjectButton").addEventListener("click", event => {
+    event.stopPropagation();
+    if (activeProjectName) openProjectEditor("manage", { projectName: activeProjectName });
+  });
+  $("#closeProjectEditor").addEventListener("click", closeProjectEditor);
+  dialog.addEventListener("pointerdown", event => { if (event.target === dialog) closeProjectEditor(); });
+  dialog.addEventListener("submit", event => {
+    const form = event.target.closest("[data-project-editor-form]");
+    if (!form) return;
+    event.preventDefault();
+    const data = new FormData(form);
+    if (form.dataset.projectEditorForm === "project") createProjectFromEditor(String(data.get("name") || ""), String(data.get("root") || ""));
+    if (form.dataset.projectEditorForm === "mode") createModeFromEditor(String(data.get("name") || ""));
+  });
+  dialog.addEventListener("click", event => {
+    const action = event.target.closest("[data-project-editor-action]");
+    if (!action) return;
+    const projectName = projectEditorState?.projectName;
+    if (action.dataset.projectEditorAction === "close") closeProjectEditor();
+    if (action.dataset.projectEditorAction === "manage") {
+      projectEditorState.view = "manage";
+      projectEditorState.modeId = null;
+      renderProjectEditor();
+    }
+    if (action.dataset.projectEditorAction === "new-mode") {
+      projectEditorState.view = "create-mode";
+      renderProjectEditor();
+      requestAnimationFrame(() => $("input", dialog)?.focus());
+    }
+    if (action.dataset.projectEditorAction === "delete-mode") {
+      projectEditorState.view = "delete-mode";
+      projectEditorState.modeId = action.dataset.modeId;
+      renderProjectEditor();
+    }
+    if (action.dataset.projectEditorAction === "delete-project") {
+      projectEditorState.view = "delete-project";
+      renderProjectEditor();
+    }
+    if (action.dataset.projectEditorAction === "confirm-delete-mode") {
+      const modeId = projectEditorState.modeId;
+      deleteProjectMode(projectName, modeId);
+      projectEditorState = { view: "manage", projectName, modeId: null, returnFocus: $("#manageProjectButton") };
+      renderProjectEditor();
+    }
+    if (action.dataset.projectEditorAction === "confirm-delete-project") deleteProject(projectName);
+  });
+}
+
 function prepareProjectSpaces() {
   loadProjectState();
   $("#projectModeSwitcher").addEventListener("click", event => {
     const button = event.target.closest("[data-project-mode]");
     if (button) switchProjectMode(button.dataset.projectMode);
   });
-  $$("[data-overview-project]").forEach(button => button.addEventListener("click", () => {
+  $("#overviewProjectGrid").addEventListener("click", event => {
+    const button = event.target.closest("[data-overview-project]");
+    if (!button) return;
     activateProject(button.dataset.overviewProject);
     showArea("projects");
     setUniversalSearchOpen(false);
-  }));
+  });
   $(".project-area").addEventListener("click", event => {
     const item = event.target.closest("[data-project-item]");
     if (item) showToast("Opening " + item.dataset.projectItem);
@@ -2435,19 +2733,40 @@ function prepareProjectSpaces() {
   });
   $("#projectRailNote").addEventListener("click", () => {
     showArea("projects");
-    if (!activeProjectName) activateProject("plasma", false);
+    if (!activeProjectName) {
+      const firstProject = Object.keys(projectSpaces)[0];
+      if (firstProject) activateProject(firstProject, false);
+      else return openProjectEditor("create-project");
+    }
     requestAnimationFrame(() => $("#projectQuickNote").focus());
   });
   $("#projectRailResource").addEventListener("click", () => {
     showArea("projects");
-    if (!activeProjectName) activateProject("plasma", false);
+    if (!activeProjectName) {
+      const firstProject = Object.keys(projectSpaces)[0];
+      if (firstProject) activateProject(firstProject, false);
+      else return openProjectEditor("create-project");
+    }
     requestAnimationFrame(() => $("#projectResourceInput").focus());
   });
   $("#projectRailSession").addEventListener("click", () => {
-    if (!activeProjectName) activateProject("plasma");
+    if (!activeProjectName) {
+      const firstProject = Object.keys(projectSpaces)[0];
+      if (firstProject) activateProject(firstProject);
+      else openProjectEditor("create-project");
+    }
     else if (!restoreProjectWindows(activeProjectName)) showToast("No saved windows for this project");
   });
-  renderProjectSpace("plasma");
+  prepareProjectEditor();
+  renderOverviewProjects();
+  const initialProject = activeProjectName && projectSpaces[activeProjectName]
+    ? activeProjectName
+    : Object.keys(projectSpaces)[0] || null;
+  if (initialProject) renderProjectSpace(initialProject);
+  else {
+    activeProjectName = null;
+    setProjectClosedState(true);
+  }
 }
 
 const workspaceProfiles = {
@@ -2634,7 +2953,7 @@ function packageRows(kind) {
     ["i-folder", "Project folder", "Files under the project root", "274 MB", true],
     ["i-link", "Linked resources", "Portable copies or safe relative references", "2 links", true],
     ["i-note", "Notes and widgets", "Project notes and selected widget state", "84 KB", true],
-    ["i-grid", "Project modes", "App sets, window layouts and monitor placement", "3 modes", true],
+    ["i-grid", "Project modes", "App sets, window layouts and monitor placement", Object.keys(projectSpaces[activeProjectName]?.modes || {}).length + " modes", true],
     ["i-clipboard", "Project clipboard", "Off by default because it may be sensitive", "optional", false]
   ];
   return kind === "project" ? projectRows : workspaceRows;
@@ -3007,7 +3326,7 @@ function prepareMaterialCursor() {
     syncMode(document.elementFromPoint(lastX, lastY), 0);
   };
 
-  [desktop, $("#universalSearch"), $("#packageDialog")].filter(Boolean).forEach(surface => {
+  [desktop, $("#universalSearch"), $("#packageDialog"), $("#projectEditorDialog")].filter(Boolean).forEach(surface => {
     surface.addEventListener("pointerenter", event => {
       if (event.pointerType && event.pointerType !== "mouse") return;
       cursor.classList.add("is-visible");
@@ -3066,8 +3385,10 @@ function trapDialogFocus(root, event) {
 
 document.addEventListener("keydown", event => {
   const packageDialog = $("#packageDialog");
+  const projectEditorDialog = $("#projectEditorDialog");
   const universalSearch = $("#universalSearch");
   if (packageDialog.classList.contains("is-open") && trapDialogFocus(packageDialog, event)) return;
+  if (projectEditorDialog.classList.contains("is-open") && trapDialogFocus(projectEditorDialog, event)) return;
   if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
 
   const isSuper = event.key === "Meta" || event.key === "OS";
@@ -3081,6 +3402,13 @@ document.addEventListener("keydown", event => {
     event.preventDefault();
     event.stopPropagation();
     closePackageDialog();
+    return;
+  }
+
+  if (event.key === "Escape" && projectEditorDialog.classList.contains("is-open")) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeProjectEditor();
     return;
   }
 
@@ -3378,6 +3706,12 @@ function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
     return { kind: "project-mode", name: activeProjectName, modeId, title: projectSpaces[activeProjectName]?.modes[modeId]?.label || "Project mode" };
   }
 
+  const projectCard = target.closest("[data-overview-project]");
+  if (projectCard) {
+    const name = projectCard.dataset.overviewProject;
+    if (projectSpaces[name]) return { kind: "project", name, title: projectSpaces[name].name };
+  }
+
   const widget = target.closest(".system-widget");
   if (widget) {
     return {
@@ -3435,8 +3769,16 @@ function contextMenuEntries(context) {
     context.linked ? { action: "project-item-unlink", icon: "i-close", label: "Remove link", danger: true } : null
   ].filter(Boolean);
   if (context.kind === "project-mode") return [
-    { action: "project-mode-open", icon: "i-monitor", label: "Switch to this mode" }
-  ];
+    { action: "project-mode-open", icon: "i-monitor", label: "Switch to this mode" },
+    Object.keys(projectSpaces[context.name]?.modes || {}).length > 1 ? separator : null,
+    Object.keys(projectSpaces[context.name]?.modes || {}).length > 1 ? { action: "project-mode-delete", icon: "i-trash", label: "Delete mode", danger: true } : null
+  ].filter(Boolean);
+  if (context.kind === "project") return [
+    { action: "project-open", icon: "i-folder", label: "Open project" },
+    context.name === activeProjectName ? { action: "project-manage", icon: "i-settings", label: "Manage modes" } : null,
+    separator,
+    { action: "project-delete", icon: "i-trash", label: "Remove project", danger: true }
+  ].filter(Boolean);
   if (context.kind === "widget") {
     const entries = [{ action: "widget-open", icon: "i-right", label: "Open" }];
     if (context.element.id === "notificationWidget") entries.push({ action: "widget-clear", icon: "i-bell", label: "Clear notifications" });
@@ -3528,6 +3870,14 @@ function executeContextAction(action) {
     showToast(context.label + " unlinked from project");
   }
   if (action === "project-mode-open") switchProjectMode(context.modeId);
+  if (action === "project-mode-delete") openProjectEditor("delete-mode", { projectName: context.name, modeId: context.modeId });
+  if (action === "project-open") {
+    activateProject(context.name);
+    showArea("projects");
+    setUniversalSearchOpen(false);
+  }
+  if (action === "project-manage") openProjectEditor("manage", { projectName: context.name });
+  if (action === "project-delete") openProjectEditor("delete-project", { projectName: context.name });
   if (action === "widget-open") showToast(context.title + " opened");
   if (action === "widget-clear") {
     $$(".notification", context.element).forEach(item => item.remove());
@@ -3839,14 +4189,10 @@ function captureDesktopSyncState() {
   const windowLayouts = readDesktopStorage("spatial-workspace-window-layouts-v1");
   windowLayouts[activeWorkspace] = Object.fromEntries(windowGeometry);
 
-  const projects = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
-    note: project.note,
-    resources: cloneDesktopState(project.resources),
-    activeMode: projectModeId(name)
-  }]));
+  const projects = cloneDesktopState(projectSpaces);
 
   return {
-    schema: 2,
+    schema: 3,
     theme: document.body.dataset.theme,
     activeWorkspace,
     workspaceStates,
@@ -3879,6 +4225,8 @@ function persistIncomingDesktopState(state) {
     localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
     localStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(state.areaSessions));
     localStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
+    localStorage.setItem("spatial-project-spaces-v2", JSON.stringify(state.projects || {}));
+    localStorage.setItem("spatial-active-project-v1", state.activeProjectName || "");
     localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
     localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
     localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
@@ -3887,7 +4235,7 @@ function persistIncomingDesktopState(state) {
 }
 
 function applyDesktopSyncState(state) {
-  if (!state || ![1, 2].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
+  if (!state || ![1, 2, 3].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {
     Object.entries(state.workspaceStates || {}).forEach(([name, saved]) => {
@@ -3904,12 +4252,18 @@ function applyDesktopSyncState(state) {
     });
     Object.keys(projectWindowSessions).forEach(name => delete projectWindowSessions[name]);
     Object.assign(projectWindowSessions, cloneDesktopState(state.projectWindowSessions || {}));
-    Object.entries(state.projects || {}).forEach(([name, saved]) => {
-      if (!projectSpaces[name] || !saved) return;
-      if (typeof saved.note === "string") projectSpaces[name].note = saved.note;
-      if (Array.isArray(saved.resources)) projectSpaces[name].resources = cloneDesktopState(saved.resources);
-      if (typeof saved.activeMode === "string" && projectSpaces[name].modes[saved.activeMode]) projectSpaces[name].activeMode = saved.activeMode;
-    });
+    if (state.schema >= 3) {
+      const normalized = Object.fromEntries(Object.entries(state.projects || {}).map(([name, project]) => [name, normalizeProject(project)]).filter(([, project]) => project));
+      Object.keys(projectSpaces).forEach(name => delete projectSpaces[name]);
+      Object.assign(projectSpaces, normalized);
+    } else {
+      Object.entries(state.projects || {}).forEach(([name, saved]) => {
+        if (!projectSpaces[name] || !saved) return;
+        if (typeof saved.note === "string") projectSpaces[name].note = saved.note;
+        if (Array.isArray(saved.resources)) projectSpaces[name].resources = cloneDesktopState(saved.resources);
+        if (typeof saved.activeMode === "string" && projectSpaces[name].modes[saved.activeMode]) projectSpaces[name].activeMode = saved.activeMode;
+      });
+    }
 
     noteDraft = typeof state.noteDraft === "string" ? state.noteDraft : noteDraft;
     document.body.dataset.theme = state.theme || document.body.dataset.theme;
@@ -3921,6 +4275,7 @@ function applyDesktopSyncState(state) {
     activeProjectName = state.activeProjectName && projectSpaces[state.activeProjectName]
       ? state.activeProjectName
       : null;
+    renderOverviewProjects();
     if (activeProjectName) renderProjectSpace(activeProjectName);
     else setProjectClosedState(true);
 

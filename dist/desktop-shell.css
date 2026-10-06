@@ -4694,6 +4694,77 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
   }
 }
 
+/* v132 — Projects and Modes are managed in a compact acrylic utility sheet.
+   The Mode strip is structural navigation, so a lone Mode stays implicit. */
+.overview-project-heading-actions{display:flex;align-items:center;gap:9px}
+.overview-project-heading-actions>span{color:var(--overview-muted,var(--muted));font-size:12px;font-weight:650}
+.overview-new-project{min-height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:2px!important}
+.overview-new-project svg{width:14px;height:14px;color:var(--area-header-accent,var(--blue))}
+.overview-project-empty{min-height:72px;padding:12px;border:1px solid var(--sd-glass-groove);display:flex;align-items:center;gap:11px;color:var(--sd-glass-muted)}
+.overview-project-empty>svg{width:24px;height:24px;color:var(--violet)}
+.overview-project-empty b,.overview-project-empty small{display:block}
+.overview-project-empty b{color:var(--sd-glass-text);font-size:14px}
+.overview-project-empty small{margin-top:3px;font-size:12px}
+
+.project-editor-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9900;
+  padding:20px;
+  display:grid;
+  place-items:center;
+  background:rgba(1,5,9,.46);
+  -webkit-backdrop-filter:blur(18px) saturate(1.08);
+  backdrop-filter:blur(18px) saturate(1.08);
+  opacity:0;
+  visibility:hidden;
+  transition:opacity 90ms linear,visibility 0s linear 90ms;
+}
+.project-editor-overlay[hidden]{display:none}
+.project-editor-overlay.is-open{opacity:1;visibility:visible;transition-delay:0s}
+.project-editor-window{
+  --area-header-accent:#a88aff;
+  width:min(540px,100%);
+  max-height:min(700px,calc(100vh - 40px));
+  overflow:hidden;
+  border:1px solid var(--sd-glass-edge);
+  border-radius:0;
+  color:var(--sd-glass-text);
+  background:color-mix(in srgb,var(--sd-glass-face) 92%,#a88aff 8%);
+  box-shadow:0 24px 72px rgba(0,0,0,.42),inset 0 1px var(--sd-glass-highlight),inset 1px 0 var(--sd-glass-edge-soft);
+  -webkit-backdrop-filter:blur(25px) saturate(1.1);
+  backdrop-filter:blur(25px) saturate(1.1);
+}
+.project-editor-titlebar{height:58px;padding:8px 9px 8px 12px;border-bottom:1px solid color-mix(in srgb,#a88aff 20%,var(--sd-glass-groove));display:flex;align-items:center;justify-content:space-between;gap:12px;background:color-mix(in srgb,#a88aff 8%,transparent)}
+.project-editor-titlebar>div{min-width:0;display:flex;align-items:center;gap:10px}.project-editor-titlebar>div>span:last-child{min-width:0}
+.project-editor-titlebar small,.project-editor-titlebar h2{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-editor-titlebar small{color:color-mix(in srgb,#a88aff 72%,var(--sd-glass-muted));font-size:10px;font-weight:800;letter-spacing:.1em}
+.project-editor-titlebar h2{margin:2px 0 0;font-size:17px}
+.project-editor-mark{width:34px;height:34px;border:1px solid color-mix(in srgb,#a88aff 24%,var(--sd-glass-groove));display:grid;place-items:center;color:#bca8ff;background:color-mix(in srgb,#a88aff 7%,transparent)}
+.project-editor-mark svg{width:18px;height:18px}.project-editor-close{width:32px;height:30px;padding:0;display:grid;place-items:center}.project-editor-close svg{width:14px;height:14px}
+.project-editor-body{max-height:calc(min(700px,100vh - 40px) - 58px);overflow:auto;padding:12px;scrollbar-width:thin}
+.project-editor-form{display:grid;gap:11px}.project-editor-form label{display:grid;gap:5px}.project-editor-form label>span{font-size:12px;font-weight:750}.project-editor-form input{height:41px;padding:0 10px;color:var(--sd-glass-text)}
+.project-editor-form>p,.project-editor-confirm p{margin:0;color:var(--sd-glass-muted);font-size:12px;line-height:1.5}
+.project-editor-form footer,.project-editor-confirm footer{padding-top:8px;border-top:1px solid var(--sd-glass-groove);display:flex;justify-content:flex-end;gap:7px}
+.project-editor-primary,.project-editor-secondary,.project-editor-danger{min-height:36px;padding:0 11px;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:2px!important;font-size:12px;font-weight:750}
+.project-editor-primary svg,.project-editor-danger svg{width:15px;height:15px}.project-editor-primary{--state-tone:#a88aff;color:var(--sd-glass-text)}.project-editor-primary.compact{min-height:32px}
+.project-editor-danger{--state-tone:#ff6f67;color:#ffaaa4}.project-editor-danger.quiet{min-height:32px}
+.project-editor-manage{display:grid;gap:10px}.project-editor-manage>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.project-editor-manage>header b,.project-editor-manage>header small{display:block}.project-editor-manage>header b{font-size:14px}.project-editor-manage>header small{margin-top:3px;color:var(--sd-glass-muted);font-size:11px}
+.project-editor-mode-list{border-top:1px solid var(--sd-glass-groove)}
+.project-editor-mode-row{min-height:54px;padding:6px 2px 6px 7px;border-bottom:1px solid var(--sd-glass-groove);display:grid;grid-template-columns:32px minmax(0,1fr) 32px;align-items:center;gap:8px}
+.project-editor-mode-row.is-active{background:color-mix(in srgb,#a88aff 6%,transparent);box-shadow:inset 2px 0 color-mix(in srgb,#a88aff 86%,white 14%)}
+.project-editor-mode-icon{width:28px;height:28px;display:grid;place-items:center;color:#bca8ff}.project-editor-mode-icon svg{width:17px;height:17px}
+.project-editor-mode-row b,.project-editor-mode-row small{display:block}.project-editor-mode-row b{font-size:13px}.project-editor-mode-row small{margin-top:3px;color:var(--sd-glass-muted);font-size:11px}
+.project-editor-delete-mode{width:30px;height:30px;padding:0;display:grid;place-items:center;color:#ff928a}.project-editor-delete-mode svg{width:14px;height:14px}.project-editor-delete-mode:disabled{opacity:.25}
+.project-editor-manage>footer{display:flex;align-items:center;justify-content:space-between;gap:10px}.project-editor-manage>footer>span{color:var(--sd-glass-muted);font-size:11px}
+.project-editor-confirm{display:grid;grid-template-columns:42px minmax(0,1fr);gap:11px}.project-editor-confirm>div>b{display:block;margin:3px 0 6px;font-size:14px}.project-editor-confirm footer{grid-column:1/-1}
+.project-editor-warning{width:40px;height:40px;border:1px solid color-mix(in srgb,#ff6f67 28%,var(--sd-glass-groove));display:grid;place-items:center;color:#ff8178;background:color-mix(in srgb,#ff6f67 8%,transparent)}.project-editor-warning svg{width:19px;height:19px}
+body[data-theme="light"] .project-editor-overlay{background:rgba(36,53,64,.30)}
+body[data-theme="light"] .project-editor-window{background:color-mix(in srgb,rgba(235,242,245,.92) 93%,#a88aff 7%)}
+body.project-editor-open{overflow:hidden}
+@media(pointer:fine){.project-editor-overlay,.project-editor-overlay *{cursor:none!important}}
+@media(max-width:620px){.project-editor-overlay{padding:8px}.project-editor-manage>header{align-items:flex-start;flex-direction:column}.project-editor-manage>footer{align-items:flex-start;flex-direction:column}.overview-project-heading-actions>span{display:none}}
+
 /* v85 — calm material hierarchy.
    Windows are primarily ABS; glass is reserved for the surrounding Areas and
    a few display-like inserts. Content rows are content, not imitation keys. */
