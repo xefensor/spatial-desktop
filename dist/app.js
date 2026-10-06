@@ -219,34 +219,58 @@ $$('[data-phone-view]').forEach(button => {
 });
 $$('[data-phone-action]').forEach(button => button.addEventListener('click', () => showToast(button.dataset.phoneAction)));
 
-function localLight(event) {
-  const rect = phone.getBoundingClientRect();
-  const point = event.touches ? event.touches[0] : event;
-  const light = $('#screenLight');
-  light.style.left = (point.clientX - rect.left) + 'px';
-  light.style.top = (point.clientY - rect.top) + 'px';
-  light.classList.add('is-on');
-}
-phone.addEventListener('pointerdown', localLight);
-phone.addEventListener('pointermove', event => {
-  if (event.buttons) localLight(event);
-});
-window.addEventListener('pointerup', () => $('#screenLight').classList.remove('is-on'));
 const musicPhone = $('.music-phone');
 const musicTouchLight = $('.music-touch-light');
-musicPhone.addEventListener('pointerdown', event => {
-  const rect = musicPhone.getBoundingClientRect();
-  musicTouchLight.style.left = (event.clientX - rect.left) + 'px';
-  musicTouchLight.style.top = (event.clientY - rect.top) + 'px';
-  musicTouchLight.classList.add('is-on');
-});
-musicPhone.addEventListener('pointermove', event => {
-  if (!event.buttons) return;
-  const rect = musicPhone.getBoundingClientRect();
-  musicTouchLight.style.left = (event.clientX - rect.left) + 'px';
-  musicTouchLight.style.top = (event.clientY - rect.top) + 'px';
-});
-window.addEventListener('pointerup', () => musicTouchLight.classList.remove('is-on'));
+
+function attachCapacitiveSurface(surface, light) {
+  surface.insertAdjacentHTML('beforeend',
+    '<div class="capacitive-field" aria-hidden="true">' +
+      '<div class="electrode-grid"></div><div class="active-electrodes"></div>' +
+      '<div class="field-cross"></div>' +
+      '<div class="cap-readout"><b>ΔC</b><span>+0,00</span><i>kontakt</i></div>' +
+    '</div>'
+  );
+  const field = $('.capacitive-field', surface);
+  const reading = $('.cap-readout span', field);
+  let releaseTimer;
+
+  function sense(event) {
+    const rect = surface.getBoundingClientRect();
+    const x = Math.max(8, Math.min(rect.width - 8, event.clientX - rect.left));
+    const y = Math.max(8, Math.min(rect.height - 8, event.clientY - rect.top));
+    const capacitance = (0.72 + ((x * 0.0031 + y * 0.0017) % 0.22)).toFixed(2).replace('.', ',');
+    surface.style.setProperty('--touch-x', x + 'px');
+    surface.style.setProperty('--touch-y', y + 'px');
+    reading.textContent = '+' + capacitance;
+    field.classList.add('is-sensing');
+    light.style.left = x + 'px';
+    light.style.top = y + 'px';
+    light.classList.add('is-on');
+    setMaterialState('press', 'ΔC +' + capacitance);
+    clearTimeout(releaseTimer);
+  }
+
+  function release() {
+    releaseTimer = setTimeout(() => {
+      field.classList.remove('is-sensing');
+      light.classList.remove('is-on');
+      setMaterialState();
+    }, 260);
+  }
+
+  surface.addEventListener('pointerdown', sense);
+  surface.addEventListener('pointermove', event => {
+    if (event.buttons || event.pointerType === 'touch') sense(event);
+  });
+  surface.addEventListener('pointerup', release);
+  surface.addEventListener('pointercancel', release);
+  surface.addEventListener('pointerleave', event => {
+    if (event.buttons) release();
+  });
+}
+
+attachCapacitiveSurface(phone, $('#screenLight'));
+attachCapacitiveSurface(musicPhone, musicTouchLight);
 window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && keyboard.classList.contains('is-open')) {
     setKeyboard(false);
