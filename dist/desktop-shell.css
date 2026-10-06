@@ -6248,3 +6248,39 @@ body[data-theme="light"].areas-docked .area-window{
 .material-cursor :is(.cursor-outline,.cursor-edge){stroke:transparent!important;filter:none!important}
 .material-cursor .cursor-glass{fill:transparent!important}
 .material-cursor .cursor-badge{fill:transparent!important;stroke:transparent!important;filter:none!important}
+
+/* v117 — The inverse band needs a visible boundary: the original-colour band
+   naturally merges into the page outside it. A stacked dark outer keyline and
+   bright inner hairline makes the line opposite the interior win perceptually:
+   black interior exposes white; white interior exposes black. */
+.material-cursor .cursor-outline{
+  fill:none!important;
+  stroke:rgba(4,9,13,.96)!important;
+  stroke-width:3.75!important;
+  stroke-linejoin:round!important;
+  mix-blend-mode:normal!important;
+  filter:none!important;
+}
+.material-cursor .cursor-edge{
+  fill:transparent!important;
+  stroke:rgba(242,251,255,.98)!important;
+  stroke-width:1.05!important;
+  stroke-linejoin:round!important;
+  paint-order:stroke!important;
+  mix-blend-mode:normal!important;
+  filter:none!important;
+}
+.material-cursor .cursor-badge{
+  fill:transparent!important;
+  stroke:rgba(242,251,255,.96)!important;
+  stroke-width:1.05!important;
+  mix-blend-mode:normal!important;
+}
+.material-cursor .cursor-line{
+  stroke:rgba(242,251,255,.98)!important;
+  stroke-width:2.45!important;
+  mix-blend-mode:normal!important;
+  filter:
+    drop-shadow(0 0 .7px rgba(4,9,13,.98))
+    drop-shadow(0 1px .55px rgba(4,9,13,.78))!important;
+}
