@@ -306,3 +306,8 @@ body[data-theme="light"] .universal-search .overview-home .overview-open-windows
   overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
 }
 .area-window .mini-actions { flex-shrink: 0; }
+/* App artwork is the identity, not a second control inside the header. */
+:is(.app-frame,.area-window,.universal-search) .app-badge {
+  border: 0 !important; background: transparent !important;
+  box-shadow: none !important;
+}
