@@ -193,6 +193,7 @@ const appInfo = {
 };
 
 const appState = { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" };
+const appMaximizedState = { dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
 const maximizeRestore = new Map();
 let frontApp = "dolphin";
@@ -452,6 +453,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (!preserveGeometry && !frame.dataset.maximized) windowGeometry.set(name, readGeometry(frame));
   frame.classList.remove("is-maximized");
   delete frame.dataset.maximized;
+  appMaximizedState[name] = false;
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   syncMaximizeButton(frame);
   appState[name] = "minimized";
@@ -465,7 +467,12 @@ function minimizeApp(name, preserveGeometry = false) {
 
 function closeApp(name) {
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
+  const frame = frameFor(name);
+  frame?.classList.remove("is-maximized");
+  if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
+  appMaximizedState[name] = false;
+  if (frame) syncMaximizeButton(frame);
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
   if (layoutMode === "auto") {
@@ -482,9 +489,11 @@ function syncMaximizeButton(frame) {
 
 function toggleMaximize(name) {
   const frame = frameFor(name);
+  if (!frame || !isLocalApp(name)) return;
   if (frame.dataset.maximized === "true") {
     delete frame.dataset.maximized;
     frame.classList.remove("is-maximized");
+    appMaximizedState[name] = false;
     clearWindowAutoAvoidance(name);
     applyGeometry(name, maximizeRestore.get(name) || windowGeometry.get(name) || readGeometry(frame));
     syncMaximizeButton(frame);
@@ -503,6 +512,7 @@ function toggleMaximize(name) {
   setWindowAutoAvoidance(name, maximizeEdges, frame);
   const workspace = workspaceBounds();
   frame.dataset.maximized = "true";
+  appMaximizedState[name] = true;
   frame.classList.add("is-maximized");
   if (layoutMode === "auto" && currentDisplayProfile === "dual") {
     const shellRect = $(".desktop-shell").getBoundingClientRect();
@@ -3211,7 +3221,7 @@ function contextMenuEntries(context) {
     return [
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
-      state === "open" ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore window" : "Maximize" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore window" : "Maximize" } : null,
       extendedDesktopActive() ? { action: "app-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
       state !== "closed" ? separator : null,
       state !== "closed" ? { action: "app-close", icon: "i-close", label: "Close", danger: true } : null
@@ -3509,6 +3519,10 @@ function applyExtendedDesktopPartition() {
   const count = activeDisplayRoster().length;
   const slot = localDisplaySlot();
   document.body.dataset.physicalDisplay = String(slot);
+  Object.keys(appInfo).forEach(name => {
+    if (count > 1 && !isLocalApp(name)) autoWindowAvoidance.delete(name);
+  });
+  if (autoAvoidanceSource && !isLocalApp(autoAvoidanceSource.dataset.appFrame)) autoAvoidanceSource = null;
   areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", count > 1 && !isLocalArea(name)));
   syncApps();
   layoutDockAreas(false);
@@ -3640,10 +3654,7 @@ function captureDesktopSyncState() {
     windowLayouts,
     displayAssignments: cloneDesktopState(workspaceDisplayAssignments),
     frontApp,
-    maximized: Object.fromEntries($$("[data-app-frame]").map(frame => [
-      frame.dataset.appFrame,
-      frame.dataset.maximized === "true"
-    ])),
+    maximized: { ...appMaximizedState },
     activeProjectName,
     projects,
     projectWindowSessions: cloneDesktopState(projectWindowSessions),
@@ -3688,6 +3699,9 @@ function applyDesktopSyncState(state) {
       Object.keys(workspaceDisplayAssignments).forEach(name => delete workspaceDisplayAssignments[name]);
       Object.assign(workspaceDisplayAssignments, cloneDesktopState(state.displayAssignments));
     }
+    Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
+      if (name in appMaximizedState) appMaximizedState[name] = Boolean(maximized);
+    });
     Object.keys(projectWindowSessions).forEach(name => delete projectWindowSessions[name]);
     Object.assign(projectWindowSessions, cloneDesktopState(state.projectWindowSessions || {}));
     Object.entries(state.projects || {}).forEach(([name, saved]) => {
@@ -3741,7 +3755,10 @@ function applyDesktopSyncState(state) {
       applyExtendedDesktopPartition();
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
         const frame = frameFor(name);
-        if (!frame || appState[name] !== "open") return;
+        if (!frame || appState[name] !== "open" || !isLocalApp(name)) {
+          autoWindowAvoidance.delete(name);
+          return;
+        }
         if (Boolean(maximized) !== (frame.dataset.maximized === "true")) toggleMaximize(name);
       });
       if (state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
