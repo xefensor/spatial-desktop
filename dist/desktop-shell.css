@@ -536,12 +536,12 @@ body[data-theme="light"]{
 .desktop-shell{
   background:
     linear-gradient(135deg,rgba(3,6,8,.20),rgba(9,5,6,.38)),
-    url("./wallpaper.png") center center/cover no-repeat;
+    url("./wallpaper-river-v34.jpg") center center/cover no-repeat;
 }
 body[data-theme="light"] .desktop-shell{
   background:
     linear-gradient(135deg,rgba(244,246,243,.10),rgba(43,31,29,.16)),
-    url("./wallpaper.png") center center/cover no-repeat;
+    url("./wallpaper-river-v34.jpg") center center/cover no-repeat;
 }
 .desktop-shell::before{content:none}
 
