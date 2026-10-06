@@ -121,3 +121,20 @@ assert.deepEqual(JSON.parse(deleted.storage.get('spatial-project-spaces-v2')), {
 const legacyContent = storageAdapter({ 'spatial-project-content-v1': JSON.stringify({ plasma: { note: oldWebsite.note, resources: oldWebsite.resources } }) });
 assert.equal(JSON.parse(legacyContent.storage.get('spatial-project-spaces-v2')).plasma.note, D.projects.plasma.note);
 console.log('Desktop storage adapter passed: active project, window sessions, deleted projects, legacy content and empty notes preserved.');
+
+// A sample filename rename must never rewrite a stylesheet or script URL.
+const dist = path.join(__dirname, '../dist');
+for (const htmlName of fs.readdirSync(dist).filter(name => name.endsWith('.html'))) {
+  const html = fs.readFileSync(path.join(dist, htmlName), 'utf8');
+  for (const tag of html.match(/<(?:link|script)\b[^>]*>/g) || []) {
+    const stylesheet = /\brel="stylesheet"/.test(tag);
+    const script = tag.startsWith('<script');
+    if (!stylesheet && !script) continue;
+    const resource = tag.match(/\b(?:href|src)="([^"]+)"/)?.[1];
+    if (!resource || /^(?:https?:|data:)/.test(resource)) continue;
+    const file = resource.split(/[?#]/)[0];
+    assert.equal(path.extname(file), stylesheet ? '.css' : '.js', htmlName + ': incorrect resource type ' + resource);
+    assert.ok(fs.existsSync(path.join(dist, file)), htmlName + ': missing ' + resource);
+  }
+}
+console.log('Website asset checks passed: local stylesheet and script types and paths.');
