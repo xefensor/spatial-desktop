@@ -53,11 +53,8 @@ const glassMaterialSurfaceSelector = [
   ".project-module",
   ".package-panel",
   ".import-map",
-  ".app-frame .app-toolbar",
-  ".app-frame .browser-toolbar",
-  ".app-frame .music-controls",
-  ".app-frame .folder-tabs",
-  ".app-frame .notes-layout nav"
+  ".app-frame .recessed-field",
+  ".app-frame input[type=range]"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
@@ -108,9 +105,9 @@ function prepareMaterialSurfaces(root = document) {
     surface.classList.add("material-surface-abs");
     surface.classList.remove("material-surface-glass");
   });
-  /* Nested glass strips are intentionally evaluated last: an ABS window may
-     contain a glass toolbar and everything inside follows that nearer surface. */
-  matchingNodes(root, ".app-frame .app-toolbar,.app-frame .browser-toolbar,.app-frame .music-controls,.app-frame .folder-tabs,.app-frame .notes-layout nav").forEach(surface => {
+  /* App windows are primarily ABS. Only small display-like inserts are glass,
+     so a whole toolbar never changes material just because it contains one. */
+  matchingNodes(root, ".app-frame .recessed-field,.app-frame input[type=range]").forEach(surface => {
     surface.classList.add("material-surface-glass");
     surface.classList.remove("material-surface-abs");
   });

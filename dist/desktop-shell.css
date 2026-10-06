@@ -4693,3 +4693,149 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
     -webkit-backdrop-filter:none;
   }
 }
+
+/* v85 — calm material hierarchy.
+   Windows are primarily ABS; glass is reserved for the surrounding Areas and
+   a few display-like inserts. Content rows are content, not imitation keys. */
+:root{
+  --area-soft-edge:rgba(222,244,255,.075);
+  --area-soft-shadow:rgba(0,0,0,.20);
+  --area-section-wash:rgba(255,255,255,.022);
+}
+body[data-theme="light"]{
+  --area-soft-edge:rgba(42,68,82,.11);
+  --area-soft-shadow:rgba(30,54,67,.15);
+  --area-section-wash:rgba(255,255,255,.18);
+}
+
+/* The acrylic Areas now dissolve into the wallpaper instead of looking like
+   thick edge-lit containers. Their outline is only enough to locate them. */
+body.areas-docked .area-window,
+.area-window,
+.desktop-shell>.apps-zone,
+.desktop-shell>.systems-zone{
+  border:1px solid var(--area-soft-edge);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent 72px),
+    color-mix(in srgb,var(--acrylic-field) 88%,transparent);
+  box-shadow:0 12px 34px var(--area-soft-shadow),inset 0 1px rgba(255,255,255,.055);
+}
+body[data-theme="light"] .area-window{
+  box-shadow:0 12px 32px var(--area-soft-shadow),inset 0 1px rgba(255,255,255,.38);
+}
+.area-window::before{display:none!important}
+.area-window.is-area-dragging,.area-window.is-area-resizing,
+body.areas-docked .area-window.is-area-resizing{
+  box-shadow:0 16px 40px rgba(0,0,0,.28),0 0 0 1px color-mix(in srgb,var(--area-header-accent,var(--blue)) 14%,transparent);
+}
+.area-window-bar{
+  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent,var(--blue)) 16%,transparent);
+  background:color-mix(in srgb,var(--area-header-accent,var(--blue)) 7%,transparent);
+  box-shadow:none;
+}
+
+/* Use spacing and a restrained tint for grouping inside glass Areas. This
+   removes the nested-card / nested-edge effect and restores breathing room. */
+.area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
+.universal-search .material-surface-glass:is(.overview-widget,.workspace-home-card,.overview-app-library){
+  border:0;
+  background:var(--area-section-wash);
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.apps-zone .mini-section{margin-top:14px}
+.systems-zone{gap:12px}
+.project-space-content{gap:10px}
+.static-widget-stack,.dynamic-widget-stack{gap:10px}
+
+/* Ordinary rows, dates, result cards and list entries are not physical keys.
+   They keep a quiet hover wash, while only declared controls receive depth. */
+.material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle){
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+  filter:none;
+}
+.material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle):hover{
+  border-color:transparent;
+  background:color-mix(in srgb,var(--glass-key-tone,var(--area-header-accent,var(--blue))) 7%,transparent);
+  box-shadow:none;
+}
+.material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle):active{
+  transform:none;
+  background:color-mix(in srgb,var(--glass-key-tone,var(--area-header-accent,var(--blue))) 11%,transparent);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.12);
+}
+.material-surface-abs button.material-abs-button:not(.control-push):not(.control-toggle):hover{
+  border-color:transparent;
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 7%,transparent);
+  box-shadow:none;
+}
+.material-surface-abs button.material-abs-button:not(.control-push):not(.control-toggle):active{
+  transform:none;
+  border-color:transparent;
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 11%,transparent);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.15);
+}
+
+/* Icon wells are labels first. On glass they use colour without another rim;
+   on ABS they are shallow moulded pieces rather than glass bubbles. */
+.material-glass-element{
+  border-color:transparent;
+  background:color-mix(in srgb,currentColor 8%,transparent);
+  box-shadow:none;
+}
+.material-abs-element{
+  border-color:color-mix(in srgb,var(--control-edge) 72%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,currentColor 5%,var(--control-top)),color-mix(in srgb,currentColor 3%,var(--control-bottom)));
+  box-shadow:inset 0 1px rgba(255,255,255,.045);
+}
+
+/* ABS app windows are a coherent opaque object. Toolbars, tab decks, player
+   controls and navigation are all the same plastic as the casing. */
+.app-frame.material-surface-abs{
+  border-color:var(--control-edge);
+  background:linear-gradient(180deg,var(--control-top),var(--control-bottom));
+  box-shadow:0 14px 38px rgba(0,0,0,.35),inset 0 1px var(--control-highlight);
+}
+.app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav){
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 9%,var(--control-edge));
+  background:color-mix(in srgb,var(--control-top) 92%,var(--app-primary,var(--blue)) 8%);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs){
+  box-shadow:inset 0 1px rgba(255,255,255,.04),inset 0 -1px rgba(0,0,0,.24);
+}
+.app-frame.material-surface-abs .notes-layout nav{
+  box-shadow:inset -1px 0 rgba(0,0,0,.24),inset 1px 0 rgba(255,255,255,.025);
+}
+
+/* The little bit of glass left inside apps is purposeful: address/search
+   displays and slider tracks. They read like inserted displays, not panels. */
+.app-frame .recessed-field.material-surface-glass{
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 15%,rgba(210,239,252,.15));
+  background:linear-gradient(180deg,rgba(0,0,0,.14),rgba(255,255,255,.02)),color-mix(in srgb,var(--glass-field-deep) 76%,transparent);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(8px) saturate(1.04);
+  -webkit-backdrop-filter:blur(8px) saturate(1.04);
+}
+body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
+  background:linear-gradient(180deg,rgba(66,93,107,.10),rgba(255,255,255,.25)),rgba(225,240,247,.58);
+}
+.app-frame input[type="range"].material-surface-glass.material-glass-field{
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.app-frame input[type="range"].material-surface-glass.material-glass-field::-webkit-slider-runnable-track{
+  border:0;
+  background:color-mix(in srgb,var(--glass-field-deep) 72%,transparent);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.035);
+}
+.app-frame input[type="range"].material-surface-glass.material-glass-field::-moz-range-track{
+  border:0;
+  background:color-mix(in srgb,var(--glass-field-deep) 72%,transparent);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.34);
+}
