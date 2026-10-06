@@ -5031,7 +5031,6 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
     corner-shape:square!important;
   }
 }
-
 /* v98 — the filled part of a range uses the same luminous state line as an
    active toggle. The unfilled part remains a recessed glass groove. */
 .material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track,
@@ -5560,5 +5559,355 @@ body[data-theme="light"] .all-apps-drawer.material-surface-glass .launcher-categ
     .all-apps-drawer.material-surface-glass input
   ){
     corner-shape:square!important;
+  }
+}
+/* v108 — edge-lit acrylic desktop pass.
+   Areas and transient desktop chrome are one continuous optical sheet. The
+   sheet has neutral cut-edge reflections; application colour appears only at
+   an engraved state mark, a filled slider segment, or a local interaction
+   point. Internal groups are engraved into the parent plane instead of being
+   stacked as independent glass cards. */
+:root{
+  --sd-glass-face:rgba(7,15,20,.68);
+  --sd-glass-face-deep:rgba(3,10,14,.34);
+  --sd-glass-edge:rgba(218,242,252,.24);
+  --sd-glass-edge-soft:rgba(218,242,252,.095);
+  --sd-glass-highlight:rgba(247,253,255,.15);
+  --sd-glass-groove:rgba(198,228,241,.14);
+  --sd-glass-groove-low:rgba(1,8,12,.46);
+  --sd-glass-hover:rgba(201,238,252,.055);
+  --sd-glass-down:rgba(1,8,12,.16);
+  --sd-glass-text:rgba(244,249,251,.96);
+  --sd-glass-muted:rgba(218,232,238,.70);
+}
+body[data-theme="light"]{
+  --sd-glass-face:rgba(226,238,243,.72);
+  --sd-glass-face-deep:rgba(185,207,217,.23);
+  --sd-glass-edge:rgba(255,255,255,.76);
+  --sd-glass-edge-soft:rgba(255,255,255,.37);
+  --sd-glass-highlight:rgba(255,255,255,.76);
+  --sd-glass-groove:rgba(46,77,92,.19);
+  --sd-glass-groove-low:rgba(38,66,79,.22);
+  --sd-glass-hover:rgba(255,255,255,.24);
+  --sd-glass-down:rgba(64,93,107,.11);
+  --sd-glass-text:rgba(20,31,37,.96);
+  --sd-glass-muted:rgba(38,57,66,.70);
+}
+
+/* One sheet: three parallel neutral reflections describe the cut acrylic
+   edge. There is deliberately no coloured perimeter or dotted texture. */
+:is(.area-window,.universal-search,.desktop-context-menu.material-surface-glass,.all-apps-drawer.material-surface-glass,.toast.material-surface-glass){
+  border:1px solid var(--sd-glass-edge)!important;
+  border-radius:0!important;
+  background:
+    linear-gradient(128deg,rgba(255,255,255,.075),transparent 19% 76%,rgba(255,255,255,.025)),
+    var(--sd-glass-face)!important;
+  color:var(--sd-glass-text);
+  box-shadow:
+    0 16px 36px rgba(0,0,0,.25),
+    inset 0 1px var(--sd-glass-highlight),
+    inset 1px 0 var(--sd-glass-edge-soft),
+    inset 0 -1px var(--sd-glass-groove-low),
+    inset -1px 0 rgba(0,0,0,.15)!important;
+  -webkit-backdrop-filter:blur(23px) saturate(1.08)!important;
+  backdrop-filter:blur(23px) saturate(1.08)!important;
+}
+body.areas-docked .area-window{
+  box-shadow:
+    inset 0 1px var(--sd-glass-highlight),
+    inset 1px 0 var(--sd-glass-edge-soft),
+    inset 0 -1px var(--sd-glass-groove-low),
+    inset -1px 0 rgba(0,0,0,.15)!important;
+}
+.area-window::before,
+.universal-search::before{display:none!important}
+
+/* The header is a tint within the same sheet, not another floating layer.
+   It stays flat (no colour fade) and is separated by one engraved groove. */
+.area-window .area-window-bar,
+.area-window[data-area-state="rail"] .area-window-bar{
+  border:0!important;
+  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 18%,var(--sd-glass-groove))!important;
+  border-radius:0!important;
+  background:color-mix(in srgb,var(--area-header-accent) 8%,transparent)!important;
+  box-shadow:inset 0 -1px rgba(0,0,0,.12)!important;
+}
+body[data-theme="light"] .area-window .area-window-bar,
+body[data-theme="light"] .area-window[data-area-state="rail"] .area-window-bar{
+  background:color-mix(in srgb,var(--area-header-accent) 7%,rgba(255,255,255,.08))!important;
+  box-shadow:inset 0 -1px rgba(40,66,79,.08)!important;
+}
+.area-window .area-window-bar .area-window-identity b{color:var(--sd-glass-text)!important}
+.area-window .area-window-bar .area-window-identity small{color:var(--sd-glass-muted)!important}
+.area-window-icon.material-glass-element{
+  border:1px solid color-mix(in srgb,currentColor 22%,var(--sd-glass-groove))!important;
+  border-radius:2px!important;
+  background:color-mix(in srgb,currentColor 6%,transparent)!important;
+  box-shadow:inset 0 1px var(--sd-glass-highlight)!important;
+}
+
+/* One plane inside each Area. Modules are separated by shallow engraved
+   seams; they are no longer cards with their own glass edge and shadow. */
+.area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
+.area-window :is(.app-rack,.project-switcher),
+.universal-search .material-surface-glass:is(.workspace-switcher,.workspace-home-card,.overview-app-library,.overview-widget){
+  border:0!important;
+  border-top:1px solid var(--sd-glass-groove)!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.018)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.area-window :is(.mini-card,.system-widget,.project-module):first-child,
+.area-window .dynamic-widget-stack>.system-widget:first-child,
+.area-window .static-widget-stack>.system-widget:first-child{border-top-color:var(--sd-glass-edge-soft)!important}
+body[data-theme="light"] .area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
+body[data-theme="light"] .area-window :is(.app-rack,.project-switcher),
+body[data-theme="light"] .universal-search .material-surface-glass:is(.workspace-switcher,.workspace-home-card,.overview-app-library,.overview-widget){
+  background:rgba(255,255,255,.08)!important;
+}
+.area-window :is(.notification,.timer-face,.next-event,.device-row,.project-path,.project-quick-note,.project-clipboard){
+  border:0!important;
+  border-left:1px solid var(--sd-glass-groove)!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.018)!important;
+  box-shadow:none!important;
+}
+.area-window :is(.notification,.next-event,.device-row):hover{
+  background:var(--sd-glass-hover)!important;
+}
+
+/* Glass controls are engraved boundaries in the parent sheet. They do not
+   rise, jump or cast a second outer shadow. Pressing reverses the tiny inner
+   reflection in 8 ms, like the microswitch under a mouse button. */
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle){
+  --glass-key-tone:var(--state-tone,var(--toggle-tone,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
+  border:1px solid color-mix(in srgb,var(--glass-key-tone) 7%,var(--sd-glass-groove))!important;
+  border-radius:2px!important;
+  background:rgba(255,255,255,.018)!important;
+  box-shadow:
+    inset 0 1px var(--sd-glass-highlight),
+    inset 0 -1px rgba(0,0,0,.18)!important;
+  filter:none!important;
+  transform:none!important;
+  transition:background 36ms linear,border-color 36ms linear,box-shadow 16ms linear!important;
+}
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle):hover{
+  border-color:color-mix(in srgb,var(--glass-key-tone) 17%,var(--sd-glass-groove))!important;
+  background:color-mix(in srgb,var(--glass-key-tone) 4%,var(--sd-glass-hover))!important;
+  box-shadow:inset 0 1px color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-highlight)),inset 0 -1px rgba(0,0,0,.18)!important;
+}
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle):active{
+  border-color:color-mix(in srgb,var(--glass-key-tone) 20%,var(--sd-glass-groove))!important;
+  background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.25),inset 0 -1px rgba(255,255,255,.055)!important;
+  transform:none!important;
+  transition-duration:8ms!important;
+}
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+  border-color:color-mix(in srgb,var(--glass-key-tone) 16%,var(--sd-glass-groove))!important;
+  background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.22),inset 0 -1px rgba(255,255,255,.05)!important;
+  transform:none!important;
+}
+
+/* Only toggles retain a light after the click. On acrylic this is light caught
+   by a one-pixel engraving, with a small local bloom rather than a halo. */
+:is(.area-window,.universal-search) button.material-glass-button.control-toggle::after{
+  height:1px!important;
+  left:7px!important;
+  right:7px!important;
+  bottom:2px!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  opacity:0!important;
+}
+:is(.area-window,.universal-search) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"])::after{
+  display:block!important;
+  background:color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 84%,white 16%)!important;
+  box-shadow:
+    0 0 1px color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 82%,transparent),
+    0 0 4px color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 32%,transparent)!important;
+  opacity:1!important;
+}
+
+/* App launchers remain normal full-colour icons. Their open/selected state is
+   an acrylic engraving only—there is no extra icon well around the artwork. */
+.apps-zone .app-key.material-glass-button,
+.apps-zone .app-key.material-glass-button:is(.control-push,.control-toggle){
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.apps-zone .app-key.material-glass-button:hover{background:var(--sd-glass-hover)!important}
+.apps-zone .app-key.material-glass-button:active{background:var(--sd-glass-down)!important}
+.apps-zone .app-key .app-art{filter:none!important}
+
+/* Fields are shallow cut-outs in the acrylic. Focus lights only the bottom
+   engraving instead of drawing a coloured aura around the entire field. */
+:is(.area-window,.universal-search,.all-apps-drawer) :is(.material-glass-field,input.material-glass-field,textarea.material-glass-field,select.material-glass-field){
+  border:1px solid var(--sd-glass-groove)!important;
+  border-radius:2px!important;
+  background:var(--sd-glass-face-deep)!important;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.19),inset 0 1px rgba(255,255,255,.035)!important;
+}
+:is(.area-window,.universal-search,.all-apps-drawer) :is(.material-glass-field,input.material-glass-field,textarea.material-glass-field,select.material-glass-field):focus-within,
+:is(.area-window,.universal-search,.all-apps-drawer) :is(input.material-glass-field,textarea.material-glass-field,select.material-glass-field):focus{
+  border-color:var(--sd-glass-groove)!important;
+  box-shadow:
+    inset 0 2px 3px rgba(0,0,0,.19),
+    inset 0 -1px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--blue))) 86%,white 14%),
+    0 1px 3px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--blue))) 28%,transparent)!important;
+  outline:0!important;
+}
+.universal-search-field{
+  border-radius:2px!important;
+  background:var(--sd-glass-face-deep)!important;
+}
+
+/* Acrylic range: frosted groove, luminous engraved fill, transparent square
+   thumb. The colour is local to the filled section only. */
+:is(.area-window,.universal-search) input[type="range"].material-glass-field{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+:is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track{
+  height:4px!important;
+  border:1px solid var(--sd-glass-groove)!important;
+  border-radius:0!important;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 86%,white 14%) 0 var(--range-progress,0%),
+      transparent var(--range-progress,0%) 100%) center/100% 1px no-repeat,
+    var(--sd-glass-face-deep)!important;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.26),0 0 3px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,transparent)!important;
+}
+:is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-thumb{
+  width:12px!important;
+  height:16px!important;
+  margin-top:-7px!important;
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 12%,var(--sd-glass-edge))!important;
+  border-radius:2px!important;
+  background:rgba(190,226,241,.12)!important;
+  box-shadow:inset 0 1px var(--sd-glass-highlight),inset 0 -1px var(--sd-glass-groove-low),0 1px 2px rgba(0,0,0,.22)!important;
+}
+:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-track{
+  height:2px!important;
+  border:1px solid var(--sd-glass-groove)!important;
+  border-radius:0!important;
+  background:var(--sd-glass-face-deep)!important;
+}
+:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress{
+  height:1px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 86%,white 14%)!important;
+  box-shadow:0 0 3px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 28%,transparent)!important;
+}
+:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-thumb{
+  width:12px!important;
+  height:16px!important;
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 12%,var(--sd-glass-edge))!important;
+  border-radius:2px!important;
+  background:rgba(190,226,241,.12)!important;
+  box-shadow:inset 0 1px var(--sd-glass-highlight),inset 0 -1px var(--sd-glass-groove-low),0 1px 2px rgba(0,0,0,.22)!important;
+}
+
+/* Overview is a full acrylic Area. Its structural regions are etched panels;
+   content rows remain flat and use a single local selection line. */
+.universal-search-shell{border-radius:0!important}
+.universal-search-header{border-bottom:1px solid var(--sd-glass-groove)!important}
+.universal-search :is(.workspace-context-card,.overview-window,.overview-project,.universal-result,.overview-area-row,.launcher-category,.launcher-app){
+  border:0!important;
+  border-radius:2px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.universal-search :is(.overview-window,.overview-project,.universal-result,.overview-area-row,.launcher-category,.launcher-app):hover{
+  background:var(--sd-glass-hover)!important;
+}
+.universal-search :is(.overview-project,.universal-result,.launcher-category):is(.is-active,[aria-selected="true"]){
+  background:color-mix(in srgb,var(--state-tone,var(--project-card-accent,var(--workspace-accent,var(--blue)))) 6%,transparent)!important;
+  box-shadow:inset 1px 0 color-mix(in srgb,var(--state-tone,var(--project-card-accent,var(--workspace-accent,var(--blue)))) 86%,white 14%)!important;
+}
+.universal-search .overview-window-preview{
+  border:1px solid var(--sd-glass-groove)!important;
+  border-radius:2px!important;
+  background:var(--sd-glass-face-deep)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+}
+.universal-search-footer{border-top:1px solid var(--sd-glass-groove)!important;color:var(--sd-glass-muted)!important}
+.universal-search kbd,
+.desktop-context-menu kbd{
+  border:1px solid var(--sd-glass-groove)!important;
+  border-radius:2px!important;
+  background:rgba(255,255,255,.025)!important;
+  box-shadow:inset 0 1px var(--sd-glass-highlight)!important;
+}
+
+/* Context menus and the app drawer are single square sheets. Their rows are
+   content, not nested glass buttons. */
+.desktop-context-menu.material-surface-glass,
+.all-apps-drawer.material-surface-glass,
+.toast.material-surface-glass{border-radius:0!important}
+.desktop-context-menu.material-surface-glass .context-menu-title,
+.all-apps-drawer.material-surface-glass .all-apps-heading{
+  border:0!important;
+  border-bottom:1px solid var(--sd-glass-groove)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button,
+.all-apps-drawer.material-surface-glass :is(.launcher-category,.launcher-app){
+  border:0!important;
+  border-left:1px solid transparent!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:hover,
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:focus-visible,
+.all-apps-drawer.material-surface-glass :is(.launcher-category,.launcher-app):hover{
+  border-left-color:var(--sd-glass-edge)!important;
+  background:var(--sd-glass-hover)!important;
+  box-shadow:none!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-item.material-glass-button:active,
+.all-apps-drawer.material-surface-glass :is(.launcher-category,.launcher-app):active{
+  border-left-color:var(--sd-glass-edge)!important;
+  background:var(--sd-glass-down)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  transition-duration:8ms!important;
+}
+.desktop-context-menu.material-surface-glass .context-menu-separator{height:1px;background:var(--sd-glass-groove)!important;box-shadow:none!important}
+.all-apps-drawer.material-surface-glass :is(.launcher-body,.launcher-results,.launcher-categories){background:transparent!important}
+
+/* Resize and pressure affordances are engravings until the pointer injects
+   colour into that exact edge. */
+.area-resize-handle,
+.area-window[data-dock-edge]>.area-resize-handle{
+  border-radius:0!important;
+  background:var(--sd-glass-groove)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025)!important;
+  opacity:.72;
+}
+.area-resize-handle:hover,
+.area-window.is-area-resizing>.area-resize-handle{
+  background:color-mix(in srgb,var(--area-header-accent) 82%,white 18%)!important;
+  box-shadow:0 0 4px color-mix(in srgb,var(--area-header-accent) 32%,transparent)!important;
+  opacity:1;
+}
+
+@media(prefers-reduced-transparency:reduce){
+  :is(.area-window,.universal-search,.desktop-context-menu.material-surface-glass,.all-apps-drawer.material-surface-glass,.toast.material-surface-glass){
+    background:color-mix(in srgb,var(--sd-glass-face) 96%,#101a20 4%)!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
   }
 }
