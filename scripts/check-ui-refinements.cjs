@@ -44,3 +44,29 @@ for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'mat
   assert(!contents.includes('href="/"'), page + ': project-relative navigation');
 }
 console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, shared lanes and project-relative navigation.');
+// Project dialogs must isolate the background and restore its previous role.
+for (const overviewOpen of [true, false]) {
+  let focusReturned = false;
+  const classes = new Set();
+  const dialog = { hidden: true, inert: true, classList: { add: v => classes.add(v), remove: v => classes.delete(v), contains: v => classes.has(v) }, setAttribute() {} };
+  const desktop = { inert: overviewOpen };
+  const overview = { inert: !overviewOpen, classList: { contains: () => overviewOpen } };
+  const returnFocus = { focus: () => { focusReturned = true; } };
+  const ctx = vm.createContext({
+    $: selector => selector === '#projectEditorDialog' ? dialog : selector === '.desktop-shell' ? desktop : selector === '#universalSearch' ? overview : { focus() {} },
+    document: { activeElement: returnFocus, body: { classList: { add() {}, remove() {} } } },
+    activeProjectName: 'custom', projectEditorState: null, renderProjectEditor() {},
+    requestAnimationFrame: callback => callback(), setTimeout: callback => callback()
+  });
+  vm.runInContext(source.slice(source.indexOf('function openProjectEditor('), source.indexOf('function prepareProjectEditor(')), ctx);
+  ctx.openProjectEditor('create-project');
+  assert.equal(desktop.inert, true);
+  assert.equal(overview.inert, true);
+  assert.equal(dialog.inert, false);
+  ctx.closeProjectEditor();
+  assert.equal(desktop.inert, overviewOpen);
+  assert.equal(overview.inert, !overviewOpen);
+  assert.equal(dialog.inert, true);
+  assert.equal(focusReturned, true);
+}
+console.log('Project dialog checks passed: background isolation and focus return from desktop and Overview.');

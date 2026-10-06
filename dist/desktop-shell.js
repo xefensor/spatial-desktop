@@ -3533,6 +3533,8 @@ function openProjectEditor(view, options = {}) {
   dialog.hidden = false;
   dialog.inert = false;
   dialog.setAttribute("aria-hidden", "false");
+  $(".desktop-shell").inert = true;
+  $("#universalSearch").inert = true;
   document.body.classList.add("project-editor-open");
   requestAnimationFrame(() => {
     dialog.classList.add("is-open");
@@ -3548,6 +3550,9 @@ function closeProjectEditor() {
   dialog.classList.remove("is-open");
   dialog.setAttribute("aria-hidden", "true");
   dialog.inert = true;
+  const overviewOpen = $("#universalSearch").classList.contains("is-open");
+  $(".desktop-shell").inert = overviewOpen;
+  $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("project-editor-open");
   projectEditorState = null;
   setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
@@ -4434,6 +4439,15 @@ document.addEventListener("keydown", event => {
   if (projectEditorDialog.classList.contains("is-open") && trapDialogFocus(projectEditorDialog, event)) return;
   if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
 
+  if (projectEditorDialog.classList.contains("is-open") || packageDialog.classList.contains("is-open")) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (projectEditorDialog.classList.contains("is-open")) closeProjectEditor();
+      else closePackageDialog();
+    }
+    return;
+  }
+
   const isSuper = event.key === "Meta" || event.key === "OS";
   if (isSuper && !event.repeat) {
     superKeyAlone = true;
@@ -4503,6 +4517,15 @@ document.addEventListener("keydown", event => {
 });
 
 document.addEventListener("keyup", event => {
+  if (projectEditorDialog.classList.contains("is-open") || packageDialog.classList.contains("is-open")) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (projectEditorDialog.classList.contains("is-open")) closeProjectEditor();
+      else closePackageDialog();
+    }
+    return;
+  }
+
   const isSuper = event.key === "Meta" || event.key === "OS";
   if (isSuper && superKeyAlone) {
     event.preventDefault();
