@@ -32,6 +32,9 @@
       --square-radius:2px;
       --press:8ms;
       --release:16ms;
+      --state-line-size:2px;
+      --abs-state-glow:0 0 3px rgba(var(--accent-rgb),.42);
+      --glass-state-glow:0 0 6px rgba(var(--accent-rgb),.70);
     }
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
@@ -118,6 +121,8 @@
     .glass-button:active,.glass-button.is-on{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.30),0 0 8px rgba(var(--accent-rgb),.08);transition-duration:var(--press)}
     .toggle-button::after{content:"";position:absolute;height:2px;left:9px;right:9px;bottom:3px;border-radius:2px;background:transparent;box-shadow:none}
     .toggle-button.is-on::after{background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.72)}
+    .abs-button.toggle-button.is-on::after{height:var(--state-line-size);box-shadow:var(--abs-state-glow)}
+    .glass-button.toggle-button.is-on::after{height:var(--state-line-size);box-shadow:var(--glass-state-glow)}
     .tabs{display:flex;gap:7px;align-items:end}.tab{min-width:90px;padding:10px 14px;border:1px solid var(--line);border-radius:11px 11px 4px 4px;background:linear-gradient(180deg,var(--abs-top),var(--abs-mid));box-shadow:0 4px 8px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.07)}.tab[aria-selected="true"]{position:relative;transform:translateY(3px);background:var(--abs-well);box-shadow:inset 0 3px 5px rgba(0,0,0,.48)}.tab[aria-selected="true"]::after{content:"";position:absolute;left:11px;right:11px;bottom:3px;height:2px;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.65)}
     .field-demo{display:grid;gap:12px;width:min(420px,100%)}.field-demo label{font-size:12px;color:var(--muted)}.recessed-field{width:100%;height:43px;padding:0 13px;border:1px solid color-mix(in srgb,var(--accent) 14%,var(--glass-edge));border-radius:9px;background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(255,255,255,.025)),var(--glass-deep);box-shadow:inset 0 2px 5px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.05)}.recessed-field:focus{border-color:color-mix(in srgb,var(--accent) 50%,var(--glass-edge));box-shadow:inset 0 2px 5px rgba(0,0,0,.38),0 0 0 1px rgba(var(--accent-rgb),.14)}
     .range-wrap{width:min(440px,100%);display:grid;gap:10px}.range-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.lit-range{--p:42%;width:100%;height:18px;appearance:none;background:transparent}.lit-range::-webkit-slider-runnable-track{height:6px;border:1px solid var(--glass-edge);border-radius:999px;background:linear-gradient(90deg,rgba(var(--accent-rgb),.24) 0 var(--p),transparent var(--p)),linear-gradient(90deg,color-mix(in srgb,var(--accent) 88%,white 12%) 0 var(--p),transparent var(--p)) center/100% 2px no-repeat,var(--glass-deep);box-shadow:inset 0 1px 3px rgba(0,0,0,.40)}.lit-range::-webkit-slider-thumb{appearance:none;width:16px;height:16px;margin-top:-6px;border:1px solid var(--line-strong);border-radius:6px;background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.40),inset 0 1px rgba(255,255,255,.10)}.lit-range::-moz-range-track{height:6px;border:1px solid var(--glass-edge);border-radius:999px;background:var(--glass-deep)}.lit-range::-moz-range-progress{height:2px;background:var(--accent);box-shadow:0 0 5px rgba(var(--accent-rgb),.68)}.lit-range::-moz-range-thumb{width:16px;height:16px;border:1px solid var(--line-strong);border-radius:6px;background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.40)}
@@ -144,6 +149,15 @@
     .light-copy{padding:18px 20px 20px}.light-copy h3{margin:0;font-size:17px}.light-copy>p{margin:7px 0 14px;color:var(--muted);font-size:13px}
     .light-facts{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin:0;font-size:12px}.light-facts dt{color:var(--faint)}.light-facts dd{margin:0;color:var(--text)}
     .light-law{margin-top:14px;padding:14px 16px;border-left:2px solid var(--accent);background:rgba(var(--accent-rgb),.07);color:var(--muted);font-size:13px}
+    .state-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+    .state-level{position:relative;min-height:180px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-raised);overflow:hidden}
+    .state-level::before{content:"";display:block;width:100%;height:44px;margin-bottom:15px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,var(--abs-top),var(--abs-mid));box-shadow:inset 0 1px rgba(255,255,255,.07)}
+    .state-level.preview::before{border-color:color-mix(in srgb,var(--accent) 24%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--abs-top) 92%,var(--accent) 8%),var(--abs-mid))}
+    .state-level.committed::before{border-color:var(--line);background:linear-gradient(180deg,var(--abs-mid),var(--abs-low));box-shadow:inset 0 2px 4px rgba(0,0,0,.36),inset 0 calc(-1 * var(--state-line-size)) var(--accent)}
+    .state-level b{display:block;font-size:14px}.state-level small{display:block;margin-top:5px;color:var(--muted);font-size:12px}.state-level code{display:inline-block;margin-top:12px;color:var(--accent);font:11px ui-monospace,SFMono-Regular,Menlo,monospace}
+    .state-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--bg-raised);border-radius:14px;overflow:hidden}
+    .state-table th,.state-table td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:12px}.state-table th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.025)}.state-table tr:last-child td{border-bottom:0}.state-table td:first-child{font-weight:700;color:var(--text);white-space:nowrap}.state-table td:nth-child(2){color:var(--accent)}
+    .state-notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.state-note{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--bg-raised)}.state-note h3{margin:0 0 7px;font-size:14px}.state-note p{margin:0;color:var(--muted);font-size:12px}
     .compare-stack{display:grid;gap:18px}
     .component-compare{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--bg-raised)}
     .compare-heading{display:flex;align-items:start;gap:18px;padding:16px 18px;border-bottom:1px solid var(--line)}
@@ -160,6 +174,8 @@
     .glass-tab{position:relative;min-width:90px;padding:10px 14px;border:1px solid var(--glass-edge);border-radius:3px;background:rgba(157,219,244,.045);box-shadow:inset 0 1px rgba(255,255,255,.10)}
     .glass-tab[aria-selected="true"]{background:rgba(var(--accent-rgb),.10);box-shadow:inset 0 2px 4px rgba(0,0,0,.28)}
     .glass-tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:2px;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.68)}
+    .tab[aria-selected="true"]::after{height:var(--state-line-size);box-shadow:var(--abs-state-glow)}
+    .glass-tab[aria-selected="true"]::after{height:var(--state-line-size);box-shadow:var(--glass-state-glow)}
     .abs-field{width:100%;height:43px;padding:0 13px;border:1px solid rgba(208,228,237,.14);border-radius:9px;background:var(--abs-well);box-shadow:inset 0 3px 5px rgba(0,0,0,.44),inset 0 1px rgba(255,255,255,.035)}
     .abs-field:focus{border-color:color-mix(in srgb,var(--accent) 34%,var(--line-strong));box-shadow:inset 0 3px 5px rgba(0,0,0,.44),0 0 0 1px rgba(var(--accent-rgb),.10)}
     .glass-field{width:100%;height:43px;padding:0 13px;border:1px solid var(--glass-edge);border-radius:3px;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(255,255,255,.03)),rgba(6,18,24,.28);box-shadow:inset 0 1px 4px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08)}
@@ -172,7 +188,9 @@
     .abs-menu .menu-title{border-bottom-color:rgba(208,228,237,.10)}.abs-menu .menu-item:hover{background:rgba(var(--accent-rgb),.09);border-color:rgba(208,228,237,.10)}
     .glass-row{display:grid;grid-template-columns:31px 1fr auto;gap:10px;align-items:center;padding:9px 8px;border:1px solid transparent;border-left:2px solid transparent;border-radius:2px}.glass-row:hover{border-color:var(--line);background:rgba(255,255,255,.035)}.glass-row.is-selected{border-left-color:var(--accent);background:rgba(var(--accent-rgb),.09);box-shadow:inset 0 1px rgba(255,255,255,.045)}
     .choice-row{display:flex;align-items:center;gap:12px}.choice{display:inline-grid;place-items:center;width:22px;height:22px;padding:0;border-radius:7px}.choice.abs-choice{border:1px solid rgba(210,230,239,.18);background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.09)}.choice.glass-choice{border:1px solid var(--glass-edge);border-radius:2px;background:rgba(126,208,242,.06);box-shadow:inset 0 1px rgba(255,255,255,.12)}.choice[aria-pressed="true"]{color:var(--accent);box-shadow:inset 0 2px 4px rgba(0,0,0,.35),0 0 5px rgba(var(--accent-rgb),.12)}.choice[aria-pressed="true"]::before{content:"✓";font-weight:800;font-size:14px;text-shadow:0 0 5px rgba(var(--accent-rgb),.48)}
+    .abs-choice[aria-pressed="true"]::before{text-shadow:none}.glass-choice[aria-pressed="true"]::before{text-shadow:var(--glass-state-glow)}
     .status-banner{width:min(390px,100%);display:grid;grid-template-columns:10px 1fr;gap:11px;align-items:center;padding:13px 14px}.status-banner i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.55)}.status-banner b,.status-banner small{display:block}.status-banner b{font-size:13px}.status-banner small{color:var(--muted);font-size:11px}.abs-banner{border:1px solid rgba(210,230,239,.14);border-radius:12px;background:linear-gradient(180deg,var(--abs-top),var(--abs-mid));box-shadow:inset 0 1px rgba(255,255,255,.07),0 5px 10px rgba(0,0,0,.22)}.glass-banner{border:1px solid var(--glass-edge);border-radius:2px;background:rgba(89,163,194,.08);box-shadow:inset 0 1px rgba(255,255,255,.10)}
+    .abs-banner i{box-shadow:var(--abs-state-glow)}.glass-banner i{box-shadow:var(--glass-state-glow)}
     .dos-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.do-card{padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--bg-raised)}.do-card h3{margin:0 0 10px;font-size:15px}.do-card ul{margin:0;padding-left:19px;color:var(--muted);font-size:13px}.do-card li+li{margin-top:7px}.do-card.good h3{color:#7ee3a0}.do-card.bad h3{color:#ff897f}
     details{border:1px solid var(--line);border-radius:12px;background:var(--bg-raised);overflow:hidden}details+details{margin-top:10px}summary{cursor:pointer;padding:14px 16px;font-weight:650}pre{margin:0;padding:17px;overflow:auto;border-top:1px solid var(--line);background:#070b0e;color:#c9d7de;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
     .footer{margin-top:36px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
@@ -191,7 +209,7 @@
     body[data-theme="light"] .glass-field{background:linear-gradient(180deg,rgba(67,94,107,.09),rgba(255,255,255,.34)),rgba(222,239,246,.50)}
     body[data-theme="light"] pre{background:#edf3f5;color:#23323a}
     @media(max-width:1000px){.layout{grid-template-columns:1fr}.guide-nav{position:static;display:flex;overflow:auto;gap:2px}.guide-nav strong{display:none}.guide-nav a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent}.guide-nav a:hover,.guide-nav a.is-current{border-left:0;border-bottom-color:var(--accent)}.intro{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr 1fr}}
-    @media(max-width:720px){.top-link{display:none}.layout{padding-inline:12px}.material-grid,.specimen-grid,.dos-grid,.light-grid{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr}.intro-copy{padding:26px 22px}.section-head{align-items:start}.section-number{display:none}.shape-demo{grid-template-columns:1fr}.token-table th:nth-child(3),.token-table td:nth-child(3){display:none}.compare-heading{display:block}.compare-rule{margin:7px 0 0;max-width:none;text-align:left}.compare-grid{grid-template-columns:1fr}.compare-side+.compare-side{border-left:0;border-top:1px solid var(--line)}}
+    @media(max-width:720px){.top-link{display:none}.layout{padding-inline:12px}.material-grid,.specimen-grid,.dos-grid,.light-grid,.state-levels,.state-notes{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr}.intro-copy{padding:26px 22px}.section-head{align-items:start}.section-number{display:none}.shape-demo{grid-template-columns:1fr}.token-table th:nth-child(3),.token-table td:nth-child(3){display:none}.compare-heading{display:block}.compare-rule{margin:7px 0 0;max-width:none;text-align:left}.compare-grid{grid-template-columns:1fr}.compare-side+.compare-side{border-left:0;border-top:1px solid var(--line)}.state-table{display:block;overflow-x:auto}.state-table th,.state-table td{min-width:130px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
     @media(prefers-reduced-transparency:reduce){.glass-surface,.guide-nav,.topbar,.menu-demo{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg-raised)}}
   </style>
@@ -207,7 +225,7 @@
   <div class="layout">
     <nav class="guide-nav" aria-label="Guide sections">
       <strong>Foundation</strong>
-      <a href="#philosophy">Philosophy</a><a href="#materials">Materials</a><a href="#light">Light</a><a href="#controls">A/B components</a><a href="#structure">Structure</a><a href="#tokens">Tokens</a><a href="#templates">Templates</a>
+      <a href="#philosophy">Philosophy</a><a href="#materials">Materials</a><a href="#light">Material light</a><a href="#state-light">State light</a><a href="#controls">A/B components</a><a href="#structure">Structure</a><a href="#tokens">Tokens</a><a href="#templates">Templates</a>
     </nav>
     <main>
       <header class="intro">
@@ -254,11 +272,39 @@
         <div class="light-law"><b>Shared semantic rule:</b> coloured light means active state, selection, focus or progress. It never exists merely because an element has an edge. ABS contains the light like an indicator LED; glass guides it through an etched path.</div>
       </section>
 
+      <section id="state-light">
+        <div class="section-head"><div><h2>State light is a language</h2><p>The coloured line is not decoration. Its shape, duration and intensity describe the control state.</p></div><span class="section-number">04</span></div>
+        <div class="state-levels">
+          <article class="state-level"><b>1 · Material light</b><small>Neutral highlights reveal plastic volume or a glass edge. They are always present and never use the app colour.</small><code>neutral · continuous</code></article>
+          <article class="state-level preview"><b>2 · Interaction preview</b><small>Hover and keyboard focus briefly increase contrast or add a low-opacity tint. They disappear when attention leaves.</small><code>8–14% tint · temporary</code></article>
+          <article class="state-level committed"><b>3 · Committed state</b><small>A precise app-coloured line marks something that remains active: toggle on, selected tab or completed slider distance.</small><code>2 px line · persistent</code></article>
+        </div>
+        <table class="state-table">
+          <thead><tr><th>State</th><th>Light form</th><th>ABS interpretation</th><th>Glass interpretation</th><th>Timing</th></tr></thead>
+          <tbody>
+            <tr><td>Idle push button</td><td>None</td><td>Top reflection and contact shadow only</td><td>Neutral edge and faint internal reflection only</td><td>Continuous</td></tr>
+            <tr><td>Hover</td><td>Low contrast lift</td><td>Top highlight becomes slightly clearer</td><td>Edge becomes slightly clearer; no coloured rail</td><td>While hovered</td></tr>
+            <tr><td>Pointer down</td><td>No new state light</td><td>Moves 2 px; shadow collapses</td><td>Moves 1 px; inner edge compresses</td><td>8 ms down</td></tr>
+            <tr><td>Toggle on</td><td>2 px persistent line</td><td>Contained LED with a tight 3 px bloom</td><td>Illuminated engraving with a soft 6 px bloom</td><td>Appears immediately; remains until off</td></tr>
+            <tr><td>Selected tab</td><td>2 px persistent line</td><td>Pressed key plus contained LED</td><td>Optically inset segment plus illuminated engraving</td><td>Follows selection</td></tr>
+            <tr><td>Slider progress</td><td>Line from minimum to thumb</td><td>3 px solid indicator inside an opaque groove</td><td>2 px light path with a restrained internal bloom</td><td>Tracks pointer directly; no lagging animation</td></tr>
+            <tr><td>Keyboard focus</td><td>1 px temporary edge</td><td>Sharp app-colour border, almost no glow</td><td>Brighter local edge with a small bloom</td><td>Only while focused</td></tr>
+            <tr><td>Disabled</td><td>None</td><td>Lower contrast, no indicator light</td><td>Lower edge contrast, no glow</td><td>Until enabled</td></tr>
+          </tbody>
+        </table>
+        <div class="state-notes">
+          <article class="state-note"><h3>Toggle buttons</h3><p>Pressing and toggling are two separate events. Every button performs the same fast 8 ms click. Only after the click resolves does a toggle remain lower and keep its state line. A normal push button must never retain that line.</p></article>
+          <article class="state-note"><h3>Sliders</h3><p>The line represents a value, so it must end exactly at the thumb and follow it without easing. The inactive track remains neutral. Do not illuminate the whole track, the thumb tail or empty distance.</p></article>
+          <article class="state-note"><h3>Colour ownership</h3><p>Use the application primary colour for in-app state. System surfaces use their owning Area colour. Warning, error and success colours replace it only when status meaning is more important than app identity.</p></article>
+          <article class="state-note"><h3>Glow budget</h3><p>Glow belongs to the emitting feature—not the whole control. ABS uses almost no bloom because light is behind a small lens. Glass gets slightly more bloom because the sheet carries light, but the centre stays dark and transparent.</p></article>
+        </div>
+      </section>
+
       <section id="controls">
-        <div class="section-head"><div><h2>Every component in both materials</h2><p>The behaviour stays consistent. Only the physical response changes.</p></div><span class="section-number">04</span></div>
+        <div class="section-head"><div><h2>Every component in both materials</h2><p>The behaviour stays consistent. Only the physical response changes.</p></div><span class="section-number">05</span></div>
         <div class="accent-picker"><strong>Application primary colour</strong><button class="swatch" style="--swatch:#a483ff" data-accent="#a483ff" data-rgb="164,131,255" aria-label="Violet" aria-pressed="true"></button><button class="swatch" style="--swatch:#2a9fff" data-accent="#2a9fff" data-rgb="42,159,255" aria-label="Blue" aria-pressed="false"></button><button class="swatch" style="--swatch:#64d782" data-accent="#64d782" data-rgb="100,215,130" aria-label="Green" aria-pressed="false"></button><button class="swatch" style="--swatch:#ffb553" data-accent="#ffb553" data-rgb="255,181,83" aria-label="Amber" aria-pressed="false"></button></div>
         <div class="compare-stack">
-          <article class="component-compare"><header class="compare-heading"><div><h3>Push and toggle buttons</h3><p>Click both versions. Push returns; toggle remains held and shows the state line.</p></div><span class="compare-rule">ABS travels 2 px with shadow collapse · glass travels 1 px with an optical edge response</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="demo-row"><button class="abs-button">Push</button><button class="abs-button toggle-button" data-demo-toggle aria-pressed="false">Toggle</button></div><p class="side-note">Raised cap · broad top highlight · contact shadow</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="demo-row"><button class="glass-button">Push</button><button class="glass-button toggle-button" data-demo-toggle aria-pressed="false">Toggle</button></div><p class="side-note">Etched boundary · internal highlight · shallow response</p></div></div></article>
+          <article class="component-compare"><header class="compare-heading"><div><h3>Push and toggle buttons</h3><p>Click both versions. Push returns; toggle remains held and shows the state line.</p></div><span class="compare-rule">ABS travels 2 px with shadow collapse · glass travels 1 px with an optical edge response</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="demo-row"><button class="abs-button">Push</button><button class="abs-button toggle-button is-on" data-demo-toggle aria-pressed="true">Toggle on</button></div><p class="side-note">Raised cap · broad top highlight · tight contained LED</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="demo-row"><button class="glass-button">Push</button><button class="glass-button toggle-button is-on" data-demo-toggle aria-pressed="true">Toggle on</button></div><p class="side-note">Etched boundary · internal highlight · wider engraved light</p></div></div></article>
 
           <article class="component-compare"><header class="compare-heading"><div><h3>Tabs and segmented choices</h3><p>The active item is lower and darker in ABS, but optically inset in glass.</p></div><span class="compare-rule">Both use the same 2 px state line because selection semantics do not change</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Files</button><button class="tab" role="tab" aria-selected="false">Recent</button></div><p class="side-note">Selected key remains physically down</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="tabs" role="tablist"><button class="glass-tab" role="tab" aria-selected="true">Files</button><button class="glass-tab" role="tab" aria-selected="false">Recent</button></div><p class="side-note">Selected segment gains internal tint, not keycap depth</p></div></div></article>
 
@@ -277,7 +323,7 @@
       </section>
 
       <section id="structure">
-        <div class="section-head"><div><h2>Composition rules</h2><p>How the pieces combine without becoming busy.</p></div><span class="section-number">05</span></div>
+        <div class="section-head"><div><h2>Composition rules</h2><p>How the pieces combine without becoming busy.</p></div><span class="section-number">06</span></div>
         <div class="dos-grid">
           <article class="do-card good"><h3>Do</h3><ul><li>Keep app content fully opaque.</li><li>Use one dominant material per surface.</li><li>Reserve app colour for meaningful state.</li><li>Let empty space separate groups.</li><li>Keep borders thin and local.</li><li>Use real app icons in launch surfaces.</li></ul></article>
           <article class="do-card bad"><h3>Do not</h3><ul><li>Put ABS buttons on a glass sheet.</li><li>Wrap every item in a raised card.</li><li>Give push buttons persistent light.</li><li>Blur text-heavy content over wallpaper.</li><li>Stack border inside border inside border.</li><li>Use glow merely to decorate an edge.</li></ul></article>
@@ -285,12 +331,12 @@
       </section>
 
       <section id="tokens">
-        <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">06</span></div>
-        <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0–2 px</td><td>Docked structural surface</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>Controls and inset displays</td></tr><tr><td>--edge</td><td>1 px</td><td>Material boundary</td></tr><tr><td>--active-line</td><td>2 px</td><td>Toggle, selection and progress state</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop glass only</td></tr></tbody></table>
+        <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">07</span></div>
+        <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--state-line-size</td><td>2 px</td><td>Toggle, selected tab and glass progress light</td></tr><tr><td>--abs-progress-size</td><td>3 px</td><td>Solid indicator inside an ABS groove</td></tr><tr><td>--abs-state-glow</td><td>3 px / 42%</td><td>Tight bloom from a contained LED lens</td></tr><tr><td>--glass-state-glow</td><td>6 px / 70%</td><td>Local bloom along an illuminated engraving</td></tr><tr><td>--hover-tint</td><td>8–14%</td><td>Temporary interaction preview, never committed state</td></tr><tr><td>--slider-follow</td><td>0 ms</td><td>Progress light must stay attached to the thumb</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0–2 px</td><td>Docked structural surface</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>Controls and inset displays</td></tr><tr><td>--edge</td><td>1 px</td><td>Neutral material boundary</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop glass only</td></tr></tbody></table>
       </section>
 
       <section id="templates">
-        <div class="section-head"><div><h2>Implementation templates</h2><p>Minimal patterns developers can adapt without changing the semantics.</p></div><span class="section-number">07</span></div>
+        <div class="section-head"><div><h2>Implementation templates</h2><p>Minimal patterns developers can adapt without changing the semantics.</p></div><span class="section-number">08</span></div>
         <details open><summary>Matching ABS and glass buttons</summary><pre>&lt;div class="surface abs"&gt;
   &lt;button class="button abs-button"&gt;Push action&lt;/button&gt;
 &lt;/div&gt;
@@ -358,7 +404,7 @@
     }));
     document.querySelectorAll('[data-demo-toggle]').forEach(button=>button.addEventListener('click',()=>{
       const on=button.getAttribute('aria-pressed')!=='true';
-      button.setAttribute('aria-pressed',String(on));button.classList.toggle('is-on',on);
+      button.setAttribute('aria-pressed',String(on));button.classList.toggle('is-on',on);button.textContent=on?'Toggle on':'Toggle off';
     }));
     document.querySelectorAll('[data-demo-choice]').forEach(button=>button.addEventListener('click',()=>{
       button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));
