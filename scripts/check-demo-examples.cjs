@@ -75,6 +75,56 @@ assert.equal(D.migrateNote(''), '');
 assert.equal(D.migrateNote('The center is a free-form workspace. Windows can overlap, move and resize.\n\nDrag a title bar into Apps to park the window as a live card. Drag that card back to restore it where you release.\n\nThe right side contains system state and short interactions.'), D.note);
 console.log('Demo migration checks passed: defaults, legacy paths, custom data, stable modes and idempotence.');
 
+// Seed usable, intentionally different scenes once, then preserve interactions.
+function sceneStore(seed = {}) {
+  const data = new Map(Object.entries(seed));
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  return { data, storage, read: key => JSON.parse(data.get(key)) };
+}
+const freshScene = sceneStore();
+assert.equal(D.seedWorkspaces(freshScene.storage), true);
+const sceneApps = freshScene.read('spatial-workspace-app-states-v1');
+const sceneAreas = freshScene.read('spatial-workspace-area-layouts-v1');
+const sceneProjects = freshScene.read('spatial-workspace-project-states-v1');
+assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin']);
+assert.equal(sceneProjects.general.project, null);
+assert.equal(sceneAreas.general.hidden.projects, true);
+assert.equal(sceneProjects.school.project, 'research');
+assert.equal(sceneAreas.school.state.apps.edge, 'bottom');
+assert.equal(sceneAreas.work.state.projects.edge, 'right');
+assert.equal(sceneProjects.work.mode, 'prototype');
+assert.equal(sceneApps.gaming.elisa, 'minimized');
+assert.equal(sceneAreas.gaming.sizes.right, 70);
+assert.equal(Object.keys(D.projects.research.modes).length, 1);
+const tiles = freshScene.read('spatial-split-layouts-v1');
+assert.equal(tiles['work:plasma:prototype:1'].root.axis, 'y');
+assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:plasma:prototype:1'].root), ['browser', 'terminal']);
+freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));
+assert.equal(D.seedWorkspaces(freshScene.storage), false);
+assert.deepEqual(freshScene.read('spatial-workspace-app-states-v1'), { general: { notes: 'open' } });
+const customScene = sceneStore({
+  'spatial-active-workspace': 'work',
+  'spatial-project-spaces-v2': JSON.stringify({ custom: { name: 'My own project' }, plasma: { ...D.projects.plasma, note: 'My draft' } }),
+  'spatial-workspace-project-states-v1': JSON.stringify({ work: { project: 'custom', mode: 'mine' } }),
+  'spatial-workspace-app-states-v1': JSON.stringify({ work: { notes: 'open' } }),
+  'spatial-workspace-area-layouts-v1': JSON.stringify({ work: { sizes: { left: 330 } } }),
+  'spatial-workspace-area-contents-v1': JSON.stringify({ general: { noteDraft: 'Keep this text' } })
+});
+D.seedWorkspaces(customScene.storage);
+assert.equal(customScene.storage.getItem('spatial-active-workspace'), 'work');
+assert.deepEqual(customScene.read('spatial-workspace-app-states-v1').work, { notes: 'open' });
+assert.deepEqual(customScene.read('spatial-workspace-area-layouts-v1').work, { sizes: { left: 330 } });
+assert.equal(customScene.read('spatial-project-spaces-v2').plasma.note, 'My draft');
+assert.equal(customScene.read('spatial-workspace-area-contents-v1').general.noteDraft, 'Keep this text');
+assert(customScene.storage.getItem('spatial-demo-scenes-backup-v1'));
+const emptyLibrary = sceneStore({ 'spatial-project-spaces-v2': '{}' });
+D.seedWorkspaces(emptyLibrary.storage);
+assert.deepEqual(emptyLibrary.read('spatial-project-spaces-v2'), {});
+assert.equal(emptyLibrary.read('spatial-workspace-project-states-v1').school.project, null);
+assert.equal(emptyLibrary.read('spatial-workspace-area-layouts-v1').school.hidden.projects, true);
+assert.equal(D.migrateProject('plasma', { ...D.projects.plasma, root: '/home/demo/Projects/website-launch', originWorkspace: 'general' }).originWorkspace, 'work');
+console.log('Demo scenes passed: distinct activities, one General window, no empty Project Area, single-mode research, one-time migration, custom data and deleted library.');
+
 // Exercise the actual storage adapter, including the older content-only key.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -149,10 +199,10 @@ vm.runInContext('delete projectSpaces.retold; const cleaned = normalizedWorkspac
 assert.equal(vm.runInContext('cleaned.work.project', ctx), null, 'Deleted Projects never reopen from a stale Workspace');
 
 // Exercise real Workspace switching, including restoration before Area/window layout.
-const ui = storageAdapter({});
+const ui = storageAdapter({ 'spatial-workspace-project-states-v1': JSON.stringify({ general: { project: 'plasma', mode: 'visual' }, school: { project: null, mode: null } }) });
 const elements = new Map();
 function element(id) {
-  if (!elements.has(id)) elements.set(id, { hidden: false, scrollTop: 0, innerHTML: '', textContent: '', value: '', style: { setProperty() {} }, classList: { remove() {}, toggle() {} }, setAttribute() {} });
+  if (!elements.has(id)) elements.set(id, { hidden: false, scrollTop: 0, innerHTML: '', textContent: '', value: '', closest() { return this; }, insertAdjacentHTML(position, html) { this.innerHTML = html; }, style: { setProperty() {} }, classList: { remove() {}, toggle() {} }, setAttribute() {} });
   return elements.get(id);
 }
 const widgets = [element('calendar'), element('phone')];
@@ -178,13 +228,14 @@ Object.assign(ui.context, {
   saveAreaLayout() {}, saveLayout() {},
   refreshWorkspaceContext() {}, workspaceFavoriteMarkup() {}, escapeHtml: x => x, icon: () => '', appArt: () => '',
   applyAppPrimaryColors() {}, prepareControlSemantics() {}, syncApps() {},
+  renderWorkspaceExample() {},
   renderOverviewProjects() {}, setProjectClosedState(closed) { element('project').hidden = closed; },
   renderProjectSpace(name) { vm.runInContext('activeProjectName = ' + JSON.stringify(name) + '; rememberWorkspaceProject();', ui.context); element('project').hidden = false; },
   restoreWorkspaceWindowLayout() { calls.push(['restore', ui.context.activeWorkspace]); }, bringToFront() {}, showToast() {}
 });
 for (const [name, profile] of Object.entries(ui.context.workspaceProfiles)) Object.assign(profile, { label: name, accent: '#56baff', icon: 'i-grid', favorites: [], folders: [], rack: [], agenda: ['', '', ''] });
 vm.runInContext(slice('function snapshotWorkspaceAreaContent(', 'function workspaceFavoriteMarkup('), ui.context);
-vm.runInContext(slice('function renderWorkspace(', 'function prepareWorkspaces('), ui.context);
+vm.runInContext(slice('function renderWorkspace(', 'function renderWorkspaceExample('), ui.context);
 vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
 element('#notificationList').innerHTML = 'General notification';
 element('.system-scroll-region').scrollTop = 120;

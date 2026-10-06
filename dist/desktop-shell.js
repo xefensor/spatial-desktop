@@ -1,5 +1,6 @@
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+try { SpatialDemoExamples.seedWorkspaces(localStorage); } catch {}
 
 const toggleControlSelector = [
   "[data-open-app]",
@@ -199,7 +200,7 @@ const appInfo = {
   notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
 };
 
-const appState = { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" };
+const appState = { ...SpatialDemoExamples.scenarios.general.apps };
 const appMaximizedState = { dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
 const autoTiledWindows = new Set();
@@ -1366,9 +1367,7 @@ function bindMiniWidgets() {
   $$("[data-mini-note]").forEach(field => field.addEventListener("input", () => {
     noteDraft = field.value;
     $(".notes-layout textarea").value = noteDraft;
-    try {
-      localStorage.setItem("spatial-note-draft-v1", noteDraft);
-    } catch {}
+    persistWorkspaceNote();
   }));
 }
 
@@ -1383,9 +1382,7 @@ function prepareNoteSync() {
   mainNote.value = noteDraft;
   mainNote.addEventListener("input", () => {
     noteDraft = mainNote.value;
-    try {
-      localStorage.setItem("spatial-note-draft-v1", noteDraft);
-    } catch {}
+    persistWorkspaceNote();
   });
 }
 
@@ -2977,14 +2974,18 @@ function prepareAreaWindows() {
 
 const projectSpaces = JSON.parse(JSON.stringify(SpatialDemoExamples.projects));
 
-let activeProjectName = "plasma";
+let activeProjectName = null;
 // Projects are shared resources; which one is open (and its Mode) belongs to a Workspace.
 const workspaceProjectStates = Object.create(null);
 const workspaceAreaContents = Object.create(null);
 let defaultAreaContent = null;
 
 function normalizedWorkspaceProjects(saved = {}, legacyProject = undefined, workspaceName = activeWorkspace) {
-  const result = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, { project: name === "general" && projectSpaces.plasma ? "plasma" : null, mode: null }]));
+  const result = Object.fromEntries(Object.keys(workspaceProfiles).map(name => {
+    const example = SpatialDemoExamples.scenarios[name];
+    const project = example?.project && projectSpaces[example.project];
+    return [name, { project: project ? example.project : null, mode: project?.modes[example.mode] ? example.mode : null }];
+  }));
   Object.entries(saved || {}).forEach(([name, context]) => {
     if (!result[name]) return;
     const project = context?.project && projectSpaces[context.project];
@@ -3290,6 +3291,7 @@ function seedProjectModeWindows(name, modeId) {
 function activateProject(name, announce = true) {
   const project = projectSpaces[name];
   if (!project) return;
+  showArea("projects", false);
   if (activeProjectName === name) {
     renderProjectSpace(name);
     if (announce) showToast(project.name + " is already open");
@@ -3725,33 +3727,33 @@ function prepareProjectSpaces() {
 const workspaceProfiles = {
   general: {
     label: "General", subtitle: "Personal desktop", icon: "i-grid", accent: "#56baff", home: "/home/demo",
-    context: "Everyday desktop", meta: "5 favourite apps · 2 open projects · private clipboard",
+    context: "Everyday files and personal tools", meta: "Personal desktop · no project open",
     folders: [["Desktop", "8 items", "folder"], ["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["dolphin", "elisa", "browser", "terminal", "notes"],
     favorites: [["dolphin", "Dolphin"], ["browser", "Firefox"], ["elisa", "Elisa"], ["notes", "Notes"], ["i-mail", "Thunderbird"]],
-    agenda: ["Today", "Team check-in", "14:30 · 45 min"]
+    agenda: ["Personal", "Walk by the river", "18:00 · personal calendar"]
   },
   school: {
     label: "School", subtitle: "Classes and study", icon: "i-graduation", accent: "#f2b646", home: "/home/demo/Workspaces/School",
-    context: "Study session", meta: "4 favourite apps · 1 open project · school clipboard",
+    context: "Read, compare and take field notes", meta: "Urban Ecology · research session",
     folders: [["Desktop", "4 items", "folder"], ["Documents", "6 courses", "folder"], ["Downloads", "12 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "dolphin", "notes"],
     favorites: [["browser", "Firefox"], ["i-office", "Writer"], ["i-calendar", "Kalendar"], ["i-note", "Okular"], ["dolphin", "Dolphin"]],
-    agenda: ["School", "Physics assignment", "Due tomorrow · 16:00"]
+    agenda: ["School", "Biology field report", "Due tomorrow · 16:00"]
   },
   work: {
     label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/demo/Workspaces/Work",
-    context: "Product work", meta: "5 favourite apps · 1 open project · work clipboard",
+    context: "Build a website and review its preview", meta: "Website Launch · Build mode",
     folders: [["Desktop", "3 items", "folder"], ["Documents", "42 items", "folder"], ["Downloads", "7 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
-    rack: ["terminal", "browser", "dolphin", "notes"],
+    rack: ["browser", "terminal", "dolphin", "notes"],
     favorites: [["terminal", "Konsole"], ["i-code", "Kate"], ["browser", "Firefox"], ["dolphin", "Dolphin"], ["i-mail", "Mail"]],
-    agenda: ["Work", "Design review", "15:15 · 30 min"]
+    agenda: ["Work", "Staging review", "15:15 · Website Launch"]
   },
   gaming: {
     label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/demo/Workspaces/Gaming",
-    context: "Game night", meta: "4 favourite apps · 1 open project · gaming clipboard",
+    context: "Friends, games and background music", meta: "Co-op night · no project needed",
     folders: [["Desktop", "6 shortcuts", "folder"], ["Games", "23 installed", "folder"], ["Captures", "64 videos", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
-    rack: ["elisa", "browser", "dolphin", "terminal"],
+    rack: ["browser", "elisa", "dolphin", "terminal"],
     favorites: [["i-gamepad", "Steam"], ["i-gamepad", "Lutris"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
     agenda: ["Gaming", "Co-op session", "20:00 · voice chat"]
   }
@@ -3761,12 +3763,7 @@ let activeWorkspace = (() => {
   try { return localStorage.getItem("spatial-active-workspace") || "general"; }
   catch { return "general"; }
 })();
-const workspaceAppStates = {
-  general: { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" },
-  school: { dolphin: "open", elisa: "closed", browser: "open", terminal: "closed", notes: "minimized" },
-  work: { dolphin: "minimized", elisa: "closed", browser: "open", terminal: "open", notes: "closed" },
-  gaming: { dolphin: "closed", elisa: "open", browser: "minimized", terminal: "closed", notes: "closed" }
-};
+const workspaceAppStates = Object.fromEntries(Object.entries(SpatialDemoExamples.scenarios).map(([name, example]) => [name, { ...example.apps }]));
 
 function persistWorkspaceAppStates() {
   if (!workspaceProfiles[activeWorkspace]) return;
@@ -3776,6 +3773,8 @@ function persistWorkspaceAppStates() {
 
 function snapshotWorkspaceAreaContent() {
   return {
+    noteDraft,
+    terminalOutputHtml: $$("#terminalScreen > p").map(line => line.outerHTML).join(""),
     notificationsHtml: $("#notificationList").innerHTML,
     focus: { running: focusRunning, seconds: focusSeconds, visible: !$("#timerWidget").hidden, savedAt: Date.now() },
     hiddenWidgets: $$(".static-widget-stack>.system-widget", areaFor("systems")).map(widget => Boolean(widget.hidden)),
@@ -3789,7 +3788,14 @@ function restoreWorkspaceAreaContent(workspaceName) {
   };
   hideNotificationPeek();
   clearTimeout(notificationAttentionTimer);
-  $("#notificationList").innerHTML = saved.notificationsHtml || "";
+  $("#notificationList").innerHTML = saved.notificationsHtml ?? (saved.notifications || []).map(([title, detail, tone, glyph]) => '<article class="notification"><span class="app-badge ' + tone + '">' + icon(glyph) + '</span><div><b>' + escapeHtml(title) + '</b><small>' + escapeHtml(detail) + '</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article>').join("");
+  noteDraft = typeof saved.noteDraft === "string" ? saved.noteDraft : SpatialDemoExamples.scenarios[workspaceName]?.note || noteDraft;
+  $(".notes-layout textarea").value = noteDraft;
+  $$("[data-mini-note]").forEach(field => { field.value = noteDraft; });
+  if (typeof saved.terminalOutputHtml === "string") {
+    $$("#terminalScreen > p").forEach(line => line.remove());
+    $("#terminalInput").closest("label").insertAdjacentHTML("beforebegin", saved.terminalOutputHtml);
+  }
   $$(".notification", $("#notificationList")).forEach(item => item.classList.remove("is-leaving", "is-new-attention"));
   areaFor("systems").classList.remove("has-notification-attention");
   $("#notificationWidget").classList.remove("has-new-attention");
@@ -3906,8 +3912,7 @@ function renderWorkspace(name, announce = true) {
   $("#systemAgendaMeta").textContent = profile.agenda[2];
   $("#appsAreaContext").textContent = profile.label + " workspace";
   $("#systemAreaContext").textContent = profile.label + " workspace";
-  $("#dolphinContext").textContent = profile.label + " · Downloads";
-  $(".address-bar input").value = profile.home + "/Downloads";
+  renderWorkspaceExample(name);
   $("#appRack").innerHTML = profile.rack.map((appName, index) => {
     const info = appInfo[appName];
     const state = appState[appName];
@@ -3936,6 +3941,46 @@ function renderWorkspace(name, announce = true) {
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
   });
   if (announce) showToast(profile.label + " workspace loaded");
+}
+
+function renderWorkspaceExample(name) {
+  const example = SpatialDemoExamples.scenarios[name];
+  if (!example) return;
+  const profile = workspaceProfiles[name];
+  const path = example.folder === "Home" ? profile.home : profile.home + "/" + example.folder;
+  $("#dolphinContext").textContent = profile.label + " · " + example.folder;
+  $(".address-bar input").value = path;
+  appInfo.dolphin.detail = example.folder;
+  const browser = frameFor("browser");
+  $(".app-identity small", browser).textContent = example.browser.subtitle;
+  $(".browser-toolbar input", browser).value = name === "work" ? "localhost:5173 · Northstar Studio" : example.browser.subtitle;
+  appInfo.browser.detail = example.browser.title;
+  $(".start-page", browser).innerHTML = '<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(example.browser.subtitle) + '</span><h2>' + escapeHtml(example.browser.title) + '</h2><p>' + escapeHtml(example.browser.intro) + '</p><div class="site-grid">' + example.browser.links.map(label => '<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>').join("") + '<section class="demo-page-detail"><h3>' + (name === "school" ? "Keep your evidence close" : name === "work" ? "Built for the people who use it" : name === "gaming" ? "Ready when you are" : "Your everyday tools") + '</h3><p>' + (name === "school" ? "Use the Project Area to keep the survey data, field guide and your conclusion together while you read. The focus timer and deadline belong to this study workspace." : name === "work" ? "A working preview stays above the build output. Source files and the launch checklist remain in the Project Area; switch to Review when the build is ready." : name === "gaming" ? "Music stays controllable in Apps while the main window is free for your game. Messages wait on the System rail so they do not cover your session." : "Open a file or start another app when you need it. A project is optional — the desktop works without one.") + '</p></section></div>';
+  $(".app-identity small", frameFor("notes")).textContent = name === "school" ? "Field observations" : name === "work" ? "Launch checklist" : name === "gaming" ? "Game night" : "Personal notes";
+  appInfo.notes.detail = $(".app-identity small", frameFor("notes")).textContent;
+  $(".notes-layout .nav-choice").textContent = appInfo.notes.detail;
+  const terminal = $("#terminalScreen");
+  $$("p", terminal).forEach(line => line.remove());
+  $("#terminalInput").closest("label").insertAdjacentHTML("beforebegin", name === "work"
+    ? '<p><b>demo@desktop</b>:<i>~/Workspaces/Work/Projects/website-launch</i>$ npm run dev</p><p class="terminal-output">Northstar Studio · development preview<br>Build completed · no errors<br>Local: http://localhost:5173/<br>Watching source files for changes…</p>'
+    : '<p><b>demo@desktop</b>:<i>~</i>$ pwd</p><p class="terminal-output">' + escapeHtml(profile.home) + '</p>');
+  $(".app-identity small", frameFor("terminal")).textContent = name === "work" ? "Website Launch · dev server" : profile.label + " · Home";
+  appInfo.terminal.detail = name === "work" ? "Development server" : profile.label + " Home";
+  const files = $(".file-list", frameFor("dolphin"));
+  files.innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join("");
+  $$(".places-list .nav-choice", frameFor("dolphin")).forEach(choice => choice.classList.toggle("is-active", choice.textContent.trim() === (example.folder === "Home" ? "Home" : example.folder.startsWith("Documents") ? "Documents" : "")));
+  const activeTab = $(".folder-tab.is-active", frameFor("dolphin"));
+  if (activeTab) activeTab.innerHTML = escapeHtml(example.folder.split("/").at(-1)) + '<span>×</span>';
+  $(".app-status span", frameFor("dolphin")).textContent = example.files.length + " items";
+  prepareControlSemantics(browser);
+}
+
+function persistWorkspaceNote() {
+  workspaceAreaContents[activeWorkspace] = { ...(workspaceAreaContents[activeWorkspace] || {}), noteDraft };
+  try {
+    localStorage.setItem("spatial-note-draft-v1", noteDraft);
+    localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents));
+  } catch {}
 }
 
 function prepareWorkspaces() {
@@ -4657,6 +4702,16 @@ $$(".content-row").forEach(row => row.addEventListener("click", () => {
   const parent = row.parentElement;
   $$(".content-row", parent).forEach(other => other.classList.toggle("is-selected", other === row));
 }));
+$(".file-list").addEventListener("click", event => {
+  const row = event.target.closest(".content-row");
+  if (row) $$(".content-row", event.currentTarget).forEach(item => item.classList.toggle("is-selected", item === row));
+});
+$(".start-page").addEventListener("click", event => {
+  const link = event.target.closest("[data-demo-link]");
+  if (!link) return;
+  $$("[data-demo-link]", event.currentTarget).forEach(item => item.classList.toggle("is-selected", item === link));
+  showToast(link.dataset.demoLink + " selected");
+});
 
 function formatTime(seconds) {
   return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");

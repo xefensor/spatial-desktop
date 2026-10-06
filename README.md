@@ -48,9 +48,18 @@ GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/
 
 ## Demonstration examples
 
-The public demo uses two illustrative projects: **Website Launch** (Design, Build, Review) and **Short Film** (Editing, Review, Delivery). Their files, linked resources, notes and workspace examples use generic sample data. The film project lives on another drive to demonstrate that a project can be created in any folder. Music titles and artist names are illustrative too.
+The public demo starts with four distinct, resumable scenes:
 
-When an existing browser profile opens this version, unchanged built-in examples are updated. Renamed or relocated projects, custom notes, added resources, custom modes and saved window arrangements are preserved. Historical commits retain their original examples.
+| Workspace | Activity | Initial layout |
+| --- | --- | --- |
+| General | Everyday files, no open Project | One Dolphin window, Apps on a left rail, System right |
+| School | Urban Ecology research, reading with project notes and linked sources | Project left, reading window centre, System right, Apps on a bottom rail |
+| Work | Website Launch in Build mode | Preview above development terminal, Project right, Apps on a left rail, System on a bottom rail |
+| Gaming | Co-op session, no open Project | Games and friends in Web, music in a live Apps card on the left, System on a right rail |
+
+The library also contains **Short Film** (Editing, Review, Delivery), kept on another drive to demonstrate that a Project can live in any folder. Urban Ecology has one mode, so it does not show a mode switcher. Website Launch has Design, Build and Review modes. Files, resources, notifications, music and browser pages are illustrative data.
+
+This scene update refreshes the built-in workspace arrangements once and retains a backup of their previous session data. Workspaces attached to custom Projects are left alone; edited Project definitions and existing workspace notes are preserved. Later visits and workspace switches restore the user's changes rather than reset the examples. Historical commits retain their original examples.
 
 ## Material philosophy
 

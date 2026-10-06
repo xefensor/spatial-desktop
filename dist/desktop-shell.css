@@ -7378,3 +7378,12 @@ body[data-theme="light"] .apps-zone .mini-card .mini-hotkey{
 body[data-theme="light"] .overview-project-zone .workspace-config-file{
   background:color-mix(in srgb,var(--home-accent) 7%,rgba(255,255,255,.58));
 }
+/* Workspace examples are readable app content on the existing solid ABS well. */
+.app-frame .start-page:has(.demo-reading-page){display:block;overflow:auto;padding:clamp(20px,3vw,44px)}
+.demo-reading-page{max-width:850px;margin:0 auto;color:var(--text);text-align:left}
+.demo-reading-page h2{font-size:clamp(24px,2.8vw,38px);line-height:1.14;margin:14px 0 18px;font-weight:650;letter-spacing:-.025em}
+.demo-reading-page p{max-width:65ch;font-size:15px;line-height:1.7;margin:0;color:var(--text)}
+.demo-reading-page .site-grid{margin:24px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:auto}
+.demo-reading-page .site-grid button{height:40px;font-size:13px}
+.demo-page-detail{border-top:1px solid var(--soft-line);padding-top:20px;margin-top:16px}
+.demo-page-detail h3{font-size:17px;line-height:1.4;margin:0 0 10px}
