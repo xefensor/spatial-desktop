@@ -9,21 +9,23 @@
   <link rel="stylesheet" href="styles.css">
   <title>Material Interface Lab</title>
 </head>
-<body data-theme="dark" data-scene="desktop">
+<body data-theme="oled" data-scene="desktop">
   <header class="lab-bar" aria-label="Ovládání prototypu">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span>Material Interface Lab</span>
+      <span>Material Lab</span>
     </div>
     <div class="lab-controls">
       <div class="switcher" role="group" aria-label="Zařízení">
         <button class="switch-option is-active" data-scene-button="desktop">Desktop</button>
         <button class="switch-option" data-scene-button="phone">Telefon</button>
       </div>
-      <button class="theme-button" id="themeButton" aria-label="Přepnout na světlý režim">
-        <span class="theme-glyph" aria-hidden="true">◐</span>
-        <span id="themeLabel">Dark</span>
-      </button>
+      <div class="switcher theme-switcher" role="group" aria-label="Povrch">
+        <button class="switch-option" data-theme-button="light">Light</button>
+        <button class="switch-option" data-theme-button="graphite">Graphite</button>
+        <button class="switch-option is-active" data-theme-button="oled">OLED</button>
+      </div>
+      <div class="material-meter" aria-live="polite"><i></i><span id="stateLabel">KLID</span></div>
     </div>
   </header>
 
@@ -171,8 +173,12 @@
           <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
         </article>
         <aside class="interaction-notes">
-          <span>RIGID GLASS / LOCAL LIGHT</span>
-          <p>Dotkni se hledání, kláves nebo spodní navigace. Světlo reaguje lokálně pod prstem, ale sklo se nedeformuje.</p>
+          <span>PEVNÉ SKLO / LOKÁLNÍ SVĚTLO</span>
+          <dl>
+            <div><dt>Klid</dt><dd>souvislá plocha</dd></div>
+            <div><dt>Dotyk</dt><dd>světlo pod prstem</dd></div>
+            <div><dt>Fokus</dt><dd>osvětlená hrana</dd></div>
+          </dl>
         </aside>
       </div>
     </section>
