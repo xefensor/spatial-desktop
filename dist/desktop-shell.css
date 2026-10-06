@@ -5032,6 +5032,232 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   }
 }
 
+/* v90 — system-wide reconciliation.
+   Desktop structure = square acrylic. Movable/temporary objects = squircle
+   ABS. App content = opaque. Glass inside apps = display-like inserts only. */
+:root{
+  --ui-gap-1:4px;
+  --ui-gap-2:8px;
+  --ui-gap-3:12px;
+  --ui-area-pad:10px;
+  --ui-header-h:44px;
+  --ui-control-h:32px;
+  --ui-meta-size:11px;
+  --ui-label-size:12px;
+  --ui-title-size:14px;
+  --ui-line:color-mix(in srgb,var(--text) 10%,transparent);
+  --ui-quiet:color-mix(in srgb,var(--text) 4%,transparent);
+  --ui-quiet-hover:color-mix(in srgb,var(--text) 7%,transparent);
+  --button-press-time:36ms;
+  --button-release-time:72ms;
+}
+
+/* Shared fit and type rhythm. */
+:is(.area-window,.universal-search,.app-frame,.package-window) *{box-sizing:border-box}
+:is(.area-window,.universal-search,.app-frame,.package-window) :where(button,input,textarea,select){font-family:inherit}
+:is(.area-window,.universal-search,.app-frame,.package-window) :where(button,label,input,select){min-width:0}
+:is(.area-window,.universal-search,.app-frame,.package-window) small{
+  font-size:var(--ui-meta-size);
+  line-height:1.3;
+}
+:is(.area-window,.universal-search,.app-frame,.package-window) button{
+  line-height:1.2;
+  transition-duration:var(--button-release-time);
+}
+:is(.area-window,.universal-search,.app-frame,.package-window) button:active{
+  transition-duration:var(--button-press-time);
+}
+.eyebrow,.small-heading{font-size:10px;line-height:1.25;letter-spacing:.10em}
+
+/* Square acrylic Areas: one outer sheet, quiet groups, consistent density. */
+.area-window{
+  padding:var(--ui-area-pad);
+}
+.area-window>*{min-width:0}
+.area-window-bar{
+  min-height:var(--ui-header-h);
+  flex-basis:var(--ui-header-h);
+  margin:calc(-1 * var(--ui-area-pad)) calc(-1 * var(--ui-area-pad)) 9px;
+  padding:6px 7px 6px 10px;
+}
+.systems-zone .area-window-bar{top:calc(-1 * var(--ui-area-pad));margin-bottom:9px}
+.area-window-identity{gap:8px}
+.area-window-identity b{font-size:var(--ui-title-size);line-height:1.2}
+.area-window-identity small{margin-top:1px}
+.area-window-icon{width:30px;height:30px;flex-basis:30px}
+.area-window-actions{gap:4px;flex:0 0 auto}
+.area-window-key{width:30px;height:28px}
+.apps-zone .app-rack,
+.area-window .mini-card,
+.area-window .system-widget,
+.area-window .project-module{
+  border:0;
+  background:var(--area-section-wash);
+  box-shadow:none;
+}
+.apps-zone .app-rack{padding:6px;gap:4px}
+.mini-stack,.static-widget-stack,.dynamic-widget-stack{gap:8px}
+.area-window .mini-card,
+.area-window .system-widget,
+.area-window .project-module{padding:9px}
+.widget-heading{min-height:28px;margin-bottom:6px}
+.widget-heading h2,.project-module>header b{font-size:12px;line-height:1.2}
+.notification,.device-row,.next-event,.timer-face{background:var(--ui-quiet)}
+.notification:hover,.device-row:hover,.next-event:hover{background:var(--ui-quiet-hover)}
+.project-space-content{gap:8px}
+.project-module>header{height:28px;margin-bottom:6px}
+.project-items{gap:2px;margin-top:4px}
+.project-items>button{height:38px;padding:4px 6px}
+.project-items b{font-size:12px}.project-items small{font-size:10px}
+.project-resource-items{scrollbar-width:thin}
+
+/* Overview follows the same structural rhythm as Areas. */
+.universal-search{
+  padding:clamp(16px,2.8vh,30px) clamp(18px,3.2vw,48px);
+}
+.universal-search-shell,.overview-home,.overview-main,.overview-widgets{min-width:0;min-height:0}
+.universal-search-header{gap:16px;padding-bottom:10px}
+.universal-search-field{
+  height:54px;
+  gap:10px;
+  padding:0 14px;
+}
+.workspace-switcher{
+  min-height:54px;
+  gap:8px;
+  padding:7px 8px;
+  border:0;
+  border-bottom:1px solid var(--ui-line);
+  background:transparent;
+  box-shadow:none;
+}
+.workspace-tabs{min-width:0;overflow-x:auto;scrollbar-width:none}
+.workspace-tabs::-webkit-scrollbar{display:none}
+.workspace-tab{min-height:38px;padding:5px 8px}
+.workspace-action{min-height:36px;padding:0 10px}
+.overview-home{gap:12px}
+.overview-main,.overview-widgets{padding-right:4px;scrollbar-width:thin}
+.overview-section{margin-bottom:14px}
+.overview-section-heading{min-height:28px;margin-bottom:6px}
+.universal-search .material-surface-glass:is(.workspace-home-card,.overview-app-library,.overview-widget,.workspace-switcher){
+  border:0;
+  background:var(--area-section-wash);
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.workspace-home-card,.overview-app-library,.overview-widget{padding:10px}
+.overview-window-grid,.overview-project-grid,.overview-quick-grid{gap:8px}
+.overview-window,.overview-project,.universal-result{background:var(--ui-quiet)}
+.overview-window:hover,.overview-project:hover,.universal-result:hover{background:var(--ui-quiet-hover)}
+.universal-result{min-height:58px;padding:7px 10px;gap:9px}
+.universal-search-footer{min-height:34px;padding-top:8px}
+
+/* ABS objects: app windows, package dialogs and context menus share the same
+   opaque casing and squircle logic. */
+:is(.app-frame,.package-window,.desktop-context-menu).material-surface-abs{
+  border:1px solid var(--control-edge);
+  background:linear-gradient(180deg,var(--control-top),var(--control-bottom));
+  box-shadow:0 14px 38px rgba(0,0,0,.35),inset 0 1px var(--control-highlight);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.app-titlebar,.package-titlebar{
+  min-height:48px;
+  padding:6px 9px 6px 12px;
+  border-bottom:1px solid color-mix(in srgb,var(--app-primary,var(--workspace-accent,var(--blue))) 10%,var(--control-edge));
+  background:color-mix(in srgb,var(--app-primary,var(--workspace-accent,var(--blue))) 7%,var(--control-top));
+}
+.app-identity{gap:9px;min-width:0}
+.app-identity>div{min-width:0}
+.app-identity b{font-size:13px;line-height:1.2}
+.app-identity small{margin-top:1px}
+.app-badge{width:32px;height:32px;flex:0 0 32px}
+.window-actions{gap:4px;flex:0 0 auto}
+.window-key{width:32px;height:29px}
+.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs{
+  gap:6px;
+  padding:7px 9px;
+}
+.compact-key{min-width:32px;height:32px}
+.recessed-field{min-height:34px}
+.folder-tabs{padding-bottom:5px}
+.folder-tab{min-height:30px;padding:0 10px}
+.places-list,.notes-layout nav{padding:10px;gap:4px}
+.nav-choice{min-height:32px;padding:0 9px}
+
+/* Main app content is always fully opaque and visually below its ABS casing. */
+.app-frame :is(.file-well,.music-hero,.playlist,.start-page,.terminal-screen,.notes-layout textarea){
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 7%,var(--control-edge));
+  background:var(--app-content,var(--content-surface));
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18);
+}
+.app-frame .terminal-screen{background:var(--app-terminal-surface,#030506)}
+.file-well,.playlist{padding:7px}
+.content-row{min-height:34px;padding:6px 8px}
+.content-row:hover{background:color-mix(in srgb,var(--app-primary,var(--blue)) 6%,var(--app-content-raised,var(--content-surface-raised)))}
+.app-status{min-height:28px;padding:0 10px;font-size:11px}
+
+/* Only inserted displays remain glass inside ABS apps. */
+.app-frame .recessed-field.material-surface-glass{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--blue)) 15%,rgba(210,239,252,.14));
+  background:linear-gradient(180deg,rgba(0,0,0,.13),rgba(255,255,255,.02)),color-mix(in srgb,var(--glass-field-deep) 76%,transparent);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.04);
+}
+
+/* Dialog content is ABS too; glass no longer reappears as nested cards. */
+.package-window :is(.package-panel,.import-map){
+  border:1px solid color-mix(in srgb,var(--workspace-accent,var(--blue)) 8%,var(--control-edge));
+  background:var(--app-content,var(--content-surface));
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.desktop-context-menu{padding:5px}
+.desktop-context-menu button{min-height:32px;padding:0 9px}
+
+/* Controls use one fast physical response. Content actions stay flat; declared
+   push/toggle controls retain material depth and only toggles keep a state rail. */
+:is(.material-glass-button,.material-abs-button).control-push::after{display:none!important}
+:is(.material-glass-button,.material-abs-button):is(.control-push,.control-toggle){
+  transition:transform var(--button-release-time) linear,background 48ms linear,border-color 48ms linear,box-shadow var(--button-release-time) linear;
+}
+:is(.material-glass-button,.material-abs-button):is(.control-push,.control-toggle):active{
+  transition-duration:var(--button-press-time);
+}
+.material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle),
+.material-surface-abs button.material-abs-button:not(.control-push):not(.control-toggle){
+  border-color:transparent;
+  box-shadow:none;
+}
+
+/* Prevent dense modes from clipping labels or wasting space. */
+.area-window[data-area-state="compact"] :is(.mini-card,.system-widget,.project-module){padding:7px}
+.area-window[data-area-state="compact"] small{font-size:10px}
+.area-window[data-area-state="rail"]{padding:5px}
+.area-window[data-area-state="rail"] .area-window-bar{margin:-5px -5px 5px}
+
+@media(max-width:1180px){
+  .universal-search{padding:14px 16px}
+  .overview-home{gap:10px}
+  .workspace-home-card,.overview-app-library,.overview-widget{padding:8px}
+  .app-titlebar,.package-titlebar{padding-inline:9px}
+}
+
+@media(max-width:850px){
+  :root{--ui-area-pad:8px}
+  .universal-search{padding:10px}
+  .universal-search-field{height:48px}
+  .workspace-switcher{min-height:48px}
+  .overview-home{gap:8px}
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .area-window,.universal-search{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+
 /* v89 — Overview is another desktop Area, not a window. Its full-screen
    sheet and every structural/control surface inside use the square language. */
 .universal-search,

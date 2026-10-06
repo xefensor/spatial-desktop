@@ -42,8 +42,6 @@ const materialControlSelector = [
 const glassMaterialSurfaceSelector = [
   ".area-window",
   ".universal-search",
-  ".package-window",
-  ".desktop-context-menu",
   ".mini-card",
   ".system-widget",
   ".overview-widget",
@@ -51,14 +49,14 @@ const glassMaterialSurfaceSelector = [
   ".workspace-home-card",
   ".overview-app-library",
   ".project-module",
-  ".package-panel",
-  ".import-map",
   ".app-frame .recessed-field",
   ".app-frame input[type=range]"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
   ".app-frame",
+  ".package-window",
+  ".desktop-context-menu",
   ".all-apps-drawer"
 ].join(",");
 
