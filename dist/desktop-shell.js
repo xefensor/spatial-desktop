@@ -1740,13 +1740,17 @@ function applySecondaryAreaCanvas(names, width, height) {
       place(names[0], padding, padding, usableWidth, firstHeight);
       place(names[1], padding, padding + firstHeight + gap, usableWidth, usableHeight - firstHeight - gap);
     }
-  } else if (width >= height * 1.15) {
-    const primaryWidth = Math.round((usableWidth - gap) * .52);
-    const secondaryWidth = usableWidth - primaryWidth - gap;
-    const upperHeight = Math.round((usableHeight - gap) * .56);
-    place(names[0], padding, padding, primaryWidth, usableHeight);
-    place(names[1], padding + primaryWidth + gap, padding, secondaryWidth, upperHeight);
-    place(names[2], padding + primaryWidth + gap, padding + upperHeight + gap, secondaryWidth, usableHeight - upperHeight - gap);
+  } else if (width >= 900) {
+    /* A whole monitor is more useful as three persistent full-height lanes
+       than as a dashboard stack. Width still reflects the desktop priority:
+       Project Space > Apps > System. */
+    const available = usableWidth - gap * 2;
+    const projectWidth = Math.round(available * .40);
+    const appsWidth = Math.round(available * .33);
+    const systemWidth = available - projectWidth - appsWidth;
+    place(names[0], padding, padding, projectWidth, usableHeight);
+    place(names[1], padding + projectWidth + gap, padding, appsWidth, usableHeight);
+    place(names[2], padding + projectWidth + appsWidth + gap * 2, padding, systemWidth, usableHeight);
   } else {
     const available = usableHeight - gap * 2;
     const primaryHeight = Math.round(available * .46);
