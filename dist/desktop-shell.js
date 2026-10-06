@@ -481,6 +481,10 @@ function areaBoundarySpanOverlaps(edge, rect, lane) {
   return Math.min(rect.right, lane.right) - Math.max(rect.left, lane.left) > 28;
 }
 
+function areaBoundaryStage(edge) {
+  return dockGroup(edge).map(name => name + ":" + (areaFor(name)?.dataset.areaState || "unknown")).join("|");
+}
+
 function edgeHasVisibleArea(edge) {
   return dockGroup(edge).some(name => {
     const area = areaFor(name);
@@ -546,17 +550,31 @@ function resistAreaBoundaries(position, size, gate, bypass = false) {
     const lane = baseDockLaneRects.get(edge);
     if (!lane || !edgeHasVisibleArea(edge) || !areaBoundarySpanOverlaps(edge, candidate, lane)) return;
     const penetration = areaBoundaryPenetration(edge, candidate, lane);
+    const stage = areaBoundaryStage(edge);
+    if (gate.stages.get(edge) !== stage) {
+      gate.stages.set(edge, stage);
+      gate.passed.delete(edge);
+      gate.baselines.set(edge, Math.max(0, penetration));
+    }
     if (gate.passed.has(edge)) {
-      if (penetration < -20) gate.passed.delete(edge);
+      if (penetration < -20) {
+        gate.passed.delete(edge);
+        gate.baselines.set(edge, 0);
+      }
       else return;
     }
-    if (penetration <= 0) return;
-    if (penetration >= gate.threshold) {
+    if (penetration <= 0) {
+      gate.baselines.set(edge, 0);
+      return;
+    }
+    const effectivePenetration = Math.max(0, penetration - (gate.baselines.get(edge) || 0));
+    if (effectivePenetration >= gate.threshold) {
       gate.passed.add(edge);
+      gate.baselines.set(edge, 0);
       return;
     }
 
-    const pressure = Math.max(0, Math.min(1, penetration / gate.threshold));
+    const pressure = Math.max(0, Math.min(1, effectivePenetration / gate.threshold));
     if (edge === "left") next.left = lane.right + AREA_BOUNDARY_INSET;
     if (edge === "right") next.left = lane.left - size.width - AREA_BOUNDARY_INSET;
     if (edge === "top") next.top = lane.bottom + AREA_BOUNDARY_INSET;
@@ -592,10 +610,12 @@ function bindWindowDrag(frame) {
     const offsetY = event.clientY - startRect.top;
     const appsZone = $(".apps-zone");
     const workspace = $(".workspace-zone");
-    const boundaryGate = { threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set() };
+    const boundaryGate = { threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set(), stages: new Map(), baselines: new Map() };
     if (layoutMode === "auto") {
       dockEdges.forEach(edge => {
         const lane = baseDockLaneRects.get(edge);
+        boundaryGate.stages.set(edge, areaBoundaryStage(edge));
+        boundaryGate.baselines.set(edge, 0);
         if (lane && areaBoundaryPenetration(edge, startRect, lane) > 0) boundaryGate.passed.add(edge);
       });
     }
@@ -1204,15 +1224,18 @@ function clearanceFromEdge(edge, rect, shellRect) {
 function spatialStateForClearance(edge, clearance) {
   const compact = edgeMinimumForState(edge, "compact");
   const expanded = edgeMinimumForState(edge, "expanded");
-  const previous = autoSpatialEdgeStates.get(edge);
+  const visibleArea = areaFor(dockGroup(edge)[0]);
+  const previous = autoSpatialEdgeStates.get(edge) || visibleArea?.dataset.areaState;
+  const lane = baseDockLaneRects.get(edge);
+  const visibleBoundary = lane ? (edge === "left" || edge === "right" ? lane.width : lane.height) : 0;
   if (previous === "expanded") {
-    if (clearance >= expanded + 18) return "expanded";
-    if (clearance >= compact + 14) return "compact";
-    return "rail";
+    if (clearance >= (visibleBoundary || expanded + 18)) return "expanded";
+    return "compact";
   }
   if (previous === "compact") {
     if (clearance >= expanded + 48) return "expanded";
-    if (clearance >= compact + 14) return "compact";
+    if (clearance >= (visibleBoundary || compact + 14)) return "compact";
+    return "rail";
   }
   if (previous === "rail") {
     if (clearance >= expanded + 60) return "expanded";
@@ -1220,7 +1243,7 @@ function spatialStateForClearance(edge, clearance) {
     return "rail";
   }
   if (clearance >= expanded + 48) return "expanded";
-  if (clearance >= compact + 28) return "compact";
+  if (clearance >= Math.max(compact + 28, visibleBoundary)) return "compact";
   return "rail";
 }
 
