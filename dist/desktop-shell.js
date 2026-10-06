@@ -1150,6 +1150,9 @@ const autoSpatialEdgeStates = new Map();
 let baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
 let autoAvoidanceSource = null;
 let spatialLayoutFrame = 0;
+let windowViewportLockReady = false;
+let suspendWindowViewportLock = false;
+let windowViewportSaveTimer = 0;
 const workspaceAreaSessions = Object.create(null);
 let defaultAreaSession = null;
 
@@ -1218,12 +1221,56 @@ function applyAreaSession(workspaceName) {
   applyAutoAvoidance();
 }
 
+function captureVisibleWindowViewportRects() {
+  const snapshot = new Map();
+  if (!windowViewportLockReady || suspendWindowViewportLock) return snapshot;
+  $$('[data-app-frame]').forEach(frame => {
+    const name = frame.dataset.appFrame;
+    if (frame.hidden || appState[name] !== "open" || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    const rect = frame.getBoundingClientRect();
+    snapshot.set(name, { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+  });
+  return snapshot;
+}
+
+function restoreWindowViewportRects(snapshot) {
+  if (!snapshot.size) return;
+  const workspaceRect = $(".workspace-zone").getBoundingClientRect();
+  snapshot.forEach((rect, name) => {
+    const frame = frameFor(name);
+    if (!frame || frame.hidden || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    const geometry = {
+      x: rect.left - workspaceRect.left,
+      y: rect.top - workspaceRect.top,
+      width: rect.width,
+      height: rect.height
+    };
+    frame.style.left = geometry.x + "px";
+    frame.style.top = geometry.y + "px";
+    frame.style.width = geometry.width + "px";
+    frame.style.height = geometry.height + "px";
+    windowGeometry.set(name, geometry);
+  });
+  clearTimeout(windowViewportSaveTimer);
+  windowViewportSaveTimer = setTimeout(saveLayout, 120);
+}
+
 function setWorkspaceInsets(left, right, bottom, top = 12) {
   const shell = $(".desktop-shell");
+  const workspace = $(".workspace-zone");
+  const windowSnapshot = captureVisibleWindowViewportRects();
+  const previousTransition = workspace.style.transition;
+  if (windowSnapshot.size) workspace.style.transition = "none";
   shell.style.setProperty("--workspace-left", left + "px");
   shell.style.setProperty("--workspace-right", right + "px");
   shell.style.setProperty("--workspace-bottom", bottom + "px");
   shell.style.setProperty("--workspace-top", top + "px");
+  if (windowSnapshot.size) {
+    void workspace.offsetWidth;
+    restoreWindowViewportRects(windowSnapshot);
+    void workspace.offsetWidth;
+    workspace.style.transition = previousTransition;
+  }
 }
 
 function edgePriority(edge) {
@@ -1692,7 +1739,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   applyAutoAvoidance();
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
-  if (layoutMode === "auto" && fitWindows) scheduleWindowFit();
+  if (layoutMode === "auto" && fitWindows && !windowViewportLockReady) scheduleWindowFit();
   if (save) saveAreaLayout();
 }
 
@@ -3309,15 +3356,18 @@ syncApps();
 requestAnimationFrame(() => {
   loadLayout(activeWorkspace);
   restoreWorkspaceWindowLayout();
+  windowViewportLockReady = true;
   if (frontApp) bringToFront(frontApp);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
 });
 
 window.addEventListener("resize", () => {
+  suspendWindowViewportLock = true;
   layoutDockAreas(false);
   windowGeometry.forEach((geometry, name) => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
+  suspendWindowViewportLock = false;
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
 });
 
