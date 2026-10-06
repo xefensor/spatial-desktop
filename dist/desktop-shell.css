@@ -6365,3 +6365,9 @@ body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::afte
   background:#087f9d;
   box-shadow:0 0 3px rgba(8,127,157,.36);
 }
+
+/* v123 — An Area rendered on the other physical display is still open; it is
+   only omitted locally. Disconnecting that display immediately restores it. */
+.area-window.is-on-other-display{
+  display:none!important;
+}

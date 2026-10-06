@@ -378,7 +378,7 @@ function syncRack() {
     const name = button.dataset.openApp;
     const state = appState[name];
     button.classList.toggle("is-open", state !== "closed");
-    button.classList.toggle("is-active", state === "open" && name === frontApp);
+    button.classList.toggle("is-active", state === "open" && name === frontApp && isLocalApp(name));
     button.classList.toggle("is-minimized", state === "minimized");
     button.setAttribute("aria-pressed", String(state === "open" && name === frontApp));
   });
@@ -386,12 +386,12 @@ function syncRack() {
 
 function topOpenApp(except = null) {
   return Object.keys(appState)
-    .filter(name => appState[name] === "open" && name !== except)
+    .filter(name => appState[name] === "open" && name !== except && isLocalApp(name))
     .sort((a, b) => Number(frameFor(b).style.zIndex || 0) - Number(frameFor(a).style.zIndex || 0))[0] || null;
 }
 
 function bringToFront(name) {
-  if (appState[name] !== "open") return;
+  if (appState[name] !== "open" || !isLocalApp(name)) return;
   frontApp = name;
   zCounter += 1;
   $$("[data-app-frame]").forEach(frame => frame.classList.toggle("is-front", frame.dataset.appFrame === name));
@@ -401,12 +401,12 @@ function bringToFront(name) {
 
 function syncApps() {
   $$("[data-app-frame]").forEach(frame => {
-    const visible = appState[frame.dataset.appFrame] === "open";
+    const visible = appState[frame.dataset.appFrame] === "open" && isLocalApp(frame.dataset.appFrame);
     frame.hidden = !visible;
     frame.classList.toggle("is-active", visible);
   });
-  if (!frontApp || appState[frontApp] !== "open") frontApp = topOpenApp();
-  $("#emptyWorkspace").hidden = Object.values(appState).includes("open");
+  if (!frontApp || appState[frontApp] !== "open" || !isLocalApp(frontApp)) frontApp = topOpenApp();
+  $("#emptyWorkspace").hidden = Object.keys(appState).some(name => appState[name] === "open" && isLocalApp(name));
   syncRack();
   renderMiniApps();
   renderOverviewWindows();
@@ -416,6 +416,7 @@ function syncApps() {
 
 function openApp(name, dropPoint = null) {
   if (!appInfo[name]) return;
+  displayAssignmentsFor().apps[name] = localDisplaySlot();
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   appState[name] = "open";
   frameFor(name).hidden = false;
@@ -439,7 +440,10 @@ function openApp(name, dropPoint = null) {
     applyGeometry(name, geometry);
   }
   bringToFront(name);
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (layoutMode === "auto") {
+    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+    scheduleSpatialAutoLayout();
+  }
 }
 
 function minimizeApp(name, preserveGeometry = false) {
@@ -453,7 +457,10 @@ function minimizeApp(name, preserveGeometry = false) {
   appState[name] = "minimized";
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (layoutMode === "auto") {
+    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+    scheduleSpatialAutoLayout();
+  }
 }
 
 function closeApp(name) {
@@ -461,7 +468,10 @@ function closeApp(name) {
   appState[name] = "closed";
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (layoutMode === "auto") {
+    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+    scheduleSpatialAutoLayout();
+  }
   showToast(appInfo[name].label + " closed");
 }
 
@@ -854,6 +864,11 @@ function bindWindowDrag(frame) {
       const finalRect = frame.getBoundingClientRect();
       frame.classList.remove("is-dragging");
       frame.style.position = "";
+      const transferTarget = displayTransferTarget(upEvent.clientX);
+      if (transferTarget) {
+        transferAppToDisplay(name, transferTarget, upEvent.clientX < window.innerWidth / 2 ? "left" : "right", finalRect);
+        return;
+      }
       if (parked) {
         windowGeometry.set(name, startGeometry);
         saveLayout();
@@ -1166,7 +1181,7 @@ function areaLabel(name) {
 
 function dockGroup(edge, includeHidden = false) {
   return areaPriority
-    .filter(name => dockState[name].edge === edge && (includeHidden || !areaFor(name)?.hidden))
+    .filter(name => isLocalArea(name) && dockState[name].edge === edge && (includeHidden || !areaFor(name)?.hidden))
     .sort((a, b) => dockState[a].order - dockState[b].order || areaPriority.indexOf(a) - areaPriority.indexOf(b));
 }
 
@@ -1431,7 +1446,9 @@ function syncAreaControls(states) {
 
 function syncLayoutModeUI(profile = currentDisplayProfile) {
   const modeLabel = layoutMode[0].toUpperCase() + layoutMode.slice(1);
-  const profileLabel = profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
+  const profileLabel = extendedDesktopActive()
+    ? "Extended · Display " + localDisplaySlot() + " of " + activeDisplayRoster().length
+    : profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
   const control = $("#layoutModeToggle");
   if (control) {
     $("span", control).textContent = "Areas: " + modeLabel;
@@ -1826,6 +1843,11 @@ function bindAreaDockDrag(name, area) {
       handle.removeEventListener("pointercancel", finish);
       area.classList.remove("is-dock-dragging");
       preview.classList.remove("is-visible");
+      const transferTarget = displayTransferTarget(upEvent.clientX);
+      if (transferTarget) {
+        transferAreaToDisplay(name, transferTarget, upEvent.clientX < window.innerWidth / 2 ? "left" : "right");
+        return;
+      }
       setDockPosition(name, candidate, dockInsertion(candidate, upEvent.clientX, upEvent.clientY, name));
     };
     handle.addEventListener("pointermove", move);
@@ -3184,6 +3206,7 @@ function contextMenuEntries(context) {
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
       state === "open" ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore window" : "Maximize" } : null,
+      extendedDesktopActive() ? { action: "app-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
       state !== "closed" ? separator : null,
       state !== "closed" ? { action: "app-close", icon: "i-close", label: "Close", danger: true } : null
     ].filter(Boolean);
@@ -3220,10 +3243,11 @@ function contextMenuEntries(context) {
   }
   if (context.kind === "area") return [
     { action: "area-move", icon: "i-grid", label: "Move to next edge" },
+    extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
     { action: "area-reset", icon: "i-max", label: "Reset Area size" },
     separator,
     { action: "area-hide", icon: "i-min", label: "Hide Area", danger: true }
-  ];
+  ].filter(Boolean);
   return [];
 }
 
@@ -3283,6 +3307,7 @@ function executeContextAction(action) {
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
   if (action === "app-maximize") toggleMaximize(context.name);
+  if (action === "app-move-display") transferAppToDisplay(context.name, otherDisplaySlot(), "right", frameFor(context.name)?.getBoundingClientRect());
   if (action === "app-close") closeApp(context.name);
   if (action === "desktop-overview") setUniversalSearchOpen(true);
   if (action === "desktop-new-folder") createDesktopFolder(context.point);
@@ -3319,6 +3344,7 @@ function executeContextAction(action) {
     const current = dockState[context.name].edge;
     setDockPosition(context.name, dockEdges[(dockEdges.indexOf(current) + 1) % dockEdges.length]);
   }
+  if (action === "area-move-display") transferAreaToDisplay(context.name, otherDisplaySlot(), "right");
   if (action === "area-reset") {
     dockSizeManual[dockState[context.name].edge] = false;
     layoutDockAreas(true);
@@ -3382,8 +3408,13 @@ function prepareContextMenus() {
 const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1";
 const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v1";
 const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+const desktopSyncStartedAt = Date.now() + Math.random();
 const desktopSyncChannel = "BroadcastChannel" in window ? new BroadcastChannel(DESKTOP_SYNC_CHANNEL) : null;
 const desktopSyncPeers = new Map();
+const workspaceDisplayAssignments = (() => {
+  try { return JSON.parse(localStorage.getItem("spatial-workspace-display-assignments-v1") || "{}"); }
+  catch { return {}; }
+})();
 let desktopSyncApplying = false;
 let desktopSyncTimer = 0;
 let desktopSyncLastStamp = 0;
@@ -3396,6 +3427,140 @@ function cloneDesktopState(value) {
 function readDesktopStorage(key, fallback = {}) {
   try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
   catch { return cloneDesktopState(fallback); }
+}
+
+function localDisplayDescriptor() {
+  return {
+    openedAt: desktopSyncStartedAt,
+    screenX: Number(window.screenX ?? window.screenLeft ?? 0),
+    screenY: Number(window.screenY ?? window.screenTop ?? 0),
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
+
+function activeDisplayRoster() {
+  const now = Date.now();
+  const roster = [{ source: desktopSyncSource, seenAt: now, ...localDisplayDescriptor() }];
+  desktopSyncPeers.forEach((peer, source) => {
+    if (now - peer.seenAt <= 6500) roster.push({ source, ...peer });
+  });
+  return roster.sort((first, second) => {
+    const separated = Math.abs((first.screenX || 0) - (second.screenX || 0)) > 80;
+    if (separated) return (first.screenX || 0) - (second.screenX || 0) || (first.screenY || 0) - (second.screenY || 0);
+    return (first.openedAt || 0) - (second.openedAt || 0) || first.source.localeCompare(second.source);
+  });
+}
+
+function extendedDesktopActive() {
+  return activeDisplayRoster().length > 1;
+}
+
+function localDisplaySlot() {
+  const index = activeDisplayRoster().findIndex(display => display.source === desktopSyncSource);
+  return Math.max(1, index + 1);
+}
+
+function otherDisplaySlot() {
+  const count = activeDisplayRoster().length;
+  if (count < 2) return 1;
+  return localDisplaySlot() === 1 ? 2 : 1;
+}
+
+function displayAssignmentsFor(workspaceName = activeWorkspace) {
+  const saved = workspaceDisplayAssignments[workspaceName] ||= {};
+  saved.apps ||= Object.fromEntries(Object.keys(appInfo).map(name => [name, 1]));
+  saved.areas ||= Object.fromEntries(areaPriority.map(name => [name, 1]));
+  return saved;
+}
+
+function isLocalApp(name) {
+  return !extendedDesktopActive() || Number(displayAssignmentsFor().apps[name] || 1) === localDisplaySlot();
+}
+
+function isLocalArea(name) {
+  return !extendedDesktopActive() || Number(displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
+}
+
+function persistDisplayAssignments() {
+  try { localStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(workspaceDisplayAssignments)); }
+  catch {}
+}
+
+function applyExtendedDesktopPartition() {
+  const count = activeDisplayRoster().length;
+  const slot = localDisplaySlot();
+  document.body.dataset.physicalDisplay = String(slot);
+  areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", count > 1 && !isLocalArea(name)));
+  syncApps();
+  layoutDockAreas(false);
+  document.title = count > 1 ? "Spatial Desktop — Display " + slot + " of " + count : "Spatial Desktop";
+}
+
+function rebalanceAreaDisplays() {
+  const count = activeDisplayRoster().length;
+  if (count < 2 || layoutMode !== "auto") return false;
+  const assignments = displayAssignmentsFor();
+  const scores = Array.from({ length: count }, (_, index) => ({ slot: index + 1, score: 0 }));
+  Object.keys(appState).forEach(name => {
+    if (appState[name] !== "open") return;
+    const slot = Math.max(1, Math.min(count, Number(assignments.apps[name]) || 1));
+    scores[slot - 1].score += 4;
+  });
+  const projectSlot = Math.max(1, Math.min(count, Number(assignments.areas.projects) || 1));
+  assignments.areas.projects = projectSlot;
+  scores[projectSlot - 1].score += 3;
+  let changed = false;
+  [["apps", 2], ["systems", 1]].forEach(([name, weight]) => {
+    const current = Math.max(1, Math.min(count, Number(assignments.areas[name]) || 1));
+    const target = [...scores].sort((first, second) => first.score - second.score
+      || Number(second.slot === current) - Number(first.slot === current)
+      || first.slot - second.slot)[0].slot;
+    if (target !== current) changed = true;
+    assignments.areas[name] = target;
+    scores[target - 1].score += weight;
+  });
+  if (changed) persistDisplayAssignments();
+  return changed;
+}
+
+function displayTransferTarget(clientX) {
+  if (!extendedDesktopActive()) return 0;
+  if (clientX <= 18 || clientX >= window.innerWidth - 18) return otherDisplaySlot();
+  return 0;
+}
+
+function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = null) {
+  if (!appInfo[name] || !extendedDesktopActive()) return;
+  const assignments = displayAssignmentsFor();
+  assignments.apps[name] = targetSlot;
+  const workspace = workspaceBounds();
+  const rect = sourceRect || frameFor(name)?.getBoundingClientRect();
+  const width = Math.min(rect?.width || 720, Math.max(380, workspace.width - 48));
+  const height = Math.min(rect?.height || 560, Math.max(300, workspace.height - 48));
+  windowGeometry.set(name, {
+    x: edge === "left" ? Math.max(24, workspace.width - width - 24) : 24,
+    y: Math.max(24, Math.min((rect?.top || 80) - workspace.rect.top, workspace.height - height - 24)),
+    width,
+    height
+  });
+  persistDisplayAssignments();
+  saveLayout();
+  if (layoutMode === "auto") rebalanceAreaDisplays();
+  applyExtendedDesktopPartition();
+  queueDesktopStateBroadcast(0);
+  showToast(appInfo[name].label + " moved to Display " + targetSlot);
+}
+
+function transferAreaToDisplay(name, targetSlot, edge = "right") {
+  if (!areaPriority.includes(name) || !extendedDesktopActive()) return;
+  displayAssignmentsFor().areas[name] = targetSlot;
+  dockState[name].edge = edge === "left" ? "right" : "left";
+  persistDisplayAssignments();
+  saveAreaLayout();
+  applyExtendedDesktopPartition();
+  queueDesktopStateBroadcast(0);
+  showToast(areaLabel(name) + " moved to Display " + targetSlot);
 }
 
 function captureDesktopSyncState() {
@@ -3415,12 +3580,13 @@ function captureDesktopSyncState() {
   }]));
 
   return {
-    schema: 1,
+    schema: 2,
     theme: document.body.dataset.theme,
     activeWorkspace,
     workspaceStates,
     areaSessions,
     windowLayouts,
+    displayAssignments: cloneDesktopState(workspaceDisplayAssignments),
     frontApp,
     maximized: Object.fromEntries($$("[data-app-frame]").map(frame => [
       frame.dataset.appFrame,
@@ -3453,11 +3619,12 @@ function persistIncomingDesktopState(state) {
     localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
     localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
     localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
+    if (state.displayAssignments) localStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(state.displayAssignments));
   } catch {}
 }
 
 function applyDesktopSyncState(state) {
-  if (!state || state.schema !== 1 || !workspaceProfiles[state.activeWorkspace]) return;
+  if (!state || ![1, 2].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {
     Object.entries(state.workspaceStates || {}).forEach(([name, saved]) => {
@@ -3465,6 +3632,10 @@ function applyDesktopSyncState(state) {
     });
     Object.keys(workspaceAreaSessions).forEach(name => delete workspaceAreaSessions[name]);
     Object.assign(workspaceAreaSessions, cloneDesktopState(state.areaSessions || {}));
+    if (state.displayAssignments) {
+      Object.keys(workspaceDisplayAssignments).forEach(name => delete workspaceDisplayAssignments[name]);
+      Object.assign(workspaceDisplayAssignments, cloneDesktopState(state.displayAssignments));
+    }
     Object.keys(projectWindowSessions).forEach(name => delete projectWindowSessions[name]);
     Object.assign(projectWindowSessions, cloneDesktopState(state.projectWindowSessions || {}));
     Object.entries(state.projects || {}).forEach(([name, saved]) => {
@@ -3514,6 +3685,8 @@ function applyDesktopSyncState(state) {
     }
 
     requestAnimationFrame(() => {
+      if (layoutMode === "auto") rebalanceAreaDisplays();
+      applyExtendedDesktopPartition();
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
         const frame = frameFor(name);
         if (!frame || appState[name] !== "open") return;
@@ -3532,6 +3705,7 @@ function postDesktopSyncMessage(message) {
     ...message,
     id: desktopSyncSource + ":" + Date.now() + ":" + Math.random().toString(36).slice(2),
     source: desktopSyncSource,
+    display: localDisplayDescriptor(),
     sentAt: Date.now()
   };
   if (desktopSyncChannel) desktopSyncChannel.postMessage(packet);
@@ -3555,14 +3729,15 @@ function queueDesktopStateBroadcast(delay = 55) {
 
 function updateDesktopSyncPresence() {
   const now = Date.now();
-  desktopSyncPeers.forEach((seen, source) => {
-    if (now - seen > 6500) desktopSyncPeers.delete(source);
+  desktopSyncPeers.forEach((peer, source) => {
+    if (now - peer.seenAt > 6500) desktopSyncPeers.delete(source);
   });
   const count = desktopSyncPeers.size;
+  const slot = localDisplaySlot();
   document.body.classList.toggle("is-session-synced", count > 0);
   const context = $("#systemAreaContext");
   if (context && workspaceProfiles[activeWorkspace]) {
-    context.textContent = workspaceProfiles[activeWorkspace].label + " workspace" + (count ? " · " + (count + 1) + " displays" : "");
+    context.textContent = workspaceProfiles[activeWorkspace].label + " workspace" + (count ? " · Display " + slot + " of " + (count + 1) : "");
   }
   const systemArea = areaFor("systems");
   if (systemArea) {
@@ -3571,22 +3746,25 @@ function updateDesktopSyncPresence() {
   }
   if (count && !desktopSyncAnnounced) {
     desktopSyncAnnounced = true;
-    showToast("Second display connected · desktop synced");
+    showToast("Display " + slot + " connected · extended desktop ready");
   }
   if (!count) desktopSyncAnnounced = false;
+  const changed = rebalanceAreaDisplays();
+  applyExtendedDesktopPartition();
+  if (changed && slot === 1 && !desktopSyncApplying) queueDesktopStateBroadcast(0);
 }
 
 function receiveDesktopSyncMessage(packet) {
   if (!packet || packet.source === desktopSyncSource) return;
-  desktopSyncPeers.set(packet.source, Date.now());
-  updateDesktopSyncPresence();
-  if (packet.type === "request") {
-    broadcastDesktopState();
-    return;
-  }
   if (packet.type === "goodbye") {
     desktopSyncPeers.delete(packet.source);
     updateDesktopSyncPresence();
+    return;
+  }
+  desktopSyncPeers.set(packet.source, { seenAt: Date.now(), ...(packet.display || {}) });
+  updateDesktopSyncPresence();
+  if (packet.type === "request") {
+    broadcastDesktopState();
     return;
   }
   if (packet.type !== "state" || !Number.isFinite(packet.stamp) || packet.stamp <= desktopSyncLastStamp) return;
