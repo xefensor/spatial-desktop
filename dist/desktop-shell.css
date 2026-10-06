@@ -6111,3 +6111,44 @@ body[data-theme="light"].areas-docked .area-window{
 .systems-zone[data-dock-edge="bottom"]>.system-scroll-region{
   display:contents;
 }
+
+/* v112 — The app window is the soft movable object; its workspace is not a
+   stack of smaller squircles. Large internal content surfaces meet on clean,
+   square seams. Real controls keep only a restrained ABS tool radius. */
+:is(.app-frame,.package-window) :where(
+  .file-well,
+  .music-hero,
+  .playlist,
+  .start-page,
+  .terminal-screen,
+  .notes-layout,
+  .notes-layout nav,
+  .notes-layout textarea,
+  .album-block,
+  .package-panel,
+  .import-map
+){
+  border-radius:0!important;
+  corner-shape:square!important;
+}
+
+.app-frame :where(
+  button,
+  input:not([type="range"]),
+  textarea,
+  select,
+  label,
+  .app-badge,
+  .folder-tab,
+  .nav-choice
+){
+  border-radius:4px!important;
+  corner-shape:round!important;
+}
+
+/* Content rows belong to the solid document surface, so selection is a flat
+   strip rather than another rounded card. */
+.app-frame :where(.content-row,.playlist .content-row){
+  border-radius:0!important;
+  corner-shape:square!important;
+}
