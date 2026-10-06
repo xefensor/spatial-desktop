@@ -682,3 +682,211 @@ body[data-theme="light"] .desktop-shell{
 .mini-card-note .mini-note-field:focus{
   box-shadow:inset 0 1px 3px rgba(0,0,0,.34),0 0 0 1px rgba(42,159,255,.2);
 }
+
+/* Edge-lit acrylic sheets: fixed glass around tactile ABS application windows */
+:root{
+  --glass-field:rgba(10,17,21,.48);
+  --glass-field-deep:rgba(3,8,11,.34);
+  --glass-highlight:rgba(229,244,252,.095);
+  --glass-groove:rgba(205,225,236,.19);
+  --glass-groove-deep:rgba(0,0,0,.58);
+  --glass-frost:rgba(226,242,249,.34);
+  --glass-charge:#58baff;
+  --glass-charge-soft:rgba(62,174,255,.16);
+}
+body[data-theme="graphite"]{
+  --glass-field:rgba(31,39,44,.52);
+  --glass-field-deep:rgba(13,18,21,.33);
+  --glass-groove:rgba(220,234,241,.22);
+}
+body[data-theme="light"]{
+  --glass-field:rgba(235,241,243,.47);
+  --glass-field-deep:rgba(174,190,197,.25);
+  --glass-highlight:rgba(255,255,255,.42);
+  --glass-groove:rgba(62,83,94,.28);
+  --glass-groove-deep:rgba(54,68,76,.22);
+  --glass-frost:rgba(28,53,68,.42);
+  --glass-charge:#087ed0;
+  --glass-charge-soft:rgba(8,126,208,.14);
+}
+
+.apps-zone,.systems-zone{
+  background:
+    linear-gradient(180deg,var(--glass-highlight),transparent 16%,transparent 84%,rgba(0,0,0,.07)),
+    color-mix(in srgb,var(--glass-field) 84%,transparent);
+  backdrop-filter:blur(21px) saturate(1.08);
+  box-shadow:inset 0 0 0 1px var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
+}
+.apps-zone{
+  border-right-color:var(--glass-groove);
+  box-shadow:inset -1px 0 var(--glass-groove-deep),inset -2px 0 var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
+}
+.systems-zone{
+  border-left-color:var(--glass-groove);
+  box-shadow:inset 1px 0 var(--glass-groove-deep),inset 2px 0 var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
+}
+.apps-zone .zone-heading,.systems-zone .zone-heading{
+  position:relative;
+  height:62px;
+  padding:2px 3px 10px;
+}
+.apps-zone .zone-heading::after,.systems-zone .zone-heading::after{
+  content:"";
+  position:absolute;
+  left:2px;
+  right:2px;
+  bottom:4px;
+  height:1px;
+  background:var(--glass-groove);
+  box-shadow:0 1px var(--glass-groove-deep),0 0 5px rgba(201,232,247,.055);
+}
+.apps-zone .eyebrow,.systems-zone .eyebrow,.apps-zone .small-heading,.systems-zone .small-heading{
+  color:var(--glass-frost);
+  text-shadow:0 1px rgba(0,0,0,.45),0 0 4px rgba(205,235,249,.055);
+}
+
+/* Each widget is an engraving in the sheet, not another raised glass card. */
+.apps-zone .app-rack,.mini-card,.system-widget{
+  position:relative;
+  border:1px solid var(--glass-groove);
+  background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008));
+  backdrop-filter:none;
+  box-shadow:
+    inset 0 0 0 1px var(--glass-groove-deep),
+    inset 0 1px var(--glass-highlight),
+    0 0 7px rgba(210,235,246,.035);
+}
+.apps-zone .app-rack{
+  height:74px;
+  padding:4px;
+  border-radius:13px;
+}
+.mini-card,.system-widget{
+  border-radius:12px;
+}
+.mini-card{
+  padding:9px;
+}
+.mini-card::before,.system-widget::before,.apps-zone .app-rack::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:.22;
+  background:repeating-linear-gradient(97deg,rgba(255,255,255,.11) 0 1px,transparent 1px 4px);
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  padding:1px;
+}
+.mini-card::after{
+  left:10px;
+  right:10px;
+  top:-1px;
+  height:1px;
+  background:var(--glass-charge);
+  box-shadow:0 0 5px var(--glass-charge-soft);
+  opacity:.72;
+}
+.system-widget:hover,.mini-card:hover{
+  border-color:color-mix(in srgb,var(--glass-charge) 33%,var(--glass-groove));
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep),inset 0 1px var(--glass-highlight),0 0 8px rgba(62,174,255,.07);
+}
+.notification-widget,.timer-widget{
+  border-color:color-mix(in srgb,var(--glass-charge) 32%,var(--glass-groove));
+  background:linear-gradient(180deg,rgba(42,159,255,.025),rgba(255,255,255,.006));
+}
+
+.section-heading,.time-block,.apps-bottom{
+  border-color:var(--glass-groove);
+}
+.section-heading{
+  padding-inline:3px;
+}
+.widget-heading svg,.section-heading svg{
+  color:var(--glass-frost);
+  filter:drop-shadow(0 0 3px rgba(200,234,249,.12));
+}
+.notification,.next-event{
+  border-color:var(--glass-groove);
+}
+.next-event,.phone-silhouette,.app-badge{
+  background:rgba(0,0,0,.10);
+  border:1px solid color-mix(in srgb,var(--glass-groove) 72%,transparent);
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep);
+}
+
+/* Controls etched into the acrylic light the existing groove; the surface never moves. */
+.apps-zone .app-key,.systems-zone .quick-toggle,.systems-zone .system-launcher{
+  transform:none;
+  filter:none;
+  border:1px solid var(--glass-groove);
+  background:transparent;
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep);
+  transition:color 30ms linear,border-color 30ms linear,box-shadow 30ms linear,text-shadow 30ms linear;
+}
+.apps-zone .app-key:hover,.systems-zone .quick-toggle:hover,.systems-zone .system-launcher:hover{
+  transform:none;
+  filter:none;
+  color:var(--text);
+  border-color:color-mix(in srgb,var(--glass-charge) 42%,var(--glass-groove));
+  background:transparent;
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px rgba(62,174,255,.08);
+}
+.apps-zone .app-key:active,.systems-zone .quick-toggle:active,.systems-zone .system-launcher:active{
+  transform:none;
+  filter:none;
+  color:var(--glass-charge);
+  border-color:color-mix(in srgb,var(--glass-charge) 72%,var(--glass-groove));
+  background:transparent;
+  box-shadow:inset 0 0 0 1px rgba(218,242,252,.08),0 0 7px var(--glass-charge-soft);
+  text-shadow:0 0 5px var(--glass-charge-soft);
+  transition-duration:16ms;
+}
+.apps-zone .app-key.is-active,.systems-zone .quick-toggle.is-active{
+  transform:none;
+  color:var(--glass-charge);
+  border-color:color-mix(in srgb,var(--glass-charge) 64%,var(--glass-groove));
+  background:transparent;
+  box-shadow:inset 0 0 0 1px rgba(218,242,252,.065),0 0 6px var(--glass-charge-soft);
+  text-shadow:0 0 5px var(--glass-charge-soft);
+}
+.apps-zone .app-key.is-active:active{transform:none}
+.apps-zone .app-key span,.systems-zone .quick-toggle span{color:inherit}
+.apps-zone .app-key>i{
+  bottom:2px;
+  height:1px;
+  background:var(--glass-groove);
+  box-shadow:none;
+}
+.apps-zone .app-key.is-open>i{
+  background:var(--glass-charge);
+  box-shadow:0 0 5px var(--glass-charge-soft);
+}
+.systems-zone .quick-toggle.is-active{
+  transform:none;
+}
+
+/* Zone dividers are conductive engraved cuts, not raised plastic handles. */
+.zone-resizer::before{
+  background:var(--glass-groove);
+  box-shadow:1px 0 var(--glass-groove-deep),-1px 0 var(--glass-highlight);
+  opacity:.74;
+}
+.zone-resizer>span{
+  background:transparent;
+  box-shadow:none;
+}
+.zone-resizer>span i{
+  background:var(--glass-frost);
+  box-shadow:0 0 3px rgba(210,238,250,.08);
+}
+.zone-resizer:hover::before,.zone-resizer:focus-visible::before,.zone-resizer.is-dragging::before{
+  background:var(--glass-charge);
+  box-shadow:0 0 7px var(--glass-charge-soft);
+}
+.zone-resizer:hover>span,.zone-resizer:focus-visible>span,.zone-resizer.is-dragging>span{
+  box-shadow:none;
+}
