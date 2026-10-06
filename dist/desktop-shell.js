@@ -1318,6 +1318,10 @@ function areaStateForSize(edge, size) {
   return size <= (vertical ? 152 : 142) ? "rail" : "expanded";
 }
 
+function edgeHasExplicitRail(edge) {
+  return Boolean(dockSizeManual[edge]) && areaStateForSize(edge, dockSizes[edge]) === "rail";
+}
+
 function initialAreaStates(profile) {
   let states;
   if (layoutMode === "manual") {
@@ -1339,8 +1343,9 @@ function initialAreaStates(profile) {
     dockGroup(edge, true).forEach(name => { states[name] = state; });
   });
   dockEdges.forEach(edge => {
-    if (!dockSizeManual[edge] || layoutMode !== "manual") return;
+    if (!dockSizeManual[edge]) return;
     const state = areaStateForSize(edge, dockSizes[edge]);
+    if (layoutMode !== "manual" && state !== "rail") return;
     dockGroup(edge, true).forEach(name => { states[name] = state; });
   });
   return states;
@@ -1618,7 +1623,9 @@ function scheduleSpatialAutoLayout() {
 function desiredAutoEdges() {
   const edges = new Set();
   if (layoutMode !== "auto") return edges;
-  autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => edges.add(edge)));
+  autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => {
+    if (!edgeHasExplicitRail(edge)) edges.add(edge);
+  }));
   return edges;
 }
 
@@ -3554,9 +3561,12 @@ function mainDisplayWindowRects() {
 
 function mainDisplayHasRoomForArea(name, windows, currentSlot) {
   const area = areaFor(name);
+  const edge = dockState[name].edge;
+  /* Resizing a lane into its rail is an explicit placement decision. Auto may
+     relocate expanded Areas, but it must never reinterpret rail as overflow. */
+  if (edgeHasExplicitRail(edge)) return true;
   if (!area || area.hidden || !windows.length) return true;
   if (windows.some(windowInfo => windowInfo.maximized)) return false;
-  const edge = dockState[name].edge;
   const shellRect = $(".desktop-shell").getBoundingClientRect();
   const clearance = Math.min(...windows.map(windowInfo => clearanceFromEdge(edge, windowInfo.rect, shellRect)));
   const vertical = edge === "left" || edge === "right";
