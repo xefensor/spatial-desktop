@@ -516,7 +516,7 @@ function miniMarkup(name) {
   const info = appInfo[name];
   const header = '<header title="Drag this card back into the workspace"><div><span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + info.detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
   if (name === "dolphin") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-location"><span class="live-slit"></span><b>Downloads</b><small>276.8 GiB free</small></div><div class="mini-file-list"><button data-mini-file="material-interface"><span><i class="folder-glyph"></i>material-interface</span><small>today</small></button><button data-mini-file="plasma-shell-study.png"><span><i class="document-glyph image"></i>plasma-shell-study.png</span><small>6.8 MiB</small></button></div><div class="mini-quick-row"><button class="surface-key mini-tool" data-mini-action="new-folder">' + icon("i-folder") + '<span>New folder</span></button><button class="surface-key mini-tool" data-mini-action="find-files">' + icon("i-search") + '<span>Find</span></button></div></article>';
@@ -2376,10 +2376,6 @@ function prepareWorkspaces() {
     const button = event.target.closest("[data-overview-open-app]");
     if (button) { openApp(button.dataset.overviewOpenApp); setUniversalSearchOpen(false); }
   });
-  $("#appRack").addEventListener("click", event => {
-    const button = event.target.closest("[data-open-app]");
-    if (button) openApp(button.dataset.openApp);
-  });
   $("#workspaceFavorites").addEventListener("click", event => {
     const open = event.target.closest("[data-open-app]");
     const toast = event.target.closest("[data-toast]");
@@ -2401,6 +2397,7 @@ const packageModes = {
 
 let packageKind = "workspace";
 let packageMode = "portable";
+let packageLastFocus = null;
 
 function packageRows(kind) {
   const workspaceRows = [
@@ -2434,6 +2431,7 @@ function renderPackageComposer() {
     const selected = button.dataset.packageMode === packageMode;
     button.classList.toggle("is-active", selected);
     button.setAttribute("aria-pressed", String(selected));
+    button.setAttribute("aria-checked", String(selected));
   });
   $("#packageContentList").innerHTML = packageRows(packageKind).map(([itemIcon, label, detail, size, checked]) => '<label class="package-content-row"><input type="checkbox" ' + (checked ? "checked" : "") + '><span>' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><small>' + escapeHtml(size) + '</small></label>').join("");
   prepareControlSemantics($("#packageDialog"));
@@ -2442,6 +2440,7 @@ function renderPackageComposer() {
 function openPackageDialog(kind = "workspace", direction = "pack") {
   packageKind = kind;
   const dialog = $("#packageDialog");
+  packageLastFocus = document.activeElement;
   $("#packageComposer").hidden = direction !== "pack";
   $("#importPreview").hidden = direction !== "import";
   if (direction === "pack") renderPackageComposer();
@@ -2450,17 +2449,30 @@ function openPackageDialog(kind = "workspace", direction = "pack") {
     $("#packageTitle").textContent = "Review shared Workspace";
   }
   dialog.hidden = false;
+  dialog.inert = false;
   dialog.setAttribute("aria-hidden", "false");
+  $(".desktop-shell").inert = true;
+  $("#universalSearch").inert = true;
   document.body.classList.add("package-open");
-  requestAnimationFrame(() => dialog.classList.add("is-open"));
+  requestAnimationFrame(() => {
+    dialog.classList.add("is-open");
+    $("[data-close-package]", dialog)?.focus({preventScroll:true});
+  });
 }
 
 function closePackageDialog() {
   const dialog = $("#packageDialog");
   dialog.classList.remove("is-open");
   dialog.setAttribute("aria-hidden", "true");
+  dialog.inert = true;
+  const overviewOpen = $("#universalSearch").classList.contains("is-open");
+  $(".desktop-shell").inert = overviewOpen;
+  $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("package-open");
   setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 120);
+  const returnFocus = packageLastFocus;
+  packageLastFocus = null;
+  requestAnimationFrame(() => returnFocus?.focus?.({preventScroll:true}));
 }
 
 function preparePackages() {
@@ -2633,14 +2645,16 @@ function filterUniversalSearch() {
 function setUniversalSearchOpen(open) {
   const overlay = $("#universalSearch");
   if (open === overlay.classList.contains("is-open")) return;
+  if (open) universalLastFocus = document.activeElement;
   overlay.classList.toggle("is-open", open);
+  overlay.inert = !open;
   overlay.setAttribute("aria-hidden", String(!open));
+  $(".desktop-shell").inert = open;
   document.body.classList.toggle("universal-search-open", open);
 
   if (open) {
     if (currentDisplayProfile === "dual") overlay.dataset.monitor = lastDesktopPointerX < window.innerWidth / 2 ? "left" : "right";
     else delete overlay.dataset.monitor;
-    universalLastFocus = document.activeElement;
     $("#universalSearchInput").value = "";
     $("#allAppsToggle").classList.add("is-active");
     $("#allAppsToggle").setAttribute("aria-expanded", "true");
@@ -2655,6 +2669,7 @@ function setUniversalSearchOpen(open) {
     $("#allAppsToggle").setAttribute("aria-expanded", "false");
     $("#allAppsToggle").setAttribute("aria-pressed", "false");
     if (universalLastFocus && universalLastFocus.focus) universalLastFocus.focus({preventScroll:true});
+    universalLastFocus = null;
   }
 }
 
@@ -2804,7 +2819,29 @@ function prepareMaterialCursor() {
 }
 
 let superKeyAlone = false;
+
+function trapDialogFocus(root, event) {
+  if (event.key !== "Tab") return false;
+  const focusable = $$('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])', root)
+    .filter(element => !element.hidden && element.offsetParent !== null);
+  if (!focusable.length) return false;
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  const outside = !root.contains(document.activeElement);
+  if (outside || (event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)) {
+    event.preventDefault();
+    (event.shiftKey && !outside ? last : first).focus();
+    return true;
+  }
+  return false;
+}
+
 document.addEventListener("keydown", event => {
+  const packageDialog = $("#packageDialog");
+  const universalSearch = $("#universalSearch");
+  if (packageDialog.classList.contains("is-open") && trapDialogFocus(packageDialog, event)) return;
+  if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
+
   const isSuper = event.key === "Meta" || event.key === "OS";
   if (isSuper && !event.repeat) {
     superKeyAlone = true;
@@ -2911,6 +2948,8 @@ function syncMusic() {
     button.innerHTML = icon(musicPlaying ? "i-pause" : "i-play");
     button.classList.toggle("is-active", musicPlaying);
     button.setAttribute("aria-pressed", String(musicPlaying));
+    button.setAttribute("aria-label", musicPlaying ? "Pause" : "Play");
+    button.title = musicPlaying ? "Pause" : "Play";
   });
   $$(".track-range").forEach(range => {
     range.value = musicPosition;
@@ -3262,7 +3301,7 @@ function executeContextAction(action) {
     activateProject(context.name);
     showArea("projects", false);
   }
-  if (action === "project-pack") showToast((projectSpaces[context.name]?.name || "Project") + " package prepared");
+  if (action === "project-pack") openPackageDialog("project");
   if (action === "widget-open") showToast(context.title + " opened");
   if (action === "widget-clear") {
     $$(".notification", context.element).forEach(item => item.remove());

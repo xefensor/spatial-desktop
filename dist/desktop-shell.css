@@ -6312,3 +6312,37 @@ body[data-theme="light"].areas-docked .area-window{
   stroke-width:2.45!important;
   filter:none!important;
 }
+
+/* v120 — Full-desktop reconciliation pass.
+   The project note absorbs otherwise unused height in vertical docks, while
+   headers stay compact enough to preserve their identity at narrow widths. */
+.project-area[data-area-state="expanded"][data-dock-edge="left"] .project-note-module,
+.project-area[data-area-state="expanded"][data-dock-edge="right"] .project-note-module{
+  flex:1 1 190px;
+  min-height:142px;
+}
+.project-area[data-area-state="expanded"] .area-window-actions{gap:3px}
+.project-area[data-area-state="expanded"] .area-window-key{
+  width:27px;
+  height:27px;
+}
+.project-area[data-area-state="expanded"] .area-window-icon{
+  width:28px;
+  height:28px;
+}
+
+/* Every interactive element gets an equally legible keyboard state. This is
+   a thin state indicator, not another material layer or permanent toggle LED. */
+:where(button,input,textarea,select,[tabindex]):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--blue) 78%,white 22%);
+  outline-offset:2px;
+}
+.app-frame :where(button,input,textarea,select,[tabindex]):focus-visible{
+  outline-color:color-mix(in srgb,var(--app-primary,var(--blue)) 78%,white 22%);
+}
+.area-window :where(button,input,textarea,select,[tabindex]):focus-visible{
+  outline-color:color-mix(in srgb,var(--area-header-accent,var(--blue)) 76%,white 24%);
+}
+body[data-theme="light"] :where(button,input,textarea,select,[tabindex]):focus-visible{
+  outline-color:color-mix(in srgb,var(--blue) 82%,#132b3b 18%);
+}
