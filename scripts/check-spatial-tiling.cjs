@@ -139,7 +139,7 @@ const docks = {
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
   localStorage: sandbox.localStorage, isLocalArea: () => true,
   $: (selector, scope) => selector === ".desktop-shell" ? shell : scope?.handle,
-  extendedDesktopActive: () => true, localDisplaySlot: () => 1,
+  extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
   captureBaseDockLaneRects() {}, syncAreaControls() {}, syncLayoutModeUI() {},
   setWorkspaceInsets(left, right, bottom, top) { docks.insets = { left, right, bottom, top }; },
@@ -187,3 +187,19 @@ assert.equal(areaFrames.projects.rect.width, 370, "Another workspace retains its
 vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', docks);
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
+
+vm.runInContext(slice("function hideArea(", "function showArea("), docks);
+vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);
+vm.runInContext(`workspaceAreaSessions.general.hidden = {apps: true, systems: true, projects: false};
+  applyAreaSession("general"); hideArea("apps"); hideArea("systems");`, docks);
+assert.equal(areaFrames.apps.hidden, false, "Apps cannot be hidden by old saved state or a hide action");
+assert.equal(areaFrames.systems.hidden, false, "System cannot be hidden by old saved state or a hide action");
+for (const name of ["apps", "systems"]) {
+  assert.equal(vm.runInContext(`contextMenuEntries({kind: "area", name: "${name}"}).some(item => item.action === "area-hide")`, docks), false, name + " context menu has no hide command");
+}
+vm.runInContext('hideArea("projects")', docks);
+assert.equal(areaFrames.projects.hidden, true, "Project remains optionally hideable");
+const html = fs.readFileSync(require("node:path").join(__dirname, "../dist/index.html"), "utf8");
+assert(!html.includes("data-area-auto"), "Move dock buttons are removed");
+assert(!/data-(?:area-hide|overview-area-visibility)="(?:apps|systems)"/.test(html), "No Apps/System hide buttons remain");
+console.log("Persistent Areas: hidden-state migration, blocked hide actions, context-menu policy and removed controls passed.");

@@ -1636,6 +1636,7 @@ function prepareZoneResizers() {
 }
 
 const areaPriority = ["projects", "apps", "systems"];
+const persistentAreas = new Set(["apps", "systems"]);
 const dockEdges = ["left", "right", "top", "bottom"];
 const dockState = {
   projects: { edge: "left", order: 0 },
@@ -1671,6 +1672,17 @@ function areaFor(name) {
   return document.querySelector('[data-area-window="' + name + '"]');
 }
 
+function areaCanBeHidden(name) {
+  return !persistentAreas.has(name);
+}
+
+function keepPersistentAreasVisible() {
+  persistentAreas.forEach(name => {
+    const area = areaFor(name);
+    if (area) area.hidden = false;
+  });
+}
+
 function areaLabel(name) {
   return name === "projects" ? "Project Space" : name === "apps" ? "Apps" : "System";
 }
@@ -1686,7 +1698,7 @@ function normalizeDockOrder(edge) {
 }
 
 function snapshotAreaLayout() {
-  const hidden = Object.fromEntries(areaPriority.map(name => [name, Boolean(areaFor(name)?.hidden)]));
+  const hidden = Object.fromEntries(areaPriority.map(name => [name, areaCanBeHidden(name) && Boolean(areaFor(name)?.hidden)]));
   return {
     state: Object.fromEntries(areaPriority.map(name => [name, { ...dockState[name] }])),
     sizes: { ...dockSizes },
@@ -1710,6 +1722,8 @@ function saveAreaLayout() {
 function applyAreaSession(workspaceName) {
   const source = workspaceAreaSessions[workspaceName] || defaultAreaSession || snapshotAreaLayout();
   const saved = JSON.parse(JSON.stringify(source));
+  saved.hidden ||= {};
+  persistentAreas.forEach(name => { saved.hidden[name] = false; });
   workspaceAreaSessions[workspaceName] = saved;
   if (saved.state) areaPriority.forEach(name => {
     if (dockEdges.includes(saved.state[name]?.edge)) {
@@ -2251,6 +2265,7 @@ function applySecondaryAreaCanvas(names, width, height) {
 }
 
 function layoutDockAreas(save = false, fitWindows = true) {
+  keepPersistentAreasVisible();
   const shell = $(".desktop-shell");
   const width = shell.clientWidth;
   const height = shell.clientHeight;
@@ -2325,6 +2340,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
 }
 
 function hideArea(name) {
+  if (!areaCanBeHidden(name)) return;
   const area = areaFor(name);
   if (!area) return;
   area.hidden = true;
@@ -2475,6 +2491,7 @@ function prepareAreaWindows() {
   });
   if (saved?.sizes) dockEdges.forEach(edge => { if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge]; });
   if (saved?.hidden) areaPriority.forEach(name => { if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]); });
+  keepPersistentAreasVisible();
   if (saved?.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
 
   areaPriority.forEach(name => {
@@ -4494,8 +4511,8 @@ function contextMenuEntries(context) {
     { action: "area-move", icon: "i-grid", label: "Move to next edge" },
     extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
     { action: "area-reset", icon: "i-max", label: "Reset Area size" },
-    separator,
-    { action: "area-hide", icon: "i-min", label: "Hide Area", danger: true }
+    areaCanBeHidden(context.name) ? separator : null,
+    areaCanBeHidden(context.name) ? { action: "area-hide", icon: "i-min", label: "Hide Area", danger: true } : null
   ].filter(Boolean);
   return [];
 }

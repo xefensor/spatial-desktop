@@ -7,7 +7,7 @@
   <meta name="description" content="A tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=148">
+  <link rel="stylesheet" href="desktop-shell.css?v=149">
   <title>Spatial Desktop</title>
 </head>
 <body data-theme="oled">
@@ -76,7 +76,6 @@
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Apps dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="app-rack" id="appRack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" data-hotbar-slot="1" aria-label="Dolphin · Super+1" aria-keyshortcuts="Meta+1" title="Dolphin · Super+1"><kbd class="app-hotkey" aria-hidden="true">1</kbd><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
@@ -128,7 +127,6 @@
     <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="System area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move System dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="systems" aria-label="Hide System area" title="Hide System area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <div class="system-scroll-region">
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
@@ -153,7 +151,7 @@
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small id="projectAreaContext">Visual Design mode</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" id="manageProjectButton" aria-label="Manage current project" title="Manage project and modes"><svg><use href="#i-settings"/></svg></button><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" id="manageProjectButton" aria-label="Manage current project" title="Manage project and modes"><svg><use href="#i-settings"/></svg></button><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher project-mode-switcher" id="projectModeSwitcher" aria-label="Project modes"></nav>
       <div class="project-space-content" id="projectSpaceContent">
@@ -325,8 +323,8 @@
             <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Project → Apps → System</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
             <div class="overview-area-list">
               <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Project</b><small>Expanded</small></span><button data-overview-area-visibility="projects">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span><button data-overview-area-visibility="apps">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span><button data-overview-area-visibility="systems">Hide</button></div>
+              <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span></div>
+              <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span></div>
             </div>
           </section>
           <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Retold test pass</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
@@ -351,8 +349,6 @@
           <h3>System and actions</h3>
           <div class="universal-result-grid">
             <button class="universal-result" data-area-show="projects" data-universal-search="show project space activity area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Project Space</b><small>Desktop area</small></span></button>
-            <button class="universal-result" data-area-show="apps" data-universal-search="show apps area"><span class="universal-symbol blue"><svg><use href="#i-grid"/></svg></span><span><b>Show Apps Area</b><small>Desktop area</small></span></button>
-            <button class="universal-result" data-area-show="systems" data-universal-search="show system widgets area"><span class="universal-symbol cyan"><svg><use href="#i-settings"/></svg></span><span><b>Show System Area</b><small>Desktop area</small></span></button>
             <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
             <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
             <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
@@ -459,7 +455,7 @@
     <span class="notification-peek-copy"><b id="notificationPeekTitle">New notification</b><small id="notificationPeekDetail"></small></span>
   </button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="spatial-tiling.js?v=148"></script>
-  <script src="desktop-shell.js?v=148"></script>
+  <script src="spatial-tiling.js?v=149"></script>
+  <script src="desktop-shell.js?v=149"></script>
 </body>
 </html>
