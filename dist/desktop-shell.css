@@ -2723,3 +2723,256 @@ body[data-display-profile="dual"] .universal-search[data-monitor]{padding-left:c
 .area-list-icon{width:29px;height:29px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb,currentColor 11%,transparent)}.area-list-icon svg{width:15px;height:15px}.area-list-icon.blue{color:var(--blue)}.area-list-icon.cyan{color:var(--cyan)}.area-list-icon.violet{color:var(--violet)}
 .overview-area-row>span:nth-child(2){min-width:0}.overview-area-row b,.overview-area-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-area-row b{font-size:13px}.overview-area-row small{margin-top:2px;color:var(--muted);font-size:12px}
 .overview-area-row>button{height:30px;padding:0 8px;border:1px solid color-mix(in srgb,var(--text) 12%,transparent);border-radius:7px;color:var(--muted);background:color-mix(in srgb,var(--content-surface-raised) 72%,transparent);font-size:12px;transition:transform 45ms linear,border-color 55ms linear,color 55ms linear}.overview-area-row>button:hover{color:var(--text);border-color:color-mix(in srgb,var(--blue) 38%,var(--line))}.overview-area-row>button:active{transform:translateY(2px)}.overview-area-row>button.is-active{color:var(--blue)}.overview-area-row>button.is-show{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 45%,var(--line))}
+
+/* v65 — restore the material contract: ABS mechanisms inside edge-lit acrylic. */
+:root{
+  --abs-top:#353c40;
+  --abs-mid:#252b2f;
+  --abs-side:#15191c;
+  --abs-seam:#090b0d;
+  --abs-edge:rgba(229,239,244,.18);
+  --abs-contact:rgba(0,0,0,.62);
+  --acrylic-field:rgba(8,15,19,.72);
+  --acrylic-rim:rgba(217,239,249,.28);
+  --acrylic-engrave:rgba(206,231,242,.19);
+  --acrylic-dark-edge:rgba(0,0,0,.72);
+  --acrylic-charge:#58baff;
+  --acrylic-charge-soft:rgba(88,186,255,.22);
+  --button-press-time:38ms;
+  --button-release-time:52ms;
+}
+body[data-theme="graphite"]{
+  --abs-top:#51585c;
+  --abs-mid:#3b4246;
+  --abs-side:#282d30;
+  --abs-seam:#171a1c;
+  --acrylic-field:rgba(29,37,42,.74);
+  --acrylic-rim:rgba(232,244,249,.31);
+  --acrylic-engrave:rgba(220,237,244,.22);
+}
+body[data-theme="light"]{
+  --abs-top:#fbfbf8;
+  --abs-mid:#e5e7e3;
+  --abs-side:#c5cac7;
+  --abs-seam:rgba(53,63,68,.46);
+  --abs-edge:rgba(255,255,255,.96);
+  --abs-contact:rgba(43,52,56,.30);
+  --acrylic-field:rgba(235,243,246,.76);
+  --acrylic-rim:rgba(255,255,255,.88);
+  --acrylic-engrave:rgba(48,75,88,.28);
+  --acrylic-dark-edge:rgba(47,66,75,.34);
+  --acrylic-charge:#087ed0;
+  --acrylic-charge-soft:rgba(8,126,208,.18);
+}
+
+/* Areas are single cast sheets: a bright cut edge outside, an engraved line inside. */
+body.areas-docked .area-window,
+.area-window,
+.desktop-shell>.apps-zone,
+.desktop-shell>.systems-zone{
+  border:1px solid var(--acrylic-rim);
+  background:var(--acrylic-field);
+  -webkit-backdrop-filter:blur(24px) saturate(1.06) contrast(1.04);
+  backdrop-filter:blur(24px) saturate(1.06) contrast(1.04);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.22),
+    inset 1px 1px rgba(255,255,255,.09),
+    inset -1px -1px var(--acrylic-dark-edge),
+    0 0 0 1px rgba(0,0,0,.30);
+}
+.area-window::before{
+  content:"";
+  position:absolute;
+  z-index:29;
+  inset:3px;
+  border:1px solid color-mix(in srgb,var(--acrylic-engrave) 72%,transparent);
+  border-radius:calc(15px - 2px);
+  box-shadow:inset 1px 1px rgba(255,255,255,.035),1px 1px rgba(0,0,0,.18);
+  pointer-events:none;
+}
+.area-window[data-area-state="rail"]::before{inset:2px;border-radius:10px}
+.area-window.is-area-resizing{
+  box-shadow:0 11px 28px rgba(0,0,0,.28),inset 1px 1px rgba(255,255,255,.12),inset -1px -1px var(--acrylic-dark-edge),0 0 0 1px var(--acrylic-charge-soft);
+}
+.area-window-bar{
+  border-bottom:1px solid var(--acrylic-engrave);
+  background:transparent;
+  box-shadow:0 1px var(--acrylic-dark-edge);
+}
+.area-window-icon{
+  border-color:color-mix(in srgb,currentColor 42%,var(--acrylic-engrave));
+  background:color-mix(in srgb,currentColor 10%,transparent);
+  box-shadow:inset 1px 1px rgba(255,255,255,.06),inset -1px -1px rgba(0,0,0,.22);
+}
+.apps-zone .app-rack,.mini-card,.system-widget,.overview-widget{
+  border:1px solid var(--acrylic-engrave);
+  background:rgba(255,255,255,.018);
+  box-shadow:inset 1px 1px rgba(255,255,255,.035),inset -1px -1px rgba(0,0,0,.24);
+}
+body[data-theme="light"] .apps-zone .app-rack,
+body[data-theme="light"] .mini-card,
+body[data-theme="light"] .system-widget,
+body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
+.mini-card::after{
+  top:-1px;
+  height:1px;
+  opacity:.88;
+  background:var(--item-tone,var(--acrylic-charge));
+  box-shadow:0 0 5px color-mix(in srgb,var(--item-tone,var(--acrylic-charge)) 54%,transparent);
+}
+
+/* The resize grip is a milled groove. It conducts light only while addressed. */
+.area-resize-handle{
+  border:1px solid color-mix(in srgb,var(--acrylic-engrave) 78%,transparent);
+  border-radius:999px!important;
+  background:rgba(0,0,0,.12);
+  opacity:.72;
+  box-shadow:inset 1px 1px var(--acrylic-dark-edge),1px 1px rgba(255,255,255,.07);
+  transition:background 45ms linear,border-color 45ms linear,box-shadow 45ms linear,opacity 45ms linear;
+}
+.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle{
+  opacity:1;
+  border-color:color-mix(in srgb,var(--acrylic-charge) 72%,var(--acrylic-engrave));
+  background:color-mix(in srgb,var(--acrylic-charge) 38%,transparent);
+  box-shadow:inset 1px 1px rgba(0,0,0,.28),0 0 7px var(--acrylic-charge-soft);
+}
+.area-window[data-dock-edge="left"]>.area-resize-handle,
+.area-window[data-dock-edge="right"]>.area-resize-handle{width:4px;height:62px}
+.area-window[data-dock-edge="top"]>.area-resize-handle,
+.area-window[data-dock-edge="bottom"]>.area-resize-handle{width:62px;height:4px}
+
+/* Mouse-switch controls are matte ABS caps with a short, binary travel. */
+.surface-key.control-push,
+.surface-key.control-toggle,
+.systems-zone .quick-toggle.control-toggle,
+.folder-tab.control-toggle,
+.workspace-action,
+.workspace-home-open,
+.overview-area-row>button,
+.package-secondary,.package-primary{
+  border:1px solid var(--abs-seam);
+  color:var(--text);
+  background:linear-gradient(180deg,var(--abs-top) 0%,var(--abs-mid) 58%,var(--abs-side) 100%);
+  box-shadow:0 2px 2px var(--abs-contact),inset 0 1px var(--abs-edge),inset 0 -1px rgba(0,0,0,.30);
+  transform-origin:50% 100%;
+  transition:transform var(--button-release-time) linear,box-shadow var(--button-release-time) linear,filter var(--button-release-time) linear,border-color var(--button-release-time) linear;
+}
+.surface-key.control-push:hover,
+.surface-key.control-toggle:hover,
+.systems-zone .quick-toggle.control-toggle:hover,
+.folder-tab.control-toggle:hover,
+.workspace-action:hover,
+.workspace-home-open:hover,
+.overview-area-row>button:hover{filter:brightness(1.055);transform:translateY(-1px)}
+.surface-key.control-push:active,
+.surface-key.control-toggle:active,
+.systems-zone .quick-toggle.control-toggle:active,
+.folder-tab.control-toggle:active,
+.workspace-action:active,
+.workspace-home-open:active,
+.overview-area-row>button:active,
+.package-secondary:active,.package-primary:active{
+  transform:translateY(2px) scaleY(.985);
+  filter:brightness(.91);
+  background:linear-gradient(180deg,var(--abs-side),var(--abs-mid));
+  box-shadow:inset 0 2px 4px var(--abs-contact),inset 0 1px rgba(255,255,255,.035);
+  transition-duration:var(--button-press-time);
+}
+.surface-key.control-toggle.is-active,
+.surface-key.control-toggle[aria-pressed="true"],
+.surface-key.control-toggle[aria-selected="true"],
+.systems-zone .quick-toggle.control-toggle.is-active,
+.folder-tab.control-toggle.is-active{
+  transform:translateY(1px);
+  filter:none;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--abs-side) 82%,var(--state-tone) 18%),var(--abs-side));
+  box-shadow:inset 0 2px 4px var(--abs-contact),inset 0 1px rgba(255,255,255,.035);
+}
+
+/* Only held-state controls keep a luminous slit. Push buttons remain unmarked. */
+.control-push::after{content:none!important}
+.control-toggle::after,.folder-tab.control-toggle::after{
+  bottom:2px;
+  height:2px;
+  background:color-mix(in srgb,var(--acrylic-engrave) 56%,transparent);
+  box-shadow:none;
+}
+.control-toggle.is-active::after,
+.control-toggle.is-open::after,
+.control-toggle[aria-pressed="true"]::after,
+.control-toggle[aria-selected="true"]::after{
+  background:var(--state-tone,var(--acrylic-charge));
+  box-shadow:0 0 5px color-mix(in srgb,var(--state-tone,var(--acrylic-charge)) 58%,transparent);
+}
+
+/* App icons remain artwork, but sit on shallow borderless ABS mouse-button pads. */
+.apps-zone .app-key.control-toggle{
+  border:0;
+  border-radius:9px;
+  background:color-mix(in srgb,var(--abs-mid) 64%,transparent);
+  box-shadow:0 1px 1px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.045);
+}
+.apps-zone .app-key.control-toggle:hover{
+  transform:translateY(-1px);
+  background:color-mix(in srgb,var(--abs-top) 72%,transparent);
+  box-shadow:0 2px 2px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.07);
+}
+.apps-zone .app-key.control-toggle:active,
+.apps-zone .app-key.control-toggle.is-active{
+  transform:translateY(1px) scaleY(.99);
+  background:color-mix(in srgb,var(--abs-side) 82%,var(--state-tone) 8%);
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.48);
+}
+.apps-zone .app-key.control-toggle:active{transform:translateY(2px) scaleY(.985);transition-duration:var(--button-press-time)}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle{background:transparent;box-shadow:none}
+
+/* App windows are ABS casings around always-solid, optically recessed work surfaces. */
+.app-frame{
+  border-color:var(--abs-seam);
+  background:linear-gradient(180deg,var(--abs-top),var(--abs-mid) 58%,var(--abs-side));
+  box-shadow:0 13px 30px rgba(0,0,0,.38),inset 1px 1px var(--abs-edge),inset -1px -1px rgba(0,0,0,.42);
+}
+.app-frame.is-front{box-shadow:0 17px 38px rgba(0,0,0,.48),0 0 0 1px color-mix(in srgb,var(--app-primary) 18%,transparent),inset 1px 1px var(--abs-edge)}
+.app-frame .app-titlebar{
+  border-bottom-color:var(--abs-seam);
+  background:color-mix(in srgb,var(--abs-mid) 86%,var(--app-primary) 14%);
+  box-shadow:inset 0 1px var(--abs-edge),inset 0 -1px rgba(0,0,0,.24);
+}
+.app-toolbar,.browser-toolbar,.music-controls,.notes-layout nav{
+  background:var(--abs-mid);
+}
+.file-well,.music-hero,.playlist,.start-page,.terminal-screen,.notes-layout textarea{
+  border:1px solid var(--abs-seam);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.43),0 1px var(--abs-edge);
+}
+.recessed-field{
+  border:1px solid var(--abs-seam);
+  background:var(--content-surface-raised);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.48),0 1px var(--abs-edge);
+}
+.recessed-field:focus-within{
+  transform:translateY(1px);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.54),0 0 0 1px color-mix(in srgb,var(--app-primary,var(--blue)) 34%,transparent);
+}
+body[data-theme="light"] .file-well,
+body[data-theme="light"] .music-hero,
+body[data-theme="light"] .playlist,
+body[data-theme="light"] .start-page,
+body[data-theme="light"] .notes-layout textarea,
+body[data-theme="light"] .recessed-field{box-shadow:inset 0 2px 5px rgba(42,53,58,.20),0 1px rgba(255,255,255,.78)}
+
+/* Overview uses the same acrylic sheet and ABS controls instead of a third material. */
+.universal-search{
+  background:color-mix(in srgb,var(--acrylic-field) 88%,rgba(4,13,22,.36));
+  -webkit-backdrop-filter:blur(28px) saturate(1.08);
+  backdrop-filter:blur(28px) saturate(1.08);
+  box-shadow:inset 0 1px var(--acrylic-rim),inset 0 -1px var(--acrylic-dark-edge);
+}
+.universal-search-field,.workspace-switcher{
+  border:1px solid var(--acrylic-engrave);
+  background:color-mix(in srgb,var(--content-surface) 86%,transparent);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.05);
+}
+.overview-widget,.overview-window,.workspace-home-card{
+  border-color:var(--acrylic-engrave);
+}
