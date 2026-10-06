@@ -159,8 +159,10 @@
       <div class="project-space-content" id="projectSpaceContent">
         <section class="project-module project-root-module">
           <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
-          <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">~/Projects/plasma-redesign</span></button>
+          <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">/home/xef/Projects/plasma-redesign</span></button>
+          <small class="project-location-note" id="projectLocationNote">Default location · General Home/Projects</small>
           <div class="project-items" id="projectRootItems">
+            <button data-toast="Opening .spatial-project.toml"><span class="linked-type config"><svg><use href="#i-code"/></svg></span><span><b>.spatial-project.toml</b><small>Editable project settings</small></span></button>
             <button data-toast="Opening desktop-shell.css"><i class="document-glyph"></i><span><b>desktop-shell.css</b><small>Modified 8 min ago</small></span></button>
             <button data-toast="Opening interaction-notes.md"><i class="document-glyph"></i><span><b>interaction-notes.md</b><small>Modified today</small></span></button>
           </div>
@@ -225,7 +227,7 @@
               <span><span class="eyebrow">PROJECT ZONE</span><h3 id="overviewProjectZoneTitle">Context and resources</h3></span>
             </header>
           <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
-            <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/xef</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
+            <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE ROOT = HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/xef</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
             <div class="workspace-home-body">
               <div class="workspace-folders" id="workspaceFolders" aria-label="Workspace folders"></div>
               <div class="workspace-context-card"><span class="eyebrow">THIS WORKSPACE</span><b id="workspaceContextTitle">Everyday desktop</b><small id="workspaceContextMeta">5 favourite apps · 2 open projects · private clipboard</small><div class="workspace-favorites" id="workspaceFavorites" aria-label="Favourite applications"></div></div>

@@ -2225,7 +2225,8 @@ const projectSpaces = {
     accent: "#5cbcff",
     icon: "i-folder",
     summary: "Desktop shell",
-    root: "~/Projects/plasma-redesign",
+    root: "/home/xef/Projects/plasma-redesign",
+    originWorkspace: "general",
     files: [["desktop-shell.css", "Modified 8 min ago", "document"], ["interaction-notes.md", "Modified today", "document"]],
     note: "Keep the interaction physical, but let the content stay quiet and readable.",
     resources: [["keyboard-reference.mp4", "Linked · ~/Videos", "video", "i-video"], ["Ocean design", "Web reference", "web", "i-web"]],
@@ -2241,7 +2242,8 @@ const projectSpaces = {
     accent: "#65d881",
     icon: "i-gamepad",
     summary: "Minecraft mod",
-    root: "~/Projects/retold-mod",
+    root: "/mnt/nvmekingston/Projects/Retold",
+    originWorkspace: null,
     files: [["src/main/java", "Gameplay sources", "folder"], ["gradle.properties", "Modified yesterday", "document"]],
     note: "Test the new movement controller, then record the climbing animation bug.",
     resources: [["v0.3 test recording.mp4", "Linked · ~/Videos/Captures", "video", "i-video"], ["Fabric documentation", "Web reference", "web", "i-web"]],
@@ -2273,18 +2275,35 @@ function normalizeProject(project) {
   }]));
   if (!Object.keys(modes).length) return null;
   const activeMode = modes[project.activeMode] ? project.activeMode : Object.keys(modes)[0];
+  const fallbackRoot = "/home/xef/Projects/" + slugifyProject(project.name);
+  const rawRoot = project.root || fallbackRoot;
+  let root = rawRoot.startsWith("~/") ? "/home/xef/" + rawRoot.slice(2) : rawRoot;
+  /* Migrate the unchanged built-in demo path so existing browser storage also
+     demonstrates that Projects may live outside every Workspace Home. */
+  if (project.name.trim() === "Retold" && root === "/home/xef/Projects/retold-mod") root = "/mnt/nvmekingston/Projects/Retold";
+  const detectedWorkspace = Object.entries(workspaceProfiles).find(([, profile]) => root === profile.home + "/Projects" || root.startsWith(profile.home + "/Projects/"))?.[0] || null;
   return {
     name: project.name.trim(),
     accent: project.accent || "#5cbcff",
     icon: project.icon || "i-folder",
     summary: project.summary || "Project",
-    root: project.root || "~/Projects/" + slugifyProject(project.name),
+    root,
+    originWorkspace: project.originWorkspace && workspaceProfiles[project.originWorkspace] ? project.originWorkspace : detectedWorkspace,
     files: Array.isArray(project.files) ? project.files : [],
     note: typeof project.note === "string" ? project.note : "",
     resources: Array.isArray(project.resources) ? project.resources : [],
     activeMode,
     modes
   };
+}
+
+function projectLocationMeta(project) {
+  const workspaceName = project.originWorkspace && workspaceProfiles[project.originWorkspace]
+    ? project.originWorkspace
+    : Object.entries(workspaceProfiles).find(([, profile]) => project.root === profile.home + "/Projects" || project.root.startsWith(profile.home + "/Projects/"))?.[0] || null;
+  if (!workspaceName) return { label: "Custom location", detail: "Stored outside Workspace Homes", custom: true };
+  const profile = workspaceProfiles[workspaceName];
+  return { label: profile.label + " Home · Projects", detail: "Default project location", custom: false };
 }
 
 function slugifyProject(value) {
@@ -2408,8 +2427,9 @@ function renderOverviewProjects() {
     const selected = activeProjectName === name;
     const modeCount = Object.keys(project.modes).length;
     const resourceCount = project.resources.length;
-    const detail = project.summary + " · " + modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
-    return '<button class="overview-project' + (selected ? " is-active" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>';
+    const location = projectLocationMeta(project);
+    const detail = location.label + " · " + modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
+    return '<button class="overview-project' + (selected ? " is-active" : "") + (location.custom ? " is-custom-location" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" title="' + escapeHtml(project.root) + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>';
   }).join("") || '<div class="overview-project-empty"><svg><use href="#i-folder"/></svg><span><b>No projects yet</b><small>Create one to attach a folder, resources and working Modes.</small></span></div>';
   prepareControlSemantics(grid);
 }
@@ -2442,7 +2462,11 @@ function renderProjectSpace(name) {
   $("#projectAreaName").textContent = project.name;
   renderProjectModes(name);
   $("#projectRootPath").textContent = project.root;
-  $("#projectRootItems").innerHTML = project.files.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  const location = projectLocationMeta(project);
+  $("#projectLocationNote").textContent = location.detail + " · " + location.label;
+  $("#projectLocationNote").classList.toggle("is-custom", location.custom);
+  const projectFiles = [[".spatial-project.toml", "Editable project settings", "config"], ...project.files.filter(([label]) => label !== ".spatial-project.toml")];
+  $("#projectRootItems").innerHTML = projectFiles.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : type === "config" ? '<span class="linked-type config">' + icon("i-code") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
   $("#projectQuickNote").value = project.note || "";
   $("#projectNoteState").textContent = "Saved";
   $("#projectLinkedItems").innerHTML = project.resources.map(resourceMarkup).join("");
@@ -2652,12 +2676,17 @@ function createProjectFromEditor(name, root) {
   if (!cleanName) return;
   const id = uniqueProjectId(cleanName);
   const accent = projectAccentPalette[Object.keys(projectSpaces).length % projectAccentPalette.length];
+  const workspace = workspaceProfiles[activeWorkspace];
+  const defaultRoot = workspace.home + "/Projects/" + id;
+  const chosenRoot = root.trim() || defaultRoot;
+  const originWorkspace = chosenRoot === workspace.home + "/Projects" || chosenRoot.startsWith(workspace.home + "/Projects/") ? activeWorkspace : null;
   projectSpaces[id] = {
     name: cleanName,
     accent,
     icon: "i-folder",
     summary: "Project",
-    root: root.trim() || "~/Projects/" + id,
+    root: chosenRoot,
+    originWorkspace,
     files: [],
     note: "",
     resources: [],
@@ -2746,7 +2775,8 @@ function renderProjectEditor() {
   if (state.view === "create-project") {
     kicker.textContent = "PROJECTS";
     title.textContent = "Create project";
-    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder</span><input name="root" maxlength="160" autocomplete="off" placeholder="~/Projects/my-project"></label><p>The folder is linked, not moved. The new Project starts with one hidden Default mode.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
+    const defaultProjectPath = workspaceProfiles[activeWorkspace].home + "/Projects/my-project";
+    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
   } else if (state.view === "create-mode" && project) {
     kicker.textContent = project.name.toUpperCase();
     title.textContent = "Create mode";
@@ -2931,7 +2961,7 @@ const workspaceProfiles = {
   general: {
     label: "General", subtitle: "Personal desktop", icon: "i-grid", accent: "#56baff", home: "/home/xef",
     context: "Everyday desktop", meta: "5 favourite apps · 2 open projects · private clipboard",
-    folders: [["Desktop", "8 items"], ["Documents", "124 items"], ["Downloads", "31 items"], ["Pictures", "480 items"]],
+    folders: [["Desktop", "8 items", "folder"], ["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["dolphin", "elisa", "browser", "terminal", "notes"],
     favorites: [["dolphin", "Dolphin"], ["browser", "Firefox"], ["elisa", "Elisa"], ["notes", "Notes"], ["i-mail", "Thunderbird"]],
     agenda: ["Today", "Retold test pass", "14:30 · 45 min"]
@@ -2939,7 +2969,7 @@ const workspaceProfiles = {
   school: {
     label: "School", subtitle: "Classes and study", icon: "i-graduation", accent: "#f2b646", home: "/home/xef/Workspaces/School",
     context: "Study session", meta: "4 favourite apps · 1 open project · school clipboard",
-    folders: [["Desktop", "4 items"], ["Documents", "6 courses"], ["Downloads", "12 items"], ["Assignments", "3 due"]],
+    folders: [["Desktop", "4 items", "folder"], ["Documents", "6 courses", "folder"], ["Downloads", "12 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "dolphin", "notes"],
     favorites: [["browser", "Firefox"], ["i-office", "Writer"], ["i-calendar", "Kalendar"], ["i-note", "Okular"], ["dolphin", "Dolphin"]],
     agenda: ["School", "Physics assignment", "Due tomorrow · 16:00"]
@@ -2947,7 +2977,7 @@ const workspaceProfiles = {
   work: {
     label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/xef/Workspaces/Work",
     context: "Product work", meta: "5 favourite apps · 1 open project · work clipboard",
-    folders: [["Desktop", "3 items"], ["Documents", "42 items"], ["Downloads", "7 items"], ["Shared", "18 items"]],
+    folders: [["Desktop", "3 items", "folder"], ["Documents", "42 items", "folder"], ["Downloads", "7 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["terminal", "browser", "dolphin", "notes"],
     favorites: [["terminal", "Konsole"], ["i-code", "Kate"], ["browser", "Firefox"], ["dolphin", "Dolphin"], ["i-mail", "Mail"]],
     agenda: ["Work", "Design review", "15:15 · 30 min"]
@@ -2955,7 +2985,7 @@ const workspaceProfiles = {
   gaming: {
     label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/xef/Workspaces/Gaming",
     context: "Game night", meta: "4 favourite apps · 1 open project · gaming clipboard",
-    folders: [["Desktop", "6 shortcuts"], ["Games", "23 installed"], ["Captures", "64 videos"], ["Mods", "11 profiles"]],
+    folders: [["Desktop", "6 shortcuts", "folder"], ["Games", "23 installed", "folder"], ["Captures", "64 videos", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["elisa", "browser", "dolphin", "terminal"],
     favorites: [["i-gamepad", "Steam"], ["i-gamepad", "Lutris"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
     agenda: ["Gaming", "Co-op with Martin", "20:00 · voice chat"]
@@ -3061,7 +3091,7 @@ function renderWorkspace(name, announce = true) {
   $("#workspaceHomeIcon use").setAttribute("href", "#" + profile.icon);
   $("#workspaceContextTitle").textContent = profile.context;
   $("#workspaceContextMeta").textContent = profile.meta;
-  $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail]) => '<button class="workspace-folder" data-toast="' + escapeHtml(label) + ' opened"><span>' + icon("i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail, type = "folder"]) => '<button class="workspace-folder' + (type === "config" ? " workspace-config-file" : "") + '" data-toast="' + escapeHtml(type === "config" ? "Opening " + label : label + " opened") + '"><span>' + icon(type === "config" ? "i-code" : "i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
   $("#workspaceFavorites").innerHTML = profile.favorites.map(workspaceFavoriteMarkup).join("");
   $("#workspaceAgendaHeading").textContent = profile.agenda[0];
   $("#workspaceAgendaTitle").textContent = profile.agenda[1];
