@@ -1125,7 +1125,6 @@ const dockState = {
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 const dockSizeManual = { left: false, right: false, top: false, bottom: false };
 let dockPreview;
-const areaStateRank = { rail: 0, compact: 1, expanded: 2 };
 const layoutModes = ["auto", "manual"];
 let layoutMode = "auto";
 let currentDisplayProfile = "desktop";
@@ -1227,9 +1226,7 @@ function displayProfileFor(width, height) {
 
 function areaStateForSize(edge, size) {
   const vertical = edge === "left" || edge === "right";
-  return vertical
-    ? size <= 132 ? "rail" : size <= 270 ? "compact" : "expanded"
-    : size <= 125 ? "rail" : size <= 215 ? "compact" : "expanded";
+  return size <= (vertical ? 152 : 142) ? "rail" : "expanded";
 }
 
 function initialAreaStates(profile) {
@@ -1244,10 +1241,10 @@ function initialAreaStates(profile) {
   }
   if (profile === "laptop") states = {
     projects: "expanded",
-    apps: areaFor("projects")?.hidden ? "compact" : "rail",
+    apps: areaFor("projects")?.hidden ? "expanded" : "rail",
     systems: "rail"
   };
-  else if (profile === "desktop") states = { projects: "expanded", apps: "compact", systems: "compact" };
+  else if (profile === "desktop") states = { projects: "expanded", apps: "expanded", systems: "expanded" };
   else states = { projects: "expanded", apps: "expanded", systems: "expanded" };
   autoSpatialEdgeStates.forEach((state, edge) => {
     dockGroup(edge, true).forEach(name => { states[name] = state; });
@@ -1262,17 +1259,16 @@ function initialAreaStates(profile) {
 
 function stateSideMinimum(name, state) {
   const values = {
-    projects: { rail: 68, compact: 226, expanded: 270 },
-    apps: { rail: 68, compact: 188, expanded: 256 },
-    systems: { rail: 70, compact: 218, expanded: 280 }
+    projects: { rail: 68, expanded: 270 },
+    apps: { rail: 68, expanded: 256 },
+    systems: { rail: 70, expanded: 280 }
   };
   return values[name][state];
 }
 
 function stateHorizontalMinimum(name, state) {
   if (state === "rail") return 96;
-  if (name === "projects") return state === "expanded" ? 210 : 178;
-  return state === "expanded" ? 190 : 162;
+  return name === "projects" ? 210 : 190;
 }
 
 function edgeStateMinimum(edge, states) {
@@ -1287,16 +1283,26 @@ function preferredSideSize(edge, states, profile) {
   if (!names.length) return 0;
   const minimum = edgeStateMinimum(edge, states);
   if (names.every(name => states[name] === "rail")) return minimum;
-  const compactOnly = names.every(name => areaStateRank[states[name]] <= areaStateRank.compact);
-  const target = compactOnly ? Math.min(dockSizes[edge], 232) : dockSizes[edge];
-  return Math.min(420, Math.max(minimum, target));
+  return Math.min(420, Math.max(minimum, dockSizes[edge]));
 }
 
 function downgradeArea(states, name) {
-  if (states[name] === "expanded") states[name] = "compact";
-  else if (states[name] === "compact") states[name] = "rail";
-  else return false;
+  if (states[name] !== "expanded") return false;
+  states[name] = "rail";
   return true;
+}
+
+function resolvedManualDockSizes(states) {
+  const sizes = { ...dockSizes };
+  dockEdges.forEach(edge => {
+    const names = dockGroup(edge);
+    if (!names.length) return;
+    const minimum = edgeStateMinimum(edge, states);
+    sizes[edge] = names.every(name => states[name] === "rail")
+      ? minimum
+      : Math.max(minimum, dockSizes[edge]);
+  });
+  return sizes;
 }
 
 function minimumWorkspaceWidth(profile, width) {
@@ -1310,7 +1316,7 @@ function resolvedAreaLayout(width, height) {
   const profile = displayProfileFor(width, height);
   const states = initialAreaStates(profile);
   if (layoutMode === "manual") {
-    return { profile, states, sizes: { ...dockSizes }, minimumWorkspace: 220 };
+    return { profile, states, sizes: resolvedManualDockSizes(states), minimumWorkspace: 220 };
   }
   const gap = 0;
   const minimumWorkspace = minimumWorkspaceWidth(profile, width);
@@ -1340,7 +1346,7 @@ function resolvedAreaLayout(width, height) {
 }
 
 function layoutStateLabel(state) {
-  return state === "rail" ? "Rail" : state === "compact" ? "Compact" : "Expanded";
+  return state === "rail" ? "On rail" : "Expanded";
 }
 
 function syncAreaControls(states) {
@@ -1370,7 +1376,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
     control.classList.toggle("is-active", layoutMode === "auto");
     control.setAttribute("aria-pressed", String(layoutMode === "auto"));
     control.title = layoutMode === "auto"
-      ? "Auto · Areas expand, compact, rail, yield, or move according to nearby windows · " + profileLabel
+      ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
   }
   const status = $("#overviewLayoutStatus");
@@ -1448,28 +1454,21 @@ function clearanceFromEdge(edge, rect, shellRect) {
 }
 
 function spatialStateForClearance(edge, clearance) {
-  const compact = edgeMinimumForState(edge, "compact");
   const expanded = edgeMinimumForState(edge, "expanded");
   const visibleArea = areaFor(dockGroup(edge)[0]);
-  const previous = autoSpatialEdgeStates.get(edge) || visibleArea?.dataset.areaState;
+  const previousState = autoSpatialEdgeStates.get(edge) || visibleArea?.dataset.areaState;
+  const previous = previousState === "rail" ? "rail" : "expanded";
   const lane = baseDockLaneRects.get(edge);
   const visibleBoundary = lane ? (edge === "left" || edge === "right" ? lane.width : lane.height) : 0;
   if (previous === "expanded") {
     if (clearance >= (visibleBoundary || expanded + 18)) return "expanded";
-    return "compact";
-  }
-  if (previous === "compact") {
-    if (clearance >= expanded + 48) return "expanded";
-    if (clearance >= (visibleBoundary || compact + 14)) return "compact";
     return "rail";
   }
   if (previous === "rail") {
     if (clearance >= expanded + 60) return "expanded";
-    if (clearance >= compact + 36) return "compact";
     return "rail";
   }
   if (clearance >= expanded + 48) return "expanded";
-  if (clearance >= Math.max(compact + 28, visibleBoundary)) return "compact";
   return "rail";
 }
 
