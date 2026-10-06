@@ -3357,3 +3357,146 @@ body[data-theme="light"] .area-window[data-area-state="rail"]{
   grid-template-columns:repeat(2,42px)!important;
   align-content:center;
 }
+
+/* v68 — contextual actions use edge-lit acrylic around fast ABS rows. */
+.desktop-context-menu{
+  position:fixed;
+  z-index:5000;
+  width:max-content;
+  min-width:232px;
+  max-width:min(300px,calc(100vw - 16px));
+  padding:6px;
+  border:1px solid var(--acrylic-rim);
+  border-radius:12px;
+  color:var(--text);
+  background:color-mix(in srgb,var(--acrylic-field) 91%,rgba(4,9,13,.54));
+  -webkit-backdrop-filter:blur(26px) saturate(1.08) contrast(1.05);
+  backdrop-filter:blur(26px) saturate(1.08) contrast(1.05);
+  box-shadow:
+    0 15px 38px rgba(0,0,0,.42),
+    inset 1px 1px rgba(255,255,255,.09),
+    inset -1px -1px var(--acrylic-dark-edge),
+    0 0 0 1px rgba(0,0,0,.30);
+  transform-origin:top left;
+  animation:context-menu-in 52ms cubic-bezier(.2,.8,.2,1) both;
+}
+.desktop-context-menu[hidden]{display:none}
+@keyframes context-menu-in{
+  from{opacity:0;transform:translateY(-3px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+.context-menu-title{
+  min-height:30px;
+  padding:7px 9px 6px;
+  overflow:hidden;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:750;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.context-menu-items{display:grid;gap:2px}
+.context-menu-item{
+  position:relative;
+  width:100%;
+  min-height:38px;
+  padding:0 9px;
+  border:1px solid transparent;
+  border-radius:8px;
+  display:grid;
+  grid-template-columns:22px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  color:var(--text);
+  background:transparent;
+  box-shadow:none;
+  text-align:left;
+  transform-origin:50% 100%;
+  transition:transform var(--button-release-time) linear,background 45ms linear,border-color 45ms linear,box-shadow var(--button-release-time) linear;
+}
+.context-menu-item svg{width:17px;height:17px;color:var(--muted)}
+.context-menu-item span{overflow:hidden;font-size:14px;white-space:nowrap;text-overflow:ellipsis}
+.context-menu-item kbd{
+  padding:0;
+  border:0;
+  color:var(--faint);
+  background:transparent;
+  box-shadow:none;
+  font:600 11px/1 ui-monospace,monospace;
+}
+.context-menu-item:hover,.context-menu-item:focus-visible{
+  outline:0;
+  border-color:color-mix(in srgb,var(--acrylic-charge) 24%,transparent);
+  background:color-mix(in srgb,var(--acrylic-charge) 10%,var(--content-surface-raised) 34%);
+  box-shadow:inset 0 1px rgba(255,255,255,.045);
+}
+.context-menu-item:active{
+  transform:translateY(2px) scaleY(.985);
+  border-color:color-mix(in srgb,var(--acrylic-charge) 32%,transparent);
+  background:color-mix(in srgb,var(--acrylic-charge) 14%,var(--content-surface-raised) 40%);
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.36);
+  transition-duration:var(--button-press-time);
+}
+.context-menu-item.is-danger{color:#ff8d83}
+.context-menu-item.is-danger svg{color:#ff7468}
+.context-menu-item.is-danger:hover,.context-menu-item.is-danger:focus-visible{
+  border-color:rgba(255,96,82,.22);
+  background:rgba(255,72,58,.09);
+}
+.context-menu-separator{
+  height:1px;
+  margin:4px 8px;
+  background:var(--acrylic-engrave);
+  box-shadow:0 1px rgba(255,255,255,.025);
+}
+body[data-theme="light"] .desktop-context-menu{
+  background:color-mix(in srgb,var(--acrylic-field) 94%,rgba(244,248,249,.72));
+  box-shadow:0 14px 34px rgba(34,50,58,.22),inset 1px 1px rgba(255,255,255,.78),inset -1px -1px var(--acrylic-dark-edge);
+}
+body[data-theme="light"] .context-menu-item:active{box-shadow:inset 0 2px 3px rgba(41,56,63,.20)}
+
+/* Objects created from the desktop menu stay on the desktop plane, below app windows. */
+.desktop-folder{
+  position:absolute;
+  z-index:1;
+  width:72px;
+  min-height:78px;
+  padding:7px 4px;
+  border:1px solid transparent;
+  border-radius:9px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  color:#f4f8fa;
+  background:transparent;
+  box-shadow:none;
+  text-align:center;
+  text-shadow:0 1px 3px rgba(0,0,0,.88);
+  transition:transform var(--button-release-time) linear,background 45ms linear,border-color 45ms linear;
+}
+.desktop-folder svg{
+  width:36px;
+  height:36px;
+  color:#55baff;
+  fill:rgba(27,132,215,.24);
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.46));
+}
+.desktop-folder span{
+  width:100%;
+  overflow:hidden;
+  font-size:12px;
+  line-height:1.18;
+  text-overflow:ellipsis;
+}
+.desktop-folder:hover,.desktop-folder:focus-visible{
+  outline:0;
+  border-color:color-mix(in srgb,var(--blue) 32%,transparent);
+  background:color-mix(in srgb,var(--blue) 12%,rgba(7,13,18,.28));
+}
+.desktop-folder:active{
+  transform:translateY(2px) scaleY(.985);
+  background:color-mix(in srgb,var(--blue) 18%,rgba(7,13,18,.36));
+  transition-duration:var(--button-press-time);
+}

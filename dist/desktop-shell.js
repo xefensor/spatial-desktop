@@ -2033,6 +2033,271 @@ $("#terminalInput").addEventListener("keydown", event => {
   event.target.value = "";
 });
 
+let desktopFolderCount = 0;
+let contextMenuState = null;
+
+function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
+  if (!target?.closest || target.closest("#desktopContextMenu")) return null;
+
+  const appControl = target.closest("[data-open-app],[data-overview-open-app],[data-search-open-app],[data-mini-card]");
+  if (appControl) {
+    const name = appControl.dataset.openApp || appControl.dataset.overviewOpenApp || appControl.dataset.searchOpenApp || appControl.dataset.miniCard;
+    if (appInfo[name]) return { kind: "app", name, title: appInfo[name].label };
+  }
+
+  const titlebar = target.closest(".app-titlebar");
+  if (titlebar) {
+    const frame = titlebar.closest("[data-app-frame]");
+    const name = frame?.dataset.appFrame;
+    if (appInfo[name]) return { kind: "app", name, title: appInfo[name].label + " window" };
+  }
+
+  const file = target.closest(".file-list .content-row");
+  if (file) {
+    const label = $("span", file)?.textContent?.trim() || "File";
+    return { kind: "file", title: label, label, element: file };
+  }
+
+  const projectItem = target.closest("[data-project-item]");
+  if (projectItem) {
+    return {
+      kind: "project-item",
+      title: projectItem.dataset.projectItem,
+      label: projectItem.dataset.projectItem,
+      linked: Boolean(projectItem.closest("#projectLinkedItems")),
+      element: projectItem
+    };
+  }
+
+  const projectChoice = target.closest("[data-project-select]");
+  if (projectChoice) {
+    const name = projectChoice.dataset.projectSelect;
+    return { kind: "project", name, title: projectSpaces[name]?.name || "Project" };
+  }
+
+  const widget = target.closest(".system-widget");
+  if (widget) {
+    return {
+      kind: "widget",
+      title: $("h2", widget)?.textContent?.trim() || "System widget",
+      element: widget
+    };
+  }
+
+  const area = target.closest("[data-area-window]");
+  if (area && (target.closest(".area-window-bar") || area.dataset.areaState === "rail" || !target.closest("button,input,textarea,a"))) {
+    const name = area.dataset.areaWindow;
+    return { kind: "area", name, title: areaLabel(name) };
+  }
+
+  if (target.closest(".workspace-zone") && !target.closest(".app-frame")) {
+    return { kind: "desktop", title: "Desktop", point: { x: clientX, y: clientY } };
+  }
+  return null;
+}
+
+function contextMenuEntries(context) {
+  const separator = { separator: true };
+  if (context.kind === "app") {
+    const state = appState[context.name];
+    const frame = frameFor(context.name);
+    const maximized = frame?.dataset.maximized === "true";
+    return [
+      { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
+      state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
+      state === "open" ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore window" : "Maximize" } : null,
+      state !== "closed" ? separator : null,
+      state !== "closed" ? { action: "app-close", icon: "i-close", label: "Close", danger: true } : null
+    ].filter(Boolean);
+  }
+  if (context.kind === "desktop") return [
+    { action: "desktop-overview", icon: "i-search", label: "Open Overview", shortcut: "Super" },
+    separator,
+    { action: "desktop-new-folder", icon: "i-folder", label: "New Folder" },
+    { action: "desktop-paste", icon: "i-clipboard", label: "Paste" },
+    separator,
+    { action: "desktop-settings", icon: "i-monitor", label: "Display Settings" }
+  ];
+  if (context.kind === "file") return [
+    { action: "file-open", icon: "i-folder", label: "Open" },
+    { action: "file-copy", icon: "i-clipboard", label: "Copy location" },
+    separator,
+    { action: "file-trash", icon: "i-close", label: "Move to Trash", danger: true }
+  ];
+  if (context.kind === "project-item") return [
+    { action: "project-item-open", icon: "i-folder", label: "Open" },
+    { action: "project-item-copy", icon: "i-link", label: "Copy reference" },
+    context.linked ? separator : null,
+    context.linked ? { action: "project-item-unlink", icon: "i-close", label: "Remove link", danger: true } : null
+  ].filter(Boolean);
+  if (context.kind === "project") return [
+    { action: "project-open", icon: "i-folder", label: "Open Project Space" },
+    { action: "project-pack", icon: "i-archive", label: "Pack project" }
+  ];
+  if (context.kind === "widget") {
+    const entries = [{ action: "widget-open", icon: "i-right", label: "Open" }];
+    if (context.element.id === "notificationWidget") entries.push({ action: "widget-clear", icon: "i-bell", label: "Clear notifications" });
+    entries.push(separator, { action: "widget-hide", icon: "i-close", label: "Remove from System Area", danger: true });
+    return entries;
+  }
+  if (context.kind === "area") return [
+    { action: "area-move", icon: "i-grid", label: "Move to next edge" },
+    { action: "area-reset", icon: "i-max", label: "Reset Area size" },
+    separator,
+    { action: "area-hide", icon: "i-min", label: "Hide Area", danger: true }
+  ];
+  return [];
+}
+
+function closeDesktopContextMenu(restoreFocus = false) {
+  const menu = $("#desktopContextMenu");
+  if (!menu || menu.hidden) return;
+  menu.classList.remove("is-open");
+  menu.hidden = true;
+  if (restoreFocus && contextMenuState?.origin?.focus) contextMenuState.origin.focus({ preventScroll: true });
+  contextMenuState = null;
+}
+
+function openDesktopContextMenu(context, clientX, clientY, keyboard = false) {
+  const menu = $("#desktopContextMenu");
+  const entries = contextMenuEntries(context);
+  if (!menu || !entries.length) return;
+  contextMenuState = { ...context, origin: document.activeElement };
+  $("#contextMenuTitle").textContent = context.title;
+  $("#contextMenuItems").innerHTML = entries.map(entry => {
+    if (entry.separator) return '<div class="context-menu-separator" role="separator"></div>';
+    return '<button class="context-menu-item' + (entry.danger ? ' is-danger' : '') + '" role="menuitem" data-context-action="' + entry.action + '">' + icon(entry.icon) + '<span>' + escapeHtml(entry.label) + '</span>' + (entry.shortcut ? '<kbd>' + escapeHtml(entry.shortcut) + '</kbd>' : '') + '</button>';
+  }).join("");
+  prepareControlSemantics(menu);
+  menu.hidden = false;
+  menu.classList.add("is-open");
+  menu.style.visibility = "hidden";
+  menu.style.left = "0px";
+  menu.style.top = "0px";
+  const rect = menu.getBoundingClientRect();
+  const left = Math.max(8, Math.min(clientX, window.innerWidth - rect.width - 8));
+  const top = Math.max(8, Math.min(clientY, window.innerHeight - rect.height - 8));
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+  menu.style.visibility = "";
+  if (keyboard) requestAnimationFrame(() => $(".context-menu-item", menu)?.focus());
+}
+
+function createDesktopFolder(point) {
+  const workspace = $(".workspace-zone");
+  const rect = workspace.getBoundingClientRect();
+  const folder = document.createElement("button");
+  const name = desktopFolderCount ? "New Folder " + (desktopFolderCount + 1) : "New Folder";
+  desktopFolderCount += 1;
+  folder.className = "desktop-folder";
+  folder.title = name;
+  folder.innerHTML = icon("i-folder") + "<span>" + escapeHtml(name) + "</span>";
+  folder.style.left = Math.max(10, Math.min(point.x - rect.left - 31, rect.width - 74)) + "px";
+  folder.style.top = Math.max(10, Math.min(point.y - rect.top - 20, rect.height - 86)) + "px";
+  folder.addEventListener("dblclick", () => showToast(name + " opened"));
+  workspace.append(folder);
+  showToast(name + " created");
+}
+
+function executeContextAction(action) {
+  const context = contextMenuState;
+  if (!context) return;
+  if (action === "app-open") openApp(context.name);
+  if (action === "app-minimize") minimizeApp(context.name);
+  if (action === "app-maximize") toggleMaximize(context.name);
+  if (action === "app-close") closeApp(context.name);
+  if (action === "desktop-overview") setUniversalSearchOpen(true);
+  if (action === "desktop-new-folder") createDesktopFolder(context.point);
+  if (action === "desktop-paste") showToast("Clipboard pasted to the desktop");
+  if (action === "desktop-settings") showToast("Display Settings opened");
+  if (action === "file-open") showToast("Opening " + context.label);
+  if (action === "file-copy") showToast("Copied /home/xef/Downloads/" + context.label);
+  if (action === "file-trash") {
+    context.element?.remove();
+    showToast(context.label + " moved to Trash");
+  }
+  if (action === "project-item-open") showToast("Opening " + context.label);
+  if (action === "project-item-copy") showToast("Reference copied · " + context.label);
+  if (action === "project-item-unlink") {
+    context.element?.remove();
+    showToast(context.label + " unlinked from project");
+  }
+  if (action === "project-open") {
+    activateProject(context.name);
+    showArea("projects", false);
+  }
+  if (action === "project-pack") showToast((projectSpaces[context.name]?.name || "Project") + " package prepared");
+  if (action === "widget-open") showToast(context.title + " opened");
+  if (action === "widget-clear") {
+    $$(".notification", context.element).forEach(item => item.remove());
+    syncNotifications();
+  }
+  if (action === "widget-hide") {
+    if (context.element.classList.contains("dynamic-widget")) concealDynamicWidget(context.element);
+    else context.element.hidden = true;
+    showToast(context.title + " removed from System Area");
+  }
+  if (action === "area-move") {
+    const current = dockState[context.name].edge;
+    setDockPosition(context.name, dockEdges[(dockEdges.indexOf(current) + 1) % dockEdges.length]);
+  }
+  if (action === "area-reset") {
+    dockSizeManual[dockState[context.name].edge] = false;
+    layoutDockAreas(true);
+    showToast(areaLabel(context.name) + " size reset");
+  }
+  if (action === "area-hide") hideArea(context.name);
+}
+
+function prepareContextMenus() {
+  const menu = $("#desktopContextMenu");
+  if (!menu) return;
+  document.addEventListener("contextmenu", event => {
+    if (event.target.closest("input,textarea,[contenteditable='true']")) return;
+    const context = contextMenuDescriptor(event.target, event.clientX, event.clientY);
+    if (!context) return;
+    event.preventDefault();
+    openDesktopContextMenu(context, event.clientX, event.clientY);
+  });
+  menu.addEventListener("click", event => {
+    const item = event.target.closest("[data-context-action]");
+    if (!item) return;
+    const action = item.dataset.contextAction;
+    executeContextAction(action);
+    closeDesktopContextMenu();
+  });
+  menu.addEventListener("keydown", event => {
+    const items = $$(".context-menu-item", menu);
+    const index = items.indexOf(document.activeElement);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      items[(index + direction + items.length) % items.length]?.focus();
+    }
+    if (event.key === "Home") { event.preventDefault(); items[0]?.focus(); }
+    if (event.key === "End") { event.preventDefault(); items.at(-1)?.focus(); }
+  });
+  document.addEventListener("pointerdown", event => {
+    if (!menu.hidden && !event.target.closest("#desktopContextMenu")) closeDesktopContextMenu();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !menu.hidden) {
+      event.preventDefault();
+      closeDesktopContextMenu(true);
+      return;
+    }
+    if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+    const target = document.activeElement;
+    const rect = target?.getBoundingClientRect?.();
+    const context = contextMenuDescriptor(target, rect?.left || 16, rect?.bottom || 16);
+    if (!context) return;
+    event.preventDefault();
+    openDesktopContextMenu(context, rect?.left || 16, rect?.bottom || 16, true);
+  });
+  window.addEventListener("blur", () => closeDesktopContextMenu());
+  window.addEventListener("resize", () => closeDesktopContextMenu());
+}
+
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
@@ -2043,6 +2308,7 @@ applyAppPrimaryColors();
 hydrateAppArtwork();
 prepareControlSemantics();
 prepareMaterialCursor();
+prepareContextMenus();
 updateClock();
 setInterval(updateClock, 1000);
 renderCalendar();
