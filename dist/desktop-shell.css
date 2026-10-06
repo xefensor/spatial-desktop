@@ -11,7 +11,7 @@
 body[data-theme="graphite"]{--bg:#161a1c;--shell-hi:#454c50;--shell:#30363a;--shell-lo:#202528;--well:#15191b;--well-2:#1a1f22;--line:#0e1113;--wallpaper-overlay:linear-gradient(rgba(9,12,14,.12),rgba(9,12,14,.12))}
 body[data-theme="light"]{color-scheme:light;--bg:#d9dde0;--text:#182025;--muted:#626d73;--faint:#7b858a;--shell-hi:#fbfbf8;--shell:#e6e8e5;--shell-lo:#c9cecb;--well:#cbd1d3;--well-2:#dbe0e1;--line:#899093;--soft-line:#fff;--shadow:0 20px 50px rgba(28,38,42,.25);--key-shadow:0 3px 5px rgba(38,42,43,.3),inset 0 1px #fff,inset 0 -1px rgba(70,76,78,.34);--wallpaper-overlay:linear-gradient(rgba(255,255,255,.04),rgba(255,255,255,.04))}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}.icon-sprite{position:absolute;width:0;height:0;overflow:hidden}svg{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.icon-sprite symbol:first-child path{fill:currentColor;stroke:none}
-.desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background:#041a39;isolation:isolate}
+.desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background:color-mix(in srgb,var(--workspace-accent,#56baff) 18%,black);isolation:isolate}
 .desktop-shell::before{content:none}
 .zone{min-width:0;height:100%;padding:24px;overflow:hidden;background:linear-gradient(115deg,color-mix(in srgb,var(--shell-hi) 78%,transparent),color-mix(in srgb,var(--shell) 93%,transparent) 45%,color-mix(in srgb,var(--shell-lo) 94%,transparent));box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(0,0,0,.82)}
 .apps-zone{display:flex;flex-direction:column;border-right:1px solid var(--line)}.systems-zone{display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--line);overflow-y:auto;scrollbar-width:none}.systems-zone::-webkit-scrollbar{display:none}
@@ -534,10 +534,10 @@ body[data-theme="light"]{
 
 /* Abstract wallpaper base; the animated atmosphere is defined at the end. */
 .desktop-shell{
-  background:#041a39;
+  background:color-mix(in srgb,var(--workspace-accent,#56baff) 18%,black);
 }
 body[data-theme="light"] .desktop-shell{
-  background:#2477b5;
+  background:color-mix(in srgb,var(--workspace-accent,#56baff) 48%,black);
 }
 .desktop-shell::before{content:none}
 
@@ -1936,8 +1936,17 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
 
 /* Continuously composited wallpaper atmosphere.
    Only transform and opacity animate: the desktop stays live at display cadence
-   without repainting the solid application surfaces. */
+   without repainting the solid application surfaces. Every layer inherits the
+   active Workspace hue; theme only changes its brightness, not its identity. */
 .desktop-shell{
+  --wallpaper-tone:var(--workspace-accent,#56baff);
+  --wallpaper-base-high:color-mix(in srgb,var(--wallpaper-tone) 32%,black);
+  --wallpaper-base-mid:color-mix(in srgb,var(--wallpaper-tone) 18%,black);
+  --wallpaper-base-low:color-mix(in srgb,var(--wallpaper-tone) 9%,black);
+  --wallpaper-base-deep:color-mix(in srgb,var(--wallpaper-tone) 2%,black);
+  --wallpaper-pool:color-mix(in srgb,var(--wallpaper-tone) 60%,black);
+  --wallpaper-halo:color-mix(in srgb,var(--wallpaper-tone) 75%,white);
+  --wallpaper-speck:color-mix(in srgb,var(--wallpaper-tone) 30%,white);
   --ambient-low:.26;
   --ambient-mid:.38;
   --ambient-high:.52;
@@ -1946,12 +1955,17 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
   --speck-high:.62;
   overflow:hidden;
   background:
-    radial-gradient(ellipse 74% 82% at 52% 59%,rgba(14,91,183,.72) 0%,rgba(7,53,113,.48) 38%,transparent 72%),
-    radial-gradient(ellipse 47% 50% at 14% 8%,rgba(36,127,232,.34),transparent 68%),
-    radial-gradient(ellipse 54% 62% at 88% 92%,rgba(13,64,148,.44),transparent 72%),
-    linear-gradient(155deg,#06152f 0%,#07336b 42%,#031a3a 72%,#01050d 100%);
+    radial-gradient(ellipse 74% 82% at 52% 59%,color-mix(in srgb,var(--wallpaper-pool) 72%,transparent) 0%,color-mix(in srgb,var(--wallpaper-pool) 48%,transparent) 38%,transparent 72%),
+    radial-gradient(ellipse 47% 50% at 14% 8%,color-mix(in srgb,var(--wallpaper-pool) 34%,transparent),transparent 68%),
+    radial-gradient(ellipse 54% 62% at 88% 92%,color-mix(in srgb,var(--wallpaper-pool) 44%,transparent),transparent 72%),
+    linear-gradient(155deg,var(--wallpaper-base-low) 0%,var(--wallpaper-base-high) 42%,var(--wallpaper-base-mid) 72%,var(--wallpaper-base-deep) 100%);
 }
 body[data-theme="light"] .desktop-shell{
+  --wallpaper-base-high:color-mix(in srgb,var(--wallpaper-tone) 64%,black);
+  --wallpaper-base-mid:color-mix(in srgb,var(--wallpaper-tone) 38%,black);
+  --wallpaper-base-low:color-mix(in srgb,var(--wallpaper-tone) 22%,black);
+  --wallpaper-base-deep:color-mix(in srgb,var(--wallpaper-tone) 9%,black);
+  --wallpaper-pool:color-mix(in srgb,var(--wallpaper-tone) 85%,white);
   --ambient-low:.18;
   --ambient-mid:.28;
   --ambient-high:.39;
@@ -1959,12 +1973,21 @@ body[data-theme="light"] .desktop-shell{
   --speck-mid:.31;
   --speck-high:.48;
   background:
-    radial-gradient(ellipse 78% 86% at 51% 58%,rgba(62,155,239,.80) 0%,rgba(22,104,190,.53) 39%,transparent 73%),
-    radial-gradient(ellipse 49% 52% at 12% 9%,rgba(131,208,255,.46),transparent 68%),
-    radial-gradient(ellipse 56% 64% at 89% 91%,rgba(33,91,181,.38),transparent 72%),
-    linear-gradient(155deg,#173d70 0%,#287fbd 43%,#124a88 72%,#071a39 100%);
+    radial-gradient(ellipse 78% 86% at 51% 58%,color-mix(in srgb,var(--wallpaper-pool) 80%,transparent) 0%,color-mix(in srgb,var(--wallpaper-pool) 53%,transparent) 39%,transparent 73%),
+    radial-gradient(ellipse 49% 52% at 12% 9%,color-mix(in srgb,var(--wallpaper-pool) 46%,transparent),transparent 68%),
+    radial-gradient(ellipse 56% 64% at 89% 91%,color-mix(in srgb,var(--wallpaper-pool) 38%,transparent),transparent 72%),
+    linear-gradient(155deg,var(--wallpaper-base-low) 0%,var(--wallpaper-base-high) 43%,var(--wallpaper-base-mid) 72%,var(--wallpaper-base-deep) 100%);
 }
 .desktop-shell::before,
+.desktop-shell::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:0;
+  will-change:transform,opacity;
+  transform:translate3d(0,0,0);
+  contain:paint;
+}
 .desktop-shell::after{
   content:"";
   position:absolute;
@@ -1977,34 +2000,34 @@ body[data-theme="light"] .desktop-shell{
 .desktop-shell::before{
   inset:-12%;
   background:
-    radial-gradient(ellipse 38% 49% at 19% 27%,rgba(75,184,255,.50),transparent 70%),
-    radial-gradient(ellipse 44% 38% at 77% 70%,rgba(22,125,255,.42),transparent 73%),
-    radial-gradient(ellipse 28% 34% at 55% 17%,rgba(132,222,255,.31),transparent 75%);
+    radial-gradient(ellipse 38% 49% at 19% 27%,color-mix(in srgb,var(--wallpaper-speck) 50%,transparent),transparent 70%),
+    radial-gradient(ellipse 44% 38% at 77% 70%,color-mix(in srgb,var(--wallpaper-speck) 42%,transparent),transparent 73%),
+    radial-gradient(ellipse 28% 34% at 55% 17%,color-mix(in srgb,var(--wallpaper-speck) 31%,transparent),transparent 75%);
   opacity:var(--ambient-low);
   animation:wallpaper-breathe 7.4s cubic-bezier(.45,.05,.55,.95) infinite alternate;
 }
 .desktop-shell::after{
   inset:-5%;
   background:
-    radial-gradient(circle 1.4px at 8% 19%,rgba(221,246,255,.92) 0 55%,transparent 72%),
-    radial-gradient(circle .7px at 13% 46%,rgba(108,203,255,.78) 0 55%,transparent 74%),
-    radial-gradient(circle 1px at 19% 67%,rgba(126,209,255,.84) 0 55%,transparent 74%),
-    radial-gradient(circle .8px at 24% 87%,rgba(225,248,255,.86) 0 54%,transparent 72%),
-    radial-gradient(circle 1.8px at 31% 38%,rgba(212,244,255,.88) 0 50%,transparent 70%),
-    radial-gradient(circle .6px at 36% 12%,rgba(95,192,255,.82) 0 55%,transparent 74%),
-    radial-gradient(circle 1px at 43% 81%,rgba(105,193,255,.82) 0 55%,transparent 73%),
-    radial-gradient(circle .8px at 48% 63%,rgba(235,250,255,.88) 0 52%,transparent 72%),
-    radial-gradient(circle 1.3px at 57% 24%,rgba(232,249,255,.90) 0 52%,transparent 71%),
-    radial-gradient(circle .7px at 62% 89%,rgba(102,198,255,.82) 0 55%,transparent 74%),
-    radial-gradient(circle .9px at 68% 58%,rgba(113,202,255,.88) 0 55%,transparent 74%),
-    radial-gradient(circle .7px at 73% 36%,rgba(224,247,255,.85) 0 52%,transparent 72%),
-    radial-gradient(circle 1.7px at 79% 13%,rgba(211,243,255,.86) 0 50%,transparent 70%),
-    radial-gradient(circle .8px at 84% 48%,rgba(99,194,255,.80) 0 55%,transparent 74%),
-    radial-gradient(circle 1.1px at 88% 73%,rgba(117,204,255,.88) 0 55%,transparent 73%),
-    radial-gradient(circle .8px at 94% 41%,rgba(225,247,255,.90) 0 55%,transparent 72%),
-    radial-gradient(circle 1.2px at 52% 49%,rgba(91,184,255,.76) 0 54%,transparent 73%);
+    radial-gradient(circle 1.4px at 8% 19%,color-mix(in srgb,var(--wallpaper-speck) 92%,transparent) 0 55%,transparent 72%),
+    radial-gradient(circle .7px at 13% 46%,color-mix(in srgb,var(--wallpaper-speck) 78%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle 1px at 19% 67%,color-mix(in srgb,var(--wallpaper-speck) 84%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle .8px at 24% 87%,color-mix(in srgb,var(--wallpaper-speck) 86%,transparent) 0 54%,transparent 72%),
+    radial-gradient(circle 1.8px at 31% 38%,color-mix(in srgb,var(--wallpaper-speck) 88%,transparent) 0 50%,transparent 70%),
+    radial-gradient(circle .6px at 36% 12%,color-mix(in srgb,var(--wallpaper-speck) 82%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle 1px at 43% 81%,color-mix(in srgb,var(--wallpaper-speck) 82%,transparent) 0 55%,transparent 73%),
+    radial-gradient(circle .8px at 48% 63%,color-mix(in srgb,var(--wallpaper-speck) 88%,transparent) 0 52%,transparent 72%),
+    radial-gradient(circle 1.3px at 57% 24%,color-mix(in srgb,var(--wallpaper-speck) 90%,transparent) 0 52%,transparent 71%),
+    radial-gradient(circle .7px at 62% 89%,color-mix(in srgb,var(--wallpaper-speck) 82%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle .9px at 68% 58%,color-mix(in srgb,var(--wallpaper-speck) 88%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle .7px at 73% 36%,color-mix(in srgb,var(--wallpaper-speck) 85%,transparent) 0 52%,transparent 72%),
+    radial-gradient(circle 1.7px at 79% 13%,color-mix(in srgb,var(--wallpaper-speck) 86%,transparent) 0 50%,transparent 70%),
+    radial-gradient(circle .8px at 84% 48%,color-mix(in srgb,var(--wallpaper-speck) 80%,transparent) 0 55%,transparent 74%),
+    radial-gradient(circle 1.1px at 88% 73%,color-mix(in srgb,var(--wallpaper-speck) 88%,transparent) 0 55%,transparent 73%),
+    radial-gradient(circle .8px at 94% 41%,color-mix(in srgb,var(--wallpaper-speck) 90%,transparent) 0 55%,transparent 72%),
+    radial-gradient(circle 1.2px at 52% 49%,color-mix(in srgb,var(--wallpaper-speck) 76%,transparent) 0 54%,transparent 73%);
   opacity:var(--speck-low);
-  filter:drop-shadow(0 0 3px rgba(73,181,255,.42));
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--wallpaper-speck) 42%,transparent));
   animation:wallpaper-specks 5.8s cubic-bezier(.37,0,.63,1) infinite alternate;
 }
 .desktop-shell>.apps-zone,
