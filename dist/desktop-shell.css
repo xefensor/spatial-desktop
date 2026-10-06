@@ -5032,6 +5032,45 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   }
 }
 
+/* v97 — range tracks are narrow edge-lit glass grooves, not unlit cuts in
+   the ABS surface. The application colour is present as a restrained optical
+   edge so the thumb remains the strongest physical element. */
+.material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track,
+.app-frame input[type="range"].material-surface-glass.material-glass-field::-webkit-slider-runnable-track{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 28%,rgba(213,240,252,.20));
+  background:
+    linear-gradient(180deg,rgba(225,247,255,.07),rgba(0,0,0,.08)),
+    color-mix(in srgb,var(--glass-field-deep) 72%,transparent);
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,.38),
+    inset 0 1px rgba(244,252,255,.10),
+    0 0 5px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 16%,transparent);
+}
+.material-surface-glass input[type="range"].material-glass-field::-moz-range-track,
+.app-frame input[type="range"].material-surface-glass.material-glass-field::-moz-range-track{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 28%,rgba(213,240,252,.20));
+  background:
+    linear-gradient(180deg,rgba(225,247,255,.07),rgba(0,0,0,.08)),
+    color-mix(in srgb,var(--glass-field-deep) 72%,transparent);
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,.38),
+    inset 0 1px rgba(244,252,255,.10),
+    0 0 5px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 16%,transparent);
+}
+body[data-theme="light"] .material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track,
+body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.material-glass-field::-webkit-slider-runnable-track,
+body[data-theme="light"] .material-surface-glass input[type="range"].material-glass-field::-moz-range-track,
+body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.material-glass-field::-moz-range-track{
+  border-color:color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 24%,rgba(73,105,120,.24));
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.42),rgba(79,110,125,.08)),
+    rgba(196,218,228,.40);
+  box-shadow:
+    inset 0 1px 2px rgba(49,72,84,.22),
+    inset 0 1px rgba(255,255,255,.66),
+    0 0 4px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 11%,transparent);
+}
+
 /* v91 — Places and note navigation are rows, not physical controls.
    Selection is communicated by a quiet surface tint and an app-colour edge,
    never by a raised cap, pressed depth, or persistent toggle rail. */
