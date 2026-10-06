@@ -7390,3 +7390,15 @@ body[data-theme="light"] .overview-project-zone .workspace-config-file{
 /* A fullscreen desktop must not scroll when focus moves to a bottom dock. */
 .desktop-shell{overflow:clip!important}
 .area-window[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){min-height:0!important;display:flex!important}
+
+/* Keep scenario pages in the browser well and mode names readable. */
+.app-frame[data-app-frame="browser"]{grid-template-rows:48px 55px minmax(0,1fr)}
+.app-frame[data-app-frame="browser"] .demo-reading-page .site-grid{width:auto;gap:8px}
+.app-frame[data-app-frame="browser"] .demo-reading-page .site-grid button{height:40px}
+.project-mode-switcher .project-mode-choice{gap:4px;padding-inline:6px;min-width:86px}
+.project-mode-switcher .project-mode-choice span{font-size:12px}
+.project-mode-switcher .project-mode-choice .project-choice-icon{flex-basis:12px;width:12px;height:12px}
+.project-mode-switcher .project-mode-choice[data-saved-windows]::before{flex-basis:15px;width:15px;height:15px;font-size:9px}
+body[data-theme="light"] .app-frame .terminal-screen{color:#22302b}
+body[data-theme="light"] .app-frame .terminal-screen b{color:#227646}
+body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
