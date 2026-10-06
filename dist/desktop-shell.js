@@ -1574,11 +1574,6 @@ requestAnimationFrame(() => {
   loadLayout();
   ensureOpenWindowGeometry();
   bringToFront("dolphin");
-  window.setTimeout(() => {
-    const diagnosticFrame = frameFor("dolphin");
-    const diagnosticRect = diagnosticFrame.getBoundingClientRect();
-    $("#projectAreaName").nextElementSibling.textContent = "Project Space · " + $$('[data-app-frame]').length + " windows · " + (diagnosticFrame.hidden ? "hidden" : "shown") + " · " + Math.round(diagnosticRect.width) + "×" + Math.round(diagnosticRect.height) + " · z" + getComputedStyle(diagnosticFrame).zIndex;
-  }, 500);
 });
 
 window.addEventListener("resize", () => {

@@ -2120,7 +2120,7 @@ body[data-theme="light"] .universal-scope.is-active{color:#fff;background:rgba(1
   overflow:hidden;
 }
 .zone-resizer{display:none!important}
-.workspace-zone{
+.desktop-shell>.workspace-zone{
   position:absolute;
   z-index:1;
   top:var(--workspace-top,12px);
