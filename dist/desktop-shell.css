@@ -530,3 +530,51 @@ body[data-theme="light"]{
 }
 .zone-resizer>span i{width:3px;height:1px}
 .zone-resizer:hover>span,.zone-resizer:focus-visible>span,.zone-resizer.is-dragging>span{width:10px;opacity:.92;box-shadow:0 3px 7px rgba(0,0,0,.42),0 0 8px rgba(42,159,255,.18)}
+
+/* User wallpaper, with only enough tint to keep floating windows legible */
+.desktop-shell{
+  background:
+    linear-gradient(135deg,rgba(3,6,8,.20),rgba(9,5,6,.38)),
+    url("./wallpaper.png") center center/cover no-repeat;
+}
+body[data-theme="light"] .desktop-shell{
+  background:
+    linear-gradient(135deg,rgba(244,246,243,.10),rgba(43,31,29,.16)),
+    url("./wallpaper.png") center center/cover no-repeat;
+}
+.desktop-shell::before{opacity:0}
+
+/* Keep the zones close to their contents; resizing still has a forgiving hit area */
+.zone{padding:12px}
+.workspace-zone{padding:9px}
+.workspace-depth{inset:4px}
+.zone-resizer::before{
+  left:10.5px;
+  width:1px;
+  opacity:.48;
+  box-shadow:none;
+}
+.zone-resizer>span{
+  width:5px;
+  height:36px;
+  gap:3px;
+  border:0;
+  border-radius:3px;
+  box-shadow:none;
+  opacity:.38;
+}
+.zone-resizer>span i{width:2px}
+.zone-resizer:hover::before,
+.zone-resizer:focus-visible::before,
+.zone-resizer.is-dragging::before{
+  left:10px;
+  width:2px;
+  box-shadow:0 0 7px var(--blue-glow);
+}
+.zone-resizer:hover>span,
+.zone-resizer:focus-visible>span,
+.zone-resizer.is-dragging>span{
+  width:7px;
+  opacity:.8;
+  box-shadow:0 0 7px rgba(42,159,255,.16);
+}
