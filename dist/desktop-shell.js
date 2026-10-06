@@ -211,6 +211,7 @@ let focusSeconds = 25 * 60;
 let focusRunning = false;
 let focusTimer;
 let notificationPeekTimer;
+let notificationPeekAttentionTimer;
 let notificationAttentionTimer;
 let noteDraft = "";
 let terminalPreview = "Ready for a command";
@@ -3810,7 +3811,9 @@ function positionNotificationPeek() {
 function hideNotificationPeek() {
   const peek = $("#notificationPeek");
   clearTimeout(notificationPeekTimer);
+  clearTimeout(notificationPeekAttentionTimer);
   peek?.classList.remove("is-visible");
+  peek?.classList.remove("is-attending");
   peek?.setAttribute("aria-hidden", "true");
 }
 
@@ -3825,6 +3828,11 @@ function showNotificationPeek(title, detail, tone, glyph) {
   $("#notificationPeekDetail").textContent = detail;
   peek.setAttribute("aria-hidden", "false");
   peek.classList.add("is-visible");
+  clearTimeout(notificationPeekAttentionTimer);
+  peek.classList.remove("is-attending");
+  void peek.offsetWidth;
+  peek.classList.add("is-attending");
+  notificationPeekAttentionTimer = setTimeout(() => peek.classList.remove("is-attending"), 1450);
   requestAnimationFrame(positionNotificationPeek);
   clearTimeout(notificationPeekTimer);
   notificationPeekTimer = setTimeout(hideNotificationPeek, 3400);

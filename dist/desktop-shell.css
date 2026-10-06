@@ -7021,41 +7021,58 @@ body[data-theme="light"].areas-docked .area-window{
 body[data-theme="light"] .universal-search .overview-open-windows .overview-window{background:linear-gradient(180deg,color-mix(in srgb,var(--overview-app) 5%,#f4f7f8),#dfe5e8)!important;box-shadow:0 5px 12px rgba(45,70,82,.14),inset 0 1px white!important}
 @media(max-width:1280px){.universal-search .overview-open-windows .overview-window{grid-template-columns:1fr!important;grid-template-rows:48px minmax(0,1fr)!important;flex-basis:146px;height:146px!important;min-height:146px!important}.universal-search .overview-open-windows .overview-window-titlebar{padding:6px 8px;grid-template-columns:30px minmax(0,1fr) 8px;border-right:0;border-bottom:1px solid var(--control-edge)}.universal-search .overview-open-windows .overview-window-titlebar>.app-art{width:30px;height:30px}}
 
-/* v136 — notifications announce themselves through the System Area. When the
-   Area is open, a short acrylic edge-light traces only the new row. A rail or
-   hidden Area uses one restrained edge-adjacent preview instead of a generic
-   desktop toast. */
-.notification.is-new-attention{isolation:isolate}
-.notification.is-new-attention::before{
+/* v138 — the acrylic attention light is a short moving segment, not a side
+   stripe or a permanent halo. It makes one complete circuit around the exact
+   thing that is notifying, then leaves the material quiet again. */
+@property --notification-orbit{
+  syntax:"<angle>";
+  inherits:false;
+  initial-value:-42deg;
+}
+.notification.is-new-attention{
+  --attention-tone:var(--notification-tone,var(--blue));
+  isolation:isolate;
+}
+.notification.is-new-attention::before,
+.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading::after,
+.notification-peek.is-attending::before{
   content:"";
   position:absolute;
-  z-index:-1;
-  inset:1px 0;
+  z-index:3;
+  inset:0;
+  padding:1px;
   pointer-events:none;
-  border:1px solid color-mix(in srgb,var(--notification-tone,var(--blue)) 72%,var(--sd-glass-edge));
-  background:color-mix(in srgb,var(--notification-tone,var(--blue)) 5%,transparent);
-  box-shadow:inset 2px 0 color-mix(in srgb,var(--notification-tone,var(--blue)) 82%,white 8%),inset -1px 0 color-mix(in srgb,var(--notification-tone,var(--blue)) 28%,transparent);
-  animation:notification-edge-attention 1.35s ease-out both;
+  background:conic-gradient(
+    from var(--notification-orbit),
+    transparent 0deg 282deg,
+    color-mix(in srgb,var(--attention-tone) 20%,transparent) 296deg,
+    color-mix(in srgb,var(--attention-tone) 78%,white 22%) 316deg,
+    color-mix(in srgb,var(--attention-tone) 42%,transparent) 332deg,
+    transparent 346deg 360deg
+  );
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  opacity:0;
+  animation:notification-perimeter-orbit 1.32s cubic-bezier(.22,.68,.24,1) both;
 }
 .notification-widget.has-new-attention .widget-heading>div>svg,
 .notification-widget.has-new-attention #notificationCount{
   color:color-mix(in srgb,var(--blue) 84%,white 16%);
-  text-shadow:0 0 5px color-mix(in srgb,var(--blue) 42%,transparent);
+  text-shadow:0 0 3px color-mix(in srgb,var(--blue) 30%,transparent);
 }
 .systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{
-  box-shadow:inset 2px 0 color-mix(in srgb,var(--blue) 76%,white 8%);
-  animation:notification-rail-attention 1.35s ease-out both;
+  --attention-tone:var(--blue);
+  position:relative;
+  isolation:isolate;
 }
-.systems-zone[data-area-state="rail"][data-dock-edge="right"].has-notification-attention .notification-widget .widget-heading{
-  box-shadow:inset -2px 0 color-mix(in srgb,var(--blue) 76%,white 8%);
+@keyframes notification-perimeter-orbit{
+  0%{--notification-orbit:-42deg;opacity:0}
+  9%{opacity:.94}
+  84%{opacity:.86}
+  100%{--notification-orbit:318deg;opacity:0}
 }
-@keyframes notification-edge-attention{
-  0%{opacity:.15;border-color:transparent;background:transparent}
-  16%{opacity:1}
-  58%{opacity:.72}
-  100%{opacity:0;border-color:transparent;background:transparent}
-}
-@keyframes notification-rail-attention{0%{background:transparent}18%{background:color-mix(in srgb,var(--blue) 12%,transparent)}100%{background:transparent}}
 
 .notification-peek{
   --peek-tone:var(--blue);
@@ -7074,7 +7091,7 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
   color:var(--sd-glass-text);
   text-align:left;
   background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.045)),transparent 42%),var(--sd-glass-face);
-  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px var(--sd-glass-highlight),inset 2px 0 color-mix(in srgb,var(--peek-tone) 60%,transparent);
+  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px var(--sd-glass-highlight);
   -webkit-backdrop-filter:blur(20px) saturate(1.08);
   backdrop-filter:blur(20px) saturate(1.08);
   opacity:0;
@@ -7083,6 +7100,8 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
   transform:translateX(5px);
   transition:opacity 110ms linear,transform 110ms ease-out,visibility 0s linear 110ms;
 }
+.notification-peek.is-attending{--attention-tone:var(--peek-tone)}
+.notification-peek>*{position:relative;z-index:1}
 .notification-peek[data-edge="left"]{transform:translateX(-5px)}
 .notification-peek[data-edge="top"]{transform:translateY(-5px)}
 .notification-peek[data-edge="bottom"]{transform:translateY(5px)}
@@ -7113,9 +7132,19 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
 .notification-peek-copy b,.notification-peek-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .notification-peek-copy b{font-size:12px;line-height:1.25}
 .notification-peek-copy small{margin-top:3px;color:var(--sd-glass-muted);font-size:10.5px;line-height:1.2}
-body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.32)),transparent 42%),var(--sd-glass-face);box-shadow:0 8px 20px rgba(42,64,76,.16),inset 0 1px white,inset 2px 0 color-mix(in srgb,var(--peek-tone) 54%,transparent)}
+body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.32)),transparent 42%),var(--sd-glass-face);box-shadow:0 8px 20px rgba(42,64,76,.16),inset 0 1px white}
 @media(prefers-reduced-motion:reduce){
-  .notification.is-new-attention::before,.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{animation:none;opacity:1}
+  .notification.is-new-attention::before,
+  .systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading::after,
+  .notification-peek.is-attending::before{
+    padding:0;
+    border:1px solid color-mix(in srgb,var(--attention-tone) 70%,var(--sd-glass-edge));
+    background:transparent;
+    -webkit-mask:none;
+    mask:none;
+    animation:none;
+    opacity:.8;
+  }
   .notification-peek,.notification-peek.is-visible{transition:none}
 }
 
