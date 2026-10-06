@@ -32,11 +32,11 @@ function prepareControlSemantics(root = document) {
 }
 
 const appInfo = {
-  dolphin: { label: "Dolphin", icon: "i-folder", tone: "blue", detail: "Downloads" },
-  elisa: { label: "Elisa", icon: "i-music", tone: "violet", detail: "running out of time" },
-  browser: { label: "Web", icon: "i-web", tone: "cyan", detail: "Start page" },
-  terminal: { label: "Konsole", icon: "i-terminal", tone: "green", detail: "xef@desktop" },
-  notes: { label: "Notes", icon: "i-note", tone: "amber", detail: "Desktop concept" }
+  dolphin: { label: "Dolphin", icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
+  elisa: { label: "Elisa", icon: "i-music", tone: "violet", primary: "#a483ff", detail: "running out of time" },
+  browser: { label: "Web", icon: "i-web", tone: "cyan", primary: "#55d8e9", detail: "Start page" },
+  terminal: { label: "Konsole", icon: "i-terminal", tone: "green", primary: "#64d782", detail: "xef@desktop" },
+  notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Desktop concept" }
 };
 
 const appState = { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" };
@@ -62,6 +62,14 @@ function appArt(name, extraClass = "") {
   return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + name + '"/></svg>';
 }
 
+function applyAppPrimaryColors(root = document) {
+  Object.entries(appInfo).forEach(([name, info]) => {
+    const selector = '[data-app-frame="' + name + '"],[data-open-app="' + name + '"],[data-mini-card="' + name + '"]';
+    const elements = root.matches?.(selector) ? [root, ...$$(selector, root)] : $$(selector, root);
+    elements.forEach(element => element.style.setProperty("--app-primary", info.primary));
+  });
+}
+
 function hydrateAppArtwork() {
   $$('[data-app-frame]').forEach(frame => {
     const name = frame.dataset.appFrame;
@@ -73,7 +81,11 @@ function hydrateAppArtwork() {
     const title = $('b', notification)?.textContent || "";
     const name = title.includes("Elisa") ? "elisa" : title.includes("Download") ? "dolphin" : "";
     const badge = $('.app-badge', notification);
-    if (badge && name) badge.innerHTML = appArt(name, "app-art-compact");
+    if (badge && name) {
+      notification.dataset.appOrigin = name;
+      notification.style.setProperty("--app-primary", appInfo[name].primary);
+      badge.innerHTML = appArt(name, "app-art-compact");
+    }
   });
 }
 
@@ -282,6 +294,7 @@ function miniMarkup(name) {
 function renderMiniApps() {
   const minimized = Object.keys(appState).filter(key => appState[key] === "minimized");
   $("#miniStack").innerHTML = minimized.length ? minimized.map(miniMarkup).join("") : '<div class="mini-empty">Drag a window here to keep it controllable.</div>';
+  applyAppPrimaryColors($("#miniStack"));
   prepareControlSemantics($("#miniStack"));
   $("#miniCount").textContent = minimized.length + " parked";
   $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
@@ -967,6 +980,7 @@ $("#terminalInput").addEventListener("keydown", event => {
 prepareNoteSync();
 prepareZoneResizers();
 prepareWindows();
+applyAppPrimaryColors();
 hydrateAppArtwork();
 prepareControlSemantics();
 updateClock();
