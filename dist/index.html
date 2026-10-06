@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101214">
+  <meta name="description" content="Interaktivní prototyp hmotného rozhraní pro KDE Plasma a telefon.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101315'/%3E%3Cpath d='M14 35h36' stroke='%232a9dff' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='15' y='15' width='34' height='28' rx='10' fill='none' stroke='%23eef4f8' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <title>Material Interface Lab</title>
+</head>
+<body data-theme="dark" data-scene="desktop">
+  <header class="lab-bar" aria-label="Ovládání prototypu">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Material Interface Lab</span>
+    </div>
+    <div class="lab-controls">
+      <div class="switcher" role="group" aria-label="Zařízení">
+        <button class="switch-option is-active" data-scene-button="desktop">Desktop</button>
+        <button class="switch-option" data-scene-button="phone">Telefon</button>
+      </div>
+      <button class="theme-button" id="themeButton" aria-label="Přepnout na světlý režim">
+        <span class="theme-glyph" aria-hidden="true">◐</span>
+        <span id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage desktop-stage" aria-label="Interaktivní desktop KDE Plasma">
+      <div class="desktop">
+        <aside class="plasma-rail" aria-label="Panel aplikací">
+          <button class="rail-key"><span>⌘</span></button>
+          <div class="rail-stack">
+            <button class="rail-key is-running" data-toast="Dolphin už je otevřený"><span>▰</span></button>
+            <button class="rail-key" data-toast="Firefox"><span>◉</span></button>
+            <button class="rail-key" data-toast="Terminál"><span>›_</span></button>
+            <button class="rail-key" data-toast="Nastavení"><span>⚙</span></button>
+          </div>
+          <div class="rail-spacer"></div>
+          <div class="rail-display" aria-label="Digitální systémový panel">
+            <span>13:14</span>
+            <i></i>
+            <span>78%</span>
+          </div>
+        </aside>
+
+        <article class="dolphin-window">
+          <header class="window-titlebar">
+            <span class="window-title">Stahování — Dolphin</span>
+            <div class="window-controls">
+              <button aria-label="Minimalizovat">−</button>
+              <button aria-label="Maximalizovat">□</button>
+              <button class="close-button" aria-label="Zavřít">×</button>
+            </div>
+          </header>
+
+          <div class="toolbar">
+            <div class="nav-keys">
+              <button class="shell-key" data-toast="Zpět">‹</button>
+              <button class="shell-key" data-toast="Vpřed">›</button>
+              <button class="shell-key compact" data-toast="Zobrazení">⌘</button>
+            </div>
+            <label class="recess-field address-field">
+              <span class="field-leading">›</span>
+              <span class="field-light" aria-hidden="true"></span>
+              <input value="Stahování" aria-label="Cesta">
+            </label>
+            <div class="nav-keys">
+              <button class="shell-key text-key" data-toast="Rozdělené zobrazení">▣ Rozdělit</button>
+              <button class="shell-key" id="focusFilter" aria-label="Hledat">⌕</button>
+              <button class="shell-key" data-toast="Nabídka">≡</button>
+            </div>
+          </div>
+
+          <div class="dolphin-body">
+            <aside class="places">
+              <p class="section-label">Místa</p>
+              <nav>
+                <button data-place="Domovská složka"><span>⌂</span>Domovská složka</button>
+                <button data-place="Pracovní plocha"><span>▣</span>Pracovní plocha</button>
+                <button class="is-active" data-place="Stahování"><span>↓</span>Stahování</button>
+                <button data-place="Dokumenty"><span>▤</span>Dokumenty</button>
+                <button data-place="Hudba"><span>♫</span>Hudba</button>
+                <button data-place="Videa"><span>▦</span>Videa</button>
+                <button data-place="Obrázky"><span>▧</span>Obrázky</button>
+                <button data-place="Projekty"><span>⚙</span>Projekty</button>
+              </nav>
+              <p class="section-label">Vzdálené</p>
+              <nav>
+                <button data-place="Síť"><span>⌁</span>Síť</button>
+                <button data-place="Server"><span>▱</span>Server</button>
+              </nav>
+            </aside>
+
+            <section class="content-module">
+              <div class="tabs" role="tablist" aria-label="Otevřené složky">
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="color-schemes"><span>▱</span>color-schemes<i>×</i></button>
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Filmy"><span>▱</span>Filmy<i>×</i></button>
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="ocean-design-master"><span>▱</span>ocean-design-master<i>×</i></button>
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Koš"><span>♜</span>Koš<i>×</i></button>
+                <button class="folder-tab is-active" role="tab" aria-selected="true" data-tab="Stahování"><span>↓</span>Stahování<i>×</i></button>
+              </div>
+              <div class="file-well">
+                <div class="file-head file-grid">
+                  <span>Název</span><span>Velikost</span><span>Změněno</span><span>Typ</span>
+                </div>
+                <div id="fileRows" class="file-rows" role="listbox" aria-label="Soubory">
+                  <button class="file-row file-grid" data-name="ocean-design-master"><span><i class="folder-icon"></i>ocean-design-master</span><span>8 položek</span><span>10.09.26 21:53</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="pebble_time_2_reminky_vsechny"><span><i class="folder-icon"></i>pebble_time_2_reminky_vsechny</span><span>21 položek</span><span>05.09.26 18:47</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="DeusEx_MapPatch13"><span><i class="folder-icon"></i>DeusEx_MapPatch13</span><span>2 položky</span><span>15.08.26 17:55</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="DeusExe-v5.3"><span><i class="folder-icon"></i>DeusExe-v5.3</span><span>4 položky</span><span>15.08.26 17:15</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="ocean-breeze-papirus-app-icons.png"><span><i class="doc-icon image-doc"></i>ocean-breeze-papirus-app-icons.png</span><span>527,3 KiB</span><span>10.09.26 21:43</span><span>obrázek PNG</span></button>
+                  <button class="file-row file-grid" data-name="PXL_20260910_152343895.MP.jpg"><span><i class="doc-icon image-doc"></i>PXL_20260910_152343895.MP.jpg</span><span>6,7 MiB</span><span>10.09.26 17:23</span><span>obrázek JPEG</span></button>
+                  <button class="file-row file-grid" data-name="vestnik_UPV_201203.pdf"><span><i class="doc-icon pdf-doc"></i>vestnik_UPV_201203.pdf</span><span>7,3 MiB</span><span>18.08.26 22:45</span><span>dokument PDF</span></button>
+                  <button class="file-row file-grid" data-name="ceske_hry.ods"><span><i class="doc-icon sheet-doc"></i>ceske_hry.ods</span><span>43,9 KiB</span><span>14.08.26 13:03</span><span>Sešit OpenDocument</span></button>
+                </div>
+                <div class="scroll-track"><div class="scroll-thumb"></div></div>
+              </div>
+            </section>
+          </div>
+
+          <footer class="status-area">
+            <label class="recess-field filter-field">
+              <span>⌕</span>
+              <input id="fileFilter" placeholder="Filtrovat…" aria-label="Filtrovat soubory">
+            </label>
+            <span id="fileCount">4 složky, 4 soubory</span>
+            <label class="zoom-control">Zvětšení:
+              <input id="zoomRange" type="range" min="0" max="2" step="1" value="0" aria-label="Velikost řádků">
+            </label>
+            <span>276,8 GiB volno</span>
+          </footer>
+        </article>
+      </div>
+    </section>
+
+    <section class="stage phone-stage" aria-label="Interaktivní telefonní rozhraní">
+      <div class="phone-wrap">
+        <article class="phone">
+          <div class="screen-light" id="screenLight" aria-hidden="true"></div>
+          <header class="phone-status"><b>1:45</b><span>⌁ ▥ ◉ <strong>60</strong>ϟ</span></header>
+          <div class="phone-toolbar recessed-glass">
+            <button id="phoneBack" aria-label="Zpět">‹</button>
+            <label><span>⌕</span><input id="phoneSearch" placeholder="Hledat"></label>
+            <button data-phone-action="Domů" aria-label="Domů">⌂</button>
+            <button data-phone-action="Řazení" aria-label="Řazení">≡</button>
+            <button data-phone-action="Nabídka" aria-label="Nabídka">⋮</button>
+          </div>
+          <div class="breadcrumbs"><button class="glass-chip">Interní</button><span>›</span><span id="phonePath">Download</span></div>
+          <main class="phone-content">
+            <div id="phoneList" class="phone-list"></div>
+          </main>
+          <button class="phone-fab" id="addFolder" aria-label="Přidat složku">＋</button>
+          <nav class="phone-nav recessed-glass" aria-label="Spodní navigace">
+            <button class="is-active" data-phone-view="Soubory"><span>▰</span>Soubory</button>
+            <button data-phone-view="Nedávné"><span>◷</span>Nedávné</button>
+            <button data-phone-view="Úložiště"><span>≡</span>Úložiště</button>
+          </nav>
+          <div class="keyboard" id="keyboard" aria-hidden="true">
+            <div class="key-row" data-keys="qwertyuiop"></div>
+            <div class="key-row" data-keys="asdfghjkl"></div>
+            <div class="key-row" data-keys="zxcvbnm"></div>
+            <div class="key-row actions">
+              <button data-key="clear">123</button>
+              <button class="space-key" data-key=" ">mezerník</button>
+              <button class="enter-key" data-key="enter">✓</button>
+            </div>
+          </div>
+          <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
+        </article>
+        <aside class="interaction-notes">
+          <span>RIGID GLASS / LOCAL LIGHT</span>
+          <p>Dotkni se hledání, kláves nebo spodní navigace. Světlo reaguje lokálně pod prstem, ale sklo se nedeformuje.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
