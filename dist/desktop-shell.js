@@ -8,6 +8,7 @@ const toggleControlSelector = [
   ".nav-choice",
   ".play-toggle",
   "#timerToggle",
+  "#allAppsToggle",
   "[data-window-action=\"maximize\"]"
 ].join(",");
 
@@ -749,13 +750,48 @@ function prepareWindows() {
   }));
 }
 
-$$("[data-open-app]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.openApp)));
+function setAllAppsOpen(open) {
+  const drawer = $("#allAppsDrawer");
+  const toggle = $("#allAppsToggle");
+  drawer.classList.toggle("is-open", open);
+  drawer.setAttribute("aria-hidden", String(!open));
+  toggle.classList.toggle("is-active", open);
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.setAttribute("aria-pressed", String(open));
+}
+
+$("#allAppsToggle").addEventListener("click", () => {
+  setAllAppsOpen(!$("#allAppsDrawer").classList.contains("is-open"));
+});
+$("#closeAllApps").addEventListener("click", () => setAllAppsOpen(false));
+
+$$("[data-open-app]").forEach(button => button.addEventListener("click", () => {
+  openApp(button.dataset.openApp);
+  if (button.closest("#allAppsDrawer")) setAllAppsOpen(false);
+}));
+
+$$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
+  showToast(button.dataset.launchApp + " launched");
+  setAllAppsOpen(false);
+}));
 
 $("#appSearch").addEventListener("input", event => {
   const query = event.target.value.toLowerCase();
-  $$("[data-open-app]").forEach(button => {
-    button.hidden = !appInfo[button.dataset.openApp].label.toLowerCase().includes(query);
+  if (query) setAllAppsOpen(true);
+  let visible = 0;
+  $$(".launcher-app", $("#allAppsGrid")).forEach(button => {
+    const label = button.textContent.trim().toLowerCase();
+    button.hidden = !label.includes(query);
+    if (!button.hidden) visible += 1;
   });
+  $("#allAppsEmpty").hidden = visible !== 0;
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && $("#allAppsDrawer").classList.contains("is-open")) {
+    setAllAppsOpen(false);
+    $("#allAppsToggle").focus();
+  }
 });
 
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));

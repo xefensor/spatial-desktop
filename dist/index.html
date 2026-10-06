@@ -7,7 +7,7 @@
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preload" as="image" href="wallpaper-river-v34.jpg">
-  <link rel="stylesheet" href="desktop-shell.css?v=35">
+  <link rel="stylesheet" href="desktop-shell.css?v=36">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -68,9 +68,27 @@
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
         <div class="mini-stack" id="miniStack" aria-live="polite"></div>
       </section>
+      <section class="all-apps-drawer" id="allAppsDrawer" aria-labelledby="allAppsTitle" aria-hidden="true">
+        <header class="all-apps-heading">
+          <div><span class="eyebrow">APPLICATIONS</span><h2 id="allAppsTitle">All apps</h2></div>
+          <button class="surface-key icon-key drawer-close" id="closeAllApps" aria-label="Close all apps"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="all-apps-grid" id="allAppsGrid">
+          <button class="launcher-app" data-open-app="dolphin"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg></span><span>Dolphin</span></button>
+          <button class="launcher-app" data-open-app="elisa"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg></span><span>Elisa</span></button>
+          <button class="launcher-app" data-open-app="browser"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg></span><span>Web</span></button>
+          <button class="launcher-app" data-open-app="terminal"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg></span><span>Konsole</span></button>
+          <button class="launcher-app" data-open-app="notes"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg></span><span>Notes</span></button>
+          <button class="launcher-app" data-launch-app="Calendar"><span class="launcher-icon launcher-symbol blue"><svg><use href="#i-calendar"/></svg></span><span>Calendar</span></button>
+          <button class="launcher-app" data-launch-app="Discover"><span class="launcher-icon launcher-symbol cyan"><svg><use href="#i-grid"/></svg></span><span>Discover</span></button>
+          <button class="launcher-app" data-launch-app="System Settings"><span class="launcher-icon launcher-symbol violet"><svg><use href="#i-settings"/></svg></span><span>Settings</span></button>
+          <button class="launcher-app" data-launch-app="System Monitor"><span class="launcher-icon launcher-symbol green"><svg><use href="#i-timer"/></svg></span><span>System Monitor</span></button>
+        </div>
+        <p class="all-apps-empty" id="allAppsEmpty" hidden>No matching apps</p>
+      </section>
       <div class="apps-bottom">
         <label class="recessed-field app-search"><svg><use href="#i-search"/></svg><input id="appSearch" placeholder="Find an app" aria-label="Find an app"></label>
-        <div class="bottom-actions"><button class="surface-key icon-key" data-toast="System settings" aria-label="System settings"><svg><use href="#i-settings"/></svg></button></div>
+        <div class="bottom-actions"><button class="surface-key all-apps-toggle" id="allAppsToggle" aria-controls="allAppsDrawer" aria-expanded="false"><svg><use href="#i-grid"/></svg><span>All apps</span></button><button class="surface-key icon-key" data-toast="System settings" aria-label="System settings"><svg><use href="#i-settings"/></svg></button></div>
       </div>
     </aside>
 
@@ -120,6 +138,6 @@
     </aside>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js"></script>
+  <script src="desktop-shell.js?v=36"></script>
 </body>
 </html>
