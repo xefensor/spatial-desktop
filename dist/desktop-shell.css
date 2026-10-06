@@ -1638,3 +1638,48 @@ body[data-theme="light"] .app-badge .app-art{
 body[data-theme="light"] .apps-zone .app-key .app-art{
   filter:drop-shadow(0 2px 2px rgba(34,46,52,.22));
 }
+
+/*
+ * Non-negotiable window rule: work content is always fully opaque.
+ * Wallpaper and acrylic may breathe through chrome, side navigation and shell
+ * areas, but never through the surface the user reads or edits.
+ */
+:root{
+  --content-surface:#080b0d;
+  --content-surface-raised:#0d1215;
+  --terminal-content-surface:#020405;
+}
+body[data-theme="graphite"]{
+  --content-surface:#1a1f22;
+  --content-surface-raised:#22282c;
+  --terminal-content-surface:#090c0e;
+}
+body[data-theme="light"]{
+  --content-surface:#f2f4f3;
+  --content-surface-raised:#e6eae8;
+  --terminal-content-surface:#101416;
+}
+
+.file-well,
+.music-hero,
+.playlist,
+.start-page,
+.terminal-screen,
+.notes-layout textarea{
+  backdrop-filter:none;
+}
+.file-well{
+  background:linear-gradient(145deg,var(--content-surface-raised),var(--content-surface));
+}
+.file-head{
+  background:var(--content-surface-raised);
+}
+.music-hero,
+.playlist,
+.start-page,
+.notes-layout textarea{
+  background:var(--content-surface);
+}
+.terminal-screen{
+  background:var(--terminal-content-surface);
+}
