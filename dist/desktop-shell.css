@@ -4839,3 +4839,64 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   background:color-mix(in srgb,var(--glass-field-deep) 72%,transparent);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.34);
 }
+
+/* v86 — silhouette is now semantic.
+   Square Areas belong to the desktop structure; soft squircle windows are
+   movable objects placed inside it. The difference works even in peripheral
+   vision, without another colour or border treatment. */
+:root{
+  --area-corner:3px;
+  --window-corner:22px;
+  --window-card-corner:15px;
+}
+
+/* Architectural, docked surfaces. */
+.area-window,
+.desktop-shell>.apps-zone,
+.desktop-shell>.systems-zone,
+.area-window[data-area-state="compact"],
+.area-window[data-area-state="rail"]{
+  border-radius:var(--area-corner);
+}
+.area-window-bar{
+  border-radius:0;
+}
+.area-resize-handle,
+.area-window[data-dock-edge]>.area-resize-handle{
+  border-radius:2px;
+}
+.all-apps-drawer{
+  border-radius:2px 2px 0 0;
+}
+
+/* Movable app objects. A generous fallback radius gives the same reading in
+   browsers without the progressive squircle corner model. */
+.app-frame,
+.package-window{
+  border-radius:var(--window-corner);
+}
+.desktop-context-menu,
+.mini-card,
+.overview-window{
+  border-radius:var(--window-card-corner);
+}
+.app-frame[data-maximized="true"]{
+  border-radius:3px;
+}
+
+@supports (corner-shape:squircle){
+  .app-frame,
+  .package-window,
+  .desktop-context-menu,
+  .mini-card,
+  .overview-window{
+    corner-shape:squircle;
+  }
+  .app-frame[data-maximized="true"]{
+    corner-shape:round;
+  }
+}
+
+@media(max-width:850px){
+  :root{--window-corner:18px;--window-card-corner:13px}
+}
