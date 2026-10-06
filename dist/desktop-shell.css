@@ -5091,8 +5091,8 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   --ui-line:color-mix(in srgb,var(--text) 10%,transparent);
   --ui-quiet:color-mix(in srgb,var(--text) 4%,transparent);
   --ui-quiet-hover:color-mix(in srgb,var(--text) 7%,transparent);
-  --button-press-time:36ms;
-  --button-release-time:72ms;
+  --button-press-time:8ms;
+  --button-release-time:16ms;
 }
 
 /* Shared fit and type rhythm. */
@@ -5342,4 +5342,38 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   .universal-search :where(button,input:not([type="range"]),textarea,select,label,section,article,aside,nav,header,footer,kbd,.workspace-switcher,.workspace-home-card,.workspace-context-card,.overview-app-library,.overview-widget,.overview-window,.overview-project,.universal-result,.all-apps-drawer,.all-apps-search,.launcher-category,.launcher-app){
     corner-shape:square!important;
   }
+}
+
+/* v93 — a control responds like a physical mouse switch: down is virtually
+   immediate and release takes only one display frame. Toggle controls use the
+   exact same stroke; after release they simply settle into their held depth. */
+:root{
+  --button-press-time:8ms;
+  --button-release-time:16ms;
+}
+:where(button,[role="button"],a.surface-key){
+  transition-duration:var(--button-release-time)!important;
+  transition-delay:0ms!important;
+  transition-timing-function:linear!important;
+}
+:where(button,[role="button"],a.surface-key):active{
+  transition-duration:var(--button-press-time)!important;
+  transition-delay:0ms!important;
+  transition-timing-function:linear!important;
+}
+:where(button,[role="button"],a.surface-key)::before,
+:where(button,[role="button"],a.surface-key)::after{
+  transition-duration:var(--button-release-time)!important;
+  transition-delay:0ms!important;
+  transition-timing-function:linear!important;
+}
+:where(button,[role="button"],a.surface-key):active::before,
+:where(button,[role="button"],a.surface-key):active::after{
+  transition-duration:var(--button-press-time)!important;
+}
+.cursor-glyph,
+.cursor-side{
+  transition-duration:var(--button-press-time)!important;
+  transition-delay:0ms!important;
+  transition-timing-function:linear!important;
 }
