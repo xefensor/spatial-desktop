@@ -620,3 +620,30 @@ body[data-theme="light"] .desktop-shell{
 .timer-widget .widget-heading{height:27px}
 .timer-face{padding:3px 0 6px}
 .timer-actions button{height:31px;padding:0 8px}
+
+/* Mouse switches feel binary: a near-instant press and a short mechanical return */
+:root{
+  --button-press-time:16ms;
+  --button-release-time:30ms;
+}
+.surface-key,
+.app-key,
+.quick-toggle,
+.folder-tab,
+.nav-choice{
+  transition:
+    transform var(--button-release-time) linear,
+    box-shadow var(--button-release-time) linear,
+    filter var(--button-release-time) linear,
+    color var(--button-release-time) linear,
+    border-color var(--button-release-time) linear,
+    background-color var(--button-release-time) linear;
+}
+.surface-key:active,
+.app-key:active,
+.quick-toggle:active,
+.folder-tab:active,
+.nav-choice:active{
+  transition-duration:var(--button-press-time);
+  transition-timing-function:linear;
+}
