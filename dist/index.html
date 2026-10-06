@@ -1,328 +1,101 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101214">
-  <meta name="description" content="Interaktivní prototyp hmotného rozhraní pro KDE Plasma a telefon.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101315'/%3E%3Cpath d='M14 35h36' stroke='%232a9dff' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='15' y='15' width='34' height='28' rx='10' fill='none' stroke='%23eef4f8' stroke-width='4'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <title>Material Interface Lab</title>
+  <meta name="theme-color" content="#07090a">
+  <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="desktop-shell.css">
+  <title>Plasma Spatial Shell</title>
 </head>
-<body data-theme="oled" data-scene="desktop">
-  <header class="lab-bar" aria-label="Ovládání prototypu">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span>Material Lab</span>
-    </div>
-    <div class="lab-controls">
-      <div class="switcher" role="group" aria-label="Zařízení">
-        <button class="switch-option is-active" data-scene-button="desktop">Desktop</button>
-        <button class="switch-option" data-scene-button="phone">Telefon</button>
-        <button class="switch-option" data-scene-button="music">Hudba</button>
+<body data-theme="oled">
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5h7l2 2h9v10.5H3z"/><path d="M3 9h18"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></symbol>
+    <symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM7 9l3 3-3 3M12 15h5"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 10h8M8 14h8M8 18h5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+    <symbol id="i-min" viewBox="0 0 24 24"><path d="M6 17h12"/></symbol>
+    <symbol id="i-max" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 6l-8 6 8 6zM7 6v12"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 6l8 6-8 6zM17 6v12"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M5 17h14l-2-3V9a5 5 0 00-10 0v5zM10 20h4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M9 2h6M12 5v3M12 13l4-2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9c2 2 2 4 0 6M19 6c4 4 4 8 0 12"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9c5-5 13-5 18 0M6 13c3-3 9-3 12 0M9 17c2-2 4-2 6 0"/><circle cx="12" cy="20" r="1"/></symbol>
+    <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></symbol>
+  </svg>
+
+  <main class="desktop-shell" aria-label="Plasma spatial desktop prototype">
+    <aside class="zone apps-zone" aria-label="Apps area">
+      <header class="zone-heading">
+        <div><span class="eyebrow">SPACE 01</span><h1>Apps</h1></div>
+        <button class="surface-key icon-key" id="fullscreenButton" aria-label="Enter fullscreen" title="Fullscreen"><svg><use href="#i-expand"/></svg></button>
+      </header>
+      <nav class="app-rack" aria-label="Favourite and open applications">
+        <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg><use href="#i-folder"/></svg><span>Dolphin</span><i></i></button>
+        <button class="app-key is-open is-minimized" data-open-app="elisa" aria-label="Elisa"><svg><use href="#i-music"/></svg><span>Elisa</span><i></i></button>
+        <button class="app-key" data-open-app="browser" aria-label="Web browser"><svg><use href="#i-web"/></svg><span>Web</span><i></i></button>
+        <button class="app-key" data-open-app="terminal" aria-label="Terminal"><svg><use href="#i-terminal"/></svg><span>Terminal</span><i></i></button>
+        <button class="app-key" data-open-app="notes" aria-label="Notes"><svg><use href="#i-note"/></svg><span>Notes</span><i></i></button>
+      </nav>
+      <section class="mini-section" aria-labelledby="minimizedTitle">
+        <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">1 active</span></header>
+        <div class="mini-stack" id="miniStack" aria-live="polite"></div>
+      </section>
+      <div class="apps-bottom">
+        <label class="recessed-field app-search"><svg><use href="#i-search"/></svg><input id="appSearch" placeholder="Find an app" aria-label="Find an app"></label>
+        <div class="bottom-actions"><a class="surface-key lab-link" href="material-lab.html" title="Open previous material lab">Material lab</a><button class="surface-key icon-key" data-toast="System settings"><svg><use href="#i-settings"/></svg></button></div>
       </div>
-      <div class="switcher theme-switcher" role="group" aria-label="Povrch">
-        <button class="switch-option" data-theme-button="light">Light</button>
-        <button class="switch-option" data-theme-button="graphite">Graphite</button>
-        <button class="switch-option is-active" data-theme-button="oled">OLED</button>
-      </div>
-      <div class="material-meter" aria-live="polite"><i></i><span id="stateLabel">KLID</span></div>
-    </div>
-  </header>
+    </aside>
 
-  <main>
-    <section class="stage desktop-stage" aria-label="Interaktivní desktop KDE Plasma">
-      <div class="desktop">
-        <aside class="plasma-rail" aria-label="Panel aplikací">
-          <button class="rail-key"><span>⌘</span></button>
-          <div class="rail-stack">
-            <button class="rail-key is-running" data-toast="Dolphin už je otevřený"><span>▰</span></button>
-            <button class="rail-key" data-toast="Firefox"><span>◉</span></button>
-            <button class="rail-key" data-toast="Terminál"><span>›_</span></button>
-            <button class="rail-key" data-toast="Nastavení"><span>⚙</span></button>
-          </div>
-          <div class="rail-spacer"></div>
-          <div class="rail-display" aria-label="Digitální systémový panel">
-            <span>13:14</span>
-            <i></i>
-            <span>78%</span>
-          </div>
-        </aside>
+    <section class="workspace-zone" aria-label="Main app area">
+      <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="empty-workspace" id="emptyWorkspace" hidden><div class="empty-mark"><svg><use href="#i-grid"/></svg></div><strong>No app in the main area</strong><span>Restore one from the Apps area.</span></div>
+      <article class="app-frame is-active" data-app-frame="dolphin" aria-label="Dolphin file manager">
+        <header class="app-titlebar"><div class="app-identity"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Dolphin</b><small>Downloads</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Minimize Dolphin"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-toast="The app already fills its area" aria-label="Maximize Dolphin"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Dolphin"><svg><use href="#i-close"/></svg></button></div></header>
+        <div class="app-toolbar"><div class="key-group"><button class="surface-key compact-key"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key"><svg><use href="#i-right"/></svg></button></div><label class="recessed-field address-bar"><span class="live-slit"></span><input value="/home/xef/Downloads" aria-label="Location"></label><button class="surface-key compact-key"><svg><use href="#i-search"/></svg></button><button class="surface-key compact-key"><svg><use href="#i-grid"/></svg></button></div>
+        <div class="dolphin-layout">
+          <nav class="places-list" aria-label="Places"><span class="small-heading">PLACES</span><button class="nav-choice"><svg><use href="#i-folder"/></svg>Home</button><button class="nav-choice is-active"><svg><use href="#i-folder"/></svg>Downloads</button><button class="nav-choice"><svg><use href="#i-note"/></svg>Documents</button><button class="nav-choice"><svg><use href="#i-music"/></svg>Music</button><span class="small-heading">REMOTE</span><button class="nav-choice"><svg><use href="#i-web"/></svg>Network</button><button class="nav-choice"><svg><use href="#i-terminal"/></svg>Server</button></nav>
+          <section class="files-module"><div class="folder-tabs" role="tablist"><button class="folder-tab" role="tab" aria-selected="false">Projects<span>×</span></button><button class="folder-tab is-active" role="tab" aria-selected="true">Downloads<span>×</span></button><button class="folder-tab" role="tab" aria-selected="false">Images<span>×</span></button></div><div class="file-well"><div class="file-head"><span>Name</span><span>Size</span><span>Modified</span></div><div class="file-list" role="listbox"><button class="content-row"><span><i class="folder-glyph"></i>material-interface</span><small>12 items</small><small>today 11:42</small></button><button class="content-row"><span><i class="folder-glyph"></i>Retold</span><small>84 items</small><small>yesterday</small></button><button class="content-row"><span><i class="folder-glyph"></i>PebbleOS</span><small>231 items</small><small>21 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>desktop-layout-notes.md</span><small>18 KiB</small><small>today 09:16</small></button><button class="content-row"><span><i class="document-glyph image"></i>plasma-shell-study.png</span><small>6.8 MiB</small><small>20 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>interaction-principles.pdf</span><small>2.1 MiB</small><small>18 Sep</small></button></div></div></section>
+        </div>
+        <footer class="app-status"><span>3 folders, 3 files</span><span>276.8 GiB free</span></footer>
+      </article>
 
-        <article class="dolphin-window">
-          <header class="window-titlebar">
-            <span class="window-title">Stahování — Dolphin</span>
-            <div class="window-controls">
-              <button aria-label="Minimalizovat">−</button>
-              <button aria-label="Maximalizovat">□</button>
-              <button class="close-button" aria-label="Zavřít">×</button>
-            </div>
-          </header>
+      <article class="app-frame" data-app-frame="elisa" aria-label="Elisa music player" hidden>
+        <header class="app-titlebar"><div class="app-identity"><span class="app-badge violet"><svg><use href="#i-music"/></svg></span><div><b>Elisa</b><small>Now playing</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Minimize Elisa"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-toast="The app already fills its area"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Elisa"><svg><use href="#i-close"/></svg></button></div></header>
+        <div class="music-hero"><div class="album-block"><span>RUNNING<br>OUT OF TIME</span></div><div class="track-copy"><span class="small-heading">NOW PLAYING</span><h2>running out of time</h2><p>eenspire · Mix from Escape</p></div><div class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="music-controls"><button class="surface-key music-key" data-music="prev"><svg><use href="#i-prev"/></svg></button><button class="surface-key music-key primary play-toggle" data-music="play"><svg><use href="#i-play"/></svg></button><button class="surface-key music-key" data-music="next"><svg><use href="#i-next"/></svg></button><span id="elapsedMain">1:55</span><input class="track-range" type="range" min="0" max="218" value="115" aria-label="Track position"><span>3:38</span><svg class="volume-icon"><use href="#i-volume"/></svg><input class="volume-range" type="range" min="0" max="100" value="72" aria-label="Volume"></div>
+        <div class="playlist"><button class="content-row is-selected"><span>01&nbsp;&nbsp; running out of time</span><small>eenspire</small><small>3:38</small></button><button class="content-row"><span>02&nbsp;&nbsp; Genesis</span><small>Justice</small><small>3:54</small></button><button class="content-row"><span>03&nbsp;&nbsp; D.A.N.C.E.</span><small>Justice</small><small>4:02</small></button><button class="content-row"><span>04&nbsp;&nbsp; Phantom</span><small>Justice</small><small>4:22</small></button><button class="content-row"><span>05&nbsp;&nbsp; Valentine</span><small>Justice</small><small>2:56</small></button></div>
+      </article>
 
-          <div class="toolbar">
-            <div class="nav-keys">
-              <button class="shell-key" data-toast="Zpět">‹</button>
-              <button class="shell-key" data-toast="Vpřed">›</button>
-              <button class="shell-key compact" data-toast="Zobrazení">⌘</button>
-            </div>
-            <label class="recess-field address-field">
-              <span class="field-leading">›</span>
-              <span class="field-light" aria-hidden="true"></span>
-              <input value="Stahování" aria-label="Cesta">
-            </label>
-            <div class="nav-keys">
-              <button class="shell-key text-key" data-toast="Rozdělené zobrazení">▣ Rozdělit</button>
-              <button class="shell-key" id="focusFilter" aria-label="Hledat">⌕</button>
-              <button class="shell-key" data-toast="Nabídka">≡</button>
-            </div>
-          </div>
-
-          <div class="dolphin-body">
-            <aside class="places">
-              <p class="section-label">Místa</p>
-              <nav>
-                <button data-place="Domovská složka"><span>⌂</span>Domovská složka</button>
-                <button data-place="Pracovní plocha"><span>▣</span>Pracovní plocha</button>
-                <button class="is-active" data-place="Stahování"><span>↓</span>Stahování</button>
-                <button data-place="Dokumenty"><span>▤</span>Dokumenty</button>
-                <button data-place="Hudba"><span>♫</span>Hudba</button>
-                <button data-place="Videa"><span>▦</span>Videa</button>
-                <button data-place="Obrázky"><span>▧</span>Obrázky</button>
-                <button data-place="Projekty"><span>⚙</span>Projekty</button>
-              </nav>
-              <p class="section-label">Vzdálené</p>
-              <nav>
-                <button data-place="Síť"><span>⌁</span>Síť</button>
-                <button data-place="Server"><span>▱</span>Server</button>
-              </nav>
-            </aside>
-
-            <section class="content-module">
-              <div class="tabs" role="tablist" aria-label="Otevřené složky">
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="color-schemes"><span>▱</span>color-schemes<i>×</i></button>
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Filmy"><span>▱</span>Filmy<i>×</i></button>
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="ocean-design-master"><span>▱</span>ocean-design-master<i>×</i></button>
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Koš"><span>♜</span>Koš<i>×</i></button>
-                <button class="folder-tab is-active" role="tab" aria-selected="true" data-tab="Stahování"><span>↓</span>Stahování<i>×</i></button>
-              </div>
-              <div class="file-well">
-                <div class="file-head file-grid">
-                  <span>Název</span><span>Velikost</span><span>Změněno</span><span>Typ</span>
-                </div>
-                <div id="fileRows" class="file-rows" role="listbox" aria-label="Soubory">
-                  <button class="file-row file-grid" data-name="ocean-design-master"><span><i class="folder-icon"></i>ocean-design-master</span><span>8 položek</span><span>10.09.26 21:53</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="pebble_time_2_reminky_vsechny"><span><i class="folder-icon"></i>pebble_time_2_reminky_vsechny</span><span>21 položek</span><span>05.09.26 18:47</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="DeusEx_MapPatch13"><span><i class="folder-icon"></i>DeusEx_MapPatch13</span><span>2 položky</span><span>15.08.26 17:55</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="DeusExe-v5.3"><span><i class="folder-icon"></i>DeusExe-v5.3</span><span>4 položky</span><span>15.08.26 17:15</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="ocean-breeze-papirus-app-icons.png"><span><i class="doc-icon image-doc"></i>ocean-breeze-papirus-app-icons.png</span><span>527,3 KiB</span><span>10.09.26 21:43</span><span>obrázek PNG</span></button>
-                  <button class="file-row file-grid" data-name="PXL_20260910_152343895.MP.jpg"><span><i class="doc-icon image-doc"></i>PXL_20260910_152343895.MP.jpg</span><span>6,7 MiB</span><span>10.09.26 17:23</span><span>obrázek JPEG</span></button>
-                  <button class="file-row file-grid" data-name="vestnik_UPV_201203.pdf"><span><i class="doc-icon pdf-doc"></i>vestnik_UPV_201203.pdf</span><span>7,3 MiB</span><span>18.08.26 22:45</span><span>dokument PDF</span></button>
-                  <button class="file-row file-grid" data-name="ceske_hry.ods"><span><i class="doc-icon sheet-doc"></i>ceske_hry.ods</span><span>43,9 KiB</span><span>14.08.26 13:03</span><span>Sešit OpenDocument</span></button>
-                </div>
-                <div class="scroll-track"><div class="scroll-thumb"></div></div>
-              </div>
-            </section>
-          </div>
-
-          <footer class="status-area">
-            <label class="recess-field filter-field">
-              <span>⌕</span>
-              <input id="fileFilter" placeholder="Filtrovat…" aria-label="Filtrovat soubory">
-            </label>
-            <span id="fileCount">4 složky, 4 soubory</span>
-            <label class="zoom-control">Zvětšení:
-              <input id="zoomRange" type="range" min="0" max="2" step="1" value="0" aria-label="Velikost řádků">
-            </label>
-            <span>276,8 GiB volno</span>
-          </footer>
-        </article>
-      </div>
+      <article class="app-frame simple-app" data-app-frame="browser" aria-label="Web browser" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge cyan"><svg><use href="#i-web"/></svg></span><div><b>Web</b><small>Start page</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close"><svg><use href="#i-close"/></svg></button></div></header><div class="browser-toolbar"><button class="surface-key compact-key"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key"><svg><use href="#i-right"/></svg></button><label class="recessed-field"><svg><use href="#i-search"/></svg><input value="Search the web" aria-label="Address"></label></div><div class="start-page"><span class="large-time live-time">--:--</span><p>Where do you want to go?</p><div class="site-grid"><button class="surface-key">KDE Invent</button><button class="surface-key">GitHub</button><button class="surface-key">Modrinth</button><button class="surface-key">CHMI</button></div></div></article>
+      <article class="app-frame simple-app" data-app-frame="terminal" aria-label="Terminal" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge green"><svg><use href="#i-terminal"/></svg></span><div><b>Konsole</b><small>xef@desktop</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close"><svg><use href="#i-close"/></svg></button></div></header><div class="terminal-screen" id="terminalScreen"><p><b>xef@desktop</b>:<i>~</i>$ neofetch</p><p class="terminal-output">OS: openSUSE Tumbleweed<br>DE: KDE Plasma 6 · Wayland<br>Shell: spatial-plasma<br>Resolution: adaptive</p><label><b>xef@desktop</b>:<i>~</i>$ <input id="terminalInput" autocomplete="off" aria-label="Terminal command"></label></div></article>
+      <article class="app-frame simple-app" data-app-frame="notes" aria-label="Notes" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge amber"><svg><use href="#i-note"/></svg></span><div><b>Notes</b><small>Desktop shell</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close"><svg><use href="#i-close"/></svg></button></div></header><div class="notes-layout"><nav><button class="nav-choice is-active">Desktop concept</button><button class="nav-choice">Interaction rules</button><button class="nav-choice">Open questions</button></nav><textarea aria-label="Note">The center is reserved for focused work.&#10;&#10;The left side keeps apps available—even when minimized.&#10;&#10;The right side contains system state and short interactions.</textarea></div></article>
     </section>
 
-    <section class="stage phone-stage" aria-label="Interaktivní telefonní rozhraní">
-      <div class="phone-wrap">
-        <article class="phone">
-          <div class="screen-light" id="screenLight" aria-hidden="true"></div>
-          <header class="phone-status"><b>1:45</b><span>⌁ ▥ ◉ <strong>60</strong>ϟ</span></header>
-          <div class="phone-toolbar recessed-glass">
-            <button id="phoneBack" aria-label="Zpět">‹</button>
-            <label><span>⌕</span><input id="phoneSearch" placeholder="Hledat"></label>
-            <button data-phone-action="Domů" aria-label="Domů">⌂</button>
-            <button data-phone-action="Řazení" aria-label="Řazení">≡</button>
-            <button data-phone-action="Nabídka" aria-label="Nabídka">⋮</button>
-          </div>
-          <div class="breadcrumbs"><button class="glass-chip">Interní</button><span>›</span><span id="phonePath">Download</span></div>
-          <main class="phone-content">
-            <div id="phoneList" class="phone-list"></div>
-          </main>
-          <button class="phone-fab" id="addFolder" aria-label="Přidat složku">＋</button>
-          <nav class="phone-nav recessed-glass" aria-label="Spodní navigace">
-            <button class="is-active" data-phone-view="Soubory"><span>▰</span>Soubory</button>
-            <button data-phone-view="Nedávné"><span>◷</span>Nedávné</button>
-            <button data-phone-view="Úložiště"><span>≡</span>Úložiště</button>
-          </nav>
-          <div class="keyboard" id="keyboard" aria-hidden="true">
-            <div class="key-row" data-keys="qwertyuiop"></div>
-            <div class="key-row" data-keys="asdfghjkl"></div>
-            <div class="key-row" data-keys="zxcvbnm"></div>
-            <div class="key-row actions">
-              <button data-key="clear">123</button>
-              <button class="space-key" data-key=" ">mezerník</button>
-              <button class="enter-key" data-key="enter">✓</button>
-            </div>
-          </div>
-          <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
-        </article>
-        <aside class="interaction-notes">
-          <span>PEVNÉ SKLO / LOKÁLNÍ SVĚTLO</span>
-          <dl>
-            <div><dt>Klid</dt><dd>souvislá plocha</dd></div>
-            <div><dt>Dotyk</dt><dd>světlo pod prstem</dd></div>
-            <div><dt>Fokus</dt><dd>osvětlená hrana</dd></div>
-          </dl>
-        </aside>
-      </div>
-    </section>
-
-    <section class="stage music-stage" aria-label="Interaktivní hudební aplikace">
-      <div class="music-workbench">
-        <article class="music-window">
-          <header class="music-titlebar">
-            <span class="music-app-mark" aria-hidden="true">♫</span>
-            <strong id="musicWindowTitle">running out of time — Elisa</strong>
-            <div class="window-controls">
-              <button aria-label="Minimalizovat">−</button>
-              <button aria-label="Maximalizovat">□</button>
-              <button class="close-button" aria-label="Zavřít">×</button>
-            </div>
-          </header>
-
-          <section class="music-display">
-            <div class="album-art compact-art" aria-label="Obal alba">
-              <span>RUNNING<br>OUT OF TIME</span>
-            </div>
-            <div class="display-copy">
-              <span class="display-label">PRÁVĚ HRAJE</span>
-              <strong class="now-title">running out of time</strong>
-              <span class="now-artist">eenspire · Mix z roku Escape</span>
-            </div>
-            <div class="spectrum" aria-hidden="true">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
-          </section>
-
-          <section class="music-transport" aria-label="Přehrávání">
-            <div class="transport-cluster">
-              <button class="music-key previous-track" aria-label="Předchozí skladba">|‹</button>
-              <button class="music-key main-play" aria-label="Přehrát"><span>▶</span></button>
-              <button class="music-key next-track" aria-label="Další skladba">›|</button>
-            </div>
-            <span class="elapsed-time">0:00</span>
-            <label class="music-progress">
-              <span class="sr-only">Pozice skladby</span>
-              <input class="track-progress" type="range" min="0" max="138" value="0">
-            </label>
-            <span class="duration-time">2:18</span>
-            <button class="music-key mode-key shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
-            <button class="music-key mode-key repeat-toggle is-active" aria-label="Opakování">↻</button>
-            <label class="volume-well">
-              <span>◖</span>
-              <input class="volume-range" type="range" min="0" max="100" value="74" aria-label="Hlasitost">
-            </label>
-          </section>
-
-          <div class="music-body">
-            <aside class="music-sidebar">
-              <p class="section-label">Knihovna</p>
-              <nav>
-                <button><span>▤</span>Nyní přehrávám</button>
-                <button><span>◷</span>Nedávno hrané</button>
-                <button><span>▥</span>Často hrané</button>
-                <button class="is-active"><span>▰</span>Alba</button>
-                <button><span>♙</span>Umělci</button>
-                <button><span>♫</span>Skladby</button>
-                <button><span>✦</span>Žánry</button>
-                <button><span>▱</span>Soubory</button>
-              </nav>
-              <div class="library-counter"><b>128</b><span>alb</span></div>
-            </aside>
-
-            <section class="music-library">
-              <div class="library-head">
-                <button class="music-key album-back" aria-label="Zpět">‹</button>
-                <div class="mini-cover album-art"><span>ROT</span></div>
-                <div>
-                  <strong>Mix z roku Escape</strong>
-                  <span>12 skladeb · 48 min</span>
-                </div>
-                <button class="music-key library-play" aria-label="Přehrát album">▶</button>
-                <button class="music-key queue-toggle" aria-label="Zobrazit frontu">▤</button>
-              </div>
-              <label class="recess-field music-search">
-                <span>⌕</span>
-                <input id="musicSearch" placeholder="Hledat skladbu nebo umělce…" aria-label="Hledat v hudbě">
-              </label>
-              <div class="music-table-head music-track-grid">
-                <span>#</span><span>Skladba</span><span>Interpret</span><span>Čas</span>
-              </div>
-              <div class="music-tracks" id="musicTracks" role="listbox" aria-label="Skladby"></div>
-            </section>
-
-            <aside class="music-queue" id="musicQueue">
-              <header>
-                <div><span>FRONTA</span><strong>Následuje</strong></div>
-                <button class="music-key queue-close" aria-label="Skrýt frontu">×</button>
-              </header>
-              <div id="queueTracks"></div>
-              <footer><span id="queueCount">11 skladeb</span><span>47:31</span></footer>
-            </aside>
-          </div>
-        </article>
-
-        <article class="music-phone">
-          <div class="screen-light music-touch-light" aria-hidden="true"></div>
-          <header class="phone-status"><b>11:59</b><span>⌁ ▥ ◉ <strong>83</strong>ϟ</span></header>
-          <div class="mobile-now-label">
-            <span>Právě hraje</span>
-            <strong>Mix z roku Escape</strong>
-          </div>
-          <div class="album-art phone-art" aria-label="Obal alba">
-            <span>RUNNING<br>OUT OF TIME</span>
-          </div>
-          <div class="mobile-track-info">
-            <div><strong class="now-title">running out of time</strong><span class="now-artist">eenspire</span></div>
-            <div class="mobile-actions">
-              <button class="glass-control share-button" aria-label="Sdílet">↗</button>
-              <button class="glass-control like-button" aria-label="Přidat do oblíbených" aria-pressed="false">♡</button>
-            </div>
-          </div>
-          <div class="mobile-progress">
-            <input class="track-progress" type="range" min="0" max="138" value="0" aria-label="Pozice skladby">
-            <div><span class="elapsed-time">0:00</span><span class="duration-time">2:18</span></div>
-          </div>
-          <div class="mobile-transport">
-            <button class="glass-control previous-track" aria-label="Předchozí skladba">|‹</button>
-            <button class="glass-control main-play mobile-main-play" aria-label="Přehrát"><span>▶</span><b>Přehrát</b></button>
-            <button class="glass-control next-track" aria-label="Další skladba">›|</button>
-          </div>
-          <div class="mobile-modes">
-            <button class="glass-control" data-toast="Fronta">♬</button>
-            <button class="glass-control" data-toast="Časovač vypnutí">◔</button>
-            <button class="glass-control shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
-            <button class="glass-control repeat-toggle is-active" aria-label="Opakování">↻</button>
-            <button class="glass-control mobile-queue-toggle" aria-label="Otevřít frontu">⋮</button>
-          </div>
-          <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
-          <section class="mobile-queue-sheet" id="mobileQueueSheet" aria-hidden="true">
-            <div class="sheet-handle"></div>
-            <header><strong>Další skladby</strong><button class="sheet-close" aria-label="Zavřít">×</button></header>
-            <div id="mobileQueue"></div>
-          </section>
-        </article>
-      </div>
-    </section>
+    <aside class="zone systems-zone" aria-label="Systems area">
+      <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
+      <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b>Retold test pass</b><small>14:30 · 45 min</small></div></div></section>
+      <section class="system-widget notification-widget"><header class="widget-heading"><div><svg><use href="#i-bell"/></svg><h2>Notifications</h2></div><span id="notificationCount">2</span></header><div id="notificationList"><article class="notification"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Download finished</b><small>plasma-shell-study.png · 6.8 MiB</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article><article class="notification"><span class="app-badge violet"><svg><use href="#i-music"/></svg></span><div><b>Elisa is still playing</b><small>running out of time · 1:55</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article></div></section>
+      <section class="system-widget timer-widget"><header class="widget-heading"><div><svg><use href="#i-timer"/></svg><h2>Focus timer</h2></div><span id="timerState">Ready</span></header><div class="timer-face"><strong id="timerValue">25:00</strong><div class="timer-progress"><i id="timerProgress"></i></div></div><div class="timer-actions"><button class="surface-key" id="timerToggle">Start</button><button class="surface-key" id="timerReset">Reset</button></div></section>
+      <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
+      <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
+    </aside>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
+  <script src="desktop-shell.js"></script>
 </body>
 </html>
