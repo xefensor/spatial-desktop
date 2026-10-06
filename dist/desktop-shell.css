@@ -3500,3 +3500,294 @@ body[data-theme="light"] .context-menu-item:active{box-shadow:inset 0 2px 3px rg
   background:color-mix(in srgb,var(--blue) 18%,rgba(7,13,18,.36));
   transition-duration:var(--button-press-time);
 }
+
+/* v69 — Compact is a deliberate information mode, not Expanded with pieces hidden. */
+.area-window[data-area-state="compact"]{
+  padding:8px;
+  border-radius:13px;
+}
+.area-window[data-area-state="compact"] .area-window-bar{
+  min-height:42px;
+  flex-basis:42px;
+  margin:-8px -8px 6px;
+  padding:5px 6px 5px 8px;
+}
+.area-window[data-area-state="compact"] .area-window-identity{gap:7px}
+.area-window[data-area-state="compact"] .area-window-icon{width:29px;height:29px;flex-basis:29px}
+.area-window[data-area-state="compact"] .area-window-identity b{font-size:13px}
+.area-window[data-area-state="compact"] .area-window-identity small{font-size:11px}
+
+/* Apps Compact: readable launchers above live, still-operable parked apps. */
+.apps-zone[data-area-state="compact"]{
+  container-name:compact-apps;
+  container-type:inline-size;
+}
+.apps-zone[data-area-state="compact"] .app-rack{
+  height:auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-content:start;
+  gap:4px;
+  padding:1px;
+}
+.apps-zone[data-area-state="compact"] .app-key,
+.apps-zone[data-area-state="compact"] .app-key:nth-child(n+4){
+  min-width:0;
+  height:57px;
+  margin-top:0;
+  padding:3px 2px;
+  gap:3px;
+}
+.apps-zone[data-area-state="compact"] .app-key .app-art{width:28px;height:28px}
+.apps-zone[data-area-state="compact"] .app-key span{
+  display:block;
+  width:100%;
+  overflow:hidden;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.05;
+  text-align:center;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+@container compact-apps (min-width:232px){
+  .apps-zone[data-area-state="compact"] .app-rack{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+.apps-zone[data-area-state="compact"] .mini-section{
+  min-height:0;
+  margin-top:7px;
+}
+.apps-zone[data-area-state="compact"] .section-heading{
+  min-height:27px;
+  padding:0 2px 4px;
+}
+.apps-zone[data-area-state="compact"] .section-heading h2{font-size:12px}
+.apps-zone[data-area-state="compact"] .section-heading span{font-size:10px}
+.apps-zone[data-area-state="compact"] .mini-stack{gap:5px;padding:0 1px 6px}
+.apps-zone[data-area-state="compact"] .mini-card{
+  padding:6px;
+  border-radius:8px;
+}
+.apps-zone[data-area-state="compact"] .mini-card::after{left:8px;right:8px}
+.apps-zone[data-area-state="compact"] .mini-card header{
+  min-height:29px;
+  margin-bottom:5px;
+}
+.apps-zone[data-area-state="compact"] .mini-card header>div{min-width:0;gap:5px}
+.apps-zone[data-area-state="compact"] .mini-card header>div>span:last-child{min-width:0}
+.apps-zone[data-area-state="compact"] .mini-card header b,
+.apps-zone[data-area-state="compact"] .mini-card header small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.apps-zone[data-area-state="compact"] .mini-card header b{font-size:12px}
+.apps-zone[data-area-state="compact"] .mini-card header small{font-size:10px}
+.apps-zone[data-area-state="compact"] .mini-card header .app-badge{width:26px;height:26px;flex-basis:26px}
+.apps-zone[data-area-state="compact"] .mini-card .mini-control{width:27px;height:26px;padding:0}
+.apps-zone[data-area-state="compact"] .mini-card .mini-actions{flex:0 0 auto;gap:3px}
+.apps-zone[data-area-state="compact"] .mini-location{
+  height:29px;
+  margin:0 0 4px;
+  padding:0 6px;
+  gap:5px;
+}
+.apps-zone[data-area-state="compact"] .mini-location b{font-size:11px}
+.apps-zone[data-area-state="compact"] .mini-location small{font-size:9px}
+.apps-zone[data-area-state="compact"] .mini-file-list{gap:1px}
+.apps-zone[data-area-state="compact"] .mini-file-list button{height:29px;padding:0 5px}
+.apps-zone[data-area-state="compact"] .mini-file-list button:nth-child(n+2){display:none}
+.apps-zone[data-area-state="compact"] .mini-file-list button span{font-size:10px}
+.apps-zone[data-area-state="compact"] .mini-quick-row{gap:4px;margin-top:4px}
+.apps-zone[data-area-state="compact"] .mini-tool{height:29px;padding:0 5px;font-size:10px}
+.apps-zone[data-area-state="compact"] .mini-music{grid-template-columns:34px minmax(0,1fr);gap:6px}
+.apps-zone[data-area-state="compact"] .mini-art{height:34px;border-radius:7px}
+.apps-zone[data-area-state="compact"] .mini-track b{font-size:11px}
+.apps-zone[data-area-state="compact"] .mini-track small{font-size:9px}
+.apps-zone[data-area-state="compact"] .mini-transport{
+  grid-template-columns:27px 31px 27px minmax(30px,1fr);
+  gap:3px;
+}
+.apps-zone[data-area-state="compact"] .mini-terminal-output{min-height:42px;padding:6px 7px}
+.apps-zone[data-area-state="compact"] .mini-command,
+.apps-zone[data-area-state="compact"] .mini-browser-search{height:31px;margin-top:4px}
+.apps-zone[data-area-state="compact"] .mini-sites{gap:3px;margin-top:4px}
+.apps-zone[data-area-state="compact"] .mini-sites button{height:27px;padding:0 2px}
+.apps-zone[data-area-state="compact"] .mini-card-note .mini-note-field{
+  min-height:78px;
+  max-height:116px;
+  padding:6px 7px;
+  font-size:11px;
+}
+.apps-zone[data-area-state="compact"] .apps-bottom{
+  grid-template-columns:42px minmax(0,1fr);
+  gap:5px;
+  padding-top:6px;
+}
+.apps-zone[data-area-state="compact"] .overview-launch{
+  width:42px;
+  min-height:39px;
+  padding:0;
+  display:grid;
+  grid-template-columns:1fr;
+  place-items:center;
+}
+.apps-zone[data-area-state="compact"] .workspace-status{
+  min-width:0;
+  min-height:39px;
+  padding:4px 6px;
+  grid-template-columns:4px minmax(0,1fr) 13px;
+  gap:6px;
+}
+.apps-zone[data-area-state="compact"] .workspace-status>i{width:4px;height:22px}
+.apps-zone[data-area-state="compact"] .workspace-status b{font-size:12px}
+.apps-zone[data-area-state="compact"] .workspace-status small{font-size:10px}
+
+/* System Compact: one-glance state plus controls, with no dead card area. */
+.systems-zone[data-area-state="compact"]{gap:5px;overflow-y:auto}
+.systems-zone[data-area-state="compact"] .time-block{
+  min-height:47px;
+  padding:2px 2px 7px;
+  gap:9px;
+}
+.systems-zone[data-area-state="compact"] .time-block>span{font-size:29px}
+.systems-zone[data-area-state="compact"] .time-block b{font-size:12px}
+.systems-zone[data-area-state="compact"] .time-block small{font-size:10px}
+.systems-zone[data-area-state="compact"] .dynamic-widget-stack{gap:5px}
+.systems-zone[data-area-state="compact"] .system-widget{
+  padding:6px;
+  border-radius:8px;
+}
+.systems-zone[data-area-state="compact"] .widget-heading{height:27px}
+.systems-zone[data-area-state="compact"] .widget-heading h2{font-size:12px}
+.systems-zone[data-area-state="compact"] .widget-heading>span{font-size:10px}
+.systems-zone[data-area-state="compact"] .notification{padding:5px 0;gap:6px}
+.systems-zone[data-area-state="compact"] .notification .app-badge{width:27px;height:27px}
+.systems-zone[data-area-state="compact"] .notification b{font-size:11px}
+.systems-zone[data-area-state="compact"] .notification small{font-size:10px}
+.systems-zone[data-area-state="compact"] .timer-face{grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 0 5px}
+.systems-zone[data-area-state="compact"] .timer-face strong{font-size:23px}
+.systems-zone[data-area-state="compact"] .timer-actions{gap:4px}
+.systems-zone[data-area-state="compact"] .timer-actions button{height:29px;padding:0 5px;font-size:11px}
+.systems-zone[data-area-state="compact"] .system-launchers{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:4px;
+}
+.systems-zone[data-area-state="compact"] .system-launcher{
+  height:35px;
+  padding:0 6px;
+  gap:5px;
+  font-size:10px;
+}
+.systems-zone[data-area-state="compact"] .system-launcher svg{flex:0 0 15px;width:15px;height:15px}
+.systems-zone[data-area-state="compact"] .layout-mode-control{grid-column:1/-1}
+.systems-zone[data-area-state="compact"] .static-widget-stack{gap:5px}
+.systems-zone[data-area-state="compact"] .calendar-widget{
+  display:block;
+  padding-bottom:6px;
+}
+.systems-zone[data-area-state="compact"] .calendar-grid,
+.systems-zone[data-area-state="compact"] .calendar-week{display:none}
+.systems-zone[data-area-state="compact"] .calendar-widget .tiny-key{height:25px;min-height:25px;padding:0 6px}
+.systems-zone[data-area-state="compact"] .next-event{
+  margin-top:3px;
+  padding:5px 6px;
+}
+.systems-zone[data-area-state="compact"] .next-event>i{height:24px}
+.systems-zone[data-area-state="compact"] .next-event b,
+.systems-zone[data-area-state="compact"] .next-event small{font-size:10px}
+.systems-zone[data-area-state="compact"] .device-row{
+  grid-template-columns:29px minmax(0,1fr) auto;
+  gap:7px;
+}
+.systems-zone[data-area-state="compact"] .phone-silhouette{height:40px;border-radius:8px}
+.systems-zone[data-area-state="compact"] .device-row b{font-size:11px}
+.systems-zone[data-area-state="compact"] .device-row small{font-size:9px}
+.systems-zone[data-area-state="compact"] .battery-track{margin-top:5px}
+.systems-zone[data-area-state="compact"] .quick-settings{gap:4px}
+.systems-zone[data-area-state="compact"] .quick-toggle{
+  min-height:35px;
+  height:35px;
+  padding:0 6px;
+  gap:5px;
+}
+.systems-zone[data-area-state="compact"] .quick-toggle span{font-size:10px}
+
+/* Project Compact: current path, one recent item from each source, quick apps
+   and the project clipboard remain available. */
+.project-area[data-area-state="compact"][data-dock-edge="left"] .project-space-content,
+.project-area[data-area-state="compact"][data-dock-edge="right"] .project-space-content{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  overflow-y:auto;
+  padding-right:1px;
+}
+.project-area[data-area-state="compact"] .project-switcher{
+  flex-basis:auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  margin-bottom:5px;
+}
+.project-area[data-area-state="compact"] .project-choice{
+  height:32px;
+  padding:0 7px;
+  gap:5px;
+}
+.project-area[data-area-state="compact"] .project-choice span{font-size:11px}
+.project-area[data-area-state="compact"] .project-module{
+  flex:0 0 auto;
+  min-height:auto;
+  padding:6px;
+  border-radius:8px;
+  overflow:visible;
+}
+.project-area[data-area-state="compact"] .project-module>header{
+  height:25px;
+  margin-bottom:3px;
+}
+.project-area[data-area-state="compact"] .project-module>header b{font-size:12px}
+.project-area[data-area-state="compact"] .project-small-key{height:25px;padding:0 6px;font-size:10px}
+.project-area[data-area-state="compact"] .project-path{height:31px;padding:0 6px}
+.project-area[data-area-state="compact"] .project-path span{font-size:10px}
+.project-area[data-area-state="compact"] .project-items{margin-top:2px}
+.project-area[data-area-state="compact"] .project-items>button{
+  height:37px;
+  padding:2px 3px;
+}
+.project-area[data-area-state="compact"] .project-items>button:nth-child(n+2){display:none}
+.project-area[data-area-state="compact"] .project-items b{font-size:11px}
+.project-area[data-area-state="compact"] .project-items small{font-size:9px}
+.project-area[data-area-state="compact"] .project-context-module{display:flex!important}
+.project-area[data-area-state="compact"] .project-quick-apps{gap:4px;margin-bottom:4px}
+.project-area[data-area-state="compact"] .project-app{width:31px;height:31px}
+.project-area[data-area-state="compact"] .project-app .app-art{width:28px;height:28px}
+.project-area[data-area-state="compact"] .project-clipboard{
+  min-height:39px;
+  padding:4px;
+  grid-template-columns:25px minmax(0,1fr) auto;
+  gap:4px;
+}
+.project-area[data-area-state="compact"] .clipboard-mark{width:25px;height:25px}
+.project-area[data-area-state="compact"] .project-clipboard b{font-size:10px}
+.project-area[data-area-state="compact"] .project-clipboard small{font-size:9px}
+.project-area[data-area-state="compact"] .project-note-widget{display:none}
+
+/* Horizontal Compact keeps the same information but uses the available width. */
+.apps-zone[data-area-state="compact"][data-dock-edge="top"] .app-rack,
+.apps-zone[data-area-state="compact"][data-dock-edge="bottom"] .app-rack{
+  height:62px;
+  grid-template-columns:repeat(5,minmax(62px,1fr));
+}
+.apps-zone[data-area-state="compact"][data-dock-edge="top"] .mini-section,
+.apps-zone[data-area-state="compact"][data-dock-edge="bottom"] .mini-section{display:none}
+.project-area[data-area-state="compact"][data-dock-edge="top"] .project-space-content,
+.project-area[data-area-state="compact"][data-dock-edge="bottom"] .project-space-content{
+  grid-template-columns:1.1fr 1fr .9fr;
+  gap:5px;
+}
+.project-area[data-area-state="compact"][data-dock-edge="top"] .project-note-widget,
+.project-area[data-area-state="compact"][data-dock-edge="bottom"] .project-note-widget{display:none}
