@@ -1888,30 +1888,30 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
   left:0;
   top:0;
   z-index:10000;
-  width:28px;
-  height:36px;
+  width:22px;
+  height:28px;
   display:none;
   opacity:0;
   pointer-events:none;
-  transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-2px,-2px);
-  filter:drop-shadow(0 2px 2px rgba(0,0,0,.72));
+  transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-1.5px,-1.5px);
+  filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.62));
   transition:opacity 55ms linear;
   will-change:transform;
 }
 .material-cursor.is-visible{opacity:1}
-.cursor-glyph{position:absolute;inset:0;width:28px;height:36px;display:none;overflow:visible;transition:filter 38ms linear}
+.cursor-glyph{position:absolute;inset:0;width:22px;height:28px;display:none;overflow:visible;transition:filter 32ms linear}
 .glyph-arrow{display:block}
 .cursor-glass{fill:rgba(190,226,244,.24);stroke:none}
 .cursor-edge{fill:rgba(190,226,244,.24);stroke:rgba(235,249,255,.96);stroke-width:1.45;stroke-linejoin:round;paint-order:stroke fill}
 .cursor-side{fill:none;stroke:transparent;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;transition:stroke 34ms linear,filter 34ms linear}
 .cursor-line{fill:none;stroke:rgba(235,249,255,.96);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
-.material-cursor.is-pointer{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-13px,-3px)}
-.material-cursor.is-text,.material-cursor.is-col-resize,.material-cursor.is-diag-resize,.material-cursor.is-grab,.material-cursor.is-grabbing{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-14px,-18px)}
+.material-cursor.is-pointer{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-10px,-2px)}
+.material-cursor.is-text,.material-cursor.is-col-resize,.material-cursor.is-diag-resize,.material-cursor.is-grab,.material-cursor.is-grabbing{transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-11px,-14px)}
 .material-cursor.is-pointer .glyph-arrow,.material-cursor.is-text .glyph-arrow,.material-cursor.is-col-resize .glyph-arrow,.material-cursor.is-diag-resize .glyph-arrow,.material-cursor.is-grab .glyph-arrow,.material-cursor.is-grabbing .glyph-arrow{display:none}
 .material-cursor.is-pointer .glyph-pointer,.material-cursor.is-text .glyph-text,.material-cursor.is-col-resize .glyph-col-resize,.material-cursor.is-diag-resize .glyph-diag-resize,.material-cursor.is-grab .glyph-grab,.material-cursor.is-grabbing .glyph-grab{display:block}
 .material-cursor.is-grabbing .glyph-grab{transform:translateY(2px) scale(.96);transform-origin:center}
-.material-cursor.is-left .cursor-side-left,.material-cursor.is-right .cursor-side-right{stroke:#53c4ff;filter:drop-shadow(0 0 2px #2a9fff) drop-shadow(0 0 5px rgba(42,159,255,.85))}
-.material-cursor.is-left .cursor-glyph{filter:drop-shadow(-2px 0 2px rgba(42,159,255,.85))}.material-cursor.is-right .cursor-glyph{filter:drop-shadow(2px 0 2px rgba(42,159,255,.85))}
+.material-cursor.is-left .cursor-side-left,.material-cursor.is-right .cursor-side-right{stroke:#76cfff;filter:drop-shadow(0 0 1px rgba(42,159,255,.72)) drop-shadow(0 0 3px rgba(42,159,255,.32))}
+.material-cursor.is-left .cursor-glyph:not(.glyph-arrow){filter:drop-shadow(-1px 0 1.5px rgba(42,159,255,.45))}.material-cursor.is-right .cursor-glyph:not(.glyph-arrow){filter:drop-shadow(1px 0 1.5px rgba(42,159,255,.45))}
 body[data-theme="light"] .cursor-glass{fill:rgba(255,255,255,.42)}
 body[data-theme="light"] .cursor-edge{fill:rgba(255,255,255,.42);stroke:#3e5661}
 body[data-theme="light"] .cursor-line{stroke:#3e5661}
