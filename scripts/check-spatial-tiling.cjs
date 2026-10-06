@@ -255,8 +255,11 @@ const splitBeforeFull = vm.runInContext('JSON.stringify(tileSession().root)', sa
 vm.runInContext('toggleAppFullscreen("notes")', sandbox);
 assert.equal(frames.notes.classList.contains("is-fullscreen"), true, "True fullscreen is separate from bounded maximize");
 assert.equal(frames.notes.style.width, "1616px");
-assert.equal(vm.runInContext('JSON.stringify(tileSession().root)', sandbox), splitBeforeFull, "Fullscreen does not overwrite the prior split tree");
+assert.equal(vm.runInContext('JSON.stringify(tileSession().fullscreen.root)', sandbox), splitBeforeFull, "Fullscreen saves the prior split tree for restoration");
+assert.equal(sandbox.appState.dolphin, "minimized", "True fullscreen parks covered tiles in Apps");
+assert.equal(sandbox.appState.elisa, "minimized");
 vm.runInContext('toggleAppFullscreen("notes")', sandbox);
+assert.equal(sandbox.appState.dolphin, "open", "Leaving fullscreen restores its previously visible peers");
 assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), floatRect, "Leaving fullscreen restores the prior floating rectangle");
 vm.runInContext('toggleMaximize("notes"); toggleMaximize("notes")', sandbox);
 assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), floatRect, "Bounded maximize also restores prior manual placement");
@@ -469,3 +472,77 @@ assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),true
 vm.runInContext('closeApp("elisa"); renderTileLayout("notes")',sandbox);
 assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),false,"Closing a float releases its space");
 console.log("Float-aware desktop: new app opening, coordinate offsets, pinned float, rendered placement, minimize/restore and close passed.");
+
+// Visibility is per monitor/workspace and based on complete geometric coverage,
+// including the union of several foreground windows, not just the front app.
+sandbox.projectModeId = () => "visibility-policy";
+sandbox.window.innerWidth = 1616;
+sandbox.window.innerHeight = 1016;
+sandbox.workspaceBounds = () => ({width:1616,height:1016,rect:{left:0,top:0}});
+sandbox.getComputedStyle = frame => ({zIndex: frame.classList.contains("is-fullscreen") ? "800" : frame.style.zIndex});
+Object.values(frames).forEach(frame => {
+  frame.getBoundingClientRect = () => ({left:parseFloat(frame.style.left)||0,top:parseFloat(frame.style.top)||0,width:parseFloat(frame.style.width)||440,height:parseFloat(frame.style.height)||340});
+});
+const resetVisibility = () => {
+  Object.keys(frames).forEach(name => {sandbox.appState[name] = "closed";frames[name].classList.remove("is-fullscreen","is-floating","is-tiled");});
+  vm.runInContext('tileSession().root=null;tileSession().focus=null;tileSession().fullscreen=null;tileSession().floating={};tileSession().parked={};',sandbox);
+};
+resetVisibility();
+sandbox.appState.browser = "minimized";
+vm.runInContext('openApp("dolphin");openApp("elisa");openApp("notes");floatWindow("notes",{left:480,top:90,width:440,height:350})',sandbox);
+const beforeVisibilityFloat = vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox);
+vm.runInContext('toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(sandbox.appState.elisa,"minimized","Fullscreen minimizes visible tiled peers");
+assert.equal(sandbox.appState.notes,"minimized","Fullscreen minimizes visible floating peers too");
+assert.equal(frames.notes.hidden,true,"Covered float is no longer an invisible open window");
+vm.runInContext('closeApp("elisa");toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(sandbox.appState.elisa,"closed","Leaving fullscreen cannot reopen a closed peer");
+assert.equal(sandbox.appState.browser,"minimized","An already minimized app stays minimized");
+assert.equal(sandbox.appState.notes,"open");
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox),beforeVisibilityFloat,"Fullscreen restore preserves manual coordinates");
+vm.runInContext('openApp("elisa");toggleAppFullscreen("dolphin");openApp("notes")',sandbox);
+assert.equal(vm.runInContext('tileSession().fullscreen',sandbox),null,"Restoring a card exits exclusive fullscreen");
+assert.equal(sandbox.appState.notes,"open","Restored card is usable rather than immediately covered again");
+vm.runInContext('toggleAppFullscreen("dolphin");minimizeApp("dolphin")',sandbox);
+assert.equal(sandbox.appState.notes,"open","Minimizing fullscreen returns the peer windows");
+vm.runInContext('openApp("dolphin");toggleAppFullscreen("dolphin");closeApp("dolphin")',sandbox);
+assert.equal(sandbox.appState.notes,"open","Closing fullscreen also returns the peer windows");
+assert.equal(vm.runInContext('tileSession().fullscreen',sandbox),null);
+
+resetVisibility();
+vm.runInContext('openApp("dolphin");openApp("elisa");openApp("notes")',sandbox);
+const originalLocalApp = sandbox.isLocalApp;
+sandbox.isLocalApp = name => name !== "notes";
+vm.runInContext('toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(sandbox.appState.notes,"open","Fullscreen on monitor 1 leaves visible apps on monitor 2 open");
+assert.equal(sandbox.appState.elisa,"minimized");
+vm.runInContext('toggleAppFullscreen("dolphin")',sandbox);
+sandbox.isLocalApp = originalLocalApp;
+
+resetVisibility();
+const position = (name,left,top,width,height,z) => {
+  sandbox.appState[name]="open";
+  Object.assign(frames[name].style,{left:left+"px",top:top+"px",width:width+"px",height:height+"px",zIndex:String(z)});
+  vm.runInContext(`tileSession().floating.${name}={left:${left},top:${top},width:${width},height:${height}}`,sandbox);
+};
+position("dolphin",100,100,800,400,1);
+position("elisa",100,100,400,400,3);
+position("notes",500,100,400,400,2);
+vm.runInContext('minimizeInvisibleWindows()',sandbox);
+assert.equal(sandbox.appState.dolphin,"minimized","Two foreground windows jointly cover and minimize a background app");
+assert.equal(sandbox.appState.elisa,"open");
+assert.equal(sandbox.appState.notes,"open");
+position("dolphin",100,100,801,400,1);
+vm.runInContext('minimizeInvisibleWindows()',sandbox);
+assert.equal(sandbox.appState.dolphin,"open","Even a partially visible window stays open");
+position("dolphin",2000,100,800,400,1);
+vm.runInContext('minimizeInvisibleWindows()',sandbox);
+assert.equal(sandbox.appState.dolphin,"minimized","A fully offscreen local window moves to Apps");
+position("dolphin",2000,100,800,400,1);
+sandbox.isLocalApp = name => name !== "dolphin";
+vm.runInContext('minimizeInvisibleWindows()',sandbox);
+assert.equal(sandbox.appState.dolphin,"open","An offscreen frame assigned to another monitor is not minimized");
+sandbox.isLocalApp = originalLocalApp;
+vm.runInContext('tileInteraction=true;minimizeInvisibleWindows();tileInteraction=false',sandbox);
+assert.equal(sandbox.appState.dolphin,"open","A window under active dragging is not parked mid-gesture");
+console.log("Visibility policy: fullscreen tile/float parking, restoration, close/minimize, explicit card opening, multi-monitor exclusion, union coverage, partial visibility, offscreen and drag safety passed.");

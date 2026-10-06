@@ -523,10 +523,111 @@ function parkTileWindows(names, reason, announce = true) {
   return parked;
 }
 
+function parkFullscreenPeers(session) {
+  const fullscreen = session.fullscreen;
+  if (!fullscreen || appState[fullscreen.name] !== "open") return;
+  fullscreen.root ??= tileEngine.copy(session.root);
+  fullscreen.parked ||= [];
+  const peers = Object.keys(appState).filter(name => name !== fullscreen.name && appState[name] === "open" && isLocalApp(name));
+  const parked = parkTileWindows(peers, "Full screen · " + appInfo[fullscreen.name].label, false);
+  parked.forEach(name => {
+    session.parked[name].fullscreen = fullscreen.name;
+    session.root = tileEngine.remove(session.root, name);
+    if (!fullscreen.parked.includes(name)) fullscreen.parked.push(name);
+  });
+}
+
+function leaveAppFullscreen(session = tileSession()) {
+  const fullscreen = session.fullscreen;
+  if (!fullscreen) return;
+  session.fullscreen = null;
+  (fullscreen.parked || []).forEach(name => {
+    // Only revive windows parked by this fullscreen, never closed apps or
+    // cards the user subsequently moved to another monitor/session.
+    if (appState[name] !== "minimized" || !isLocalApp(name) || session.parked[name]?.fullscreen !== fullscreen.name) return;
+    appState[name] = "open";
+    delete session.parked[name];
+  });
+  if (fullscreen.root) session.root = tileEngine.normalize(fullscreen.root,
+    Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name]));
+  const frame = frameFor(fullscreen.name);
+  frame?.classList.remove("is-fullscreen", "is-maximized");
+  if (frame) delete frame.dataset.maximized;
+  appMaximizedState[fullscreen.name] = false;
+  syncApps();
+}
+
+// Subtract opaque foreground windows from the visible portion of a window.
+// Several overlapping windows can jointly cover it; a partially visible
+// window stays open. This deliberately ignores Overview and other overlays.
+function subtractWindowRect(rect, cover) {
+  const left = Math.max(rect.left, cover.left), top = Math.max(rect.top, cover.top);
+  const right = Math.min(rect.right, cover.right), bottom = Math.min(rect.bottom, cover.bottom);
+  if (right <= left || bottom <= top) return [rect];
+  return [
+    { left: rect.left, top: rect.top, right: rect.right, bottom: top },
+    { left: rect.left, top: bottom, right: rect.right, bottom: rect.bottom },
+    { left: rect.left, top, right: left, bottom },
+    { left: right, top, right: rect.right, bottom }
+  ].filter(part => part.right > part.left && part.bottom > part.top);
+}
+
+function minimizeInvisibleWindows() {
+  if (tileInteraction || tileRendering) return;
+  const session = tileSession();
+  const workspace = workspaceBounds();
+  const viewport = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+  const windows = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name))
+    .map(name => {
+      const frame = frameFor(name), bounds = frame.getBoundingClientRect();
+      const floating = Boolean(session.floating[name] || session.fullscreen?.name === name);
+      const clip = floating ? viewport : {
+        left: Math.max(0, workspace.rect.left), top: Math.max(0, workspace.rect.top),
+        right: Math.min(viewport.right, workspace.rect.left + workspace.width),
+        bottom: Math.min(viewport.bottom, workspace.rect.top + workspace.height)
+      };
+      return { name, frame, z: Number(getComputedStyle(frame).zIndex) || 0, rect: {
+        left: Math.max(bounds.left, clip.left), top: Math.max(bounds.top, clip.top),
+        right: Math.min(bounds.left + bounds.width, clip.right), bottom: Math.min(bounds.top + bounds.height, clip.bottom)
+      }};
+    }).sort((a, b) => b.z - a.z);
+  const covers = [], invisible = [];
+  windows.forEach(({ name, rect }) => {
+    let visible = rect.right > rect.left && rect.bottom > rect.top ? [rect] : [];
+    covers.forEach(cover => { visible = visible.flatMap(part => subtractWindowRect(part, cover)); });
+    if (!visible.length) invisible.push(name);
+    else covers.push(rect);
+  });
+  if (!invisible.length) return;
+  const parked = parkTileWindows(invisible, "Covered by another window", false);
+  parked.forEach(name => {
+    session.root = tileEngine.remove(session.root, name);
+    if (session.focus && !session.focus.parked.includes(name)) session.focus.parked.push(name);
+  });
+  saveTileSessions();
+  scheduleWindowTiling();
+}
+
+let windowVisibilityFrame = 0;
+function scheduleWindowVisibility() {
+  if (windowVisibilityFrame) return;
+  windowVisibilityFrame = requestAnimationFrame(() => {
+    windowVisibilityFrame = 0;
+    if (tileInteraction || tileRendering) return;
+    // Check settled geometry, not the intermediate overlap of animated tiles.
+    if ($$(".app-frame.is-auto-tiling").length) {
+      setTimeout(scheduleWindowVisibility, 160);
+      return;
+    }
+    minimizeInvisibleWindows();
+  });
+}
+
 function renderTileLayout(preferredName = frontApp, announce = false, animate = false) {
   if (tileRendering) return;
   tileRendering = true;
   try {
+    parkFullscreenPeers(tileSession());
     const session = reconcileTileTree(preferredName);
     renderFloatingWindows(session);
     $$(".tile-will-park").forEach(frame => frame.classList.remove("tile-will-park"));
@@ -563,7 +664,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
     if (session.fullscreen && appState[session.fullscreen.name] === "open") renderFullscreenWindow(session.fullscreen.name);
     saveLayout();
     saveTileSessions();
-  } finally { tileRendering = false; }
+  } finally { tileRendering = false; scheduleWindowVisibility(); }
 }
 
 function tileOpenWindows(newName) {
@@ -909,12 +1010,9 @@ function toggleAppFullscreen(name) {
   if (appState[name] !== "open" || !isLocalApp(name)) return;
   const session = tileSession();
   if (session.fullscreen?.name === name) {
-    session.fullscreen = null;
-    const frame = frameFor(name);
-    frame.classList.remove("is-fullscreen", "is-maximized");
-    delete frame.dataset.maximized;
-    appMaximizedState[name] = false;
+    leaveAppFullscreen(session);
   } else {
+    if (session.fullscreen) leaveAppFullscreen(session);
     // Keep the split tree, floating rectangle and bounded focus untouched.
     session.fullscreen = { name };
     bringToFront(name);
@@ -1076,6 +1174,7 @@ function bringToFront(name) {
   $$("[data-app-frame]").forEach(frame => frame.classList.toggle("is-front", frame.dataset.appFrame === name));
   frameFor(name).style.zIndex = zCounter;
   syncRack();
+  scheduleWindowVisibility();
 }
 
 function syncApps() {
@@ -1100,6 +1199,8 @@ function syncApps() {
 
 function openApp(name, dropPoint = null) {
   if (!appInfo[name]) return;
+  // Restoring a live card is an explicit request to leave exclusive fullscreen.
+  if (tileSession().fullscreen && tileSession().fullscreen.name !== name) leaveAppFullscreen();
   const previousState = appState[name];
   const splitTarget = frontApp;
   displayAssignmentsFor().apps[name] = localDisplaySlot();
@@ -1131,7 +1232,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   syncMaximizeButton(frame);
   appState[name] = "minimized";
-  if (tileSession().fullscreen?.name === name) tileSession().fullscreen = null;
+  if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
   if (tileSession().focus?.name === name) tileSession().focus = null;
@@ -1154,7 +1255,7 @@ function closeApp(name) {
   if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
   delete tileSession().floating[name];
-  if (tileSession().fullscreen?.name === name) tileSession().fullscreen = null;
+  if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
   if (tileSession().focus?.name === name) tileSession().focus = null;
