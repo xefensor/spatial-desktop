@@ -1859,8 +1859,10 @@ body[data-theme="light"] .app-frame.is-front{
 .launcher-category:active{transform:translateY(2px);background:color-mix(in srgb,var(--text) 12%,transparent)}
 .launcher-category.is-active{color:#fff;background:#176ca8;box-shadow:inset 3px 0 #57c2ff}
 .launcher-category:focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
-.launcher-results{min-width:0;min-height:0;padding:8px;overflow-y:auto;background:var(--content-surface);scrollbar-width:thin}
+.launcher-results{min-width:0;min-height:0;padding:8px;overflow-y:auto;background:var(--content-surface);scrollbar-width:thin;container-name:app-list;container-type:inline-size}
 .all-apps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+@container app-list (max-width:229px){.all-apps-grid{grid-template-columns:minmax(0,1fr)}}
+@container app-list (min-width:430px){.all-apps-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .launcher-app{position:relative;min-width:0;min-height:54px;padding:7px;border:0;border-radius:9px;background:transparent;color:var(--text);display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;text-align:left;transition:transform 45ms cubic-bezier(.2,.8,.2,1),background 55ms ease}
 .launcher-app[hidden]{display:none}
 .launcher-app:hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
