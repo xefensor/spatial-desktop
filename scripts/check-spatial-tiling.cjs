@@ -418,6 +418,56 @@ vm.runInContext('tileSession().floating.notes.left = 400; updateFloatingYield("n
 assert.equal(vm.runInContext('tileSession().floating.notes.yieldEdges.includes("left")', sandbox), false, "Moving the manual window clear releases borrowed space");
 console.log("Intent interactions: Alt/middle drag and resize, capture loss on reparent, pointer filtering, release, cancel, blur, visibility, missing-up recovery, cursor reset and no leaked hooks passed.");
 
+// Detaching a noodle-shaped tile gives it a normal app footprint, anchored
+// under the held pointer. Existing manual sizes and resize gestures are kept.
+const beforeDetachApps = {...sandbox.appState};
+const beforeDetachMode = sandbox.projectModeId;
+sandbox.projectModeId = () => "detach-footprint";
+Object.keys(sandbox.appState).forEach(name => {sandbox.appState[name] = name === "notes" ? "open" : "closed";});
+vm.runInContext('renderTileLayout("notes")',sandbox);
+Object.assign(frames.notes.style,{left:"80px",top:"80px",width:"1400px",height:"340px"});
+const noodleRect = {...frames.notes.style};
+startGesture();
+pointer("pointermove",552,112);
+for (const key of ["left","top","width","height"]) assert.equal(frames.notes.style[key],noodleRect[key],"A middle click or tiny pointer wobble does not resize the tile");
+pointer("pointermove",620,165);
+assert.equal(frames.notes.style.width,"480px","Wide thin tile becomes a normal small Notes window");
+assert.equal(frames.notes.style.height,"440px");
+assert(Math.abs(parseFloat(frames.notes.style.left)+(470/1400)*480-620)<.01,"Horizontal grab proportion stays under the pointer");
+assert.equal(parseFloat(frames.notes.style.top)+30,165,"The same titlebar point follows the pointer vertically");
+pointer("pointerup",620,165,0);
+assertCleanGesture();
+startGesture();pointer("pointermove",610,160);pointer("pointerup",610,160,0);
+assert.equal(frames.notes.style.width,"480px","A second middle drag preserves the floating size");
+assert.equal(frames.notes.style.height,"440px");
+startGesture(1,true);pointer("pointermove",590,140);pointer("pointerup",590,140,0);
+assert.equal(frames.notes.style.width,"520px","Manual resizing uses the current width, not a detach preset");
+assert.equal(frames.notes.style.height,"470px");
+assertCleanGesture();
+vm.runInContext('splitWindowIntoTile("notes")',sandbox);
+startGesture();pointer("pointermove",620,165);pointer("pointercancel",620,165,0);
+assertCleanGesture();
+assert(frames.notes.classList.contains("is-tiled"),"Canceling a detach restores the tile");
+assert.equal(vm.runInContext('Boolean(tileSession().floating.notes)',sandbox),false);
+vm.runInContext('floatWindow("notes")',sandbox);
+assert.equal(frames.notes.style.width,"480px","Float menu uses the same normal footprint as manual detaching");
+assert.equal(frames.notes.style.height,"440px");
+for(const name of Object.keys(minimums)) {
+  const rect=vm.runInContext(`detachedDragRect("${name}",{left:8,top:8,width:1500,height:350},{clientX:750,clientY:32})`,sandbox);
+  assert(rect.width>=min(name).width && rect.height>=min(name).height,name+" has a usable detached footprint");
+  assert(rect.width/rect.height<2 && rect.height/rect.width<2,name+" is not a noodle in either direction");
+}
+const wideBounds=sandbox.workspaceBounds;
+sandbox.workspaceBounds=()=>({width:460,height:350,rect:{left:0,top:0}});
+const smallRect=vm.runInContext('detachedDragRect("notes",{left:8,top:8,width:444,height:334},{clientX:230,clientY:32})',sandbox);
+assert.equal(smallRect.width,444,"Detached size adapts to a small available workspace");
+assert.equal(smallRect.height,334);
+sandbox.workspaceBounds=wideBounds;
+sandbox.projectModeId=beforeDetachMode;
+Object.assign(sandbox.appState,beforeDetachApps);
+vm.runInContext('syncApps();renderTileLayout("notes")',sandbox);
+console.log("Detached footprints: movement threshold, sensible app sizes, pointer anchoring, repeated drag, explicit resize, cancel, Float menu and limited space passed.");
+
 // Check the desktop's real planner adapter, not just the pure docking policy.
 const intentAssignments = {apps:Object.fromEntries(Object.keys(frames).map(name => [name,1])),areas:{projects:1,apps:1,systems:1}};
 Object.assign(sandbox, {

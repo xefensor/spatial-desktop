@@ -951,6 +951,26 @@ function screenWindowRect(frame) {
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 }
 
+function detachedDragRect(name, rect, pointer, titlebarHeight = 48) {
+  const preferred = {
+    dolphin: { width: 640, height: 480 },
+    elisa: { width: 680, height: 540 },
+    browser: { width: 720, height: 520 },
+    terminal: { width: 560, height: 380 },
+    notes: { width: 480, height: 440 }
+  }[name] || { width: 640, height: 480 };
+  const minimum = minimumUsableWindowSize(name);
+  const workspace = workspaceBounds();
+  const fit = (ideal, min, available, screen) => Math.min(Math.max(1, screen - 16), Math.max(min, Math.min(ideal, available - 16)));
+  const width = fit(preferred.width, minimum.width, workspace.width, window.innerWidth);
+  const height = fit(preferred.height, minimum.height, workspace.height, window.innerHeight);
+  // Preserve the grab's horizontal proportion and its titlebar offset while
+  // replacing a long tile with the app's normal, usable floating footprint.
+  const fraction = Math.max(0, Math.min(1, (pointer.clientX - rect.left) / Math.max(1, rect.width)));
+  const titleOffset = Math.max(0, Math.min(titlebarHeight - 1, pointer.clientY - rect.top));
+  return { left: pointer.clientX - fraction * width, top: pointer.clientY - titleOffset, width, height };
+}
+
 function applyFloatingGeometry(name, rect) {
   const frame = frameFor(name);
   const minimum = minimumUsableWindowSize(name);
@@ -986,7 +1006,12 @@ function renderFloatingWindows(session) {
 
 function floatWindow(name, rect = null) {
   const frame = frameFor(name);
-  rect ||= screenWindowRect(frame);
+  if (!rect) {
+    rect = screenWindowRect(frame);
+    if (frame.classList.contains("is-tiled") && !tileSession().floating[name]) {
+      rect = detachedDragRect(name, rect, { clientX: rect.left + rect.width / 2, clientY: rect.top + 24 });
+    }
+  }
   const session = tileSession();
   if (session.fullscreen?.name === name) toggleAppFullscreen(name);
   if (session.focus?.name === name) focusTileWindow(name);
@@ -1707,9 +1732,12 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
   event.stopPropagation();
   const name = frame.dataset.appFrame;
   if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
-  const start = screenWindowRect(frame);
+  const original = screenWindowRect(frame);
   const startX = event.clientX, startY = event.clientY;
   const priorFloating = tileSession().floating[name] ? { ...tileSession().floating[name] } : null;
+  const start = !resizing && !priorFloating && frame.classList.contains("is-tiled")
+    ? detachedDragRect(name, original, event, handle.getBoundingClientRect?.().height || 48)
+    : original;
   const gate = { manual: true, threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set(priorFloating?.yieldEdges || []), stages: new Map(), baselines: new Map(), preferredSizes: { ...dockSizes } };
   dockEdges.forEach(edge => { gate.stages.set(edge, areaBoundaryStage(edge)); gate.baselines.set(edge, 0); });
   let moved = false;
