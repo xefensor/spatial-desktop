@@ -2508,3 +2508,87 @@ body[data-theme="light"] .package-window{background:rgba(232,240,245,.94);box-sh
   .workspace-home-open span{display:none}.workspace-home-body{grid-template-columns:1fr}.workspace-folders{grid-template-columns:repeat(2,1fr)}
   .package-columns{grid-template-columns:1fr}.package-mode-switch{grid-template-columns:1fr}.package-actions{align-items:flex-end}.package-actions>span{display:none}.import-grid{grid-template-columns:1fr}.import-tree{grid-template-columns:1fr}
 }
+
+/* v60 — compact workstation density: fewer nested frames, larger useful type. */
+:root{
+  --ui-label:14px;
+  --ui-secondary:12px;
+  --ui-micro:11px;
+  --ui-radius:10px;
+  --glass:var(--glass-field);
+}
+body{font-size:var(--ui-label);line-height:1.35;text-rendering:optimizeLegibility}
+button,input,textarea{line-height:1.25}
+.eyebrow,.small-heading{font-size:var(--ui-micro);line-height:1.2;letter-spacing:.085em}
+
+/* Docked glass is the frame; its contents no longer need thick frames of their own. */
+.area-window,.desktop-shell>.apps-zone,.desktop-shell>.systems-zone{padding:9px;border-radius:15px}
+.area-window-bar{flex-basis:44px;min-height:44px;margin:-9px -9px 7px;padding:5px 6px 5px 9px}
+.systems-zone .area-window-bar{top:-9px;margin-bottom:7px}
+.area-window-icon{flex-basis:30px;width:30px;height:30px;border-radius:8px}.area-window-icon svg{width:16px;height:16px}
+.area-window-identity b{font-size:14px;line-height:1.2}.area-window-identity small{font-size:12px;line-height:1.2}
+.area-window-actions{gap:4px}.area-window-key{width:30px;height:28px}
+.apps-zone .app-rack{height:66px;padding:1px;border:0;background:transparent;box-shadow:none}
+.apps-zone .app-key{height:62px;border-color:transparent;border-radius:9px;gap:3px;box-shadow:none}
+.apps-zone .app-key:hover{border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 28%,transparent)}
+.apps-zone .app-key .app-art{width:29px;height:29px}.apps-zone .app-key span{font-size:12px;font-weight:680;line-height:1.1}
+.apps-zone .mini-section{margin-top:8px}.section-heading{min-height:31px;padding:0 2px 6px}.section-heading h2,.widget-heading h2{font-size:14px}.section-heading span,.widget-heading>span{font-size:12px}
+.mini-stack{gap:6px;padding-bottom:8px}.mini-card{padding:7px;border-radius:9px}.mini-card header{min-height:31px;margin-bottom:5px}.mini-card header b,.mini-track b{font-size:13px}.mini-card header small,.mini-track small{font-size:12px}.mini-card-note .mini-note-field{min-height:92px;padding:7px 8px;font-size:13px;line-height:1.45}
+.apps-zone .apps-bottom{gap:5px;padding-top:7px}.workspace-status{min-height:39px;padding:4px 7px;border-radius:8px}.workspace-status b{font-size:13px}.workspace-status small{font-size:11px}.workspace-status>i{height:21px}.overview-launch{min-height:38px;padding:0 8px}.overview-launch span{font-size:13px}.overview-launch kbd{font-size:11px}
+
+.systems-zone{gap:7px}.systems-zone .time-block{min-height:51px;padding:2px 3px 8px;gap:11px}.time-block>span{font-size:34px}.time-block b{font-size:14px}.time-block small{font-size:12px}
+.system-launchers{gap:5px}.system-launcher{height:34px;padding:0 8px;font-size:12px}
+.dynamic-widget-stack{gap:6px}.static-widget-stack{gap:6px}
+.system-widget{padding:8px;border-radius:9px;box-shadow:inset 0 0 0 1px var(--glass-groove-deep)}
+.widget-heading{height:28px;align-items:center}.tiny-key{min-height:27px;padding:4px 8px;font-size:12px}
+.notification{grid-template-columns:30px minmax(0,1fr) 26px;gap:8px;padding:7px 0}.notification b{font-size:13px}.notification small{font-size:12px;line-height:1.3}
+.calendar-week{margin:3px 0;font-size:11px}.calendar-grid button{height:25px;font-size:12px}.next-event{margin-top:6px;padding:6px 7px}.next-event b,.next-event small{font-size:12px}
+.device-row b{font-size:13px}.device-row small{font-size:12px}.quick-settings{gap:5px}.quick-toggle{min-height:38px;padding:5px 7px}.quick-toggle span{font-size:12px}
+
+/* App chrome gets out of the way; the solid content surface receives the space. */
+.workspace-zone{padding:6px}.workspace-depth{inset:2px;border-radius:15px}
+.app-frame{grid-template-rows:48px 48px minmax(0,1fr) 28px;border-radius:14px}
+.app-titlebar{padding:0 8px 0 10px}.app-identity{gap:8px}.app-badge{width:30px;height:30px}.app-identity b{font-size:14px}.app-identity small{font-size:12px}.window-actions{gap:4px}.window-key{width:30px;height:28px}
+.app-toolbar{gap:6px;padding:5px 8px}.compact-key{width:36px;height:36px}.address-bar{height:36px}.recessed-field input{font-size:13px}
+.dolphin-layout{grid-template-columns:142px minmax(0,1fr);gap:6px;padding:0 8px 7px}.places-list{gap:2px;padding:5px 6px 5px 0}.places-list .small-heading{margin:6px 7px 2px}.nav-choice{height:34px;padding:0 8px;font-size:13px}
+.folder-tabs{height:36px;padding:3px 3px 2px;gap:3px}.folder-tab{height:30px;min-width:92px;padding:0 8px;font-size:13px}.folder-tab.is-active::after{bottom:1px}
+.file-well{border-radius:7px}.file-head{height:31px;padding:0 10px;font-size:12px}.content-row{height:41px;padding:0 10px;font-size:13px}.content-row small{font-size:12px}.app-status{padding:0 10px;font-size:12px}
+.app-frame[data-app-frame="elisa"]{grid-template-rows:48px 176px 64px minmax(0,1fr)}.music-hero{grid-template-columns:128px minmax(0,1fr) 100px;gap:15px;padding:14px}.album-block{height:145px}.track-copy h2{font-size:22px}.music-controls{grid-template-columns:38px 48px 38px auto minmax(90px,1fr) auto 18px 86px;padding:6px 10px}.music-key{height:38px}.music-key.primary{height:46px}.playlist{padding:7px}
+.simple-app{grid-template-rows:48px minmax(0,1fr)}.browser-toolbar{padding:8px}.notes-layout{grid-template-columns:150px minmax(0,1fr)}.notes-layout nav{padding:9px}.notes-layout textarea{padding:20px;font-size:16px}
+
+/* Project content is dense but no longer microscopic. */
+.project-switcher{flex-basis:35px;margin-bottom:6px;gap:4px}.project-choice{height:34px;padding:0 9px}.project-choice span{font-size:13px}
+.project-space-content{gap:6px}.project-module{padding:7px;border-color:color-mix(in srgb,var(--text) 8%,transparent);border-radius:8px;box-shadow:none}.project-module>header{height:27px;margin-bottom:4px}.project-module>header b{font-size:13px}.project-widget-count{font-size:12px}.project-small-key{height:27px;font-size:12px}
+.project-path{height:34px}.project-path span{font-size:12px}.project-items{gap:1px;margin-top:3px}.project-items>button{height:42px;padding:3px 4px}.project-items b{font-size:13px}.project-items small{font-size:12px}.project-quick-apps{margin-bottom:4px}.project-clipboard{min-height:43px}.project-clipboard b{font-size:12px}.project-clipboard small{font-size:11px}.project-note-widget{min-height:40px;margin-top:4px}.project-note-widget b{font-size:12px}.project-note-widget small{font-size:11px}
+
+/* Overview: more information in the first screen, with readable labels. */
+.universal-search{padding:clamp(16px,2.5vh,28px) clamp(18px,3vw,44px)}
+.universal-search-shell{gap:9px}.universal-search-header{grid-template-columns:minmax(170px,.24fr) minmax(360px,1fr);gap:16px;padding:0 1px 8px}.universal-search-title h2{font-size:30px}.universal-search-field{height:49px;border-radius:12px}.universal-search-field input{font-size:18px}
+.workspace-switcher{grid-template-columns:112px minmax(0,1fr) auto;gap:7px;padding:5px 7px;border-radius:11px;box-shadow:inset 0 1px rgba(255,255,255,.06)}.workspace-switcher-label strong{font-size:14px}.workspace-tabs{gap:3px}.workspace-tab{min-height:43px;padding:4px 6px;grid-template-columns:28px minmax(0,1fr);gap:6px;border-radius:8px}.workspace-glyph{width:28px;height:28px;border-radius:7px}.workspace-tab b{font-size:13px}.workspace-tab small{font-size:11px}.workspace-action{min-height:35px;padding:0 8px;font-size:12px}
+.overview-home{grid-template-columns:minmax(0,1fr) minmax(250px,292px);gap:9px}.overview-main{gap:9px;padding-right:2px}.overview-widgets{gap:6px;padding-right:1px}.overview-section-heading{min-height:31px;padding:0 3px 5px}.overview-section-heading h3{font-size:16px}.overview-section-heading>span{font-size:12px}
+.workspace-home-card{border-radius:10px}.workspace-home-header{min-height:52px;padding:6px 8px;grid-template-columns:35px minmax(0,1fr) auto;gap:8px}.workspace-home-icon{width:35px;height:35px;border-radius:8px}.workspace-home-icon svg{width:19px;height:19px}.workspace-home-header h3{font-size:15px}.workspace-home-header small{font-size:12px}.workspace-home-open{min-height:32px;padding:0 8px;font-size:12px}
+.workspace-home-body{padding:6px;grid-template-columns:minmax(270px,1.4fr) minmax(205px,.9fr) minmax(170px,.75fr);gap:5px}.workspace-folders{gap:3px}.workspace-folder{min-height:62px;padding:6px;border-color:transparent;border-radius:7px}.workspace-folder:hover{border-color:color-mix(in srgb,var(--home-accent) 34%,transparent)}.workspace-folder b{font-size:12px}.workspace-folder small{font-size:11px}.workspace-context-card{padding:7px 8px;border:0;border-radius:7px}.workspace-context-card>b{font-size:13px}.workspace-context-card>small{font-size:11px}.workspace-favorites{margin-top:6px}.other-workspaces{grid-column:auto;min-height:62px;padding:6px;border-color:transparent;background:color-mix(in srgb,var(--content-surface-raised) 55%,transparent)}.other-workspaces b{font-size:12px}.other-workspaces small{font-size:11px;white-space:normal}
+.overview-window-grid{gap:5px}.overview-window{height:91px;padding:7px;border-radius:9px;grid-template-columns:minmax(130px,.85fr) minmax(85px,1.15fr);gap:7px}.overview-window-app>.app-art{width:37px;height:37px}.overview-window-app b{font-size:13px}.overview-window-app small{font-size:12px}.overview-window-preview{border-radius:7px}.file-preview{padding:11px 8px 6px;gap:5px}
+.overview-apps-section{min-height:300px}.overview-app-library{min-height:280px;grid-template-columns:155px minmax(0,1fr);border-radius:10px}.overview-app-library .launcher-categories{padding:5px}.overview-app-library .launcher-results{padding:5px 7px 8px}.overview-app-library .all-apps-grid{gap:2px 4px}.overview-app-library .launcher-app{min-height:47px}.overview-app-library .launcher-app>span:last-child{font-size:13px}
+.launcher-category span{font-size:13px}.launcher-app>span:last-child{font-size:13px}.all-apps-empty{font-size:12px}
+.overview-widget{border-radius:9px}.overview-clock-widget{min-height:65px;padding:8px 11px}.overview-clock-widget>.live-time{font-size:29px}.overview-clock-widget b{font-size:13px}.overview-clock-widget small{font-size:12px}.overview-now-playing,.overview-quick-widget,.overview-agenda-widget{padding:8px 9px}.overview-now-playing header b,.overview-quick-widget h3,.overview-agenda-widget h3{font-size:13px}.overview-now-playing header small{font-size:11px}.overview-quick-grid{gap:4px;margin-top:6px}.overview-quick-grid .quick-toggle{min-height:36px;font-size:12px}.overview-agenda-widget>button{min-height:44px;margin-top:5px}.overview-agenda-widget>button b{font-size:12px}.overview-agenda-widget>button small{font-size:11px}.overview-connect-widget{min-height:52px;padding:6px 8px}.overview-connect-widget b{font-size:12px}.overview-connect-widget small{font-size:11px}
+.universal-search-footer{min-height:26px;padding-top:6px;gap:15px;font-size:12px}
+
+/* The package dialog uses the same density instead of shrinking its words. */
+.package-window{width:min(900px,100%);border-radius:14px}.package-titlebar{min-height:56px;padding:7px 9px 7px 11px}.package-titlebar small{font-size:11px}.package-titlebar h2{font-size:18px}.package-mark{width:35px;height:35px}.package-composer,.import-preview{padding:9px}.package-intro{min-height:44px;padding:5px 7px}.package-intro b{font-size:14px}.package-intro small{font-size:12px}.package-size{font-size:12px}.package-mode-switch{gap:4px;margin-bottom:7px}.package-mode-switch button{min-height:57px;padding:6px}.package-mode-switch b{font-size:13px}.package-mode-switch small{font-size:11px}.package-columns{gap:6px}.package-panel{border-radius:9px}.package-panel>header{min-height:43px;padding:6px 8px}.package-panel h3{font-size:14px}.package-panel>header>button,.safety-details,.import-map header button{font-size:12px}.package-content-row{min-height:47px;padding:4px 8px}.package-content-row b{font-size:12px}.package-content-row small,.package-content-row>small{font-size:11px}.package-safety p{margin:8px 10px 4px;font-size:12px}.package-safety ul{margin:4px 10px 6px;font-size:12px;line-height:1.5}.package-actions{min-height:52px;margin-top:7px;padding-top:6px}.package-actions>span b{font-size:12px}.package-actions>span small{font-size:11px}.package-secondary,.package-primary{min-height:36px;font-size:12px}
+.import-hero{min-height:72px;padding:8px}.import-hero small{font-size:11px}.import-hero h3{font-size:16px}.import-hero p,.import-trust{font-size:12px}.import-grid section{min-height:75px;padding:8px}.import-grid b{font-size:12px}.import-grid small{font-size:11px}.import-tree>span{min-height:50px;padding:6px 8px}.import-tree b{font-size:12px}.import-tree small{font-size:11px}
+
+body[data-theme="light"] .project-module,
+body[data-theme="light"] .workspace-context-card,
+body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
+
+@media(max-width:1180px){
+  .workspace-switcher{grid-template-columns:minmax(0,1fr) auto}
+  .workspace-home-body{grid-template-columns:minmax(250px,1.2fr) minmax(190px,.8fr)}
+  .other-workspaces{grid-column:1/-1;min-height:40px}
+}
+@media(max-width:800px){
+  .universal-search{padding:12px}.universal-search-header{grid-template-columns:1fr}.workspace-switcher{grid-template-columns:minmax(0,1fr) auto}
+  .workspace-home-body{grid-template-columns:1fr}.other-workspaces{grid-column:auto}
+  .overview-widgets{grid-template-columns:1fr}.package-overlay{padding:10px}
+}
