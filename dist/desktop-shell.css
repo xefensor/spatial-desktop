@@ -1988,21 +1988,12 @@ body[data-theme="light"] .desktop-shell{
   transform:translate3d(0,0,0);
   contain:paint;
 }
-.desktop-shell::after{
-  content:"";
-  position:absolute;
-  pointer-events:none;
-  z-index:0;
-  will-change:transform,opacity;
-  transform:translate3d(0,0,0);
-  contain:paint;
-}
 .desktop-shell::before{
   inset:-12%;
   background:
-    radial-gradient(ellipse 38% 49% at 19% 27%,color-mix(in srgb,var(--wallpaper-speck) 50%,transparent),transparent 70%),
-    radial-gradient(ellipse 44% 38% at 77% 70%,color-mix(in srgb,var(--wallpaper-speck) 42%,transparent),transparent 73%),
-    radial-gradient(ellipse 28% 34% at 55% 17%,color-mix(in srgb,var(--wallpaper-speck) 31%,transparent),transparent 75%);
+    radial-gradient(ellipse 38% 49% at 19% 27%,color-mix(in srgb,var(--wallpaper-halo) 50%,transparent),transparent 70%),
+    radial-gradient(ellipse 44% 38% at 77% 70%,color-mix(in srgb,var(--wallpaper-halo) 42%,transparent),transparent 73%),
+    radial-gradient(ellipse 28% 34% at 55% 17%,color-mix(in srgb,var(--wallpaper-halo) 31%,transparent),transparent 75%);
   opacity:var(--ambient-low);
   animation:wallpaper-breathe 7.4s cubic-bezier(.45,.05,.55,.95) infinite alternate;
 }
