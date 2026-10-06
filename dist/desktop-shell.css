@@ -2645,7 +2645,6 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
 }
 
 /* v62 — adaptive Areas preserve the workspace before decorative density. */
-.area-window-identity small[data-layout-state]::after{content:" · " attr(data-layout-state);color:color-mix(in srgb,var(--blue) 74%,var(--muted))}
 .layout-mode-control{grid-column:1/-1}
 .layout-mode-control.is-active{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,var(--line))}
 .overview-layout-status{display:inline-flex;align-items:center;gap:6px;margin-top:5px;color:var(--muted);font-size:12px;font-weight:650}.overview-layout-status svg{width:14px;height:14px;color:var(--blue)}

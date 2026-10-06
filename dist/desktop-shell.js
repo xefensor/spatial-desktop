@@ -975,8 +975,6 @@ function layoutDockAreas(save = false) {
     if (!area) return;
     const state = resolved.states[name];
     area.dataset.areaState = state;
-    const context = $(".area-window-identity small", area);
-    if (context) context.dataset.layoutState = layoutStateLabel(state);
   });
   syncAreaControls(resolved.states);
   syncLayoutModeUI(resolved.profile);
