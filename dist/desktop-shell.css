@@ -4031,6 +4031,39 @@ body[data-layout-mode="manual"] .area-window{transition:none}
   body.areas-docked .area-window,.desktop-shell>.workspace-zone{transition:none!important}
 }
 
+/* v78 — Auto Areas have a small pressure boundary. A dragged window rests
+   against the Area before it is allowed to collapse the lane; deliberate
+   continued movement crosses it, like a pointer barrier between displays. */
+.area-boundary-feedback{
+  --boundary-pressure:0;
+  --boundary-accent:#62c9ff;
+  position:absolute;
+  z-index:1200;
+  pointer-events:none;
+  opacity:0;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--boundary-accent) 72%,rgba(229,249,255,.82));
+  box-shadow:
+    0 0 var(--boundary-glow,7px) color-mix(in srgb,var(--boundary-accent) 48%,transparent),
+    0 0 0 1px rgba(235,251,255,.22);
+  transform:scale(.82);
+  transition:opacity 45ms linear,transform 65ms cubic-bezier(.2,.8,.2,1),box-shadow 45ms linear;
+}
+.area-boundary-feedback.is-visible{
+  opacity:var(--boundary-opacity,.48);
+  transform:scale(1);
+}
+.area-boundary-feedback[data-edge="left"],
+.area-boundary-feedback[data-edge="right"]{transform-origin:center center}
+.area-boundary-feedback[data-edge="top"],
+.area-boundary-feedback[data-edge="bottom"]{transform-origin:center center}
+body[data-theme="light"] .area-boundary-feedback{
+  background:color-mix(in srgb,var(--boundary-accent) 76%,#315264);
+  box-shadow:0 0 var(--boundary-glow,7px) color-mix(in srgb,var(--boundary-accent) 36%,transparent),0 0 0 1px rgba(255,255,255,.62);
+}
+body[data-layout-mode="manual"] .area-boundary-feedback{display:none}
+@media(prefers-reduced-motion:reduce){.area-boundary-feedback{transition:none}}
+
 /* v77 — Overview breathes through hierarchy and spacing rather than empty
    decoration. The acrylic remains continuous; solid, quieter content islands
    carry readable text and the controls that matter. */

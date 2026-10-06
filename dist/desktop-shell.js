@@ -453,6 +453,130 @@ function setDropTarget(zone, active) {
   zone.classList.toggle("is-drop-target", active);
 }
 
+const AREA_BOUNDARY_RESISTANCE = 58;
+const AREA_BOUNDARY_INSET = 10;
+
+function ensureAreaBoundaryFeedback() {
+  let feedback = $("#areaBoundaryFeedback");
+  if (feedback) return feedback;
+  feedback = document.createElement("div");
+  feedback.id = "areaBoundaryFeedback";
+  feedback.className = "area-boundary-feedback";
+  feedback.setAttribute("aria-hidden", "true");
+  $(".desktop-shell").append(feedback);
+  return feedback;
+}
+
+function areaBoundaryPenetration(edge, rect, lane) {
+  if (edge === "left") return lane.right - rect.left;
+  if (edge === "right") return rect.right - lane.left;
+  if (edge === "top") return lane.bottom - rect.top;
+  return rect.bottom - lane.top;
+}
+
+function areaBoundarySpanOverlaps(edge, rect, lane) {
+  if (edge === "left" || edge === "right") {
+    return Math.min(rect.bottom, lane.bottom) - Math.max(rect.top, lane.top) > 28;
+  }
+  return Math.min(rect.right, lane.right) - Math.max(rect.left, lane.left) > 28;
+}
+
+function edgeHasVisibleArea(edge) {
+  return dockGroup(edge).some(name => {
+    const area = areaFor(name);
+    return area && !area.classList.contains("is-auto-yielding") && !area.classList.contains("is-auto-relocated");
+  });
+}
+
+function setAreaBoundaryFeedback(hit, rect) {
+  const feedback = ensureAreaBoundaryFeedback();
+  if (!hit) {
+    feedback.classList.remove("is-visible");
+    feedback.style.removeProperty("--boundary-pressure");
+    return;
+  }
+  const shellRect = $(".desktop-shell").getBoundingClientRect();
+  const lane = hit.lane;
+  const vertical = hit.edge === "left" || hit.edge === "right";
+  const extent = vertical
+    ? Math.min(190, Math.max(72, rect.height * .42))
+    : Math.min(220, Math.max(90, rect.width * .42));
+  const center = vertical
+    ? Math.max(lane.top + extent / 2, Math.min((rect.top + rect.bottom) / 2, lane.bottom - extent / 2))
+    : Math.max(lane.left + extent / 2, Math.min((rect.left + rect.right) / 2, lane.right - extent / 2));
+  const boundary = hit.edge === "left" ? lane.right : hit.edge === "right" ? lane.left : hit.edge === "top" ? lane.bottom : lane.top;
+  const firstArea = areaFor(dockGroup(hit.edge)[0]);
+  const accent = firstArea ? getComputedStyle(firstArea).getPropertyValue("--area-header-accent").trim() : "#62c9ff";
+  feedback.dataset.edge = hit.edge;
+  feedback.style.setProperty("--boundary-pressure", hit.pressure.toFixed(3));
+  feedback.style.setProperty("--boundary-opacity", (0.28 + hit.pressure * 0.56).toFixed(3));
+  feedback.style.setProperty("--boundary-glow", Math.round(4 + hit.pressure * 8) + "px");
+  feedback.style.setProperty("--boundary-accent", accent || "#62c9ff");
+  if (vertical) {
+    feedback.style.left = Math.round(boundary - shellRect.left - 2) + "px";
+    feedback.style.top = Math.round(center - extent / 2 - shellRect.top) + "px";
+    feedback.style.width = "4px";
+    feedback.style.height = Math.round(extent) + "px";
+  } else {
+    feedback.style.left = Math.round(center - extent / 2 - shellRect.left) + "px";
+    feedback.style.top = Math.round(boundary - shellRect.top - 2) + "px";
+    feedback.style.width = Math.round(extent) + "px";
+    feedback.style.height = "4px";
+  }
+  feedback.classList.add("is-visible");
+}
+
+function resistAreaBoundaries(position, size, gate, bypass = false) {
+  if (layoutMode !== "auto" || bypass) {
+    setAreaBoundaryFeedback(null);
+    return { ...position, resisted: false };
+  }
+  const candidate = {
+    left: position.left,
+    top: position.top,
+    right: position.left + size.width,
+    bottom: position.top + size.height,
+    width: size.width,
+    height: size.height
+  };
+  const next = { ...position, resisted: false };
+  let strongest = null;
+
+  dockEdges.forEach(edge => {
+    const lane = baseDockLaneRects.get(edge);
+    if (!lane || !edgeHasVisibleArea(edge) || !areaBoundarySpanOverlaps(edge, candidate, lane)) return;
+    const penetration = areaBoundaryPenetration(edge, candidate, lane);
+    if (gate.passed.has(edge)) {
+      if (penetration < -20) gate.passed.delete(edge);
+      else return;
+    }
+    if (penetration <= 0) return;
+    if (penetration >= gate.threshold) {
+      gate.passed.add(edge);
+      return;
+    }
+
+    const pressure = Math.max(0, Math.min(1, penetration / gate.threshold));
+    if (edge === "left") next.left = lane.right + AREA_BOUNDARY_INSET;
+    if (edge === "right") next.left = lane.left - size.width - AREA_BOUNDARY_INSET;
+    if (edge === "top") next.top = lane.bottom + AREA_BOUNDARY_INSET;
+    if (edge === "bottom") next.top = lane.top - size.height - AREA_BOUNDARY_INSET;
+    next.resisted = true;
+    if (!strongest || pressure > strongest.pressure) strongest = { edge, pressure, lane };
+  });
+
+  const resistedRect = {
+    left: next.left,
+    top: next.top,
+    right: next.left + size.width,
+    bottom: next.top + size.height,
+    width: size.width,
+    height: size.height
+  };
+  setAreaBoundaryFeedback(strongest, resistedRect);
+  return next;
+}
+
 function bindWindowDrag(frame) {
   const titlebar = $(".app-titlebar", frame);
   titlebar.addEventListener("pointerdown", event => {
@@ -468,6 +592,13 @@ function bindWindowDrag(frame) {
     const offsetY = event.clientY - startRect.top;
     const appsZone = $(".apps-zone");
     const workspace = $(".workspace-zone");
+    const boundaryGate = { threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set() };
+    if (layoutMode === "auto") {
+      dockEdges.forEach(edge => {
+        const lane = baseDockLaneRects.get(edge);
+        if (lane && areaBoundaryPenetration(edge, startRect, lane) > 0) boundaryGate.passed.add(edge);
+      });
+    }
     titlebar.setPointerCapture(event.pointerId);
     frame.classList.add("is-dragging");
     frame.style.left = startRect.left + "px";
@@ -476,11 +607,15 @@ function bindWindowDrag(frame) {
     frame.style.height = startRect.height + "px";
 
     const move = moveEvent => {
-      frame.style.left = moveEvent.clientX - offsetX + "px";
-      frame.style.top = moveEvent.clientY - offsetY + "px";
+      const position = resistAreaBoundaries({
+        left: moveEvent.clientX - offsetX,
+        top: moveEvent.clientY - offsetY
+      }, { width: startRect.width, height: startRect.height }, boundaryGate, moveEvent.altKey);
+      frame.style.left = position.left + "px";
+      frame.style.top = position.top + "px";
       if (layoutMode === "auto") {
         const movingRect = frame.getBoundingClientRect();
-        refreshSpatialAutoLayout(frame, movingRect);
+        if (!position.resisted) refreshSpatialAutoLayout(frame, movingRect);
         setDropTarget(appsZone, false);
         setDropTarget(workspace, true);
       } else {
@@ -495,6 +630,7 @@ function bindWindowDrag(frame) {
       titlebar.removeEventListener("pointercancel", finish);
       setDropTarget(appsZone, false);
       setDropTarget(workspace, false);
+      setAreaBoundaryFeedback(null);
       const parked = layoutMode === "manual" && pointInside(appsZone.getBoundingClientRect(), upEvent.clientX, upEvent.clientY);
       const finalRect = frame.getBoundingClientRect();
       frame.classList.remove("is-dragging");
