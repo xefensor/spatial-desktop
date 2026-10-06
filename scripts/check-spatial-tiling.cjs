@@ -305,6 +305,7 @@ const assertCleanGesture = () => {
   assert(!frames.notes.classList.contains("is-dragging"), "Drag class cannot block interaction after release");
   assert(!frames.notes.classList.contains("is-resizing"));
   assert.equal(vm.runInContext("tileInteraction", sandbox), false, "Tiling is no longer locked");
+  assert.equal(vm.runInContext("manualWindowInteraction", sandbox), false, "Manual placement lock is released too");
   assert.equal(vm.runInContext("cancelWindowPointerInteraction", sandbox), null);
   assert.equal(sandbox.window.listenerCount(), windowBaseline, "Global gesture hooks are removed");
   assert.equal(sandbox.document.listenerCount(), 0);
@@ -318,8 +319,13 @@ const desktopShell = {append(frame) {
 }};
 const oldSelector = sandbox.$;
 sandbox.$ = selector => selector === ".desktop-shell" ? desktopShell : oldSelector(selector);
+const peersBeforeDrag = JSON.stringify(Object.entries(frames).filter(([name]) => name !== "notes").map(([name,frame]) => [name,frame.style,sandbox.appState[name]]));
 startGesture();
 pointer("pointermove", 620, 165);
+assert.equal(JSON.stringify(Object.entries(frames).filter(([name]) => name !== "notes").map(([name,frame]) => [name,frame.style,sandbox.appState[name]])), peersBeforeDrag, "Starting a manual drag does not retile or park its neighbours");
+const treeDuringDrag = vm.runInContext('JSON.stringify(tileSession().root)', sandbox);
+vm.runInContext('renderTileLayout("notes")', sandbox);
+assert.equal(vm.runInContext('JSON.stringify(tileSession().root)', sandbox), treeDuringDrag, "An Area/presence layout pass cannot mutate tiles during a held manual drag");
 assert.equal(frames.notes.parentElement, desktopShell, "Manual drag moves out of the clipped workspace");
 assert.equal(dragHandle.captured, true, "Capture is restored after reparenting");
 assert.equal(dragHandle.captures, 2);
@@ -561,3 +567,48 @@ vm.runInContext('tileLayoutFrame=0;scheduleWindowVisibility()',sandbox);
 visibilityCallbacks.shift()();
 assert.equal(sandbox.appState.dolphin,"minimized","After layout settles an actually invisible window is parked");
 console.log("Visibility scheduling: startup guard, pending layout and settled checks passed.");
+
+// A tile pass queued before pointerdown must not race the next pointermove.
+visibilityCallbacks.length=0;
+const oldRenderTileLayout = vm.runInContext('renderTileLayout', sandbox);
+let scheduledTileRenders = 0;
+sandbox.countTileRender = () => scheduledTileRenders++;
+vm.runInContext('renderTileLayout=countTileRender;tileLayoutFrame=0;tileInteraction=false;scheduleWindowTiling("notes")', sandbox);
+vm.runInContext('tileInteraction=true', sandbox);
+visibilityCallbacks.shift()();
+assert.equal(visibilityCallbacks.length,0,"The first queued frame stops when a gesture has started");
+vm.runInContext('tileInteraction=false;scheduleWindowTiling("notes")', sandbox);
+visibilityCallbacks.shift()();
+vm.runInContext('tileInteraction=true', sandbox);
+visibilityCallbacks.shift()();
+assert.equal(scheduledTileRenders,0,"The second queued frame also respects the held gesture");
+vm.runInContext('tileInteraction=false;scheduleWindowTiling("notes")', sandbox);
+visibilityCallbacks.shift()();visibilityCallbacks.shift()();
+assert.equal(scheduledTileRenders,1,"Normal scheduling still renders after release");
+sandbox.restoreTileRender = oldRenderTileLayout;
+vm.runInContext('renderTileLayout=restoreTileRender',sandbox);
+
+// Area yielding changes the workspace origin. Fixed floats must keep screen
+// coordinates while legacy workspace children retain their viewport position.
+sandbox.suspendWindowViewportLock = false;
+sandbox.windowViewportSaveTimer = 0;
+sandbox.clearTimeout = () => {};
+vm.runInContext(slice("function captureVisibleWindowViewportRects(","function setWorkspaceInsets("),sandbox);
+resetVisibility();
+vm.runInContext('openApp("notes");floatWindow("notes",{left:480,top:90,width:440,height:350});tileSession().floating.notes.yieldEdges=["left"]',sandbox);
+const fixedScreenRect = vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox);
+vm.runInContext('var areaResizeSnapshot=captureVisibleWindowViewportRects()',sandbox);
+const selectorBeforeViewportTest = sandbox.$;
+sandbox.$ = selector => selector === ".workspace-zone" ? {getBoundingClientRect:()=>({left:310,top:70})} : selectorBeforeViewportTest(selector);
+vm.runInContext('restoreWindowViewportRects(areaResizeSnapshot)',sandbox);
+assert.equal(frames.notes.style.left,"480px","Yield/return never subtracts the Area inset from a floating window");
+assert.equal(frames.notes.style.top,"90px");
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox),fixedScreenRect,"Fixed coordinates and Area leases remain in sync");
+frames.notes.classList.add("is-fullscreen");
+assert.equal(vm.runInContext('captureVisibleWindowViewportRects().size',sandbox),0,"Fullscreen is never restored as a workspace child");
+frames.notes.classList.remove("is-fullscreen","is-floating");
+vm.runInContext('restoreWindowViewportRects(areaResizeSnapshot)',sandbox);
+assert.equal(frames.notes.style.left,"170px","A genuine workspace child still compensates for its new origin");
+assert.equal(frames.notes.style.top,"20px");
+sandbox.$ = selectorBeforeViewportTest;
+console.log("Manual drag stability: frozen peers/tree, both queued-frame guards, screen-space float restoration and fullscreen exclusion passed.");

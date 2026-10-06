@@ -450,6 +450,7 @@ let tileSessions = {};
 try { tileSessions = JSON.parse(localStorage.getItem("spatial-split-layouts-v1") || "{}"); } catch {}
 let tileRendering = false;
 let tileInteraction = false;
+let manualWindowInteraction = false;
 let tileLayoutFrame = 0;
 let tileDropPreview = null;
 let lastTileContext = "";
@@ -626,7 +627,9 @@ function scheduleWindowVisibility() {
 }
 
 function renderTileLayout(preferredName = frontApp, announce = false, animate = false) {
-  if (tileRendering) return;
+  // A held manual gesture owns its screen geometry. Retile neighbours once
+  // on release, rather than parking them against a moving obstacle.
+  if (tileRendering || manualWindowInteraction) return;
   tileRendering = true;
   try {
     parkFullscreenPeers(tileSession());
@@ -691,8 +694,10 @@ function scheduleWindowTiling(name = frontApp) {
   if (tileRendering || tileInteraction) return;
   cancelAnimationFrame(tileLayoutFrame);
   tileLayoutFrame = requestAnimationFrame(() => {
+    if (tileInteraction) { tileLayoutFrame = 0; return; }
     tileLayoutFrame = requestAnimationFrame(() => {
       tileLayoutFrame = 0;
+      if (tileInteraction) return;
       renderTileLayout(appState[name] === "open" ? name : frontApp);
     });
   });
@@ -1646,6 +1651,8 @@ let cancelWindowPointerInteraction = null;
 // element capture is only an aid, never the sole route to pointerup.
 function trackWindowPointer(event, handle, move, finish) {
   cancelWindowPointerInteraction?.();
+  cancelAnimationFrame(tileLayoutFrame);
+  tileLayoutFrame = 0;
   tileInteraction = true;
   const pointerId = event.pointerId;
   const heldButton = event.button === 1 ? 4 : 1;
@@ -1712,10 +1719,12 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
     if (!moved) {
       if (Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 6) return;
       moved = true;
+      manualWindowInteraction = true;
+      frame.classList.remove("is-auto-tiling");
+      frame.classList.add(resizing ? "is-resizing" : "is-dragging");
       floatWindow(name, start);
       // Re-establish capture after append(), not before the DOM move.
       recapture();
-      frame.classList.add(resizing ? "is-resizing" : "is-dragging");
     }
     const candidate = resizing
       ? { ...start, width: start.width + pointer.clientX - startX, height: start.height + pointer.clientY - startY }
@@ -1747,6 +1756,7 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
   };
   const finish = pointer => {
     frame.classList.remove("is-dragging", "is-resizing");
+    manualWindowInteraction = false;
     setAreaBoundaryFeedback(null);
     tileInteraction = false;
     if (moved && pointer.type === "pointercancel") {
@@ -2241,7 +2251,7 @@ function captureVisibleWindowViewportRects() {
   if (!windowViewportLockReady || suspendWindowViewportLock) return snapshot;
   $$('[data-app-frame]').forEach(frame => {
     const name = frame.dataset.appFrame;
-    if (frame.hidden || appState[name] !== "open" || frame.classList.contains("is-tiled") || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    if (frame.hidden || appState[name] !== "open" || frame.classList.contains("is-tiled") || frame.classList.contains("is-fullscreen") || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
     const rect = frame.getBoundingClientRect();
     snapshot.set(name, { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
   });
@@ -2254,6 +2264,13 @@ function restoreWindowViewportRects(snapshot) {
   snapshot.forEach((rect, name) => {
     const frame = frameFor(name);
     if (!frame || frame.hidden || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    // Floats are fixed to the screen, not positioned inside the workspace.
+    // Subtracting Area insets here made them jump whenever an Area yielded.
+    if (frame.classList.contains("is-floating")) {
+      const session = tileSession();
+      session.floating[name] = applyFloatingGeometry(name, { ...session.floating[name], ...rect });
+      return;
+    }
     const geometry = {
       x: rect.left - workspaceRect.left,
       y: rect.top - workspaceRect.top,
