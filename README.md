@@ -18,6 +18,24 @@ Open **http://localhost:8000**, then use the browser's fullscreen command. In Je
 
 Serve the files over HTTP rather than opening `index.html` directly. Browser storage saves demo state for each origin. To test an older version without reusing the current version's state, serve it on a different port or use a separate browser profile.
 
+## Publish on GitHub Pages
+
+The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) checks the JavaScript and runs the existing layout/interaction checks, then publishes only `dist/`. It runs on pushes to `main` and can also be started manually.
+
+### One-time setup
+
+1. Open [Settings → Pages](https://github.com/xefensor/spatial-desktop/settings/pages).
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Open [the publishing workflow](https://github.com/xefensor/spatial-desktop/actions/workflows/pages.yml) and choose **Run workflow** on `main`, or rerun the failed deployment after enabling Pages.
+
+Once deployment succeeds, the default site address is **https://xefensor.github.io/spatial-desktop/**. The workflow's deployment environment also shows the actual published URL.
+
+This repository is private. GitHub Pages for a private personal repository requires GitHub Pro; GitHub Free supports Pages from public repositories. Repository visibility must be changed deliberately by the owner if that route is chosen.
+
+The workflow uses GitHub's built-in token; no custom deployment secret or personal access token is needed after the one-time Pages setup. Deployment fails with `Get Pages site failed / Not Found` when Pages are not enabled or available for the repository.
+
+GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
 ## Explore the desktop
 
 - **Apps Area:** launch apps, use the numbered app hotbar and control parked windows through live cards.
