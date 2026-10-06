@@ -6188,3 +6188,30 @@ body[data-theme="light"].areas-docked .area-window{
   stroke:#eefaff!important;
   stroke-width:1.3!important;
 }
+
+/* v115 — The border is not a fixed colour. White in difference blend mode
+   resolves to the live inverse of the already inverted glass interior, so the
+   outline always opposes the colour directly inside the cursor. */
+.cursor-outline{
+  stroke:#fff!important;
+  stroke-width:3.1!important;
+  mix-blend-mode:difference;
+  filter:none!important;
+}
+.cursor-edge{
+  stroke:rgba(238,250,255,.26)!important;
+  stroke-width:.7!important;
+  mix-blend-mode:normal;
+  filter:none!important;
+}
+.cursor-line{
+  stroke:#fff!important;
+  stroke-width:2.75!important;
+  mix-blend-mode:difference;
+  filter:none!important;
+}
+.cursor-badge{
+  stroke:#fff!important;
+  mix-blend-mode:difference;
+  filter:none!important;
+}
