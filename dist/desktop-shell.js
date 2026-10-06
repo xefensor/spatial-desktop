@@ -488,6 +488,7 @@ function toggleMaximize(name) {
     clearWindowAutoAvoidance(name);
     applyGeometry(name, maximizeRestore.get(name) || windowGeometry.get(name) || readGeometry(frame));
     syncMaximizeButton(frame);
+    if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
     return;
   }
@@ -520,6 +521,7 @@ function toggleMaximize(name) {
   }
   bringToFront(name);
   syncMaximizeButton(frame);
+  if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
 }
 
 function miniMarkup(name) {
@@ -1447,7 +1449,7 @@ function syncAreaControls(states) {
 function syncLayoutModeUI(profile = currentDisplayProfile) {
   const modeLabel = layoutMode[0].toUpperCase() + layoutMode.slice(1);
   const profileLabel = extendedDesktopActive()
-    ? "Extended · Display " + localDisplaySlot() + " of " + activeDisplayRoster().length
+    ? "Extended · " + localDisplayRoleLabel()
     : profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
   const control = $("#layoutModeToggle");
   if (control) {
@@ -1930,6 +1932,7 @@ function prepareAreaWindows() {
     clearAllAutoAvoidance();
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(true);
+    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     showToast("Desktop Areas restored to Auto");
   });
   $$('[data-area-auto]').forEach(button => button.addEventListener("click", event => {
@@ -1958,7 +1961,10 @@ function prepareAreaWindows() {
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(false);
     saveAreaLayout();
-    if (layoutMode === "auto") scheduleSpatialAutoLayout();
+    if (layoutMode === "auto") {
+      if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+      scheduleSpatialAutoLayout();
+    }
     showToast(layoutMode === "auto" ? "Auto Areas · windows can claim dock space" : "Manual Areas · geometry locked");
   });
   layoutDockAreas(false);
@@ -3408,7 +3414,15 @@ function prepareContextMenus() {
 const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1";
 const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v1";
 const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
-const desktopSyncStartedAt = Date.now() + Math.random();
+const desktopSyncStartedAt = (() => {
+  try {
+    const saved = Number(sessionStorage.getItem("spatial-display-opened-at"));
+    if (Number.isFinite(saved) && saved > 0) return saved;
+    const created = Date.now() + Math.random();
+    sessionStorage.setItem("spatial-display-opened-at", String(created));
+    return created;
+  } catch { return Date.now() + Math.random(); }
+})();
 const desktopSyncChannel = "BroadcastChannel" in window ? new BroadcastChannel(DESKTOP_SYNC_CHANNEL) : null;
 const desktopSyncPeers = new Map();
 const workspaceDisplayAssignments = (() => {
@@ -3445,11 +3459,10 @@ function activeDisplayRoster() {
   desktopSyncPeers.forEach((peer, source) => {
     if (now - peer.seenAt <= 6500) roster.push({ source, ...peer });
   });
-  return roster.sort((first, second) => {
-    const separated = Math.abs((first.screenX || 0) - (second.screenX || 0)) > 80;
-    if (separated) return (first.screenX || 0) - (second.screenX || 0) || (first.screenY || 0) - (second.screenY || 0);
-    return (first.openedAt || 0) - (second.openedAt || 0) || first.source.localeCompare(second.source);
-  });
+  /* The first window opened is the main monitor. Physical X coordinates are
+     deliberately not used: a main monitor may sit to the right in KDE. */
+  return roster.sort((first, second) => (first.openedAt || 0) - (second.openedAt || 0)
+    || first.source.localeCompare(second.source));
 }
 
 function extendedDesktopActive() {
@@ -3465,6 +3478,11 @@ function otherDisplaySlot() {
   const count = activeDisplayRoster().length;
   if (count < 2) return 1;
   return localDisplaySlot() === 1 ? 2 : 1;
+}
+
+function localDisplayRoleLabel() {
+  const slot = localDisplaySlot();
+  return slot === 1 ? "Main display" : "Display " + slot;
 }
 
 function displayAssignmentsFor(workspaceName = activeWorkspace) {
@@ -3494,31 +3512,65 @@ function applyExtendedDesktopPartition() {
   areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", count > 1 && !isLocalArea(name)));
   syncApps();
   layoutDockAreas(false);
-  document.title = count > 1 ? "Spatial Desktop — Display " + slot + " of " + count : "Spatial Desktop";
+  if (count > 1) {
+    const workspace = workspaceBounds();
+    $$('[data-app-frame]').forEach(frame => {
+      if (frame.hidden || frame.dataset.maximized !== "true") return;
+      applyGeometry(frame.dataset.appFrame, {
+        x: 8,
+        y: 8,
+        width: workspace.width - 16,
+        height: workspace.height - 16
+      }, false);
+    });
+  }
+  document.title = count > 1 ? "Spatial Desktop — " + localDisplayRoleLabel() : "Spatial Desktop";
+}
+
+function mainDisplayWindowRects() {
+  return $$('[data-app-frame]').filter(frame => {
+    const name = frame.dataset.appFrame;
+    return appState[name] === "open" && Number(displayAssignmentsFor().apps[name] || 1) === 1 && !frame.hidden;
+  }).map(frame => ({
+    frame,
+    rect: frame.getBoundingClientRect(),
+    maximized: frame.dataset.maximized === "true"
+  }));
+}
+
+function mainDisplayHasRoomForArea(name, windows, currentSlot) {
+  const area = areaFor(name);
+  if (!area || area.hidden || !windows.length) return true;
+  if (windows.some(windowInfo => windowInfo.maximized)) return false;
+  const edge = dockState[name].edge;
+  const shellRect = $(".desktop-shell").getBoundingClientRect();
+  const clearance = Math.min(...windows.map(windowInfo => clearanceFromEdge(edge, windowInfo.rect, shellRect)));
+  const vertical = edge === "left" || edge === "right";
+  const expandedMinimum = vertical
+    ? { projects: 270, apps: 256, systems: 280 }[name]
+    : { projects: 220, apps: 190, systems: 210 }[name];
+  const desiredThickness = Math.max(expandedMinimum, Math.min(340, dockSizes[edge] || expandedMinimum));
+  /* A little hysteresis stops an Area hopping between monitors when a window
+     rests exactly on the threshold. System yields first, then Apps, then the
+     higher-priority Project Space. */
+  const priorityAllowance = { projects: 22, apps: 10, systems: 0 }[name];
+  const threshold = desiredThickness - priorityAllowance + (currentSlot === 1 ? -10 : 6);
+  return clearance >= threshold;
 }
 
 function rebalanceAreaDisplays() {
   const count = activeDisplayRoster().length;
-  if (count < 2 || layoutMode !== "auto") return false;
+  if (count < 2 || layoutMode !== "auto" || localDisplaySlot() !== 1) return false;
   const assignments = displayAssignmentsFor();
-  const scores = Array.from({ length: count }, (_, index) => ({ slot: index + 1, score: 0 }));
-  Object.keys(appState).forEach(name => {
-    if (appState[name] !== "open") return;
-    const slot = Math.max(1, Math.min(count, Number(assignments.apps[name]) || 1));
-    scores[slot - 1].score += 4;
-  });
-  const projectSlot = Math.max(1, Math.min(count, Number(assignments.areas.projects) || 1));
-  assignments.areas.projects = projectSlot;
-  scores[projectSlot - 1].score += 3;
+  const windows = mainDisplayWindowRects();
   let changed = false;
-  [["apps", 2], ["systems", 1]].forEach(([name, weight]) => {
+  /* Main-monitor first: every Area returns to Display 1 as soon as its edge has
+     enough real clearance. Only obstructed Areas spill to Display 2. */
+  ["systems", "apps", "projects"].forEach(name => {
     const current = Math.max(1, Math.min(count, Number(assignments.areas[name]) || 1));
-    const target = [...scores].sort((first, second) => first.score - second.score
-      || Number(second.slot === current) - Number(first.slot === current)
-      || first.slot - second.slot)[0].slot;
+    const target = mainDisplayHasRoomForArea(name, windows, current) ? 1 : 2;
     if (target !== current) changed = true;
     assignments.areas[name] = target;
-    scores[target - 1].score += weight;
   });
   if (changed) persistDisplayAssignments();
   return changed;
@@ -3685,7 +3737,7 @@ function applyDesktopSyncState(state) {
     }
 
     requestAnimationFrame(() => {
-      if (layoutMode === "auto") rebalanceAreaDisplays();
+      const areasChanged = layoutMode === "auto" && rebalanceAreaDisplays();
       applyExtendedDesktopPartition();
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
         const frame = frameFor(name);
@@ -3694,6 +3746,9 @@ function applyDesktopSyncState(state) {
       });
       if (state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
       updateDesktopSyncPresence();
+      if (areasChanged && localDisplaySlot() === 1) {
+        setTimeout(() => queueDesktopStateBroadcast(0), 0);
+      }
     });
   } finally {
     requestAnimationFrame(() => { desktopSyncApplying = false; });
@@ -3737,7 +3792,7 @@ function updateDesktopSyncPresence() {
   document.body.classList.toggle("is-session-synced", count > 0);
   const context = $("#systemAreaContext");
   if (context && workspaceProfiles[activeWorkspace]) {
-    context.textContent = workspaceProfiles[activeWorkspace].label + " workspace" + (count ? " · Display " + slot + " of " + (count + 1) : "");
+    context.textContent = workspaceProfiles[activeWorkspace].label + " workspace" + (count ? " · " + localDisplayRoleLabel() : "");
   }
   const systemArea = areaFor("systems");
   if (systemArea) {
@@ -3746,7 +3801,7 @@ function updateDesktopSyncPresence() {
   }
   if (count && !desktopSyncAnnounced) {
     desktopSyncAnnounced = true;
-    showToast("Display " + slot + " connected · extended desktop ready");
+    showToast(localDisplayRoleLabel() + " connected · extended desktop ready");
   }
   if (!count) desktopSyncAnnounced = false;
   const changed = rebalanceAreaDisplays();
@@ -3784,7 +3839,10 @@ function prepareCrossDisplaySync() {
   document.addEventListener("input", event => {
     if (!event.target.closest("#universalSearch")) queueDesktopStateBroadcast(90);
   });
-  window.addEventListener("pointerup", () => queueDesktopStateBroadcast());
+  window.addEventListener("pointerup", () => {
+    if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+    queueDesktopStateBroadcast();
+  });
 
   postDesktopSyncMessage({ type: "presence" });
   postDesktopSyncMessage({ type: "request" });
@@ -3830,7 +3888,10 @@ window.addEventListener("resize", () => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
   suspendWindowViewportLock = false;
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (layoutMode === "auto") {
+    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+    scheduleSpatialAutoLayout();
+  }
 });
 
 window.addEventListener("pointermove", event => {
