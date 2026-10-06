@@ -743,6 +743,8 @@ const dockState = {
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 let dockPreview;
 const areaStateRank = { rail: 0, compact: 1, expanded: 2 };
+const areaStateCycle = ["auto", "compact", "rail", "expanded"];
+const areaStateOverride = { projects: "auto", apps: "auto", systems: "auto" };
 const layoutModes = ["auto", "focus", "expanded"];
 let layoutMode = "auto";
 let currentDisplayProfile = "desktop";
@@ -769,7 +771,7 @@ function normalizeDockOrder(edge) {
 function saveAreaLayout() {
   const hidden = Object.fromEntries(areaPriority.map(name => [name, Boolean(areaFor(name)?.hidden)]));
   try {
-    localStorage.setItem("spatial-dock-layout-v2", JSON.stringify({ state: dockState, sizes: dockSizes, hidden }));
+    localStorage.setItem("spatial-dock-layout-v2", JSON.stringify({ state: dockState, sizes: dockSizes, hidden, presentation: areaStateOverride }));
   } catch {}
 }
 
@@ -795,15 +797,20 @@ function displayProfileFor(width, height) {
 }
 
 function initialAreaStates(profile) {
-  if (layoutMode === "focus") return { projects: "expanded", apps: "rail", systems: "rail" };
-  if (layoutMode === "expanded") return { projects: "expanded", apps: "expanded", systems: "expanded" };
-  if (profile === "laptop") return {
+  let states;
+  if (layoutMode === "focus") states = { projects: "expanded", apps: "rail", systems: "rail" };
+  else if (layoutMode === "expanded") states = { projects: "expanded", apps: "expanded", systems: "expanded" };
+  else if (profile === "laptop") states = {
     projects: "expanded",
     apps: areaFor("projects")?.hidden ? "compact" : "rail",
     systems: "rail"
   };
-  if (profile === "desktop") return { projects: "expanded", apps: "compact", systems: "compact" };
-  return { projects: "expanded", apps: "expanded", systems: "expanded" };
+  else if (profile === "desktop") states = { projects: "expanded", apps: "compact", systems: "compact" };
+  else states = { projects: "expanded", apps: "expanded", systems: "expanded" };
+  areaPriority.forEach(name => {
+    if (areaStateOverride[name] !== "auto") states[name] = areaStateOverride[name];
+  });
+  return states;
 }
 
 function stateSideMinimum(name, state) {
@@ -886,6 +893,41 @@ function layoutStateLabel(state) {
   return state === "rail" ? "Rail" : state === "compact" ? "Compact" : "Expanded";
 }
 
+function syncAreaControls(states) {
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    const hidden = Boolean(area?.hidden);
+    const override = areaStateOverride[name];
+    $$('[data-area-density="' + name + '"], [data-overview-area-state="' + name + '"]').forEach(button => {
+      const label = override === "auto" ? "Auto" : layoutStateLabel(override);
+      button.title = areaLabel(name) + " size: " + label;
+      button.setAttribute("aria-label", "Change " + areaLabel(name) + " size, currently " + label);
+      if (button.dataset.overviewAreaState) button.textContent = label;
+      button.classList.toggle("is-active", override !== "auto");
+    });
+    $$('[data-overview-area-visibility="' + name + '"]').forEach(button => {
+      button.textContent = hidden ? "Show" : "Hide";
+      button.classList.toggle("is-show", hidden);
+      button.setAttribute("aria-label", (hidden ? "Show " : "Hide ") + areaLabel(name));
+    });
+    const row = $('[data-overview-area="' + name + '"]');
+    if (row) {
+      row.classList.toggle("is-hidden", hidden);
+      const detail = $("small", row);
+      if (detail) detail.textContent = hidden ? "Closed" : layoutStateLabel(states[name]);
+    }
+  });
+}
+
+function cycleAreaState(name) {
+  if (!areaPriority.includes(name)) return;
+  const current = areaStateOverride[name];
+  areaStateOverride[name] = areaStateCycle[(areaStateCycle.indexOf(current) + 1) % areaStateCycle.length];
+  layoutDockAreas(true);
+  const label = areaStateOverride[name] === "auto" ? "Auto" : layoutStateLabel(areaStateOverride[name]);
+  showToast(areaLabel(name) + " size: " + label);
+}
+
 function syncLayoutModeUI(profile = currentDisplayProfile) {
   const modeLabel = layoutMode[0].toUpperCase() + layoutMode.slice(1);
   const profileLabel = profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
@@ -948,6 +990,7 @@ function layoutDockAreas(save = false) {
     const context = $(".area-window-identity small", area);
     if (context) context.dataset.layoutState = layoutStateLabel(state);
   });
+  syncAreaControls(resolved.states);
   syncLayoutModeUI(resolved.profile);
 
   const left = dockGroup("left");
@@ -991,7 +1034,7 @@ function hideArea(name) {
   if (!area) return;
   area.hidden = true;
   layoutDockAreas(true);
-  showToast(areaLabel(name) + " hidden — reopen it from Search");
+  showToast(areaLabel(name) + " closed — reopen it from Overview");
 }
 
 function showArea(name, announce = true) {
@@ -1112,6 +1155,9 @@ function prepareAreaWindows() {
   });
   if (saved?.sizes) dockEdges.forEach(edge => { if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge]; });
   if (saved?.hidden) areaPriority.forEach(name => { if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]); });
+  if (saved?.presentation) areaPriority.forEach(name => {
+    if (areaStateCycle.includes(saved.presentation[name])) areaStateOverride[name] = saved.presentation[name];
+  });
 
   areaPriority.forEach(name => {
     const area = areaFor(name);
@@ -1121,6 +1167,24 @@ function prepareAreaWindows() {
   });
   $$('[data-area-hide]').forEach(button => button.addEventListener("click", event => { event.stopPropagation(); hideArea(button.dataset.areaHide); }));
   $$('[data-area-show]').forEach(button => button.addEventListener("click", () => showArea(button.dataset.areaShow)));
+  $$('[data-area-density]').forEach(button => button.addEventListener("click", event => { event.stopPropagation(); cycleAreaState(button.dataset.areaDensity); }));
+  $$('[data-overview-area-state]').forEach(button => button.addEventListener("click", () => cycleAreaState(button.dataset.overviewAreaState)));
+  $$('[data-overview-area-visibility]').forEach(button => button.addEventListener("click", () => {
+    const name = button.dataset.overviewAreaVisibility;
+    if (areaFor(name)?.hidden) showArea(name, false);
+    else hideArea(name);
+  }));
+  const resetAreas = $("#resetAreas");
+  if (resetAreas) resetAreas.addEventListener("click", () => {
+    areaPriority.forEach(name => {
+      areaStateOverride[name] = "auto";
+      if (areaFor(name)) areaFor(name).hidden = false;
+    });
+    layoutMode = "auto";
+    try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
+    layoutDockAreas(true);
+    showToast("Desktop Areas restored to Auto");
+  });
   $$('[data-area-auto]').forEach(button => button.addEventListener("click", event => {
     event.stopPropagation();
     const name = button.closest('[data-area-window]').dataset.areaWindow;
