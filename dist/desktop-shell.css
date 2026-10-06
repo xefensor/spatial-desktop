@@ -1937,3 +1937,79 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
 .material-cursor.is-left .cursor-side-left,.material-cursor.is-right .cursor-side-right{stroke:#76cfff;filter:drop-shadow(0 0 1px rgba(42,159,255,.72)) drop-shadow(0 0 3px rgba(42,159,255,.32))}
 .material-cursor.is-left .cursor-glyph:not(.glyph-arrow) .cursor-edge,.material-cursor.is-left .cursor-line{filter:drop-shadow(-1px 0 1.5px rgba(42,159,255,.42))}.material-cursor.is-right .cursor-glyph:not(.glyph-arrow) .cursor-edge,.material-cursor.is-right .cursor-line{filter:drop-shadow(1px 0 1.5px rgba(42,159,255,.42))}
 @media(pointer:fine){.desktop-shell,.desktop-shell *{cursor:none!important}.material-cursor{display:block}}
+
+/* Continuously composited wallpaper atmosphere.
+   Only transform and opacity animate: the desktop stays live at display cadence
+   without repainting the solid application surfaces. */
+.desktop-shell{
+  --ambient-low:.14;
+  --ambient-mid:.22;
+  --ambient-high:.30;
+  --speck-low:.20;
+  --speck-mid:.31;
+  --speck-high:.43;
+  overflow:hidden;
+}
+body[data-theme="light"] .desktop-shell{
+  --ambient-low:.08;
+  --ambient-mid:.13;
+  --ambient-high:.19;
+  --speck-low:.12;
+  --speck-mid:.20;
+  --speck-high:.28;
+}
+.desktop-shell::before,
+.desktop-shell::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:0;
+  will-change:transform,opacity;
+  transform:translate3d(0,0,0);
+  contain:paint;
+}
+.desktop-shell::before{
+  inset:-12%;
+  background:
+    radial-gradient(ellipse 36% 46% at 18% 28%,rgba(56,170,255,.34),transparent 69%),
+    radial-gradient(ellipse 42% 35% at 76% 71%,rgba(25,118,255,.24),transparent 72%),
+    radial-gradient(ellipse 25% 31% at 55% 18%,rgba(106,210,255,.17),transparent 74%);
+  opacity:var(--ambient-low);
+  animation:wallpaper-breathe 7.4s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+}
+.desktop-shell::after{
+  inset:-5%;
+  background:
+    radial-gradient(circle 1.4px at 8% 19%,rgba(221,246,255,.92) 0 55%,transparent 72%),
+    radial-gradient(circle 1px at 19% 67%,rgba(126,209,255,.84) 0 55%,transparent 74%),
+    radial-gradient(circle 1.8px at 31% 38%,rgba(212,244,255,.88) 0 50%,transparent 70%),
+    radial-gradient(circle 1px at 43% 81%,rgba(105,193,255,.82) 0 55%,transparent 73%),
+    radial-gradient(circle 1.3px at 57% 24%,rgba(232,249,255,.90) 0 52%,transparent 71%),
+    radial-gradient(circle .9px at 68% 58%,rgba(113,202,255,.88) 0 55%,transparent 74%),
+    radial-gradient(circle 1.7px at 79% 13%,rgba(211,243,255,.86) 0 50%,transparent 70%),
+    radial-gradient(circle 1.1px at 88% 73%,rgba(117,204,255,.88) 0 55%,transparent 73%),
+    radial-gradient(circle .8px at 94% 41%,rgba(225,247,255,.90) 0 55%,transparent 72%),
+    radial-gradient(circle 1.2px at 52% 49%,rgba(91,184,255,.76) 0 54%,transparent 73%);
+  opacity:var(--speck-low);
+  filter:drop-shadow(0 0 3px rgba(73,181,255,.42));
+  animation:wallpaper-specks 5.8s cubic-bezier(.37,0,.63,1) infinite alternate;
+}
+.desktop-shell>.apps-zone,
+.desktop-shell>.workspace-zone,
+.desktop-shell>.systems-zone{
+  position:relative;
+  z-index:1;
+}
+@keyframes wallpaper-breathe{
+  0%{opacity:var(--ambient-low);transform:translate3d(-1.2%,-.5%,0) scale(1)}
+  46%{opacity:var(--ambient-high);transform:translate3d(.1%,.35%,0) scale(1.028)}
+  100%{opacity:var(--ambient-mid);transform:translate3d(1.15%,-.25%,0) scale(1.052)}
+}
+@keyframes wallpaper-specks{
+  0%{opacity:var(--speck-low);transform:translate3d(-.38%,.46%,0) scale(1)}
+  52%{opacity:var(--speck-high);transform:translate3d(.18%,-.18%,0) scale(1.012)}
+  100%{opacity:var(--speck-mid);transform:translate3d(.68%,-.62%,0) scale(1.026)}
+}
+@media(prefers-reduced-motion:reduce){
+  .desktop-shell::before,.desktop-shell::after{animation:none}
+}
