@@ -1592,3 +1592,27 @@ body[data-theme="light"]{
   transform:translateY(1px) scaleY(.99);
   transition-duration:var(--button-press-time);
 }
+
+/* Full-colour application artwork is reserved for the Apps shelf. */
+.apps-zone .app-key .app-art{
+  width:36px;
+  height:36px;
+  color:initial;
+  fill:initial;
+  stroke:none;
+  overflow:visible;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.28));
+  transition:filter var(--button-release-time) linear,transform var(--button-release-time) linear;
+}
+.apps-zone .app-key:hover .app-art{
+  transform:translateY(-1px);
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.31)) saturate(1.06);
+}
+.apps-zone .app-key:active .app-art,
+.apps-zone .app-key.is-active .app-art{
+  transform:translateY(1px);
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.22)) saturate(1.08);
+}
+body[data-theme="light"] .apps-zone .app-key .app-art{
+  filter:drop-shadow(0 2px 2px rgba(34,46,52,.22));
+}
