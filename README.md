@@ -6,6 +6,8 @@ Spatial Desktop is an interactive browser prototype of a desktop organised aroun
 
 [Live demo](https://xefensor.github.io/spatial-desktop/) · [Design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html)
 
+![Spatial Desktop overview with Website Launch and Short Film example projects](docs/images/overview.jpg)
+
 ## Run locally
 
 No build step or npm dependencies are required. From the repository root:
