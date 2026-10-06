@@ -7192,3 +7192,59 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 }
 
 @media(prefers-reduced-motion:reduce){.app-frame.is-auto-tiling{transition:none}}
+
+/* v140 — Apps Area hotbar. Slot labels are engraved into the acrylic app
+   shelf rather than wrapped in another button. Super+number gives the same
+   immediate 1–9 muscle memory as a game hotbar. */
+.apps-zone .app-key .app-hotkey{
+  position:absolute;
+  z-index:2;
+  top:3px;
+  left:4px;
+  min-width:15px;
+  height:15px;
+  margin:0;
+  padding:0 3px;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+  border:0;
+  border-radius:4px;
+  color:color-mix(in srgb,var(--text) 72%,var(--area-header-accent,var(--blue)));
+  background:color-mix(in srgb,var(--text) 4%,transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--text) 13%,transparent),
+    inset 0 1px color-mix(in srgb,white 10%,transparent);
+  font:750 9px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:-.02em;
+  text-shadow:none;
+}
+.apps-zone .app-key:hover .app-hotkey,
+.apps-zone .app-key.is-open .app-hotkey{
+  color:color-mix(in srgb,var(--item-tone,var(--blue)) 72%,var(--text));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 34%,transparent),
+    0 0 5px color-mix(in srgb,var(--item-tone,var(--blue)) 13%,transparent);
+}
+.apps-zone .app-key.is-active .app-hotkey{
+  color:color-mix(in srgb,var(--item-tone,var(--blue)) 84%,white);
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 8%,transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 52%,transparent),
+    0 0 6px color-mix(in srgb,var(--item-tone,var(--blue)) 24%,transparent);
+}
+.apps-zone .app-key.is-hotkey-pulse{
+  transform:translateY(2px) scaleY(.985)!important;
+  transition-duration:8ms!important;
+}
+.apps-zone[data-area-state="rail"] .app-key .app-hotkey{
+  top:2px;
+  left:2px;
+}
+body[data-theme="light"] .apps-zone .app-key .app-hotkey{
+  background:rgba(255,255,255,.18);
+  color:color-mix(in srgb,var(--text) 78%,var(--area-header-accent,var(--blue)));
+}
+@media(prefers-reduced-motion:reduce){
+  .apps-zone .app-key.is-hotkey-pulse{transform:none!important}
+}

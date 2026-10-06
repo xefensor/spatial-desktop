@@ -3063,10 +3063,12 @@ function renderWorkspace(name, announce = true) {
   $("#systemAreaContext").textContent = profile.label + " workspace";
   $("#dolphinContext").textContent = profile.label + " · Downloads";
   $(".address-bar input").value = profile.home + "/Downloads";
-  $("#appRack").innerHTML = profile.rack.map(appName => {
+  $("#appRack").innerHTML = profile.rack.map((appName, index) => {
     const info = appInfo[appName];
     const state = appState[appName];
-    return '<button class="app-key ' + (state !== "closed" ? "is-open " : "") + (state === "open" && appName === frontApp ? "is-active" : "") + '" data-open-app="' + appName + '" aria-label="' + escapeHtml(info.label) + '" title="' + escapeHtml(info.label) + '">' + appArt(appName) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
+    const slot = index + 1;
+    const shortcut = "Super+" + slot;
+    return '<button class="app-key ' + (state !== "closed" ? "is-open " : "") + (state === "open" && appName === frontApp ? "is-active" : "") + '" data-open-app="' + appName + '" data-hotbar-slot="' + slot + '" aria-label="' + escapeHtml(info.label) + ' · ' + shortcut + '" aria-keyshortcuts="Meta+' + slot + '" title="' + escapeHtml(info.label) + ' · ' + shortcut + '"><kbd class="app-hotkey" aria-hidden="true">' + slot + '</kbd>' + appArt(appName) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   }).join("");
   applyAppPrimaryColors($("#appRack"));
   prepareControlSemantics($("#appRack"));
@@ -3566,6 +3568,30 @@ function trapDialogFocus(root, event) {
   return false;
 }
 
+function activateHotbarSlot(slot) {
+  const button = $('#appRack [data-hotbar-slot="' + slot + '"]');
+  if (!button) return false;
+  const name = button.dataset.openApp;
+  if (!appInfo[name]) return false;
+
+  /* Match a desktop taskbar while retaining the game-hotbar directness:
+     first press opens/focuses, pressing the already-front slot parks it. */
+  const visibleHere = appState[name] === "open" && isLocalApp(name);
+  if (visibleHere && frontApp === name) minimizeApp(name);
+  else if (visibleHere) bringToFront(name);
+  else openApp(name);
+
+  if ($("#universalSearch").classList.contains("is-open")) setUniversalSearchOpen(false);
+  const currentButton = $('#appRack [data-hotbar-slot="' + slot + '"]');
+  if (currentButton) {
+    currentButton.classList.remove("is-hotkey-pulse");
+    void currentButton.offsetWidth;
+    currentButton.classList.add("is-hotkey-pulse");
+    window.setTimeout(() => currentButton.classList.remove("is-hotkey-pulse"), 90);
+  }
+  return true;
+}
+
 document.addEventListener("keydown", event => {
   const packageDialog = $("#packageDialog");
   const projectEditorDialog = $("#projectEditorDialog");
@@ -3580,6 +3606,16 @@ document.addEventListener("keydown", event => {
     return;
   }
   if (event.metaKey && !isSuper) superKeyAlone = false;
+
+  const hotbarMatch = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+  const superHeld = event.metaKey || event.getModifierState?.("OS");
+  if (hotbarMatch && superHeld && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    event.stopPropagation();
+    superKeyAlone = false;
+    activateHotbarSlot(Number(hotbarMatch[1]));
+    return;
+  }
 
   if (event.key === "Escape" && $("#packageDialog").classList.contains("is-open")) {
     event.preventDefault();
