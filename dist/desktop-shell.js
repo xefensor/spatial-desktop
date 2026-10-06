@@ -1518,7 +1518,63 @@ function resistAreaBoundaries(position, size, gate, bypass = false) {
   return next;
 }
 
+let cancelWindowPointerInteraction = null;
+
+// A floating window is reparented out of the clipped workspace. Capture on
+// its titlebar can be lost during that move, so the window owns the gesture;
+// element capture is only an aid, never the sole route to pointerup.
+function trackWindowPointer(event, handle, move, finish) {
+  cancelWindowPointerInteraction?.();
+  tileInteraction = true;
+  const pointerId = event.pointerId;
+  const heldButton = event.button === 1 ? 4 : 1;
+  let lastPointer = event;
+  let finished = false;
+  const capture = () => {
+    if (finished) return;
+    try { handle.setPointerCapture(pointerId); } catch { /* Global tracking still works. */ }
+  };
+  const end = pointer => {
+    if (finished || (pointer.pointerId !== undefined && pointer.pointerId !== pointerId)) return;
+    finished = true;
+    window.removeEventListener("pointermove", onMove, true);
+    window.removeEventListener("pointerup", end, true);
+    window.removeEventListener("pointercancel", end, true);
+    window.removeEventListener("blur", cancel);
+    document.removeEventListener("visibilitychange", visibilityChanged);
+    if (cancelWindowPointerInteraction === cancel) cancelWindowPointerInteraction = null;
+    try { handle.releasePointerCapture(pointerId); } catch { /* Capture may already be gone. */ }
+    try { finish(pointer); }
+    finally {
+      tileInteraction = false;
+      window.dispatchEvent(new CustomEvent("material-cursor-release"));
+    }
+  };
+  const cancel = () => end({ type: "pointercancel", pointerId, clientX: lastPointer.clientX, clientY: lastPointer.clientY });
+  const visibilityChanged = () => { if (document.hidden) cancel(); };
+  const onMove = pointer => {
+    if (pointer.pointerId !== pointerId || finished) return;
+    // Recover even if release happened outside the browser and no up arrived.
+    if (typeof pointer.buttons === "number" && !(pointer.buttons & heldButton)) {
+      end({ type: "pointerup", pointerId, clientX: lastPointer.clientX, clientY: lastPointer.clientY });
+      return;
+    }
+    lastPointer = pointer;
+    try { move(pointer); }
+    catch (error) { cancel(); throw error; }
+  };
+  cancelWindowPointerInteraction = cancel;
+  window.addEventListener("pointermove", onMove, true);
+  window.addEventListener("pointerup", end, true);
+  window.addEventListener("pointercancel", end, true);
+  window.addEventListener("blur", cancel);
+  document.addEventListener("visibilitychange", visibilityChanged);
+  capture();
+  return capture;
+}
+
 function beginManualWindowInteraction(event, frame, handle, resizing = false) {
+  cancelWindowPointerInteraction?.();
   event.preventDefault();
   event.stopPropagation();
   const name = frame.dataset.appFrame;
@@ -1531,12 +1587,13 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
   let moved = false;
   tileInteraction = true;
   bringToFront(name);
-  handle.setPointerCapture(event.pointerId);
   const move = pointer => {
     if (!moved) {
       if (Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 6) return;
       moved = true;
       floatWindow(name, start);
+      // Re-establish capture after append(), not before the DOM move.
+      recapture();
       frame.classList.add(resizing ? "is-resizing" : "is-dragging");
     }
     const candidate = resizing
@@ -1568,9 +1625,6 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
     queueDesktopStateBroadcast(80);
   };
   const finish = pointer => {
-    handle.removeEventListener("pointermove", move);
-    handle.removeEventListener("pointerup", finish);
-    handle.removeEventListener("pointercancel", finish);
     frame.classList.remove("is-dragging", "is-resizing");
     setAreaBoundaryFeedback(null);
     tileInteraction = false;
@@ -1586,9 +1640,7 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
     renderTileLayout(name);
     queueDesktopStateBroadcast(0);
   };
-  handle.addEventListener("pointermove", move);
-  handle.addEventListener("pointerup", finish);
-  handle.addEventListener("pointercancel", finish);
+  const recapture = trackWindowPointer(event, handle, move, finish);
 }
 
 function bindWindowDrag(frame) {
@@ -1599,6 +1651,7 @@ function bindWindowDrag(frame) {
       return;
     }
     if (event.button !== 0 || event.target.closest("button,input,a")) return;
+    cancelWindowPointerInteraction?.();
     event.preventDefault();
     const name = frame.dataset.appFrame;
     if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
@@ -1622,7 +1675,6 @@ function bindWindowDrag(frame) {
         if (lane && areaBoundaryPenetration(edge, startRect, lane) > 0) boundaryGate.passed.add(edge);
       });
     }
-    titlebar.setPointerCapture(event.pointerId);
     frame.classList.add("is-dragging");
     frame.style.left = startRect.left + "px";
     frame.style.top = startRect.top + "px";
@@ -1654,9 +1706,6 @@ function bindWindowDrag(frame) {
     };
 
     const finish = upEvent => {
-      titlebar.removeEventListener("pointermove", move);
-      titlebar.removeEventListener("pointerup", finish);
-      titlebar.removeEventListener("pointercancel", finish);
       setDropTarget(appsZone, false);
       setDropTarget(workspace, false);
       setAreaBoundaryFeedback(null);
@@ -1690,9 +1739,7 @@ function bindWindowDrag(frame) {
       if (layoutMode === "auto") scheduleSpatialAutoLayout();
     };
 
-    titlebar.addEventListener("pointermove", move);
-    titlebar.addEventListener("pointerup", finish);
-    titlebar.addEventListener("pointercancel", finish);
+    trackWindowPointer(event, titlebar, move, finish);
   });
 }
 
@@ -4293,6 +4340,7 @@ function prepareMaterialCursor() {
   window.addEventListener("pointerup", release);
   window.addEventListener("pointercancel", release);
   window.addEventListener("blur", release);
+  window.addEventListener("material-cursor-release", release);
   window.addEventListener("material-cursor-mode", () => {
     const target = document.elementFromPoint(lastX, lastY);
     lastBorderTarget = null;

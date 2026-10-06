@@ -236,18 +236,141 @@ Object.assign(sandbox, { AREA_BOUNDARY_RESISTANCE: 120, AREA_BOUNDARY_INSET: 2,
   baseDockLaneRects: new Map(), areaBoundaryStage: () => "expanded", setAreaBoundaryFeedback() {},
   resistAreaBoundaries: position => ({...position, resisted: false}), displayTransferTarget: () => 0 });
 frames.notes.getBoundingClientRect = () => ({left: parseFloat(frames.notes.style.left), top: parseFloat(frames.notes.style.top), width: parseFloat(frames.notes.style.width), height: parseFloat(frames.notes.style.height)});
-vm.runInContext(slice("function beginManualWindowInteraction(", "function bindWindowDrag("), sandbox);
-const dragHandle = {listeners: new Map(), setPointerCapture() {}, addEventListener(type, fn) {this.listeners.set(type, fn);}, removeEventListener(type) {this.listeners.delete(type);} };
+function eventTarget() {
+  const listeners = new Map();
+  return {
+    listeners,
+    addEventListener(type, fn) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(fn); },
+    removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
+    dispatchEvent(event) { for (const fn of [...(listeners.get(event.type) || [])]) fn(event); },
+    listenerCount() { return [...listeners.values()].reduce((sum, hooks) => sum + hooks.size, 0); }
+  };
+}
+Object.assign(sandbox.window, eventTarget());
+sandbox.document = Object.assign(eventTarget(), {hidden: false});
+sandbox.CustomEvent = class { constructor(type) {this.type = type;} };
+vm.runInContext(slice("let cancelWindowPointerInteraction =", "function bindWindowDrag("), sandbox);
+const dragHandle = Object.assign(eventTarget(), {
+  captured: false, captures: 0, releases: 0,
+  setPointerCapture() {this.captured = true; this.captures++;},
+  releasePointerCapture() {this.captured = false; this.releases++;}
+});
 sandbox.dragHandle = dragHandle;
-vm.runInContext('beginManualWindowInteraction({button:1,clientX:550,clientY:110,pointerId:3,preventDefault(){},stopPropagation(){}}, frameFor("notes"), dragHandle)', sandbox);
-dragHandle.listeners.get("pointermove")({clientX:620, clientY:165});
-dragHandle.listeners.get("pointerup")({type:"pointerup", clientX:620, clientY:165});
+let cursorReleases = 0;
+sandbox.window.addEventListener("material-cursor-release", () => cursorReleases++);
+const windowBaseline = sandbox.window.listenerCount();
+const pointer = (type, x, y, buttons = 4, pointerId = 3) => sandbox.window.dispatchEvent({type, clientX: x, clientY: y, buttons, pointerId});
+const startGesture = (button = 1, resizing = false) => vm.runInContext(`beginManualWindowInteraction({button:${button},clientX:550,clientY:110,pointerId:3,preventDefault(){},stopPropagation(){}}, frameFor("notes"), dragHandle, ${resizing})`, sandbox);
+const assertCleanGesture = () => {
+  assert(!frames.notes.classList.contains("is-dragging"), "Drag class cannot block interaction after release");
+  assert(!frames.notes.classList.contains("is-resizing"));
+  assert.equal(vm.runInContext("tileInteraction", sandbox), false, "Tiling is no longer locked");
+  assert.equal(vm.runInContext("cancelWindowPointerInteraction", sandbox), null);
+  assert.equal(sandbox.window.listenerCount(), windowBaseline, "Global gesture hooks are removed");
+  assert.equal(sandbox.document.listenerCount(), 0);
+  assert.equal(dragHandle.captured, false);
+};
+// Model the exact browser failure: append() drops capture on the titlebar.
+const desktopShell = {append(frame) {
+  frame.parentElement = desktopShell;
+  dragHandle.captured = false;
+  dragHandle.dispatchEvent({type:"lostpointercapture", pointerId:3});
+}};
+const oldSelector = sandbox.$;
+sandbox.$ = selector => selector === ".desktop-shell" ? desktopShell : oldSelector(selector);
+startGesture();
+pointer("pointermove", 620, 165);
+assert.equal(frames.notes.parentElement, desktopShell, "Manual drag moves out of the clipped workspace");
+assert.equal(dragHandle.captured, true, "Capture is restored after reparenting");
+assert.equal(dragHandle.captures, 2);
+const firstPosition = frames.notes.style.left;
+// Subsequent events arrive at the browser, not at the old handle.
+dragHandle.captured = false;
+dragHandle.dispatchEvent({type:"lostpointercapture", pointerId:3});
+pointer("pointermove", 690, 190);
+assert.notEqual(frames.notes.style.left, firstPosition, "Movement continues after capture is lost");
+pointer("pointerup", 690, 190, 0);
 assert.equal(frames.notes.classList.contains("is-floating"), true, "Releasing middle drag keeps manual placement");
+assertCleanGesture();
+assert.equal(cursorReleases, 1, "Finishing also resets the custom cursor");
+pointer("pointerup", 690, 190, 0);
+assert.equal(cursorReleases, 1, "Duplicate release is harmless");
+
+// Alt+left is the same lifecycle, but monitors the left-button mask.
+startGesture(0);
+pointer("pointermove", 630, 160, 1);
+const beforeOtherPointer = frames.notes.style.left;
+pointer("pointermove", 830, 360, 1, 99);
+pointer("pointerup", 830, 360, 0, 99);
+assert.equal(frames.notes.style.left, beforeOtherPointer, "Another pointer cannot move or finish the gesture");
+pointer("pointerup", 630, 160, 0);
+assertCleanGesture();
+
+const beforeCancel = vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox);
+startGesture(0);
+pointer("pointermove", 670, 210, 1);
+pointer("pointercancel", 670, 210, 0);
+assertCleanGesture();
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), beforeCancel, "Cancel restores prior placement");
+
+startGesture(0);
+pointer("pointermove", 640, 180, 1);
+sandbox.window.dispatchEvent({type:"blur"});
+assertCleanGesture();
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), beforeCancel, "Leaving the browser safely cancels");
+
+startGesture(0);
+pointer("pointermove", 650, 190, 1);
+const releasedPosition = frames.notes.style.left;
+pointer("pointermove", 950, 490, 0);
+assertCleanGesture();
+assert.equal(frames.notes.style.left, releasedPosition, "A missing up finishes at the last held position without jumping");
+
+startGesture(1, true);
+pointer("pointermove", 670, 230);
+pointer("pointerup", 670, 230, 0);
+assertCleanGesture();
+
+startGesture(0);
+sandbox.document.hidden = true;
+sandbox.document.dispatchEvent({type:"visibilitychange"});
+sandbox.document.hidden = false;
+assertCleanGesture();
+sandbox.$ = oldSelector;
+
+// Normal left dragging still docks a floating window back into the tree,
+// and now shares the same interruption-safe global gesture owner.
+const appsBeforeLeftDrag = {...sandbox.appState};
+const modeBeforeLeftDrag = sandbox.projectModeId;
+sandbox.projectModeId = () => "pointer-lifecycle-left";
+vm.runInContext('renderTileLayout("notes")', sandbox);
+const workspaceElement = {append(frame) {frame.parentElement = workspaceElement;}, getBoundingClientRect: () => ({left:0, top:0, right:1616, bottom:1016})};
+const appsElement = {getBoundingClientRect: () => ({left:0, top:0, right:200, bottom:1016})};
+sandbox.$ = selector => selector === ".app-titlebar" ? dragHandle : selector === ".workspace-zone" ? workspaceElement : selector === ".apps-zone" ? appsElement : oldSelector(selector);
+Object.assign(sandbox, {setDropTarget() {}, clearTileDropPreview() {}, showTileDropPreview() {}, pointInside: () => false});
+vm.runInContext(slice("function bindWindowDrag(", "function bindResize("), sandbox);
+vm.runInContext('bindWindowDrag(frameFor("notes"))', sandbox);
+const startLeftDrag = () => dragHandle.dispatchEvent({type:"pointerdown", button:0, clientX:550, clientY:110, pointerId:3, target:{closest:()=>null}, preventDefault(){}});
+startLeftDrag();
+pointer("pointermove", 700, 230, 1);
+pointer("pointerup", 700, 230, 0);
+assertCleanGesture();
+assert.equal(frames.notes.classList.contains("is-tiled"), true, "Left drag still retiles the manually placed window");
+assert.equal(frames.notes.parentElement, workspaceElement);
+startLeftDrag();
+pointer("pointermove", 680, 220, 1);
+sandbox.window.dispatchEvent({type:"blur"});
+assertCleanGesture();
+assert.equal(frames.notes.classList.contains("is-tiled"), true, "Interrupted left drag restores its tile");
+sandbox.$ = oldSelector;
+sandbox.projectModeId = modeBeforeLeftDrag;
+Object.assign(sandbox.appState, appsBeforeLeftDrag);
+vm.runInContext('syncApps(); renderTileLayout("notes")', sandbox);
 vm.runInContext('tileSession().floating.notes = {left:330,top:300,width:440,height:350,yieldEdges:["left"]}; updateFloatingYield("notes", {passed:new Set(),preferredSizes:dockSizes})', sandbox);
 assert.equal(vm.runInContext('tileSession().floating.notes.yieldEdges.includes("left")', sandbox), true, "Area return has a larger hysteresis boundary");
 vm.runInContext('tileSession().floating.notes.left = 400; updateFloatingYield("notes", {passed:new Set(),preferredSizes:dockSizes})', sandbox);
 assert.equal(vm.runInContext('tileSession().floating.notes.yieldEdges.includes("left")', sandbox), false, "Moving the manual window clear releases borrowed space");
-console.log("Intent interactions: middle pointer lifecycle, float persistence, both maximize modes, exact restoration, explicit retiling and Area-return hysteresis passed.");
+console.log("Intent interactions: Alt/middle drag and resize, capture loss on reparent, pointer filtering, release, cancel, blur, visibility, missing-up recovery, cursor reset and no leaked hooks passed.");
 
 // Check the desktop's real planner adapter, not just the pure docking policy.
 const intentAssignments = {apps:Object.fromEntries(Object.keys(frames).map(name => [name,1])),areas:{projects:1,apps:1,systems:1}};
