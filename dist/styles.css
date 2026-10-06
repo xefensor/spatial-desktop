@@ -247,23 +247,26 @@ body[data-scene="phone"] .phone-stage { display:grid; }
 .key-row.actions .enter-key { background:#97c3ff; color:#062d59; }
 .phone.keyboard-open { grid-template-rows:57px 60px 55px 1fr 0 38px; }
 .phone.keyboard-open .phone-nav, .phone.keyboard-open .phone-fab { opacity:0; pointer-events:none; }
-.screen-light { position:absolute; width:82px; height:82px; border-radius:50%; pointer-events:none; z-index:8; opacity:0; transform:translate(-50%,-50%); background:radial-gradient(circle,rgba(134,218,255,.2),rgba(45,152,255,.07) 42%,transparent 72%); filter:blur(2px); mix-blend-mode:screen; transition:opacity .18s; }
-.screen-light.is-on { opacity:1; transition:none; }
-body[data-theme="light"] .screen-light { mix-blend-mode:multiply; background:radial-gradient(circle,rgba(0,126,215,.12),rgba(0,126,215,.045) 42%,transparent 72%); }
 .capacitive-field {
-  --touch-x:50%; --touch-y:50%; position:absolute; inset:8px; overflow:hidden; border-radius:39px;
-  z-index:19; pointer-events:none;
+  position:absolute; inset:8px; overflow:hidden; border-radius:39px; z-index:19; pointer-events:none;
 }
-.field-cross {
-  position:absolute; left:var(--touch-x); top:var(--touch-y); width:40px; height:40px; border:1px solid rgba(120,205,250,.3); border-radius:50%;
-  opacity:0; transform:translate(-50%,-50%) scale(.55); box-shadow:0 0 10px rgba(54,175,255,.1);
+.glass-contact {
+  --contact-x:50%; --contact-y:50%; --contact-w:24px; --contact-h:18px;
+  position:absolute; left:var(--contact-x); top:var(--contact-y); width:var(--contact-w); height:var(--contact-h);
+  border-radius:50%; transform:translate(-50%,-50%); opacity:1; background:rgba(98,191,255,.16);
+  box-shadow:0 0 2px 1px rgba(228,249,255,.1),0 0 8px 4px rgba(55,170,255,.1),0 0 16px 9px rgba(36,151,255,.045);
+  transition:opacity 60ms linear;
 }
-.field-cross::after { content:""; position:absolute; width:3px; height:3px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:rgba(215,245,255,.82); box-shadow:0 0 7px rgba(73,186,255,.58); }
-.capacitive-field.is-sensing .field-cross { animation:cap-ring .36s ease-out both; }
-@keyframes cap-ring {
-  0% { opacity:0; transform:translate(-50%,-50%) scale(.52); }
-  35% { opacity:.55; }
-  100% { opacity:.18; transform:translate(-50%,-50%) scale(1); }
+.glass-contact::before,.glass-contact::after { content:""; position:absolute; border-radius:inherit; pointer-events:none; }
+.glass-contact::before { inset:-4px; background:rgba(41,158,255,.045); filter:blur(4px); }
+.glass-contact::after { inset:2px; background:rgba(226,248,255,.07); box-shadow:0 0 4px rgba(67,178,255,.09); }
+.glass-contact.is-releasing { opacity:0; }
+body[data-theme="light"] .glass-contact {
+  background:rgba(0,115,200,.075); box-shadow:0 0 2px 1px rgba(0,75,130,.06),0 0 8px 4px rgba(0,121,215,.065),0 0 15px 8px rgba(0,121,215,.025);
+}
+body[data-theme="light"] .glass-contact::after { background:rgba(0,102,181,.045); }
+@media (prefers-reduced-motion: reduce) {
+  .glass-contact { transition:none; }
 }
 .interaction-notes { width:260px; color:var(--muted); line-height:1.5; }
 .interaction-notes span { font:700 11px/1 ui-monospace,monospace; letter-spacing:.16em; color:var(--blue); }
@@ -430,8 +433,8 @@ body[data-scene="music"] .music-stage { display:grid; place-items:center; }
 }
 .mobile-actions .glass-control { width:46px; height:46px; border-radius:16px; font-size:24px; }
 .like-button.is-active { color:#ff6a8a; border-color:#ff6a8a; box-shadow:inset 0 0 20px rgba(255,75,120,.32),0 0 9px rgba(255,75,120,.22); }
-.mobile-progress { display:grid; align-content:center; gap:4px; }
-.mobile-progress div { display:flex; justify-content:space-between; }
+.mobile-progress { display:grid; grid-template-columns:42px minmax(0,1fr) 42px; align-items:center; gap:6px; font-size:12px; }
+.mobile-progress > span:last-child { text-align:right; }
 .mobile-transport { display:grid; grid-template-columns:64px 1fr 64px; align-items:center; gap:8px; }
 .mobile-transport .glass-control { height:65px; border-radius:24px; font-size:25px; }
 .mobile-main-play { display:flex; align-items:center; justify-content:center; gap:9px; background:var(--text); color:var(--well); }
@@ -499,46 +502,73 @@ body[data-scene="music"] .music-stage { display:grid; place-items:center; }
   transform:translateY(2px);
 }
 
-.phone button,.music-phone button {
-  transition:color .1s ease,border-color .1s ease,background .1s ease,box-shadow .1s ease;
+.phone button,.music-phone button,.phone .phone-toolbar label,.phone input[type="range"],.music-phone input[type="range"] {
+  transition:color 60ms linear,border-color 60ms linear,box-shadow 60ms linear,text-shadow 60ms linear;
 }
+.phone,.music-phone { -webkit-tap-highlight-color:transparent; }
+.phone button,.music-phone button { touch-action:manipulation; }
 .phone button:active,.music-phone button:active {
-  transform:none !important;
-  filter:none;
-  color:var(--blue);
-  border-color:color-mix(in srgb,var(--blue) 55%,transparent);
-  background:color-mix(in srgb,var(--blue) 10%,transparent);
-  box-shadow:inset 0 0 18px rgba(33,156,255,.2);
+  transform:none !important; filter:none; background:transparent;
+}
+
+/* Phone controls are grooves in one fixed cover sheet, never moving glass objects. */
+.phone :is(.phone-toolbar button,.glass-chip,.phone-fab,.phone-nav button),
+.music-phone .glass-control {
+  border:1px solid color-mix(in srgb,var(--muted) 42%,transparent);
+  background:transparent;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 3%,transparent),0 0 0 1px color-mix(in srgb,var(--well) 35%,transparent);
+}
+.phone .phone-toolbar label {
+  min-height:42px; padding:0 8px; border:1px solid color-mix(in srgb,var(--muted) 38%,transparent); border-radius:14px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 3%,transparent);
+}
+.phone .phone-toolbar {
+  margin-inline:-15px; padding-inline:20px; border-radius:0; border-inline:0; border-top:0;
+  box-shadow:inset 0 -1px color-mix(in srgb,var(--muted) 24%,transparent);
+}
+.phone .phone-toolbar:focus-within { box-shadow:inset 0 -1px color-mix(in srgb,var(--muted) 24%,transparent); }
+.phone .phone-toolbar label:focus-within {
+  border-color:color-mix(in srgb,var(--blue) 72%,transparent); box-shadow:0 0 7px rgba(33,156,255,.14); text-shadow:0 0 6px rgba(33,156,255,.2);
+}
+.phone .phone-item {
+  border:0; border-bottom:1px solid color-mix(in srgb,var(--muted) 25%,transparent); border-radius:0;
+}
+.phone .phone-nav button { margin:7px 5px; border-radius:16px; }
+.phone .phone-fab { background:color-mix(in srgb,var(--well) 20%,transparent); }
+
+.phone :is(button.is-contacted,.phone-toolbar label.is-contacted),
+.music-phone :is(button.is-contacted,input.is-contacted) {
+  transform:none !important; filter:none; color:var(--blue); background:transparent;
+  border-color:color-mix(in srgb,var(--blue) 72%,transparent);
+  box-shadow:inset 0 0 0 1px rgba(205,240,255,.08),0 0 7px rgba(33,156,255,.16);
+  text-shadow:0 0 7px rgba(33,156,255,.28);
 }
 .phone :is(button.is-active,button.is-selected),
 .music-phone :is(button.is-active,button.is-selected) {
-  transform:none !important;
-  color:var(--blue);
+  transform:none !important; color:var(--blue); background:transparent;
   border-color:color-mix(in srgb,var(--blue) 62%,transparent);
-  background:color-mix(in srgb,var(--blue) 8%,transparent);
-  box-shadow:inset 0 0 20px rgba(33,156,255,.16);
+  box-shadow:inset 0 0 0 1px rgba(205,240,255,.055),0 0 6px rgba(33,156,255,.12);
+  text-shadow:0 0 6px rgba(33,156,255,.24);
 }
-.phone .phone-item.is-selected {
-  box-shadow:inset 2px 0 var(--blue),inset 0 0 18px rgba(33,156,255,.12);
+.phone .phone-item:is(.is-selected,.is-contacted) {
+  border-bottom-color:var(--blue); box-shadow:0 5px 8px -7px var(--blue); background:transparent;
 }
-.phone .phone-nav button.is-active {
-  background:radial-gradient(ellipse at 50% 100%,rgba(33,156,255,.14),transparent 68%);
-}
+.phone .phone-nav button.is-active::after { opacity:.75; height:1px; box-shadow:0 0 6px rgba(33,156,255,.28); }
 .music-phone .like-button.is-active {
-  color:#ff6a8a;
-  border-color:#ff6a8a;
-  background:rgba(255,75,120,.07);
-  box-shadow:inset 0 0 18px rgba(255,75,120,.18);
+  color:#ff6a8a; border-color:#ff6a8a; background:transparent; box-shadow:0 0 7px rgba(255,75,120,.16); text-shadow:0 0 6px rgba(255,75,120,.28);
 }
 .music-phone .mobile-main-play,
 .music-phone .mobile-main-play.is-active {
-  background:var(--text);
-  color:var(--well);
-  border-color:transparent;
+  background:transparent; color:var(--text); border-color:color-mix(in srgb,var(--muted) 55%,transparent);
 }
-.music-phone .mobile-main-play.is-active {
-  background:color-mix(in srgb,var(--blue) 14%,var(--text));
-  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--blue) 45%,transparent),inset 0 0 18px rgba(33,156,255,.14);
+.music-phone .mobile-main-play:is(.is-active,.is-contacted) {
+  color:#62e1cb; border-color:#62e1cb; box-shadow:0 0 7px rgba(98,225,203,.16); text-shadow:0 0 7px rgba(98,225,203,.28);
+}
+.music-phone :is(.queue-track,.sheet-close) { background:transparent; }
+.music-phone .queue-track { border:0; border-bottom:1px solid color-mix(in srgb,var(--muted) 25%,transparent); border-radius:0; }
+.music-phone .sheet-close { border:1px solid color-mix(in srgb,var(--muted) 42%,transparent); }
+.music-phone input[type="range"].is-contacted {
+  border:0; box-shadow:none; filter:drop-shadow(0 0 3px rgba(33,156,255,.24));
 }
 
 .dolphin-window input[type="range"],.music-window input[type="range"] {
@@ -556,19 +586,20 @@ body[data-scene="music"] .music-stage { display:grid; place-items:center; }
   height:3px; border-radius:4px; background:var(--blue); box-shadow:0 0 5px var(--blue-glow);
 }
 .phone input[type="range"],.music-phone input[type="range"] {
-  height:3px; border:0; border-radius:5px; appearance:none;
-  background:color-mix(in srgb,var(--muted) 40%,transparent);
+  --range-fill:0%; appearance:none; width:100%; height:54px; margin:0; border:0; border-radius:18px; touch-action:none;
+  background:
+    linear-gradient(90deg,var(--blue) 0 var(--range-fill),transparent var(--range-fill) 100%) center / calc(100% - 18px) 4px no-repeat,
+    linear-gradient(90deg,color-mix(in srgb,var(--well) 48%,transparent),color-mix(in srgb,var(--muted) 48%,transparent)) center / calc(100% - 18px) 10px no-repeat;
+  box-shadow:none;
 }
 .phone input[type="range"]::-webkit-slider-thumb,.music-phone input[type="range"]::-webkit-slider-thumb {
-  appearance:none; width:17px; height:17px; border:1px solid color-mix(in srgb,var(--blue) 65%,transparent); border-radius:50%;
-  background:color-mix(in srgb,var(--blue) 22%,var(--well)); box-shadow:inset 0 0 8px var(--blue-glow);
+  appearance:none; width:1px; height:11px; border:0; border-radius:1px; background:var(--blue); box-shadow:0 0 6px rgba(33,156,255,.42);
 }
 .phone input[type="range"]::-moz-range-thumb,.music-phone input[type="range"]::-moz-range-thumb {
-  width:17px; height:17px; border:1px solid color-mix(in srgb,var(--blue) 65%,transparent); border-radius:50%;
-  background:color-mix(in srgb,var(--blue) 22%,var(--well)); box-shadow:inset 0 0 8px var(--blue-glow);
+  width:1px; height:11px; border:0; border-radius:1px; background:var(--blue); box-shadow:0 0 6px rgba(33,156,255,.42);
 }
 .phone input[type="range"]::-moz-range-progress,.music-phone input[type="range"]::-moz-range-progress {
-  height:3px; border-radius:4px; background:var(--blue); box-shadow:0 0 4px var(--blue-glow);
+  height:4px; border-radius:4px; background:var(--blue); box-shadow:0 0 5px rgba(33,156,255,.3);
 }
 .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); padding:10px 15px; border:1px solid var(--soft-line); border-radius:12px; background:var(--shell); box-shadow:var(--shadow); opacity:0; pointer-events:none; z-index:99; transition:.2s; }
 .toast.is-visible { opacity:1; transform:translate(-50%,0); }

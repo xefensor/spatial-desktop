@@ -142,7 +142,6 @@
     <section class="stage phone-stage" aria-label="Interaktivní telefonní rozhraní">
       <div class="phone-wrap">
         <article class="phone">
-          <div class="screen-light" id="screenLight" aria-hidden="true"></div>
           <header class="phone-status"><b>1:45</b><span>⌁ ▥ ◉ <strong>60</strong>ϟ</span></header>
           <div class="phone-toolbar recessed-glass">
             <button id="phoneBack" aria-label="Zpět">‹</button>
@@ -177,8 +176,9 @@
           <span>PEVNÉ SKLO / LOKÁLNÍ SVĚTLO</span>
           <dl>
             <div><dt>Klid</dt><dd>souvislá plocha</dd></div>
-            <div><dt>Dotyk</dt><dd>světlo pod prstem</dd></div>
-            <div><dt>Fokus</dt><dd>osvětlená hrana</dd></div>
+            <div><dt>Dotyk</dt><dd>přesný elektrický otisk</dd></div>
+            <div><dt>Akce</dt><dd>svítí stejná rytina</dd></div>
+            <div><dt>Volba</dt><dd>klidný trvalý náboj</dd></div>
           </dl>
         </aside>
       </div>
@@ -280,7 +280,6 @@
         </article>
 
         <article class="music-phone">
-          <div class="screen-light music-touch-light" aria-hidden="true"></div>
           <header class="phone-status"><b>11:59</b><span>⌁ ▥ ◉ <strong>83</strong>ϟ</span></header>
           <div class="mobile-now-label">
             <span>Právě hraje</span>
@@ -297,8 +296,9 @@
             </div>
           </div>
           <div class="mobile-progress">
+            <span class="elapsed-time">0:00</span>
             <input class="track-progress" type="range" min="0" max="138" value="0" aria-label="Pozice skladby">
-            <div><span class="elapsed-time">0:00</span><span class="duration-time">2:18</span></div>
+            <span class="duration-time">2:18</span>
           </div>
           <div class="mobile-transport">
             <button class="glass-control previous-track" aria-label="Předchozí skladba">|‹</button>

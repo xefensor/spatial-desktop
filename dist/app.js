@@ -223,72 +223,106 @@ $$('[data-phone-view]').forEach(button => {
 $$('[data-phone-action]').forEach(button => button.addEventListener('click', () => showToast(button.dataset.phoneAction)));
 
 const musicPhone = $('.music-phone');
-const musicTouchLight = $('.music-touch-light');
 
-function attachCapacitiveSurface(surface, light) {
-  surface.insertAdjacentHTML('beforeend',
-    '<div class="capacitive-field" aria-hidden="true">' +
-      '<div class="field-cross"></div>' +
-    '</div>'
-  );
+function attachCapacitiveSurface(surface) {
+  if (!surface || surface.dataset.capacitiveSurface === 'true') return;
+  surface.dataset.capacitiveSurface = 'true';
+  surface.insertAdjacentHTML('beforeend', '<div class="capacitive-field" aria-hidden="true"></div>');
   const field = $('.capacitive-field', surface);
-  let releaseTimer;
-  let sensing = false;
-  let activePointerId = null;
+  const contacts = new Map();
+  const controlContacts = new Map();
 
-  function sense(event, begin = false) {
-    const rect = surface.getBoundingClientRect();
-    const fieldRect = field.getBoundingClientRect();
-    const x = Math.max(8, Math.min(rect.width - 8, event.clientX - rect.left));
-    const y = Math.max(8, Math.min(rect.height - 8, event.clientY - rect.top));
-    const fieldX = Math.max(0, Math.min(fieldRect.width, event.clientX - fieldRect.left));
-    const fieldY = Math.max(0, Math.min(fieldRect.height, event.clientY - fieldRect.top));
-    field.style.setProperty('--touch-x', fieldX + 'px');
-    field.style.setProperty('--touch-y', fieldY + 'px');
-    if (begin) {
-      field.classList.remove('is-sensing');
-      void field.offsetWidth;
-    }
-    field.classList.add('is-sensing');
-    light.style.left = x + 'px';
-    light.style.top = y + 'px';
-    light.classList.add('is-on');
-    setMaterialState('press', 'DOTYK');
-    clearTimeout(releaseTimer);
+  function contactTargetAt(x, y) {
+    const target = document.elementFromPoint(x, y)?.closest('button, input[type="range"], .phone-toolbar label');
+    return target && surface.contains(target) ? target : null;
   }
 
-  function release() {
-    releaseTimer = setTimeout(() => {
-      field.classList.remove('is-sensing');
-      light.classList.remove('is-on');
-      setMaterialState();
-    }, 260);
+  function addControlContact(control) {
+    if (!control) return;
+    const count = (controlContacts.get(control) || 0) + 1;
+    controlContacts.set(control, count);
+    control.classList.add('is-contacted');
+  }
+
+  function removeControlContact(control, delay = 0) {
+    if (!control) return;
+    window.setTimeout(() => {
+      const count = Math.max(0, (controlContacts.get(control) || 1) - 1);
+      if (count) controlContacts.set(control, count);
+      else {
+        controlContacts.delete(control);
+        control.classList.remove('is-contacted');
+      }
+    }, delay);
+  }
+
+  function updateContact(entry, event) {
+    const samples = event.getCoalescedEvents?.() || [event];
+    const sample = samples[samples.length - 1] || event;
+    const rect = field.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, sample.clientX - rect.left));
+    const y = Math.max(0, Math.min(rect.height, sample.clientY - rect.top));
+    const touchWidth = sample.pointerType === 'mouse' ? 19 : Math.max(12, Math.min(58, sample.width || 24));
+    const touchHeight = sample.pointerType === 'mouse' ? 15 : Math.max(10, Math.min(52, sample.height || 18));
+    entry.element.style.setProperty('--contact-x', x + 'px');
+    entry.element.style.setProperty('--contact-y', y + 'px');
+    entry.element.style.setProperty('--contact-w', touchWidth + 'px');
+    entry.element.style.setProperty('--contact-h', touchHeight + 'px');
+
+    const nextControl = contactTargetAt(sample.clientX, sample.clientY);
+    if (nextControl !== entry.control) {
+      removeControlContact(entry.control);
+      entry.control = nextControl;
+      addControlContact(nextControl);
+    }
+  }
+
+  function finishContact(event, cancelled = false) {
+    const entry = contacts.get(event.pointerId);
+    if (!entry) return;
+    updateContact(entry, event);
+    contacts.delete(event.pointerId);
+    entry.element.classList.add('is-releasing');
+    window.setTimeout(() => entry.element.remove(), 70);
+    const visibleFor = performance.now() - entry.startedAt;
+    const clickBridge = cancelled ? 0 : Math.max(0, 90 - visibleFor);
+    removeControlContact(entry.control, clickBridge);
+    if (!contacts.size) setMaterialState();
   }
 
   surface.addEventListener('pointerdown', event => {
-    sensing = true;
-    activePointerId = event.pointerId;
-    sense(event, true);
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const element = document.createElement('i');
+    element.className = 'glass-contact';
+    field.append(element);
+    const entry = { element, control: null, startedAt: performance.now() };
+    contacts.set(event.pointerId, entry);
+    updateContact(entry, event);
+    setMaterialState('press', 'DOTYK');
   });
   window.addEventListener('pointermove', event => {
-    if (sensing && event.pointerId === activePointerId) sense(event);
+    const entry = contacts.get(event.pointerId);
+    if (entry) updateContact(entry, event);
   });
-  window.addEventListener('pointerup', event => {
-    if (event.pointerId !== activePointerId) return;
-    sensing = false;
-    activePointerId = null;
-    release();
-  });
-  window.addEventListener('pointercancel', event => {
-    if (event.pointerId !== activePointerId) return;
-    sensing = false;
-    activePointerId = null;
-    release();
-  });
+  window.addEventListener('pointerup', event => finishContact(event));
+  window.addEventListener('pointercancel', event => finishContact(event, true));
 }
 
-attachCapacitiveSurface(phone, $('#screenLight'));
-attachCapacitiveSurface(musicPhone, musicTouchLight);
+attachCapacitiveSurface(phone);
+attachCapacitiveSurface(musicPhone);
+
+function syncGlassRange(range) {
+  const min = Number(range.min || 0);
+  const max = Number(range.max || 100);
+  const ratio = max === min ? 0 : (Number(range.value) - min) / (max - min);
+  range.style.setProperty('--range-fill', Math.max(0, Math.min(1, ratio)) * 100 + '%');
+  range.setAttribute('aria-valuenow', range.value);
+}
+
+$$('.phone input[type="range"], .music-phone input[type="range"]').forEach(range => {
+  syncGlassRange(range);
+  range.addEventListener('input', () => syncGlassRange(range));
+});
 window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && keyboard.classList.contains('is-open')) {
     setKeyboard(false);
@@ -356,6 +390,7 @@ function syncProgress() {
   $$('.track-progress').forEach(range => {
     range.max = track.seconds;
     range.value = playbackSeconds;
+    syncGlassRange(range);
   });
   $$('.elapsed-time').forEach(label => label.textContent = formatTime(playbackSeconds));
   $$('.duration-time').forEach(label => label.textContent = formatTime(track.seconds));
@@ -411,7 +446,10 @@ $$('.track-progress').forEach(range => range.addEventListener('input', event => 
   syncProgress();
 }));
 $$('.volume-range').forEach(range => range.addEventListener('input', event => {
-  $$('.volume-range').forEach(other => other.value = event.target.value);
+  $$('.volume-range').forEach(other => {
+    other.value = event.target.value;
+    if (other.closest('.phone, .music-phone')) syncGlassRange(other);
+  });
   showToast('Hlasitost ' + event.target.value + ' %');
 }));
 
