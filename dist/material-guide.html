@@ -126,6 +126,53 @@
     .shape-demo{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}.shape-area,.shape-window{min-height:130px;padding:14px}.shape-area{border:1px solid var(--glass-edge);border-radius:0;background:var(--glass);box-shadow:inset 0 1px rgba(255,255,255,.12)}.shape-window{border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,var(--abs-top),var(--abs-low));box-shadow:0 10px 22px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.07)}.shape-demo b,.shape-demo small{display:block}.shape-demo small{margin-top:4px;color:var(--muted);font-size:11px}
     .token-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--bg-raised);border-radius:14px;overflow:hidden}.token-table th,.token-table td{padding:13px 15px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.token-table th{color:var(--muted);font-weight:500;background:rgba(255,255,255,.025)}.token-table td:first-child{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}.token-table tr:last-child td{border-bottom:0}
     .accent-picker{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-raised);margin-bottom:14px}.accent-picker strong{margin-right:auto;font-size:13px}.swatch{width:30px;height:30px;padding:0;border:2px solid transparent;border-radius:50%;background:var(--swatch);box-shadow:0 0 8px color-mix(in srgb,var(--swatch) 28%,transparent)}.swatch[aria-pressed="true"]{border-color:white;outline:2px solid var(--swatch);outline-offset:2px}
+    .light-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .light-card{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--bg-raised)}
+    .light-stage{position:relative;min-height:230px;display:grid;place-items:center;padding:26px;overflow:hidden}
+    .light-stage::before{content:"";position:absolute;inset:0;pointer-events:none}
+    .abs-light-stage{background:linear-gradient(145deg,#3a4248,#1a2024)}
+    .abs-light-stage::before{background:radial-gradient(circle at 28% 18%,rgba(255,255,255,.19),transparent 34%)}
+    .glass-light-stage{background:radial-gradient(circle at 72% 24%,rgba(77,190,237,.17),transparent 32%),linear-gradient(145deg,#0a202b,#071016)}
+    .light-object{position:relative;width:min(290px,90%);height:128px;display:grid;place-items:center;font-weight:700;letter-spacing:.03em}
+    .light-object.abs{border:1px solid rgba(221,237,244,.17);border-radius:26px;background:linear-gradient(145deg,#424b51,#272e33 48%,#161b1f);box-shadow:0 18px 24px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.14),inset -1px -1px rgba(0,0,0,.52)}
+    .light-object.abs::before{content:"external reflection";position:absolute;left:24px;top:18px;color:rgba(255,255,255,.56);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.12em}
+    .light-object.abs::after{content:"contact shadow";position:absolute;left:26px;right:26px;bottom:-25px;height:18px;border-radius:50%;background:rgba(0,0,0,.42);filter:blur(11px)}
+    .abs-led{position:absolute;left:32px;right:32px;bottom:17px;height:2px;border-radius:2px;background:var(--accent);box-shadow:0 0 3px rgba(var(--accent-rgb),.44)}
+    .light-object.glass{border:1px solid rgba(182,230,250,.34);border-radius:2px;background:linear-gradient(135deg,rgba(241,252,255,.12),transparent 30%),rgba(33,74,92,.25);backdrop-filter:blur(15px);box-shadow:inset 0 1px rgba(255,255,255,.22),inset 1px 0 rgba(183,231,250,.11),0 0 12px rgba(76,190,236,.08)}
+    .light-object.glass::before{content:"edge-lit entry";position:absolute;left:22px;top:16px;color:rgba(220,246,255,.72);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;text-shadow:0 0 5px rgba(76,190,236,.34)}
+    .light-path{position:absolute;left:28px;right:28px;bottom:23px;height:2px;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.72)}
+    .light-copy{padding:18px 20px 20px}.light-copy h3{margin:0;font-size:17px}.light-copy>p{margin:7px 0 14px;color:var(--muted);font-size:13px}
+    .light-facts{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin:0;font-size:12px}.light-facts dt{color:var(--faint)}.light-facts dd{margin:0;color:var(--text)}
+    .light-law{margin-top:14px;padding:14px 16px;border-left:2px solid var(--accent);background:rgba(var(--accent-rgb),.07);color:var(--muted);font-size:13px}
+    .compare-stack{display:grid;gap:18px}
+    .component-compare{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--bg-raised)}
+    .compare-heading{display:flex;align-items:start;gap:18px;padding:16px 18px;border-bottom:1px solid var(--line)}
+    .compare-heading>div{min-width:0}.compare-heading h3{margin:0;font-size:17px}.compare-heading p{margin:4px 0 0;color:var(--muted);font-size:13px}.compare-rule{margin-left:auto;max-width:300px;color:var(--faint);font-size:11px;text-align:right}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr}
+    .compare-side{position:relative;min-width:0;min-height:220px;padding:48px 22px 22px;display:grid;place-items:center}
+    .compare-side+.compare-side{border-left:1px solid var(--line)}
+    .compare-side.abs-side{background:linear-gradient(145deg,var(--abs-top),var(--abs-mid) 48%,var(--abs-low))}
+    .compare-side.glass-side{background:radial-gradient(circle at 82% 7%,rgba(var(--accent-rgb),.13),transparent 45%),linear-gradient(135deg,rgba(240,252,255,.08),transparent 31%),var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+    .surface-tag{position:absolute;top:13px;left:15px;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+    .surface-tag::before{content:"";width:9px;height:9px;border-radius:3px;border:1px solid var(--line-strong);background:var(--abs-mid);box-shadow:inset 0 1px rgba(255,255,255,.09)}
+    .glass-side .surface-tag::before{border-radius:1px;background:rgba(102,194,232,.12);border-color:var(--glass-edge);box-shadow:0 0 6px rgba(76,190,236,.16)}
+    .side-note{position:absolute;left:15px;right:15px;bottom:10px;margin:0;color:var(--faint);font-size:10px;text-align:center}
+    .glass-tab{position:relative;min-width:90px;padding:10px 14px;border:1px solid var(--glass-edge);border-radius:3px;background:rgba(157,219,244,.045);box-shadow:inset 0 1px rgba(255,255,255,.10)}
+    .glass-tab[aria-selected="true"]{background:rgba(var(--accent-rgb),.10);box-shadow:inset 0 2px 4px rgba(0,0,0,.28)}
+    .glass-tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:2px;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.68)}
+    .abs-field{width:100%;height:43px;padding:0 13px;border:1px solid rgba(208,228,237,.14);border-radius:9px;background:var(--abs-well);box-shadow:inset 0 3px 5px rgba(0,0,0,.44),inset 0 1px rgba(255,255,255,.035)}
+    .abs-field:focus{border-color:color-mix(in srgb,var(--accent) 34%,var(--line-strong));box-shadow:inset 0 3px 5px rgba(0,0,0,.44),0 0 0 1px rgba(var(--accent-rgb),.10)}
+    .glass-field{width:100%;height:43px;padding:0 13px;border:1px solid var(--glass-edge);border-radius:3px;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(255,255,255,.03)),rgba(6,18,24,.28);box-shadow:inset 0 1px 4px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08)}
+    .glass-field:focus{border-color:color-mix(in srgb,var(--accent) 48%,var(--glass-edge));box-shadow:inset 0 1px 4px rgba(0,0,0,.30),0 0 5px rgba(var(--accent-rgb),.12)}
+    .abs-range::-webkit-slider-runnable-track{border-color:rgba(208,228,237,.12)!important;background:linear-gradient(90deg,var(--accent) 0 var(--p),var(--abs-well) var(--p))!important;box-shadow:inset 0 2px 3px rgba(0,0,0,.55)!important}
+    .abs-range::-moz-range-track{background:var(--abs-well)!important;border-color:rgba(208,228,237,.12)!important}.abs-range::-moz-range-progress{height:3px;background:var(--accent);box-shadow:none}
+    .glass-range::-webkit-slider-runnable-track{border-color:var(--glass-edge)!important;background:linear-gradient(90deg,rgba(var(--accent-rgb),.22) 0 var(--p),transparent var(--p)),linear-gradient(90deg,color-mix(in srgb,var(--accent) 88%,white 12%) 0 var(--p),transparent var(--p)) center/100% 2px no-repeat,rgba(5,16,22,.42)!important}
+    .glass-range::-moz-range-track{background:rgba(5,16,22,.42)!important;border-color:var(--glass-edge)!important}.glass-range::-moz-range-progress{height:2px;background:color-mix(in srgb,var(--accent) 88%,white 12%);box-shadow:0 0 5px rgba(var(--accent-rgb),.70)}
+    .abs-menu{width:min(290px,100%);padding:6px;border:1px solid rgba(208,228,237,.16);border-radius:13px;background:linear-gradient(145deg,var(--abs-top),var(--abs-mid) 50%,var(--abs-low));box-shadow:0 15px 30px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.08)}
+    .abs-menu .menu-title{border-bottom-color:rgba(208,228,237,.10)}.abs-menu .menu-item:hover{background:rgba(var(--accent-rgb),.09);border-color:rgba(208,228,237,.10)}
+    .glass-row{display:grid;grid-template-columns:31px 1fr auto;gap:10px;align-items:center;padding:9px 8px;border:1px solid transparent;border-left:2px solid transparent;border-radius:2px}.glass-row:hover{border-color:var(--line);background:rgba(255,255,255,.035)}.glass-row.is-selected{border-left-color:var(--accent);background:rgba(var(--accent-rgb),.09);box-shadow:inset 0 1px rgba(255,255,255,.045)}
+    .choice-row{display:flex;align-items:center;gap:12px}.choice{display:inline-grid;place-items:center;width:22px;height:22px;padding:0;border-radius:7px}.choice.abs-choice{border:1px solid rgba(210,230,239,.18);background:linear-gradient(180deg,var(--abs-top),var(--abs-low));box-shadow:0 3px 6px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.09)}.choice.glass-choice{border:1px solid var(--glass-edge);border-radius:2px;background:rgba(126,208,242,.06);box-shadow:inset 0 1px rgba(255,255,255,.12)}.choice[aria-pressed="true"]{color:var(--accent);box-shadow:inset 0 2px 4px rgba(0,0,0,.35),0 0 5px rgba(var(--accent-rgb),.12)}.choice[aria-pressed="true"]::before{content:"✓";font-weight:800;font-size:14px;text-shadow:0 0 5px rgba(var(--accent-rgb),.48)}
+    .status-banner{width:min(390px,100%);display:grid;grid-template-columns:10px 1fr;gap:11px;align-items:center;padding:13px 14px}.status-banner i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(var(--accent-rgb),.55)}.status-banner b,.status-banner small{display:block}.status-banner b{font-size:13px}.status-banner small{color:var(--muted);font-size:11px}.abs-banner{border:1px solid rgba(210,230,239,.14);border-radius:12px;background:linear-gradient(180deg,var(--abs-top),var(--abs-mid));box-shadow:inset 0 1px rgba(255,255,255,.07),0 5px 10px rgba(0,0,0,.22)}.glass-banner{border:1px solid var(--glass-edge);border-radius:2px;background:rgba(89,163,194,.08);box-shadow:inset 0 1px rgba(255,255,255,.10)}
     .dos-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.do-card{padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--bg-raised)}.do-card h3{margin:0 0 10px;font-size:15px}.do-card ul{margin:0;padding-left:19px;color:var(--muted);font-size:13px}.do-card li+li{margin-top:7px}.do-card.good h3{color:#7ee3a0}.do-card.bad h3{color:#ff897f}
     details{border:1px solid var(--line);border-radius:12px;background:var(--bg-raised);overflow:hidden}details+details{margin-top:10px}summary{cursor:pointer;padding:14px 16px;font-weight:650}pre{margin:0;padding:17px;overflow:auto;border-top:1px solid var(--line);background:#070b0e;color:#c9d7de;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
     .footer{margin-top:36px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
@@ -135,9 +182,16 @@
     body[data-theme="light"] .guide-nav{background:rgba(226,240,246,.76)}
     body[data-theme="light"] .abs-surface,body[data-theme="light"] .intro-copy,body[data-theme="light"] .rule-card{box-shadow:var(--shadow),inset 0 1px white,inset 0 -1px rgba(73,93,103,.18)}
     body[data-theme="light"] .glass-button,body[data-theme="light"] .menu-demo{background:rgba(242,250,253,.42)}
+    body[data-theme="light"] .abs-light-stage{background:linear-gradient(145deg,#f7f9fa,#cbd3d7)}
+    body[data-theme="light"] .glass-light-stage{background:radial-gradient(circle at 72% 24%,rgba(42,159,255,.18),transparent 32%),linear-gradient(145deg,#d7ebf3,#bed6e1)}
+    body[data-theme="light"] .light-object.abs{color:var(--text);background:linear-gradient(145deg,var(--abs-top),var(--abs-mid) 48%,var(--abs-low));box-shadow:0 18px 24px rgba(55,75,85,.25),inset 0 1px white,inset -1px -1px rgba(74,94,103,.24)}
+    body[data-theme="light"] .light-object.abs::before{color:rgba(30,49,58,.55)}
+    body[data-theme="light"] .light-object.glass{color:var(--text);background:linear-gradient(135deg,rgba(255,255,255,.52),transparent 30%),rgba(219,240,248,.42);border-color:rgba(255,255,255,.82)}
+    body[data-theme="light"] .compare-side.glass-side{background:radial-gradient(circle at 82% 7%,rgba(var(--accent-rgb),.12),transparent 45%),linear-gradient(135deg,rgba(255,255,255,.42),transparent 31%),rgba(218,237,245,.62)}
+    body[data-theme="light"] .glass-field{background:linear-gradient(180deg,rgba(67,94,107,.09),rgba(255,255,255,.34)),rgba(222,239,246,.50)}
     body[data-theme="light"] pre{background:#edf3f5;color:#23323a}
     @media(max-width:1000px){.layout{grid-template-columns:1fr}.guide-nav{position:static;display:flex;overflow:auto;gap:2px}.guide-nav strong{display:none}.guide-nav a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent}.guide-nav a:hover,.guide-nav a.is-current{border-left:0;border-bottom-color:var(--accent)}.intro{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr 1fr}}
-    @media(max-width:720px){.top-link{display:none}.layout{padding-inline:12px}.material-grid,.specimen-grid,.dos-grid{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr}.intro-copy{padding:26px 22px}.section-head{align-items:start}.section-number{display:none}.shape-demo{grid-template-columns:1fr}.token-table th:nth-child(3),.token-table td:nth-child(3){display:none}}
+    @media(max-width:720px){.top-link{display:none}.layout{padding-inline:12px}.material-grid,.specimen-grid,.dos-grid,.light-grid{grid-template-columns:1fr}.principle-grid{grid-template-columns:1fr}.intro-copy{padding:26px 22px}.section-head{align-items:start}.section-number{display:none}.shape-demo{grid-template-columns:1fr}.token-table th:nth-child(3),.token-table td:nth-child(3){display:none}.compare-heading{display:block}.compare-rule{margin:7px 0 0;max-width:none;text-align:left}.compare-grid{grid-template-columns:1fr}.compare-side+.compare-side{border-left:0;border-top:1px solid var(--line)}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
     @media(prefers-reduced-transparency:reduce){.glass-surface,.guide-nav,.topbar,.menu-demo{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg-raised)}}
   </style>
@@ -153,7 +207,7 @@
   <div class="layout">
     <nav class="guide-nav" aria-label="Guide sections">
       <strong>Foundation</strong>
-      <a href="#philosophy">Philosophy</a><a href="#materials">Materials</a><a href="#controls">Controls</a><a href="#structure">Structure</a><a href="#tokens">Tokens</a><a href="#templates">Templates</a>
+      <a href="#philosophy">Philosophy</a><a href="#materials">Materials</a><a href="#light">Light</a><a href="#controls">A/B components</a><a href="#structure">Structure</a><a href="#tokens">Tokens</a><a href="#templates">Templates</a>
     </nav>
     <main>
       <header class="intro">
@@ -185,23 +239,45 @@
         </div>
       </section>
 
+      <section id="light">
+        <div class="section-head"><div><h2>Light behaves differently</h2><p>The same colour can communicate state through two different physical models.</p></div><span class="section-number">03</span></div>
+        <div class="light-grid">
+          <article class="light-card">
+            <div class="light-stage abs-light-stage"><div class="light-object abs">ABS plastic<span class="abs-led"></span></div></div>
+            <div class="light-copy"><h3>ABS reflects light</h3><p>Plastic is visible because a broad external light strikes its top and side surfaces. Its depth comes from a contact shadow below it—not from a glowing perimeter.</p><dl class="light-facts"><dt>Source</dt><dd>Diffuse light from above-left</dd><dt>Depth</dt><dd>Top highlight + lower contact shadow</dd><dt>App colour</dt><dd>Embedded LED line, icon or selected edge</dd><dt>Pressed</dt><dd>Object moves down; outer shadow collapses</dd><dt>Inactive</dt><dd>No coloured glow</dd></dl></div>
+          </article>
+          <article class="light-card">
+            <div class="light-stage glass-light-stage"><div class="light-object glass">Edge-lit glass<span class="light-path"></span></div></div>
+            <div class="light-copy"><h3>Glass carries light</h3><p>Glass is revealed by a fine illuminated boundary and internal reflections. Engraved lines may collect app colour, while the centre remains transparent and quiet.</p><dl class="light-facts"><dt>Source</dt><dd>Light entering the sheet edge</dd><dt>Depth</dt><dd>Edge contrast + blur + internal reflection</dd><dt>App colour</dt><dd>Etched state line or progress path</dd><dt>Pressed</dt><dd>One-pixel optical response, not a deep key travel</dd><dt>Inactive</dt><dd>Neutral edge, almost no glow</dd></dl></div>
+          </article>
+        </div>
+        <div class="light-law"><b>Shared semantic rule:</b> coloured light means active state, selection, focus or progress. It never exists merely because an element has an edge. ABS contains the light like an indicator LED; glass guides it through an etched path.</div>
+      </section>
+
       <section id="controls">
-        <div class="section-head"><div><h2>Interactive elements</h2><p>Use the controls below—do not reinterpret their states per app.</p></div><span class="section-number">03</span></div>
+        <div class="section-head"><div><h2>Every component in both materials</h2><p>The behaviour stays consistent. Only the physical response changes.</p></div><span class="section-number">04</span></div>
         <div class="accent-picker"><strong>Application primary colour</strong><button class="swatch" style="--swatch:#a483ff" data-accent="#a483ff" data-rgb="164,131,255" aria-label="Violet" aria-pressed="true"></button><button class="swatch" style="--swatch:#2a9fff" data-accent="#2a9fff" data-rgb="42,159,255" aria-label="Blue" aria-pressed="false"></button><button class="swatch" style="--swatch:#64d782" data-accent="#64d782" data-rgb="100,215,130" aria-label="Green" aria-pressed="false"></button><button class="swatch" style="--swatch:#ffb553" data-accent="#ffb553" data-rgb="255,181,83" aria-label="Amber" aria-pressed="false"></button></div>
-        <div class="specimen-grid">
-          <article class="specimen"><div class="specimen-demo abs-surface"><div class="demo-row"><button class="abs-button">Push action</button><button class="abs-button toggle-button" data-demo-toggle aria-pressed="false">Toggle action</button></div></div><div class="specimen-copy"><h3>ABS buttons</h3><p>A push button rises again. A toggle clicks at the same speed, stays down and gains the persistent state line.</p></div></article>
-          <article class="specimen"><div class="specimen-demo glass-surface"><div class="demo-row"><button class="glass-button">Push action</button><button class="glass-button toggle-button" data-demo-toggle aria-pressed="false">Toggle action</button></div></div><div class="specimen-copy"><h3>Glass buttons</h3><p>Use only on glass. The etched edge moves by one pixel; the persistent line still belongs only to the active toggle.</p></div></article>
-          <article class="specimen"><div class="specimen-demo abs-surface"><div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Files</button><button class="tab" role="tab" aria-selected="false">Projects</button><button class="tab" role="tab" aria-selected="false">Recent</button></div></div><div class="specimen-copy"><h3>Pressed tabs</h3><p>The selected tab sits lower and darker, like a held keyboard key. Its light line preserves recognition.</p></div></article>
-          <article class="specimen"><div class="specimen-demo abs-surface"><div class="field-demo"><label for="guide-field">Recessed display inside ABS</label><input id="guide-field" class="recessed-field" value="Search files and folders"></div></div><div class="specimen-copy"><h3>Text fields</h3><p>A field is an inset display, not another raised button. Small glass inserts are allowed inside ABS.</p></div></article>
-          <article class="specimen"><div class="specimen-demo abs-surface"><div class="range-wrap"><div class="range-meta"><span>1:55</span><span>3:38</span></div><input class="lit-range" type="range" min="0" max="218" value="115" aria-label="Playback position"></div></div><div class="specimen-copy"><h3>Sliders</h3><p>The filled segment uses the same state light as an active toggle. The rest stays a quiet recessed groove.</p></div></article>
-          <article class="specimen"><div class="specimen-demo"><div class="menu-demo"><div class="menu-title">Window</div><button class="menu-item"><span>Move to Project</span><kbd>⇧P</kbd></button><button class="menu-item"><span>Keep visible</span><kbd>K</kbd></button><button class="menu-item"><span>Close</span><kbd>⌘W</kbd></button></div></div><div class="specimen-copy"><h3>Context menus</h3><p>Temporary UI is square, transparent glass. Rows stay flat until hover; the menu is not an ABS mini-window.</p></div></article>
-          <article class="specimen"><div class="specimen-demo abs-surface"><div class="rows"><div class="plain-row is-selected"><span class="row-icon">F</span><span><b>Downloads</b><small>Selected location</small></span><time>12</time></div><div class="plain-row"><span class="row-icon">D</span><span><b>Documents</b><small>Local folder</small></span><time>8</time></div><div class="plain-row"><span class="row-icon">M</span><span><b>Music</b><small>Local folder</small></span><time>24</time></div></div></div><div class="specimen-copy"><h3>Rows are not buttons</h3><p>Navigation and content rows remain flat. A tint and app-colour edge communicate selection without fake depth.</p></div></article>
-          <article class="specimen"><div class="specimen-demo"><div class="shape-demo"><div class="shape-area"><b>Desktop Area</b><small>Docked · structural · square</small></div><div class="shape-window"><b>App window</b><small>Movable · independent · squircle</small></div></div></div><div class="specimen-copy"><h3>Shape communicates ownership</h3><p>Square objects belong to the desktop structure. Squircles are independent app objects placed above it.</p></div></article>
+        <div class="compare-stack">
+          <article class="component-compare"><header class="compare-heading"><div><h3>Push and toggle buttons</h3><p>Click both versions. Push returns; toggle remains held and shows the state line.</p></div><span class="compare-rule">ABS travels 2 px with shadow collapse · glass travels 1 px with an optical edge response</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="demo-row"><button class="abs-button">Push</button><button class="abs-button toggle-button" data-demo-toggle aria-pressed="false">Toggle</button></div><p class="side-note">Raised cap · broad top highlight · contact shadow</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="demo-row"><button class="glass-button">Push</button><button class="glass-button toggle-button" data-demo-toggle aria-pressed="false">Toggle</button></div><p class="side-note">Etched boundary · internal highlight · shallow response</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Tabs and segmented choices</h3><p>The active item is lower and darker in ABS, but optically inset in glass.</p></div><span class="compare-rule">Both use the same 2 px state line because selection semantics do not change</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Files</button><button class="tab" role="tab" aria-selected="false">Recent</button></div><p class="side-note">Selected key remains physically down</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="tabs" role="tablist"><button class="glass-tab" role="tab" aria-selected="true">Files</button><button class="glass-tab" role="tab" aria-selected="false">Recent</button></div><p class="side-note">Selected segment gains internal tint, not keycap depth</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Text and search fields</h3><p>Both are recessed because they receive content rather than trigger an action.</p></div><span class="compare-rule">ABS uses a physical well · glass uses a darker transparent inset with a focused edge</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="field-demo"><label for="abs-guide-field">Search field</label><input id="abs-guide-field" class="abs-field" value="Search files and folders"></div><p class="side-note">Opaque well · strong inner shadow · no glow when idle</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="field-demo"><label for="glass-guide-field">Search field</label><input id="glass-guide-field" class="glass-field" value="Search files and folders"></div><p class="side-note">Transparent inset · visible edge · restrained focus light</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Sliders and continuous values</h3><p>The active length is meaningful state, so both materials use application colour.</p></div><span class="compare-rule">ABS looks like a coloured indicator in a groove · glass looks like light travelling through an etched path</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="range-wrap"><div class="range-meta"><span>1:55</span><span>3:38</span></div><input class="lit-range abs-range" type="range" min="0" max="218" value="115" aria-label="ABS playback position"></div><p class="side-note">3 px solid fill · recessed opaque groove · no halo</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="range-wrap"><div class="range-meta"><span>1:55</span><span>3:38</span></div><input class="lit-range glass-range" type="range" min="0" max="218" value="115" aria-label="Glass playback position"></div><p class="side-note">2 px luminous fill · transparent groove · small internal bloom</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Menus and popovers</h3><p>The surrounding surface decides the material, not the menu command itself.</p></div><span class="compare-rule">An in-app dropdown may remain ABS · desktop context menus and transient system UI are glass</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS app menu</span><div class="abs-menu"><div class="menu-title">Document</div><button class="menu-item"><span>Rename</span><kbd>F2</kbd></button><button class="menu-item"><span>Duplicate</span><kbd>⌘D</kbd></button><button class="menu-item"><span>Close</span><kbd>⌘W</kbd></button></div><p class="side-note">Belongs to the opaque application body</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass system menu</span><div class="menu-demo"><div class="menu-title">Window</div><button class="menu-item"><span>Move to Project</span><kbd>⇧P</kbd></button><button class="menu-item"><span>Keep visible</span><kbd>K</kbd></button><button class="menu-item"><span>Close</span><kbd>⌘W</kbd></button></div><p class="side-note">Temporary desktop layer · square transparent sheet</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Rows and selection</h3><p>Rows are information, not physical keys. Neither material raises every row.</p></div><span class="compare-rule">Selection uses a tint plus one app-colour edge; depth stays flat</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="rows"><div class="plain-row is-selected"><span class="row-icon">F</span><span><b>Downloads</b><small>Selected location</small></span><time>12</time></div><div class="plain-row"><span class="row-icon">D</span><span><b>Documents</b><small>Local folder</small></span><time>8</time></div></div><p class="side-note">Opaque tint · embedded selection edge</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="rows"><div class="glass-row is-selected"><span class="row-icon">F</span><span><b>Downloads</b><small>Selected location</small></span><time>12</time></div><div class="glass-row"><span class="row-icon">D</span><span><b>Documents</b><small>Local folder</small></span><time>8</time></div></div><p class="side-note">Translucent tint · etched selection edge</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Checks and compact choices</h3><p>A small binary control follows its host surface while preserving the same check state.</p></div><span class="compare-rule">The mark carries state colour; the container communicates material</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS surface</span><div class="choice-row"><button class="choice abs-choice" data-demo-choice aria-pressed="true" aria-label="ABS check"></button><span>Keep window visible</span></div><p class="side-note">Small keycap · pressed cavity when checked</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass surface</span><div class="choice-row"><button class="choice glass-choice" data-demo-choice aria-pressed="true" aria-label="Glass check"></button><span>Keep window visible</span></div><p class="side-note">Etched square · illuminated mark when checked</p></div></div></article>
+
+          <article class="component-compare"><header class="compare-heading"><div><h3>Status and notifications</h3><p>The message origin decides whether it is embedded in an app or floats at system level.</p></div><span class="compare-rule">Application status is ABS and attached · system notification is glass and transient</span></header><div class="compare-grid"><div class="compare-side abs-side"><span class="surface-tag">ABS app status</span><div class="status-banner abs-banner"><i></i><span><b>Project saved</b><small>Stored inside this application</small></span></div><p class="side-note">Solid and connected to its parent window</p></div><div class="compare-side glass-side"><span class="surface-tag">Glass system notice</span><div class="status-banner glass-banner"><i></i><span><b>Project saved</b><small>Temporary system feedback</small></span></div><p class="side-note">Floating, transparent and square</p></div></div></article>
         </div>
       </section>
 
       <section id="structure">
-        <div class="section-head"><div><h2>Composition rules</h2><p>How the pieces combine without becoming busy.</p></div><span class="section-number">04</span></div>
+        <div class="section-head"><div><h2>Composition rules</h2><p>How the pieces combine without becoming busy.</p></div><span class="section-number">05</span></div>
         <div class="dos-grid">
           <article class="do-card good"><h3>Do</h3><ul><li>Keep app content fully opaque.</li><li>Use one dominant material per surface.</li><li>Reserve app colour for meaningful state.</li><li>Let empty space separate groups.</li><li>Keep borders thin and local.</li><li>Use real app icons in launch surfaces.</li></ul></article>
           <article class="do-card bad"><h3>Do not</h3><ul><li>Put ABS buttons on a glass sheet.</li><li>Wrap every item in a raised card.</li><li>Give push buttons persistent light.</li><li>Blur text-heavy content over wallpaper.</li><li>Stack border inside border inside border.</li><li>Use glow merely to decorate an edge.</li></ul></article>
@@ -209,13 +285,20 @@
       </section>
 
       <section id="tokens">
-        <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">05</span></div>
+        <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">06</span></div>
         <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0–2 px</td><td>Docked structural surface</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>Controls and inset displays</td></tr><tr><td>--edge</td><td>1 px</td><td>Material boundary</td></tr><tr><td>--active-line</td><td>2 px</td><td>Toggle, selection and progress state</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop glass only</td></tr></tbody></table>
       </section>
 
       <section id="templates">
-        <div class="section-head"><div><h2>Implementation templates</h2><p>Minimal patterns developers can adapt without changing the semantics.</p></div><span class="section-number">06</span></div>
-        <details open><summary>ABS push and toggle</summary><pre>&lt;button class="abs-button"&gt;Push action&lt;/button&gt;
+        <div class="section-head"><div><h2>Implementation templates</h2><p>Minimal patterns developers can adapt without changing the semantics.</p></div><span class="section-number">07</span></div>
+        <details open><summary>Matching ABS and glass buttons</summary><pre>&lt;div class="surface abs"&gt;
+  &lt;button class="button abs-button"&gt;Push action&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;div class="surface glass"&gt;
+  &lt;button class="button glass-button"&gt;Push action&lt;/button&gt;
+&lt;/div&gt;
+
 &lt;button class="abs-button toggle-button" aria-pressed="true"&gt;
   Toggle action
 &lt;/button&gt;
@@ -224,6 +307,20 @@
 .toggle-button[aria-pressed="true"]::after {
   background: var(--app-primary);
   box-shadow: 0 0 6px color-mix(in srgb, var(--app-primary) 70%, transparent);
+}</pre></details>
+        <details><summary>Matching ABS and glass sliders</summary><pre>&lt;!-- Same value and semantics; different physical rendering. --&gt;
+&lt;input class="range abs-range" type="range" min="0" max="100" value="42"&gt;
+&lt;input class="range glass-range" type="range" min="0" max="100" value="42"&gt;
+
+.abs-range .filled-part {
+  height: 3px;
+  background: var(--app-primary);      /* embedded indicator */
+  box-shadow: none;
+}
+.glass-range .filled-part {
+  height: 2px;
+  background: var(--app-primary);      /* illuminated engraving */
+  box-shadow: 0 0 5px var(--app-primary-glow);
 }</pre></details>
         <details><summary>Glass context menu</summary><pre>&lt;menu class="glass context-menu"&gt;
   &lt;button class="menu-row"&gt;Move to Project&lt;/button&gt;
@@ -262,6 +359,9 @@
     document.querySelectorAll('[data-demo-toggle]').forEach(button=>button.addEventListener('click',()=>{
       const on=button.getAttribute('aria-pressed')!=='true';
       button.setAttribute('aria-pressed',String(on));button.classList.toggle('is-on',on);
+    }));
+    document.querySelectorAll('[data-demo-choice]').forEach(button=>button.addEventListener('click',()=>{
+      button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));
     }));
     document.querySelectorAll('[role="tab"]').forEach(tab=>tab.addEventListener('click',()=>{
       tab.parentElement.querySelectorAll('[role="tab"]').forEach(item=>item.setAttribute('aria-selected',String(item===tab)));
