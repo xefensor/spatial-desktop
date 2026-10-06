@@ -475,13 +475,24 @@ function saveTileSessions() {
 
 function tilePriority(name) { return Number(frameFor(name)?.style.zIndex || 0); }
 
+function fitDesktopTiles(root = tileSession().root, preferredName = frontApp) {
+  const session = tileSession();
+  const workspace = workspaceBounds();
+  // Float coordinates belong to the monitor; tile coordinates belong to the
+  // workspace between Areas. Only visible floats on this monitor reserve space.
+  const obstacles = session.fullscreen ? [] : Object.entries(session.floating)
+    .filter(([name]) => appState[name] === "open" && isLocalApp(name))
+    .map(([,rect]) => ({x:rect.left-workspace.rect.left, y:rect.top-workspace.rect.top, width:rect.width, height:rect.height}));
+  return tileEngine.fitAvoiding(root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority, obstacles);
+}
+
 function reconcileTileTree(preferredName = frontApp) {
   const session = tileSession();
   const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name]);
   session.root = tileEngine.normalize(session.root, open);
   open.forEach(name => {
     if (tileEngine.contains(session.root, name)) return;
-    session.root = tileEngine.insert(session.root, name, preferredName, null, tileBounds(), minimumUsableWindowSize);
+    session.root = tileEngine.insert(session.root, name, preferredName, null, tileBounds(), minimumUsableWindowSize, fitDesktopTiles(session.root,preferredName).windows);
   });
   return session;
 }
@@ -522,7 +533,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
       autoTiledWindows.clear();
       lastTileContext = key;
     }
-    const fitted = tileEngine.fit(session.root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority);
+    const fitted = fitDesktopTiles(session.root, preferredName);
     session.root = fitted.node;
     parkTileWindows(fitted.parked, "Made room for " + (appInfo[preferredName]?.label || "a window"), announce);
     fitted.windows.forEach((rect, name) => {
@@ -588,7 +599,8 @@ function splitWindowIntoTile(name, point = null, preferredTarget = frontApp) {
   if (session.fullscreen?.name === name) session.fullscreen = null;
   const target = tileDropTarget(name, point);
   session.focus = null;
-  session.root = tileEngine.insert(session.root, name, target?.name || preferredTarget, target?.side, tileBounds(), minimumUsableWindowSize);
+  const clearRects = fitDesktopTiles(tileEngine.remove(session.root,name),preferredTarget).windows;
+  session.root = tileEngine.insert(session.root, name, target?.name || preferredTarget, target?.side, tileBounds(), minimumUsableWindowSize, clearRects);
   delete session.parked[name];
   tileOpenWindows(name);
   refreshIntentAreas();
@@ -598,7 +610,7 @@ function tileDropTarget(name, point) {
   if (!point) return null;
   const workspace = workspaceBounds();
   const x = point.x - workspace.rect.left, y = point.y - workspace.rect.top;
-  const rects = tileEngine.layout(tileSession().root, tileBounds()).windows;
+  const rects = fitDesktopTiles().windows;
   let target = null;
   rects.forEach((rect, other) => {
     if (other === name || x < rect.x || x > rect.x + rect.width || y < rect.y || y > rect.y + rect.height) return;
@@ -705,7 +717,7 @@ function beginTileDividerResize(event, split, divider) {
 }
 
 function previewTilePressure(root, preferredName) {
-  const fitted = tileEngine.fit(root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority);
+  const fitted = fitDesktopTiles(root, preferredName);
   tileSession().root = fitted.node;
   const visible = new Set(fitted.windows.keys());
   let hint = $(".tile-pressure-hint");
@@ -719,7 +731,7 @@ function previewTilePressure(root, preferredName) {
   } else hint?.remove();
   $$("[data-app-frame]").forEach(frame => {
     const name = frame.dataset.appFrame;
-    if (appState[name] !== "open" || !isLocalApp(name)) return;
+    if (appState[name] !== "open" || !isLocalApp(name) || tileSession().floating[name]) return;
     frame.classList.toggle("tile-will-park", !visible.has(name));
     if (!visible.has(name)) return;
     autoTiledWindows.add(name);
@@ -736,7 +748,9 @@ function beginTileWindowResize(event, name, handle) {
   const startTree = tileEngine.copy(session.root);
   const bounds = tileBounds();
   const initialNames = tileEngine.names(startTree);
-  const initialRect = tileEngine.layout(startTree, bounds).windows.get(name);
+  const placed = fitDesktopTiles(startTree, name);
+  const initialRect = placed.windows.get(name);
+  if (!initialRect) return;
   const minimum = minimumUsableWindowSize(name);
   const startX = event.clientX, startY = event.clientY;
   tileInteraction = true;
@@ -746,8 +760,8 @@ function beginTileWindowResize(event, name, handle) {
   const move = next => {
     const dx = Math.max(Math.min(0, minimum.width - initialRect.width), next.clientX - startX);
     const dy = Math.max(Math.min(0, minimum.height - initialRect.height), next.clientY - startY);
-    let root = tileEngine.resizeWindow(startTree, name, "x", dx, bounds);
-    root = tileEngine.resizeWindow(root, name, "y", dy, bounds);
+    let root = tileEngine.resizeWindow(startTree, name, "x", dx, bounds, placed);
+    root = tileEngine.resizeWindow(root, name, "y", dy, bounds, placed);
     previewTilePressure(root, name);
   };
   const finish = () => {
@@ -768,14 +782,15 @@ function beginTileWindowResize(event, name, handle) {
 
 function growTileWindow(name, direction) {
   const session = reconcileTileTree(name);
-  const rect = tileEngine.layout(session.root, tileBounds()).windows.get(name);
+  const placed = fitDesktopTiles(session.root, name);
+  const rect = placed.windows.get(name);
   if (!rect) return;
   const path = tileEngine.pathTo(session.root, name);
   const axis = path?.length ? tileEngine.at(session.root, path.slice(0, -1)).axis : "x";
   const extent = rect[axis === "x" ? "width" : "height"];
   const minimum = minimumUsableWindowSize(name)[axis === "x" ? "width" : "height"];
   const delta = Math.max(Math.min(0, minimum - extent), direction * Math.max(36, extent * .12));
-  session.root = tileEngine.resizeWindow(session.root, name, axis, delta, tileBounds());
+  session.root = tileEngine.resizeWindow(session.root, name, axis, delta, tileBounds(), placed);
   bringToFront(name);
   renderTileLayout(name, true, true);
 }

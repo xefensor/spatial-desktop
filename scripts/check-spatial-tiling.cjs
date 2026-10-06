@@ -61,6 +61,43 @@ assert.deepEqual(T.names(original), ["dolphin", "elisa", "notes"], "Resize/remov
 assert.deepEqual(T.names(T.normalize({ kind: "split", axis: "x", a: T.leaf("notes"), b: T.leaf("notes") }, ["notes"])), ["notes"], "Duplicate leaves are repaired");
 console.log("Spatial split engine: " + checks + " viewport/open scenarios + resize, park, restore, persistence and overlap checks passed.");
 
+// Fixed floats reserve space with the same 8px gap as neighbouring tiles.
+const obstacleBounds = {x:8,y:8,width:1800,height:1200};
+let obstacleTree = T.insert(T.leaf("dolphin"), "elisa", "dolphin", "right", obstacleBounds, min);
+obstacleTree = T.insert(obstacleTree, "notes", "elisa", "bottom", obstacleBounds, min);
+const centralFloat = {x:750,y:8,width:340,height:1200};
+const noOverlap = (result, obstacles) => {
+  check(result, obstacleBounds);
+  for (const [name,rect] of result.windows) {
+    assert(rect.width >= min(name).width-1 && rect.height >= min(name).height-1, name+" stays usable around a float");
+    for (const obstacle of obstacles) assert(rect.x+rect.width <= obstacle.x-T.gap || rect.x >= obstacle.x+obstacle.width+T.gap || rect.y+rect.height <= obstacle.y-T.gap || rect.y >= obstacle.y+obstacle.height+T.gap, name+" clears a floating window and its gutter");
+  }
+  for (const split of result.splits) assert.equal(T.at(result.node,split.path).axis,split.axis, "Visible divider addresses the real persistent split");
+};
+const bothSides = T.fitAvoiding(obstacleTree,obstacleBounds,min,"notes",()=>0,[centralFloat]);
+assert.equal(bothSides.windows.size,3,"Uses both sides of a central float instead of parking a usable window");
+assert.equal(bothSides.parked.length,0);
+noOverlap(bothSides,[centralFloat]);
+assert([...bothSides.windows.values()].some(rect=>rect.x+rect.width < centralFloat.x));
+assert([...bothSides.windows.values()].some(rect=>rect.x > centralFloat.x+centralFloat.width));
+assert.equal(bothSides.splits.length,1,"A shared free lane keeps a working resize divider");
+const insertedAround = T.insert(bothSides.node,"browser","dolphin",null,obstacleBounds,min,bothSides.windows);
+const fourAround = T.fitAvoiding(insertedAround,obstacleBounds,min,"browser",()=>0,[centralFloat]);
+assert.equal(fourAround.windows.size,4,"New insertion chooses a useful vertical split in the narrow free lane");
+noOverlap(fourAround,[centralFloat]);
+const sideFloats = [{x:8,y:8,width:240,height:1200},{x:1540,y:8,width:268,height:1200}];
+const middleLane = T.fitAvoiding(obstacleTree,obstacleBounds,min,"notes",()=>0,sideFloats);
+assert.equal(middleLane.windows.size,3,"Multiple floats leave a usable centre lane");
+noOverlap(middleLane,sideFloats);
+const resizedAvoiding = T.resizeWindow(middleLane.node,"elisa","y",30,obstacleBounds,middleLane);
+noOverlap(T.fitAvoiding(resizedAvoiding,obstacleBounds,min,"elisa",()=>0,sideFloats),sideFloats);
+const covered = T.fitAvoiding(obstacleTree,obstacleBounds,min,"notes",()=>0,[obstacleBounds]);
+assert.equal(covered.windows.size,0,"Does not place an unusable app under a covering float");
+assert.equal(covered.parked.length,3);
+assert.deepEqual(T.fitAvoiding(obstacleTree,obstacleBounds,min,"notes",()=>0,[{x:2500,y:0,width:400,height:500}]),T.fit(obstacleTree,obstacleBounds,min,"notes"),"Off-workspace floats do not constrain tiles");
+assert.deepEqual(T.fitAvoiding(obstacleTree,obstacleBounds,min,"notes"),T.fit(obstacleTree,obstacleBounds,min,"notes"),"Removing the obstruction restores ordinary tiling");
+console.log("Floating obstacles: both-side packing, multiple floats, gutters, usable sizes, divider paths, resize, full coverage and obstruction removal passed.");
+
 // Exercise the actual desktop adapter with DOM geometry stubs. These tests
 // check state transitions, not browser rendering or visual appearance.
 const fs = require("node:fs"), vm = require("node:vm");
@@ -394,3 +431,28 @@ assert.equal(vm.runInContext('intentAreaPlan.moves.projects', sandbox), 2, "A ma
 vm.runInContext('manualAreaOverride("projects"); refreshIntentAreas()', sandbox);
 assert.equal(vm.runInContext('intentAreaPlan.moves.projects', sandbox), undefined, "An explicit Area edit releases its temporary automatic move");
 console.log("Desktop Area adapter: actual fullscreen and manual leases, temporary monitor allocation, return and manual override passed.");
+
+// Actual openApp/render adapter: screen-space floats must be translated to
+// workspace coordinates, including a workspace offset caused by docked Areas.
+sandbox.projectModeId = () => "float-aware-opening";
+Object.keys(sandbox.appState).forEach(name => {sandbox.appState[name] = "closed";});
+sandbox.window.innerWidth = 2416;
+sandbox.window.innerHeight = 1216;
+sandbox.workspaceBounds = () => ({width:2100,height:1200,rect:{left:200,top:16}});
+vm.runInContext('openApp("elisa"); floatWindow("elisa",{left:900,top:16,width:460,height:1184}); openApp("dolphin")',sandbox);
+const pinnedFloat = vm.runInContext('JSON.stringify(tileSession().floating.elisa)',sandbox);
+vm.runInContext('openApp("notes")',sandbox);
+assert.equal(sandbox.appState.notes,"open","New app opens in clear usable space beside a float");
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.elisa)',sandbox),pinnedFloat,"Opening tiles never moves the manually placed float");
+const desktopFit = vm.runInContext('fitDesktopTiles()',sandbox);
+for (const [name,rect] of desktopFit.windows) {
+  assert(rect.x+rect.width <= 700-T.gap || rect.x >= 1160+T.gap || rect.y+rect.height <= -T.gap || rect.y >= 1184+T.gap,name+" avoids the screen-space floating rectangle");
+  assert.equal(frames[name].style.left,rect.x+"px","Rendered geometry matches obstacle-aware tiling");
+}
+vm.runInContext('minimizeApp("elisa"); renderTileLayout("notes")',sandbox);
+assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),false,"Minimized floats stop reserving space");
+vm.runInContext('openApp("elisa")',sandbox);
+assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),true,"Restoring a float reserves its space again");
+vm.runInContext('closeApp("elisa"); renderTileLayout("notes")',sandbox);
+assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),false,"Closing a float releases its space");
+console.log("Float-aware desktop: new app opening, coordinate offsets, pinned float, rendered placement, minimize/restore and close passed.");
