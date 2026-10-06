@@ -11,7 +11,7 @@ body[data-theme="graphite"]{--bg:#161a1c;--shell-hi:#454c50;--shell:#30363a;--sh
 body[data-theme="light"]{color-scheme:light;--bg:#d9dde0;--text:#182025;--muted:#626d73;--faint:#7b858a;--shell-hi:#fbfbf8;--shell:#e6e8e5;--shell-lo:#c9cecb;--well:#cbd1d3;--well-2:#dbe0e1;--line:#899093;--soft-line:#fff;--shadow:0 20px 50px rgba(28,38,42,.25);--key-shadow:0 3px 5px rgba(38,42,43,.3),inset 0 1px #fff,inset 0 -1px rgba(70,76,78,.34)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}.icon-sprite{position:absolute;width:0;height:0;overflow:hidden}svg{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.icon-sprite symbol:first-child path{fill:currentColor;stroke:none}
 .desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background:radial-gradient(circle at 47% 18%,rgba(69,162,212,.23),transparent 29%),radial-gradient(circle at 58% 89%,rgba(39,112,79,.26),transparent 35%),linear-gradient(135deg,#0a1720,#071010 58%,#10150d);isolation:isolate}
-.desktop-shell::before{content:"";position:fixed;inset:0;z-index:-1;opacity:.18;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(90deg,transparent 24%,#000 34%,#000 67%,transparent 76%)}
+.desktop-shell::before{content:none}
 .zone{min-width:0;height:100%;padding:24px;overflow:hidden;background:linear-gradient(115deg,color-mix(in srgb,var(--shell-hi) 78%,transparent),color-mix(in srgb,var(--shell) 93%,transparent) 45%,color-mix(in srgb,var(--shell-lo) 94%,transparent));box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(0,0,0,.82)}
 .apps-zone{display:flex;flex-direction:column;border-right:1px solid var(--line)}.systems-zone{display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--line);overflow-y:auto;scrollbar-width:none}.systems-zone::-webkit-scrollbar{display:none}
 .zone-heading{height:70px;display:flex;align-items:start;justify-content:space-between}.eyebrow,.small-heading{font:750 10px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:var(--muted)}h1{margin:5px 0 0;font-size:26px;letter-spacing:-.04em}.icon-key{width:40px;height:40px;padding:0;display:grid;place-items:center}.icon-key svg{width:19px;height:19px}
@@ -542,7 +542,7 @@ body[data-theme="light"] .desktop-shell{
     linear-gradient(135deg,rgba(244,246,243,.10),rgba(43,31,29,.16)),
     url("./wallpaper.png") center center/cover no-repeat;
 }
-.desktop-shell::before{opacity:0}
+.desktop-shell::before{content:none}
 
 /* Keep the zones close to their contents; resizing still has a forgiving hit area */
 .zone{padding:12px}
@@ -766,20 +766,6 @@ body[data-theme="light"]{
 }
 .mini-card{
   padding:9px;
-}
-.mini-card::before,.system-widget::before,.apps-zone .app-rack::before{
-  content:"";
-  position:absolute;
-  inset:1px;
-  border-radius:inherit;
-  pointer-events:none;
-  opacity:.22;
-  background:repeating-linear-gradient(97deg,rgba(255,255,255,.11) 0 1px,transparent 1px 4px);
-  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  mask-composite:exclude;
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;
-  padding:1px;
 }
 .mini-card::after{
   left:10px;
