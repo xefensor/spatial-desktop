@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell with portable Workspaces, Projects and persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=60">
+  <link rel="stylesheet" href="desktop-shell.css?v=61">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -87,8 +87,8 @@
         <div class="mini-stack" id="miniStack" aria-live="polite"></div>
       </section>
       <div class="apps-bottom">
+        <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
         <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview"><i></i><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
-        <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Open overview"><svg><use href="#i-grid"/></svg><span>Overview</span><kbd>Super</kbd></button>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag to resize"></button>
     </aside>
@@ -214,6 +214,14 @@
               <div class="workspace-folders" id="workspaceFolders" aria-label="Workspace folders"></div>
               <div class="workspace-context-card"><span class="eyebrow">THIS WORKSPACE</span><b id="workspaceContextTitle">Everyday desktop</b><small id="workspaceContextMeta">5 favourite apps · 2 open projects · private clipboard</small><div class="workspace-favorites" id="workspaceFavorites" aria-label="Favourite applications"></div></div>
               <button class="other-workspaces" data-toast="Showing all Workspace Homes"><span><svg><use href="#i-folder"/></svg><span><b>Other Workspace Homes</b><small>School · Work · Gaming</small></span></span><svg><use href="#i-right"/></svg></button>
+            </div>
+          </section>
+
+          <section class="overview-section overview-projects-section" aria-labelledby="overviewProjectsTitle">
+            <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><span>2 projects</span></header>
+            <div class="overview-project-grid">
+              <button class="overview-project is-active" data-overview-project="plasma" style="--project-card-accent:#54baff"><span class="overview-project-icon"><svg><use href="#i-folder"/></svg></span><span><b>Plasma Redesign</b><small>Desktop shell · 2 linked resources</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>
+              <button class="overview-project" data-overview-project="retold" style="--project-card-accent:#65d881"><span class="overview-project-icon"><svg><use href="#i-gamepad"/></svg></span><span><b>Retold</b><small>Minecraft mod · 2 linked resources</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>
             </div>
           </section>
 
@@ -405,6 +413,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=60"></script>
+  <script src="desktop-shell.js?v=61"></script>
 </body>
 </html>

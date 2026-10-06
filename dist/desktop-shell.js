@@ -1037,18 +1037,32 @@ function renderProjectSpace(name) {
   $("#projectLinkedItems").innerHTML = project.links.map(([label, detail, type, itemIcon]) => '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + type + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>').join("");
   const [clip, clipDetail] = project.clipboard;
   $("#projectClipboard").innerHTML = '<span class="clipboard-mark">' + icon("i-clipboard") + '</span><span><b>' + escapeHtml(clip) + '</b><small>' + escapeHtml(clipDetail) + '</small></span><button class="surface-key project-small-key" data-project-copy="' + escapeHtml(clip) + '">Copy</button>';
+  $$("[data-overview-project]").forEach(card => {
+    const selected = card.dataset.overviewProject === name;
+    card.classList.toggle("is-active", selected);
+    card.setAttribute("aria-pressed", String(selected));
+  });
   applyAppPrimaryColors(area);
 }
 
+function activateProject(name, announce = true) {
+  const project = projectSpaces[name];
+  if (!project) return;
+  $$('[data-project-select]').forEach(choice => {
+    const selected = choice.dataset.projectSelect === name;
+    choice.classList.toggle("is-active", selected);
+    choice.setAttribute("aria-pressed", String(selected));
+  });
+  renderProjectSpace(name);
+  if (announce) showToast(project.name + " project opened");
+}
+
 function prepareProjectSpaces() {
-  $$('[data-project-select]').forEach(button => button.addEventListener("click", () => {
-    $$('[data-project-select]').forEach(choice => {
-      const selected = choice === button;
-      choice.classList.toggle("is-active", selected);
-      choice.setAttribute("aria-pressed", String(selected));
-    });
-    renderProjectSpace(button.dataset.projectSelect);
-    showToast(button.textContent.trim() + " context loaded");
+  $$('[data-project-select]').forEach(button => button.addEventListener("click", () => activateProject(button.dataset.projectSelect)));
+  $$("[data-overview-project]").forEach(button => button.addEventListener("click", () => {
+    activateProject(button.dataset.overviewProject);
+    showArea("projects");
+    setUniversalSearchOpen(false);
   }));
   $(".project-area").addEventListener("click", event => {
     const item = event.target.closest("[data-project-item]");
@@ -1056,7 +1070,7 @@ function prepareProjectSpaces() {
     if (item) showToast("Opening " + item.dataset.projectItem);
     if (copy) showToast("Copied " + copy.dataset.projectCopy);
   });
-  renderProjectSpace("plasma");
+  activateProject("plasma", false);
 }
 
 const workspaceProfiles = {

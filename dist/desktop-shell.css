@@ -2592,3 +2592,54 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
   .workspace-home-body{grid-template-columns:1fr}.other-workspaces{grid-column:auto}
   .overview-widgets{grid-template-columns:1fr}.package-overlay{padding:10px}
 }
+
+/* v61 — Overview is a compact launcher beside the active Workspace. */
+.apps-zone .apps-bottom{
+  display:grid;
+  grid-template-columns:40px minmax(0,1fr);
+  align-items:stretch;
+  gap:6px;
+}
+.apps-zone .overview-launch{
+  width:40px;
+  height:40px;
+  min-height:40px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+}
+.apps-zone .overview-launch svg{width:19px;height:19px;color:var(--blue)}
+.apps-zone .workspace-status{min-height:40px;height:40px}
+
+.overview-projects-section{min-width:0}
+.overview-project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.overview-project{
+  --project-card-accent:var(--blue);
+  position:relative;
+  min-width:0;
+  min-height:61px;
+  padding:6px 8px;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:var(--text);
+  background:color-mix(in srgb,var(--content-surface-raised) 66%,transparent);
+  display:grid;
+  grid-template-columns:37px minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+  transition:transform 45ms linear,background 60ms linear,border-color 60ms linear;
+}
+.overview-project::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;border-radius:2px;background:transparent}
+.overview-project:hover{border-color:color-mix(in srgb,var(--project-card-accent) 34%,transparent);background:color-mix(in srgb,var(--content-surface-raised) 84%,var(--project-card-accent) 8%)}
+.overview-project:active{transform:translateY(2px)}
+.overview-project.is-active{border-color:color-mix(in srgb,var(--project-card-accent) 48%,transparent);background:color-mix(in srgb,var(--content-surface-raised) 88%,var(--project-card-accent) 12%)}
+.overview-project.is-active::after{background:var(--project-card-accent);box-shadow:0 0 6px color-mix(in srgb,var(--project-card-accent) 48%,transparent)}
+.overview-project-icon{width:37px;height:37px;border-radius:8px;display:grid;place-items:center;color:var(--project-card-accent);background:color-mix(in srgb,var(--project-card-accent) 12%,var(--well))}.overview-project-icon svg{width:19px;height:19px}
+.overview-project>span:nth-child(2){min-width:0}.overview-project b,.overview-project small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-project b{font-size:13px}.overview-project small{margin-top:3px;color:var(--muted);font-size:11px}
+.overview-project-open{display:flex;align-items:center;gap:4px;color:var(--project-card-accent);font-size:12px;font-weight:750}.overview-project-open svg{width:14px;height:14px}
+
+@media(max-width:800px){
+  .overview-project-grid{grid-template-columns:1fr}
+}
