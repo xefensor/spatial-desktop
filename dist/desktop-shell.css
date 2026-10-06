@@ -6948,3 +6948,75 @@ body[data-theme="light"].areas-docked .area-window{
 @supports(corner-shape:squircle){
   .universal-search .overview-desktop-stage .overview-window{corner-shape:squircle!important}
 }
+
+/* v135 — The real desktop is already visible through the Overview acrylic.
+   Do not duplicate it as a wallpaper miniature. This lane is now only a
+   vertical index of real open/minimized ABS windows. */
+.overview-home[data-overview-state="all"] .open-windows-section{
+  background:color-mix(in srgb,var(--lane-accent) 2%,rgba(255,255,255,.01));
+}
+.overview-open-windows{
+  min-width:0;
+  min-height:0;
+  padding:7px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  overflow:auto;
+  scrollbar-width:thin;
+  background:transparent;
+}
+.universal-search .overview-open-windows .overview-window{
+  position:relative!important;
+  inset:auto!important;
+  z-index:auto!important;
+  flex:0 0 112px;
+  width:100%!important;
+  height:112px!important;
+  min-width:0!important;
+  min-height:112px!important;
+  max-width:none!important;
+  max-height:none!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-columns:minmax(150px,38%) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--overview-app) 22%,var(--control-edge))!important;
+  border-radius:13px!important;
+  color:var(--text)!important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--overview-app) 5%,var(--control-top)),var(--control-bottom))!important;
+  box-shadow:0 5px 12px rgba(0,0,0,.22),inset 0 1px var(--control-highlight)!important;
+  transform:none!important;
+}
+.universal-search .overview-open-windows .overview-window:hover{
+  border-color:color-mix(in srgb,var(--overview-app) 48%,var(--control-edge))!important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--overview-app) 8%,var(--control-top)),var(--control-bottom))!important;
+  transform:translateY(-1px)!important;
+}
+.universal-search .overview-open-windows .overview-window:active{
+  transform:translateY(1px)!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.18),inset 0 2px 4px rgba(0,0,0,.28)!important;
+  transition-duration:8ms!important;
+}
+.universal-search .overview-open-windows .overview-window.is-front{border-color:color-mix(in srgb,var(--overview-app) 55%,var(--control-edge))!important}
+.universal-search .overview-open-windows .overview-window.is-minimized{opacity:.76}
+.universal-search .overview-open-windows .overview-window-titlebar{
+  min-width:0;
+  padding:10px;
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr) 8px;
+  align-items:center;
+  gap:9px;
+  border:0;
+  border-right:1px solid color-mix(in srgb,var(--overview-app) 12%,var(--control-edge));
+  background:color-mix(in srgb,var(--overview-app) 6%,var(--control-top));
+}
+.universal-search .overview-open-windows .overview-window-titlebar>.app-art{width:36px;height:36px}
+.universal-search .overview-open-windows .overview-window-titlebar b{font-size:13px}.universal-search .overview-open-windows .overview-window-titlebar small{margin-top:3px;font-size:11px;color:var(--muted)}
+.universal-search .overview-open-windows .overview-window-titlebar>i{width:6px;height:6px;background:var(--overview-app);box-shadow:0 0 4px color-mix(in srgb,var(--overview-app) 45%,transparent)}
+.universal-search .overview-open-windows .overview-mini-content{min-width:0;min-height:0;height:100%;border:0;background:var(--app-content,#101417)}
+.overview-open-windows .workspace-no-windows{min-height:170px;margin:auto 8px;padding:18px;display:grid;place-items:center;align-content:center;gap:7px;border:1px dashed var(--sd-glass-groove);color:var(--sd-glass-muted);text-align:center}
+.overview-open-windows .workspace-no-windows>span{width:40px;height:40px;display:grid;place-items:center}.overview-open-windows .workspace-no-windows svg{width:22px;height:22px}.overview-open-windows .workspace-no-windows b{font-size:14px;color:var(--text)}.overview-open-windows .workspace-no-windows small{max-width:260px;font-size:12px;line-height:1.4}
+body[data-theme="light"] .universal-search .overview-open-windows .overview-window{background:linear-gradient(180deg,color-mix(in srgb,var(--overview-app) 5%,#f4f7f8),#dfe5e8)!important;box-shadow:0 5px 12px rgba(45,70,82,.14),inset 0 1px white!important}
+@media(max-width:1280px){.universal-search .overview-open-windows .overview-window{grid-template-columns:1fr!important;grid-template-rows:48px minmax(0,1fr)!important;flex-basis:146px;height:146px!important;min-height:146px!important}.universal-search .overview-open-windows .overview-window-titlebar{padding:6px 8px;grid-template-columns:30px minmax(0,1fr) 8px;border-right:0;border-bottom:1px solid var(--control-edge)}.universal-search .overview-open-windows .overview-window-titlebar>.app-art{width:30px;height:30px}}

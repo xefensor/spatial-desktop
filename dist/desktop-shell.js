@@ -2840,11 +2840,8 @@ function workspaceFavoriteMarkup([asset, label]) {
 function renderOverviewWindows() {
   const target = $("#overviewWindowGrid");
   if (!target) return;
-  const openNames = Object.keys(appState).filter(name => appState[name] === "open");
-  $("#workspaceOpenCount").textContent = openNames.length + (openNames.length === 1 ? " window" : " windows");
-  const workspace = workspaceBounds();
-  const width = Math.max(1, workspace.width);
-  const height = Math.max(1, workspace.height);
+  const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed");
+  $("#workspaceOpenCount").textContent = windowNames.length + (windowNames.length === 1 ? " window" : " windows");
   const miniature = name => {
     if (name === "elisa") return '<span class="overview-mini-content overview-mini-music"><i></i><span><b>running out of time</b><small>eenspire</small><em></em></span></span>';
     if (name === "browser") return '<span class="overview-mini-content overview-mini-browser"><i></i><i></i><strong></strong><span></span></span>';
@@ -2852,37 +2849,14 @@ function renderOverviewWindows() {
     if (name === "notes") return '<span class="overview-mini-content overview-mini-notes"><b>Desktop concept</b><i></i><i></i><i></i><i></i></span>';
     return '<span class="overview-mini-content overview-mini-files"><i></i><span></span><span></span><span></span><span></span></span>';
   };
-  target.innerHTML = openNames.map(name => {
+  target.innerHTML = windowNames.map(name => {
     const info = appInfo[name];
-    const geometry = windowGeometry.get(name) || defaultWindowGeometry(name, 0);
-    const left = Math.max(1.5, Math.min(72, geometry.x / width * 100));
-    const top = Math.max(2, Math.min(66, geometry.y / height * 100));
-    const windowWidth = Math.max(24, Math.min(96 - left, geometry.width / width * 100));
-    const windowHeight = Math.max(28, Math.min(96 - top, geometry.height / height * 100));
-    const frame = frameFor(name);
-    const z = Number(frame?.style.zIndex || 1);
-    return '<button class="overview-window ' + (name === frontApp ? "is-front " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + ';--ow-left:' + left.toFixed(2) + '%;--ow-top:' + top.toFixed(2) + '%;--ow-width:' + windowWidth.toFixed(2) + '%;--ow-height:' + windowHeight.toFixed(2) + '%;--ow-z:' + z + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(info.detail) + '</small></span><i></i></span>' + miniature(name) + '</button>';
-  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No open windows</b><small>Open an application and it will appear here in its real desktop position.</small></div>';
+    const minimized = appState[name] === "minimized";
+    const stateLabel = minimized ? "Minimized" : (name === frontApp ? "Active" : "Open");
+    return '<button class="overview-window ' + (name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span>' + miniature(name) + '</button>';
+  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or restore an application and it will appear here.</small></div>';
 
-  const taskStrip = $("#overviewTaskStrip");
-  if (taskStrip) {
-    const runningNames = Object.keys(appState).filter(name => appState[name] !== "closed");
-    taskStrip.innerHTML = runningNames.map(name => {
-      const state = appState[name];
-      return '<button data-open-app="' + name + '" class="overview-task ' + (name === frontApp && state === "open" ? "is-active " : "") + (state === "minimized" ? "is-minimized" : "") + '" title="' + escapeHtml(appInfo[name].label + (state === "minimized" ? " · minimized" : "")) + '" style="--app-primary:' + appInfo[name].primary + '">' + appArt(name) + '<i></i></button>';
-    }).join("");
-    prepareControlSemantics(taskStrip);
-  }
-
-  ["projects", "apps", "systems"].forEach(name => {
-    const preview = $('[data-stage-area="' + name + '"]');
-    const area = areaFor(name);
-    if (!preview || !area) return;
-    const state = area.dataset.areaState || "expanded";
-    preview.classList.toggle("is-hidden", state === "hidden" || area.classList.contains("is-on-other-display"));
-    preview.classList.toggle("is-rail", state === "rail");
-    preview.title = name[0].toUpperCase() + name.slice(1) + " Area · " + state;
-  });
+  prepareControlSemantics(target);
 }
 
 let activeOverviewView = "all";
