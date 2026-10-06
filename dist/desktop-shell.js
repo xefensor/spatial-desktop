@@ -774,17 +774,40 @@ $$("[data-launch-app]").forEach(button => button.addEventListener("click", () =>
   setAllAppsOpen(false);
 }));
 
-$("#appSearch").addEventListener("input", event => {
-  const query = event.target.value.toLowerCase();
-  if (query) setAllAppsOpen(true);
+let activeLauncherCategory = "all";
+
+function filterLauncher() {
+  const query = $("#appSearch").value.trim().toLowerCase();
   let visible = 0;
   $$(".launcher-app", $("#allAppsGrid")).forEach(button => {
-    const label = button.textContent.trim().toLowerCase();
-    button.hidden = !label.includes(query);
+    const matchesSearch = !query || button.textContent.trim().toLowerCase().includes(query);
+    const matchesCategory = query || activeLauncherCategory === "all" ||
+      (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
+      button.dataset.category === activeLauncherCategory;
+    button.hidden = !(matchesSearch && matchesCategory);
     if (!button.hidden) visible += 1;
   });
+  $("#allAppsCount").textContent = visible + (visible === 1 ? " app" : " apps");
   $("#allAppsEmpty").hidden = visible !== 0;
+}
+
+$$("[data-category-filter]").forEach(button => button.addEventListener("click", () => {
+  activeLauncherCategory = button.dataset.categoryFilter;
+  $$("[data-category-filter]").forEach(choice => {
+    const selected = choice === button;
+    choice.classList.toggle("is-active", selected);
+    choice.setAttribute("aria-pressed", String(selected));
+  });
+  $("#appSearch").value = "";
+  filterLauncher();
+}));
+
+$("#appSearch").addEventListener("input", event => {
+  if (event.target.value) setAllAppsOpen(true);
+  filterLauncher();
 });
+
+filterLauncher();
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && $("#allAppsDrawer").classList.contains("is-open")) {
