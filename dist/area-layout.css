@@ -83,6 +83,8 @@
 }
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-bottom{
   display:flex;
+  flex-direction:row;
+  min-height:0;
   align-items:center;
   gap:6px;
   padding-top:5px;
@@ -98,7 +100,7 @@
   width:auto;
   min-height:32px;
   height:32px;
-  flex:1 1 auto;
+  flex:0 1 180px;
 }
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .workspace-status small{display:none}
 
@@ -301,3 +303,28 @@
   .apps-scroll-region:has(.mini-section){column-gap:8px!important}
   .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-scroll-region{grid-template-columns:112px minmax(0,1fr)}
 }
+
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-card{padding:7px}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-card header{margin-bottom:5px}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-music{grid-template-columns:32px minmax(0,1fr);gap:6px}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-art{height:32px}
+
+/* A wide Project dock has room for mode toggles in its header. Preserve the
+   separate row on narrower docks, where squeezing it would truncate names. */
+@container (min-width:800px){
+  .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-switcher{
+    position:absolute;
+    top:5px;
+    right:148px;
+    width:clamp(280px,40cqw,510px);
+    height:34px;
+    margin:0;
+    z-index:11;
+  }
+  .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]):has(.project-mode-switcher:not([hidden])) .area-window-identity{
+    max-width:calc(100% - clamp(280px,40cqw,510px) - 160px);
+  }
+}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-session-bar{padding-top:5px;gap:8px}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-status{min-height:36px;height:36px;padding-block:3px}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-close-key{height:36px}

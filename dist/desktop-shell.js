@@ -2238,7 +2238,7 @@ function stateSideMinimum(name, state) {
 }
 
 function stateHorizontalMinimum(name, state) {
-  if (state === "rail") return 96;
+  if (state === "rail") return 64;
   return name === "projects" ? 210 : 190;
 }
 
