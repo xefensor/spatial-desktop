@@ -1817,8 +1817,10 @@ body[data-theme="light"] .app-frame.is-front{
 /* Bottom-up application launcher */
 .apps-zone{isolation:isolate}
 .apps-bottom{position:relative;z-index:904}
+.apps-zone .apps-bottom{grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:center}
+.apps-zone .app-search{width:100%}
 .apps-zone .bottom-actions{align-items:center;justify-content:space-between}
-.all-apps-toggle{position:relative;flex:0 0 40px;width:40px;height:40px;padding:0;display:grid;place-items:center}
+.all-apps-toggle{position:relative;width:40px;height:40px;padding:0;display:grid;place-items:center}
 .all-apps-toggle svg{width:18px;height:18px}
 .all-apps-drawer{
   position:absolute;
@@ -1873,4 +1875,5 @@ body[data-theme="light"] .app-frame.is-front{
 .all-apps-empty{margin:12px 0 2px;padding:18px 8px;text-align:center;color:var(--muted);font-size:12px}
 body[data-theme="light"] .all-apps-drawer{background:var(--content-surface);box-shadow:0 -12px 26px rgba(35,40,43,.16),inset 0 1px rgba(255,255,255,.62)}
 body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#1877b7;box-shadow:inset 3px 0 #75d0ff}
+.systems-zone .system-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:1350px){.launcher-body{grid-template-columns:46px minmax(0,1fr)}.launcher-category{justify-content:center;padding:6px}.launcher-category span{display:none}}
