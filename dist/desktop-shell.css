@@ -5032,6 +5032,49 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   }
 }
 
+/* v91 — Places and note navigation are rows, not physical controls.
+   Selection is communicated by a quiet surface tint and an app-colour edge,
+   never by a raised cap, pressed depth, or persistent toggle rail. */
+.app-frame .nav-choice,
+.app-frame .nav-choice.material-abs-button,
+.app-frame .nav-choice.material-abs-button:is(.control-push,.control-toggle){
+  position:relative;
+  border:0!important;
+  border-radius:4px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+  color:var(--muted);
+  transition:background 55ms linear,color 55ms linear!important;
+}
+.app-frame .nav-choice::after{
+  content:none!important;
+  display:none!important;
+}
+.app-frame .nav-choice:hover,
+.app-frame .nav-choice.material-abs-button:hover{
+  border:0!important;
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 6%,transparent)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  color:var(--text);
+}
+.app-frame .nav-choice:active,
+.app-frame .nav-choice.material-abs-button:active{
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 10%,transparent)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+.app-frame .nav-choice:is(.is-active,[aria-pressed="true"]),
+.app-frame .nav-choice.material-abs-button:is(.is-active,[aria-pressed="true"]){
+  border:0!important;
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 11%,transparent)!important;
+  box-shadow:inset 2px 0 var(--app-primary,var(--blue))!important;
+  transform:none!important;
+  color:var(--text);
+}
+
 /* v90 — system-wide reconciliation.
    Desktop structure = square acrylic. Movable/temporary objects = squircle
    ABS. App content = opaque. Glass inside apps = display-like inserts only. */
