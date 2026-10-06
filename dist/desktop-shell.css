@@ -3816,3 +3816,27 @@ body.areas-docked .dock-preview[data-edge="left"]{left:0;top:0;bottom:0}
 body.areas-docked .dock-preview[data-edge="right"]{right:0;top:0;bottom:0}
 body.areas-docked .dock-preview[data-edge="top"]{top:0}
 body.areas-docked .dock-preview[data-edge="bottom"]{bottom:0}
+
+/* v71 — Each Area has a solid, identity-coloured acrylic header. The body
+   remains neutral glass, so the header is immediately legible as chrome. */
+.apps-zone{--area-header-accent:#3aa7ff}
+.project-area{--area-header-accent:#a88aff}
+.systems-zone{--area-header-accent:#36ccd7}
+.area-window .area-window-bar{
+  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 66%,var(--acrylic-engrave));
+  background:color-mix(in srgb,var(--area-header-accent) 20%,rgba(9,15,19,.91));
+  box-shadow:
+    inset 0 1px color-mix(in srgb,var(--area-header-accent) 30%,rgba(255,255,255,.12)),
+    inset 0 -1px color-mix(in srgb,var(--area-header-accent) 54%,rgba(0,0,0,.42));
+}
+.area-window .area-window-bar .area-window-identity b{color:color-mix(in srgb,var(--area-header-accent) 22%,#fff)}
+.area-window .area-window-bar .area-window-identity small{color:color-mix(in srgb,var(--area-header-accent) 24%,rgba(226,234,238,.76))}
+body[data-theme="light"] .area-window .area-window-bar{
+  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 58%,rgba(45,60,68,.32));
+  background:color-mix(in srgb,var(--area-header-accent) 17%,rgba(239,243,243,.97));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.82),
+    inset 0 -1px color-mix(in srgb,var(--area-header-accent) 30%,rgba(43,58,66,.28));
+}
+body[data-theme="light"] .area-window .area-window-bar .area-window-identity b{color:color-mix(in srgb,var(--area-header-accent) 24%,#182128)}
+body[data-theme="light"] .area-window .area-window-bar .area-window-identity small{color:color-mix(in srgb,var(--area-header-accent) 18%,#526069)}
