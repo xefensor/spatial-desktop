@@ -9,7 +9,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="desktop-shell.css?v=155">
   <title>Spatial Desktop</title>
-  <link rel="stylesheet" href="ui-refinements.css?v=156">
+  <link rel="stylesheet" href="ui-refinements.css?v=157">
 </head>
 <body data-theme="oled">
   <svg class="icon-sprite" aria-hidden="true">
@@ -226,6 +226,7 @@
               <span class="overview-zone-mark"><svg><use href="#i-folder"/></svg></span>
               <span><span class="eyebrow">PROJECT ZONE</span><h3 id="overviewProjectZoneTitle">Projects and Home</h3></span>
             </header>
+          <div class="overview-project-body">
           <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
             <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE ROOT = HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/demo</small></span><button class="workspace-home-open" data-workspace-home aria-label="Open workspace Home in Dolphin" title="Open workspace Home in Dolphin"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
             <div class="workspace-home-body">
@@ -239,6 +240,7 @@
             <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton" aria-label="Create a project" title="Create a project"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
             <div class="overview-project-grid" id="overviewProjectGrid"></div>
           </section>
+          </div>
           </section>
 
           <section class="overview-section overview-apps-section" aria-labelledby="allAppsTitle">

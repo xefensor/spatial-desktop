@@ -235,3 +235,8 @@ body[data-theme="light"] .universal-search .overview-home .overview-open-windows
 @media (max-width: 980px) {
   .overview-system-body { overflow: visible; flex: none; }
 }
+.overview-project-zone { display: flex; flex-direction: column; }
+.overview-project-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.overview-project-zone .overview-projects-section { display: block; overflow: visible; }
+.overview-project-zone .overview-project-grid { overflow: visible; }
+@media (max-width: 980px) { .overview-project-body { overflow: visible; flex: none; } }

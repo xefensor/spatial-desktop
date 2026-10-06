@@ -9,7 +9,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101315'/%3E%3Cpath d='M14 35h36' stroke='%232a9dff' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='15' y='15' width='34' height='28' rx='10' fill='none' stroke='%23eef4f8' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <title>Spatial Desktop — Material Reference</title>
-  <link rel="stylesheet" href="ui-refinements.css?v=156">
+  <link rel="stylesheet" href="ui-refinements.css?v=157">
 </head>
 <body class="material-reference-page" data-theme="oled" data-scene="desktop">
   <header class="lab-bar" aria-label="Prototype controls">
@@ -37,12 +37,12 @@
     <section class="stage desktop-stage" aria-label="Interactive KDE Plasma desktop">
       <div class="desktop">
         <aside class="plasma-rail" aria-label="Application panel">
-          <button class="rail-key"><span>⌘</span></button>
+          <button class="rail-key" aria-label="Applications"><span>⌘</span></button>
           <div class="rail-stack">
-            <button class="rail-key is-running" data-toast="Dolphin is already open"><span>▰</span></button>
-            <button class="rail-key" data-toast="Firefox"><span>◉</span></button>
-            <button class="rail-key" data-toast="Terminal"><span>›_</span></button>
-            <button class="rail-key" data-toast="Settings"><span>⚙</span></button>
+            <button class="rail-key is-running" data-toast="Dolphin is already open" aria-label="Dolphin"><span>▰</span></button>
+            <button class="rail-key" data-toast="Firefox" aria-label="Firefox"><span>◉</span></button>
+            <button class="rail-key" data-toast="Terminal" aria-label="Terminal"><span>›_</span></button>
+            <button class="rail-key" data-toast="Settings" aria-label="Settings"><span>⚙</span></button>
           </div>
           <div class="rail-spacer"></div>
           <div class="rail-display" aria-label="Digital system panel">
@@ -64,9 +64,9 @@
 
           <div class="toolbar">
             <div class="nav-keys">
-              <button class="shell-key" data-toast="Back">‹</button>
-              <button class="shell-key" data-toast="Forward">›</button>
-              <button class="shell-key compact" data-toast="View">⌘</button>
+              <button class="shell-key" data-toast="Back" aria-label="Back">‹</button>
+              <button class="shell-key" data-toast="Forward" aria-label="Forward">›</button>
+              <button class="shell-key compact" data-toast="View" aria-label="Change view">⌘</button>
             </div>
             <label class="recess-field address-field">
               <span class="field-leading">›</span>
@@ -76,7 +76,7 @@
             <div class="nav-keys">
               <button class="shell-key text-key" data-toast="Split view">▣ Split</button>
               <button class="shell-key" id="focusFilter" aria-label="Search">⌕</button>
-              <button class="shell-key" data-toast="Menu">≡</button>
+              <button class="shell-key" data-toast="Menu" aria-label="Menu">≡</button>
             </div>
           </div>
 

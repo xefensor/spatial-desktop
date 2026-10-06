@@ -40,7 +40,7 @@ assert(!source.includes('const miniature = name =>'), 'No decorative desktop pre
 assert(source.includes('!$("#universalResults").hidden && (event.target === $("#universalSearchInput")'), 'Result navigation leaves category select alone');
 for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'material-lab.html']) {
   const contents = fs.readFileSync(path.join(__dirname, '../dist', page), 'utf8');
-  assert(contents.includes('ui-refinements.css?v=156'), page + ': shared refinements loaded');
+  assert(contents.includes('ui-refinements.css?v=157'), page + ': shared refinements loaded');
   assert(!contents.includes('href="/"'), page + ': project-relative navigation');
 }
 console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, shared lanes and project-relative navigation.');

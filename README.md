@@ -100,3 +100,5 @@ See [`docs/history/README.md`](docs/history/README.md) for checking out versions
 ## Prototype scope
 
 This is a design demonstration, not a native desktop environment. Its apps, files, system widgets and project/workspace packaging illustrate interactions; they do not provide complete operating-system integrations. Demo data is stored in the browser.
+
+See the [UI and UX refinement notes](docs/ui-ux-review.md) for the latest overview and accessibility changes.
