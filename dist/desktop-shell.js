@@ -817,11 +817,27 @@ function prepareMaterialCursor() {
   const desktop = $(".desktop-shell");
   if (!cursor || !desktop || !window.matchMedia("(pointer:fine)").matches) return;
 
+  const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-diag-resize", "is-grab", "is-grabbing"];
+  let lastX = 0;
+  let lastY = 0;
+
   const syncButtons = buttons => {
     cursor.classList.toggle("is-left", (buttons & 1) === 1);
     cursor.classList.toggle("is-right", (buttons & 2) === 2);
   };
-  const release = () => syncButtons(0);
+  const syncMode = (target, buttons = 0) => {
+    cursor.classList.remove(...cursorModes);
+    if (!target || !target.closest) return;
+    if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
+    else if (target.closest(".resize-handle")) cursor.classList.add("is-diag-resize");
+    else if (target.closest("textarea,[contenteditable='true'],input:not([type]),input[type='text'],input[type='search']")) cursor.classList.add("is-text");
+    else if (target.closest("button,a,label,input[type='range'],select")) cursor.classList.add("is-pointer");
+    else if (target.closest(".app-titlebar,.mini-card header")) cursor.classList.add((buttons & 1) ? "is-grabbing" : "is-grab");
+  };
+  const release = () => {
+    syncButtons(0);
+    syncMode(document.elementFromPoint(lastX, lastY), 0);
+  };
 
   desktop.addEventListener("pointerenter", event => {
     if (event.pointerType && event.pointerType !== "mouse") return;
@@ -833,14 +849,18 @@ function prepareMaterialCursor() {
   });
   desktop.addEventListener("pointermove", event => {
     if (event.pointerType && event.pointerType !== "mouse") return;
+    lastX = event.clientX;
+    lastY = event.clientY;
     cursor.style.setProperty("--cursor-x", event.clientX + "px");
     cursor.style.setProperty("--cursor-y", event.clientY + "px");
     cursor.classList.add("is-visible");
     syncButtons(event.buttons);
+    syncMode(document.elementFromPoint(event.clientX, event.clientY), event.buttons);
   }, {passive:true});
   desktop.addEventListener("pointerdown", event => {
     if (event.pointerType && event.pointerType !== "mouse") return;
     syncButtons(event.buttons);
+    syncMode(event.target, event.buttons);
   });
   desktop.addEventListener("contextmenu", event => event.preventDefault());
   window.addEventListener("pointerup", release);
