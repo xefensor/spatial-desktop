@@ -5477,3 +5477,49 @@ body[data-theme="light"] .desktop-context-menu.material-surface-glass .context-m
 }
 body[data-theme="light"] .all-apps-drawer.material-surface-glass .all-apps-heading{background:rgba(255,255,255,.20)}
 body[data-theme="light"] .all-apps-drawer.material-surface-glass .launcher-categories{background:rgba(255,255,255,.16)}
+
+/* v96 — transient glass is part of the square desktop-area language. It may
+   float, but it is not another rounded application window. */
+:is(
+  .desktop-context-menu.material-surface-glass,
+  .all-apps-drawer.material-surface-glass,
+  .toast.material-surface-glass
+){
+  border-radius:0!important;
+}
+.desktop-context-menu.material-surface-glass :is(
+  .context-menu-title,
+  .context-menu-item,
+  .context-menu-item kbd,
+  .context-menu-separator
+),
+.all-apps-drawer.material-surface-glass :is(
+  .all-apps-heading,
+  .launcher-body,
+  .launcher-results,
+  .launcher-categories,
+  .launcher-category,
+  .launcher-app,
+  button,
+  input
+){
+  border-radius:2px!important;
+}
+
+@supports (corner-shape:square){
+  :is(
+    .desktop-context-menu.material-surface-glass,
+    .all-apps-drawer.material-surface-glass,
+    .toast.material-surface-glass,
+    .desktop-context-menu.material-surface-glass .context-menu-title,
+    .desktop-context-menu.material-surface-glass .context-menu-item,
+    .desktop-context-menu.material-surface-glass .context-menu-item kbd,
+    .all-apps-drawer.material-surface-glass .all-apps-heading,
+    .all-apps-drawer.material-surface-glass .launcher-category,
+    .all-apps-drawer.material-surface-glass .launcher-app,
+    .all-apps-drawer.material-surface-glass button,
+    .all-apps-drawer.material-surface-glass input
+  ){
+    corner-shape:square!important;
+  }
+}
