@@ -7216,6 +7216,21 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 .app-frame.is-tiled{min-width:0;min-height:0}
 .app-frame.is-floating{position:fixed!important;margin:0!important;z-index:600!important;transition:none}
 .app-frame.is-floating.is-front{z-index:700!important}
+/* A quiet app-coloured rim distinguishes free placement from docked tiles.
+   Keep the ABS casing and its shadow; the light stays close to the edge. */
+.app-frame.material-surface-abs.is-floating:not(.is-fullscreen){
+  --float-edge-strength:46%;
+  --float-glow-strength:18%;
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) var(--float-edge-strength),var(--control-edge));
+  box-shadow:0 14px 38px rgba(0,0,0,.35),
+    0 0 0 1px color-mix(in srgb,var(--app-primary,var(--blue)) 12%,transparent),
+    0 0 8px color-mix(in srgb,var(--app-primary,var(--blue)) var(--float-glow-strength),transparent),
+    inset 0 1px var(--control-highlight);
+}
+.app-frame.material-surface-abs.is-floating.is-front:not(.is-fullscreen){
+  --float-edge-strength:62%;
+  --float-glow-strength:28%;
+}
 .app-frame.is-fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;min-width:0;min-height:0;margin:0!important;border-radius:0!important;z-index:800!important;transition:none;filter:none}
 .app-frame.is-fullscreen .resize-handle{display:none}
 .app-frame.is-dragging{z-index:1400!important}
