@@ -3839,3 +3839,119 @@ body[data-theme="light"] .area-window .area-window-bar{
 }
 body[data-theme="light"] .area-window .area-window-bar .area-window-identity b{color:color-mix(in srgb,var(--area-header-accent) 24%,#182128)}
 body[data-theme="light"] .area-window .area-window-bar .area-window-identity small{color:color-mix(in srgb,var(--area-header-accent) 18%,#526069)}
+
+/* v73 — Rail is a purpose-built panel mode, not merely clipped Area content. */
+.rail-workspace-glyph,.project-choice-icon,.project-rail-tools{display:none}
+
+/* Apps Rail: task manager above, Overview and a recognizable Workspace switch below. */
+.apps-zone[data-area-state="rail"] .workspace-status>i,
+.apps-zone[data-area-state="rail"] .workspace-status>span,
+.apps-zone[data-area-state="rail"] .workspace-status>svg{display:none}
+.apps-zone[data-area-state="rail"] .rail-workspace-glyph{
+  width:28px;
+  height:28px;
+  border:1px solid color-mix(in srgb,var(--workspace-accent) 55%,var(--acrylic-engrave));
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  color:color-mix(in srgb,var(--workspace-accent) 34%,#fff);
+  background:color-mix(in srgb,var(--workspace-accent) 18%,transparent);
+  box-shadow:inset 0 1px rgba(255,255,255,.07);
+  font:750 12px/1 system-ui,sans-serif;
+  font-style:normal;
+}
+body[data-theme="light"] .apps-zone[data-area-state="rail"] .rail-workspace-glyph{color:color-mix(in srgb,var(--workspace-accent) 48%,#1d2a31)}
+
+/* System Rail: dynamic status first, launchers in the middle and persistent
+   toggles beside the clock at the bottom, like a useful Plasma tray. */
+.systems-zone[data-area-state="rail"] .dynamic-widget-stack{order:1}
+.systems-zone[data-area-state="rail"] .system-launchers{order:2}
+.systems-zone[data-area-state="rail"] .static-widget-stack{
+  order:8;
+  margin-top:auto;
+  padding-top:5px;
+  display:block;
+  border-top:1px solid var(--acrylic-engrave);
+}
+.systems-zone[data-area-state="rail"] .calendar-widget,
+.systems-zone[data-area-state="rail"] .connect-widget{display:none}
+.systems-zone[data-area-state="rail"] .quick-settings{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:3px;
+}
+.systems-zone[data-area-state="rail"] .quick-toggle{
+  width:100%;
+  min-width:0;
+  height:40px;
+  padding:0;
+  justify-content:center;
+  border-color:transparent;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.systems-zone[data-area-state="rail"] .quick-toggle>span:not(.theme-dot){display:none}
+.systems-zone[data-area-state="rail"] .quick-toggle svg{width:19px;height:19px}
+.systems-zone[data-area-state="rail"] .quick-toggle.is-active{background:color-mix(in srgb,var(--toggle-tone,var(--blue)) 10%,transparent)}
+.systems-zone[data-area-state="rail"] .time-block{margin-top:3px}
+
+/* Project Rail: switch Projects, then act on the selected Project without
+   needing to widen the Area first. */
+.project-area[data-area-state="rail"] .project-choice .project-color{display:none}
+.project-area[data-area-state="rail"] .project-choice-icon{
+  width:20px;
+  height:20px;
+  display:block;
+  color:var(--project-accent);
+}
+.project-area[data-area-state="rail"] .project-rail-tools{
+  margin-top:5px;
+  padding-top:5px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:3px;
+  border-top:1px solid var(--acrylic-engrave);
+}
+.project-area[data-area-state="rail"] .project-rail-tool{
+  width:100%;
+  min-width:0;
+  height:42px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-color:transparent;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.project-area[data-area-state="rail"] .project-rail-tool:hover{background:color-mix(in srgb,var(--project-accent) 10%,transparent)}
+.project-area[data-area-state="rail"] .project-rail-tool>svg:not(.app-art){width:19px;height:19px;color:var(--project-accent)}
+.project-area[data-area-state="rail"] .project-rail-tool .app-art{width:29px;height:29px}
+
+/* The same controls turn into a conventional horizontal panel when the Rail
+   is docked to the top or bottom edge. */
+.systems-zone[data-area-state="rail"][data-dock-edge="top"] .static-widget-stack,
+.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .static-widget-stack{
+  margin:0;
+  padding:0 0 0 5px;
+  display:flex;
+  align-items:center;
+  border-top:0;
+  border-left:1px solid var(--acrylic-engrave);
+}
+.systems-zone[data-area-state="rail"][data-dock-edge="top"] .quick-settings,
+.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .quick-settings{
+  grid-template-columns:repeat(4,40px);
+  grid-auto-flow:column;
+}
+.project-area[data-area-state="rail"][data-dock-edge="top"] .project-rail-tools,
+.project-area[data-area-state="rail"][data-dock-edge="bottom"] .project-rail-tools{
+  margin:0 0 0 5px;
+  padding:0 0 0 5px;
+  grid-template-columns:repeat(5,42px);
+  grid-auto-flow:column;
+  align-content:center;
+  border-top:0;
+  border-left:1px solid var(--acrylic-engrave);
+}

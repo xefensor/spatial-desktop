@@ -1224,6 +1224,8 @@ function renderProjectSpace(name) {
   $("#projectLinkedItems").innerHTML = project.links.map(([label, detail, type, itemIcon]) => '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + type + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>').join("");
   const [clip, clipDetail] = project.clipboard;
   $("#projectClipboard").innerHTML = '<span class="clipboard-mark">' + icon("i-clipboard") + '</span><span><b>' + escapeHtml(clip) + '</b><small>' + escapeHtml(clipDetail) + '</small></span><button class="surface-key project-small-key" data-project-copy="' + escapeHtml(clip) + '">Copy</button>';
+  $("#projectRailCopy").dataset.projectCopy = clip;
+  $("#projectRailCopy").title = "Copy " + clip;
   $$("[data-overview-project]").forEach(card => {
     const selected = card.dataset.overviewProject === name;
     card.classList.toggle("is-active", selected);
@@ -1365,6 +1367,7 @@ function renderWorkspace(name, announce = true) {
   const status = $("#workspaceStatus");
   $("b", status).textContent = profile.label;
   $("small", status).textContent = profile.subtitle;
+  $("#workspaceRailGlyph").textContent = profile.label.slice(0, 1).toUpperCase();
   status.title = profile.label + " workspace";
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
   if (announce) showToast(profile.label + " workspace loaded");
