@@ -212,7 +212,7 @@
 /* Rails rotate into a single panel row. Keep identity and overview outside
    the scroll viewport; all controls remain reachable on shorter shared docks. */
 .area-window[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){
-  display:flex!important;
+  display:flex;
   flex-direction:row;
   align-items:stretch;
   min-width:0;
@@ -333,3 +333,13 @@
   outline:1px solid var(--area-header-accent,var(--blue));
   outline-offset:-1px;
 }
+
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .section-heading{
+  min-height:20px;
+  height:20px;
+  margin:0;
+  padding:0 4px 3px;
+}
+/* Hiding and display ownership outrank orientation, including after a switch
+   from a workspace whose Project occupied a horizontal rail. */
+.area-window[data-area-state][data-dock-edge]:is([hidden],.is-intent-hidden,.is-on-other-display){display:none!important}

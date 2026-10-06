@@ -2239,7 +2239,7 @@ function stateSideMinimum(name, state) {
 
 function stateHorizontalMinimum(name, state) {
   if (state === "rail") return 64;
-  return name === "projects" ? 280 : name === "apps" ? 240 : 190;
+  return name === "projects" ? 280 : name === "apps" ? 250 : 190;
 }
 
 function edgeStateMinimum(edge, states) {

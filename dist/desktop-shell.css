@@ -7389,7 +7389,6 @@ body[data-theme="light"] .overview-project-zone .workspace-config-file{
 .demo-page-detail h3{font-size:17px;line-height:1.4;margin:0 0 10px}
 /* A fullscreen desktop must not scroll when focus moves to a bottom dock. */
 .desktop-shell{overflow:clip!important}
-.area-window[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){min-height:0!important;display:flex!important}
 
 /* Keep scenario pages in the browser well and mode names readable. */
 .app-frame[data-app-frame="browser"]{grid-template-rows:48px 55px minmax(0,1fr)}
