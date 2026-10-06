@@ -11,6 +11,7 @@ const toggleControlSelector = [
   "[data-project-mode]",
   "[data-workspace]",
   "[data-package-mode]",
+  "[data-overview-view]",
   "[data-category-filter]",
   "[data-overview-project]",
   "#layoutModeToggle",
@@ -25,6 +26,9 @@ const materialControlSelector = [
   ".dismiss-button",
   ".workspace-tab",
   ".workspace-action",
+  ".overview-view-tab",
+  ".overview-task",
+  ".overview-window",
   ".launcher-category",
   ".areas-reset",
   ".overview-area-row > button",
@@ -2837,14 +2841,75 @@ function renderOverviewWindows() {
   const target = $("#overviewWindowGrid");
   if (!target) return;
   const openNames = Object.keys(appState).filter(name => appState[name] === "open");
-  $("#workspaceOpenCount").textContent = openNames.length + (openNames.length === 1 ? " active" : " active");
+  $("#workspaceOpenCount").textContent = openNames.length + (openNames.length === 1 ? " window" : " windows");
+  const workspace = workspaceBounds();
+  const width = Math.max(1, workspace.width);
+  const height = Math.max(1, workspace.height);
+  const miniature = name => {
+    if (name === "elisa") return '<span class="overview-mini-content overview-mini-music"><i></i><span><b>running out of time</b><small>eenspire</small><em></em></span></span>';
+    if (name === "browser") return '<span class="overview-mini-content overview-mini-browser"><i></i><i></i><strong></strong><span></span></span>';
+    if (name === "terminal") return '<span class="overview-mini-content overview-mini-terminal"><i></i><i></i><i></i><i></i></span>';
+    if (name === "notes") return '<span class="overview-mini-content overview-mini-notes"><b>Desktop concept</b><i></i><i></i><i></i><i></i></span>';
+    return '<span class="overview-mini-content overview-mini-files"><i></i><span></span><span></span><span></span><span></span></span>';
+  };
   target.innerHTML = openNames.map(name => {
     const info = appInfo[name];
-    const preview = name === "elisa"
-      ? '<span class="overview-window-preview music-preview"><i></i><b>1:55</b><span></span></span>'
-      : '<span class="overview-window-preview file-preview"><i></i><i></i><i></i></span>';
-    return '<button class="overview-window ' + (name === "elisa" ? "elisa" : "") + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-app">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(info.detail) + '</small></span></span>' + preview + '</button>';
-  }).join("") || '<div class="workspace-no-windows"><b>No open windows</b><small>This Workspace will remember new windows you open.</small></div>';
+    const geometry = windowGeometry.get(name) || defaultWindowGeometry(name, 0);
+    const left = Math.max(1.5, Math.min(72, geometry.x / width * 100));
+    const top = Math.max(2, Math.min(66, geometry.y / height * 100));
+    const windowWidth = Math.max(24, Math.min(96 - left, geometry.width / width * 100));
+    const windowHeight = Math.max(28, Math.min(96 - top, geometry.height / height * 100));
+    const frame = frameFor(name);
+    const z = Number(frame?.style.zIndex || 1);
+    return '<button class="overview-window ' + (name === frontApp ? "is-front " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + ';--ow-left:' + left.toFixed(2) + '%;--ow-top:' + top.toFixed(2) + '%;--ow-width:' + windowWidth.toFixed(2) + '%;--ow-height:' + windowHeight.toFixed(2) + '%;--ow-z:' + z + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(info.detail) + '</small></span><i></i></span>' + miniature(name) + '</button>';
+  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No open windows</b><small>Open an application and it will appear here in its real desktop position.</small></div>';
+
+  const taskStrip = $("#overviewTaskStrip");
+  if (taskStrip) {
+    const runningNames = Object.keys(appState).filter(name => appState[name] !== "closed");
+    taskStrip.innerHTML = runningNames.map(name => {
+      const state = appState[name];
+      return '<button data-open-app="' + name + '" class="overview-task ' + (name === frontApp && state === "open" ? "is-active " : "") + (state === "minimized" ? "is-minimized" : "") + '" title="' + escapeHtml(appInfo[name].label + (state === "minimized" ? " · minimized" : "")) + '" style="--app-primary:' + appInfo[name].primary + '">' + appArt(name) + '<i></i></button>';
+    }).join("");
+    prepareControlSemantics(taskStrip);
+  }
+
+  ["projects", "apps", "systems"].forEach(name => {
+    const preview = $('[data-stage-area="' + name + '"]');
+    const area = areaFor(name);
+    if (!preview || !area) return;
+    const state = area.dataset.areaState || "expanded";
+    preview.classList.toggle("is-hidden", state === "hidden" || area.classList.contains("is-on-other-display"));
+    preview.classList.toggle("is-rail", state === "rail");
+    preview.title = name[0].toUpperCase() + name.slice(1) + " Area · " + state;
+  });
+}
+
+let activeOverviewView = "desktop";
+
+function setOverviewView(view, focus = false) {
+  if (!["desktop", "apps", "system"].includes(view)) view = "desktop";
+  activeOverviewView = view;
+  const home = $("#overviewHome");
+  home.dataset.overviewState = view;
+  $$("[data-overview-view]").forEach(button => {
+    const active = button.dataset.overviewView === view;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  $(".open-windows-section").hidden = view !== "desktop";
+  $(".overview-projects-section").hidden = view !== "desktop";
+  $(".workspace-home-card").hidden = view !== "system";
+  $(".overview-apps-section").hidden = view !== "apps";
+  $(".overview-main").hidden = view === "system";
+  $(".overview-widgets").hidden = view === "apps";
+  if (view === "desktop") renderOverviewWindows();
+  if (focus) $("#overviewHome")?.focus?.({preventScroll:true});
+}
+
+function prepareOverviewViews() {
+  $$("[data-overview-view]").forEach(button => button.addEventListener("click", () => setOverviewView(button.dataset.overviewView)));
+  setOverviewView("desktop");
 }
 
 function renderWorkspace(name, announce = true) {
@@ -2865,6 +2930,7 @@ function renderWorkspace(name, announce = true) {
     button.setAttribute("aria-selected", String(selected));
   });
   $("#activeWorkspaceLabel").textContent = profile.label;
+  $("#openWindowsTitle").textContent = profile.label + " workspace";
   $("#workspaceHomeTitle").textContent = profile.label + " Home";
   $("#workspaceHomePath").textContent = profile.home;
   $("#workspaceHomeIcon use").setAttribute("href", "#" + profile.icon);
@@ -3206,6 +3272,7 @@ function setUniversalSearchOpen(open) {
     $("#allAppsToggle").classList.add("is-active");
     $("#allAppsToggle").setAttribute("aria-expanded", "true");
     $("#allAppsToggle").setAttribute("aria-pressed", "true");
+    setOverviewView("desktop");
     filterUniversalSearch();
     requestAnimationFrame(() => {
       $("#universalSearchInput").focus();
@@ -4428,6 +4495,7 @@ function prepareCrossDisplaySync() {
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
+prepareOverviewViews();
 prepareWorkspaces();
 preparePackages();
 prepareWindows();

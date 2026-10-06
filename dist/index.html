@@ -7,7 +7,7 @@
   <meta name="description" content="A tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=132">
+  <link rel="stylesheet" href="desktop-shell.css?v=133">
   <title>Spatial Desktop</title>
 </head>
 <body data-theme="oled">
@@ -217,7 +217,13 @@
         <div class="workspace-switcher-actions"><button class="workspace-action" data-import-package><svg><use href="#i-archive"/></svg><span>Import</span></button><button class="workspace-action primary" data-open-package="workspace"><svg><use href="#i-link"/></svg><span>Pack workspace</span></button></div>
       </section>
 
-      <div class="overview-home" id="overviewHome">
+      <nav class="overview-view-tabs" aria-label="Overview sections">
+        <button class="overview-view-tab is-active" data-overview-view="desktop" aria-pressed="true"><svg><use href="#i-monitor"/></svg><span>Desktop</span></button>
+        <button class="overview-view-tab" data-overview-view="apps" aria-pressed="false"><svg><use href="#i-grid"/></svg><span>Applications</span></button>
+        <button class="overview-view-tab" data-overview-view="system" aria-pressed="false"><svg><use href="#i-settings"/></svg><span>System &amp; widgets</span></button>
+      </nav>
+
+      <div class="overview-home" id="overviewHome" data-overview-state="desktop">
         <main class="overview-main">
           <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
             <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/xef</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
@@ -234,10 +240,15 @@
           </section>
 
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
-            <header class="overview-section-heading"><div><span class="eyebrow">RUNNING</span><h3 id="openWindowsTitle">Open windows</h3></div><span id="workspaceOpenCount">2 active</span></header>
-            <div class="overview-window-grid" id="overviewWindowGrid">
-              <button class="overview-window dolphin" data-open-app="dolphin"><span class="overview-window-app"><svg class="app-art"><use href="#app-dolphin"/></svg><span><b>Dolphin</b><small>Downloads</small></span></span><span class="overview-window-preview file-preview"><i></i><i></i><i></i></span></button>
-              <button class="overview-window elisa" data-open-app="elisa"><span class="overview-window-app"><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Elisa</b><small>running out of time</small></span></span><span class="overview-window-preview music-preview"><i></i><b>1:55</b><span></span></span></button>
+            <header class="overview-section-heading desktop-stage-heading"><div><span class="eyebrow">CURRENT DESKTOP</span><h3 id="openWindowsTitle">General workspace</h3></div><span id="workspaceOpenCount">2 active</span></header>
+            <div class="overview-desktop-stage" id="overviewDesktopStage">
+              <div class="overview-desktop-wallpaper" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="overview-area-mini overview-area-mini-project" data-stage-area="projects"><span><svg><use href="#i-folder"/></svg></span><b>Project</b></div>
+              <div class="overview-area-mini overview-area-mini-apps" data-stage-area="apps"><span><svg><use href="#i-grid"/></svg></span><b>Apps</b></div>
+              <div class="overview-area-mini overview-area-mini-system" data-stage-area="systems"><span><svg><use href="#i-settings"/></svg></span><b>System</b></div>
+              <div class="overview-window-grid" id="overviewWindowGrid" aria-label="Open windows"></div>
+              <div class="overview-task-strip" id="overviewTaskStrip" aria-label="Running applications"></div>
+              <span class="overview-stage-hint"><svg><use href="#i-monitor"/></svg> Select a window to return to it</span>
             </div>
           </section>
 
@@ -446,6 +457,6 @@
     <div class="context-menu-items" id="contextMenuItems"></div>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=132"></script>
+  <script src="desktop-shell.js?v=133"></script>
 </body>
 </html>
