@@ -200,6 +200,7 @@ const appInfo = {
 const appState = { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" };
 const appMaximizedState = { dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
+const autoTiledWindows = new Set();
 const maximizeRestore = new Map();
 let frontApp = "dolphin";
 let zCounter = 20;
@@ -313,10 +314,17 @@ function readGeometry(frame) {
 function clampGeometry(geometry, name = null) {
   const workspace = workspaceBounds();
   const usable = minimumUsableWindowSize(name);
-  const minWidth = Math.min(usable.width, workspace.width - 24);
-  const minHeight = Math.min(usable.height, workspace.height - 24);
-  const width = Math.max(minWidth, Math.min(geometry.width, workspace.width - 16));
-  const height = Math.max(minHeight, Math.min(geometry.height, workspace.height - 16));
+  const maximumWidth = Math.max(1, workspace.width - 16);
+  const maximumHeight = Math.max(1, workspace.height - 16);
+  /* A tiled window must obey the tile it was given. Applying the normal app
+     minimum here used to enlarge narrow cells after layout, making windows
+     overlap and disappear behind the Areas. App container layouts provide a
+  compact presentation for these deliberately small tiles. */
+  const isAutoTile = name && autoTiledWindows.has(name);
+  const minWidth = Math.min(isAutoTile ? Math.max(1, geometry.width) : usable.width, maximumWidth);
+  const minHeight = Math.min(isAutoTile ? Math.max(1, geometry.height) : usable.height, maximumHeight);
+  const width = Math.max(minWidth, Math.min(geometry.width, maximumWidth));
+  const height = Math.max(minHeight, Math.min(geometry.height, maximumHeight));
   return {
     x: Math.max(8, Math.min(geometry.x, workspace.width - width - 8)),
     y: Math.max(8, Math.min(geometry.y, workspace.height - height - 8)),
@@ -336,6 +344,7 @@ function applyGeometry(name, geometry, save = true) {
     windowGeometry.set(name, next);
     saveLayout();
   }
+  return next;
 }
 
 function saveLayout() {
@@ -381,7 +390,7 @@ function defaultWindowGeometry(name, index = 0) {
   };
 }
 
-function packedWindowLayout(names) {
+function fittedWindowLayout(names) {
   const workspace = workspaceBounds();
   const inset = 8;
   const gap = 10;
@@ -389,81 +398,44 @@ function packedWindowLayout(names) {
   const availableHeight = Math.max(0, workspace.height - inset * 2);
   if (!names.length) return null;
 
-  const entries = names.map(name => ({ name, ...minimumUsableWindowSize(name) }));
+  /* Try every sensible column count and choose the partition that preserves
+     each app's usable footprint best. Every candidate still fills the exact
+     workspace; the score only decides whether that space is divided more
+     naturally into rows or columns. The incomplete final row expands across
+     the width, which gives the newly opened (last) window a useful tile. */
   let best = null;
-  const breakCount = Math.max(0, entries.length - 1);
-  for (let mask = 0; mask < (1 << breakCount); mask += 1) {
-    const rows = [];
-    let row = [];
-    entries.forEach((entry, index) => {
-      row.push(entry);
-      if (index === entries.length - 1 || mask & (1 << index)) {
-        rows.push(row);
-        row = [];
-      }
-    });
-    const rowMetrics = rows.map(items => ({
-      items,
-      width: items.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, items.length - 1),
-      height: Math.max(...items.map(item => item.height))
-    }));
-    const width = Math.max(...rowMetrics.map(metric => metric.width));
-    const height = rowMetrics.reduce((sum, metric) => sum + metric.height, 0) + gap * Math.max(0, rowMetrics.length - 1);
-    if (width > availableWidth || height > availableHeight) continue;
-    const layoutAspect = width / Math.max(1, height);
-    const workspaceAspect = availableWidth / Math.max(1, availableHeight);
-    const aspectPenalty = Math.abs(Math.log(layoutAspect / workspaceAspect));
-    const unused = availableWidth * availableHeight - width * height;
-    const score = aspectPenalty * 100000 + unused * .02 + rowMetrics.length * 30;
-    if (!best || score < best.score) best = { score, width, height, rows: rowMetrics };
-  }
-  if (!best) return null;
-
-  const geometries = new Map();
-  let y = inset + Math.max(0, (availableHeight - best.height) / 2);
-  best.rows.forEach(row => {
-    let x = inset + Math.max(0, (availableWidth - row.width) / 2);
-    row.items.forEach(item => {
-      geometries.set(item.name, {
-        x: Math.round(x),
-        y: Math.round(y + (row.height - item.height) / 2),
-        width: item.width,
-        height: item.height
+  for (let columns = 1; columns <= names.length; columns += 1) {
+    const rows = Math.ceil(names.length / columns);
+    const rowHeight = (availableHeight - gap * Math.max(0, rows - 1)) / rows;
+    if (rowHeight <= 0) continue;
+    const geometries = new Map();
+    const fits = [];
+    const aspectPenalties = [];
+    for (let row = 0; row < rows; row += 1) {
+      const start = row * columns;
+      const rowNames = names.slice(start, start + columns);
+      const cellWidth = (availableWidth - gap * Math.max(0, rowNames.length - 1)) / rowNames.length;
+      rowNames.forEach((name, column) => {
+        const usable = minimumUsableWindowSize(name);
+        const widthFit = Math.min(1, cellWidth / usable.width);
+        const heightFit = Math.min(1, rowHeight / usable.height);
+        fits.push(widthFit * heightFit);
+        aspectPenalties.push(Math.abs(Math.log((cellWidth / Math.max(1, rowHeight)) / 1.42)));
+        geometries.set(name, {
+          x: Math.round(inset + column * (cellWidth + gap)),
+          y: Math.round(inset + row * (rowHeight + gap)),
+          width: Math.round(cellWidth),
+          height: Math.round(rowHeight)
+        });
       });
-      x += item.width + gap;
-    });
-    y += row.height + gap;
-  });
-  return geometries;
-}
-
-function compactAreasForWindowTiling() {
-  if (layoutMode !== "auto") return false;
-  let changed = false;
-  dockEdges.forEach(edge => {
-    if (!dockGroup(edge).length || autoSpatialEdgeStates.get(edge) === "rail") return;
-    autoSpatialEdgeStates.set(edge, "rail");
-    changed = true;
-  });
-  if (changed) layoutDockAreas(false, false);
-  return changed;
-}
-
-function fallbackWindowGrid(names) {
-  const workspace = workspaceBounds();
-  const inset = 8;
-  const gap = 10;
-  const aspect = workspace.width / Math.max(1, workspace.height);
-  const columns = Math.max(1, Math.min(names.length, Math.ceil(Math.sqrt(names.length * aspect))));
-  const rows = Math.ceil(names.length / columns);
-  const cellWidth = (workspace.width - inset * 2 - gap * (columns - 1)) / columns;
-  const cellHeight = (workspace.height - inset * 2 - gap * (rows - 1)) / rows;
-  return new Map(names.map((name, index) => [name, {
-    x: inset + index % columns * (cellWidth + gap),
-    y: inset + Math.floor(index / columns) * (cellHeight + gap),
-    width: cellWidth,
-    height: cellHeight
-  }]));
+    }
+    const minimumFit = Math.min(...fits);
+    const averageFit = fits.reduce((sum, value) => sum + value, 0) / fits.length;
+    const aspectPenalty = aspectPenalties.reduce((sum, value) => sum + value, 0) / aspectPenalties.length;
+    const score = minimumFit * 1000 + averageFit * 120 - aspectPenalty * 10 - rows * .05;
+    if (!best || score > best.score) best = { score, geometries };
+  }
+  return best?.geometries || null;
 }
 
 function tileOpenWindows(newName) {
@@ -488,20 +460,33 @@ function tileOpenWindows(newName) {
   autoAvoidanceSource = null;
   applyAutoAvoidance();
 
-  let layout = packedWindowLayout(names);
-  if (!layout && compactAreasForWindowTiling()) layout = packedWindowLayout(names);
-  layout ||= fallbackWindowGrid(names);
+  const layout = fittedWindowLayout(names);
+  if (!layout) return;
   names.forEach(name => {
     const frame = frameFor(name);
+    autoTiledWindows.add(name);
     frame.classList.remove("is-auto-tiling");
     void frame.offsetWidth;
     frame.classList.add("is-auto-tiling");
-    const geometry = clampGeometry(layout.get(name), name);
-    applyGeometry(name, geometry, false);
+    const geometry = applyGeometry(name, layout.get(name), false);
     windowGeometry.set(name, geometry);
     setTimeout(() => frame.classList.remove("is-auto-tiling"), 180);
   });
   saveLayout();
+}
+
+let pendingWindowTileFrame = 0;
+function scheduleWindowTiling(name) {
+  cancelAnimationFrame(pendingWindowTileFrame);
+  /* Auto Areas settle during the first frame. Tile on the following frame so
+     the window is measured against the final center rectangle, not the space
+     that existed before an Area expanded, railed, or moved displays. */
+  pendingWindowTileFrame = requestAnimationFrame(() => {
+    pendingWindowTileFrame = requestAnimationFrame(() => {
+      pendingWindowTileFrame = 0;
+      if (appState[name] === "open" && isLocalApp(name)) tileOpenWindows(name);
+    });
+  });
 }
 
 function restoreWorkspaceWindowLayout() {
@@ -575,6 +560,7 @@ function openApp(name, dropPoint = null) {
   frameFor(name).hidden = false;
   syncApps();
   if (dropPoint) {
+    autoTiledWindows.delete(name);
     const workspace = workspaceBounds();
     const previous = windowGeometry.get(name);
     const width = previous?.width || Math.min(680, workspace.width * .72);
@@ -586,7 +572,7 @@ function openApp(name, dropPoint = null) {
       height
     });
   } else if (previousState === "closed") {
-    tileOpenWindows(name);
+    if (layoutMode !== "auto") tileOpenWindows(name);
   } else if (windowGeometry.has(name)) {
     applyGeometry(name, windowGeometry.get(name), false);
   } else {
@@ -598,6 +584,7 @@ function openApp(name, dropPoint = null) {
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
+    if (previousState === "closed" && !dropPoint) scheduleWindowTiling(name);
   }
 }
 
@@ -625,6 +612,7 @@ function closeApp(name) {
   frame?.classList.remove("is-maximized");
   if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
+  autoTiledWindows.delete(name);
   appMaximizedState[name] = false;
   if (frame) syncMaximizeButton(frame);
   if (frontApp === name) frontApp = topOpenApp(name);
@@ -985,6 +973,7 @@ function bindWindowDrag(frame) {
     if (event.button !== 0 || event.target.closest("button,input,a")) return;
     event.preventDefault();
     const name = frame.dataset.appFrame;
+    autoTiledWindows.delete(name);
     bringToFront(name);
     if (frame.dataset.maximized === "true") toggleMaximize(name);
 
@@ -1084,6 +1073,7 @@ function bindResize(frame) {
     event.preventDefault();
     event.stopPropagation();
     const name = frame.dataset.appFrame;
+    autoTiledWindows.delete(name);
     bringToFront(name);
     if (frame.dataset.maximized === "true") toggleMaximize(name);
     const start = readGeometry(frame);
