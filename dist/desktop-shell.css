@@ -876,3 +876,191 @@ body[data-theme="light"]{
 .zone-resizer:hover>span,.zone-resizer:focus-visible>span,.zone-resizer.is-dragging>span{
   box-shadow:none;
 }
+
+/* Semantic colour and stronger legibility: colour identifies function, never decoration. */
+:root{
+  --text:#f7fafb;
+  --muted:#bec9ce;
+  --faint:#8e9ba2;
+  --red:#ff6f6f;
+  --rose:#ff75aa;
+  --glass-field:rgba(7,14,18,.66);
+  --glass-frost:#d5e5ec;
+}
+body[data-theme="graphite"]{
+  --text:#f5f8f9;
+  --muted:#c0c9cd;
+  --faint:#909ba1;
+  --glass-field:rgba(28,35,39,.68);
+  --glass-frost:#d6e4ea;
+}
+body[data-theme="light"]{
+  --text:#11191d;
+  --muted:#42515a;
+  --faint:#5c6b73;
+  --blue:#006fb8;
+  --violet:#6842b8;
+  --green:#16763b;
+  --amber:#9b5200;
+  --cyan:#00788a;
+  --red:#b82d35;
+  --rose:#a73363;
+  --glass-field:rgba(241,246,248,.72);
+  --glass-field-deep:rgba(112,135,146,.18);
+  --glass-groove:rgba(43,67,79,.38);
+  --glass-frost:#334f5d;
+}
+.apps-zone,.systems-zone{
+  backdrop-filter:blur(23px) saturate(.96) contrast(1.05);
+}
+body[data-theme="light"] .apps-zone,
+body[data-theme="light"] .systems-zone{
+  backdrop-filter:blur(23px) saturate(.9) brightness(1.05);
+}
+
+/* Readable everyday labels without turning the compact side areas into large-type cards. */
+.apps-zone .eyebrow,.systems-zone .eyebrow,
+.apps-zone .small-heading,.systems-zone .small-heading{
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.105em;
+}
+.app-key span{font-size:11px;font-weight:650}
+.section-heading h2,.widget-heading h2{font-size:13.5px;font-weight:750}
+.section-heading span,.widget-heading>span{font-size:10.5px}
+.system-launcher{font-size:10.5px;font-weight:650}
+.quick-toggle span{font-size:11px;font-weight:650}
+.app-identity b{font-size:13.5px}
+.app-identity small{font-size:11px}
+.nav-choice{font-size:12px;font-weight:600}
+.folder-tab{font-size:11.5px;font-weight:650}
+.file-head{font-size:10.5px;font-weight:700}
+.content-row{font-size:12px}
+.content-row small{font-size:10.5px}
+.notification b{font-size:11.5px}
+.notification small{font-size:10.5px;line-height:1.35}
+.device-row b{font-size:11.5px}
+.device-row small{font-size:10px;line-height:1.35}
+.calendar-week{font-size:9.5px}
+.calendar-grid button{font-size:10.5px;font-weight:600}
+.next-event b,.next-event small{font-size:10.5px}
+.mini-card header b,.mini-track b{font-size:12.5px}
+.mini-card header small,.mini-track small{font-size:10.5px}
+body[data-theme="light"] .apps-zone .eyebrow,
+body[data-theme="light"] .systems-zone .eyebrow,
+body[data-theme="light"] .apps-zone .small-heading,
+body[data-theme="light"] .systems-zone .small-heading{
+  text-shadow:none;
+}
+
+/* Each application keeps one recognisable signal colour across rack, window and parked card. */
+.apps-zone .app-key[data-open-app="dolphin"],.mini-card[data-mini-card="dolphin"]{--item-tone:var(--blue)}
+.apps-zone .app-key[data-open-app="elisa"],.mini-card[data-mini-card="elisa"]{--item-tone:var(--violet)}
+.apps-zone .app-key[data-open-app="browser"],.mini-card[data-mini-card="browser"]{--item-tone:var(--cyan)}
+.apps-zone .app-key[data-open-app="terminal"],.mini-card[data-mini-card="terminal"]{--item-tone:var(--green)}
+.apps-zone .app-key[data-open-app="notes"],.mini-card[data-mini-card="notes"]{--item-tone:var(--amber)}
+.apps-zone .app-key svg{color:var(--item-tone,var(--blue))}
+.apps-zone .app-key:hover{
+  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 42%,var(--glass-groove));
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 5%,transparent);
+}
+.apps-zone .app-key.is-active{
+  color:var(--text);
+  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 68%,var(--glass-groove));
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 9%,transparent);
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 7px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent);
+  text-shadow:none;
+}
+.apps-zone .app-key:active{
+  color:var(--text);
+  border-color:var(--item-tone,var(--blue));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 34%,transparent),0 0 6px color-mix(in srgb,var(--item-tone,var(--blue)) 23%,transparent);
+  text-shadow:none;
+}
+.apps-zone .app-key.is-open>i{
+  background:var(--item-tone,var(--blue));
+  box-shadow:0 0 5px color-mix(in srgb,var(--item-tone,var(--blue)) 54%,transparent);
+}
+.mini-card::after{
+  background:var(--item-tone,var(--blue));
+  box-shadow:0 0 5px color-mix(in srgb,var(--item-tone,var(--blue)) 48%,transparent);
+}
+
+/* Coloured icon wells carry app identity while text and window chrome stay neutral. */
+.app-badge.blue{--badge-tone:var(--blue)}
+.app-badge.violet{--badge-tone:var(--violet)}
+.app-badge.cyan{--badge-tone:var(--cyan)}
+.app-badge.green{--badge-tone:var(--green)}
+.app-badge.amber{--badge-tone:var(--amber)}
+.app-badge{
+  color:var(--badge-tone,var(--text));
+  background:color-mix(in srgb,var(--badge-tone,var(--text)) 10%,rgba(0,0,0,.10));
+  border-color:color-mix(in srgb,var(--badge-tone,var(--text)) 32%,var(--glass-groove));
+}
+body[data-theme="light"] .app-badge{
+  background:color-mix(in srgb,var(--badge-tone,var(--text)) 9%,rgba(255,255,255,.48));
+}
+
+/* System colours describe state: rose alerts, amber time, green connection. */
+.notification-widget{--widget-tone:var(--rose)}
+.timer-widget,.calendar-widget{--widget-tone:var(--amber)}
+.connect-widget{--widget-tone:var(--green)}
+.system-widget .widget-heading svg{color:var(--widget-tone,var(--glass-frost))}
+.system-widget .widget-heading>span{
+  color:var(--widget-tone,var(--text));
+  padding:2px 6px;
+  border:1px solid color-mix(in srgb,var(--widget-tone,var(--text)) 36%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--widget-tone,var(--text)) 8%,transparent);
+}
+.notification-widget,.timer-widget{
+  border-color:color-mix(in srgb,var(--widget-tone) 38%,var(--glass-groove));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--widget-tone) 4%,transparent),rgba(255,255,255,.006));
+}
+.calendar-widget .next-event{
+  background:color-mix(in srgb,var(--amber) 8%,rgba(0,0,0,.10));
+  border-color:color-mix(in srgb,var(--amber) 36%,var(--glass-groove));
+}
+.calendar-widget .next-event>i{
+  background:var(--amber);
+  box-shadow:0 0 7px color-mix(in srgb,var(--amber) 44%,transparent);
+}
+.calendar-grid button.is-today{
+  color:var(--amber);
+  border:1px solid color-mix(in srgb,var(--amber) 42%,transparent);
+  background:color-mix(in srgb,var(--amber) 10%,transparent);
+  box-shadow:inset 0 -2px var(--amber);
+}
+.connect-widget .phone-silhouette{
+  border-color:color-mix(in srgb,var(--green) 38%,var(--glass-groove));
+  background:color-mix(in srgb,var(--green) 7%,rgba(0,0,0,.10));
+}
+.time-block b{color:var(--blue)}
+
+#launchTimer{--control-tone:var(--amber)}
+#launchNotification{--control-tone:var(--rose)}
+.systems-zone .system-launcher svg{color:var(--control-tone,var(--blue))}
+.systems-zone .system-launcher:hover,
+.systems-zone .system-launcher:active{
+  color:var(--text);
+  border-color:color-mix(in srgb,var(--control-tone,var(--blue)) 62%,var(--glass-groove));
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px color-mix(in srgb,var(--control-tone,var(--blue)) 20%,transparent);
+  text-shadow:none;
+}
+
+.quick-settings .quick-toggle:nth-child(1){--toggle-tone:var(--blue)}
+.quick-settings .quick-toggle:nth-child(2){--toggle-tone:var(--violet)}
+.quick-settings .quick-toggle:nth-child(3){--toggle-tone:var(--green)}
+.systems-zone .quick-toggle.is-active{
+  color:var(--text);
+  border-color:color-mix(in srgb,var(--toggle-tone,var(--blue)) 64%,var(--glass-groove));
+  background:color-mix(in srgb,var(--toggle-tone,var(--blue)) 8%,transparent);
+  box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px color-mix(in srgb,var(--toggle-tone,var(--blue)) 18%,transparent);
+  text-shadow:none;
+}
+.systems-zone .quick-toggle.is-active svg{color:var(--toggle-tone,var(--blue))}
+.systems-zone .quick-toggle:active{
+  color:var(--text);
+  border-color:var(--toggle-tone,var(--blue));
+  text-shadow:none;
+}
