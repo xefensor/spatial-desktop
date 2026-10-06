@@ -240,6 +240,7 @@ function openApp(name, dropPoint = null) {
     applyGeometry(name, windowGeometry.get(name), false);
   }
   bringToFront(name);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
 }
 
 function minimizeApp(name, preserveGeometry = false) {
@@ -253,6 +254,7 @@ function minimizeApp(name, preserveGeometry = false) {
   appState[name] = "minimized";
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
 }
 
 function closeApp(name) {
@@ -260,6 +262,7 @@ function closeApp(name) {
   appState[name] = "closed";
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
   showToast(appInfo[name].label + " closed");
 }
 
@@ -276,6 +279,7 @@ function toggleMaximize(name) {
     clearWindowAutoAvoidance(name);
     applyGeometry(name, maximizeRestore.get(name) || windowGeometry.get(name) || readGeometry(frame));
     syncMaximizeButton(frame);
+    scheduleSpatialAutoLayout();
     return;
   }
   maximizeRestore.set(name, readGeometry(frame));
@@ -476,11 +480,7 @@ function bindWindowDrag(frame) {
       frame.style.top = moveEvent.clientY - offsetY + "px";
       if (layoutMode === "auto") {
         const movingRect = frame.getBoundingClientRect();
-        const collidedEdges = [];
-        baseDockLaneRects.forEach((laneRect, edge) => {
-          if (rectanglesOverlap(movingRect, laneRect, 18)) collidedEdges.push(edge);
-        });
-        setWindowAutoAvoidance(name, collidedEdges, frame);
+        refreshSpatialAutoLayout(frame, movingRect);
         setDropTarget(appsZone, false);
         setDropTarget(workspace, true);
       } else {
@@ -517,6 +517,7 @@ function bindWindowDrag(frame) {
         width: finalRect.width,
         height: finalRect.height
       });
+      if (layoutMode === "auto") scheduleSpatialAutoLayout();
     };
 
     titlebar.addEventListener("pointermove", move);
@@ -546,11 +547,14 @@ function bindResize(frame) {
     handle.setPointerCapture(event.pointerId);
     frame.classList.add("is-resizing");
 
-    const move = moveEvent => applyGeometry(name, {
-      ...start,
-      width: start.width + moveEvent.clientX - startX,
-      height: start.height + moveEvent.clientY - startY
-    }, false);
+    const move = moveEvent => {
+      applyGeometry(name, {
+        ...start,
+        width: start.width + moveEvent.clientX - startX,
+        height: start.height + moveEvent.clientY - startY
+      }, false);
+      if (layoutMode === "auto") refreshSpatialAutoLayout(frame, frame.getBoundingClientRect());
+    };
     const finish = () => {
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", finish);
@@ -558,6 +562,7 @@ function bindResize(frame) {
       frame.classList.remove("is-resizing");
       windowGeometry.set(name, readGeometry(frame));
       saveLayout();
+      if (layoutMode === "auto") scheduleSpatialAutoLayout();
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", finish);
@@ -787,8 +792,10 @@ let currentDisplayProfile = "desktop";
 let lastDesktopPointerX = window.innerWidth / 2;
 const autoWindowAvoidance = new Map();
 const baseDockLaneRects = new Map();
+const autoSpatialEdgeStates = new Map();
 let baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
 let autoAvoidanceSource = null;
+let spatialLayoutFrame = 0;
 
 function areaFor(name) {
   return document.querySelector('[data-area-window="' + name + '"]');
@@ -860,6 +867,9 @@ function initialAreaStates(profile) {
   };
   else if (profile === "desktop") states = { projects: "expanded", apps: "compact", systems: "compact" };
   else states = { projects: "expanded", apps: "expanded", systems: "expanded" };
+  autoSpatialEdgeStates.forEach((state, edge) => {
+    dockGroup(edge, true).forEach(name => { states[name] = state; });
+  });
   dockEdges.forEach(edge => {
     if (!dockSizeManual[edge] || layoutMode !== "manual") return;
     const state = areaStateForSize(edge, dockSizes[edge]);
@@ -896,7 +906,7 @@ function preferredSideSize(edge, states, profile) {
   const minimum = edgeStateMinimum(edge, states);
   if (names.every(name => states[name] === "rail")) return minimum;
   const compactOnly = names.every(name => areaStateRank[states[name]] <= areaStateRank.compact);
-  const target = dockSizeManual[edge] ? dockSizes[edge] : compactOnly ? Math.min(dockSizes[edge], 232) : dockSizes[edge];
+  const target = compactOnly ? Math.min(dockSizes[edge], 232) : dockSizes[edge];
   return Math.min(420, Math.max(minimum, target));
 }
 
@@ -978,7 +988,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
     control.classList.toggle("is-active", layoutMode === "auto");
     control.setAttribute("aria-pressed", String(layoutMode === "auto"));
     control.title = layoutMode === "auto"
-      ? "Auto · Areas yield to windows and may move to a free display · " + profileLabel
+      ? "Auto · Areas expand, compact, rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
   }
   const status = $("#overviewLayoutStatus");
@@ -1039,6 +1049,91 @@ function captureBaseDockLaneRects() {
 
 function rectanglesOverlap(first, second, inset = 0) {
   return first.left < second.right - inset && first.right > second.left + inset && first.top < second.bottom - inset && first.bottom > second.top + inset;
+}
+
+function edgeMinimumForState(edge, state) {
+  const names = dockGroup(edge);
+  if (!names.length) return 0;
+  const states = Object.fromEntries(areaPriority.map(name => [name, state]));
+  return edgeStateMinimum(edge, states);
+}
+
+function clearanceFromEdge(edge, rect, shellRect) {
+  if (edge === "left") return rect.left - shellRect.left;
+  if (edge === "right") return shellRect.right - rect.right;
+  if (edge === "top") return rect.top - shellRect.top;
+  return shellRect.bottom - rect.bottom;
+}
+
+function spatialStateForClearance(edge, clearance) {
+  const compact = edgeMinimumForState(edge, "compact");
+  const expanded = edgeMinimumForState(edge, "expanded");
+  const previous = autoSpatialEdgeStates.get(edge);
+  if (previous === "expanded") {
+    if (clearance >= expanded + 18) return "expanded";
+    if (clearance >= compact + 14) return "compact";
+    return "rail";
+  }
+  if (previous === "compact") {
+    if (clearance >= expanded + 48) return "expanded";
+    if (clearance >= compact + 14) return "compact";
+  }
+  if (previous === "rail") {
+    if (clearance >= expanded + 60) return "expanded";
+    if (clearance >= compact + 36) return "compact";
+    return "rail";
+  }
+  if (clearance >= expanded + 48) return "expanded";
+  if (clearance >= compact + 28) return "compact";
+  return "rail";
+}
+
+function contextWindowRects(sourceFrame = null, sourceRect = null) {
+  return $$('[data-app-frame]').filter(frame => !frame.hidden && appState[frame.dataset.appFrame] === "open").map(frame => ({
+    frame,
+    rect: frame === sourceFrame && sourceRect ? sourceRect : frame.getBoundingClientRect()
+  }));
+}
+
+function refreshSpatialAutoLayout(sourceFrame = null, sourceRect = null) {
+  if (layoutMode !== "auto") return;
+  const shellRect = $(".desktop-shell").getBoundingClientRect();
+  const windows = contextWindowRects(sourceFrame, sourceRect);
+  let stateChanged = false;
+
+  dockEdges.forEach(edge => {
+    if (!dockGroup(edge).length) {
+      if (autoSpatialEdgeStates.delete(edge)) stateChanged = true;
+      return;
+    }
+    const clearance = windows.length
+      ? Math.min(...windows.map(item => clearanceFromEdge(edge, item.rect, shellRect)))
+      : Infinity;
+    const nextState = spatialStateForClearance(edge, clearance);
+    if (autoSpatialEdgeStates.get(edge) !== nextState) {
+      autoSpatialEdgeStates.set(edge, nextState);
+      stateChanged = true;
+    }
+  });
+
+  if (stateChanged) layoutDockAreas(false, false);
+
+  windows.forEach(({ frame, rect }) => {
+    if (frame.dataset.maximized === "true") return;
+    const edges = dockEdges.filter(edge => {
+      if (!dockGroup(edge).length) return false;
+      return clearanceFromEdge(edge, rect, shellRect) < edgeMinimumForState(edge, "rail") + 8;
+    });
+    if (edges.length) autoWindowAvoidance.set(frame.dataset.appFrame, new Set(edges));
+    else autoWindowAvoidance.delete(frame.dataset.appFrame);
+  });
+  autoAvoidanceSource = sourceFrame;
+  applyAutoAvoidance();
+}
+
+function scheduleSpatialAutoLayout() {
+  cancelAnimationFrame(spatialLayoutFrame);
+  spatialLayoutFrame = requestAnimationFrame(() => refreshSpatialAutoLayout());
 }
 
 function desiredAutoEdges() {
@@ -1134,7 +1229,7 @@ function freezeCurrentAreaLayout() {
   });
 }
 
-function layoutDockAreas(save = false) {
+function layoutDockAreas(save = false, fitWindows = true) {
   const shell = $(".desktop-shell");
   const width = shell.clientWidth;
   const height = shell.clientHeight;
@@ -1149,6 +1244,8 @@ function layoutDockAreas(save = false) {
     if (!area) return;
     const state = resolved.states[name];
     area.dataset.areaState = state;
+    if (layoutMode === "auto") area.dataset.autoSize = state;
+    else delete area.dataset.autoSize;
   });
   syncAreaControls(resolved.states);
   syncLayoutModeUI(resolved.profile);
@@ -1192,7 +1289,7 @@ function layoutDockAreas(save = false) {
   applyAutoAvoidance();
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
-  if (layoutMode === "auto") scheduleWindowFit();
+  if (layoutMode === "auto" && fitWindows) scheduleWindowFit();
   if (save) saveAreaLayout();
 }
 
@@ -1201,6 +1298,7 @@ function hideArea(name) {
   if (!area) return;
   area.hidden = true;
   layoutDockAreas(true);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
   showToast(areaLabel(name) + " closed — reopen it from Overview");
 }
 
@@ -1209,6 +1307,7 @@ function showArea(name, announce = true) {
   if (!area) return;
   area.hidden = false;
   layoutDockAreas(true);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
   if (announce) showToast(areaLabel(name) + " shown in its " + dockState[name].edge + " dock");
 }
 
@@ -1221,7 +1320,9 @@ function setDockPosition(name, edge, insertion = null, announce = true) {
   const index = insertion === null ? peers.length : Math.max(0, Math.min(insertion, peers.length));
   peers.splice(index, 0, name);
   peers.forEach((item, order) => { dockState[item].order = order; });
+  autoSpatialEdgeStates.clear();
   layoutDockAreas(true);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
   if (announce) showToast(areaLabel(name) + " docked " + edge);
 }
 
@@ -1308,6 +1409,7 @@ function bindDockResize(name, area) {
       handle.removeEventListener("pointercancel", finish);
       area.classList.remove("is-area-resizing");
       saveAreaLayout();
+      if (layoutMode === "auto") scheduleSpatialAutoLayout();
       showToast(areaLabel(name) + " · " + layoutStateLabel(area.dataset.areaState));
     };
     handle.addEventListener("pointermove", move);
@@ -1347,6 +1449,7 @@ function prepareAreaWindows() {
     Object.assign(dockSizes, { left: 310, right: 300, top: 250, bottom: 250 });
     dockEdges.forEach(edge => { dockSizeManual[edge] = false; });
     layoutMode = "auto";
+    autoSpatialEdgeStates.clear();
     clearAllAutoAvoidance();
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(true);
@@ -1368,9 +1471,15 @@ function prepareAreaWindows() {
     const nextMode = layoutModes[(layoutModes.indexOf(layoutMode) + 1) % layoutModes.length];
     if (nextMode === "manual") freezeCurrentAreaLayout();
     layoutMode = nextMode;
-    if (layoutMode === "manual") clearAllAutoAvoidance();
+    if (layoutMode === "manual") {
+      autoSpatialEdgeStates.clear();
+      clearAllAutoAvoidance();
+    } else {
+      autoSpatialEdgeStates.clear();
+    }
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(false);
+    if (layoutMode === "auto") scheduleSpatialAutoLayout();
     showToast(layoutMode === "auto" ? "Auto Areas · windows can claim dock space" : "Manual Areas · geometry locked");
   });
   layoutDockAreas(false);
@@ -2506,6 +2615,7 @@ requestAnimationFrame(() => {
   loadLayout();
   ensureOpenWindowGeometry();
   bringToFront("dolphin");
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
 });
 
 window.addEventListener("resize", () => {
@@ -2513,6 +2623,7 @@ window.addEventListener("resize", () => {
   windowGeometry.forEach((geometry, name) => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
 });
 
 window.addEventListener("pointermove", event => {
