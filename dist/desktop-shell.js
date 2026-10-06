@@ -1697,7 +1697,7 @@ function prepareMaterialCursor() {
   const desktop = $(".desktop-shell");
   if (!cursor || !desktop || !window.matchMedia("(pointer:fine)").matches) return;
 
-  const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-diag-resize", "is-grab", "is-grabbing", "is-move", "is-forbidden", "is-help", "is-progress", "is-copy"];
+  const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-row-resize", "is-diag-resize", "is-grab", "is-grabbing", "is-move", "is-forbidden", "is-help", "is-progress", "is-copy"];
   let lastX = 0;
   let lastY = 0;
 
@@ -1725,6 +1725,7 @@ function prepareMaterialCursor() {
     else if (explicitMode === "help") cursor.classList.add("is-help");
     else if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
     else if (target.closest("[data-area-resize]") && ["left", "right"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-col-resize");
+    else if (target.closest("[data-area-resize]") && ["top", "bottom"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-row-resize");
     else if (target.closest(".resize-handle")) cursor.classList.add("is-diag-resize");
     else if (target.closest("textarea,[contenteditable='true'],input:not([type]),input[type='text'],input[type='search']")) cursor.classList.add("is-text");
     else if (target.closest(".app-titlebar,.area-window-bar") && !target.closest("button,input,a")) cursor.classList.add("is-move");

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell with portable Workspaces, Projects and persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=65">
+  <link rel="stylesheet" href="desktop-shell.css?v=66">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -90,7 +90,7 @@
         <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
         <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview"><i></i><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag to resize"></button>
+      <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag this border to resize"></button>
     </aside>
 
     <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
@@ -142,7 +142,7 @@
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="systems" aria-label="Resize System area" title="Drag to resize"></button>
+      <button class="resize-handle area-resize-handle" data-area-resize="systems" aria-label="Resize System area" title="Drag this border to resize"></button>
     </aside>
 
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
@@ -182,7 +182,7 @@
           <button class="project-note-widget" data-toast="Project notes opened"><svg><use href="#i-note"/></svg><span><b>Interaction notes</b><small>Tabs, buttons and window behaviour</small></span></button>
         </section>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Project Space" title="Drag to resize"></button>
+      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Project Space" title="Drag this border to resize"></button>
     </aside>
   </main>
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true">
@@ -395,6 +395,7 @@
     </svg>
     <svg class="cursor-glyph glyph-text" viewBox="0 0 28 36"><path class="cursor-line" d="M7 4h14M14 4v28M7 32h14"/></svg>
     <svg class="cursor-glyph glyph-col-resize" viewBox="0 0 28 36"><path class="cursor-line" d="M2 18h24M2 18l6-6M2 18l6 6M26 18l-6-6M26 18l-6 6"/></svg>
+    <svg class="cursor-glyph glyph-row-resize" viewBox="0 0 28 36"><path class="cursor-line" d="M14 4v28M14 4l-6 6M14 4l6 6M14 32l-6-6M14 32l6-6"/></svg>
     <svg class="cursor-glyph glyph-diag-resize" viewBox="0 0 28 36"><path class="cursor-line" d="M5 29 23 7M5 29v-8M5 29h8M23 7v8M23 7h-8"/></svg>
     <svg class="cursor-glyph glyph-grab" viewBox="0 0 28 36">
       <path class="cursor-glass" d="M5 17v-5a2 2 0 0 1 4 0v4-8a2 2 0 0 1 4 0v8-10a2 2 0 0 1 4 0v10-8a2 2 0 0 1 4 0v9-5a2 2 0 0 1 4 0v9c0 8-4 12-11 12h-1C7 33 5 28 5 23Z"/>
@@ -422,6 +423,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=65"></script>
+  <script src="desktop-shell.js?v=66"></script>
 </body>
 </html>
