@@ -21,9 +21,21 @@ let musicTimer;
 let focusSeconds = 25 * 60;
 let focusRunning = false;
 let focusTimer;
+let noteDraft = "";
+let terminalPreview = "Ready for a command";
 
 function icon(name) {
   return '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
 }
 
 function showToast(message) {
@@ -196,12 +208,18 @@ function miniMarkup(name) {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
   if (name === "dolphin") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-files"><b>Downloads</b><span>6 items</span><small>material-interface</small><span>today</span><small>Retold</small><span>yesterday</span></div><button class="surface-key mini-open" data-mini-restore="' + name + '">Open Downloads</button></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-location"><span class="live-slit"></span><b>Downloads</b><small>276.8 GiB free</small></div><div class="mini-file-list"><button data-mini-file="material-interface"><span><i class="folder-glyph"></i>material-interface</span><small>today</small></button><button data-mini-file="plasma-shell-study.png"><span><i class="document-glyph image"></i>plasma-shell-study.png</span><small>6.8 MiB</small></button></div><div class="mini-quick-row"><button class="surface-key mini-tool" data-mini-action="new-folder">' + icon("i-folder") + '<span>New folder</span></button><button class="surface-key mini-tool" data-mini-action="find-files">' + icon("i-search") + '<span>Find</span></button></div></article>';
   }
   if (name === "terminal") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-files"><b>Last command</b><span>done</span><small>git status</small><span>clean</span></div><button class="surface-key mini-open" data-mini-restore="' + name + '">Return to terminal</button></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-terminal-output"><b>xef@desktop:~$</b><span data-mini-terminal-output>' + escapeHtml(terminalPreview) + '</span></div><form class="mini-command" data-mini-terminal-form><span>$</span><input name="command" autocomplete="off" placeholder="Run a quick command" aria-label="Quick terminal command"><button class="surface-key mini-control" aria-label="Run command">' + icon("i-right") + "</button></form></article>";
   }
-  return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-files"><b>' + info.detail + '</b><span>open</span><small>App remains available here</small><span>live</span></div><button class="surface-key mini-open" data-mini-restore="' + name + '">Restore ' + info.label + "</button></article>";
+  if (name === "browser") {
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<form class="mini-browser-search" data-mini-browser-form><input name="query" placeholder="Search or enter address" aria-label="Mini browser search"><button class="surface-key mini-control" aria-label="Search">' + icon("i-search") + '</button></form><div class="mini-sites"><button data-mini-site="KDE Invent">KDE</button><button data-mini-site="GitHub">GitHub</button><button data-mini-site="CHMI">CHMI</button></div></article>';
+  }
+  if (name === "notes") {
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<label class="mini-note-label"><span>Desktop concept</span><textarea class="mini-note-field" data-mini-note aria-label="Edit Desktop concept note">' + escapeHtml(noteDraft) + "</textarea></label></article>";
+  }
+  return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-files"><b>' + info.detail + '</b><span>live</span><small>Drag back when you need the full app</small><span>ready</span></div></article>';
 }
 
 function renderMiniApps() {
@@ -212,6 +230,105 @@ function renderMiniApps() {
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
   $$("[data-mini-card]").forEach(bindMiniDrag);
   bindMusicControls();
+  bindMiniWidgets();
+}
+
+function terminalResult(command) {
+  if (command === "date") return new Date().toLocaleString();
+  if (command === "git status") return "On branch main · working tree clean";
+  if (command === "pwd") return "/home/xef";
+  if (command === "clear") return "Terminal cleared";
+  return "command not found: " + command;
+}
+
+function bindMiniWidgets() {
+  $$("[data-mini-file]").forEach(button => button.addEventListener("click", () => {
+    const item = button.dataset.miniFile;
+    openApp("dolphin");
+    showToast(item + " selected");
+  }));
+
+  $$("[data-mini-action]").forEach(button => button.addEventListener("click", () => {
+    if (button.dataset.miniAction === "new-folder") {
+      const list = button.closest("[data-mini-card]").querySelector(".mini-file-list");
+      const folder = document.createElement("button");
+      const number = list.querySelectorAll('[data-mini-file^="New folder"]').length + 1;
+      const folderName = number === 1 ? "New folder" : "New folder " + number;
+      folder.dataset.miniFile = folderName;
+      folder.innerHTML = '<span><i class="folder-glyph"></i>' + folderName + '</span><small>now</small>';
+      folder.addEventListener("click", () => {
+        openApp("dolphin");
+        showToast(folderName + " selected");
+      });
+      list.prepend(folder);
+      showToast("New folder created in Downloads");
+      return;
+    }
+    openApp("dolphin");
+    requestAnimationFrame(() => {
+      const location = frameFor("dolphin").querySelector('input[aria-label="Location"]');
+      location.focus();
+      location.select();
+    });
+  }));
+
+  $$("[data-mini-browser-form]").forEach(form => form.addEventListener("submit", event => {
+    event.preventDefault();
+    const query = new FormData(form).get("query").trim();
+    if (!query) return;
+    const address = frameFor("browser").querySelector('input[aria-label="Address"]');
+    address.value = query;
+    openApp("browser");
+    showToast("Web opened: " + query);
+  }));
+
+  $$("[data-mini-site]").forEach(button => button.addEventListener("click", () => {
+    const address = frameFor("browser").querySelector('input[aria-label="Address"]');
+    address.value = button.dataset.miniSite;
+    openApp("browser");
+    showToast(button.dataset.miniSite + " opened");
+  }));
+
+  $$("[data-mini-terminal-form]").forEach(form => form.addEventListener("submit", event => {
+    event.preventDefault();
+    const input = form.elements.command;
+    const command = input.value.trim();
+    if (!command) return;
+    terminalPreview = terminalResult(command);
+    const output = form.closest("[data-mini-card]").querySelector("[data-mini-terminal-output]");
+    output.textContent = terminalPreview;
+    const mainLine = document.createElement("p");
+    mainLine.className = "terminal-output";
+    mainLine.textContent = "$ " + command + "  ·  " + terminalPreview;
+    const terminalLabel = $("#terminalInput").closest("label");
+    if (command === "clear") $$(".terminal-screen > p").forEach(item => item.remove());
+    else terminalLabel.before(mainLine);
+    input.value = "";
+  }));
+
+  $$("[data-mini-note]").forEach(field => field.addEventListener("input", () => {
+    noteDraft = field.value;
+    $(".notes-layout textarea").value = noteDraft;
+    try {
+      localStorage.setItem("spatial-note-draft-v1", noteDraft);
+    } catch {}
+  }));
+}
+
+function prepareNoteSync() {
+  const mainNote = $(".notes-layout textarea");
+  try {
+    noteDraft = localStorage.getItem("spatial-note-draft-v1") || mainNote.value;
+  } catch {
+    noteDraft = mainNote.value;
+  }
+  mainNote.value = noteDraft;
+  mainNote.addEventListener("input", () => {
+    noteDraft = mainNote.value;
+    try {
+      localStorage.setItem("spatial-note-draft-v1", noteDraft);
+    } catch {}
+  });
 }
 
 function pointInside(rect, x, y) {
@@ -733,6 +850,7 @@ $("#terminalInput").addEventListener("keydown", event => {
   event.target.value = "";
 });
 
+prepareNoteSync();
 prepareZoneResizers();
 prepareWindows();
 updateClock();

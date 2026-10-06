@@ -221,3 +221,169 @@ input[type="range"]{height:5px;appearance:none;border-radius:6px;background:var(
 @media(max-width:1050px){
   .desktop-shell{grid-template-columns:var(--apps-width) minmax(0,1fr) var(--systems-width)}
 }
+
+/* Selective translucency: the work stays solid, surrounding surfaces can breathe */
+.zone{
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb,var(--shell-hi) 72%,transparent),
+      color-mix(in srgb,var(--shell) 78%,transparent) 46%,
+      color-mix(in srgb,var(--shell-lo) 84%,transparent));
+  backdrop-filter:blur(24px) saturate(1.16);
+}
+.workspace-zone{
+  background:
+    radial-gradient(circle at 58% 22%,rgba(42,159,255,.055),transparent 35%),
+    linear-gradient(90deg,rgba(0,0,0,.24),rgba(0,0,0,.05) 8%,rgba(0,0,0,.05) 92%,rgba(0,0,0,.24));
+}
+.app-rack{
+  background:color-mix(in srgb,var(--well) 78%,transparent);
+  backdrop-filter:blur(16px) saturate(1.12);
+}
+.mini-card{
+  background:
+    radial-gradient(circle at 15% 0,rgba(255,255,255,.11),transparent 38%),
+    linear-gradient(120deg,
+      color-mix(in srgb,var(--shell-hi) 82%,transparent),
+      color-mix(in srgb,var(--shell) 78%,transparent) 46%,
+      color-mix(in srgb,var(--shell-lo) 84%,transparent));
+  backdrop-filter:blur(20px) saturate(1.18);
+}
+.system-widget{
+  background:linear-gradient(130deg,
+    color-mix(in srgb,var(--shell-hi) 76%,transparent),
+    color-mix(in srgb,var(--shell) 72%,transparent) 52%,
+    color-mix(in srgb,var(--shell-lo) 80%,transparent));
+  backdrop-filter:blur(18px) saturate(1.14);
+}
+.quick-toggle{
+  background:linear-gradient(
+    color-mix(in srgb,var(--shell-hi) 82%,transparent),
+    color-mix(in srgb,var(--shell-lo) 86%,transparent));
+  backdrop-filter:blur(13px);
+}
+.app-frame{
+  background:
+    radial-gradient(circle at 25% 0,rgba(255,255,255,.09),transparent 32%),
+    linear-gradient(115deg,
+      color-mix(in srgb,var(--shell-hi) 91%,transparent),
+      color-mix(in srgb,var(--shell) 88%,transparent) 40%,
+      color-mix(in srgb,var(--shell-lo) 93%,transparent));
+  backdrop-filter:blur(28px) saturate(1.12);
+}
+.app-titlebar,.app-toolbar,.app-status{
+  background:color-mix(in srgb,var(--shell) 64%,transparent);
+  backdrop-filter:blur(16px) saturate(1.12);
+}
+.music-hero{
+  background:color-mix(in srgb,var(--well) 86%,transparent);
+  backdrop-filter:blur(16px);
+}
+.recessed-field{
+  background:color-mix(in srgb,var(--well) 88%,transparent);
+  backdrop-filter:blur(12px);
+}
+
+/* Useful minimized app widgets */
+.mini-location{
+  min-width:0;
+  height:31px;
+  display:grid;
+  grid-template-columns:3px minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  margin:-2px 0 8px;
+  padding:0 9px;
+  border:1px solid color-mix(in srgb,var(--line) 72%,transparent);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--well) 76%,transparent);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.55),0 1px rgba(255,255,255,.06);
+}
+.mini-location .live-slit{height:17px}
+.mini-location b{font-size:11px}
+.mini-location small{font-size:9px;color:var(--muted)}
+.mini-file-list{display:grid;gap:3px}
+.mini-file-list button{
+  min-width:0;
+  height:31px;
+  padding:0 8px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+}
+.mini-file-list button:hover{background:color-mix(in srgb,var(--blue) 11%,transparent)}
+.mini-file-list button span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.mini-file-list button small{font-size:9px;color:var(--muted)}
+.mini-file-list .folder-glyph{width:14px;height:10px;margin-right:6px}
+.mini-file-list .document-glyph{width:13px;height:15px;margin-right:6px}
+.mini-quick-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mini-tool{height:32px;padding:0 8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px}
+.mini-tool svg{width:13px;height:13px}
+.mini-terminal-output{
+  min-height:50px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:rgba(0,0,0,.52);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.68);
+  font:10px/1.4 ui-monospace,monospace;
+}
+.mini-terminal-output b{color:var(--green)}
+.mini-terminal-output span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-command,.mini-browser-search{
+  height:34px;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) 31px;
+  align-items:center;
+  gap:6px;
+  margin-top:7px;
+  padding-left:9px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:color-mix(in srgb,var(--well) 84%,transparent);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.55);
+}
+.mini-command>span{font:700 11px ui-monospace,monospace;color:var(--green)}
+.mini-command input,.mini-browser-search input{
+  min-width:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  font-size:10px;
+}
+.mini-browser-search{grid-template-columns:minmax(0,1fr) 31px;margin-top:0;padding-left:10px}
+.mini-sites{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}
+.mini-sites button{
+  height:29px;
+  border:1px solid color-mix(in srgb,var(--line) 72%,transparent);
+  border-radius:8px;
+  background:color-mix(in srgb,var(--well) 66%,transparent);
+  color:var(--muted);
+  font-size:9px;
+}
+.mini-sites button:hover{color:var(--text);border-color:color-mix(in srgb,var(--blue) 42%,var(--line))}
+.mini-note-label>span{display:block;margin:0 0 6px 2px;color:var(--muted);font-size:9px}
+.mini-note-field{
+  width:100%;
+  min-height:105px;
+  resize:none;
+  border:1px solid var(--line);
+  border-radius:10px;
+  outline:0;
+  padding:9px 10px;
+  background:color-mix(in srgb,var(--well) 79%,transparent);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.58);
+  color:var(--text);
+  font:10px/1.45 system-ui;
+}
+.mini-note-field:focus{border-color:color-mix(in srgb,var(--blue) 55%,var(--line));box-shadow:inset 0 3px 7px rgba(0,0,0,.58),0 0 0 1px rgba(42,159,255,.22)}
