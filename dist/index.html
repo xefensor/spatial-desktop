@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07090a">
-  <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
+  <meta name="description" content="An interactive KDE desktop shell with portable Workspaces, Projects and persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=58">
+  <link rel="stylesheet" href="desktop-shell.css?v=59">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -66,15 +66,16 @@
     <symbol id="i-archive" viewBox="0 0 24 24"><path d="M4 7h16v14H4zM3 3h18v4H3zM9 11h6"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6-6M7.5 17.5l-1 1a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0M16.5 6.5l1-1a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0"/></symbol>
     <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 11h8M8 15h6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
   </svg>
 
   <main class="desktop-shell" aria-label="Plasma spatial desktop prototype">
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Open and parked</small></span></div>
+        <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Apps dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
       </header>
-      <nav class="app-rack" aria-label="Favourite and open applications">
+      <nav class="app-rack" id="appRack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
         <button class="app-key is-open" data-open-app="elisa" aria-label="Elisa"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg><span>Elisa</span><i></i></button>
         <button class="app-key" data-open-app="browser" aria-label="Web browser"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg><span>Web</span><i></i></button>
@@ -86,6 +87,7 @@
         <div class="mini-stack" id="miniStack" aria-live="polite"></div>
       </section>
       <div class="apps-bottom">
+        <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview"><i></i><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
         <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Open overview"><svg><use href="#i-grid"/></svg><span>Overview</span><kbd>Super</kbd></button>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag to resize"></button>
@@ -97,7 +99,7 @@
       <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="empty-workspace" id="emptyWorkspace" hidden><div class="empty-mark"><svg><use href="#i-grid"/></svg></div><strong>No app in the main area</strong><span>Restore one from the Apps area.</span></div>
       <article class="app-frame is-active" data-app-frame="dolphin" aria-label="Dolphin file manager">
-        <header class="app-titlebar"><div class="app-identity"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Dolphin</b><small>Downloads</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Minimize Dolphin"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-window-action="maximize" aria-label="Maximize Dolphin"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Dolphin"><svg><use href="#i-close"/></svg></button></div></header>
+        <header class="app-titlebar"><div class="app-identity"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Dolphin</b><small id="dolphinContext">Downloads</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Minimize Dolphin"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-window-action="maximize" aria-label="Maximize Dolphin"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Dolphin"><svg><use href="#i-close"/></svg></button></div></header>
         <div class="app-toolbar"><div class="key-group"><button class="surface-key compact-key"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key"><svg><use href="#i-right"/></svg></button></div><label class="recessed-field address-bar"><span class="live-slit"></span><input value="/home/xef/Downloads" aria-label="Location"></label><button class="surface-key compact-key"><svg><use href="#i-search"/></svg></button><button class="surface-key compact-key"><svg><use href="#i-grid"/></svg></button></div>
         <div class="dolphin-layout">
           <nav class="places-list" aria-label="Places"><span class="small-heading">PLACES</span><button class="nav-choice"><svg><use href="#i-folder"/></svg>Home</button><button class="nav-choice is-active"><svg><use href="#i-folder"/></svg>Downloads</button><button class="nav-choice"><svg><use href="#i-note"/></svg>Documents</button><button class="nav-choice"><svg><use href="#i-music"/></svg>Music</button><span class="small-heading">REMOTE</span><button class="nav-choice"><svg><use href="#i-web"/></svg>Network</button><button class="nav-choice"><svg><use href="#i-terminal"/></svg>Server</button></nav>
@@ -122,7 +124,7 @@
 
     <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="Systems area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Status and controls</small></span></div>
+        <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move System dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="systems" aria-label="Hide System area" title="Hide System area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
@@ -135,7 +137,7 @@
         <section class="system-widget timer-widget dynamic-widget" id="timerWidget" hidden><header class="widget-heading"><div><svg><use href="#i-timer"/></svg><h2>Focus timer</h2></div><span id="timerState">Ready</span></header><div class="timer-face"><strong id="timerValue">25:00</strong><div class="timer-progress"><i id="timerProgress"></i></div></div><div class="timer-actions"><button class="surface-key" id="timerToggle">Pause</button><button class="surface-key" id="timerReset">Dismiss</button></div></section>
       </div>
       <div class="static-widget-stack" aria-label="Pinned system widgets">
-      <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b>Retold test pass</b><small>14:30 · 45 min</small></div></div></section>
+      <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b id="systemAgendaTitle">Retold test pass</b><small id="systemAgendaMeta">14:30 · 45 min</small></div></div></section>
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
       </div>
@@ -145,7 +147,7 @@
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small>Project Space</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher" aria-label="Projects">
         <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true"><i class="project-color project-color-blue"></i><span>Plasma Redesign</span></button>
@@ -193,11 +195,31 @@
         </label>
       </header>
 
+      <section class="workspace-switcher" aria-label="Workspaces">
+        <div class="workspace-switcher-label"><span class="eyebrow">WORKSPACES</span><strong id="activeWorkspaceLabel">General</strong></div>
+        <div class="workspace-tabs" role="tablist">
+          <button class="workspace-tab is-active" role="tab" aria-selected="true" data-workspace="general"><span class="workspace-glyph"><svg><use href="#i-grid"/></svg></span><span><b>General</b><small>Personal desktop</small></span></button>
+          <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="school"><span class="workspace-glyph"><svg><use href="#i-graduation"/></svg></span><span><b>School</b><small>Classes and study</small></span></button>
+          <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="work"><span class="workspace-glyph"><svg><use href="#i-office"/></svg></span><span><b>Work</b><small>Focused session</small></span></button>
+          <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="gaming"><span class="workspace-glyph"><svg><use href="#i-gamepad"/></svg></span><span><b>Gaming</b><small>Games and friends</small></span></button>
+        </div>
+        <div class="workspace-switcher-actions"><button class="workspace-action" data-import-package><svg><use href="#i-archive"/></svg><span>Import</span></button><button class="workspace-action primary" data-open-package="workspace"><svg><use href="#i-link"/></svg><span>Pack workspace</span></button></div>
+      </section>
+
       <div class="overview-home" id="overviewHome">
         <main class="overview-main">
+          <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
+            <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/xef</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
+            <div class="workspace-home-body">
+              <div class="workspace-folders" id="workspaceFolders" aria-label="Workspace folders"></div>
+              <div class="workspace-context-card"><span class="eyebrow">THIS WORKSPACE</span><b id="workspaceContextTitle">Everyday desktop</b><small id="workspaceContextMeta">5 favourite apps · 2 open projects · private clipboard</small><div class="workspace-favorites" id="workspaceFavorites" aria-label="Favourite applications"></div></div>
+              <button class="other-workspaces" data-toast="Showing all Workspace Homes"><span><svg><use href="#i-folder"/></svg><span><b>Other Workspace Homes</b><small>School · Work · Gaming</small></span></span><svg><use href="#i-right"/></svg></button>
+            </div>
+          </section>
+
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
-            <header class="overview-section-heading"><div><span class="eyebrow">RUNNING</span><h3 id="openWindowsTitle">Open windows</h3></div><span>2 active</span></header>
-            <div class="overview-window-grid">
+            <header class="overview-section-heading"><div><span class="eyebrow">RUNNING</span><h3 id="openWindowsTitle">Open windows</h3></div><span id="workspaceOpenCount">2 active</span></header>
+            <div class="overview-window-grid" id="overviewWindowGrid">
               <button class="overview-window dolphin" data-open-app="dolphin"><span class="overview-window-app"><svg class="app-art"><use href="#app-dolphin"/></svg><span><b>Dolphin</b><small>Downloads</small></span></span><span class="overview-window-preview file-preview"><i></i><i></i><i></i></span></button>
               <button class="overview-window elisa" data-open-app="elisa"><span class="overview-window-app"><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Elisa</b><small>running out of time</small></span></span><span class="overview-window-preview music-preview"><i></i><b>1:55</b><span></span></span></button>
             </div>
@@ -274,7 +296,7 @@
             <header><h3>System</h3><button class="surface-key tiny-key" data-toast="System settings">Settings</button></header>
             <div class="overview-quick-grid"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" data-toggle aria-pressed="false"><svg><use href="#i-bell"/></svg><span>Focus</span></button></div>
           </section>
-          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3>Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b>Retold test pass</b><small>14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
+          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Retold test pass</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Pixel 8a</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></section>
         </aside>
       </div>
@@ -311,6 +333,35 @@
       </div>
 
       <footer class="universal-search-footer"><span><kbd>Super</kbd> Close overview</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span></footer>
+    </div>
+  </section>
+  <section class="package-overlay" id="packageDialog" role="dialog" aria-modal="true" aria-labelledby="packageTitle" aria-hidden="true" hidden>
+    <div class="package-window">
+      <header class="package-titlebar">
+        <div><span class="package-mark"><svg><use href="#i-archive"/></svg></span><span><small id="packageKicker">PORTABLE WORKSPACE</small><h2 id="packageTitle">Pack General</h2></span></div>
+        <button class="surface-key package-close" data-close-package aria-label="Close package preview"><svg><use href="#i-close"/></svg></button>
+      </header>
+
+      <div class="package-composer" id="packageComposer">
+        <section class="package-intro"><div><b id="packageFileName">General.workspace</b><small id="packageSummary">A portable copy of this Workspace and its selected content.</small></div><span class="package-size" id="packageSize">1.8 GB</span></section>
+        <div class="package-mode-switch" role="radiogroup" aria-label="Package type">
+          <button data-package-mode="template" aria-pressed="false"><svg><use href="#i-grid"/></svg><span><b>Template</b><small>Layout, apps and widgets</small></span></button>
+          <button class="is-active" data-package-mode="portable" aria-pressed="true"><svg><use href="#i-archive"/></svg><span><b>Portable copy</b><small>Settings and selected files</small></span></button>
+          <button data-package-mode="handoff" aria-pressed="false"><svg><use href="#i-link"/></svg><span><b>Handoff snapshot</b><small>Resume the same session</small></span></button>
+        </div>
+        <div class="package-columns">
+          <section class="package-panel package-contents"><header><span><span class="eyebrow">INCLUDED</span><h3>Package contents</h3></span><button id="packageSelectAll">Select all</button></header><div id="packageContentList"></div></section>
+          <section class="package-panel package-safety"><header><span class="safety-shield"><svg><use href="#i-lock"/></svg></span><span><span class="eyebrow">PRIVACY CHECK</span><h3>Safe to share</h3></span></header><p>Personal authentication and device identity stay on this computer.</p><ul><li>Passwords, tokens and cookies</li><li>SSH keys and device IDs</li><li>Notifications and private recents</li><li>Clipboard history and absolute paths</li></ul><button class="safety-details" data-toast="Privacy exclusions reviewed">Review exclusions</button></section>
+        </div>
+        <footer class="package-actions"><span><svg><use href="#i-link"/></svg><span><b>Open package format</b><small>Manifest + files · inspectable like a ZIP</small></span></span><div><button class="package-secondary" data-close-package>Cancel</button><button class="package-primary" id="createPackage"><svg><use href="#i-archive"/></svg><span>Create package</span></button></div></footer>
+      </div>
+
+      <div class="import-preview" id="importPreview" hidden>
+        <section class="import-hero"><span class="import-file-icon"><svg><use href="#i-archive"/></svg></span><span><small>WORKSPACE PACKAGE</small><h3>Game Development.workspace</h3><p>Shared by Alex · 1.8 GB</p></span><span class="import-trust"><svg><use href="#i-lock"/></svg> Privacy check passed</span></section>
+        <div class="import-grid"><section><span class="import-count">4</span><b>Apps ready</b><small>3 apps need installation</small></section><section><span class="import-count">2</span><b>Projects included</b><small>Plasma Redesign, Retold</small></section><section><span class="import-count">8</span><b>Home folders</b><small>1 external link unavailable</small></section></div>
+        <section class="import-map"><header><span><span class="eyebrow">IMPORT PREVIEW</span><h3>What will be created</h3></span><button data-toast="Package manifest opened">View manifest</button></header><div class="import-tree"><span><i></i><b>New Workspace</b><small>Game Development</small></span><span><i></i><b>Workspace Home</b><small>Documents, Downloads, Desktop</small></span><span><i></i><b>Desktop context</b><small>Areas, widgets, favourites and wallpaper</small></span><span><i></i><b>Projects</b><small>Available from every Workspace</small></span></div></section>
+        <footer class="package-actions"><button class="package-secondary" data-close-package>Cancel</button><div><button class="package-secondary" id="importProjectOnly">Projects only</button><button class="package-primary" id="importWorkspace"><svg><use href="#i-grid"/></svg><span>Import as new Workspace</span></button></div></footer>
+      </div>
     </div>
   </section>
   <div class="material-cursor" id="materialCursor" aria-hidden="true">
@@ -354,6 +405,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=58"></script>
+  <script src="desktop-shell.js?v=59"></script>
 </body>
 </html>

@@ -215,6 +215,7 @@ function syncApps() {
   $("#emptyWorkspace").hidden = Object.values(appState).includes("open");
   syncRack();
   renderMiniApps();
+  renderOverviewWindows();
   if (frontApp) bringToFront(frontApp);
 }
 
@@ -1022,10 +1023,13 @@ const projectSpaces = {
   }
 };
 
+let activeProjectName = "plasma";
+
 function renderProjectSpace(name) {
   const project = projectSpaces[name];
   const area = areaFor("projects");
   if (!project || !area) return;
+  activeProjectName = name;
   area.style.setProperty("--project-accent", project.accent);
   $("#projectAreaName").textContent = project.name;
   $("#projectRootPath").textContent = project.root;
@@ -1053,6 +1057,235 @@ function prepareProjectSpaces() {
     if (copy) showToast("Copied " + copy.dataset.projectCopy);
   });
   renderProjectSpace("plasma");
+}
+
+const workspaceProfiles = {
+  general: {
+    label: "General", subtitle: "Personal desktop", icon: "i-grid", accent: "#56baff", home: "/home/xef",
+    context: "Everyday desktop", meta: "5 favourite apps · 2 open projects · private clipboard",
+    folders: [["Desktop", "8 items"], ["Documents", "124 items"], ["Downloads", "31 items"], ["Pictures", "480 items"]],
+    rack: ["dolphin", "elisa", "browser", "terminal", "notes"],
+    favorites: [["dolphin", "Dolphin"], ["browser", "Firefox"], ["elisa", "Elisa"], ["notes", "Notes"], ["i-mail", "Thunderbird"]],
+    agenda: ["Today", "Retold test pass", "14:30 · 45 min"]
+  },
+  school: {
+    label: "School", subtitle: "Classes and study", icon: "i-graduation", accent: "#f2b646", home: "/home/xef/Workspaces/School",
+    context: "Study session", meta: "4 favourite apps · 1 open project · school clipboard",
+    folders: [["Desktop", "4 items"], ["Documents", "6 courses"], ["Downloads", "12 items"], ["Assignments", "3 due"]],
+    rack: ["browser", "dolphin", "notes"],
+    favorites: [["browser", "Firefox"], ["i-office", "Writer"], ["i-calendar", "Kalendar"], ["i-note", "Okular"], ["dolphin", "Dolphin"]],
+    agenda: ["School", "Physics assignment", "Due tomorrow · 16:00"]
+  },
+  work: {
+    label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/xef/Workspaces/Work",
+    context: "Product work", meta: "5 favourite apps · 1 open project · work clipboard",
+    folders: [["Desktop", "3 items"], ["Documents", "42 items"], ["Downloads", "7 items"], ["Shared", "18 items"]],
+    rack: ["terminal", "browser", "dolphin", "notes"],
+    favorites: [["terminal", "Konsole"], ["i-code", "Kate"], ["browser", "Firefox"], ["dolphin", "Dolphin"], ["i-mail", "Mail"]],
+    agenda: ["Work", "Design review", "15:15 · 30 min"]
+  },
+  gaming: {
+    label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/xef/Workspaces/Gaming",
+    context: "Game night", meta: "4 favourite apps · 1 open project · gaming clipboard",
+    folders: [["Desktop", "6 shortcuts"], ["Games", "23 installed"], ["Captures", "64 videos"], ["Mods", "11 profiles"]],
+    rack: ["elisa", "browser", "dolphin", "terminal"],
+    favorites: [["i-gamepad", "Steam"], ["i-gamepad", "Lutris"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
+    agenda: ["Gaming", "Co-op with Martin", "20:00 · voice chat"]
+  }
+};
+
+let activeWorkspace = "general";
+const workspaceAppStates = {
+  general: { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" },
+  school: { dolphin: "open", elisa: "closed", browser: "open", terminal: "closed", notes: "minimized" },
+  work: { dolphin: "minimized", elisa: "closed", browser: "open", terminal: "open", notes: "closed" },
+  gaming: { dolphin: "closed", elisa: "open", browser: "minimized", terminal: "closed", notes: "closed" }
+};
+
+function workspaceFavoriteMarkup([asset, label]) {
+  if (appInfo[asset]) return '<button class="workspace-favorite" data-open-app="' + asset + '" title="' + escapeHtml(label) + '">' + appArt(asset) + '</button>';
+  return '<button class="workspace-favorite generic" data-toast="' + escapeHtml(label) + ' launched" title="' + escapeHtml(label) + '">' + icon(asset) + '</button>';
+}
+
+function renderOverviewWindows() {
+  const target = $("#overviewWindowGrid");
+  if (!target) return;
+  const openNames = Object.keys(appState).filter(name => appState[name] === "open");
+  $("#workspaceOpenCount").textContent = openNames.length + (openNames.length === 1 ? " active" : " active");
+  target.innerHTML = openNames.map(name => {
+    const info = appInfo[name];
+    const preview = name === "elisa"
+      ? '<span class="overview-window-preview music-preview"><i></i><b>1:55</b><span></span></span>'
+      : '<span class="overview-window-preview file-preview"><i></i><i></i><i></i></span>';
+    return '<button class="overview-window ' + (name === "elisa" ? "elisa" : "") + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-app">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(info.detail) + '</small></span></span>' + preview + '</button>';
+  }).join("") || '<div class="workspace-no-windows"><b>No open windows</b><small>This Workspace will remember new windows you open.</small></div>';
+}
+
+function renderWorkspace(name, announce = true) {
+  const profile = workspaceProfiles[name];
+  if (!profile) return;
+  if (name !== activeWorkspace && workspaceAppStates[activeWorkspace]) workspaceAppStates[activeWorkspace] = { ...appState };
+  activeWorkspace = name;
+  Object.assign(appState, workspaceAppStates[name]);
+  frontApp = Object.keys(appState).find(appName => appState[appName] === "open") || null;
+  document.body.dataset.workspace = name;
+  document.body.style.setProperty("--workspace-accent", profile.accent);
+  document.body.style.setProperty("--workspace-accent-soft", profile.accent + "26");
+  $$("[data-workspace]").forEach(button => {
+    const selected = button.dataset.workspace === name;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-selected", String(selected));
+  });
+  $("#activeWorkspaceLabel").textContent = profile.label;
+  $("#workspaceHomeTitle").textContent = profile.label + " Home";
+  $("#workspaceHomePath").textContent = profile.home;
+  $("#workspaceHomeIcon use").setAttribute("href", "#" + profile.icon);
+  $("#workspaceContextTitle").textContent = profile.context;
+  $("#workspaceContextMeta").textContent = profile.meta;
+  $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail]) => '<button class="workspace-folder" data-toast="' + escapeHtml(label) + ' opened"><span>' + icon("i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  $("#workspaceFavorites").innerHTML = profile.favorites.map(workspaceFavoriteMarkup).join("");
+  $("#workspaceAgendaHeading").textContent = profile.agenda[0];
+  $("#workspaceAgendaTitle").textContent = profile.agenda[1];
+  $("#workspaceAgendaMeta").textContent = profile.agenda[2];
+  $("#systemAgendaTitle").textContent = profile.agenda[1];
+  $("#systemAgendaMeta").textContent = profile.agenda[2];
+  $("#appsAreaContext").textContent = profile.label + " workspace";
+  $("#systemAreaContext").textContent = profile.label + " workspace";
+  $("#dolphinContext").textContent = profile.label + " · Downloads";
+  $(".address-bar input").value = profile.home + "/Downloads";
+  $("#appRack").innerHTML = profile.rack.map(appName => {
+    const info = appInfo[appName];
+    const state = appState[appName];
+    return '<button class="app-key ' + (state !== "closed" ? "is-open " : "") + (state === "open" && appName === frontApp ? "is-active" : "") + '" data-open-app="' + appName + '" aria-label="' + escapeHtml(info.label) + '">' + appArt(appName) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
+  }).join("");
+  applyAppPrimaryColors($("#appRack"));
+  prepareControlSemantics($("#appRack"));
+  syncApps();
+  const status = $("#workspaceStatus");
+  $("b", status).textContent = profile.label;
+  $("small", status).textContent = profile.subtitle;
+  try { localStorage.setItem("spatial-active-workspace", name); } catch {}
+  if (announce) showToast(profile.label + " workspace loaded");
+}
+
+function prepareWorkspaces() {
+  try { activeWorkspace = localStorage.getItem("spatial-active-workspace") || "general"; } catch {}
+  if (!workspaceProfiles[activeWorkspace]) activeWorkspace = "general";
+  $$("[data-workspace]").forEach(button => button.addEventListener("click", () => renderWorkspace(button.dataset.workspace)));
+  $("#workspaceStatus").addEventListener("click", () => setUniversalSearchOpen(true));
+  $("#overviewWindowGrid").addEventListener("click", event => {
+    const button = event.target.closest("[data-overview-open-app]");
+    if (button) { openApp(button.dataset.overviewOpenApp); setUniversalSearchOpen(false); }
+  });
+  $("#appRack").addEventListener("click", event => {
+    const button = event.target.closest("[data-open-app]");
+    if (button) openApp(button.dataset.openApp);
+  });
+  $("#workspaceFavorites").addEventListener("click", event => {
+    const open = event.target.closest("[data-open-app]");
+    const toast = event.target.closest("[data-toast]");
+    if (open) { openApp(open.dataset.openApp); setUniversalSearchOpen(false); }
+    if (toast) showToast(toast.dataset.toast);
+  });
+  $("#workspaceFolders").addEventListener("click", event => {
+    const button = event.target.closest("[data-toast]");
+    if (button) showToast(button.dataset.toast);
+  });
+  renderWorkspace(activeWorkspace, false);
+}
+
+const packageModes = {
+  template: { summary: "A reusable layout with app requirements and widgets, but no personal files.", workspaceSize: "6.4 MB", projectSize: "420 KB" },
+  portable: { summary: "A portable copy with settings and the files you select.", workspaceSize: "1.8 GB", projectSize: "286 MB" },
+  handoff: { summary: "A resumable snapshot with open windows and session context.", workspaceSize: "1.9 GB", projectSize: "301 MB" }
+};
+
+let packageKind = "workspace";
+let packageMode = "portable";
+
+function packageRows(kind) {
+  const workspaceRows = [
+    ["i-folder", "Workspace Home", "Desktop, Documents, Downloads and selected files", "1.6 GB", true],
+    ["i-grid", "Desktop context", "Area layout, favourites, widgets and wallpaper", "3.8 MB", true],
+    ["i-folder", "Selected projects", "References to Plasma Redesign and Retold", "2 links", true],
+    ["i-archive", "App requirements", "Package names and suggested versions", "33 apps", true],
+    ["i-monitor", "Window session", "Open apps, positions and view state", "optional", packageMode === "handoff"]
+  ];
+  const projectRows = [
+    ["i-folder", "Project folder", "Files under the project root", "274 MB", true],
+    ["i-link", "Linked resources", "Portable copies or safe relative references", "2 links", true],
+    ["i-note", "Notes and widgets", "Project notes and selected widget state", "84 KB", true],
+    ["i-grid", "Quick launch apps", "App requirements, commands and roles", "4 apps", true],
+    ["i-clipboard", "Project clipboard", "Off by default because it may be sensitive", "optional", false]
+  ];
+  return kind === "project" ? projectRows : workspaceRows;
+}
+
+function renderPackageComposer() {
+  const profile = workspaceProfiles[activeWorkspace];
+  const project = projectSpaces[activeProjectName];
+  const subject = packageKind === "project" ? project.name : profile.label;
+  const suffix = packageKind === "project" ? ".project" : ".workspace";
+  $("#packageKicker").textContent = packageKind === "project" ? "PORTABLE PROJECT" : "PORTABLE WORKSPACE";
+  $("#packageTitle").textContent = "Pack " + subject;
+  $("#packageFileName").textContent = subject.replace(/\s+/g, "-") + suffix;
+  $("#packageSummary").textContent = packageModes[packageMode].summary;
+  $("#packageSize").textContent = packageModes[packageMode][packageKind + "Size"];
+  $$("[data-package-mode]").forEach(button => {
+    const selected = button.dataset.packageMode === packageMode;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  $("#packageContentList").innerHTML = packageRows(packageKind).map(([itemIcon, label, detail, size, checked]) => '<label class="package-content-row"><input type="checkbox" ' + (checked ? "checked" : "") + '><span>' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><small>' + escapeHtml(size) + '</small></label>').join("");
+  prepareControlSemantics($("#packageDialog"));
+}
+
+function openPackageDialog(kind = "workspace", direction = "pack") {
+  packageKind = kind;
+  const dialog = $("#packageDialog");
+  $("#packageComposer").hidden = direction !== "pack";
+  $("#importPreview").hidden = direction !== "import";
+  if (direction === "pack") renderPackageComposer();
+  else {
+    $("#packageKicker").textContent = "IMPORT PREVIEW";
+    $("#packageTitle").textContent = "Review shared Workspace";
+  }
+  dialog.hidden = false;
+  dialog.setAttribute("aria-hidden", "false");
+  document.body.classList.add("package-open");
+  requestAnimationFrame(() => dialog.classList.add("is-open"));
+}
+
+function closePackageDialog() {
+  const dialog = $("#packageDialog");
+  dialog.classList.remove("is-open");
+  dialog.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("package-open");
+  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 120);
+}
+
+function preparePackages() {
+  $$("[data-open-package]").forEach(button => button.addEventListener("click", event => { event.stopPropagation(); openPackageDialog(button.dataset.openPackage); }));
+  $$("[data-close-package]").forEach(button => button.addEventListener("click", closePackageDialog));
+  $("[data-import-package]").addEventListener("click", () => openPackageDialog("workspace", "import"));
+  $$("[data-package-mode]").forEach(button => button.addEventListener("click", () => { packageMode = button.dataset.packageMode; renderPackageComposer(); }));
+  $("#packageSelectAll").addEventListener("click", () => $$("input[type=checkbox]", $("#packageContentList")).forEach(input => { input.checked = true; }));
+  $("#createPackage").addEventListener("click", () => {
+    const button = $("#createPackage");
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = icon("i-timer") + "<span>Building preview…</span>";
+    setTimeout(() => {
+      button.disabled = false;
+      button.innerHTML = original;
+      closePackageDialog();
+      showToast((packageKind === "project" ? "Project" : "Workspace") + " package preview created");
+    }, 650);
+  });
+  $("#importWorkspace").addEventListener("click", () => { closePackageDialog(); showToast("Game Development workspace imported · preview"); });
+  $("#importProjectOnly").addEventListener("click", () => { closePackageDialog(); showToast("2 projects imported · preview"); });
+  $("#packageDialog").addEventListener("pointerdown", event => { if (event.target === $("#packageDialog")) closePackageDialog(); });
+  renderPackageComposer();
 }
 
 function ensureOpenWindowGeometry() {
@@ -1298,7 +1531,7 @@ function prepareMaterialCursor() {
     syncMode(document.elementFromPoint(lastX, lastY), 0);
   };
 
-  [desktop, $("#universalSearch")].filter(Boolean).forEach(surface => {
+  [desktop, $("#universalSearch"), $("#packageDialog")].filter(Boolean).forEach(surface => {
     surface.addEventListener("pointerenter", event => {
       if (event.pointerType && event.pointerType !== "mouse") return;
       cursor.classList.add("is-visible");
@@ -1338,6 +1571,13 @@ document.addEventListener("keydown", event => {
     return;
   }
   if (event.metaKey && !isSuper) superKeyAlone = false;
+
+  if (event.key === "Escape" && $("#packageDialog").classList.contains("is-open")) {
+    event.preventDefault();
+    event.stopPropagation();
+    closePackageDialog();
+    return;
+  }
 
   const universalShortcut = event.code === "Space" && (event.metaKey || event.altKey || event.ctrlKey);
   if (universalShortcut) {
@@ -1589,6 +1829,8 @@ $("#terminalInput").addEventListener("keydown", event => {
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
+prepareWorkspaces();
+preparePackages();
 prepareWindows();
 applyAppPrimaryColors();
 hydrateAppArtwork();
