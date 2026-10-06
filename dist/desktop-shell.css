@@ -5031,3 +5031,46 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
     corner-shape:square!important;
   }
 }
+
+/* v89 — Overview is another desktop Area, not a window. Its full-screen
+   sheet and every structural/control surface inside use the square language. */
+.universal-search,
+.universal-search-shell{
+  border-radius:0!important;
+}
+.universal-search :where(
+  button,
+  input:not([type="range"]),
+  textarea,
+  select,
+  label,
+  section,
+  article,
+  aside,
+  nav,
+  header,
+  footer,
+  kbd,
+  .workspace-switcher,
+  .workspace-home-card,
+  .workspace-context-card,
+  .overview-app-library,
+  .overview-widget,
+  .overview-window,
+  .overview-project,
+  .universal-result,
+  .all-apps-drawer,
+  .all-apps-search,
+  .launcher-category,
+  .launcher-app
+){
+  border-radius:2px!important;
+}
+
+@supports (corner-shape:square){
+  .universal-search,
+  .universal-search-shell,
+  .universal-search :where(button,input:not([type="range"]),textarea,select,label,section,article,aside,nav,header,footer,kbd,.workspace-switcher,.workspace-home-card,.workspace-context-card,.overview-app-library,.overview-widget,.overview-window,.overview-project,.universal-result,.all-apps-drawer,.all-apps-search,.launcher-category,.launcher-app){
+    corner-shape:square!important;
+  }
+}
