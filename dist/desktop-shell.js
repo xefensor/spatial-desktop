@@ -413,6 +413,10 @@ function syncApps() {
   renderOverviewWindows();
   if (frontApp) bringToFront(frontApp);
   persistWorkspaceAppStates();
+  /* An otherwise empty secondary display is an Area workspace. Re-run the
+     Area layout whenever its local window occupancy changes so it can enter
+     or leave that presentation immediately. */
+  if (windowViewportLockReady && extendedDesktopActive()) layoutDockAreas(false, false);
 }
 
 function openApp(name, dropPoint = null) {
@@ -1703,6 +1707,62 @@ function freezeCurrentAreaLayout() {
   });
 }
 
+function secondaryAreaCanvasNames() {
+  if (layoutMode !== "auto" || !extendedDesktopActive() || localDisplaySlot() === 1) return [];
+  const hasLocalWindow = Object.keys(appState).some(name => appState[name] === "open" && isLocalApp(name));
+  if (hasLocalWindow) return [];
+  return areaPriority.filter(name => isLocalArea(name) && !areaFor(name)?.hidden);
+}
+
+function applySecondaryAreaCanvas(names, width, height) {
+  const padding = 8;
+  const gap = 8;
+  const usableWidth = Math.max(220, width - padding * 2);
+  const usableHeight = Math.max(220, height - padding * 2);
+  const place = (name, x, y, areaWidth, areaHeight) => {
+    applyDockRect(name, {
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(areaWidth),
+      height: Math.round(areaHeight)
+    });
+  };
+
+  if (names.length === 1) {
+    place(names[0], padding, padding, usableWidth, usableHeight);
+  } else if (names.length === 2) {
+    if (width >= height * 1.15) {
+      const firstWidth = Math.round((usableWidth - gap) * (names[0] === "projects" ? .54 : .5));
+      place(names[0], padding, padding, firstWidth, usableHeight);
+      place(names[1], padding + firstWidth + gap, padding, usableWidth - firstWidth - gap, usableHeight);
+    } else {
+      const firstHeight = Math.round((usableHeight - gap) * (names[0] === "projects" ? .54 : .5));
+      place(names[0], padding, padding, usableWidth, firstHeight);
+      place(names[1], padding, padding + firstHeight + gap, usableWidth, usableHeight - firstHeight - gap);
+    }
+  } else if (width >= height * 1.15) {
+    const primaryWidth = Math.round((usableWidth - gap) * .52);
+    const secondaryWidth = usableWidth - primaryWidth - gap;
+    const upperHeight = Math.round((usableHeight - gap) * .56);
+    place(names[0], padding, padding, primaryWidth, usableHeight);
+    place(names[1], padding + primaryWidth + gap, padding, secondaryWidth, upperHeight);
+    place(names[2], padding + primaryWidth + gap, padding + upperHeight + gap, secondaryWidth, usableHeight - upperHeight - gap);
+  } else {
+    const available = usableHeight - gap * 2;
+    const primaryHeight = Math.round(available * .46);
+    const appsHeight = Math.round(available * .30);
+    place(names[0], padding, padding, usableWidth, primaryHeight);
+    place(names[1], padding, padding + primaryHeight + gap, usableWidth, appsHeight);
+    place(names[2], padding, padding + primaryHeight + appsHeight + gap * 2, usableWidth, available - primaryHeight - appsHeight);
+  }
+
+  baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
+  captureBaseDockLaneRects();
+  applyAutoAvoidance();
+  document.body.classList.add("secondary-area-canvas", "areas-docked");
+  document.body.classList.remove("areas-freeform", "areas-auto");
+}
+
 function layoutDockAreas(save = false, fitWindows = true) {
   const shell = $(".desktop-shell");
   const width = shell.clientWidth;
@@ -1710,6 +1770,10 @@ function layoutDockAreas(save = false, fitWindows = true) {
   const gap = 0;
   const resolved = resolvedAreaLayout(width, height);
   const effectiveSizes = resolved.sizes;
+  const secondaryCanvasNames = secondaryAreaCanvasNames();
+  if (secondaryCanvasNames.length) {
+    secondaryCanvasNames.forEach(name => { resolved.states[name] = "expanded"; });
+  }
   currentDisplayProfile = resolved.profile;
   document.body.dataset.displayProfile = resolved.profile;
   document.body.dataset.layoutMode = layoutMode;
@@ -1723,6 +1787,12 @@ function layoutDockAreas(save = false, fitWindows = true) {
   });
   syncAreaControls(resolved.states);
   syncLayoutModeUI(resolved.profile);
+  if (secondaryCanvasNames.length) {
+    applySecondaryAreaCanvas(secondaryCanvasNames, width, height);
+    if (save) saveAreaLayout();
+    return;
+  }
+  document.body.classList.remove("secondary-area-canvas");
 
   const left = dockGroup("left");
   const right = dockGroup("right");
