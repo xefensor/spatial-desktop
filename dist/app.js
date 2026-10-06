@@ -230,13 +230,22 @@ function attachCapacitiveSurface(surface, light) {
   );
   const field = $('.capacitive-field', surface);
   let releaseTimer;
+  let sensing = false;
+  let activePointerId = null;
 
-  function sense(event) {
+  function sense(event, begin = false) {
     const rect = surface.getBoundingClientRect();
+    const fieldRect = field.getBoundingClientRect();
     const x = Math.max(8, Math.min(rect.width - 8, event.clientX - rect.left));
     const y = Math.max(8, Math.min(rect.height - 8, event.clientY - rect.top));
-    surface.style.setProperty('--touch-x', x + 'px');
-    surface.style.setProperty('--touch-y', y + 'px');
+    const fieldX = Math.max(0, Math.min(fieldRect.width, event.clientX - fieldRect.left));
+    const fieldY = Math.max(0, Math.min(fieldRect.height, event.clientY - fieldRect.top));
+    field.style.setProperty('--touch-x', fieldX + 'px');
+    field.style.setProperty('--touch-y', fieldY + 'px');
+    if (begin) {
+      field.classList.remove('is-sensing');
+      void field.offsetWidth;
+    }
     field.classList.add('is-sensing');
     light.style.left = x + 'px';
     light.style.top = y + 'px';
@@ -253,14 +262,25 @@ function attachCapacitiveSurface(surface, light) {
     }, 260);
   }
 
-  surface.addEventListener('pointerdown', sense);
-  surface.addEventListener('pointermove', event => {
-    if (event.buttons || event.pointerType === 'touch') sense(event);
+  surface.addEventListener('pointerdown', event => {
+    sensing = true;
+    activePointerId = event.pointerId;
+    sense(event, true);
   });
-  surface.addEventListener('pointerup', release);
-  surface.addEventListener('pointercancel', release);
-  surface.addEventListener('pointerleave', event => {
-    if (event.buttons) release();
+  window.addEventListener('pointermove', event => {
+    if (sensing && event.pointerId === activePointerId) sense(event);
+  });
+  window.addEventListener('pointerup', event => {
+    if (event.pointerId !== activePointerId) return;
+    sensing = false;
+    activePointerId = null;
+    release();
+  });
+  window.addEventListener('pointercancel', event => {
+    if (event.pointerId !== activePointerId) return;
+    sensing = false;
+    activePointerId = null;
+    release();
   });
 }
 
