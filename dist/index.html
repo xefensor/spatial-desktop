@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="desktop-shell.css?v=167">
   <title>Spatial Desktop</title>
   <link rel="stylesheet" href="ui-refinements.css?v=157">
-  <link rel="stylesheet" href="area-layout.css?v=169">
+  <link rel="stylesheet" href="area-layout.css?v=170">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -90,7 +90,7 @@
       </nav>
       <section class="mini-section" aria-labelledby="minimizedTitle">
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
-        <div class="mini-stack" id="miniStack" aria-live="polite"></div>
+        <div class="mini-stack" id="miniStack" tabindex="0" aria-label="Minimized application cards" aria-live="polite"></div>
       </section>
       </div>
       <div class="apps-bottom">
@@ -133,7 +133,7 @@
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
       </header>
-      <div class="system-scroll-region">
+      <div class="system-scroll-region" tabindex="0" aria-label="System widgets">
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer" title="Focus timer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
@@ -159,7 +159,7 @@
         <div class="area-window-actions"><button class="surface-key area-window-key" id="manageProjectButton" aria-label="Manage current project" title="Manage project and modes"><svg><use href="#i-settings"/></svg></button><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher project-mode-switcher" id="projectModeSwitcher" aria-label="Project modes"></nav>
-      <div class="project-space-content" id="projectSpaceContent">
+      <div class="project-space-content" id="projectSpaceContent" tabindex="0" aria-label="Project modules">
         <section class="project-module project-root-module">
           <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
           <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">/home/demo/Projects/website-launch</span></button>
@@ -471,6 +471,6 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
-  <script src="desktop-shell.js?v=169"></script>
+  <script src="desktop-shell.js?v=170"></script>
 </body>
 </html>

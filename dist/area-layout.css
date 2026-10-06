@@ -328,3 +328,8 @@
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-session-bar{padding-top:5px;gap:8px}
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-status{min-height:36px;height:36px;padding-block:3px}
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-close-key{height:36px}
+
+:is(.system-scroll-region,.mini-stack,.project-space-content):focus-visible{
+  outline:1px solid var(--area-header-accent,var(--blue));
+  outline-offset:-1px;
+}
