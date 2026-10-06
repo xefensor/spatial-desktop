@@ -4979,3 +4979,55 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
 @media(max-width:850px){
   :root{--window-panel-corner:13px;--window-control-corner:8px}
 }
+
+/* v88 — hard separation: Area geometry must never inherit a component's
+   rounded default. These declarations intentionally win over every widget. */
+:root{--area-corner:0px;--area-content-corner:2px}
+
+.area-window,
+.desktop-shell>.apps-zone,
+.desktop-shell>.systems-zone,
+.area-window[data-area-state="compact"],
+.area-window[data-area-state="rail"]{
+  border-radius:0!important;
+}
+
+.area-window :where(
+  button,
+  input:not([type="range"]),
+  textarea,
+  select,
+  label,
+  section,
+  article,
+  nav,
+  form,
+  .app-rack,
+  .mini-card,
+  .system-widget,
+  .project-module,
+  .project-path,
+  .project-quick-note,
+  .project-closed-state,
+  .all-apps-drawer,
+  .all-apps-search,
+  .notification,
+  .timer-face,
+  .next-event,
+  .device-row,
+  .project-session-toggle,
+  .workspace-status
+){
+  border-radius:2px!important;
+}
+
+@supports (corner-shape:square){
+  .area-window,
+  .desktop-shell>.apps-zone,
+  .desktop-shell>.systems-zone,
+  .area-window[data-area-state="compact"],
+  .area-window[data-area-state="rail"],
+  .area-window :where(button,input:not([type="range"]),textarea,select,label,section,article,nav,form,.app-rack,.mini-card,.system-widget,.project-module,.project-path,.project-quick-note,.project-closed-state,.all-apps-drawer,.all-apps-search,.notification,.timer-face,.next-event,.device-row,.project-session-toggle,.workspace-status){
+    corner-shape:square!important;
+  }
+}
