@@ -799,11 +799,14 @@ $$("[data-category-filter]").forEach(button => button.addEventListener("click", 
     choice.setAttribute("aria-pressed", String(selected));
   });
   $("#appSearch").value = "";
+  $("#allAppsTitle").textContent = button.textContent.trim();
   filterLauncher();
 }));
 
 $("#appSearch").addEventListener("input", event => {
   if (event.target.value) setAllAppsOpen(true);
+  const selectedCategory = $("[data-category-filter].is-active");
+  $("#allAppsTitle").textContent = event.target.value ? "Search results" : selectedCategory.textContent.trim();
   filterLauncher();
 });
 

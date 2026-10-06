@@ -1860,6 +1860,7 @@ body[data-theme="light"] .app-frame.is-front{
 .launcher-results{min-width:0;min-height:0;padding:8px;overflow-y:auto;background:var(--content-surface);scrollbar-width:thin}
 .all-apps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
 .launcher-app{position:relative;min-width:0;min-height:54px;padding:7px;border:0;border-radius:9px;background:transparent;color:var(--text);display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;text-align:left;transition:transform 45ms cubic-bezier(.2,.8,.2,1),background 55ms ease}
+.launcher-app[hidden]{display:none}
 .launcher-app:hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
 .launcher-app:active{transform:translateY(2px) scale(.985);background:color-mix(in srgb,var(--glass-groove-deep) 48%,transparent)}
 .launcher-app:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
