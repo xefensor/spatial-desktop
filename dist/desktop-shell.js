@@ -1,6 +1,36 @@
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
+const toggleControlSelector = [
+  "[data-open-app]",
+  "[data-toggle]",
+  ".folder-tab",
+  ".nav-choice",
+  ".play-toggle",
+  "#timerToggle",
+  "#fullscreenButton",
+  "[data-window-action=\"maximize\"]"
+].join(",");
+
+function prepareControlSemantics(root = document) {
+  const buttons = root.matches?.("button") ? [root, ...$$("button", root)] : $$("button", root);
+  buttons.forEach(button => {
+    const managed = button.matches(".surface-key,.quick-toggle,.folder-tab,.nav-choice,.app-key,.dismiss-button");
+    if (!managed) return;
+    const toggle = button.matches(toggleControlSelector);
+    button.classList.toggle("control-toggle", toggle);
+    button.classList.toggle("control-push", !toggle);
+    if (button.matches(".play-toggle")) {
+      button.classList.toggle("is-active", musicPlaying);
+      button.setAttribute("aria-pressed", String(musicPlaying));
+      return;
+    }
+    if (toggle && !button.hasAttribute("aria-pressed") && !button.hasAttribute("aria-selected")) {
+      button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
+    }
+  });
+}
+
 const appInfo = {
   dolphin: { label: "Dolphin", icon: "i-folder", tone: "blue", detail: "Downloads" },
   elisa: { label: "Elisa", icon: "i-music", tone: "violet", detail: "running out of time" },
@@ -233,6 +263,7 @@ function miniMarkup(name) {
 function renderMiniApps() {
   const minimized = Object.keys(appState).filter(key => appState[key] === "minimized");
   $("#miniStack").innerHTML = minimized.length ? minimized.map(miniMarkup).join("") : '<div class="mini-empty">Drag a window here to keep it controllable.</div>';
+  prepareControlSemantics($("#miniStack"));
   $("#miniCount").textContent = minimized.length + " parked";
   $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
@@ -725,7 +756,11 @@ $("#themeToggle").addEventListener("click", () => {
 
 $$(".nav-choice").forEach(button => button.addEventListener("click", () => {
   const nav = button.closest("nav");
-  $$(".nav-choice", nav).forEach(other => other.classList.toggle("is-active", other === button));
+  $$(".nav-choice", nav).forEach(other => {
+    const selected = other === button;
+    other.classList.toggle("is-active", selected);
+    other.setAttribute("aria-pressed", String(selected));
+  });
 }));
 
 $$(".folder-tab").forEach(tab => tab.addEventListener("click", event => {
@@ -913,6 +948,7 @@ $("#terminalInput").addEventListener("keydown", event => {
 prepareNoteSync();
 prepareZoneResizers();
 prepareWindows();
+prepareControlSemantics();
 updateClock();
 setInterval(updateClock, 1000);
 renderCalendar();
