@@ -818,7 +818,7 @@ function tileAreas(save = false) {
   const hasSystems = visible("systems");
   let appsWidth = hasApps ? Math.min(320, Math.max(250, width * .205)) : 0;
   let systemsWidth = hasSystems ? Math.min(340, Math.max(270, width * .215)) : 0;
-  const projectHeight = hasProject ? Math.min(300, Math.max(220, height * .29)) : 0;
+  const projectHeight = hasProject ? Math.min(320, Math.max(250, height * .31)) : 0;
 
   // Project Space gets the central canvas first. On constrained screens the
   // lower-priority System area yields before Apps.
@@ -1024,6 +1024,24 @@ function prepareProjectSpaces() {
     if (copy) showToast("Copied " + copy.dataset.projectCopy);
   });
   renderProjectSpace("plasma");
+}
+
+function ensureOpenWindowGeometry() {
+  const workspace = workspaceBounds();
+  const defaults = {
+    dolphin: { x: workspace.width * .03, y: workspace.height * .04, width: workspace.width * .78, height: workspace.height * .78 },
+    elisa: { x: workspace.width * .24, y: workspace.height * .23, width: workspace.width * .73, height: workspace.height * .72 }
+  };
+  Object.entries(defaults).forEach(([name, geometry]) => {
+    if (appState[name] !== "open") return;
+    const frame = frameFor(name);
+    frame.hidden = false;
+    frame.style.visibility = "visible";
+    frame.style.opacity = "1";
+    const rect = frame.getBoundingClientRect();
+    const isUsable = rect.width >= Math.min(300, workspace.width * .65) && rect.height >= Math.min(220, workspace.height * .65);
+    if (!isUsable) applyGeometry(name, geometry, false);
+  });
 }
 
 function prepareWindows() {
@@ -1554,6 +1572,7 @@ updateTimer();
 syncApps();
 requestAnimationFrame(() => {
   loadLayout();
+  ensureOpenWindowGeometry();
   bringToFront("dolphin");
 });
 

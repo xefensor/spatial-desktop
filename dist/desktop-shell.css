@@ -2185,6 +2185,7 @@ body[data-theme="light"] .universal-scope.is-active{color:#fff;background:rgba(1
 .area-resize-handle{z-index:35;border-radius:7px 0 17px 0}
 body.areas-freeform .workspace-zone{top:12px;left:12px;right:12px;bottom:12px}
 body.areas-freeform .area-window{transition:none}
+.workspace-zone>.app-frame:not([hidden]){display:grid;visibility:visible;opacity:1}
 
 /* Apps and System retain their internal layouts inside window chrome. */
 .apps-zone{display:flex;flex-direction:column}.apps-zone .app-rack{flex:0 0 auto}.apps-zone .mini-section{margin-top:12px}.apps-zone .apps-bottom{flex:0 0 auto}
