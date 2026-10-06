@@ -4474,3 +4474,222 @@ body[data-theme="light"] .apps-zone .app-key.material-glass-button{border-color:
 @media(prefers-reduced-transparency:reduce){
   :is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle){background:color-mix(in srgb,var(--glass-field) 94%,var(--glass-key-tone) 3%)}
 }
+
+/* v84 — material is inherited from the nearest physical substrate.
+   A glass Area is glass all the way through; an ABS app stays ABS unless it
+   deliberately contains a glass strip, whose descendants then become glass. */
+:root{
+  --material-glass-fill:rgba(104,148,171,.105);
+  --material-glass-fill-hover:rgba(134,181,205,.16);
+  --material-glass-fill-down:rgba(29,54,68,.22);
+  --material-glass-edge:rgba(214,242,255,.20);
+  --material-glass-edge-low:rgba(4,12,18,.38);
+  --material-glass-shine:rgba(245,253,255,.20);
+}
+body[data-theme="light"]{
+  --material-glass-fill:rgba(230,245,252,.28);
+  --material-glass-fill-hover:rgba(247,253,255,.40);
+  --material-glass-fill-down:rgba(116,153,172,.16);
+  --material-glass-edge:rgba(255,255,255,.62);
+  --material-glass-edge-low:rgba(42,75,92,.25);
+  --material-glass-shine:rgba(255,255,255,.72);
+}
+
+/* Glass components remain optically connected to their parent glass instead
+   of becoming opaque plastic islands. Colour is a sparse orientation cue. */
+.material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.workspace-switcher,.workspace-home-card,.overview-app-library,.project-module,.package-panel,.import-map){
+  border-color:color-mix(in srgb,var(--area-header-accent,var(--workspace-accent,var(--blue))) 13%,var(--material-glass-edge));
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.075),transparent 34%,rgba(0,0,0,.055)),
+    color-mix(in srgb,var(--glass-panel,var(--glass-field)) 43%,transparent);
+  box-shadow:
+    inset 0 1px var(--material-glass-shine),
+    inset 1px 0 rgba(225,246,255,.055),
+    inset 0 -1px var(--material-glass-edge-low),
+    0 3px 10px rgba(0,0,0,.08);
+  backdrop-filter:blur(13px) saturate(1.10);
+  -webkit-backdrop-filter:blur(13px) saturate(1.10);
+}
+body[data-theme="light"] .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.workspace-switcher,.workspace-home-card,.overview-app-library,.project-module,.package-panel,.import-map){
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.30),transparent 38%,rgba(72,105,122,.035)),
+    color-mix(in srgb,var(--glass-panel,var(--glass-field)) 49%,transparent);
+}
+
+/* These are the deliberate glass insertions inside opaque ABS windows. */
+.app-frame.material-surface-abs .material-surface-glass:is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav){
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 16%,var(--material-glass-edge));
+  background:
+    linear-gradient(180deg,rgba(238,251,255,.105),rgba(113,163,186,.035) 48%,rgba(0,0,0,.13)),
+    color-mix(in srgb,var(--glass-field-deep,#10212b) 66%,transparent);
+  box-shadow:
+    inset 0 1px rgba(244,253,255,.19),
+    inset 0 -1px rgba(0,0,0,.38),
+    0 1px 0 rgba(0,0,0,.18);
+  backdrop-filter:blur(12px) saturate(1.08);
+  -webkit-backdrop-filter:blur(12px) saturate(1.08);
+}
+body[data-theme="light"] .app-frame.material-surface-abs .material-surface-glass:is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav){
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.50),rgba(222,241,249,.20) 48%,rgba(86,119,136,.08)),
+    rgba(223,240,248,.54);
+}
+
+/* Every button on glass uses the same shallow engraved-glass construction.
+   Unmanaged content buttons stay quieter; intentional push/toggle controls
+   receive the more tactile cap treatment below. */
+.material-surface-glass button.material-glass-button{
+  --glass-key-tone:var(--state-tone,var(--app-primary,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
+  border-color:color-mix(in srgb,var(--glass-key-tone) 10%,var(--material-glass-edge));
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.055),transparent 48%,rgba(0,0,0,.065)),
+    var(--material-glass-fill);
+  box-shadow:inset 0 1px rgba(245,253,255,.105),inset 0 -1px rgba(0,0,0,.20);
+  filter:none;
+}
+.material-surface-glass button.material-glass-button:hover{
+  border-color:color-mix(in srgb,var(--glass-key-tone) 27%,var(--material-glass-edge));
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.105),transparent 49%,rgba(0,0,0,.055)),
+    var(--material-glass-fill-hover);
+  box-shadow:inset 0 1px rgba(248,254,255,.17),inset 0 -1px rgba(0,0,0,.22),0 0 6px color-mix(in srgb,var(--glass-key-tone) 7%,transparent);
+  filter:none;
+}
+.material-surface-glass button.material-glass-button:active{
+  transform:translateY(var(--control-press)) scaleY(.985);
+  background:var(--material-glass-fill-down);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.04);
+  transition-duration:var(--button-press-time);
+}
+.material-surface-glass button.material-glass-button:is(.control-push,.control-toggle){
+  border:1px solid color-mix(in srgb,var(--glass-key-tone) 14%,var(--material-glass-edge));
+  background:
+    linear-gradient(180deg,var(--glass-key-top),var(--glass-key-mid) 46%,rgba(255,255,255,.018) 47%,var(--glass-key-bottom)),
+    color-mix(in srgb,var(--glass-field) 37%,transparent);
+  box-shadow:0 2px 3px var(--glass-key-contact),inset 0 1px rgba(239,251,255,.22),inset 1px 0 rgba(230,248,255,.065),inset 0 -1px rgba(0,0,0,.30);
+}
+.material-surface-glass button.material-glass-button:is(.control-push,.control-toggle):active{
+  background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(255,255,255,.025)),color-mix(in srgb,var(--glass-field-deep) 62%,transparent);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.36),inset 0 1px rgba(255,255,255,.045);
+}
+.material-surface-glass button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+  transform:translateY(var(--control-held));
+  border-color:color-mix(in srgb,var(--state-tone,var(--glass-key-tone)) 32%,var(--material-glass-edge));
+  background:linear-gradient(180deg,rgba(0,0,0,.075),rgba(255,255,255,.028)),color-mix(in srgb,var(--glass-field-deep) 76%,var(--state-tone,var(--glass-key-tone)) 7%);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.055);
+}
+
+/* Every button on ABS is cut from the same opaque plastic. Content/list
+   buttons are flush at rest, while declared controls rise like mouse keys. */
+.material-surface-abs button.material-abs-button{
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+  filter:none;
+}
+.material-surface-abs button.material-abs-button:hover{
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 13%,var(--control-edge));
+  background:color-mix(in srgb,var(--app-primary,var(--blue)) 7%,var(--app-content-raised,var(--control-top)));
+  box-shadow:inset 0 1px rgba(255,255,255,.045);
+  filter:none;
+}
+.material-surface-abs button.material-abs-button:active{
+  transform:translateY(var(--control-press)) scaleY(.985);
+  background:color-mix(in srgb,var(--control-bottom) 91%,var(--app-primary,var(--blue)) 9%);
+  box-shadow:inset 0 2px 4px var(--control-contact);
+  transition-duration:var(--button-press-time);
+}
+.material-surface-abs button.material-abs-button:is(.control-push,.control-toggle){
+  border:1px solid var(--control-edge);
+  background:linear-gradient(180deg,var(--control-highlight),transparent 42%),linear-gradient(180deg,var(--control-top),var(--control-bottom));
+  box-shadow:0 2px 3px var(--control-contact),inset 0 1px var(--control-highlight);
+}
+.material-surface-abs button.material-abs-button:is(.control-push,.control-toggle):active{
+  background:linear-gradient(180deg,var(--control-bottom),var(--control-top));
+  box-shadow:inset 0 2px 4px var(--control-contact),inset 0 1px rgba(255,255,255,.04);
+}
+.material-surface-abs button.material-abs-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+  transform:translateY(var(--control-held));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--control-bottom) 84%,var(--state-tone,var(--app-primary,var(--blue))) 16%),var(--control-bottom));
+  box-shadow:inset 0 2px 4px var(--control-contact),inset 0 1px rgba(255,255,255,.04);
+}
+.app-frame.material-surface-abs .window-key.danger.material-abs-button{
+  border-color:rgba(77,15,10,.72);
+  color:#fff;
+  background:linear-gradient(180deg,#ff755d,#a6281e);
+  box-shadow:0 2px 3px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.28);
+}
+
+/* Icon wells, badges and other tactile pieces obey the same inheritance too. */
+.material-glass-element{
+  border:1px solid color-mix(in srgb,currentColor 12%,var(--material-glass-edge));
+  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.075)),color-mix(in srgb,currentColor 9%,var(--material-glass-fill));
+  box-shadow:inset 0 1px rgba(247,254,255,.17),inset 0 -1px rgba(0,0,0,.22);
+}
+.material-abs-element{
+  border:1px solid var(--control-edge);
+  background:linear-gradient(180deg,color-mix(in srgb,currentColor 7%,var(--control-top)),color-mix(in srgb,currentColor 5%,var(--control-bottom)));
+  box-shadow:0 1px 2px var(--control-contact),inset 0 1px var(--control-highlight);
+}
+
+/* Fields follow the same substrate rule as buttons. Wrapper fields keep their
+   child input optically seamless, avoiding a second border inside a border. */
+.material-glass-field:is(.recessed-field,.universal-search-field,.project-resource-form label,.all-apps-search,.mini-command,.mini-browser-search),
+input.material-glass-field,textarea.material-glass-field,select.material-glass-field{
+  border-color:color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 14%,var(--material-glass-edge));
+  background:linear-gradient(180deg,rgba(0,0,0,.10),rgba(255,255,255,.025)),color-mix(in srgb,var(--glass-field-deep) 58%,transparent);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.27),inset 0 1px rgba(255,255,255,.05);
+}
+.material-glass-field:focus-within,
+input.material-glass-field:focus,textarea.material-glass-field:focus,select.material-glass-field:focus{
+  border-color:color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 45%,var(--material-glass-edge));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.27),0 0 0 1px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 14%,transparent);
+}
+.material-abs-field:is(.recessed-field,.universal-search-field,.project-resource-form label,.all-apps-search,.mini-command,.mini-browser-search),
+input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
+  border-color:var(--control-edge);
+  background:var(--app-content,var(--content-surface));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.035);
+}
+.material-glass-field > :is(input,textarea,select).material-glass-field,
+.material-abs-field > :is(input,textarea,select).material-abs-field{
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.material-surface-glass input[type="range"].material-glass-field{
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 13%,var(--material-glass-edge));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--glass-field-deep) 64%,transparent);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.035);
+}
+.material-surface-glass input[type="range"].material-glass-field::-webkit-slider-thumb{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,var(--material-glass-edge));
+  background:linear-gradient(180deg,rgba(245,253,255,.32),rgba(104,153,177,.15)),color-mix(in srgb,var(--glass-field) 68%,transparent);
+  box-shadow:0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.30);
+}
+.material-surface-glass input[type="range"].material-glass-field::-moz-range-track{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 13%,var(--material-glass-edge));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--glass-field-deep) 64%,transparent);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.30);
+}
+.material-surface-glass input[type="range"].material-glass-field::-moz-range-thumb{
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,var(--material-glass-edge));
+  background:color-mix(in srgb,var(--glass-field) 68%,transparent);
+  box-shadow:0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.30);
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.workspace-switcher,.workspace-home-card,.overview-app-library,.project-module,.package-panel,.import-map),
+  .app-frame.material-surface-abs .material-surface-glass:is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav){
+    background:color-mix(in srgb,var(--glass-field) 94%,var(--area-header-accent,var(--app-primary,var(--blue))) 3%);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+}

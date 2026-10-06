@@ -39,27 +39,114 @@ const materialControlSelector = [
   ".workspace-status"
 ].join(",");
 
-const solidMaterialSurfaceSelector = [
-  ".app-frame",
-  ".project-module",
+const glassMaterialSurfaceSelector = [
+  ".area-window",
+  ".universal-search",
+  ".package-window",
+  ".desktop-context-menu",
+  ".mini-card",
+  ".system-widget",
+  ".overview-widget",
+  ".workspace-switcher",
   ".workspace-home-card",
   ".overview-app-library",
-  ".all-apps-drawer",
+  ".project-module",
   ".package-panel",
-  ".import-map"
+  ".import-map",
+  ".app-frame .app-toolbar",
+  ".app-frame .browser-toolbar",
+  ".app-frame .music-controls",
+  ".app-frame .folder-tabs",
+  ".app-frame .notes-layout nav"
 ].join(",");
 
+const absMaterialSurfaceSelector = [
+  ".app-frame",
+  ".all-apps-drawer"
+].join(",");
+
+const materialFieldSelector = [
+  ".recessed-field",
+  ".universal-search-field",
+  ".project-resource-form label",
+  ".all-apps-search",
+  ".mini-command",
+  ".mini-browser-search",
+  "input[type=range]",
+  "input:not([type=range]):not([type=checkbox]):not([type=radio])",
+  "textarea",
+  "select"
+].join(",");
+
+const materialElementSelector = [
+  ".app-badge",
+  ".area-window-icon",
+  ".area-list-icon",
+  ".universal-symbol",
+  ".universal-file-icon",
+  ".overview-project-icon",
+  ".workspace-home-icon",
+  ".workspace-glyph",
+  ".project-choice-icon",
+  ".session-toggle-icon",
+  ".phone-silhouette",
+  ".safety-shield",
+  ".import-file-icon"
+].join(",");
+
+function matchingNodes(root, selector) {
+  const nodes = root?.matches?.(selector) ? [root] : [];
+  return nodes.concat(root?.querySelectorAll ? [...root.querySelectorAll(selector)] : []);
+}
+
+function prepareMaterialSurfaces(root = document) {
+  matchingNodes(root, glassMaterialSurfaceSelector).forEach(surface => {
+    surface.classList.add("material-surface-glass");
+    surface.classList.remove("material-surface-abs");
+  });
+  matchingNodes(root, absMaterialSurfaceSelector).forEach(surface => {
+    surface.classList.add("material-surface-abs");
+    surface.classList.remove("material-surface-glass");
+  });
+  /* Nested glass strips are intentionally evaluated last: an ABS window may
+     contain a glass toolbar and everything inside follows that nearer surface. */
+  matchingNodes(root, ".app-frame .app-toolbar,.app-frame .browser-toolbar,.app-frame .music-controls,.app-frame .folder-tabs,.app-frame .notes-layout nav").forEach(surface => {
+    surface.classList.add("material-surface-glass");
+    surface.classList.remove("material-surface-abs");
+  });
+}
+
+function nearestMaterialSurface(element) {
+  return element.closest(".material-surface-glass,.material-surface-abs");
+}
+
 function applyControlMaterial(button) {
-  if (!button.matches(materialControlSelector)) return;
-  const glassSurface = button.closest(".area-window,.universal-search,.package-window");
-  const solidSurface = button.closest(solidMaterialSurfaceSelector);
-  const sitsOnSolid = Boolean(solidSurface && (!glassSurface || glassSurface.contains(solidSurface)));
-  button.classList.toggle("material-glass-button", Boolean(glassSurface && !sitsOnSolid));
-  button.classList.toggle("material-abs-button", Boolean(sitsOnSolid || (!glassSurface && button.closest(".workspace-zone"))));
+  const surface = nearestMaterialSurface(button);
+  const glass = surface?.classList.contains("material-surface-glass");
+  const abs = surface?.classList.contains("material-surface-abs");
+  button.classList.toggle("material-glass-button", Boolean(glass));
+  button.classList.toggle("material-abs-button", Boolean(abs));
+}
+
+function applyFieldMaterial(field) {
+  const surface = nearestMaterialSurface(field);
+  const glass = surface?.classList.contains("material-surface-glass");
+  const abs = surface?.classList.contains("material-surface-abs");
+  field.classList.toggle("material-glass-field", Boolean(glass));
+  field.classList.toggle("material-abs-field", Boolean(abs));
+}
+
+function applyElementMaterial(element) {
+  const surface = nearestMaterialSurface(element);
+  const glass = surface?.classList.contains("material-surface-glass");
+  const abs = surface?.classList.contains("material-surface-abs");
+  element.classList.toggle("material-glass-element", Boolean(glass));
+  element.classList.toggle("material-abs-element", Boolean(abs));
 }
 
 function prepareControlSemantics(root = document) {
-  const buttons = root.matches?.("button") ? [root, ...$$("button", root)] : $$("button", root);
+  prepareMaterialSurfaces(root);
+  const buttons = matchingNodes(root, "button");
   buttons.forEach(button => {
     applyControlMaterial(button);
     const toggle = button.matches(toggleControlSelector);
@@ -76,6 +163,17 @@ function prepareControlSemantics(root = document) {
       button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
     }
   });
+  matchingNodes(root, materialFieldSelector).forEach(applyFieldMaterial);
+  matchingNodes(root, materialElementSelector).forEach(applyElementMaterial);
+}
+
+function observeMaterialInheritance() {
+  const observer = new MutationObserver(records => {
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE) prepareControlSemantics(node);
+    }));
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 const appInfo = {
@@ -3150,6 +3248,7 @@ prepareWindows();
 applyAppPrimaryColors();
 hydrateAppArtwork();
 prepareControlSemantics();
+observeMaterialInheritance();
 prepareMaterialCursor();
 prepareContextMenus();
 updateClock();
