@@ -7118,3 +7118,48 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
   .notification.is-new-attention::before,.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{animation:none;opacity:1}
   .notification-peek,.notification-peek.is-visible{transition:none}
 }
+
+/* v137 — compact-first smart tiling. Windows expose a genuinely usable
+   minimum rather than a generic rectangle. Their content folds at the
+   component boundary, keeping controls available while Areas stay visible. */
+.app-frame{container-type:inline-size}
+.app-frame.is-auto-tiling{transition:left 150ms ease-out,top 150ms ease-out,width 150ms ease-out,height 150ms ease-out}
+
+@container (max-width:540px){
+  .app-frame[data-app-frame="dolphin"] .dolphin-layout{grid-template-columns:48px minmax(0,1fr);gap:5px;padding-left:6px}
+  .app-frame[data-app-frame="dolphin"] .places-list{padding-right:5px;align-items:stretch}
+  .app-frame[data-app-frame="dolphin"] .places-list .small-heading{display:none}
+  .app-frame[data-app-frame="dolphin"] .places-list .nav-choice{padding:0;justify-content:center;font-size:0}
+  .app-frame[data-app-frame="dolphin"] .places-list .nav-choice svg{width:18px;margin:0}
+  .app-frame[data-app-frame="dolphin"] .folder-tab:nth-child(n+3){display:none}
+  .app-frame[data-app-frame="dolphin"] .file-head{grid-template-columns:1fr 64px}
+  .app-frame[data-app-frame="dolphin"] .file-head span:last-child,
+  .app-frame[data-app-frame="dolphin"] .content-row small:last-child{display:none}
+  .app-frame[data-app-frame="dolphin"] .content-row{grid-template-columns:minmax(0,1fr) 64px}
+}
+
+@container (max-width:560px){
+  .app-frame[data-app-frame="elisa"]{grid-template-rows:48px 136px 58px minmax(0,1fr)}
+  .app-frame[data-app-frame="elisa"] .music-hero{grid-template-columns:104px minmax(0,1fr);gap:10px;padding:9px}
+  .app-frame[data-app-frame="elisa"] .album-block{height:112px}
+  .app-frame[data-app-frame="elisa"] .equalizer{display:none}
+  .app-frame[data-app-frame="elisa"] .track-copy h2{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-frame[data-app-frame="elisa"] .music-controls{grid-template-columns:34px 42px 34px minmax(70px,1fr) auto;gap:5px;padding:5px 8px}
+  .app-frame[data-app-frame="elisa"] .music-controls>:nth-child(4),
+  .app-frame[data-app-frame="elisa"] .music-controls>:nth-child(7),
+  .app-frame[data-app-frame="elisa"] .music-controls>:nth-child(8){display:none}
+  .app-frame[data-app-frame="elisa"] .playlist .content-row{grid-template-columns:minmax(0,1fr) 48px}
+  .app-frame[data-app-frame="elisa"] .playlist .content-row small:first-of-type{display:none}
+}
+
+@container (max-width:480px){
+  .app-frame[data-app-frame="notes"] .notes-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .app-frame[data-app-frame="notes"] .notes-layout nav{padding:6px;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .app-frame[data-app-frame="notes"] .notes-layout nav .nav-choice{flex:0 0 auto;height:30px;padding:0 9px}
+  .app-frame[data-app-frame="notes"] .notes-layout textarea{padding:14px}
+  .app-frame[data-app-frame="browser"] .site-grid{width:82%;gap:7px}
+  .app-frame[data-app-frame="browser"] .site-grid button{height:48px}
+  .app-frame[data-app-frame="browser"] .large-time{font-size:56px}
+}
+
+@media(prefers-reduced-motion:reduce){.app-frame.is-auto-tiling{transition:none}}

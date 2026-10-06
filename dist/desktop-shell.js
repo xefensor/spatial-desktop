@@ -283,6 +283,21 @@ function frameFor(name) {
   return document.querySelector('[data-app-frame="' + name + '"]');
 }
 
+/* Content limits rather than generic window-manager minimums. Each app
+   switches to a compact internal layout at this footprint, while keeping its
+   primary controls and content usable. */
+const windowUsableSizes = {
+  dolphin: { width: 440, height: 340 },
+  elisa: { width: 460, height: 360 },
+  browser: { width: 420, height: 320 },
+  terminal: { width: 390, height: 300 },
+  notes: { width: 400, height: 300 }
+};
+
+function minimumUsableWindowSize(name) {
+  return windowUsableSizes[name] || { width: 400, height: 300 };
+}
+
 function workspaceBounds() {
   const element = $(".workspace-zone");
   return { element, rect: element.getBoundingClientRect(), width: element.clientWidth, height: element.clientHeight };
@@ -294,10 +309,11 @@ function readGeometry(frame) {
   return { x: rect.left - workspace.rect.left, y: rect.top - workspace.rect.top, width: rect.width, height: rect.height };
 }
 
-function clampGeometry(geometry) {
+function clampGeometry(geometry, name = null) {
   const workspace = workspaceBounds();
-  const minWidth = Math.min(380, workspace.width - 24);
-  const minHeight = Math.min(300, workspace.height - 24);
+  const usable = minimumUsableWindowSize(name);
+  const minWidth = Math.min(usable.width, workspace.width - 24);
+  const minHeight = Math.min(usable.height, workspace.height - 24);
   const width = Math.max(minWidth, Math.min(geometry.width, workspace.width - 16));
   const height = Math.max(minHeight, Math.min(geometry.height, workspace.height - 16));
   return {
@@ -310,7 +326,7 @@ function clampGeometry(geometry) {
 
 function applyGeometry(name, geometry, save = true) {
   const frame = frameFor(name);
-  const next = clampGeometry(geometry);
+  const next = clampGeometry(geometry, name);
   frame.style.left = next.x + "px";
   frame.style.top = next.y + "px";
   frame.style.width = next.width + "px";
@@ -364,6 +380,129 @@ function defaultWindowGeometry(name, index = 0) {
   };
 }
 
+function packedWindowLayout(names) {
+  const workspace = workspaceBounds();
+  const inset = 8;
+  const gap = 10;
+  const availableWidth = Math.max(0, workspace.width - inset * 2);
+  const availableHeight = Math.max(0, workspace.height - inset * 2);
+  if (!names.length) return null;
+
+  const entries = names.map(name => ({ name, ...minimumUsableWindowSize(name) }));
+  let best = null;
+  const breakCount = Math.max(0, entries.length - 1);
+  for (let mask = 0; mask < (1 << breakCount); mask += 1) {
+    const rows = [];
+    let row = [];
+    entries.forEach((entry, index) => {
+      row.push(entry);
+      if (index === entries.length - 1 || mask & (1 << index)) {
+        rows.push(row);
+        row = [];
+      }
+    });
+    const rowMetrics = rows.map(items => ({
+      items,
+      width: items.reduce((sum, item) => sum + item.width, 0) + gap * Math.max(0, items.length - 1),
+      height: Math.max(...items.map(item => item.height))
+    }));
+    const width = Math.max(...rowMetrics.map(metric => metric.width));
+    const height = rowMetrics.reduce((sum, metric) => sum + metric.height, 0) + gap * Math.max(0, rowMetrics.length - 1);
+    if (width > availableWidth || height > availableHeight) continue;
+    const layoutAspect = width / Math.max(1, height);
+    const workspaceAspect = availableWidth / Math.max(1, availableHeight);
+    const aspectPenalty = Math.abs(Math.log(layoutAspect / workspaceAspect));
+    const unused = availableWidth * availableHeight - width * height;
+    const score = aspectPenalty * 100000 + unused * .02 + rowMetrics.length * 30;
+    if (!best || score < best.score) best = { score, width, height, rows: rowMetrics };
+  }
+  if (!best) return null;
+
+  const geometries = new Map();
+  let y = inset + Math.max(0, (availableHeight - best.height) / 2);
+  best.rows.forEach(row => {
+    let x = inset + Math.max(0, (availableWidth - row.width) / 2);
+    row.items.forEach(item => {
+      geometries.set(item.name, {
+        x: Math.round(x),
+        y: Math.round(y + (row.height - item.height) / 2),
+        width: item.width,
+        height: item.height
+      });
+      x += item.width + gap;
+    });
+    y += row.height + gap;
+  });
+  return geometries;
+}
+
+function compactAreasForWindowTiling() {
+  if (layoutMode !== "auto") return false;
+  let changed = false;
+  dockEdges.forEach(edge => {
+    if (!dockGroup(edge).length || autoSpatialEdgeStates.get(edge) === "rail") return;
+    autoSpatialEdgeStates.set(edge, "rail");
+    changed = true;
+  });
+  if (changed) layoutDockAreas(false, false);
+  return changed;
+}
+
+function fallbackWindowGrid(names) {
+  const workspace = workspaceBounds();
+  const inset = 8;
+  const gap = 10;
+  const aspect = workspace.width / Math.max(1, workspace.height);
+  const columns = Math.max(1, Math.min(names.length, Math.ceil(Math.sqrt(names.length * aspect))));
+  const rows = Math.ceil(names.length / columns);
+  const cellWidth = (workspace.width - inset * 2 - gap * (columns - 1)) / columns;
+  const cellHeight = (workspace.height - inset * 2 - gap * (rows - 1)) / rows;
+  return new Map(names.map((name, index) => [name, {
+    x: inset + index % columns * (cellWidth + gap),
+    y: inset + Math.floor(index / columns) * (cellHeight + gap),
+    width: cellWidth,
+    height: cellHeight
+  }]));
+}
+
+function tileOpenWindows(newName) {
+  const names = Object.keys(appState)
+    .filter(name => appState[name] === "open" && isLocalApp(name))
+    .sort((first, second) => {
+      if (first === newName) return 1;
+      if (second === newName) return -1;
+      return Number(frameFor(first)?.style.zIndex || 0) - Number(frameFor(second)?.style.zIndex || 0);
+    });
+  if (!names.length) return;
+
+  names.forEach(name => {
+    const frame = frameFor(name);
+    frame.classList.remove("is-maximized");
+    delete frame.dataset.maximized;
+    delete frame.dataset.maxDisplay;
+    appMaximizedState[name] = false;
+    autoWindowAvoidance.delete(name);
+    syncMaximizeButton(frame);
+  });
+  autoAvoidanceSource = null;
+  applyAutoAvoidance();
+
+  let layout = packedWindowLayout(names);
+  if (!layout && compactAreasForWindowTiling()) layout = packedWindowLayout(names);
+  layout ||= fallbackWindowGrid(names);
+  names.forEach(name => {
+    const frame = frameFor(name);
+    frame.classList.remove("is-auto-tiling");
+    void frame.offsetWidth;
+    frame.classList.add("is-auto-tiling");
+    const geometry = clampGeometry(layout.get(name), name);
+    applyGeometry(name, geometry, false);
+    windowGeometry.set(name, geometry);
+    setTimeout(() => frame.classList.remove("is-auto-tiling"), 180);
+  });
+  saveLayout();
+}
+
 function restoreWorkspaceWindowLayout() {
   const openNames = Object.keys(appState).filter(name => appState[name] === "open");
   $$('[data-app-frame]').forEach(frame => {
@@ -375,7 +514,7 @@ function restoreWorkspaceWindowLayout() {
   maximizeRestore.clear();
   openNames.forEach((name, index) => {
     const geometry = windowGeometry.get(name) || defaultWindowGeometry(name, index);
-    windowGeometry.set(name, clampGeometry(geometry));
+    windowGeometry.set(name, clampGeometry(geometry, name));
     applyGeometry(name, geometry, false);
   });
   saveLayout();
@@ -428,6 +567,7 @@ function syncApps() {
 
 function openApp(name, dropPoint = null) {
   if (!appInfo[name]) return;
+  const previousState = appState[name];
   displayAssignmentsFor().apps[name] = localDisplaySlot();
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   appState[name] = "open";
@@ -444,11 +584,13 @@ function openApp(name, dropPoint = null) {
       width,
       height
     });
+  } else if (previousState === "closed") {
+    tileOpenWindows(name);
   } else if (windowGeometry.has(name)) {
     applyGeometry(name, windowGeometry.get(name), false);
   } else {
     const geometry = defaultWindowGeometry(name, Object.values(appState).filter(state => state === "open").length - 1);
-    windowGeometry.set(name, clampGeometry(geometry));
+    windowGeometry.set(name, clampGeometry(geometry, name));
     applyGeometry(name, geometry);
   }
   bringToFront(name);
@@ -1046,7 +1188,7 @@ function scheduleWindowFit() {
     $$("[data-app-frame]").forEach(frame => {
       if (frame.hidden || frame.classList.contains("is-dragging")) return;
       const current = readGeometry(frame);
-      const fitted = clampGeometry(current);
+      const fitted = clampGeometry(current, frame.dataset.appFrame);
       const changed = ["x", "y", "width", "height"].some(key => Math.abs(current[key] - fitted[key]) > 1);
       if (changed) {
         applyGeometry(frame.dataset.appFrame, fitted, false);
