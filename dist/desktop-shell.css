@@ -6063,3 +6063,51 @@ body[data-theme="light"].areas-docked .area-window{
   box-shadow:0 0 3px color-mix(in srgb,var(--area-header-accent) 25%,transparent)!important;
   opacity:.82!important;
 }
+
+/* v111 — System gets one explicit middle viewport. The Area shell and header
+   never scroll; every system item remains reachable in a single continuous
+   scroll instead of depending on a dock attribute or nested widget scrollers. */
+.systems-zone{
+  overflow:hidden!important;
+  gap:0!important;
+}
+.systems-zone>.system-scroll-region{
+  min-width:0;
+  min-height:0;
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scroll-padding-block:8px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--sd-glass-groove) transparent;
+}
+.systems-zone>.system-scroll-region>.dynamic-widget-stack,
+.systems-zone>.system-scroll-region>.static-widget-stack{
+  max-height:none!important;
+  overflow:visible!important;
+}
+.systems-zone>.system-scroll-region>.dynamic-widget-stack{
+  flex:0 0 auto!important;
+}
+.systems-zone>.system-scroll-region>.static-widget-stack{
+  min-height:auto;
+  flex:0 0 auto!important;
+  margin-top:auto;
+}
+.systems-zone>.system-scroll-region::-webkit-scrollbar{width:5px}
+.systems-zone>.system-scroll-region::-webkit-scrollbar-track{background:transparent}
+.systems-zone>.system-scroll-region::-webkit-scrollbar-thumb{
+  border:2px solid transparent;
+  background:var(--sd-glass-groove);
+  background-clip:content-box;
+}
+
+/* Horizontal docks already distribute these items across the panel grid. */
+.systems-zone[data-dock-edge="top"]>.system-scroll-region,
+.systems-zone[data-dock-edge="bottom"]>.system-scroll-region{
+  display:contents;
+}
