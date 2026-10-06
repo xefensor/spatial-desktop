@@ -2212,3 +2212,95 @@ body[data-theme="light"] .area-window{box-shadow:0 13px 30px rgba(36,54,65,.18),
 body[data-theme="light"] .project-module{background:rgba(238,242,243,.88)}
 @media(max-width:1180px){.project-space-content{grid-template-columns:1fr 1fr}.project-context-module{display:none}}
 @media(max-width:1050px){html,body{overflow:hidden}.desktop-shell{width:100vw;min-height:0}.area-window-bar{min-height:46px;flex-basis:46px}.project-space-content{grid-template-columns:1fr}.project-links-module{display:none}}
+
+/* Docked areas: they always reserve their own space and never float over apps. */
+body.areas-docked .area-window{
+  z-index:220;
+  transform:none;
+  opacity:1;
+  box-shadow:0 8px 22px rgba(0,0,0,.22),inset 0 0 0 1px color-mix(in srgb,var(--glass-highlight) 58%,transparent),inset 0 0 26px var(--glass-field-deep);
+}
+body.areas-docked .desktop-shell>.workspace-zone{
+  z-index:1;
+  transition:left 135ms cubic-bezier(.2,.8,.2,1),right 135ms cubic-bezier(.2,.8,.2,1),top 135ms cubic-bezier(.2,.8,.2,1),bottom 135ms cubic-bezier(.2,.8,.2,1);
+}
+.area-window.is-dock-dragging{
+  opacity:.72;
+  filter:saturate(.8);
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 0 0 1px var(--glass-highlight);
+}
+.dock-preview{
+  position:absolute;
+  z-index:210;
+  display:block;
+  pointer-events:none;
+  opacity:0;
+  border:1px solid rgba(104,205,255,.78);
+  border-radius:16px;
+  background:rgba(42,159,255,.16);
+  box-shadow:inset 0 0 24px rgba(67,177,255,.2),0 0 18px rgba(42,159,255,.2);
+  transition:opacity 55ms linear,left 70ms ease,right 70ms ease,top 70ms ease,bottom 70ms ease,width 70ms ease,height 70ms ease;
+}
+.dock-preview.is-visible{opacity:1}
+.dock-preview[data-edge="left"]{left:8px;top:8px;bottom:8px;width:min(310px,27vw)}
+.dock-preview[data-edge="right"]{right:8px;top:8px;bottom:8px;width:min(310px,27vw)}
+.dock-preview[data-edge="top"]{left:22%;right:22%;top:8px;height:min(250px,29vh)}
+.dock-preview[data-edge="bottom"]{left:22%;right:22%;bottom:8px;height:min(250px,29vh)}
+
+/* The grip always sits on the edge shared with the app workspace. */
+.area-resize-handle{
+  clip-path:none;
+  border-radius:5px;
+  background:color-mix(in srgb,var(--text) 26%,transparent);
+  opacity:.34;
+}
+.area-resize-handle:hover{opacity:.9;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
+.area-window[data-dock-edge="left"]>.area-resize-handle{
+  left:auto;right:1px;top:50%;bottom:auto;width:5px;height:58px;transform:translateY(-50%);cursor:ew-resize;
+}
+.area-window[data-dock-edge="right"]>.area-resize-handle{
+  left:1px;right:auto;top:50%;bottom:auto;width:5px;height:58px;transform:translateY(-50%);cursor:ew-resize;
+}
+.area-window[data-dock-edge="top"]>.area-resize-handle{
+  left:50%;right:auto;top:auto;bottom:1px;width:58px;height:5px;transform:translateX(-50%);cursor:ns-resize;
+}
+.area-window[data-dock-edge="bottom"]>.area-resize-handle{
+  left:50%;right:auto;top:1px;bottom:auto;width:58px;height:5px;transform:translateX(-50%);cursor:ns-resize;
+}
+
+/* Project Space is vertical by default and remains useful as a tall dock. */
+.project-area[data-dock-edge="left"] .project-space-content,
+.project-area[data-dock-edge="right"] .project-space-content{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow-y:auto;
+  padding-right:2px;
+  scrollbar-width:thin;
+}
+.project-area[data-dock-edge="left"] .project-module,
+.project-area[data-dock-edge="right"] .project-module{
+  flex:0 0 auto;
+  min-height:auto;
+  overflow:visible;
+}
+.project-area[data-dock-edge="left"] .project-context-module,
+.project-area[data-dock-edge="right"] .project-context-module,
+.project-area[data-dock-edge="left"] .project-links-module,
+.project-area[data-dock-edge="right"] .project-links-module{display:flex}
+.project-area[data-dock-edge="left"] .project-links-module,
+.project-area[data-dock-edge="right"] .project-links-module{display:block}
+.project-area[data-dock-edge="left"] .project-switcher,
+.project-area[data-dock-edge="right"] .project-switcher{flex-basis:auto;display:grid;grid-template-columns:1fr 1fr;overflow:visible}
+
+/* Horizontal docking is allowed, but the information rearranges instead of overflowing. */
+.project-area[data-dock-edge="top"] .project-space-content,
+.project-area[data-dock-edge="bottom"] .project-space-content{grid-template-columns:1.05fr 1fr .95fr;overflow:hidden}
+.area-window[data-dock-edge="top"],.area-window[data-dock-edge="bottom"]{min-height:170px}
+.apps-zone[data-dock-edge="top"] .mini-section,.apps-zone[data-dock-edge="bottom"] .mini-section{display:none}
+.apps-zone[data-dock-edge="top"] .app-rack,.apps-zone[data-dock-edge="bottom"] .app-rack{height:74px}
+.systems-zone[data-dock-edge="top"],.systems-zone[data-dock-edge="bottom"]{display:grid;grid-template-columns:190px minmax(240px,1fr) minmax(260px,1fr);grid-template-rows:auto 1fr;align-items:start;overflow:hidden}
+.systems-zone[data-dock-edge="top"] .area-window-bar,.systems-zone[data-dock-edge="bottom"] .area-window-bar{grid-column:1/-1;position:relative;top:auto}
+.systems-zone[data-dock-edge="top"] .time-block,.systems-zone[data-dock-edge="bottom"] .time-block{align-self:stretch}
+.systems-zone[data-dock-edge="top"] .static-widget-stack,.systems-zone[data-dock-edge="bottom"] .static-widget-stack{display:flex;gap:8px;overflow-x:auto;margin:0}
+.systems-zone[data-dock-edge="top"] .static-widget-stack>.system-widget,.systems-zone[data-dock-edge="bottom"] .static-widget-stack>.system-widget{min-width:260px}

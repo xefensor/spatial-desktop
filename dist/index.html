@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=56">
+  <link rel="stylesheet" href="desktop-shell.css?v=57">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -72,7 +72,7 @@
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Open and parked</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Apps dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="app-rack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
@@ -185,7 +185,7 @@
     <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="Systems area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Status and controls</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="systems" aria-label="Hide System area" title="Hide System area"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move System dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="systems" aria-label="Hide System area" title="Hide System area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
@@ -207,7 +207,7 @@
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small>Project Space</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher" aria-label="Projects">
         <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true"><i class="project-color project-color-blue"></i><span>Plasma Redesign</span></button>
@@ -343,6 +343,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=56"></script>
+  <script src="desktop-shell.js?v=57"></script>
 </body>
 </html>
