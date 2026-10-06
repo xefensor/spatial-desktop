@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=51">
+  <link rel="stylesheet" href="desktop-shell.css?v=52">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -64,12 +64,15 @@
     <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
     <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2M8 18h2M14 18h2"/></symbol>
     <symbol id="i-archive" viewBox="0 0 24 24"><path d="M4 7h16v14H4zM3 3h18v4H3zM9 11h6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 15l6-6M7.5 17.5l-1 1a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0M16.5 6.5l1-1a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 11h8M8 15h6"/></symbol>
   </svg>
 
   <main class="desktop-shell" aria-label="Plasma spatial desktop prototype">
-    <aside class="zone apps-zone" aria-label="Apps area">
-      <header class="zone-heading">
-        <div><span class="eyebrow">SPACE 01</span><h1>Apps</h1></div>
+    <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
+      <header class="area-window-bar" data-area-drag-handle>
+        <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Open and parked</small></span></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="app-rack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
@@ -147,6 +150,7 @@
         <label class="recessed-field app-search"><svg><use href="#i-search"/></svg><input id="appSearch" placeholder="Find an app" aria-label="Find an app"></label>
         <button class="surface-key icon-key all-apps-toggle" id="allAppsToggle" aria-controls="allAppsDrawer" aria-expanded="false" aria-label="All apps" title="All apps"><svg><use href="#i-grid"/></svg></button>
       </div>
+      <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag to resize"></button>
     </aside>
 
     <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
@@ -178,7 +182,11 @@
 
     <button class="zone-resizer zone-resizer-right" data-zone-resizer="systems" type="button" role="separator" aria-label="Resize Workspace and Systems areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
-    <aside class="zone systems-zone" aria-label="Systems area">
+    <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="Systems area">
+      <header class="area-window-bar" data-area-drag-handle>
+        <div class="area-window-identity"><span class="area-window-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Status and controls</small></span></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="systems" aria-label="Hide System area" title="Hide System area"><svg><use href="#i-min"/></svg></button></div>
+      </header>
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
@@ -193,6 +201,47 @@
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
       </div>
+      <button class="resize-handle area-resize-handle" data-area-resize="systems" aria-label="Resize System area" title="Drag to resize"></button>
+    </aside>
+
+    <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
+      <header class="area-window-bar" data-area-drag-handle>
+        <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small>Project Space</small></span></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Automatically arrange areas" title="Auto-arrange areas"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
+      </header>
+      <nav class="project-switcher" aria-label="Projects">
+        <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true"><i class="project-color project-color-blue"></i><span>Plasma Redesign</span></button>
+        <button class="surface-key project-choice" data-project-select="retold" aria-pressed="false"><i class="project-color project-color-green"></i><span>Retold</span></button>
+      </nav>
+      <div class="project-space-content">
+        <section class="project-module project-root-module">
+          <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
+          <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">~/Projects/plasma-redesign</span></button>
+          <div class="project-items" id="projectRootItems">
+            <button data-toast="Opening desktop-shell.css"><i class="document-glyph"></i><span><b>desktop-shell.css</b><small>Modified 8 min ago</small></span></button>
+            <button data-toast="Opening interaction-notes.md"><i class="document-glyph"></i><span><b>interaction-notes.md</b><small>Modified today</small></span></button>
+          </div>
+        </section>
+        <section class="project-module project-links-module">
+          <header><span><svg><use href="#i-link"/></svg><b>Linked resources</b></span><button class="surface-key project-small-key" data-toast="Add a linked resource">Add</button></header>
+          <div class="project-items" id="projectLinkedItems">
+            <button data-toast="Opening keyboard-reference.mp4"><span class="linked-type video"><svg><use href="#i-video"/></svg></span><span><b>keyboard-reference.mp4</b><small>Linked · ~/Videos</small></span><i class="link-badge"><svg><use href="#i-link"/></svg></i></button>
+            <button data-toast="Opening Ocean design"><span class="linked-type web"><svg><use href="#i-web"/></svg></span><span><b>Ocean design</b><small>Linked web reference</small></span><i class="link-badge"><svg><use href="#i-link"/></svg></i></button>
+          </div>
+        </section>
+        <section class="project-module project-context-module">
+          <header><span><svg><use href="#i-clipboard"/></svg><b>Context</b></span><span class="project-widget-count">2 widgets</span></header>
+          <div class="project-quick-apps" aria-label="Project quick launch">
+            <button class="project-app" data-open-app="browser" aria-label="Open Firefox"><svg class="app-art"><use href="#app-browser"/></svg></button>
+            <button class="project-app" data-open-app="dolphin" aria-label="Open Dolphin"><svg class="app-art"><use href="#app-dolphin"/></svg></button>
+            <button class="project-app" data-open-app="notes" aria-label="Open Notes"><svg class="app-art"><use href="#app-notes"/></svg></button>
+            <button class="project-app project-app-generic" data-toast="Krita launched" aria-label="Open Krita"><svg><use href="#i-palette"/></svg></button>
+          </div>
+          <div class="project-clipboard" id="projectClipboard"><span class="clipboard-mark"><svg><use href="#i-clipboard"/></svg></span><span><b>#2a9fff</b><small>Project clipboard · pinned colour</small></span><button class="surface-key project-small-key" data-toast="Copied #2a9fff">Copy</button></div>
+          <button class="project-note-widget" data-toast="Project notes opened"><svg><use href="#i-note"/></svg><span><b>Interaction notes</b><small>Tabs, buttons and window behaviour</small></span></button>
+        </section>
+      </div>
+      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Project Space" title="Drag to resize"></button>
     </aside>
   </main>
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true">
@@ -233,6 +282,9 @@
           <section class="universal-group" data-universal-group="settings">
             <h3>Settings and actions</h3>
             <div class="universal-result-grid">
+              <button class="universal-result" data-area-show="projects" data-universal-search="show open project space area activity"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Project Space</b><small>Priority 1 area</small></span></button>
+              <button class="universal-result" data-area-show="apps" data-universal-search="show open apps applications area"><span class="universal-symbol blue"><svg><use href="#i-grid"/></svg></span><span><b>Show Apps Area</b><small>Priority 2 area</small></span></button>
+              <button class="universal-result" data-area-show="systems" data-universal-search="show open system area widgets controls"><span class="universal-symbol cyan"><svg><use href="#i-settings"/></svg></span><span><b>Show System Area</b><small>Priority 3 area</small></span></button>
               <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
               <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
               <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
@@ -291,6 +343,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=51"></script>
+  <script src="desktop-shell.js?v=52"></script>
 </body>
 </html>

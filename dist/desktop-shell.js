@@ -9,6 +9,7 @@ const toggleControlSelector = [
   ".play-toggle",
   "#timerToggle",
   "#allAppsToggle",
+  "[data-project-select]",
   "[data-window-action=\"maximize\"]"
 ].join(",");
 
@@ -731,6 +732,300 @@ function prepareZoneResizers() {
   });
 }
 
+const areaPriority = ["projects", "apps", "systems"];
+const areaGeometry = new Map();
+let areaMode = "auto";
+let areaZCounter = 240;
+
+function areaFor(name) {
+  return document.querySelector('[data-area-window="' + name + '"]');
+}
+
+function areaMinimums(name) {
+  return name === "projects" ? { width: 480, height: 210 } : { width: name === "systems" ? 260 : 240, height: 310 };
+}
+
+function defaultAreaGeometry(name) {
+  const shell = $(".desktop-shell");
+  const width = shell.clientWidth;
+  const height = shell.clientHeight;
+  if (name === "projects") return { x: Math.max(12, width * .24), y: Math.max(12, height * .66), width: Math.max(480, width * .5), height: Math.max(210, height * .31) };
+  if (name === "systems") return { x: Math.max(12, width - Math.max(280, width * .22) - 12), y: 12, width: Math.max(280, width * .22), height: height - 24 };
+  return { x: 12, y: 12, width: Math.max(260, width * .21), height: height - 24 };
+}
+
+function clampAreaGeometry(name, geometry) {
+  const shell = $(".desktop-shell");
+  const gap = 8;
+  const minimum = areaMinimums(name);
+  const width = Math.min(Math.max(minimum.width, geometry.width), Math.max(minimum.width, shell.clientWidth - gap * 2));
+  const height = Math.min(Math.max(minimum.height, geometry.height), Math.max(minimum.height, shell.clientHeight - gap * 2));
+  return {
+    x: Math.min(Math.max(gap, geometry.x), Math.max(gap, shell.clientWidth - width - gap)),
+    y: Math.min(Math.max(gap, geometry.y), Math.max(gap, shell.clientHeight - height - gap)),
+    width,
+    height
+  };
+}
+
+function applyAreaGeometry(name, geometry, remember = true) {
+  const area = areaFor(name);
+  if (!area) return;
+  const fitted = clampAreaGeometry(name, geometry);
+  area.style.left = fitted.x + "px";
+  area.style.top = fitted.y + "px";
+  area.style.width = fitted.width + "px";
+  area.style.height = fitted.height + "px";
+  area.style.right = "auto";
+  area.style.bottom = "auto";
+  if (remember) areaGeometry.set(name, fitted);
+}
+
+function bringAreaToFront(name) {
+  const area = areaFor(name);
+  if (!area) return;
+  areaZCounter += 1;
+  area.style.zIndex = areaZCounter;
+}
+
+function saveAreaLayout() {
+  const hidden = Object.fromEntries(areaPriority.map(name => [name, Boolean(areaFor(name)?.hidden)]));
+  try {
+    localStorage.setItem("spatial-area-layout-v1", JSON.stringify({
+      mode: areaMode,
+      hidden,
+      geometry: Object.fromEntries(areaGeometry)
+    }));
+  } catch {}
+}
+
+function setWorkspaceInsets(left, right, bottom, top = 12) {
+  const shell = $(".desktop-shell");
+  shell.style.setProperty("--workspace-left", left + "px");
+  shell.style.setProperty("--workspace-right", right + "px");
+  shell.style.setProperty("--workspace-bottom", bottom + "px");
+  shell.style.setProperty("--workspace-top", top + "px");
+}
+
+function tileAreas(save = false) {
+  const shell = $(".desktop-shell");
+  const width = shell.clientWidth;
+  const height = shell.clientHeight;
+  const gap = 12;
+  const visible = name => areaFor(name) && !areaFor(name).hidden;
+  const hasProject = visible("projects");
+  const hasApps = visible("apps");
+  const hasSystems = visible("systems");
+  let appsWidth = hasApps ? Math.min(320, Math.max(250, width * .205)) : 0;
+  let systemsWidth = hasSystems ? Math.min(340, Math.max(270, width * .215)) : 0;
+  const projectHeight = hasProject ? Math.min(300, Math.max(220, height * .29)) : 0;
+
+  // Project Space gets the central canvas first. On constrained screens the
+  // lower-priority System area yields before Apps.
+  const minimumCenter = Math.min(560, width - gap * 2);
+  let overflow = appsWidth + systemsWidth + (hasApps ? gap : 0) + (hasSystems ? gap : 0) + minimumCenter + gap * 2 - width;
+  if (overflow > 0 && hasSystems) {
+    const reduction = Math.min(overflow, Math.max(0, systemsWidth - 240));
+    systemsWidth -= reduction;
+    overflow -= reduction;
+  }
+  if (overflow > 0 && hasApps) appsWidth = Math.max(230, appsWidth - overflow);
+
+  if (hasApps) applyAreaGeometry("apps", { x: gap, y: gap, width: appsWidth, height: height - gap * 2 });
+  if (hasSystems) applyAreaGeometry("systems", { x: width - systemsWidth - gap, y: gap, width: systemsWidth, height: height - gap * 2 });
+  if (hasProject) {
+    const left = gap + (hasApps ? appsWidth + gap : 0);
+    const right = width - gap - (hasSystems ? systemsWidth + gap : 0);
+    applyAreaGeometry("projects", { x: left, y: height - projectHeight - gap, width: Math.max(480, right - left), height: projectHeight });
+  }
+
+  areaMode = "auto";
+  document.body.classList.add("areas-auto");
+  document.body.classList.remove("areas-freeform");
+  setWorkspaceInsets(hasApps ? appsWidth + gap * 2 : gap, hasSystems ? systemsWidth + gap * 2 : gap, hasProject ? projectHeight + gap * 2 : gap, gap);
+  [["systems", 221], ["apps", 222], ["projects", 223]].forEach(([name, z]) => {
+    const area = areaFor(name);
+    if (area) area.style.zIndex = z;
+  });
+  scheduleWindowFit();
+  if (save) saveAreaLayout();
+}
+
+function detachAreaLayout() {
+  if (areaMode === "free") return;
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (!area || area.hidden) return;
+    const areaRect = area.getBoundingClientRect();
+    const shellRect = $(".desktop-shell").getBoundingClientRect();
+    areaGeometry.set(name, { x: areaRect.left - shellRect.left, y: areaRect.top - shellRect.top, width: areaRect.width, height: areaRect.height });
+  });
+  areaMode = "free";
+  document.body.classList.remove("areas-auto");
+  document.body.classList.add("areas-freeform");
+  setWorkspaceInsets(12, 12, 12, 12);
+  scheduleWindowFit();
+}
+
+function hideArea(name) {
+  const area = areaFor(name);
+  if (!area) return;
+  area.hidden = true;
+  if (areaMode === "auto") tileAreas(false);
+  saveAreaLayout();
+  showToast((name === "projects" ? "Project Space" : name === "apps" ? "Apps" : "System") + " hidden — reopen it from Search");
+}
+
+function showArea(name, announce = true) {
+  const area = areaFor(name);
+  if (!area) return;
+  area.hidden = false;
+  if (areaMode === "auto") tileAreas(false);
+  else applyAreaGeometry(name, areaGeometry.get(name) || defaultAreaGeometry(name));
+  bringAreaToFront(name);
+  saveAreaLayout();
+  if (announce) showToast((name === "projects" ? "Project Space" : name === "apps" ? "Apps" : "System") + " shown");
+}
+
+function bindAreaDrag(name, area) {
+  const handle = $("[data-area-drag-handle]", area);
+  if (!handle) return;
+  handle.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || event.target.closest("button,input,a")) return;
+    event.preventDefault();
+    detachAreaLayout();
+    bringAreaToFront(name);
+    const shellRect = $(".desktop-shell").getBoundingClientRect();
+    const startRect = area.getBoundingClientRect();
+    const start = { x: event.clientX, y: event.clientY, left: startRect.left - shellRect.left, top: startRect.top - shellRect.top, width: startRect.width, height: startRect.height };
+    handle.setPointerCapture(event.pointerId);
+    area.classList.add("is-area-dragging");
+    const move = moveEvent => applyAreaGeometry(name, { x: start.left + moveEvent.clientX - start.x, y: start.top + moveEvent.clientY - start.y, width: start.width, height: start.height });
+    const finish = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
+      area.classList.remove("is-area-dragging");
+      saveAreaLayout();
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+  });
+}
+
+function bindAreaResize(name, area) {
+  const handle = $('[data-area-resize="' + name + '"]', area);
+  if (!handle) return;
+  handle.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    detachAreaLayout();
+    bringAreaToFront(name);
+    const rect = area.getBoundingClientRect();
+    const shellRect = $(".desktop-shell").getBoundingClientRect();
+    const start = { x: event.clientX, y: event.clientY, left: rect.left - shellRect.left, top: rect.top - shellRect.top, width: rect.width, height: rect.height };
+    handle.setPointerCapture(event.pointerId);
+    area.classList.add("is-area-resizing");
+    const move = moveEvent => applyAreaGeometry(name, { x: start.left, y: start.top, width: start.width + moveEvent.clientX - start.x, height: start.height + moveEvent.clientY - start.y });
+    const finish = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
+      area.classList.remove("is-area-resizing");
+      saveAreaLayout();
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+  });
+}
+
+function prepareAreaWindows() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("spatial-area-layout-v1") || "null"); } catch {}
+  if (saved?.hidden) areaPriority.forEach(name => { if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]); });
+  if (saved?.geometry) Object.entries(saved.geometry).forEach(([name, geometry]) => areaGeometry.set(name, geometry));
+
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (!area) return;
+    bindAreaDrag(name, area);
+    bindAreaResize(name, area);
+    area.addEventListener("pointerdown", () => bringAreaToFront(name));
+  });
+  $$('[data-area-hide]').forEach(button => button.addEventListener("click", event => { event.stopPropagation(); hideArea(button.dataset.areaHide); }));
+  $$('[data-area-show]').forEach(button => button.addEventListener("click", () => showArea(button.dataset.areaShow)));
+  $$('[data-area-auto]').forEach(button => button.addEventListener("click", event => {
+    event.stopPropagation();
+    tileAreas(true);
+    showToast("Areas arranged: Projects → Apps → System");
+  }));
+
+  if (saved?.mode === "free") {
+    areaMode = "free";
+    document.body.classList.add("areas-freeform");
+    setWorkspaceInsets(12, 12, 12, 12);
+    areaPriority.forEach(name => {
+      const area = areaFor(name);
+      if (area && !area.hidden) applyAreaGeometry(name, areaGeometry.get(name) || defaultAreaGeometry(name));
+    });
+  } else tileAreas(false);
+}
+
+const projectSpaces = {
+  plasma: {
+    name: "Plasma Redesign",
+    accent: "#5cbcff",
+    root: "~/Projects/plasma-redesign",
+    files: [["desktop-shell.css", "Modified 8 min ago", "document"], ["interaction-notes.md", "Modified today", "document"]],
+    links: [["keyboard-reference.mp4", "Linked · ~/Videos", "video", "i-video"], ["Ocean design", "Linked web reference", "web", "i-web"]],
+    clipboard: ["#2a9fff", "Project clipboard · pinned colour"]
+  },
+  retold: {
+    name: "Retold",
+    accent: "#65d881",
+    root: "~/Projects/retold-mod",
+    files: [["src/main/java", "Gameplay sources", "folder"], ["gradle.properties", "Modified yesterday", "document"]],
+    links: [["v0.3 test recording.mp4", "Linked · ~/Videos/Captures", "video", "i-video"], ["Fabric documentation", "Linked web reference", "web", "i-web"]],
+    clipboard: ["./gradlew runClient", "Project clipboard · last command"]
+  }
+};
+
+function renderProjectSpace(name) {
+  const project = projectSpaces[name];
+  const area = areaFor("projects");
+  if (!project || !area) return;
+  area.style.setProperty("--project-accent", project.accent);
+  $("#projectAreaName").textContent = project.name;
+  $("#projectRootPath").textContent = project.root;
+  $("#projectRootItems").innerHTML = project.files.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  $("#projectLinkedItems").innerHTML = project.links.map(([label, detail, type, itemIcon]) => '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + type + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>').join("");
+  const [clip, clipDetail] = project.clipboard;
+  $("#projectClipboard").innerHTML = '<span class="clipboard-mark">' + icon("i-clipboard") + '</span><span><b>' + escapeHtml(clip) + '</b><small>' + escapeHtml(clipDetail) + '</small></span><button class="surface-key project-small-key" data-project-copy="' + escapeHtml(clip) + '">Copy</button>';
+  applyAppPrimaryColors(area);
+}
+
+function prepareProjectSpaces() {
+  $$('[data-project-select]').forEach(button => button.addEventListener("click", () => {
+    $$('[data-project-select]').forEach(choice => {
+      const selected = choice === button;
+      choice.classList.toggle("is-active", selected);
+      choice.setAttribute("aria-pressed", String(selected));
+    });
+    renderProjectSpace(button.dataset.projectSelect);
+    showToast(button.textContent.trim() + " context loaded");
+  }));
+  $(".project-area").addEventListener("click", event => {
+    const item = event.target.closest("[data-project-item]");
+    const copy = event.target.closest("[data-project-copy]");
+    if (item) showToast("Opening " + item.dataset.projectItem);
+    if (copy) showToast("Copied " + copy.dataset.projectCopy);
+  });
+  renderProjectSpace("plasma");
+}
+
 function prepareWindows() {
   $$("[data-app-frame]").forEach(frame => {
     const actions = $(".window-actions", frame);
@@ -878,6 +1173,7 @@ function setUniversalSearchOpen(open) {
 
 function openApplicationSearch() {
   setUniversalSearchOpen(false);
+  showArea("apps", false);
   setAllAppsOpen(true);
   requestAnimationFrame(() => $("#appSearch").focus());
 }
@@ -942,7 +1238,7 @@ function prepareMaterialCursor() {
     else if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
     else if (target.closest(".resize-handle")) cursor.classList.add("is-diag-resize");
     else if (target.closest("textarea,[contenteditable='true'],input:not([type]),input[type='text'],input[type='search']")) cursor.classList.add("is-text");
-    else if (target.closest(".app-titlebar") && !target.closest("button,input,a")) cursor.classList.add("is-move");
+    else if (target.closest(".app-titlebar,.area-window-bar") && !target.closest("button,input,a")) cursor.classList.add("is-move");
     else if (target.closest(".mini-card header") && !target.closest("button,input,a")) cursor.classList.add((buttons & 1) ? "is-grabbing" : "is-grab");
     else if (target.closest("button,a,label,input[type='range'],select")) cursor.classList.add("is-pointer");
   };
@@ -1242,7 +1538,8 @@ $("#terminalInput").addEventListener("keydown", event => {
 });
 
 prepareNoteSync();
-prepareZoneResizers();
+prepareAreaWindows();
+prepareProjectSpaces();
 prepareWindows();
 applyAppPrimaryColors();
 hydrateAppArtwork();
@@ -1261,7 +1558,11 @@ requestAnimationFrame(() => {
 });
 
 window.addEventListener("resize", () => {
-  applyZoneLayout(false);
+  if (areaMode === "auto") tileAreas(false);
+  else areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (area && !area.hidden) applyAreaGeometry(name, areaGeometry.get(name) || defaultAreaGeometry(name));
+  });
   windowGeometry.forEach((geometry, name) => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
