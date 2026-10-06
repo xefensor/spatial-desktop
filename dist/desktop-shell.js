@@ -763,7 +763,6 @@ function setAllAppsOpen(open) {
 $("#allAppsToggle").addEventListener("click", () => {
   setAllAppsOpen(!$("#allAppsDrawer").classList.contains("is-open"));
 });
-$("#closeAllApps").addEventListener("click", () => setAllAppsOpen(false));
 
 $$("[data-open-app]").forEach(button => button.addEventListener("click", () => {
   openApp(button.dataset.openApp);
