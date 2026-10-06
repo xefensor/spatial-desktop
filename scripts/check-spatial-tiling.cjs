@@ -546,3 +546,18 @@ sandbox.isLocalApp = originalLocalApp;
 vm.runInContext('tileInteraction=true;minimizeInvisibleWindows();tileInteraction=false',sandbox);
 assert.equal(sandbox.appState.dolphin,"open","A window under active dragging is not parked mid-gesture");
 console.log("Visibility policy: fullscreen tile/float parking, restoration, close/minimize, explicit card opening, multi-monitor exclusion, union coverage, partial visibility, offscreen and drag safety passed.");
+
+const visibilityCallbacks = [];
+sandbox.requestAnimationFrame = fn => {visibilityCallbacks.push(fn);return visibilityCallbacks.length;};
+sandbox.windowViewportLockReady = false;
+vm.runInContext('windowVisibilityFrame=0;tileLayoutFrame=0;scheduleWindowVisibility()',sandbox);
+visibilityCallbacks.shift()();
+assert.equal(sandbox.appState.dolphin,"open","Startup must restore and tile the windows before judging their visibility");
+sandbox.windowViewportLockReady = true;
+vm.runInContext('tileLayoutFrame=1;scheduleWindowVisibility()',sandbox);
+visibilityCallbacks.shift()();
+assert.equal(sandbox.appState.dolphin,"open","A pending tile pass takes priority over stale overlapping geometry");
+vm.runInContext('tileLayoutFrame=0;scheduleWindowVisibility()',sandbox);
+visibilityCallbacks.shift()();
+assert.equal(sandbox.appState.dolphin,"minimized","After layout settles an actually invisible window is parked");
+console.log("Visibility scheduling: startup guard, pending layout and settled checks passed.");

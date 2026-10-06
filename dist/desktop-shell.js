@@ -613,7 +613,7 @@ function scheduleWindowVisibility() {
   if (windowVisibilityFrame) return;
   windowVisibilityFrame = requestAnimationFrame(() => {
     windowVisibilityFrame = 0;
-    if (tileInteraction || tileRendering) return;
+    if (!windowViewportLockReady || tileInteraction || tileRendering || tileLayoutFrame) return;
     // Check settled geometry, not the intermediate overlap of animated tiles.
     if ($$(".app-frame.is-auto-tiling").length) {
       setTimeout(scheduleWindowVisibility, 160);
