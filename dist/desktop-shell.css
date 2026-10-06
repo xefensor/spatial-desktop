@@ -1785,3 +1785,28 @@ body[data-theme="light"] .app-frame.is-front{
 .terminal-screen{
   background:var(--app-terminal-surface);
 }
+
+/* Systems hierarchy: live activity rises; pinned utilities settle at the base. */
+.systems-zone .time-block{order:0}
+.systems-zone .dynamic-widget-stack{
+  order:1;
+  flex:0 0 auto;
+}
+.systems-zone .system-launchers{
+  order:2;
+  flex:0 0 auto;
+}
+.systems-zone .static-widget-stack{
+  order:3;
+  min-height:0;
+  margin-top:auto;
+  display:grid;
+  gap:14px;
+  align-content:end;
+}
+.systems-zone .static-widget-stack .quick-settings{
+  margin-top:0;
+}
+@media(max-width:1350px){
+  .systems-zone .static-widget-stack{gap:10px}
+}
