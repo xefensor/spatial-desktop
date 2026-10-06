@@ -7055,7 +7055,7 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
   mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   mask-composite:exclude;
   opacity:0;
-  animation:notification-perimeter-orbit 1.32s cubic-bezier(.22,.68,.24,1) both;
+  animation:notification-perimeter-orbit 2.35s cubic-bezier(.22,.68,.24,1) both;
 }
 .notification-widget.has-new-attention .widget-heading>div>svg,
 .notification-widget.has-new-attention #notificationCount{
@@ -7069,8 +7069,8 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
 }
 @keyframes notification-perimeter-orbit{
   0%{--notification-orbit:-42deg;opacity:0}
-  9%{opacity:.94}
-  84%{opacity:.86}
+  7%{opacity:.96}
+  90%{opacity:.88}
   100%{--notification-orbit:318deg;opacity:0}
 }
 

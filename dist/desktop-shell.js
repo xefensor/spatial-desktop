@@ -3832,7 +3832,7 @@ function showNotificationPeek(title, detail, tone, glyph) {
   peek.classList.remove("is-attending");
   void peek.offsetWidth;
   peek.classList.add("is-attending");
-  notificationPeekAttentionTimer = setTimeout(() => peek.classList.remove("is-attending"), 1450);
+  notificationPeekAttentionTimer = setTimeout(() => peek.classList.remove("is-attending"), 2500);
   requestAnimationFrame(positionNotificationPeek);
   clearTimeout(notificationPeekTimer);
   notificationPeekTimer = setTimeout(hideNotificationPeek, 3400);
@@ -3857,13 +3857,13 @@ function drawAttentionToNotification(item, title, detail, tone, glyph) {
       item.classList.remove("is-new-attention");
       area.classList.remove("has-notification-attention");
       $("#notificationWidget")?.classList.remove("has-new-attention");
-    }, 1450);
+    }, 2500);
     return;
   }
 
   if (local && area.dataset.areaState === "rail") area.classList.add("has-notification-attention");
   showNotificationPeek(title, detail, tone, glyph);
-  notificationAttentionTimer = setTimeout(() => area?.classList.remove("has-notification-attention"), 1450);
+  notificationAttentionTimer = setTimeout(() => area?.classList.remove("has-notification-attention"), 2500);
 }
 
 function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
