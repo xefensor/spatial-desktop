@@ -812,6 +812,42 @@ $("#appSearch").addEventListener("input", event => {
 
 filterLauncher();
 
+function prepareMaterialCursor() {
+  const cursor = $("#materialCursor");
+  const desktop = $(".desktop-shell");
+  if (!cursor || !desktop || !window.matchMedia("(pointer:fine)").matches) return;
+
+  const syncButtons = buttons => {
+    cursor.classList.toggle("is-left", (buttons & 1) === 1);
+    cursor.classList.toggle("is-right", (buttons & 2) === 2);
+  };
+  const release = () => syncButtons(0);
+
+  desktop.addEventListener("pointerenter", event => {
+    if (event.pointerType && event.pointerType !== "mouse") return;
+    cursor.classList.add("is-visible");
+  });
+  desktop.addEventListener("pointerleave", () => {
+    cursor.classList.remove("is-visible");
+    release();
+  });
+  desktop.addEventListener("pointermove", event => {
+    if (event.pointerType && event.pointerType !== "mouse") return;
+    cursor.style.setProperty("--cursor-x", event.clientX + "px");
+    cursor.style.setProperty("--cursor-y", event.clientY + "px");
+    cursor.classList.add("is-visible");
+    syncButtons(event.buttons);
+  }, {passive:true});
+  desktop.addEventListener("pointerdown", event => {
+    if (event.pointerType && event.pointerType !== "mouse") return;
+    syncButtons(event.buttons);
+  });
+  desktop.addEventListener("contextmenu", event => event.preventDefault());
+  window.addEventListener("pointerup", release);
+  window.addEventListener("pointercancel", release);
+  window.addEventListener("blur", release);
+}
+
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && $("#allAppsDrawer").classList.contains("is-open")) {
     setAllAppsOpen(false);
@@ -1025,6 +1061,7 @@ prepareWindows();
 applyAppPrimaryColors();
 hydrateAppArtwork();
 prepareControlSemantics();
+prepareMaterialCursor();
 updateClock();
 setInterval(updateClock, 1000);
 renderCalendar();

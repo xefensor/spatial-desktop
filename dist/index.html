@@ -7,7 +7,7 @@
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preload" as="image" href="wallpaper-river-v34.jpg">
-  <link rel="stylesheet" href="desktop-shell.css?v=41">
+  <link rel="stylesheet" href="desktop-shell.css?v=42">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -196,7 +196,13 @@
       </div>
     </aside>
   </main>
+  <div class="material-cursor" id="materialCursor" aria-hidden="true">
+    <span class="cursor-body"></span>
+    <span class="cursor-button cursor-left"><i></i></span>
+    <span class="cursor-button cursor-right"><i></i></span>
+    <span class="cursor-wheel"></span>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=41"></script>
+  <script src="desktop-shell.js?v=42"></script>
 </body>
 </html>
