@@ -173,6 +173,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (!preserveGeometry && !frame.dataset.maximized) windowGeometry.set(name, readGeometry(frame));
   frame.classList.remove("is-maximized");
   delete frame.dataset.maximized;
+  syncMaximizeButton(frame);
   appState[name] = "minimized";
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
@@ -185,12 +186,18 @@ function closeApp(name) {
   showToast(appInfo[name].label + " closed");
 }
 
+function syncMaximizeButton(frame) {
+  const button = $('[data-window-action="maximize"]', frame);
+  if (button) button.setAttribute("aria-pressed", String(frame.dataset.maximized === "true"));
+}
+
 function toggleMaximize(name) {
   const frame = frameFor(name);
   if (frame.dataset.maximized === "true") {
     delete frame.dataset.maximized;
     frame.classList.remove("is-maximized");
     applyGeometry(name, maximizeRestore.get(name) || windowGeometry.get(name) || readGeometry(frame));
+    syncMaximizeButton(frame);
     return;
   }
   maximizeRestore.set(name, readGeometry(frame));
@@ -199,6 +206,7 @@ function toggleMaximize(name) {
   frame.classList.add("is-maximized");
   applyGeometry(name, { x: 8, y: 8, width: workspace.width - 16, height: workspace.height - 16 }, false);
   bringToFront(name);
+  syncMaximizeButton(frame);
 }
 
 function miniMarkup(name) {
@@ -657,9 +665,11 @@ function prepareWindows() {
       maximize.className = "surface-key window-key";
       maximize.dataset.windowAction = "maximize";
       maximize.setAttribute("aria-label", "Maximize " + appInfo[frame.dataset.appFrame].label);
+      maximize.setAttribute("aria-pressed", "false");
       maximize.innerHTML = icon("i-max");
       actions.insertBefore(maximize, $(".danger", actions));
     }
+    syncMaximizeButton(frame);
     bindWindowDrag(frame);
     bindResize(frame);
     frame.addEventListener("pointerdown", () => bringToFront(frame.dataset.appFrame));
@@ -697,6 +707,7 @@ $("#fullscreenButton").addEventListener("click", async () => {
 
 document.addEventListener("fullscreenchange", () => {
   $("#fullscreenButton").setAttribute("aria-label", document.fullscreenElement ? "Leave fullscreen" : "Enter fullscreen");
+  $("#fullscreenButton").setAttribute("aria-pressed", String(Boolean(document.fullscreenElement)));
 });
 
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));
@@ -807,6 +818,7 @@ function updateTimer() {
   $("#timerProgress").style.width = 100 - focusSeconds / (25 * 60) * 100 + "%";
   $("#timerState").textContent = focusRunning ? "Running" : focusSeconds === 25 * 60 ? "Ready" : "Paused";
   $("#timerToggle").textContent = focusRunning ? "Pause" : "Start";
+  $("#timerToggle").setAttribute("aria-pressed", String(focusRunning));
 }
 
 function revealDynamicWidget(widget) {

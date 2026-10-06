@@ -42,7 +42,7 @@
     <aside class="zone apps-zone" aria-label="Apps area">
       <header class="zone-heading">
         <div><span class="eyebrow">SPACE 01</span><h1>Apps</h1></div>
-        <button class="surface-key icon-key" id="fullscreenButton" aria-label="Enter fullscreen" title="Fullscreen"><svg><use href="#i-expand"/></svg></button>
+        <button class="surface-key icon-key" id="fullscreenButton" aria-label="Enter fullscreen" aria-pressed="false" title="Fullscreen"><svg><use href="#i-expand"/></svg></button>
       </header>
       <nav class="app-rack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg><use href="#i-folder"/></svg><span>Dolphin</span><i></i></button>
@@ -102,7 +102,7 @@
       </div>
       <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b>Retold test pass</b><small>14:30 · 45 min</small></div></div></section>
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
-      <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
+      <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle"><span class="theme-dot"></span><span>Surface</span></button></section>
     </aside>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

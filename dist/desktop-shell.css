@@ -1272,3 +1272,151 @@ body[data-theme="light"] .recessed-field{
   box-shadow:inset 0 2px 4px rgba(48,60,67,.22);
 }
 .theme-dot{border:0}
+
+/* Restrained ABS tactility: only controls get a cap, never whole content regions. */
+:root{
+  --cap-top:color-mix(in srgb,var(--shell-hi) 72%,var(--shell));
+  --cap-bottom:color-mix(in srgb,var(--shell-lo) 86%,var(--shell));
+  --cap-edge:color-mix(in srgb,var(--soft-line) 28%,var(--line));
+  --cap-highlight:rgba(255,255,255,.11);
+  --cap-contact:rgba(0,0,0,.46);
+  --toggle-rail:color-mix(in srgb,var(--glass-frost) 35%,transparent);
+}
+body[data-theme="light"]{
+  --cap-top:#f5f6f4;
+  --cap-bottom:#cdd2d0;
+  --cap-edge:rgba(55,65,69,.38);
+  --cap-highlight:rgba(255,255,255,.88);
+  --cap-contact:rgba(43,50,53,.25);
+  --toggle-rail:rgba(38,58,68,.32);
+}
+.surface-key,
+.systems-zone .system-launcher,
+.systems-zone .quick-toggle{
+  background:
+    linear-gradient(180deg,var(--cap-highlight),transparent 42%),
+    linear-gradient(180deg,var(--cap-top),var(--cap-bottom));
+  border-color:var(--cap-edge);
+  box-shadow:0 2px 3px var(--cap-contact),inset 0 1px var(--cap-highlight);
+}
+.surface-key:hover,
+.systems-zone .system-launcher:hover,
+.systems-zone .quick-toggle:hover{
+  filter:brightness(1.055);
+}
+.surface-key:active,
+.systems-zone .system-launcher:active,
+.systems-zone .quick-toggle:active{
+  transform:translateY(2px) scaleY(.985);
+  filter:brightness(.92);
+  background:linear-gradient(180deg,var(--cap-bottom),var(--cap-top));
+  box-shadow:inset 0 2px 4px var(--cap-contact),inset 0 1px rgba(255,255,255,.04);
+  transition-duration:var(--button-press-time);
+}
+.window-key,.compact-key,.mini-control,.tiny-key{
+  border-radius:7px;
+}
+
+/* A persistent rail is reserved for controls that hold state. */
+.quick-toggle[data-toggle],
+.folder-tab,
+.nav-choice,
+.play-toggle,
+#timerToggle,
+#fullscreenButton,
+[data-window-action="maximize"]{
+  position:relative;
+  --state-tone:var(--blue);
+}
+.quick-toggle[data-toggle]::after,
+.folder-tab::after,
+.nav-choice::after,
+.play-toggle::after,
+#timerToggle::after,
+#fullscreenButton::after,
+[data-window-action="maximize"]::after{
+  content:"";
+  position:absolute;
+  left:24%;
+  right:24%;
+  bottom:3px;
+  height:2px;
+  border-radius:2px;
+  background:var(--toggle-rail);
+  box-shadow:none;
+  opacity:.8;
+  pointer-events:none;
+  transition:background var(--button-release-time) linear,box-shadow var(--button-release-time) linear,opacity var(--button-release-time) linear;
+}
+.quick-toggle[data-toggle]{--state-tone:var(--toggle-tone,var(--blue))}
+.play-toggle{--state-tone:var(--violet)}
+#timerToggle{--state-tone:var(--amber)}
+#fullscreenButton,[data-window-action="maximize"]{--state-tone:var(--cyan)}
+.quick-toggle[data-toggle].is-active::after,
+.folder-tab.is-active::after,
+.folder-tab[aria-selected="true"]::after,
+.nav-choice.is-active::after,
+.play-toggle.is-active::after,
+.play-toggle[aria-pressed="true"]::after,
+#timerToggle[aria-pressed="true"]::after,
+#fullscreenButton[aria-pressed="true"]::after,
+[data-window-action="maximize"][aria-pressed="true"]::after{
+  background:var(--state-tone);
+  box-shadow:0 0 6px color-mix(in srgb,var(--state-tone) 56%,transparent);
+  opacity:1;
+}
+
+/* Task buttons are stateful too; their existing slit is the same toggle rail. */
+.apps-zone .app-key>i{
+  width:20px;
+  height:2px;
+  background:var(--toggle-rail);
+  opacity:.8;
+}
+.apps-zone .app-key.is-open>i{
+  background:var(--item-tone,var(--blue));
+  opacity:1;
+}
+
+/* Held toggles sit one step lower, but press and release at the same mouse-switch speed. */
+.systems-zone .quick-toggle.is-active,
+.play-toggle.is-active,
+#timerToggle[aria-pressed="true"],
+#fullscreenButton[aria-pressed="true"],
+[data-window-action="maximize"][aria-pressed="true"]{
+  transform:translateY(1px);
+  filter:none;
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--cap-bottom) 82%,var(--state-tone) 18%),var(--cap-bottom));
+  box-shadow:inset 0 2px 4px var(--cap-contact),inset 0 1px rgba(255,255,255,.04);
+  transition-duration:var(--button-release-time);
+}
+.systems-zone .quick-toggle.is-active:active,
+.play-toggle.is-active:active,
+#timerToggle[aria-pressed="true"]:active,
+#fullscreenButton[aria-pressed="true"]:active,
+[data-window-action="maximize"][aria-pressed="true"]:active{
+  transform:translateY(2px) scaleY(.985);
+  transition-duration:var(--button-press-time);
+}
+.apps-zone .app-key.is-active{
+  transform:translateY(1px);
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.28);
+}
+.apps-zone .app-key.is-active:active{
+  transform:translateY(2px) scaleY(.985);
+  transition-duration:var(--button-press-time);
+}
+.folder-tab.is-active{
+  transition-duration:var(--button-release-time);
+}
+.folder-tab.is-active:active{
+  transform:translateY(3px) scaleY(.985);
+  transition-duration:var(--button-press-time);
+}
+
+/* Momentary buttons deliberately have no state rail. */
+.system-launcher::after,
+.surface-key:not(.play-toggle):not(#timerToggle):not(#fullscreenButton):not([data-window-action="maximize"])::after{
+  content:none;
+}
