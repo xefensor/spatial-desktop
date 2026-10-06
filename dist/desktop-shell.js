@@ -4625,11 +4625,11 @@ $$("[data-toggle]").forEach(button => button.addEventListener("click", () => {
   button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
 }));
 
-const themes = ["oled", "graphite", "light"];
+SpatialDesktopTheme.bind($("#themeToggle"));
+SpatialDesktopTheme.onChange = () => queueDesktopStateBroadcast(0);
 $("#themeToggle").addEventListener("click", () => {
-  const next = themes[(themes.indexOf(document.body.dataset.theme) + 1) % themes.length];
-  document.body.dataset.theme = next;
-  showToast(next[0].toUpperCase() + next.slice(1) + " surface");
+  SpatialDesktopTheme.next();
+  showToast(SpatialDesktopTheme.preference === "auto" ? "Auto theme · follows system" : $("#themeToggle span:last-child").textContent + " surface");
 });
 
 $$(".nav-choice").forEach(button => button.addEventListener("click", () => {
@@ -5512,6 +5512,7 @@ function captureDesktopSyncState() {
     workspaceProjects: cloneDesktopState(workspaceProjectStates),
     areaContents,
     theme: document.body.dataset.theme,
+    themePreference: SpatialDesktopTheme.preference,
     activeWorkspace,
     workspaceStates,
     areaSessions,
@@ -5592,7 +5593,7 @@ function applyDesktopSyncState(state) {
       projectSpaces[id] = SpatialDemoExamples.migrateProject(id, project);
     });
     noteDraft = typeof state.noteDraft === "string" ? SpatialDemoExamples.migrateNote(state.noteDraft) : noteDraft;
-    document.body.dataset.theme = state.theme || document.body.dataset.theme;
+    SpatialDesktopTheme.setPreference(state.themePreference || state.theme || "auto", { notify: false });
     persistIncomingDesktopState({ ...state, projects: projectSpaces, noteDraft });
 
     Object.keys(workspaceProjectStates).forEach(name => delete workspaceProjectStates[name]);

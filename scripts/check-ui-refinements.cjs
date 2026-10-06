@@ -70,3 +70,55 @@ for (const overviewOpen of [true, false]) {
   assert.equal(focusReturned, true);
 }
 console.log('Project dialog checks passed: background isolation and focus return from desktop and Overview.');
+
+// Exercise real preference handling and media changes, including persistence and
+// cross-display packets: Auto must remain Auto, rather than save its palette.
+const createTheme = require('../dist/desktop-theme.js');
+const themeStorage = new Map();
+function themeFixture(dark, storage = themeStorage) {
+  const handlers = {};
+  const body = { dataset: {} };
+  const meta = {};
+  const label = {};
+  const attributes = {};
+  const button = { querySelector: () => label, setAttribute: (k, v) => attributes[k] = v };
+  const media = { matches: dark, addEventListener: (type, listener) => handlers[type] = listener };
+  const theme = createTheme({ document: { body, querySelector: () => meta },
+    storage: { getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v) }, media,
+    events: { addEventListener: (type, listener) => handlers[type] = listener } });
+  theme.bind(button);
+  return { theme, body, label, attributes, handlers, media };
+}
+const auto = themeFixture(false);
+assert.equal(auto.theme.preference, 'auto');
+assert.equal(auto.body.dataset.theme, 'light');
+assert.equal(auto.label.textContent, 'Auto');
+auto.media.matches = true;
+auto.handlers.change();
+assert.equal(auto.body.dataset.theme, 'graphite');
+assert.match(auto.attributes['aria-label'], /Auto \(Dark\)/);
+auto.theme.setPreference('oled');
+auto.media.matches = false;
+auto.handlers.change();
+assert.equal(auto.body.dataset.theme, 'oled', 'Manual selection ignores system changes');
+assert.equal(themeFixture(false).theme.preference, 'oled', 'Manual preference survives reload');
+for (const expected of ['graphite', 'light', 'auto']) {
+  auto.theme.next();
+  assert.equal(auto.theme.preference, expected);
+}
+assert.equal(themeFixture(true).body.dataset.theme, 'graphite', 'Persisted Auto resolves the current system');
+auto.theme.setPreference('auto', { notify: false }); // Incoming desktop packet.
+assert.equal(auto.body.dataset.theme, 'light');
+auto.handlers.storage({ key: 'spatial-color-theme-v1', newValue: 'graphite' });
+assert.equal(auto.theme.preference, 'graphite');
+auto.handlers.storage({ key: 'spatial-color-theme-v1', newValue: null });
+assert.equal(auto.theme.preference, 'auto');
+assert.equal(themeFixture(true, new Map([['spatial-color-theme-v1', 'invalid']])).theme.preference, 'auto');
+const blocked = createTheme({ document: { body: { dataset: {} }, querySelector: () => null },
+  storage: { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); } },
+  media: { matches: true, addEventListener() {} } });
+blocked.setPreference('light');
+assert.equal(blocked.preference, 'light', 'Blocked storage does not disable themes');
+assert(html.indexOf('desktop-theme.js') < html.indexOf('class="icon-sprite"'), 'Resolve preference before desktop markup');
+assert(source.includes('themePreference: SpatialDesktopTheme.preference'), 'Sync carries the preference separately');
+console.log('Theme checks passed: live system changes, manual override, reload, cross-tab changes, Auto sync and blocked storage.');
