@@ -212,3 +212,26 @@ body[data-theme="light"] :is(.overview-zone-heading,.overview-section-heading) .
 .universal-search .overview-home .overview-window-titlebar > i { display: none; }
 .overview-home .workspace-no-windows { min-height: 70px; padding: 10px; border: 0; }
 .overview-home .workspace-no-windows > span { display: none; }
+/* One header alignment and a separate scroll well: nothing runs behind glass headers. */
+.overview-zone-heading { justify-content: flex-start; }
+.overview-zone-heading > span:last-child { flex: 1; }
+.overview-home[data-overview-state="all"] .overview-apps-section > .overview-section-heading > div {
+  display: flex; align-items: center; gap: 9px;
+}
+.overview-home[data-overview-state="all"] .overview-apps-section > .overview-section-heading { min-height: 50px; }
+.overview-home[data-overview-state="all"] .overview-widgets { overflow: hidden; }
+.overview-system-heading { position: static; }
+.overview-system-body {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  overflow-y: auto; scrollbar-width: thin;
+}
+body[data-theme="light"] .universal-search .overview-home .overview-open-windows .overview-window {
+  background: color-mix(in srgb, var(--overview-app) 7%, transparent) !important;
+  box-shadow: none !important;
+}
+body[data-theme="light"] .universal-search .overview-home .overview-open-windows .overview-window:hover {
+  background: color-mix(in srgb, var(--overview-app) 15%, transparent) !important;
+}
+@media (max-width: 980px) {
+  .overview-system-body { overflow: visible; flex: none; }
+}

@@ -4108,7 +4108,7 @@ $("#overviewNotificationList").addEventListener("click", event => {
   const button = event.target.closest("[data-overview-dismiss]");
   if (!button) return;
   const notification = $$(".notification", $("#notificationList"))[Number(button.dataset.overviewDismiss)];
-  $(".dismiss-button", notification)?.click();
+  if (notification) $(".dismiss-button", notification)?.click();
 });
 
 function filterLauncher() {
@@ -4569,6 +4569,8 @@ function syncMusic() {
     updateRangeLight(range);
   });
   if ($("#elapsedMain")) $("#elapsedMain").textContent = formatTime(musicPosition);
+  const overviewProgress = $(".overview-track i");
+  if (overviewProgress) overviewProgress.style.width = (musicPosition / 218 * 100) + "%";
 }
 
 function setMusicPlaying(next) {
@@ -4635,6 +4637,7 @@ function updateTimer() {
   $("#timerState").textContent = focusRunning ? "Running" : focusSeconds === 25 * 60 ? "Ready" : "Paused";
   $("#timerToggle").textContent = focusRunning ? "Pause" : "Start";
   $("#timerToggle").setAttribute("aria-pressed", String(focusRunning));
+  $("#overviewTimer small").textContent = (focusRunning ? "Running" : focusSeconds === 25 * 60 ? "Ready" : "Paused") + " · " + formatTime(focusSeconds);
 }
 
 function revealDynamicWidget(widget) {

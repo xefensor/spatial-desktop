@@ -9,7 +9,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="desktop-shell.css?v=155">
   <title>Spatial Desktop</title>
-  <link rel="stylesheet" href="ui-refinements.css?v=155">
+  <link rel="stylesheet" href="ui-refinements.css?v=156">
 </head>
 <body data-theme="oled">
   <svg class="icon-sprite" aria-hidden="true">
@@ -106,7 +106,7 @@
         <div class="app-toolbar"><div class="key-group"><button class="surface-key compact-key" aria-label="Back" title="Back"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key" aria-label="Forward" title="Forward"><svg><use href="#i-right"/></svg></button></div><label class="recessed-field address-bar"><span class="live-slit"></span><input value="/home/demo/Downloads" aria-label="Location"></label><button class="surface-key compact-key" aria-label="Search files" title="Search files"><svg><use href="#i-search"/></svg></button><button class="surface-key compact-key" aria-label="Change file view" title="Change file view"><svg><use href="#i-grid"/></svg></button></div>
         <div class="dolphin-layout">
           <nav class="places-list" aria-label="Places"><span class="small-heading">PLACES</span><button class="nav-choice"><svg><use href="#i-folder"/></svg>Home</button><button class="nav-choice is-active"><svg><use href="#i-folder"/></svg>Downloads</button><button class="nav-choice"><svg><use href="#i-note"/></svg>Documents</button><button class="nav-choice"><svg><use href="#i-music"/></svg>Music</button><span class="small-heading">REMOTE</span><button class="nav-choice"><svg><use href="#i-web"/></svg>Network</button><button class="nav-choice"><svg><use href="#i-terminal"/></svg>Server</button></nav>
-          <section class="files-module"><div class="folder-tabs" role="tablist" aria-label="Choose workspace"><button class="folder-tab" role="tab" aria-selected="false">Projects<span>×</span></button><button class="folder-tab is-active" role="tab" aria-selected="true">Downloads<span>×</span></button><button class="folder-tab" role="tab" aria-selected="false">Images<span>×</span></button></div><div class="file-well"><div class="file-head"><span>Name</span><span>Size</span><span>Modified</span></div><div class="file-list" role="listbox"><button class="content-row"><span><i class="folder-glyph"></i>Website Launch</span><small>12 items</small><small>today 11:42</small></button><button class="content-row"><span><i class="folder-glyph"></i>Short Film</span><small>84 items</small><small>yesterday</small></button><button class="content-row"><span><i class="folder-glyph"></i>Travel Photos</span><small>231 items</small><small>21 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>meeting-notes.md</span><small>18 KiB</small><small>today 09:16</small></button><button class="content-row"><span><i class="document-glyph image"></i>landscape.jpg</span><small>6.8 MiB</small><small>20 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>project-brief.pdf</span><small>2.1 MiB</small><small>18 Sep</small></button></div></div></section>
+          <section class="files-module"><div class="folder-tabs" role="tablist" aria-label="File tabs"><button class="folder-tab" role="tab" aria-selected="false">Projects<span>×</span></button><button class="folder-tab is-active" role="tab" aria-selected="true">Downloads<span>×</span></button><button class="folder-tab" role="tab" aria-selected="false">Images<span>×</span></button></div><div class="file-well"><div class="file-head"><span>Name</span><span>Size</span><span>Modified</span></div><div class="file-list" role="listbox"><button class="content-row"><span><i class="folder-glyph"></i>Website Launch</span><small>12 items</small><small>today 11:42</small></button><button class="content-row"><span><i class="folder-glyph"></i>Short Film</span><small>84 items</small><small>yesterday</small></button><button class="content-row"><span><i class="folder-glyph"></i>Travel Photos</span><small>231 items</small><small>21 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>meeting-notes.md</span><small>18 KiB</small><small>today 09:16</small></button><button class="content-row"><span><i class="document-glyph image"></i>landscape.jpg</span><small>6.8 MiB</small><small>20 Sep</small></button><button class="content-row"><span><i class="document-glyph"></i>project-brief.pdf</span><small>2.1 MiB</small><small>18 Sep</small></button></div></div></section>
         </div>
         <footer class="app-status"><span>3 folders, 3 files</span><span>276.8 GiB free</span></footer>
       </article>
@@ -210,7 +210,7 @@
 
       <section class="workspace-switcher" aria-label="Workspaces">
         <div class="workspace-switcher-label"><span class="eyebrow">WORKSPACES</span><strong id="activeWorkspaceLabel">General</strong></div>
-        <div class="workspace-tabs" role="tablist">
+        <div class="workspace-tabs" role="tablist" aria-label="Choose workspace">
           <button class="workspace-tab is-active" role="tab" aria-selected="true" data-workspace="general"><span class="workspace-glyph"><svg><use href="#i-grid"/></svg></span><span><b>General</b><small>Personal desktop</small></span></button>
           <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="school"><span class="workspace-glyph"><svg><use href="#i-graduation"/></svg></span><span><b>School</b><small>Classes and study</small></span></button>
           <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="work"><span class="workspace-glyph"><svg><use href="#i-office"/></svg></span><span><b>Work</b><small>Focused session</small></span></button>
@@ -312,6 +312,7 @@
             <span class="overview-zone-mark"><svg><use href="#i-settings"/></svg></span>
             <span><span class="eyebrow">SYSTEM ZONE</span><h3>State and controls</h3></span>
           </header>
+          <div class="overview-system-body">
           <section class="overview-widget overview-notifications-widget" id="overviewNotifications" hidden aria-label="Notifications"><header><h3>Notifications</h3><span id="overviewNotificationCount"></span></header><div id="overviewNotificationList"></div></section>
           <section class="overview-widget overview-clock-widget"><span class="live-time">--:--</span><div><b id="overviewDayLabel">Thursday</b><small id="overviewDateLabel">24 September</small></div></section>
           <section class="overview-widget overview-now-playing">
@@ -333,6 +334,7 @@
           </section>
           <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Phone</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
+          </div>
         </aside>
       </div>
 
@@ -463,6 +465,6 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=153"></script>
   <script src="demo-examples.js?v=154"></script>
-  <script src="desktop-shell.js?v=155"></script>
+  <script src="desktop-shell.js?v=156"></script>
 </body>
 </html>
