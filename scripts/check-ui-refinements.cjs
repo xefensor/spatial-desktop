@@ -71,6 +71,39 @@ for (const overviewOpen of [true, false]) {
 }
 console.log('Project dialog checks passed: background isolation and focus return from desktop and Overview.');
 
+// Material inheritance must match desktop utility surfaces even when a saved
+// or newly inserted node still carries an obsolete ABS class.
+const materialCtx = vm.createContext({});
+vm.runInContext(source.slice(source.indexOf('const glassMaterialSurfaceSelector'),source.indexOf('const materialFieldSelector')),materialCtx);
+vm.runInContext(source.slice(source.indexOf('function matchingNodes('),source.indexOf('function updateRangeLight(')),materialCtx);
+const materialNode = (selector,parent=null) => {
+  const classes=new Set();
+  const node={selector,parent,classes,
+    matches: selectors => selectors.split(',').includes(selector),
+    closest: () => classes.has('material-surface-glass') || classes.has('material-surface-abs') ? node : parent?.closest(),
+    classList:{add: value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
+  return node;
+};
+const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.notification-peek'].map(selector=>materialNode(selector));
+const absApp=materialNode('.app-frame');
+const allSurfaces=[...utilitySurfaces,absApp];
+utilitySurfaces[0].classes.add('material-surface-abs');
+materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>allSurfaces.filter(node=>node.matches(selector))});
+for(const surface of utilitySurfaces){
+  const button=materialNode('button',surface),field=materialNode('input',surface);
+  materialCtx.applyControlMaterial(button);materialCtx.applyFieldMaterial(field);
+  assert(surface.classes.has('material-surface-glass'),surface.selector+' is acrylic');
+  assert(!surface.classes.has('material-surface-abs'));
+  assert(button.classes.has('material-glass-button'),'Controls inherit '+surface.selector+' glass');
+  assert(field.classes.has('material-glass-field'),'Fields inherit '+surface.selector+' glass');
+}
+materialCtx.applyControlMaterial(utilitySurfaces.at(-1));
+assert(utilitySurfaces.at(-1).classes.has('material-glass-button'),'A notification preview inherits its own glass surface');
+const appButton=materialNode('button',absApp);
+materialCtx.applyControlMaterial(appButton);
+assert(appButton.classes.has('material-abs-button'),'Application controls retain ABS');
+console.log('Material inheritance passed: Pack/Import, project editor, Overview, context menus, toast, notification preview, stale ABS removal and application distinction.');
+
 // Exercise real preference handling and media changes, including persistence and
 // cross-display packets: Auto must remain Auto, rather than save its palette.
 const createTheme = require('../dist/desktop-theme.js');

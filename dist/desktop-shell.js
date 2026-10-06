@@ -3,6 +3,7 @@ const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)]
 try { SpatialDemoExamples.seedWorkspaces(localStorage); } catch {}
 
 const toggleControlSelector = [
+  "[data-package-mode]",
   "[data-open-app]",
   "[data-toggle]",
   ".folder-tab",
@@ -57,14 +58,15 @@ const glassMaterialSurfaceSelector = [
   ".desktop-context-menu",
   ".all-apps-drawer",
   ".project-editor-window",
+  ".package-window",
+  ".notification-peek",
   ".toast",
   ".app-frame .recessed-field",
   ".app-frame input[type=range]"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
-  ".app-frame",
-  ".package-window"
+  ".app-frame"
 ].join(",");
 
 const materialFieldSelector = [

@@ -7,10 +7,11 @@
   <meta name="description" content="A tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=171">
+  <link rel="stylesheet" href="desktop-shell.css?v=174">
   <title>Spatial Desktop</title>
   <link rel="stylesheet" href="ui-refinements.css?v=157">
   <link rel="stylesheet" href="area-layout.css?v=171">
+  <link rel="stylesheet" href="desktop-dialogs.css?v=174">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -378,7 +379,7 @@
     </div>
   </section>
   <section class="project-editor-overlay" id="projectEditorDialog" role="dialog" aria-modal="true" aria-labelledby="projectEditorTitle" aria-hidden="true" inert hidden>
-    <div class="project-editor-window material-surface-glass">
+    <div class="project-editor-window desktop-glass-dialog material-surface-glass">
       <header class="project-editor-titlebar">
         <div><span class="project-editor-mark"><svg><use href="#i-folder"/></svg></span><span><small id="projectEditorKicker">PROJECTS</small><h2 id="projectEditorTitle">Create project</h2></span></div>
         <button class="surface-key project-editor-close" id="closeProjectEditor" aria-label="Close project editor"><svg><use href="#i-close"/></svg></button>
@@ -388,7 +389,7 @@
   </section>
 
   <section class="package-overlay" id="packageDialog" role="dialog" aria-modal="true" aria-labelledby="packageTitle" aria-hidden="true" inert hidden>
-    <div class="package-window">
+    <div class="package-window desktop-glass-dialog material-surface-glass">
       <header class="package-titlebar">
         <div><span class="package-mark"><svg><use href="#i-archive"/></svg></span><span><small id="packageKicker">PORTABLE WORKSPACE</small><h2 id="packageTitle">Pack General</h2></span></div>
         <button class="surface-key package-close" data-close-package aria-label="Close package preview"><svg><use href="#i-close"/></svg></button>
@@ -471,6 +472,6 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
-  <script src="desktop-shell.js?v=173"></script>
+  <script src="desktop-shell.js?v=174"></script>
 </body>
 </html>

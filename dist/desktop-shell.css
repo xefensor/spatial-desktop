@@ -6169,7 +6169,7 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
 /* Glass controls are engraved boundaries in the parent sheet. They do not
    rise, jump or cast a second outer shadow. Pressing reverses the tiny inner
    reflection in 8 ms, like the microswitch under a mouse button. */
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle){
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle){
   --glass-key-tone:var(--state-tone,var(--toggle-tone,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
   border:1px solid color-mix(in srgb,var(--glass-key-tone) 7%,var(--sd-glass-groove))!important;
   border-radius:2px!important;
@@ -6181,19 +6181,19 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
   transform:none!important;
   transition:background 36ms linear,border-color 36ms linear,box-shadow 16ms linear!important;
 }
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle):hover{
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle):hover{
   border-color:color-mix(in srgb,var(--glass-key-tone) 17%,var(--sd-glass-groove))!important;
   background:color-mix(in srgb,var(--glass-key-tone) 4%,var(--sd-glass-hover))!important;
   box-shadow:inset 0 1px color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-highlight)),inset 0 -1px rgba(0,0,0,.18)!important;
 }
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button:is(.control-push,.control-toggle):active{
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle):active{
   border-color:color-mix(in srgb,var(--glass-key-tone) 20%,var(--sd-glass-groove))!important;
   background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
   box-shadow:inset 0 2px 3px rgba(0,0,0,.25),inset 0 -1px rgba(255,255,255,.055)!important;
   transform:none!important;
   transition-duration:8ms!important;
 }
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
   border-color:color-mix(in srgb,var(--glass-key-tone) 16%,var(--sd-glass-groove))!important;
   background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
   box-shadow:inset 0 2px 3px rgba(0,0,0,.22),inset 0 -1px rgba(255,255,255,.05)!important;
@@ -6202,7 +6202,7 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
 
 /* Only toggles retain a light after the click. On acrylic this is light caught
    by a one-pixel engraving, with a small local bloom rather than a halo. */
-:is(.area-window,.universal-search) button.material-glass-button.control-toggle::after{
+:is(.area-window,.universal-search,.desktop-glass-dialog) button.material-glass-button.control-toggle::after{
   height:1px!important;
   left:7px!important;
   right:7px!important;
@@ -6212,7 +6212,7 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
   box-shadow:none!important;
   opacity:0!important;
 }
-:is(.area-window,.universal-search) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"])::after{
+:is(.area-window,.universal-search,.desktop-glass-dialog) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"])::after{
   display:block!important;
   background:color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 84%,white 16%)!important;
   box-shadow:
