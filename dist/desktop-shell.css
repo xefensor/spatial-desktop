@@ -6418,3 +6418,33 @@ body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::afte
   min-width:0;
   max-width:none;
 }
+
+/* v131 — Each docked Area is one subtly coloured acrylic sheet. The tint is
+   deliberately flat and restrained: it identifies the Area without turning
+   its internal modules into separate cards or touching solid app content. */
+.apps-zone{--area-body-tint:#3aa7ff}
+.project-area{--area-body-tint:#a88aff}
+.systems-zone{--area-body-tint:#36ccd7}
+
+.area-window,
+body.areas-docked .area-window{
+  background:
+    linear-gradient(128deg,rgba(255,255,255,.07),transparent 19% 76%,rgba(255,255,255,.022)),
+    color-mix(in srgb,var(--sd-glass-face) 94%,var(--area-body-tint,var(--area-header-accent)) 6%)!important;
+}
+body[data-theme="light"] .area-window,
+body[data-theme="light"].areas-docked .area-window{
+  background:
+    linear-gradient(128deg,rgba(255,255,255,.16),transparent 19% 76%,rgba(255,255,255,.05)),
+    color-mix(in srgb,var(--sd-glass-face) 93%,var(--area-body-tint,var(--area-header-accent)) 7%)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+  .area-window,
+  body.areas-docked .area-window{
+    background:color-mix(in srgb,#101a20 94%,var(--area-body-tint,var(--area-header-accent)) 6%)!important;
+  }
+  body[data-theme="light"] .area-window,
+  body[data-theme="light"].areas-docked .area-window{
+    background:color-mix(in srgb,#eef3f5 93%,var(--area-body-tint,var(--area-header-accent)) 7%)!important;
+  }
+}
