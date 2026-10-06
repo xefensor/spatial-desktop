@@ -1,0 +1,303 @@
+/* Dock orientation changes layout, not material or interaction. Each Area
+   retains a fixed identity and a bounded content viewport in both directions. */
+.apps-scroll-region{
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+.area-window:is([data-dock-edge="top"],[data-dock-edge="bottom"]){
+  min-width:0;
+  min-height:0;
+  container-type:inline-size;
+}
+.area-window[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+}
+.area-window[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
+  position:relative;
+  top:auto;
+  flex:0 0 44px;
+  min-height:44px;
+  width:auto;
+  margin:calc(-1 * var(--ui-area-pad)) calc(-1 * var(--ui-area-pad)) 8px!important;
+}
+
+/* Apps: favourite icons and live cards sit beside each other. A horizontal
+   dock must not discard the live cards just because it is shorter. */
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-scroll-region{
+  display:grid;
+  grid-template-columns:minmax(140px,280px) minmax(0,1fr);
+  gap:12px;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{
+  height:auto;
+  min-width:0;
+  min-height:0;
+  margin:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(48px,1fr));
+  align-content:start;
+  overflow:auto;
+  scrollbar-width:thin;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-section{
+  display:flex;
+  margin:0;
+  min-width:0;
+  min-height:0;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .section-heading{
+  flex:0 0 auto;
+  padding:0 4px 5px;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-stack{
+  flex:1 1 auto;
+  display:flex;
+  align-items:stretch;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:1px 0 5px;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-card{
+  flex:0 0 270px;
+  min-width:0;
+  min-height:0;
+  overflow:auto;
+  scrollbar-width:thin;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-card-note{
+  display:flex;
+  flex-direction:column;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .mini-note-field{
+  flex:1 1 auto;
+  min-height:54px;
+  height:auto;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-bottom{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding-top:5px;
+  margin-top:5px;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .overview-launch{
+  flex:0 0 36px;
+  width:36px;
+  height:32px;
+  min-height:32px;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .workspace-status{
+  width:auto;
+  min-height:32px;
+  height:32px;
+  flex:1 1 auto;
+}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .workspace-status small{display:none}
+
+/* System: one horizontal viewport for actions, dynamic events and pinned
+   widgets. Cards keep their readable width and can scroll within their height. */
+.systems-zone:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.system-scroll-region{
+  display:flex;
+  flex-direction:row;
+  align-items:stretch;
+  min-width:0;
+  min-height:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  gap:10px;
+  padding-bottom:5px;
+}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .time-block{
+  order:0;
+  flex:0 0 155px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:6px;
+  margin:0;
+  padding:8px;
+  border:0;
+}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-launchers{
+  order:1;
+  flex:0 0 150px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:6px;
+  margin:0;
+  padding:0;
+  border:0;
+}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-launcher{width:100%;min-height:34px}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) :is(.dynamic-widget-stack,.static-widget-stack){
+  display:flex;
+  flex-direction:row;
+  align-items:stretch;
+  flex:0 0 auto!important;
+  gap:10px;
+  min-height:0;
+  margin:0!important;
+  padding:0;
+  border:0;
+}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .dynamic-widget-stack{order:2}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .static-widget-stack{order:3}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .dynamic-widget-stack:not(:has(.system-widget:not([hidden]))){display:none}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-widget{
+  flex:0 0 250px;
+  min-width:250px;
+  width:250px;
+  min-height:0;
+  max-height:100%;
+  overflow-y:auto;
+  overflow-x:hidden;
+  margin:0;
+  scrollbar-width:thin;
+}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .quick-settings{
+  flex:0 0 210px;
+  width:210px;
+  min-width:210px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-content:center;
+  gap:6px;
+  margin:0;
+}
+
+/* Project: three readable modules, not three columns squeezed to fit any
+   width. Narrow docks scroll across them; each module owns its vertical scroll. */
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-switcher{
+  flex:0 0 auto;
+  display:flex;
+  grid-template-columns:none;
+  margin-bottom:6px;
+  overflow-x:auto;
+}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-space-content{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(250px,1fr));
+  grid-template-rows:minmax(0,1fr);
+  gap:10px;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding-bottom:5px;
+}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-module{
+  min-height:0!important;
+  overflow-x:hidden;
+  overflow-y:auto;
+  scrollbar-width:thin;
+}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-note-module{display:flex;flex-direction:column}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-note-module>header{flex:0 0 27px}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-quick-note{flex:1 1 auto;height:auto;min-height:54px}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-resource-items{max-height:none}
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-session-bar{margin-top:5px;min-height:38px}
+
+/* Rails rotate into a single panel row. Keep identity and overview outside
+   the scroll viewport; all controls remain reachable on shorter shared docks. */
+.area-window[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){
+  display:flex!important;
+  flex-direction:row;
+  align-items:stretch;
+  min-width:0;
+  padding:5px;
+  gap:4px;
+}
+.area-window[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
+  flex:0 0 44px;
+  width:44px;
+  min-width:44px;
+  min-height:0;
+  margin:-5px 0 -5px -5px!important;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-scroll-region{flex:1 1 0;justify-content:center}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{
+  flex:0 1 auto;
+  height:auto;
+  min-height:0;
+  grid-template-columns:none;
+  grid-auto-flow:column;
+  grid-auto-columns:48px;
+  align-content:center;
+  justify-content:start;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-bottom{
+  flex:0 0 92px;
+  margin:0;
+  padding:0 0 0 5px;
+  display:grid;
+  grid-template-columns:42px 42px;
+  align-content:center;
+  gap:3px;
+  border-top:0;
+}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.system-scroll-region{
+  flex:1 1 0;
+  align-items:center;
+  gap:8px;
+  padding:0;
+}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) :is(.dynamic-widget-stack,.static-widget-stack,.system-launchers){
+  display:flex;
+  flex-direction:row;
+  flex:0 0 auto!important;
+  align-items:center;
+  margin:0!important;
+  padding:0;
+  border:0;
+  gap:4px;
+}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .dynamic-widget-stack:not(:has(.system-widget:not([hidden]))){display:none}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .dynamic-widget{flex:0 0 42px;width:42px}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-launcher{flex:0 0 42px;width:42px}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .layout-mode-status{display:none}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .quick-settings{display:flex;flex:0 0 auto;gap:4px}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .quick-toggle{flex:0 0 40px;width:40px}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .time-block{
+  flex:0 0 auto;
+  order:10;
+  margin:0 0 0 auto;
+  padding:0 8px;
+  border:0;
+}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-switcher{
+  flex:1 1 0;
+  display:flex;
+  align-items:center;
+  overflow-x:auto;
+  margin:0;
+}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-choice{flex:0 0 46px;width:46px}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-rail-tools{
+  flex:1 1 0;
+  display:flex;
+  align-items:center;
+  overflow-x:auto;
+  margin:0;
+  padding:0;
+  border:0;
+  gap:4px;
+}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-rail-tool{flex:0 0 42px;width:42px}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-switcher[hidden]{display:none!important}
+
+@container (max-width:580px){
+  .apps-scroll-region:has(.mini-section){column-gap:8px!important}
+  .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-scroll-region{grid-template-columns:112px minmax(0,1fr)}
+}

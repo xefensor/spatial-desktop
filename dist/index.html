@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="desktop-shell.css?v=167">
   <title>Spatial Desktop</title>
   <link rel="stylesheet" href="ui-refinements.css?v=157">
+  <link rel="stylesheet" href="area-layout.css?v=168">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -79,6 +80,7 @@
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
       </header>
+      <div class="apps-scroll-region">
       <nav class="app-rack" id="appRack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" data-hotbar-slot="1" aria-label="Dolphin · Super+1" aria-keyshortcuts="Meta+1" title="Dolphin · Super+1"><kbd class="app-hotkey" aria-hidden="true">1</kbd><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
         <button class="app-key is-open" data-open-app="elisa" data-hotbar-slot="2" aria-label="Elisa · Super+2" aria-keyshortcuts="Meta+2" title="Elisa · Super+2"><kbd class="app-hotkey" aria-hidden="true">2</kbd><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg><span>Elisa</span><i></i></button>
@@ -90,6 +92,7 @@
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
         <div class="mini-stack" id="miniStack" aria-live="polite"></div>
       </section>
+      </div>
       <div class="apps-bottom">
         <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
         <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview" title="General workspace"><i></i><em class="rail-workspace-glyph" id="workspaceRailGlyph" aria-hidden="true">G</em><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
