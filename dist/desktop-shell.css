@@ -7151,7 +7151,7 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 /* v137 — compact-first smart tiling. Windows expose a genuinely usable
    minimum rather than a generic rectangle. Their content folds at the
    component boundary, keeping controls available while Areas stay visible. */
-.app-frame{container-type:inline-size}
+.app-frame{container-type:inline-size;min-height:0}
 .app-frame.is-auto-tiling{transition:left 150ms ease-out,top 150ms ease-out,width 150ms ease-out,height 150ms ease-out}
 
 @container (max-width:540px){
@@ -7192,6 +7192,35 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 }
 
 @media(prefers-reduced-motion:reduce){.app-frame.is-auto-tiling{transition:none}}
+
+/* Bounded fractal splits: window surfaces remain ABS; only the transient
+   placement cue uses the desktop's acrylic material. No viewport scaling. */
+.app-frame.is-tiled{min-width:0;min-height:0}
+.app-frame.is-tiled.is-auto-tiling{transition:left 100ms ease-out,top 100ms ease-out,width 100ms ease-out,height 100ms ease-out}
+.app-frame.tile-will-park{visibility:hidden;pointer-events:none}
+.tile-divider{position:absolute;z-index:190;touch-action:none;outline:none}
+.tile-divider-x{cursor:ew-resize}
+.tile-divider-y{cursor:ns-resize}
+.tile-divider::after{content:"";position:absolute;opacity:0;background:color-mix(in srgb,var(--text) 42%,transparent);transition:opacity 45ms linear}
+.tile-divider-x::after{width:2px;top:12%;bottom:12%;left:3px}
+.tile-divider-y::after{height:2px;left:12%;right:12%;top:3px}
+.tile-divider:is(:hover,:focus-visible,.is-resizing)::after{opacity:1}
+.tile-divider:focus-visible::after{background:var(--blue);box-shadow:0 0 3px var(--blue-glow)}
+.tile-drop-preview{position:absolute;z-index:195;display:flex;align-items:center;justify-content:center;pointer-events:none;padding:12px;border:1px solid color-mix(in srgb,var(--tile-accent) 72%,white);border-radius:var(--window-corner);background:color-mix(in srgb,var(--tile-accent) 16%,var(--sd-glass-face));backdrop-filter:blur(16px);color:var(--text);font-size:14px;font-weight:650;box-shadow:inset 0 1px rgba(255,255,255,.25)}
+.tile-drop-preview[hidden]{display:none}
+.tile-pressure-hint{position:absolute;z-index:200;bottom:18px;left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);padding:7px 11px;border:1px solid var(--sd-glass-edge);border-radius:2px;background:var(--sd-glass-face);backdrop-filter:blur(18px);color:var(--text);font-size:14px;pointer-events:none;text-align:center}
+.app-frame.is-tiled .resize-handle{cursor:nwse-resize}
+
+@container (max-width:390px){
+  .app-frame .app-identity{min-width:0;gap:6px}
+  .app-frame .app-identity>div{min-width:0}
+  .app-frame .app-identity small{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .app-frame .app-toolbar{gap:4px;padding-inline:6px}
+  .app-frame .folder-tab{min-width:0;flex:1}
+  .app-frame .folder-tab:nth-child(n+2){display:none}
+  .app-frame .music-controls{grid-template-columns:30px 38px 30px minmax(35px,1fr) auto!important}
+  .app-frame .terminal-screen{padding:12px}
+}
 
 /* v140 — Apps Area hotbar. Slot labels are engraved into the acrylic app
    shelf rather than wrapped in another button. Super+number gives the same

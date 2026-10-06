@@ -438,55 +438,366 @@ function fittedWindowLayout(names) {
   return best?.geometries || null;
 }
 
-function tileOpenWindows(newName) {
-  const names = Object.keys(appState)
-    .filter(name => appState[name] === "open" && isLocalApp(name))
-    .sort((first, second) => {
-      if (first === newName) return 1;
-      if (second === newName) return -1;
-      return Number(frameFor(first)?.style.zIndex || 0) - Number(frameFor(second)?.style.zIndex || 0);
-    });
-  if (!names.length) return;
+/* Trellis-inspired nested splitting, with bounded space instead of zoom.
+   The existing ABS windows stay mounted; overflow becomes a live Apps card. */
+const tileEngine = window.SpatialTiling;
+let tileSessions = {};
+try { tileSessions = JSON.parse(localStorage.getItem("spatial-split-layouts-v1") || "{}"); } catch {}
+let tileRendering = false;
+let tileInteraction = false;
+let tileLayoutFrame = 0;
+let tileDropPreview = null;
+let lastTileContext = "";
 
-  names.forEach(name => {
-    const frame = frameFor(name);
-    frame.classList.remove("is-maximized");
-    delete frame.dataset.maximized;
-    delete frame.dataset.maxDisplay;
-    appMaximizedState[name] = false;
-    autoWindowAvoidance.delete(name);
-    syncMaximizeButton(frame);
-  });
-  autoAvoidanceSource = null;
-  applyAutoAvoidance();
-
-  const layout = fittedWindowLayout(names);
-  if (!layout) return;
-  names.forEach(name => {
-    const frame = frameFor(name);
-    autoTiledWindows.add(name);
-    frame.classList.remove("is-auto-tiling");
-    void frame.offsetWidth;
-    frame.classList.add("is-auto-tiling");
-    const geometry = applyGeometry(name, layout.get(name), false);
-    windowGeometry.set(name, geometry);
-    setTimeout(() => frame.classList.remove("is-auto-tiling"), 180);
-  });
-  saveLayout();
+function tileContextKey() {
+  return [activeWorkspace, activeProjectName || "desktop", activeProjectName ? projectModeId(activeProjectName) : "default", localDisplaySlot()].join(":");
 }
 
-let pendingWindowTileFrame = 0;
-function scheduleWindowTiling(name) {
-  cancelAnimationFrame(pendingWindowTileFrame);
-  /* Auto Areas settle during the first frame. Tile on the following frame so
-     the window is measured against the final center rectangle, not the space
-     that existed before an Area expanded, railed, or moved displays. */
-  pendingWindowTileFrame = requestAnimationFrame(() => {
-    pendingWindowTileFrame = requestAnimationFrame(() => {
-      pendingWindowTileFrame = 0;
-      if (appState[name] === "open" && isLocalApp(name)) tileOpenWindows(name);
+function tileSession() {
+  const key = tileContextKey();
+  tileSessions[key] ||= { root: null, parked: {}, focus: null };
+  const session = tileSessions[key];
+  session.parked ||= {};
+  return session;
+}
+
+function tileBounds() {
+  const workspace = workspaceBounds();
+  return { x: 8, y: 8, width: Math.max(1, workspace.width - 16), height: Math.max(1, workspace.height - 16) };
+}
+
+function saveTileSessions() {
+  try { localStorage.setItem("spatial-split-layouts-v1", JSON.stringify(tileSessions)); } catch {}
+}
+
+function tilePriority(name) { return Number(frameFor(name)?.style.zIndex || 0); }
+
+function reconcileTileTree(preferredName = frontApp) {
+  const session = tileSession();
+  const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name));
+  session.root = tileEngine.normalize(session.root, open);
+  open.forEach(name => {
+    if (tileEngine.contains(session.root, name)) return;
+    session.root = tileEngine.insert(session.root, name, preferredName, null, tileBounds(), minimumUsableWindowSize);
+  });
+  return session;
+}
+
+function parkTileWindows(names, reason, announce = true) {
+  const session = tileSession();
+  const parked = names.filter(name => appState[name] === "open" && isLocalApp(name));
+  parked.forEach(name => {
+    const frame = frameFor(name);
+    windowGeometry.set(name, readGeometry(frame));
+    session.parked[name] = { reason, target: frontApp };
+    appState[name] = "minimized";
+    appMaximizedState[name] = false;
+    frame.classList.remove("is-maximized", "is-tiled");
+    delete frame.dataset.maximized;
+    autoWindowAvoidance.delete(name);
+    autoTiledWindows.delete(name);
+    syncMaximizeButton(frame);
+  });
+  if (parked.length) {
+    syncApps();
+    if (announce) showToast(parked.map(name => appInfo[name].label).join(", ") + " parked in Apps · still running");
+    queueDesktopStateBroadcast();
+  }
+  return parked;
+}
+
+function renderTileLayout(preferredName = frontApp, announce = false, animate = false) {
+  if (tileRendering) return;
+  tileRendering = true;
+  try {
+    const session = reconcileTileTree(preferredName);
+    $$(".tile-will-park").forEach(frame => frame.classList.remove("tile-will-park"));
+    $(".tile-pressure-hint")?.remove();
+    const key = tileContextKey();
+    if (key !== lastTileContext) {
+      autoTiledWindows.clear();
+      lastTileContext = key;
+    }
+    const fitted = tileEngine.fit(session.root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority);
+    session.root = fitted.node;
+    parkTileWindows(fitted.parked, "Made room for " + (appInfo[preferredName]?.label || "a window"), announce);
+    fitted.windows.forEach((rect, name) => {
+      const frame = frameFor(name);
+      if (!frame || frame.classList.contains("is-dragging")) return;
+      autoTiledWindows.add(name);
+      frame.classList.add("is-tiled");
+      const focused = session.focus?.name === name;
+      frame.classList.toggle("is-maximized", focused);
+      appMaximizedState[name] = focused;
+      if (focused) frame.dataset.maximized = "true";
+      else delete frame.dataset.maximized;
+      syncMaximizeButton(frame);
+      if (animate && !tileInteraction) {
+        frame.classList.add("is-auto-tiling");
+        setTimeout(() => frame.classList.remove("is-auto-tiling"), 120);
+      }
+      const geometry = applyGeometry(name, rect, false);
+      windowGeometry.set(name, geometry);
+    });
+    renderTileDividers(fitted.splits);
+    saveLayout();
+    saveTileSessions();
+  } finally { tileRendering = false; }
+}
+
+function tileOpenWindows(newName) {
+  const session = tileSession();
+  if (newName) {
+    /* Opening a card is an explicit request to bring it back, not to revive
+       every card that was pushed out by an earlier focus action. */
+    session.focus = null;
+    $$('[data-app-frame]').forEach(frame => {
+      if (!frame.classList.contains("is-tiled")) return;
+      delete frame.dataset.maximized;
+      frame.classList.remove("is-maximized");
+      appMaximizedState[frame.dataset.appFrame] = false;
+      syncMaximizeButton(frame);
+    });
+    delete session.parked[newName];
+  }
+  renderTileLayout(newName || frontApp, true, true);
+}
+
+function scheduleWindowTiling(name = frontApp) {
+  if (tileRendering || tileInteraction) return;
+  cancelAnimationFrame(tileLayoutFrame);
+  tileLayoutFrame = requestAnimationFrame(() => {
+    tileLayoutFrame = requestAnimationFrame(() => {
+      tileLayoutFrame = 0;
+      renderTileLayout(appState[name] === "open" ? name : frontApp);
     });
   });
+}
+
+function splitWindowIntoTile(name, point = null, preferredTarget = frontApp) {
+  const session = tileSession();
+  const target = tileDropTarget(name, point);
+  session.focus = null;
+  session.root = tileEngine.insert(session.root, name, target?.name || preferredTarget, target?.side, tileBounds(), minimumUsableWindowSize);
+  delete session.parked[name];
+  tileOpenWindows(name);
+}
+
+function tileDropTarget(name, point) {
+  if (!point) return null;
+  const workspace = workspaceBounds();
+  const x = point.x - workspace.rect.left, y = point.y - workspace.rect.top;
+  const rects = tileEngine.layout(tileSession().root, tileBounds()).windows;
+  let target = null;
+  rects.forEach((rect, other) => {
+    if (other === name || x < rect.x || x > rect.x + rect.width || y < rect.y || y > rect.y + rect.height) return;
+    const nx = (x - rect.x) / rect.width, ny = (y - rect.y) / rect.height;
+    const edges = [["left", nx], ["right", 1 - nx], ["top", ny], ["bottom", 1 - ny]].sort((a, b) => a[1] - b[1]);
+    target = { name: other, side: edges[0][0], rect };
+  });
+  return target;
+}
+
+function showTileDropPreview(name, point) {
+  const target = tileDropTarget(name, point);
+  if (!tileDropPreview) {
+    tileDropPreview = document.createElement("div");
+    tileDropPreview.className = "tile-drop-preview";
+    tileDropPreview.setAttribute("aria-hidden", "true");
+    $(".workspace-zone").append(tileDropPreview);
+  }
+  tileDropPreview.hidden = !target;
+  if (!target) return;
+  const rect = { ...target.rect };
+  if (target.side === "left" || target.side === "right") {
+    rect.width = (rect.width - tileEngine.gap) / 2;
+    if (target.side === "right") rect.x += rect.width + tileEngine.gap;
+  } else {
+    rect.height = (rect.height - tileEngine.gap) / 2;
+    if (target.side === "bottom") rect.y += rect.height + tileEngine.gap;
+  }
+  Object.assign(tileDropPreview.style, { left: rect.x + "px", top: rect.y + "px", width: rect.width + "px", height: rect.height + "px", "--tile-accent": appInfo[name].primary });
+  tileDropPreview.textContent = "Place " + appInfo[name].label + " " + ({ left: "to the left", right: "to the right", top: "above", bottom: "below" }[target.side]);
+}
+
+function clearTileDropPreview() { if (tileDropPreview) tileDropPreview.hidden = true; }
+
+function renderTileDividers(splits) {
+  if (tileInteraction) return;
+  $$(".tile-divider").forEach(element => element.remove());
+  splits.forEach(split => {
+    const divider = document.createElement("div");
+    divider.className = "tile-divider tile-divider-" + split.axis;
+    divider.dataset.cursor = split.axis === "x" ? "ew-resize" : "ns-resize";
+    divider.tabIndex = 0;
+    divider.setAttribute("role", "separator");
+    divider.setAttribute("aria-orientation", split.axis === "x" ? "vertical" : "horizontal");
+    divider.setAttribute("aria-label", "Resize adjacent windows · push further to park one in Apps");
+    divider.setAttribute("aria-valuemin", "0");
+    divider.setAttribute("aria-valuemax", "100");
+    divider.setAttribute("aria-valuenow", String(Math.round(tileEngine.at(tileSession().root, split.path).ratio * 100)));
+    divider.title = "Drag to resize · keep pushing to park a window in Apps";
+    const vertical = split.axis === "x";
+    Object.assign(divider.style, { left: (vertical ? split.coordinate - 4 : split.bounds.x) + "px", top: (vertical ? split.bounds.y : split.coordinate - 4) + "px", width: (vertical ? 8 : split.bounds.width) + "px", height: (vertical ? split.bounds.height : 8) + "px" });
+    divider.addEventListener("pointerdown", event => beginTileDividerResize(event, split, divider));
+    divider.addEventListener("keydown", event => {
+      const direction = vertical ? { ArrowLeft: -1, ArrowRight: 1 } : { ArrowUp: -1, ArrowDown: 1 };
+      if (!direction[event.key]) return;
+      event.preventDefault();
+      const session = tileSession(), node = tileEngine.at(session.root, split.path);
+      const step = direction[event.key] * (event.shiftKey ? .1 : .025);
+      const protectedName = tileEngine.names(step > 0 ? node.a : node.b)[0];
+      node.ratio = Math.max(.001, Math.min(.999, node.ratio + step));
+      renderTileLayout(protectedName, true);
+    });
+    $(".workspace-zone").append(divider);
+  });
+}
+
+function beginTileDividerResize(event, split, divider) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  const session = tileSession(), startTree = tileEngine.copy(session.root);
+  const axis = split.axis === "x" ? "clientX" : "clientY";
+  const extent = split.bounds[split.axis === "x" ? "width" : "height"] - tileEngine.gap;
+  const start = event[axis], initialRatio = tileEngine.at(startTree, split.path).ratio;
+  const initialNames = tileEngine.names(startTree);
+  let protectedName = frontApp;
+  tileInteraction = true;
+  divider.setPointerCapture(event.pointerId);
+  divider.classList.add("is-resizing");
+  $$(".app-frame").forEach(frame => frame.classList.remove("is-auto-tiling"));
+  const move = next => {
+    const root = tileEngine.copy(startTree), node = tileEngine.at(root, split.path);
+    const delta = next[axis] - start;
+    node.ratio = Math.max(.001, Math.min(.999, initialRatio + delta / Math.max(1, extent)));
+    protectedName = tileEngine.names(delta >= 0 ? node.a : node.b)[0];
+    session.root = root;
+    /* Preserve all start nodes until release so reversing a drag restores the
+       squeezed neighbour. Release commits parking rather than tiny windows. */
+    previewTilePressure(root, protectedName);
+  };
+  const finish = () => {
+    divider.removeEventListener("pointermove", move);
+    divider.removeEventListener("pointerup", finish);
+    divider.removeEventListener("pointercancel", cancel);
+    tileInteraction = false;
+    const missing = initialNames.filter(name => !tileEngine.contains(session.root, name));
+    parkTileWindows(missing, "Made room while resizing", true);
+    renderTileLayout(protectedName);
+    queueDesktopStateBroadcast();
+  };
+  const cancel = () => { session.root = startTree; finish(); };
+  divider.addEventListener("pointermove", move);
+  divider.addEventListener("pointerup", finish);
+  divider.addEventListener("pointercancel", cancel);
+}
+
+function previewTilePressure(root, preferredName) {
+  const fitted = tileEngine.fit(root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority);
+  tileSession().root = fitted.node;
+  const visible = new Set(fitted.windows.keys());
+  let hint = $(".tile-pressure-hint");
+  if (fitted.parked.length) {
+    if (!hint) {
+      hint = document.createElement("div");
+      hint.className = "tile-pressure-hint";
+      $(".workspace-zone").append(hint);
+    }
+    hint.textContent = "Release to park " + fitted.parked.map(name => appInfo[name].label).join(", ") + " in Apps";
+  } else hint?.remove();
+  $$("[data-app-frame]").forEach(frame => {
+    const name = frame.dataset.appFrame;
+    if (appState[name] !== "open" || !isLocalApp(name)) return;
+    frame.classList.toggle("tile-will-park", !visible.has(name));
+    if (!visible.has(name)) return;
+    autoTiledWindows.add(name);
+    windowGeometry.set(name, applyGeometry(name, fitted.windows.get(name), false));
+  });
+}
+
+function beginTileWindowResize(event, name, handle) {
+  event.preventDefault();
+  event.stopPropagation();
+  bringToFront(name);
+  const session = reconcileTileTree(name);
+  if (session.focus?.name === name) focusTileWindow(name);
+  const startTree = tileEngine.copy(session.root);
+  const bounds = tileBounds();
+  const initialNames = tileEngine.names(startTree);
+  const initialRect = tileEngine.layout(startTree, bounds).windows.get(name);
+  const minimum = minimumUsableWindowSize(name);
+  const startX = event.clientX, startY = event.clientY;
+  tileInteraction = true;
+  handle.setPointerCapture(event.pointerId);
+  frameFor(name).classList.add("is-resizing");
+  $$(".app-frame").forEach(frame => frame.classList.remove("is-auto-tiling"));
+  const move = next => {
+    const dx = Math.max(Math.min(0, minimum.width - initialRect.width), next.clientX - startX);
+    const dy = Math.max(Math.min(0, minimum.height - initialRect.height), next.clientY - startY);
+    let root = tileEngine.resizeWindow(startTree, name, "x", dx, bounds);
+    root = tileEngine.resizeWindow(root, name, "y", dy, bounds);
+    previewTilePressure(root, name);
+  };
+  const finish = () => {
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", finish);
+    handle.removeEventListener("pointercancel", cancel);
+    tileInteraction = false;
+    frameFor(name).classList.remove("is-resizing");
+    parkTileWindows(initialNames.filter(other => !tileEngine.contains(session.root, other)), "Made room for " + appInfo[name].label, true);
+    renderTileLayout(name);
+    queueDesktopStateBroadcast();
+  };
+  const cancel = () => { session.root = startTree; finish(); };
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", cancel);
+}
+
+function growTileWindow(name, direction) {
+  const session = reconcileTileTree(name);
+  const rect = tileEngine.layout(session.root, tileBounds()).windows.get(name);
+  if (!rect) return;
+  const path = tileEngine.pathTo(session.root, name);
+  const axis = path?.length ? tileEngine.at(session.root, path.slice(0, -1)).axis : "x";
+  const extent = rect[axis === "x" ? "width" : "height"];
+  const minimum = minimumUsableWindowSize(name)[axis === "x" ? "width" : "height"];
+  const delta = Math.max(Math.min(0, minimum - extent), direction * Math.max(36, extent * .12));
+  session.root = tileEngine.resizeWindow(session.root, name, axis, delta, tileBounds());
+  bringToFront(name);
+  renderTileLayout(name, true, true);
+}
+
+function focusTileWindow(name) {
+  const session = reconcileTileTree(name);
+  if (session.focus?.name === name) {
+    const focus = session.focus;
+    session.focus = null;
+    focus.parked.forEach(other => {
+      if (appState[other] !== "minimized" || !isLocalApp(other)) return;
+      appState[other] = "open";
+      delete session.parked[other];
+    });
+    session.root = tileEngine.normalize(focus.root, Object.keys(appState).filter(other => appState[other] === "open" && isLocalApp(other)));
+    delete frameFor(name).dataset.maximized;
+    frameFor(name).classList.remove("is-maximized");
+    appMaximizedState[name] = false;
+    syncApps();
+    renderTileLayout(name, true, true);
+  } else {
+    const parked = tileEngine.names(session.root).filter(other => other !== name);
+    session.focus = { name, root: tileEngine.copy(session.root), parked };
+    session.root = tileEngine.leaf(name);
+    parkTileWindows(parked, "Focused " + appInfo[name].label, true);
+    frameFor(name).dataset.maximized = "true";
+    frameFor(name).classList.add("is-maximized");
+    appMaximizedState[name] = true;
+    renderTileLayout(name, false, true);
+  }
+  syncMaximizeButton(frameFor(name));
+  saveTileSessions();
+  queueDesktopStateBroadcast();
 }
 
 function restoreWorkspaceWindowLayout() {
@@ -504,6 +815,7 @@ function restoreWorkspaceWindowLayout() {
     applyGeometry(name, geometry, false);
   });
   saveLayout();
+  scheduleWindowTiling();
 }
 
 function syncRack() {
@@ -549,42 +861,26 @@ function syncApps() {
      Area layout whenever its local window occupancy changes so it can enter
      or leave that presentation immediately. */
   if (windowViewportLockReady && extendedDesktopActive()) layoutDockAreas(false, false);
+  if (windowViewportLockReady && !tileRendering && !tileInteraction) scheduleWindowTiling();
 }
 
 function openApp(name, dropPoint = null) {
   if (!appInfo[name]) return;
   const previousState = appState[name];
+  const splitTarget = frontApp;
   displayAssignmentsFor().apps[name] = localDisplaySlot();
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   appState[name] = "open";
   frameFor(name).hidden = false;
   syncApps();
-  if (dropPoint) {
-    autoTiledWindows.delete(name);
-    const workspace = workspaceBounds();
-    const previous = windowGeometry.get(name);
-    const width = previous?.width || Math.min(680, workspace.width * .72);
-    const height = previous?.height || Math.min(620, workspace.height * .72);
-    applyGeometry(name, {
-      x: dropPoint.x - workspace.rect.left - width / 2,
-      y: dropPoint.y - workspace.rect.top - 32,
-      width,
-      height
-    });
-  } else if (previousState === "closed") {
-    if (layoutMode !== "auto") tileOpenWindows(name);
-  } else if (windowGeometry.has(name)) {
-    applyGeometry(name, windowGeometry.get(name), false);
-  } else {
-    const geometry = defaultWindowGeometry(name, Object.values(appState).filter(state => state === "open").length - 1);
-    windowGeometry.set(name, clampGeometry(geometry, name));
-    applyGeometry(name, geometry);
-  }
+  if (previousState !== "open" || dropPoint) {
+    splitWindowIntoTile(name, dropPoint, splitTarget);
+  } else renderTileLayout(name);
   bringToFront(name);
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
-    if (previousState === "closed" && !dropPoint) scheduleWindowTiling(name);
+    scheduleWindowTiling(name);
   }
 }
 
@@ -598,6 +894,12 @@ function minimizeApp(name, preserveGeometry = false) {
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   syncMaximizeButton(frame);
   appState[name] = "minimized";
+  tileSession().root = tileEngine.remove(tileSession().root, name);
+  delete tileSession().parked[name];
+  if (tileSession().focus?.name === name) tileSession().focus = null;
+  autoTiledWindows.delete(name);
+  frame.classList.remove("is-tiled");
+  saveTileSessions();
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
   if (layoutMode === "auto") {
@@ -612,6 +914,10 @@ function closeApp(name) {
   frame?.classList.remove("is-maximized");
   if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
+  tileSession().root = tileEngine.remove(tileSession().root, name);
+  delete tileSession().parked[name];
+  if (tileSession().focus?.name === name) tileSession().focus = null;
+  saveTileSessions();
   autoTiledWindows.delete(name);
   appMaximizedState[name] = false;
   if (frame) syncMaximizeButton(frame);
@@ -632,6 +938,10 @@ function syncMaximizeButton(frame) {
 function toggleMaximize(name) {
   const frame = frameFor(name);
   if (!frame || !isLocalApp(name)) return;
+  if (frame.classList.contains("is-tiled") || tileEngine.contains(tileSession().root, name)) {
+    focusTileWindow(name);
+    return;
+  }
   if (frame.dataset.maximized === "true") {
     delete frame.dataset.maximized;
     frame.classList.remove("is-maximized");
@@ -687,7 +997,9 @@ function miniMarkup(name) {
   const slot = hotbarSlotFor(name);
   const hotkey = slot === null ? "" : '<kbd class="mini-hotkey" aria-hidden="true">' + slot + '</kbd>';
   const shortcut = slot === null ? "" : " · Super+" + slot;
-  const header = '<header title="Drag this card back into the workspace' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + info.detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const parked = tileSession().parked[name];
+  const detail = parked ? "Parked · still running" : info.detail;
+  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -975,7 +1287,8 @@ function bindWindowDrag(frame) {
     const name = frame.dataset.appFrame;
     autoTiledWindows.delete(name);
     bringToFront(name);
-    if (frame.dataset.maximized === "true") toggleMaximize(name);
+    tileInteraction = true;
+    let hasMoved = false;
 
     const startGeometry = readGeometry(frame);
     const startRect = frame.getBoundingClientRect();
@@ -1000,12 +1313,18 @@ function bindWindowDrag(frame) {
     frame.style.height = startRect.height + "px";
 
     const move = moveEvent => {
+      if (!hasMoved) {
+        if (Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) < 6) return;
+        hasMoved = true;
+        if (frame.dataset.maximized === "true") focusTileWindow(name);
+      }
       const position = resistAreaBoundaries({
         left: moveEvent.clientX - offsetX,
         top: moveEvent.clientY - offsetY
       }, { width: startRect.width, height: startRect.height }, boundaryGate, moveEvent.altKey);
       frame.style.left = position.left + "px";
       frame.style.top = position.top + "px";
+      showTileDropPreview(name, { x: moveEvent.clientX, y: moveEvent.clientY });
       if (layoutMode === "auto") {
         const movingRect = frame.getBoundingClientRect();
         if (!position.resisted) refreshSpatialAutoLayout(frame, movingRect);
@@ -1024,10 +1343,16 @@ function bindWindowDrag(frame) {
       setDropTarget(appsZone, false);
       setDropTarget(workspace, false);
       setAreaBoundaryFeedback(null);
-      const parked = layoutMode === "manual" && pointInside(appsZone.getBoundingClientRect(), upEvent.clientX, upEvent.clientY);
+      clearTileDropPreview();
+      tileInteraction = false;
+      const parked = pointInside(appsZone.getBoundingClientRect(), upEvent.clientX, upEvent.clientY);
       const finalRect = frame.getBoundingClientRect();
       frame.classList.remove("is-dragging");
       frame.style.position = "";
+      if (!hasMoved || upEvent.type === "pointercancel") {
+        renderTileLayout(name);
+        return;
+      }
       const transferTarget = displayTransferTarget(upEvent.clientX);
       if (transferTarget) {
         transferAppToDisplay(name, transferTarget, upEvent.clientX < window.innerWidth / 2 ? "left" : "right", finalRect);
@@ -1044,13 +1369,7 @@ function bindWindowDrag(frame) {
         showToast(appInfo[name].label + " parked in Apps");
         return;
       }
-      const workspaceRect = workspace.getBoundingClientRect();
-      applyGeometry(name, {
-        x: finalRect.left - workspaceRect.left,
-        y: finalRect.top - workspaceRect.top,
-        width: finalRect.width,
-        height: finalRect.height
-      });
+      splitWindowIntoTile(name, { x: upEvent.clientX, y: upEvent.clientY });
       if (layoutMode === "auto") scheduleSpatialAutoLayout();
     };
 
@@ -1073,6 +1392,10 @@ function bindResize(frame) {
     event.preventDefault();
     event.stopPropagation();
     const name = frame.dataset.appFrame;
+    if (frame.classList.contains("is-tiled")) {
+      beginTileWindowResize(event, name, handle);
+      return;
+    }
     autoTiledWindows.delete(name);
     bringToFront(name);
     if (frame.dataset.maximized === "true") toggleMaximize(name);
@@ -1127,6 +1450,7 @@ function bindMiniDrag(card) {
       ghost.style.left = moveEvent.clientX - 35 + "px";
       ghost.style.top = moveEvent.clientY - 24 + "px";
       const workspace = $(".workspace-zone");
+      showTileDropPreview(name, { x: moveEvent.clientX, y: moveEvent.clientY });
       setDropTarget(workspace, pointInside(workspace.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
     };
 
@@ -1136,6 +1460,7 @@ function bindMiniDrag(card) {
       header.removeEventListener("pointercancel", finish);
       const workspace = $(".workspace-zone");
       setDropTarget(workspace, false);
+      clearTileDropPreview();
       if (ghost) ghost.remove();
       if (pointInside(workspace.getBoundingClientRect(), upEvent.clientX, upEvent.clientY)) {
         openApp(name, { x: upEvent.clientX, y: upEvent.clientY });
@@ -1406,7 +1731,7 @@ function captureVisibleWindowViewportRects() {
   if (!windowViewportLockReady || suspendWindowViewportLock) return snapshot;
   $$('[data-app-frame]').forEach(frame => {
     const name = frame.dataset.appFrame;
-    if (frame.hidden || appState[name] !== "open" || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    if (frame.hidden || appState[name] !== "open" || frame.classList.contains("is-tiled") || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
     const rect = frame.getBoundingClientRect();
     snapshot.set(name, { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
   });
@@ -1451,6 +1776,7 @@ function setWorkspaceInsets(left, right, bottom, top = 12) {
     void workspace.offsetWidth;
     workspace.style.transition = previousTransition;
   }
+  if (windowViewportLockReady && !tileRendering && !tileInteraction) scheduleWindowTiling();
 }
 
 function edgePriority(edge) {
@@ -2550,7 +2876,8 @@ function switchProjectMode(modeId, announce = true) {
 function parkProjectWindows(name, announce = true, modeId = projectModeId(name)) {
   const project = projectSpaces[name];
   if (!project) return 0;
-  const names = Object.keys(appState).filter(appName => appState[appName] === "open");
+  const names = Object.keys(appState).filter(appName => appState[appName] !== "closed");
+  const states = Object.fromEntries(names.map(appName => [appName, appState[appName]]));
   const geometry = {};
   const displays = {};
   names.forEach(appName => {
@@ -2571,7 +2898,7 @@ function parkProjectWindows(name, announce = true, modeId = projectModeId(name))
     }
     appMaximizedState[appName] = false;
   });
-  projectWindowSessions[projectSessionKey(name, modeId)] = { apps: names, geometry, displays, savedAt: Date.now() };
+  projectWindowSessions[projectSessionKey(name, modeId)] = { apps: names, states, geometry, displays, savedAt: Date.now() };
   frontApp = topOpenApp();
   syncApps();
   saveLayout();
@@ -2593,7 +2920,7 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
   }
   session.apps.forEach(appName => {
     if (!appInfo[appName]) return;
-    appState[appName] = "open";
+    appState[appName] = session.states?.[appName] === "minimized" ? "minimized" : "open";
     if (session.geometry?.[appName]) windowGeometry.set(appName, session.geometry[appName]);
     if (session.displays?.[appName]) displayAssignmentsFor().apps[appName] = session.displays[appName];
   });
@@ -2601,7 +2928,7 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
   session.apps.forEach(appName => {
     if (appState[appName] === "open" && isLocalApp(appName) && windowGeometry.has(appName)) applyGeometry(appName, windowGeometry.get(appName), false);
   });
-  frontApp = session.apps.at(-1) || frontApp;
+  frontApp = session.apps.filter(appName => appState[appName] === "open").at(-1) || topOpenApp();
   if (frontApp && isLocalApp(frontApp)) bringToFront(frontApp);
   delete projectWindowSessions[projectSessionKey(name, modeId)];
   persistProjectState();
@@ -3291,6 +3618,12 @@ function prepareWindows() {
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
       if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
     });
+    $(".app-titlebar", frame).title = "Drag beside another window to split · double-click to focus · Alt+wheel for more or less space";
+    $(".app-titlebar", frame).addEventListener("wheel", event => {
+      if (!event.altKey || event.ctrlKey || !event.deltaY) return;
+      event.preventDefault();
+      growTileWindow(frame.dataset.appFrame, event.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
   });
 
   $$("[data-window-action]").forEach(button => button.addEventListener("click", event => {
@@ -3300,6 +3633,8 @@ function prepareWindows() {
     if (button.dataset.windowAction === "maximize") toggleMaximize(name);
     if (button.dataset.windowAction === "close") closeApp(name);
   }));
+  const observer = new ResizeObserver(() => { if (windowViewportLockReady) scheduleWindowTiling(); });
+  observer.observe($(".workspace-zone"));
 }
 
 $("#allAppsToggle").addEventListener("click", () => {
@@ -3526,6 +3861,8 @@ function prepareMaterialCursor() {
     const explicitMode = target.closest("[data-cursor]")?.dataset.cursor;
     if (target.closest(":disabled,[aria-disabled='true']")) cursor.classList.add("is-forbidden");
     else if (explicitMode === "help") cursor.classList.add("is-help");
+    else if (target.closest(".tile-divider-x")) cursor.classList.add("is-col-resize");
+    else if (target.closest(".tile-divider-y")) cursor.classList.add("is-row-resize");
     else if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
     else if (target.closest("[data-area-resize]") && ["left", "right"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-col-resize");
     else if (target.closest("[data-area-resize]") && ["top", "bottom"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-row-resize");
@@ -4100,7 +4437,9 @@ function contextMenuEntries(context) {
     return [
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
-      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore window" : "Maximize" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore split layout" : "Focus · park other windows", shortcut: "Alt+Enter" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-grow", icon: "i-max", label: "Give more space", shortcut: "Alt+wheel up" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-shrink", icon: "i-min", label: "Give less space", shortcut: "Alt+wheel down" } : null,
       extendedDesktopActive() ? { action: "app-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
       state !== "closed" ? separator : null,
       state !== "closed" ? { action: "app-close", icon: "i-close", label: "Close", danger: true } : null
@@ -4209,6 +4548,8 @@ function executeContextAction(action) {
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
   if (action === "app-maximize") toggleMaximize(context.name);
+  if (action === "app-grow") growTileWindow(context.name, 1);
+  if (action === "app-shrink") growTileWindow(context.name, -1);
   if (action === "app-move-display") transferAppToDisplay(context.name, otherDisplaySlot(), "right", frameFor(context.name)?.getBoundingClientRect());
   if (action === "app-close") closeApp(context.name);
   if (action === "desktop-overview") setUniversalSearchOpen(true);
@@ -4290,7 +4631,12 @@ function prepareContextMenus() {
   document.addEventListener("pointerdown", event => {
     if (!menu.hidden && !event.target.closest("#desktopContextMenu")) closeDesktopContextMenu();
   });
-  document.addEventListener("keydown", event => {
+document.addEventListener("keydown", event => {
+  if (event.altKey && !event.ctrlKey && event.code === "Enter" && frontApp && !event.repeat && !event.target.closest("input,textarea,[contenteditable]") && !$("#universalSearch").classList.contains("is-open") && !$("#packageDialog").classList.contains("is-open") && !$("#projectEditorDialog").classList.contains("is-open")) {
+    event.preventDefault();
+    focusTileWindow(frontApp);
+    return;
+  }
     if (event.key === "Escape" && !menu.hidden) {
       event.preventDefault();
       closeDesktopContextMenu(true);
@@ -4438,7 +4784,9 @@ function mainDisplayWindowRects() {
   }).map(frame => ({
     frame,
     rect: frame.getBoundingClientRect(),
-    maximized: frame.dataset.maximized === "true"
+    /* Bounded tile focus is not screen fullscreen. It leaves the Areas in
+       place; only a genuine fullscreen/floating app needs another display. */
+    maximized: frame.dataset.maximized === "true" && !frame.classList.contains("is-tiled")
   }));
 }
 
@@ -4562,6 +4910,7 @@ function captureDesktopSyncState() {
     activeProjectName,
     projects,
     projectWindowSessions: cloneDesktopState(projectWindowSessions),
+    tileSessions: cloneDesktopState(tileSessions),
     noteDraft,
     music: { playing: musicPlaying, position: musicPosition },
     focus: {
@@ -4589,6 +4938,7 @@ function persistIncomingDesktopState(state) {
     localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
     localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
     if (state.displayAssignments) localStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(state.displayAssignments));
+    if (state.tileSessions) localStorage.setItem("spatial-split-layouts-v1", JSON.stringify(state.tileSessions));
   } catch {}
 }
 
@@ -4596,6 +4946,7 @@ function applyDesktopSyncState(state) {
   if (!state || ![1, 2, 3].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {
+    if (state.tileSessions) tileSessions = cloneDesktopState(state.tileSessions);
     Object.entries(state.workspaceStates || {}).forEach(([name, saved]) => {
       if (workspaceAppStates[name] && saved) workspaceAppStates[name] = { ...workspaceAppStates[name], ...saved };
     });
@@ -4681,6 +5032,7 @@ function applyDesktopSyncState(state) {
     requestAnimationFrame(() => {
       const areasChanged = layoutMode === "auto" && rebalanceAreaDisplays();
       applyExtendedDesktopPartition();
+      renderTileLayout(state.frontApp || frontApp);
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
         const frame = frameFor(name);
         if (!frame || appState[name] !== "open" || !isLocalApp(name)) {
@@ -4825,6 +5177,7 @@ requestAnimationFrame(() => {
   windowViewportLockReady = true;
   if (frontApp) bringToFront(frontApp);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  scheduleWindowTiling();
 });
 
 window.addEventListener("resize", () => {
