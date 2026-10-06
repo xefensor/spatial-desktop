@@ -451,6 +451,125 @@ body[data-scene="music"] .music-stage { display:grid; place-items:center; }
 .mobile-queue-sheet .queue-track { min-height:46px; border-radius:10px; }
 
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Shared behavior contract: ABS moves, cover glass only illuminates. */
+.dolphin-window :is(.shell-key,.window-controls button,.folder-tab),
+.plasma-rail .rail-key,
+.music-window :is(.music-key,.window-controls button) {
+  transition:transform .11s ease,box-shadow .11s ease,filter .11s ease,color .11s ease;
+  transform-origin:50% 100%;
+}
+@media (hover:hover) {
+  .dolphin-window :is(.shell-key,.window-controls button,.folder-tab):not(.is-active):hover,
+  .plasma-rail .rail-key:not(.is-running):hover,
+  .music-window :is(.music-key,.window-controls button):not(.is-active):hover {
+    transform:translateY(-1px);
+    filter:brightness(1.08);
+  }
+}
+.dolphin-window :is(.shell-key,.window-controls button,.folder-tab):active,
+.plasma-rail .rail-key:active,
+.music-window :is(.music-key,.window-controls button):active {
+  transform:translateY(3px) rotateX(4deg);
+  filter:brightness(.92);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.72),inset 0 1px rgba(255,255,255,.07);
+}
+.plasma-rail .rail-key.is-running,
+.music-window .music-key.is-active {
+  transform:translateY(2px) rotateX(2deg);
+  color:var(--blue);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.7),0 0 8px rgba(33,156,255,.14);
+}
+.dolphin-window .folder-tab.is-active {
+  transform:translateY(4px) rotateX(-7deg);
+  filter:brightness(.9);
+}
+.places button,.music-sidebar nav button {
+  transition:transform .11s ease,background .11s ease,box-shadow .11s ease,color .11s ease;
+}
+.places button:active,.music-sidebar nav button:active,
+.places button.is-active,.music-sidebar nav button.is-active {
+  transform:translateY(1px);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.57),0 1px rgba(255,255,255,.08);
+}
+.dolphin-window .recess-field,.music-window .recess-field {
+  transition:transform .11s ease,border-color .11s ease,box-shadow .11s ease;
+}
+.dolphin-window .recess-field:focus-within,.music-window .recess-field:focus-within {
+  transform:translateY(2px);
+}
+
+.phone button,.music-phone button {
+  transition:color .1s ease,border-color .1s ease,background .1s ease,box-shadow .1s ease;
+}
+.phone button:active,.music-phone button:active {
+  transform:none !important;
+  filter:none;
+  color:var(--blue);
+  border-color:color-mix(in srgb,var(--blue) 55%,transparent);
+  background:color-mix(in srgb,var(--blue) 10%,transparent);
+  box-shadow:inset 0 0 18px rgba(33,156,255,.2);
+}
+.phone :is(button.is-active,button.is-selected),
+.music-phone :is(button.is-active,button.is-selected) {
+  transform:none !important;
+  color:var(--blue);
+  border-color:color-mix(in srgb,var(--blue) 62%,transparent);
+  background:color-mix(in srgb,var(--blue) 8%,transparent);
+  box-shadow:inset 0 0 20px rgba(33,156,255,.16);
+}
+.phone .phone-item.is-selected {
+  box-shadow:inset 2px 0 var(--blue),inset 0 0 18px rgba(33,156,255,.12);
+}
+.phone .phone-nav button.is-active {
+  background:radial-gradient(ellipse at 50% 100%,rgba(33,156,255,.14),transparent 68%);
+}
+.music-phone .like-button.is-active {
+  color:#ff6a8a;
+  border-color:#ff6a8a;
+  background:rgba(255,75,120,.07);
+  box-shadow:inset 0 0 18px rgba(255,75,120,.18);
+}
+.music-phone .mobile-main-play,
+.music-phone .mobile-main-play.is-active {
+  background:var(--text);
+  color:var(--well);
+  border-color:transparent;
+}
+.music-phone .mobile-main-play.is-active {
+  background:color-mix(in srgb,var(--blue) 14%,var(--text));
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--blue) 45%,transparent),inset 0 0 18px rgba(33,156,255,.14);
+}
+
+.dolphin-window input[type="range"],.music-window input[type="range"] {
+  height:6px; border:0; border-radius:8px; appearance:none; background:var(--well); box-shadow:inset 0 2px 4px rgba(0,0,0,.75),0 1px rgba(255,255,255,.1);
+}
+.dolphin-window input[type="range"]::-webkit-slider-thumb,.music-window input[type="range"]::-webkit-slider-thumb {
+  appearance:none; width:17px; height:17px; border-radius:6px; border:1px solid var(--line);
+  background:repeating-linear-gradient(135deg,var(--shell-hi) 0 2px,var(--shell-lo) 2px 4px); box-shadow:var(--key-shadow);
+}
+.dolphin-window input[type="range"]::-moz-range-thumb,.music-window input[type="range"]::-moz-range-thumb {
+  width:17px; height:17px; border-radius:6px; border:1px solid var(--line);
+  background:repeating-linear-gradient(135deg,var(--shell-hi) 0 2px,var(--shell-lo) 2px 4px); box-shadow:var(--key-shadow);
+}
+.dolphin-window input[type="range"]::-moz-range-progress,.music-window input[type="range"]::-moz-range-progress {
+  height:3px; border-radius:4px; background:var(--blue); box-shadow:0 0 5px var(--blue-glow);
+}
+.phone input[type="range"],.music-phone input[type="range"] {
+  height:3px; border:0; border-radius:5px; appearance:none;
+  background:color-mix(in srgb,var(--muted) 40%,transparent);
+}
+.phone input[type="range"]::-webkit-slider-thumb,.music-phone input[type="range"]::-webkit-slider-thumb {
+  appearance:none; width:17px; height:17px; border:1px solid color-mix(in srgb,var(--blue) 65%,transparent); border-radius:50%;
+  background:color-mix(in srgb,var(--blue) 22%,var(--well)); box-shadow:inset 0 0 8px var(--blue-glow);
+}
+.phone input[type="range"]::-moz-range-thumb,.music-phone input[type="range"]::-moz-range-thumb {
+  width:17px; height:17px; border:1px solid color-mix(in srgb,var(--blue) 65%,transparent); border-radius:50%;
+  background:color-mix(in srgb,var(--blue) 22%,var(--well)); box-shadow:inset 0 0 8px var(--blue-glow);
+}
+.phone input[type="range"]::-moz-range-progress,.music-phone input[type="range"]::-moz-range-progress {
+  height:3px; border-radius:4px; background:var(--blue); box-shadow:0 0 4px var(--blue-glow);
+}
 .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); padding:10px 15px; border:1px solid var(--soft-line); border-radius:12px; background:var(--shell); box-shadow:var(--shadow); opacity:0; pointer-events:none; z-index:99; transition:.2s; }
 .toast.is-visible { opacity:1; transform:translate(-50%,0); }
 [hidden] { display:none !important; }

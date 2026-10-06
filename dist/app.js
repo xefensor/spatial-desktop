@@ -164,7 +164,10 @@ function renderPhoneItems(view = currentPhoneView) {
     name + '</b><small>' + (view === 'Nedávné' ? 'dnes, 1:' + String(31 + index).padStart(2, '0') : detail) +
     '</small></span></button>'
   ).join('') : '<p class="phone-empty">Nic takového tu není.</p>';
-  $$('.phone-item').forEach(item => item.addEventListener('click', () => showToast('Vybráno: ' + $('b', item).textContent)));
+  $$('.phone-item').forEach(item => item.addEventListener('click', () => {
+    $$('.phone-item').forEach(other => other.classList.toggle('is-selected', other === item));
+    showToast('Vybráno: ' + $('b', item).textContent);
+  }));
 }
 renderPhoneItems();
 
@@ -362,6 +365,8 @@ function syncPlaybackState() {
   $('.music-window').classList.toggle('is-playing', musicPlaying);
   $('.music-phone').classList.toggle('is-playing', musicPlaying);
   $$('.main-play').forEach(button => {
+    button.classList.toggle('is-active', musicPlaying);
+    button.setAttribute('aria-pressed', String(musicPlaying));
     $('span', button).textContent = musicPlaying ? '❚❚' : '▶';
     button.setAttribute('aria-label', musicPlaying ? 'Pozastavit' : 'Přehrát');
   });
@@ -398,6 +403,7 @@ function selectMusicTrack(index, autoplay = false) {
 
 $('#musicSearch').addEventListener('input', renderMusicTracks);
 $$('.main-play').forEach(button => button.addEventListener('click', () => setPlaying(!musicPlaying)));
+$('.library-play').addEventListener('click', () => setPlaying(true));
 $$('.previous-track').forEach(button => button.addEventListener('click', () => selectMusicTrack(currentTrackIndex - 1, true)));
 $$('.next-track').forEach(button => button.addEventListener('click', () => selectMusicTrack(currentTrackIndex + 1, true)));
 $$('.track-progress').forEach(range => range.addEventListener('input', event => {
@@ -410,14 +416,23 @@ $$('.volume-range').forEach(range => range.addEventListener('input', event => {
 }));
 
 for (const selector of ['.shuffle-toggle', '.repeat-toggle']) {
-  $$(selector).forEach(button => button.addEventListener('click', () => {
-    $$(selector).forEach(other => other.classList.toggle('is-active'));
-  }));
+  $$(selector).forEach(button => {
+    button.setAttribute('aria-pressed', String(button.classList.contains('is-active')));
+    button.addEventListener('click', () => {
+      const active = !button.classList.contains('is-active');
+      $$(selector).forEach(other => {
+        other.classList.toggle('is-active', active);
+        other.setAttribute('aria-pressed', String(active));
+      });
+    });
+  });
 }
 $('.like-button').addEventListener('click', event => {
   event.currentTarget.classList.toggle('is-active');
+  event.currentTarget.setAttribute('aria-pressed', String(event.currentTarget.classList.contains('is-active')));
   event.currentTarget.textContent = event.currentTarget.classList.contains('is-active') ? '♥' : '♡';
 });
+$('.share-button').addEventListener('click', () => showToast('Odkaz na skladbu zkopírován'));
 $('.queue-toggle').addEventListener('click', () => $('.music-body').classList.toggle('queue-hidden'));
 $('.queue-close').addEventListener('click', () => $('.music-body').classList.add('queue-hidden'));
 $('.mobile-queue-toggle').addEventListener('click', () => {
