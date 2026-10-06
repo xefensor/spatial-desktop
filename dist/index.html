@@ -46,7 +46,6 @@
     <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 18h4"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M9 2h6M12 5v3M12 13l4-2"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18"/></symbol>
-    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
     <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9c2 2 2 4 0 6M19 6c4 4 4 8 0 12"/></symbol>
     <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9c5-5 13-5 18 0M6 13c3-3 9-3 12 0M9 17c2-2 4-2 6 0"/><circle cx="12" cy="20" r="1"/></symbol>
     <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></symbol>
@@ -56,7 +55,6 @@
     <aside class="zone apps-zone" aria-label="Apps area">
       <header class="zone-heading">
         <div><span class="eyebrow">SPACE 01</span><h1>Apps</h1></div>
-        <button class="surface-key icon-key" id="fullscreenButton" aria-label="Enter fullscreen" aria-pressed="false" title="Fullscreen"><svg><use href="#i-expand"/></svg></button>
       </header>
       <nav class="app-rack" aria-label="Favourite and open applications">
         <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
@@ -71,7 +69,7 @@
       </section>
       <div class="apps-bottom">
         <label class="recessed-field app-search"><svg><use href="#i-search"/></svg><input id="appSearch" placeholder="Find an app" aria-label="Find an app"></label>
-        <div class="bottom-actions"><a class="surface-key lab-link" href="material-lab.html" title="Open previous material lab">Material lab</a><button class="surface-key icon-key" data-toast="System settings"><svg><use href="#i-settings"/></svg></button></div>
+        <div class="bottom-actions"><button class="surface-key icon-key" data-toast="System settings" aria-label="System settings"><svg><use href="#i-settings"/></svg></button></div>
       </div>
     </aside>
 
@@ -108,7 +106,6 @@
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
-        <button class="surface-key system-launcher" id="launchNotification"><svg><use href="#i-bell"/></svg><span>New alert</span></button>
       </nav>
       <div class="dynamic-widget-stack" id="dynamicWidgetStack" aria-live="polite">
         <section class="system-widget notification-widget dynamic-widget is-visible" id="notificationWidget"><header class="widget-heading"><div><svg><use href="#i-bell"/></svg><h2>Notifications</h2></div><span id="notificationCount">2</span></header><div id="notificationList"><article class="notification"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Download finished</b><small>plasma-shell-study.png · 6.8 MiB</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article><article class="notification"><span class="app-badge violet"><svg><use href="#i-music"/></svg></span><div><b>Elisa is still playing</b><small>running out of time · 1:55</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article></div></section>

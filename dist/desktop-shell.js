@@ -8,7 +8,6 @@ const toggleControlSelector = [
   ".nav-choice",
   ".play-toggle",
   "#timerToggle",
-  "#fullscreenButton",
   "[data-window-action=\"maximize\"]"
 ].join(",");
 
@@ -759,20 +758,6 @@ $("#appSearch").addEventListener("input", event => {
   });
 });
 
-$("#fullscreenButton").addEventListener("click", async () => {
-  try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-    else await document.exitFullscreen();
-  } catch {
-    showToast("Use F11 to enter fullscreen");
-  }
-});
-
-document.addEventListener("fullscreenchange", () => {
-  $("#fullscreenButton").setAttribute("aria-label", document.fullscreenElement ? "Leave fullscreen" : "Enter fullscreen");
-  $("#fullscreenButton").setAttribute("aria-pressed", String(Boolean(document.fullscreenElement)));
-});
-
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));
 $$("[data-toggle]").forEach(button => button.addEventListener("click", () => {
   button.classList.toggle("is-active");
@@ -948,10 +933,6 @@ $("#timerReset").addEventListener("click", () => {
   focusSeconds = 25 * 60;
   updateTimer();
   concealDynamicWidget($("#timerWidget"));
-});
-
-$("#launchNotification").addEventListener("click", () => {
-  addNotification("KDE Connect", "Pixel 8a shared a clipboard item", "green", "i-phone");
 });
 
 $("#notificationList").addEventListener("click", event => {

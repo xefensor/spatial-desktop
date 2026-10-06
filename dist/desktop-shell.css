@@ -1808,3 +1808,7 @@ body[data-theme="light"] .app-frame.is-front{
 @media(max-width:1350px){
   .systems-zone .static-widget-stack{gap:10px}
 }
+
+/* The shell exposes only real desktop actions, never prototype controls. */
+.apps-zone .bottom-actions{justify-content:flex-end}
+.systems-zone .system-launchers{grid-template-columns:1fr}
