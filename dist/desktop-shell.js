@@ -191,10 +191,10 @@ function observeMaterialInheritance() {
 
 const appInfo = {
   dolphin: { label: "Dolphin", icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
-  elisa: { label: "Elisa", icon: "i-music", tone: "violet", primary: "#a483ff", detail: "running out of time" },
+  elisa: { label: "Elisa", icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
   browser: { label: "Web", icon: "i-web", tone: "cyan", primary: "#55d8e9", detail: "Start page" },
-  terminal: { label: "Konsole", icon: "i-terminal", tone: "green", primary: "#64d782", detail: "xef@desktop" },
-  notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Desktop concept" }
+  terminal: { label: "Konsole", icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
+  notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
 };
 
 const appState = { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" };
@@ -1255,19 +1255,19 @@ function miniMarkup(name) {
   const detail = parked ? "Parked · still running" : info.detail;
   const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>Evening Light</b><small>Northbound · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
   if (name === "dolphin") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-location"><span class="live-slit"></span><b>Downloads</b><small>276.8 GiB free</small></div><div class="mini-file-list"><button data-mini-file="material-interface"><span><i class="folder-glyph"></i>material-interface</span><small>today</small></button><button data-mini-file="plasma-shell-study.png"><span><i class="document-glyph image"></i>plasma-shell-study.png</span><small>6.8 MiB</small></button></div><div class="mini-quick-row"><button class="surface-key mini-tool" data-mini-action="new-folder">' + icon("i-folder") + '<span>New folder</span></button><button class="surface-key mini-tool" data-mini-action="find-files">' + icon("i-search") + '<span>Find</span></button></div></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-location"><span class="live-slit"></span><b>Downloads</b><small>276.8 GiB free</small></div><div class="mini-file-list"><button data-mini-file="Website Launch"><span><i class="folder-glyph"></i>Website Launch</span><small>today</small></button><button data-mini-file="landscape.jpg"><span><i class="document-glyph image"></i>landscape.jpg</span><small>6.8 MiB</small></button></div><div class="mini-quick-row"><button class="surface-key mini-tool" data-mini-action="new-folder">' + icon("i-folder") + '<span>New folder</span></button><button class="surface-key mini-tool" data-mini-action="find-files">' + icon("i-search") + '<span>Find</span></button></div></article>';
   }
   if (name === "terminal") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-terminal-output"><b>xef@desktop:~$</b><span data-mini-terminal-output>' + escapeHtml(terminalPreview) + '</span></div><form class="mini-command" data-mini-terminal-form><span>$</span><input name="command" autocomplete="off" placeholder="Run a quick command" aria-label="Quick terminal command"><button class="surface-key mini-control" aria-label="Run command">' + icon("i-right") + "</button></form></article>";
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-terminal-output"><b>demo@desktop:~$</b><span data-mini-terminal-output>' + escapeHtml(terminalPreview) + '</span></div><form class="mini-command" data-mini-terminal-form><span>$</span><input name="command" autocomplete="off" placeholder="Run a quick command" aria-label="Quick terminal command"><button class="surface-key mini-control" aria-label="Run command">' + icon("i-right") + "</button></form></article>";
   }
   if (name === "browser") {
-    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<form class="mini-browser-search" data-mini-browser-form><input name="query" placeholder="Search or enter address" aria-label="Mini browser search"><button class="surface-key mini-control" aria-label="Search">' + icon("i-search") + '</button></form><div class="mini-sites"><button data-mini-site="KDE Invent">KDE</button><button data-mini-site="GitHub">GitHub</button><button data-mini-site="CHMI">CHMI</button></div></article>';
+    return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<form class="mini-browser-search" data-mini-browser-form><input name="query" placeholder="Search or enter address" aria-label="Mini browser search"><button class="surface-key mini-control" aria-label="Search">' + icon("i-search") + '</button></form><div class="mini-sites"><button data-mini-site="Mail">Mail</button><button data-mini-site="Calendar">Calendar</button><button data-mini-site="Weather">Weather</button></div></article>';
   }
   if (name === "notes") {
-    return '<article class="mini-card mini-card-note" data-mini-card="' + name + '">' + header + '<textarea class="mini-note-field" data-mini-note aria-label="Edit Desktop concept note">' + escapeHtml(noteDraft) + "</textarea></article>";
+    return '<article class="mini-card mini-card-note" data-mini-card="' + name + '">' + header + '<textarea class="mini-note-field" data-mini-note aria-label="Edit meeting note">' + escapeHtml(noteDraft) + "</textarea></article>";
   }
   return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-files"><b>' + info.detail + '</b><span>live</span><small>Drag back when you need the full app</small><span>ready</span></div></article>';
 }
@@ -1288,7 +1288,7 @@ function renderMiniApps() {
 function terminalResult(command) {
   if (command === "date") return new Date().toLocaleString("en-GB");
   if (command === "git status") return "On branch main · working tree clean";
-  if (command === "pwd") return "/home/xef";
+  if (command === "pwd") return "/home/demo";
   if (command === "clear") return "Terminal cleared";
   return "command not found: " + command;
 }
@@ -1370,7 +1370,8 @@ function bindMiniWidgets() {
 function prepareNoteSync() {
   const mainNote = $(".notes-layout textarea");
   try {
-    noteDraft = localStorage.getItem("spatial-note-draft-v1") || mainNote.value;
+    noteDraft = SpatialDemoExamples.migrateNote(localStorage.getItem("spatial-note-draft-v1") ?? mainNote.value);
+    localStorage.setItem("spatial-note-draft-v1", noteDraft);
   } catch {
     noteDraft = mainNote.value;
   }
@@ -2968,42 +2969,7 @@ function prepareAreaWindows() {
   persistAreaSessions();
 }
 
-const projectSpaces = {
-  plasma: {
-    name: "Plasma Redesign",
-    accent: "#5cbcff",
-    icon: "i-folder",
-    summary: "Desktop shell",
-    root: "/home/xef/Projects/plasma-redesign",
-    originWorkspace: "general",
-    files: [["desktop-shell.css", "Modified 8 min ago", "document"], ["interaction-notes.md", "Modified today", "document"]],
-    note: "Keep the interaction physical, but let the content stay quiet and readable.",
-    resources: [["keyboard-reference.mp4", "Linked · ~/Videos", "video", "i-video"], ["Ocean design", "Web reference", "web", "i-web"]],
-    activeMode: "visual",
-    modes: {
-      visual: { label: "Visual Design", icon: "i-palette", apps: ["browser", "dolphin", "notes"], layout: "canvas" },
-      prototype: { label: "Prototype", icon: "i-code", apps: ["browser", "terminal", "dolphin"], layout: "build" },
-      testing: { label: "Interaction Test", icon: "i-monitor", apps: ["browser", "notes", "terminal"], layout: "review" }
-    }
-  },
-  retold: {
-    name: "Retold",
-    accent: "#65d881",
-    icon: "i-gamepad",
-    summary: "Minecraft mod",
-    root: "/mnt/nvmekingston/Projects/Retold",
-    originWorkspace: null,
-    files: [["src/main/java", "Gameplay sources", "folder"], ["gradle.properties", "Modified yesterday", "document"]],
-    note: "Test the new movement controller, then record the climbing animation bug.",
-    resources: [["v0.3 test recording.mp4", "Linked · ~/Videos/Captures", "video", "i-video"], ["Fabric documentation", "Web reference", "web", "i-web"]],
-    activeMode: "development",
-    modes: {
-      development: { label: "Development", icon: "i-code", apps: ["terminal", "dolphin", "browser"], layout: "build" },
-      playtest: { label: "Playtest", icon: "i-play", apps: ["browser", "terminal", "notes"], layout: "review" },
-      release: { label: "Release", icon: "i-monitor", apps: ["dolphin", "browser", "notes"], layout: "canvas" }
-    }
-  }
-};
+const projectSpaces = JSON.parse(JSON.stringify(SpatialDemoExamples.projects));
 
 let activeProjectName = "plasma";
 let projectNoteSaveTimer;
@@ -3014,7 +2980,8 @@ function validProject(project) {
   return project && typeof project.name === "string" && project.name.trim() && project.modes && typeof project.modes === "object" && Object.keys(project.modes).length;
 }
 
-function normalizeProject(project) {
+function normalizeProject(project, id) {
+  project = SpatialDemoExamples.migrateProject(id, project);
   if (!validProject(project)) return null;
   const modes = Object.fromEntries(Object.entries(project.modes).filter(([, mode]) => mode && typeof mode.label === "string" && mode.label.trim()).map(([modeId, mode]) => [modeId, {
     label: mode.label.trim(),
@@ -3024,12 +2991,9 @@ function normalizeProject(project) {
   }]));
   if (!Object.keys(modes).length) return null;
   const activeMode = modes[project.activeMode] ? project.activeMode : Object.keys(modes)[0];
-  const fallbackRoot = "/home/xef/Projects/" + slugifyProject(project.name);
+  const fallbackRoot = "/home/demo/Projects/" + slugifyProject(project.name);
   const rawRoot = project.root || fallbackRoot;
-  let root = rawRoot.startsWith("~/") ? "/home/xef/" + rawRoot.slice(2) : rawRoot;
-  /* Migrate the unchanged built-in demo path so existing browser storage also
-     demonstrates that Projects may live outside every Workspace Home. */
-  if (project.name.trim() === "Retold" && root === "/home/xef/Projects/retold-mod") root = "/mnt/nvmekingston/Projects/Retold";
+  const root = rawRoot.startsWith("~/") ? "/home/demo/" + rawRoot.slice(2) : rawRoot;
   const detectedWorkspace = Object.entries(workspaceProfiles).find(([, profile]) => root === profile.home + "/Projects" || root.startsWith(profile.home + "/Projects/"))?.[0] || null;
   return {
     name: project.name.trim(),
@@ -3101,7 +3065,7 @@ function loadProjectState() {
     const savedSpacesRaw = localStorage.getItem("spatial-project-spaces-v2");
     if (savedSpacesRaw !== null) {
       const savedSpaces = JSON.parse(savedSpacesRaw || "{}");
-      const normalized = Object.fromEntries(Object.entries(savedSpaces).map(([name, project]) => [name, normalizeProject(project)]).filter(([, project]) => project));
+      const normalized = Object.fromEntries(Object.entries(savedSpaces).map(([name, project]) => [name, normalizeProject(project, name)]).filter(([, project]) => project));
       Object.keys(projectSpaces).forEach(name => delete projectSpaces[name]);
       Object.assign(projectSpaces, normalized);
     }
@@ -3112,9 +3076,13 @@ function loadProjectState() {
       if (Array.isArray(saved.resources)) projectSpaces[name].resources = saved.resources;
       if (typeof saved.activeMode === "string" && projectSpaces[name].modes[saved.activeMode]) projectSpaces[name].activeMode = saved.activeMode;
     });
+    Object.entries(projectSpaces).forEach(([id, project]) => {
+      projectSpaces[id] = SpatialDemoExamples.migrateProject(id, project);
+    });
     Object.assign(projectWindowSessions, JSON.parse(localStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
     const savedActiveProject = localStorage.getItem("spatial-active-project-v1");
     if (savedActiveProject !== null) activeProjectName = projectSpaces[savedActiveProject] ? savedActiveProject : null;
+    persistProjectState();
   } catch {}
 }
 
@@ -3709,15 +3677,15 @@ function prepareProjectSpaces() {
 
 const workspaceProfiles = {
   general: {
-    label: "General", subtitle: "Personal desktop", icon: "i-grid", accent: "#56baff", home: "/home/xef",
+    label: "General", subtitle: "Personal desktop", icon: "i-grid", accent: "#56baff", home: "/home/demo",
     context: "Everyday desktop", meta: "5 favourite apps · 2 open projects · private clipboard",
     folders: [["Desktop", "8 items", "folder"], ["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["dolphin", "elisa", "browser", "terminal", "notes"],
     favorites: [["dolphin", "Dolphin"], ["browser", "Firefox"], ["elisa", "Elisa"], ["notes", "Notes"], ["i-mail", "Thunderbird"]],
-    agenda: ["Today", "Retold test pass", "14:30 · 45 min"]
+    agenda: ["Today", "Team check-in", "14:30 · 45 min"]
   },
   school: {
-    label: "School", subtitle: "Classes and study", icon: "i-graduation", accent: "#f2b646", home: "/home/xef/Workspaces/School",
+    label: "School", subtitle: "Classes and study", icon: "i-graduation", accent: "#f2b646", home: "/home/demo/Workspaces/School",
     context: "Study session", meta: "4 favourite apps · 1 open project · school clipboard",
     folders: [["Desktop", "4 items", "folder"], ["Documents", "6 courses", "folder"], ["Downloads", "12 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "dolphin", "notes"],
@@ -3725,7 +3693,7 @@ const workspaceProfiles = {
     agenda: ["School", "Physics assignment", "Due tomorrow · 16:00"]
   },
   work: {
-    label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/xef/Workspaces/Work",
+    label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/demo/Workspaces/Work",
     context: "Product work", meta: "5 favourite apps · 1 open project · work clipboard",
     folders: [["Desktop", "3 items", "folder"], ["Documents", "42 items", "folder"], ["Downloads", "7 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["terminal", "browser", "dolphin", "notes"],
@@ -3733,12 +3701,12 @@ const workspaceProfiles = {
     agenda: ["Work", "Design review", "15:15 · 30 min"]
   },
   gaming: {
-    label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/xef/Workspaces/Gaming",
+    label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/demo/Workspaces/Gaming",
     context: "Game night", meta: "4 favourite apps · 1 open project · gaming clipboard",
     folders: [["Desktop", "6 shortcuts", "folder"], ["Games", "23 installed", "folder"], ["Captures", "64 videos", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["elisa", "browser", "dolphin", "terminal"],
     favorites: [["i-gamepad", "Steam"], ["i-gamepad", "Lutris"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
-    agenda: ["Gaming", "Co-op with Martin", "20:00 · voice chat"]
+    agenda: ["Gaming", "Co-op session", "20:00 · voice chat"]
   }
 };
 
@@ -3777,10 +3745,10 @@ function renderOverviewWindows() {
   const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed");
   $("#workspaceOpenCount").textContent = windowNames.length + (windowNames.length === 1 ? " window" : " windows");
   const miniature = name => {
-    if (name === "elisa") return '<span class="overview-mini-content overview-mini-music"><i></i><span><b>running out of time</b><small>eenspire</small><em></em></span></span>';
+    if (name === "elisa") return '<span class="overview-mini-content overview-mini-music"><i></i><span><b>Evening Light</b><small>Northbound</small><em></em></span></span>';
     if (name === "browser") return '<span class="overview-mini-content overview-mini-browser"><i></i><i></i><strong></strong><span></span></span>';
     if (name === "terminal") return '<span class="overview-mini-content overview-mini-terminal"><i></i><i></i><i></i><i></i></span>';
-    if (name === "notes") return '<span class="overview-mini-content overview-mini-notes"><b>Desktop concept</b><i></i><i></i><i></i><i></i></span>';
+    if (name === "notes") return '<span class="overview-mini-content overview-mini-notes"><b>Meeting notes</b><i></i><i></i><i></i><i></i></span>';
     return '<span class="overview-mini-content overview-mini-files"><i></i><span></span><span></span><span></span><span></span></span>';
   };
   target.innerHTML = windowNames.map(name => {
@@ -3918,7 +3886,7 @@ function packageRows(kind) {
   const workspaceRows = [
     ["i-folder", "Workspace Home", "Desktop, Documents, Downloads and selected files", "1.6 GB", true],
     ["i-grid", "Desktop context", "Area layout, favourites, widgets and wallpaper", "3.8 MB", true],
-    ["i-folder", "Selected projects", "References to Plasma Redesign and Retold", "2 links", true],
+    ["i-folder", "Selected projects", Object.values(projectSpaces).map(project => project.name).join(", ") || "No projects", Object.keys(projectSpaces).length + " links", true],
     ["i-archive", "App requirements", "Package names and suggested versions", "33 apps", true],
     ["i-monitor", "Window session", "Open apps, positions and view state", "optional", packageMode === "handoff"]
   ];
@@ -4008,7 +3976,7 @@ function preparePackages() {
       showToast((packageKind === "project" ? "Project" : "Workspace") + " package preview created");
     }, 650);
   });
-  $("#importWorkspace").addEventListener("click", () => { closePackageDialog(); showToast("Game Development workspace imported · preview"); });
+  $("#importWorkspace").addEventListener("click", () => { closePackageDialog(); showToast("Creative Studio workspace imported · preview"); });
   $("#importProjectOnly").addEventListener("click", () => { closePackageDialog(); showToast("2 projects imported · preview"); });
   $("#packageDialog").addEventListener("pointerdown", event => { if (event.target === $("#packageDialog")) closePackageDialog(); });
   renderPackageComposer();
@@ -4792,7 +4760,7 @@ $("#notificationPeek").addEventListener("click", () => {
 });
 
 $$('[data-phone-ping]').forEach(button => button.addEventListener("click", () => {
-  addNotification("Phone ping sent", "Pixel 8a is ringing", "cyan", "i-phone");
+  addNotification("Phone ping sent", "Phone is ringing", "cyan", "i-phone");
 }));
 
 $("#terminalInput").addEventListener("keydown", event => {
@@ -5014,7 +4982,7 @@ function executeContextAction(action) {
   if (action === "desktop-paste") showToast("Clipboard pasted to the desktop");
   if (action === "desktop-settings") showToast("Display Settings opened");
   if (action === "file-open") showToast("Opening " + context.label);
-  if (action === "file-copy") showToast("Copied /home/xef/Downloads/" + context.label);
+  if (action === "file-copy") showToast("Copied /home/demo/Downloads/" + context.label);
   if (action === "file-trash") {
     context.element?.remove();
     showToast(context.label + " moved to Trash");
@@ -5434,7 +5402,7 @@ function applyDesktopSyncState(state) {
     Object.keys(projectWindowSessions).forEach(name => delete projectWindowSessions[name]);
     Object.assign(projectWindowSessions, cloneDesktopState(state.projectWindowSessions || {}));
     if (state.schema >= 3) {
-      const normalized = Object.fromEntries(Object.entries(state.projects || {}).map(([name, project]) => [name, normalizeProject(project)]).filter(([, project]) => project));
+      const normalized = Object.fromEntries(Object.entries(state.projects || {}).map(([name, project]) => [name, normalizeProject(project, name)]).filter(([, project]) => project));
       Object.keys(projectSpaces).forEach(name => delete projectSpaces[name]);
       Object.assign(projectSpaces, normalized);
     } else {
@@ -5446,9 +5414,12 @@ function applyDesktopSyncState(state) {
       });
     }
 
-    noteDraft = typeof state.noteDraft === "string" ? state.noteDraft : noteDraft;
+    Object.entries(projectSpaces).forEach(([id, project]) => {
+      projectSpaces[id] = SpatialDemoExamples.migrateProject(id, project);
+    });
+    noteDraft = typeof state.noteDraft === "string" ? SpatialDemoExamples.migrateNote(state.noteDraft) : noteDraft;
     document.body.dataset.theme = state.theme || document.body.dataset.theme;
-    persistIncomingDesktopState(state);
+    persistIncomingDesktopState({ ...state, projects: projectSpaces, noteDraft });
 
     activeWorkspace = state.activeWorkspace;
     renderWorkspace(activeWorkspace, false);

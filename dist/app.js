@@ -59,7 +59,7 @@ function setMaterialState(state = 'rest', label = 'IDLE') {
 }
 
 document.addEventListener('pointerover', event => {
-  if (event.target.closest('button, .recess-field, input[type="range"]')) setMaterialState('hover', 'NAD POVRCHEM');
+  if (event.target.closest('button, .recess-field, input[type="range"]')) setMaterialState('hover', 'HOVER');
 });
 document.addEventListener('pointerout', event => {
   if (!event.relatedTarget?.closest?.('button, .recess-field, input[type="range"]')) setMaterialState();
@@ -145,13 +145,13 @@ $('#zoomRange').addEventListener('input', event => {
 });
 
 const basePhoneItems = [
-  ['Signal space tickets', '4 items'],
-  ['Lured In', '17 items'],
-  ['YTDLnis', '2 items'],
-  ['log', '1 item'],
+  ['Event tickets', '4 items'],
+  ['Travel Photos', '17 items'],
+  ['Tutorials', '2 items'],
+  ['Receipts', '1 item'],
   ['Quick Share', '1 item'],
-  ['plastic-plasma-oled-4k', '6.8 MB'],
-  ['cs_CZ-refined-fonts', '221.9 kB']
+  ['landscape.jpg', '6.8 MB'],
+  ['project-brief.pdf', '221.9 kB']
 ];
 let phoneItems = [...basePhoneItems];
 let currentPhoneView = 'Files';
@@ -339,18 +339,18 @@ window.addEventListener('keydown', event => {
 });
 
 const musicData = [
-  { title: 'running out of time', artist: 'eenspire', album: 'Mix from Escape', seconds: 138 },
-  { title: 'Genesis', artist: 'Justice', album: 'Justice', seconds: 234 },
-  { title: 'Let There Be Light', artist: 'Justice', album: 'Justice', seconds: 295 },
-  { title: 'D.A.N.C.E.', artist: 'Justice', album: 'Justice', seconds: 242 },
-  { title: 'Newjack', artist: 'Justice', album: 'Justice', seconds: 216 },
-  { title: 'Phantom', artist: 'Justice', album: 'Justice', seconds: 262 },
-  { title: 'Phantom Pt. II', artist: 'Justice', album: 'Justice', seconds: 200 },
-  { title: 'Valentine', artist: 'Justice', album: 'Justice', seconds: 176 },
-  { title: 'The Party', artist: 'Justice', album: 'Justice', seconds: 243 },
-  { title: 'DVNO', artist: 'Justice', album: 'Justice', seconds: 236 },
-  { title: 'Stress', artist: 'Justice', album: 'Justice', seconds: 298 },
-  { title: 'Waters of Nazareth', artist: 'Justice', album: 'Justice', seconds: 265 }
+  { title: 'Evening Light', artist: 'Northbound', album: 'After Hours', seconds: 138 },
+  { title: 'First Light', artist: 'Northbound', album: 'Northbound', seconds: 234 },
+  { title: 'Open Road', artist: 'Northbound', album: 'Northbound', seconds: 295 },
+  { title: 'City Lights', artist: 'Northbound', album: 'Northbound', seconds: 242 },
+  { title: 'Quiet Hours', artist: 'Northbound', album: 'Northbound', seconds: 216 },
+  { title: 'Blue Horizon', artist: 'Northbound', album: 'Northbound', seconds: 262 },
+  { title: 'Second Wind', artist: 'Northbound', album: 'Northbound', seconds: 200 },
+  { title: 'Last Stop', artist: 'Northbound', album: 'Northbound', seconds: 176 },
+  { title: 'Gathering', artist: 'Northbound', album: 'Northbound', seconds: 243 },
+  { title: 'Daybreak', artist: 'Northbound', album: 'Northbound', seconds: 236 },
+  { title: 'Moving On', artist: 'Northbound', album: 'Northbound', seconds: 298 },
+  { title: 'Homeward', artist: 'Northbound', album: 'Northbound', seconds: 265 }
 ];
 let currentTrackIndex = 0;
 let musicPlaying = false;

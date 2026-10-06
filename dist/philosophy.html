@@ -65,13 +65,13 @@
         <p class="chapter-number">02 / MENTAL MODELS</p><h2>Workspace, Project, Mode. Three different questions.</h2>
         <div class="model-cards">
           <article class="workspace-model"><span class="model-label">WORKSPACE</span><h3>Where am I working?</h3><p>General, School, Work or Gaming. A broad personal context with its own Home, favourites, Areas, widgets, app session and clipboard context.</p></article>
-          <article class="project-model"><span class="model-label">PROJECT</span><h3>What am I working on?</h3><p>A named body of work attached to a real folder: Spatial Desktop, Retold or a school assignment. It gathers resources, notes, launchers and working Modes.</p></article>
+          <article class="project-model"><span class="model-label">PROJECT</span><h3>What am I working on?</h3><p>A named body of work attached to a real folder: a website launch, a short film or a study assignment. It gathers resources, notes, launchers and working Modes.</p></article>
           <article class="mode-model"><span class="model-label">MODE</span><h3>How am I working on it?</h3><p>A saved tool and window arrangement inside one Project: Modeling, Texturing, Coding or Testing. It is not a task or a second copy of the Project.</p></article>
         </div>
         <figure class="relationship">
           <div class="workspace-strip"><b>Workspace · Work</b><span>Home + Apps + System + current session</span></div>
-          <div class="project-strip"><b>Open Project · Retold</b><span>Folder + notes + linked resources + project context</span></div>
-          <div class="mode-strip"><div><b>Mode · Coding</b><span>Editor + terminal + reference</span></div><div><b>Mode · Testing</b><span>Game + logs + notes</span></div></div>
+          <div class="project-strip"><b>Open Project · Website Launch</b><span>Folder + notes + linked resources + project context</span></div>
+          <div class="mode-strip"><div><b>Mode · Build</b><span>Editor + terminal + reference</span></div><div><b>Mode · Review</b><span>Browser + notes + references</span></div></div>
           <figcaption>A Workspace opens a Project; it does not exclusively own it. The same Project is available from School, Work or General. Modes belong to the Project.</figcaption>
         </figure>
         <h3>A Workspace is almost a separate sign-in, not a security boundary.</h3>
@@ -205,17 +205,17 @@
       <section id="files" class="chapter">
         <p class="chapter-number">11 / FOLDERS & PORTABILITY</p><h2>Inspectable context, carried with the work.</h2>
         <p>The intended storage model uses editable settings files inside the associated folders. Workspace settings are represented as <code>.spatial-workspace.toml</code>; Project settings as <code>.spatial-project.toml</code>. They may be hidden by default but should not require a proprietary editor.</p>
-        <div class="folder-example"><div><b>Workspace root = Home</b><pre><code>/home/xef/Workspaces/Work/
+        <div class="folder-example"><div><b>Workspace root = Home</b><pre><code>/home/demo/Workspaces/Work/
   .spatial-workspace.toml
   Desktop/
   Documents/
   Downloads/
   Projects/
-    Retold/
+    website-launch/
       .spatial-project.toml
-      src/</code></pre></div><div><b>A Project elsewhere is equally valid</b><pre><code>/mnt/projects/Spatial Desktop/
+      src/</code></pre></div><div><b>A Project elsewhere is equally valid</b><pre><code>/mnt/media/Projects/short-film/
   .spatial-project.toml
-  designs/
+  Footage/
   references/
 
 Linked resource, not moved:
@@ -234,13 +234,13 @@ Linked resource, not moved:
         <p class="chapter-number">12 / A WORKING EXAMPLE</p><h2>One project. More than one way to work.</h2>
         <ol class="workflow-steps">
           <li><h3>Enter Work.</h3><p>Your Work Home, favourite tools and System widgets form the surrounding context. General and Gaming are still accessible; their folders have not become inaccessible user accounts.</p></li>
-          <li><h3>Open Retold from the Overview.</h3><p>The Project Area gathers its root folder, quick note and linked reference material. A reference video on another drive can belong to this Project without being copied.</p></li>
-          <li><h3>Use the Coding Mode.</h3><p>The editor, terminal and reference windows occupy a sensible tiled arrangement. Park a music player in Apps and keep its playback controls available.</p></li>
-          <li><h3>Switch to Testing.</h3><p>Restore the testing arrangement for the same Project. This is not “another Retold” and not a new numbered virtual desktop. Files and shared project resources remain the same.</p></li>
+          <li><h3>Open Website Launch from the Overview.</h3><p>The Project Area gathers its root folder, quick note and linked reference material. A reference video on another drive can belong to this Project without being copied.</p></li>
+          <li><h3>Use the Build Mode.</h3><p>The editor, terminal and reference windows occupy a sensible tiled arrangement. Park a music player in Apps and keep its playback controls available.</p></li>
+          <li><h3>Switch to Review.</h3><p>Restore the testing arrangement for the same Project. This is not “another Website Launch” and not a new numbered virtual desktop. Files and shared project resources remain the same.</p></li>
           <li><h3>Float a reference deliberately.</h3><p>Use a held-wheel title-bar drag or Alt + left drag. The other tiles work around it. A normal left drag returns it to tiling.</p></li>
-          <li><h3>Leave without losing the setup.</h3><p>The Project’s save/park-window behaviour is intended to preserve its working arrangement for later. Switching to School changes your broader context; Retold remains a Project you can reopen from there.</p></li>
+          <li><h3>Leave without losing the setup.</h3><p>The Project’s save/park-window behaviour is intended to preserve its working arrangement for later. Switching to School changes your broader context; Website Launch remains a Project you can reopen from there.</p></li>
         </ol>
-        <p>This example describes the intended complete workflow. The demo’s five simulated application windows demonstrate the shell behaviour, not real editor or game processes.</p>
+        <p>This example describes the intended complete workflow. The demo’s five simulated application windows demonstrate the shell behaviour, not real editor or media processes.</p>
       </section>
 
       <section id="decisions" class="chapter">

@@ -4,7 +4,7 @@
 
 Spatial Desktop is an interactive browser prototype of a desktop organised around workspaces, projects and docked Areas. It explores how windows, useful app widgets and system tools can share the screen without a conventional taskbar.
 
-[Live demo](https://spatial-desktop.xefensor.chatgpt.site) · [Design philosophy](https://spatial-desktop.xefensor.chatgpt.site/philosophy.html)
+[Live demo](https://xefensor.github.io/spatial-desktop/) · [Design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html)
 
 ## Run locally
 
@@ -30,8 +30,6 @@ The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) che
 
 Once deployment succeeds, the default site address is **https://xefensor.github.io/spatial-desktop/**. The workflow's deployment environment also shows the actual published URL.
 
-This repository is private. GitHub Pages for a private personal repository requires GitHub Pro; GitHub Free supports Pages from public repositories. Repository visibility must be changed deliberately by the owner if that route is chosen.
-
 The workflow uses GitHub's built-in token; no custom deployment secret or personal access token is needed after the one-time Pages setup. Deployment fails with `Get Pages site failed / Not Found` when Pages are not enabled or available for the repository.
 
 GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
@@ -45,6 +43,12 @@ GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/
 - **Windows:** ordinary dragging uses the tiled layout. Middle-button dragging or Alt + left-button dragging enables manual floating movement. New tiled windows try to avoid floating windows.
 - **Areas:** resize and reposition docked Areas using their handles. Actual app fullscreen can temporarily move Areas to a second display when space permits.
 - **Two displays:** open the same local URL in two browser windows and use the prototype's display assignment controls. Synchronisation requires the same browser profile and origin; it is a simulation rather than access to native monitor/window management.
+
+## Demonstration examples
+
+The public demo uses two illustrative projects: **Website Launch** (Design, Build, Review) and **Short Film** (Editing, Review, Delivery). Their files, linked resources, notes and workspace examples use generic sample data. The film project lives on another drive to demonstrate that a project can be created in any folder. Music titles and artist names are illustrative too.
+
+When an existing browser profile opens this version, unchanged built-in examples are updated. Renamed or relocated projects, custom notes, added resources, custom modes and saved window arrangements are preserved. Historical commits retain their original examples.
 
 ## Material philosophy
 
@@ -65,6 +69,7 @@ The detailed reasoning, experiments and workflow models are in [`dist/philosophy
 | `dist/index.html` | Current fullscreen desktop |
 | `dist/desktop-shell.js` / `.css` | Desktop behaviour and appearance |
 | `dist/spatial-tiling.js` | Tiling and floating-window obstacle layout |
+| `dist/demo-examples.js` | Generic project examples and saved-data migration |
 | `dist/spatial-intent.js` | Area allocation and fullscreen intent policy |
 | `dist/philosophy.*` | Design and workflow documentation |
 | `dist/material-guide.html` / `material-lab.html` | Material examples and earlier explorations |
@@ -79,6 +84,7 @@ With Node.js installed:
 ```sh
 node scripts/check-spatial-intent.cjs
 node scripts/check-spatial-tiling.cjs
+node scripts/check-demo-examples.cjs
 ```
 
 ## Development history
