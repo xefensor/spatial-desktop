@@ -2885,31 +2885,28 @@ function renderOverviewWindows() {
   });
 }
 
-let activeOverviewView = "desktop";
+let activeOverviewView = "all";
 
 function setOverviewView(view, focus = false) {
-  if (!["desktop", "apps", "system"].includes(view)) view = "desktop";
-  activeOverviewView = view;
+  /* Overview is intentionally one glanceable surface. Project context,
+     favourite apps, open windows and live system state remain visible at the
+     same time instead of being split into tabs. Keep this function as a
+     compatibility entry point for older callers and saved sessions. */
+  activeOverviewView = "all";
   const home = $("#overviewHome");
-  home.dataset.overviewState = view;
-  $$("[data-overview-view]").forEach(button => {
-    const active = button.dataset.overviewView === view;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
-  $(".open-windows-section").hidden = view !== "desktop";
-  $(".overview-projects-section").hidden = view !== "desktop";
-  $(".workspace-home-card").hidden = view !== "system";
-  $(".overview-apps-section").hidden = view !== "apps";
-  $(".overview-main").hidden = view === "system";
-  $(".overview-widgets").hidden = view === "apps";
-  if (view === "desktop") renderOverviewWindows();
+  home.dataset.overviewState = "all";
+  $(".open-windows-section").hidden = false;
+  $(".overview-projects-section").hidden = false;
+  $(".workspace-home-card").hidden = false;
+  $(".overview-apps-section").hidden = false;
+  $(".overview-main").hidden = false;
+  $(".overview-widgets").hidden = false;
+  renderOverviewWindows();
   if (focus) $("#overviewHome")?.focus?.({preventScroll:true});
 }
 
 function prepareOverviewViews() {
-  $$("[data-overview-view]").forEach(button => button.addEventListener("click", () => setOverviewView(button.dataset.overviewView)));
-  setOverviewView("desktop");
+  setOverviewView("all");
 }
 
 function renderWorkspace(name, announce = true) {

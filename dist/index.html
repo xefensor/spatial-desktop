@@ -217,14 +217,13 @@
         <div class="workspace-switcher-actions"><button class="workspace-action" data-import-package><svg><use href="#i-archive"/></svg><span>Import</span></button><button class="workspace-action primary" data-open-package="workspace"><svg><use href="#i-link"/></svg><span>Pack workspace</span></button></div>
       </section>
 
-      <nav class="overview-view-tabs" aria-label="Overview sections">
-        <button class="overview-view-tab is-active" data-overview-view="desktop" aria-pressed="true"><svg><use href="#i-monitor"/></svg><span>Desktop</span></button>
-        <button class="overview-view-tab" data-overview-view="apps" aria-pressed="false"><svg><use href="#i-grid"/></svg><span>Applications</span></button>
-        <button class="overview-view-tab" data-overview-view="system" aria-pressed="false"><svg><use href="#i-settings"/></svg><span>System &amp; widgets</span></button>
-      </nav>
-
-      <div class="overview-home" id="overviewHome" data-overview-state="desktop">
+      <div class="overview-home" id="overviewHome" data-overview-state="all">
         <main class="overview-main">
+          <section class="overview-zone-lane overview-project-zone" aria-labelledby="overviewProjectZoneTitle">
+            <header class="overview-zone-heading">
+              <span class="overview-zone-mark"><svg><use href="#i-folder"/></svg></span>
+              <span><span class="eyebrow">PROJECT ZONE</span><h3 id="overviewProjectZoneTitle">Context and resources</h3></span>
+            </header>
           <section class="workspace-home-card" aria-labelledby="workspaceHomeTitle">
             <header class="workspace-home-header"><span class="workspace-home-icon"><svg id="workspaceHomeIcon"><use href="#i-grid"/></svg></span><span><span class="eyebrow">WORKSPACE HOME</span><h3 id="workspaceHomeTitle">General Home</h3><small id="workspaceHomePath">/home/xef</small></span><button class="workspace-home-open" data-toast="Workspace Home opened"><svg><use href="#i-folder"/></svg><span>Open in Dolphin</span></button></header>
             <div class="workspace-home-body">
@@ -238,9 +237,10 @@
             <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
             <div class="overview-project-grid" id="overviewProjectGrid"></div>
           </section>
+          </section>
 
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
-            <header class="overview-section-heading desktop-stage-heading"><div><span class="eyebrow">CURRENT DESKTOP</span><h3 id="openWindowsTitle">General workspace</h3></div><span id="workspaceOpenCount">2 active</span></header>
+            <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">DESKTOP</span><h3 id="openWindowsTitle">General workspace</h3></span></div><span id="workspaceOpenCount">2 active</span></header>
             <div class="overview-desktop-stage" id="overviewDesktopStage">
               <div class="overview-desktop-wallpaper" aria-hidden="true"><i></i><i></i><i></i></div>
               <div class="overview-area-mini overview-area-mini-project" data-stage-area="projects"><span><svg><use href="#i-folder"/></svg></span><b>Project</b></div>
@@ -253,7 +253,7 @@
           </section>
 
           <section class="overview-section overview-apps-section" aria-labelledby="allAppsTitle">
-            <header class="overview-section-heading"><div><span class="eyebrow">LIBRARY</span><h3 id="allAppsTitle">Applications</h3></div><span id="allAppsCount">33 apps</span></header>
+            <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
             <div class="overview-app-library">
               <nav class="launcher-categories" aria-label="Application categories">
                 <button class="launcher-category" data-category-filter="favorites"><svg><use href="#i-star"/></svg><span>Favorites</span></button>
@@ -313,6 +313,10 @@
         </main>
 
         <aside class="overview-widgets" aria-label="System widgets">
+          <header class="overview-zone-heading overview-system-heading">
+            <span class="overview-zone-mark"><svg><use href="#i-settings"/></svg></span>
+            <span><span class="eyebrow">SYSTEM ZONE</span><h3>State and controls</h3></span>
+          </header>
           <section class="overview-widget overview-clock-widget"><span class="live-time">--:--</span><div><b id="overviewDayLabel">Thursday</b><small id="overviewDateLabel">24 September</small></div></section>
           <section class="overview-widget overview-now-playing">
             <header><span><svg class="app-art"><use href="#app-elisa"/></svg><span><b>running out of time</b><small>eenspire</small></span></span><small>ELISA</small></header>

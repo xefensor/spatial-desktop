@@ -5995,6 +5995,148 @@ body[data-theme="light"] .area-window :is(.app-rack,.project-switcher),
 body[data-theme="light"] .universal-search .material-surface-glass:is(.workspace-switcher,.workspace-home-card,.overview-app-library,.overview-widget){
   background:rgba(255,255,255,.08)!important;
 }
+
+/* v134 — One-glance Overview. The information architecture now mirrors the
+   desktop itself: Project, Apps, Desktop and System are simultaneous vertical
+   lanes. Nothing important lives behind a mode tab. */
+.universal-search-shell{
+  grid-template-rows:auto auto minmax(0,1fr) auto!important;
+  gap:8px;
+}
+.overview-home[data-overview-state="all"]{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(252px,292px);
+  gap:10px;
+  overflow:hidden;
+}
+.overview-home[data-overview-state="all"] .overview-main{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(238px,.72fr) minmax(210px,.64fr) minmax(420px,1.64fr);
+  grid-template-rows:minmax(0,1fr);
+  gap:10px;
+  overflow:hidden;
+  padding:0;
+}
+.overview-zone-lane,
+.overview-home[data-overview-state="all"] .overview-apps-section,
+.overview-home[data-overview-state="all"] .open-windows-section,
+.overview-home[data-overview-state="all"] .overview-widgets{
+  --lane-accent:var(--workspace-accent);
+  min-width:0;
+  min-height:0;
+  margin:0;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--lane-accent) 16%,var(--sd-glass-groove));
+  border-radius:0!important;
+  background:color-mix(in srgb,var(--lane-accent) 3%,rgba(255,255,255,.014));
+  box-shadow:inset 0 1px var(--sd-glass-highlight);
+}
+.overview-project-zone{--lane-accent:var(--violet);grid-column:1;grid-row:1;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
+.overview-home[data-overview-state="all"] .overview-apps-section{--lane-accent:var(--blue);grid-column:2;grid-row:1;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.overview-home[data-overview-state="all"] .open-windows-section{--lane-accent:var(--workspace-accent);grid-column:3;grid-row:1;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.overview-home[data-overview-state="all"] .overview-widgets{--lane-accent:var(--cyan);display:flex;flex-direction:column;gap:0;overflow-y:auto;padding:0;scrollbar-width:thin}
+
+.overview-zone-heading,
+.overview-home[data-overview-state="all"] .overview-section-heading{
+  flex:0 0 auto;
+  min-height:50px;
+  margin:0;
+  padding:7px 9px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border:0;
+  border-bottom:1px solid color-mix(in srgb,var(--lane-accent) 24%,var(--sd-glass-groove));
+  border-radius:0!important;
+  background:color-mix(in srgb,var(--lane-accent) 10%,var(--sd-glass-face-deep));
+}
+.overview-zone-heading>span:last-child,
+.overview-home[data-overview-state="all"] .overview-section-heading>div>span:last-child{min-width:0}
+.overview-zone-heading h3,
+.overview-home[data-overview-state="all"] .overview-section-heading h3{margin:2px 0 0;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overview-zone-heading .eyebrow,
+.overview-home[data-overview-state="all"] .overview-section-heading .eyebrow{display:block;color:color-mix(in srgb,var(--lane-accent) 78%,white 22%);font-size:9px;letter-spacing:.11em}
+.overview-zone-mark{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--lane-accent) 26%,var(--sd-glass-groove));background:color-mix(in srgb,var(--lane-accent) 7%,transparent)}
+.overview-zone-mark svg{width:16px;height:16px;color:color-mix(in srgb,var(--lane-accent) 82%,white 18%)}
+.overview-system-heading{position:sticky;z-index:4;top:0;background:color-mix(in srgb,var(--cyan) 10%,var(--sd-glass-face-deep))}
+
+/* Project lane: home identity and attached projects are a single vertical
+   context rather than separate dashboard cards. */
+.overview-project-zone .workspace-home-card{
+  flex:0 0 auto;
+  margin:0;
+  padding:0!important;
+  border:0!important;
+  border-bottom:1px solid var(--sd-glass-groove)!important;
+  background:transparent!important;
+}
+.overview-project-zone .workspace-home-header{min-height:48px;padding:6px 8px;grid-template-columns:32px minmax(0,1fr) 30px;background:transparent}
+.overview-project-zone .workspace-home-icon{width:30px;height:30px;border-radius:2px!important}.overview-project-zone .workspace-home-icon svg{width:17px;height:17px}
+.overview-project-zone .workspace-home-header h3{font-size:13px}.overview-project-zone .workspace-home-header small{font-size:11px}
+.overview-project-zone .workspace-home-open{width:30px;height:30px;min-height:30px;padding:0;justify-content:center}.overview-project-zone .workspace-home-open span{display:none}
+.overview-project-zone .workspace-home-body{padding:7px;display:grid;grid-template-columns:1fr;gap:6px}
+.overview-project-zone .workspace-folders{grid-template-columns:1fr 1fr;gap:4px}
+.overview-project-zone .workspace-folder{min-height:46px;padding:5px 6px;display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px}.overview-project-zone .workspace-folder svg{width:17px;height:17px}.overview-project-zone .workspace-folder small{display:none}
+.overview-project-zone .workspace-context-card{padding:7px}.overview-project-zone .workspace-context-card>small{font-size:11px}.overview-project-zone .workspace-favorites{margin-top:6px}
+.overview-project-zone .other-workspaces{display:none}
+.overview-project-zone .overview-projects-section{min-height:0;margin:0;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+.overview-project-zone .overview-projects-section .overview-section-heading{min-height:40px;padding:5px 7px;background:transparent;border-bottom-color:var(--sd-glass-groove)}
+.overview-project-zone .overview-projects-section .overview-section-heading>div{display:block}.overview-project-zone .overview-projects-section .overview-section-heading .eyebrow{display:none}
+.overview-project-zone .overview-project-heading-actions>span{display:none}.overview-project-zone .overview-new-project{width:28px;min-height:28px;padding:0;justify-content:center}.overview-project-zone .overview-new-project span{display:none}
+.overview-project-zone .overview-project-grid{min-height:0;padding:5px;display:grid;grid-template-columns:1fr;grid-auto-rows:min-content;gap:4px;overflow:auto;scrollbar-width:thin}
+.overview-project-zone .overview-project{min-height:64px;padding:7px}.overview-project-zone .overview-project-open{display:none}
+
+/* Apps lane keeps favourites and current apps at the top while the complete
+   library remains directly scrollable below—no category page is required. */
+.overview-home[data-overview-state="all"] .overview-app-library{min-height:0;height:100%;padding:0!important;display:block;border:0!important;background:transparent!important}
+.overview-home[data-overview-state="all"] .overview-app-library .launcher-categories{display:none}
+.overview-home[data-overview-state="all"] .overview-app-library .launcher-results{height:100%;padding:5px;overflow:auto;background:transparent;scrollbar-width:thin}
+.overview-home[data-overview-state="all"] .overview-app-library .all-apps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));grid-auto-rows:min-content;gap:3px}
+.overview-home[data-overview-state="all"] .overview-app-library .launcher-app{min-width:0;min-height:57px;padding:5px;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:6px;text-align:left}
+.overview-home[data-overview-state="all"] .overview-app-library .launcher-icon{width:32px;height:32px}.overview-home[data-overview-state="all"] .overview-app-library .app-art,.overview-home[data-overview-state="all"] .overview-app-library .app-tile{width:31px;height:31px}
+.overview-home[data-overview-state="all"] .overview-app-library .launcher-app>span:last-child{font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+
+/* The desktop miniature gets the remaining width and height. It is the visual
+   anchor, but no longer pushes project/app/system state below the fold. */
+.overview-home[data-overview-state="all"] .desktop-stage-heading>div{min-width:0;display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:8px}
+.overview-home[data-overview-state="all"] .overview-desktop-stage{min-height:0;height:100%;border:0;border-radius:0!important}
+.overview-home[data-overview-state="all"] .overview-desktop-stage .overview-window-grid{inset:9px 66px 46px 105px}
+.overview-home[data-overview-state="all"] .overview-area-mini-apps{left:8px;top:8px;bottom:46px;width:36px}.overview-home[data-overview-state="all"] .overview-area-mini-project{left:49px;top:8px;bottom:46px;width:48px}.overview-home[data-overview-state="all"] .overview-area-mini-system{right:8px;top:8px;bottom:46px;width:50px}
+
+/* System lane follows the dynamic-to-static priority already used by the
+   real zone. Frequent state is visible first; structural controls sit last. */
+.overview-home[data-overview-state="all"] .overview-widget{flex:0 0 auto;margin:0;padding:8px 9px!important;border:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;background:transparent!important}
+.overview-home[data-overview-state="all"] .overview-clock-widget{order:1;min-height:64px}.overview-home[data-overview-state="all"] .overview-now-playing{order:2}.overview-home[data-overview-state="all"] .overview-agenda-widget{order:3}.overview-home[data-overview-state="all"] .overview-quick-widget{order:4}.overview-home[data-overview-state="all"] .overview-connect-widget{order:5}.overview-home[data-overview-state="all"] .overview-areas-widget{order:6}
+.overview-home[data-overview-state="all"] .overview-clock-widget>.live-time{font-size:28px}.overview-home[data-overview-state="all"] .overview-quick-grid{gap:4px;margin-top:6px}.overview-home[data-overview-state="all"] .overview-quick-grid .quick-toggle{min-height:34px}
+.overview-home[data-overview-state="all"] .overview-area-row{min-height:36px}.overview-home[data-overview-state="all"] .area-list-icon{width:25px;height:25px}.overview-home[data-overview-state="all"] .overview-area-row>button{height:27px}
+
+body[data-theme="light"] .overview-zone-lane,
+body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-apps-section,
+body[data-theme="light"] .overview-home[data-overview-state="all"] .open-windows-section,
+body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-widgets{background:color-mix(in srgb,var(--lane-accent) 3%,rgba(255,255,255,.18))}
+
+@media(max-width:1280px){
+  .overview-home[data-overview-state="all"]{grid-template-columns:minmax(0,1fr) 242px}
+  .overview-home[data-overview-state="all"] .overview-main{grid-template-columns:minmax(215px,.72fr) minmax(186px,.62fr) minmax(360px,1.5fr);gap:7px}
+  .overview-home[data-overview-state="all"] .overview-app-library .all-apps-grid{grid-template-columns:1fr}
+  .overview-home[data-overview-state="all"] .overview-app-library .launcher-app{min-height:49px}
+  .overview-project-zone .workspace-context-card{display:none}
+}
+@media(max-width:980px){
+  .universal-search-shell{display:block;overflow:auto}
+  .overview-home[data-overview-state="all"]{display:block;overflow:visible}
+  .overview-home[data-overview-state="all"] .overview-main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:520px 540px;overflow:visible}
+  .overview-project-zone{grid-column:1;grid-row:1}.overview-home[data-overview-state="all"] .overview-apps-section{grid-column:2;grid-row:1}.overview-home[data-overview-state="all"] .open-windows-section{grid-column:1/-1;grid-row:2}
+  .overview-home[data-overview-state="all"] .overview-widgets{margin-top:10px;max-height:none;display:grid;grid-template-columns:1fr 1fr;overflow:visible}
+  .overview-system-heading{grid-column:1/-1;position:static}.overview-home[data-overview-state="all"] .overview-widget{border-right:1px solid var(--sd-glass-groove)!important}
+}
+@media(max-width:620px){
+  .overview-home[data-overview-state="all"] .overview-main{display:flex;flex-direction:column}.overview-project-zone,.overview-home[data-overview-state="all"] .overview-apps-section{min-height:480px}.overview-home[data-overview-state="all"] .open-windows-section{min-height:520px}
+  .overview-home[data-overview-state="all"] .overview-widgets{display:flex}.overview-system-heading{position:static}
+}
 .area-window :is(.notification,.timer-face,.next-event,.device-row,.project-path,.project-quick-note,.project-clipboard){
   border:0!important;
   border-left:1px solid var(--sd-glass-groove)!important;
