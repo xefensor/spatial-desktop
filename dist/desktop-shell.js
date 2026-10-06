@@ -163,20 +163,62 @@ function applyGeometry(name, geometry, save = true) {
 
 function saveLayout() {
   try {
-    localStorage.setItem("spatial-desktop-layout-v3", JSON.stringify(Object.fromEntries(windowGeometry)));
+    const layouts = JSON.parse(localStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
+    layouts[activeWorkspace] = Object.fromEntries(windowGeometry);
+    localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(layouts));
   } catch {}
 }
 
-function loadLayout() {
+function loadLayout(workspaceName = activeWorkspace) {
+  windowGeometry.clear();
   try {
-    const layout = JSON.parse(localStorage.getItem("spatial-desktop-layout-v3") || "{}");
+    const layouts = JSON.parse(localStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
+    let layout = layouts[workspaceName];
+    if (!layout && workspaceName === "general") {
+      layout = JSON.parse(localStorage.getItem("spatial-desktop-layout-v3") || "{}");
+    }
+    layout ||= {};
     Object.entries(layout).forEach(([name, geometry]) => {
       if (appInfo[name] && geometry && Number.isFinite(geometry.x)) {
         windowGeometry.set(name, geometry);
-        applyGeometry(name, geometry, false);
       }
     });
   } catch {}
+}
+
+function defaultWindowGeometry(name, index = 0) {
+  const workspace = workspaceBounds();
+  const presets = {
+    dolphin: { x: .03, y: .04, width: .78, height: .78 },
+    elisa: { x: .24, y: .23, width: .73, height: .72 },
+    browser: { x: .09, y: .11, width: .76, height: .74 },
+    terminal: { x: .18, y: .16, width: .68, height: .62 },
+    notes: { x: .34, y: .10, width: .52, height: .68 }
+  };
+  const preset = presets[name] || { x: .08 + index * .04, y: .08 + index * .04, width: .72, height: .70 };
+  return {
+    x: workspace.width * preset.x,
+    y: workspace.height * preset.y,
+    width: workspace.width * preset.width,
+    height: workspace.height * preset.height
+  };
+}
+
+function restoreWorkspaceWindowLayout() {
+  const openNames = Object.keys(appState).filter(name => appState[name] === "open");
+  $$('[data-app-frame]').forEach(frame => {
+    frame.classList.remove("is-maximized");
+    delete frame.dataset.maximized;
+    delete frame.dataset.maxDisplay;
+    syncMaximizeButton(frame);
+  });
+  maximizeRestore.clear();
+  openNames.forEach((name, index) => {
+    const geometry = windowGeometry.get(name) || defaultWindowGeometry(name, index);
+    windowGeometry.set(name, clampGeometry(geometry));
+    applyGeometry(name, geometry, false);
+  });
+  saveLayout();
 }
 
 function syncRack() {
@@ -217,6 +259,7 @@ function syncApps() {
   renderMiniApps();
   renderOverviewWindows();
   if (frontApp) bringToFront(frontApp);
+  persistWorkspaceAppStates();
 }
 
 function openApp(name, dropPoint = null) {
@@ -238,6 +281,10 @@ function openApp(name, dropPoint = null) {
     });
   } else if (windowGeometry.has(name)) {
     applyGeometry(name, windowGeometry.get(name), false);
+  } else {
+    const geometry = defaultWindowGeometry(name, Object.values(appState).filter(state => state === "open").length - 1);
+    windowGeometry.set(name, clampGeometry(geometry));
+    applyGeometry(name, geometry);
   }
   bringToFront(name);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
@@ -952,6 +999,8 @@ const autoSpatialEdgeStates = new Map();
 let baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
 let autoAvoidanceSource = null;
 let spatialLayoutFrame = 0;
+const workspaceAreaSessions = Object.create(null);
+let defaultAreaSession = null;
 
 function areaFor(name) {
   return document.querySelector('[data-area-window="' + name + '"]');
@@ -971,11 +1020,51 @@ function normalizeDockOrder(edge) {
   dockGroup(edge, true).forEach((name, order) => { dockState[name].order = order; });
 }
 
-function saveAreaLayout() {
+function snapshotAreaLayout() {
   const hidden = Object.fromEntries(areaPriority.map(name => [name, Boolean(areaFor(name)?.hidden)]));
+  return {
+    state: Object.fromEntries(areaPriority.map(name => [name, { ...dockState[name] }])),
+    sizes: { ...dockSizes },
+    hidden,
+    manual: { ...dockSizeManual },
+    layoutMode
+  };
+}
+
+function persistAreaSessions() {
   try {
-    localStorage.setItem("spatial-dock-layout-v2", JSON.stringify({ state: dockState, sizes: dockSizes, hidden, manual: dockSizeManual }));
+    localStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(workspaceAreaSessions));
   } catch {}
+}
+
+function saveAreaLayout() {
+  workspaceAreaSessions[activeWorkspace] = snapshotAreaLayout();
+  persistAreaSessions();
+}
+
+function applyAreaSession(workspaceName) {
+  const source = workspaceAreaSessions[workspaceName] || defaultAreaSession || snapshotAreaLayout();
+  const saved = JSON.parse(JSON.stringify(source));
+  workspaceAreaSessions[workspaceName] = saved;
+  if (saved.state) areaPriority.forEach(name => {
+    if (dockEdges.includes(saved.state[name]?.edge)) {
+      dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
+    }
+  });
+  if (saved.sizes) dockEdges.forEach(edge => {
+    if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge];
+  });
+  if (saved.hidden) areaPriority.forEach(name => {
+    if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]);
+  });
+  if (saved.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
+  if (layoutModes.includes(saved.layoutMode)) layoutMode = saved.layoutMode;
+  dockEdges.forEach(normalizeDockOrder);
+  autoSpatialEdgeStates.clear();
+  autoWindowAvoidance.clear();
+  autoAvoidanceSource = null;
+  layoutDockAreas(false, false);
+  applyAutoAvoidance();
 }
 
 function setWorkspaceInsets(left, right, bottom, top = 12) {
@@ -1583,7 +1672,12 @@ function bindDockResize(name, area) {
 
 function prepareAreaWindows() {
   let saved = null;
-  try { saved = JSON.parse(localStorage.getItem("spatial-dock-layout-v2") || "null"); } catch {}
+  try {
+    const sessions = JSON.parse(localStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
+    Object.entries(sessions).forEach(([name, session]) => { workspaceAreaSessions[name] = session; });
+    saved = workspaceAreaSessions[activeWorkspace] || null;
+    if (!saved && activeWorkspace === "general") saved = JSON.parse(localStorage.getItem("spatial-dock-layout-v2") || "null");
+  } catch {}
   if (saved?.state) areaPriority.forEach(name => {
     if (dockEdges.includes(saved.state[name]?.edge)) dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
   });
@@ -1627,8 +1721,9 @@ function prepareAreaWindows() {
   dockEdges.forEach(normalizeDockOrder);
   try {
     const savedMode = localStorage.getItem("spatial-layout-mode-v1");
-    if (layoutModes.includes(savedMode)) layoutMode = savedMode;
+    if (!saved?.layoutMode && layoutModes.includes(savedMode)) layoutMode = savedMode;
   } catch {}
+  if (layoutModes.includes(saved?.layoutMode)) layoutMode = saved.layoutMode;
   const layoutControl = $("#layoutModeToggle");
   if (layoutControl) layoutControl.addEventListener("click", () => {
     const nextMode = layoutModes[(layoutModes.indexOf(layoutMode) + 1) % layoutModes.length];
@@ -1642,10 +1737,14 @@ function prepareAreaWindows() {
     }
     try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(false);
+    saveAreaLayout();
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
     showToast(layoutMode === "auto" ? "Auto Areas · windows can claim dock space" : "Manual Areas · geometry locked");
   });
   layoutDockAreas(false);
+  workspaceAreaSessions[activeWorkspace] = snapshotAreaLayout();
+  defaultAreaSession = JSON.parse(JSON.stringify(workspaceAreaSessions.general || workspaceAreaSessions[activeWorkspace]));
+  persistAreaSessions();
 }
 
 const projectSpaces = {
@@ -1754,13 +1853,29 @@ const workspaceProfiles = {
   }
 };
 
-let activeWorkspace = "general";
+let activeWorkspace = (() => {
+  try { return localStorage.getItem("spatial-active-workspace") || "general"; }
+  catch { return "general"; }
+})();
 const workspaceAppStates = {
   general: { dolphin: "open", elisa: "open", browser: "closed", terminal: "closed", notes: "closed" },
   school: { dolphin: "open", elisa: "closed", browser: "open", terminal: "closed", notes: "minimized" },
   work: { dolphin: "minimized", elisa: "closed", browser: "open", terminal: "open", notes: "closed" },
   gaming: { dolphin: "closed", elisa: "open", browser: "minimized", terminal: "closed", notes: "closed" }
 };
+
+function persistWorkspaceAppStates() {
+  if (!workspaceProfiles[activeWorkspace]) return;
+  workspaceAppStates[activeWorkspace] = { ...appState };
+  try { localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(workspaceAppStates)); } catch {}
+}
+
+function captureCurrentWorkspaceSession() {
+  if (!workspaceProfiles[activeWorkspace]) return;
+  persistWorkspaceAppStates();
+  saveLayout();
+  saveAreaLayout();
+}
 
 function workspaceFavoriteMarkup([asset, label]) {
   if (appInfo[asset]) return '<button class="workspace-favorite" data-open-app="' + asset + '" title="' + escapeHtml(label) + '">' + appArt(asset) + '</button>';
@@ -1784,9 +1899,11 @@ function renderOverviewWindows() {
 function renderWorkspace(name, announce = true) {
   const profile = workspaceProfiles[name];
   if (!profile) return;
-  if (name !== activeWorkspace && workspaceAppStates[activeWorkspace]) workspaceAppStates[activeWorkspace] = { ...appState };
+  if (name !== activeWorkspace) captureCurrentWorkspaceSession();
   activeWorkspace = name;
   Object.assign(appState, workspaceAppStates[name]);
+  loadLayout(name);
+  applyAreaSession(name);
   frontApp = Object.keys(appState).find(appName => appState[appName] === "open") || null;
   document.body.dataset.workspace = name;
   document.body.style.setProperty("--workspace-accent", profile.accent);
@@ -1827,12 +1944,24 @@ function renderWorkspace(name, announce = true) {
   $("#workspaceRailGlyph").textContent = profile.label.slice(0, 1).toUpperCase();
   status.title = profile.label + " workspace";
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
+  persistWorkspaceAppStates();
+  requestAnimationFrame(() => {
+    restoreWorkspaceWindowLayout();
+    if (frontApp) bringToFront(frontApp);
+    if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  });
   if (announce) showToast(profile.label + " workspace loaded");
 }
 
 function prepareWorkspaces() {
-  try { activeWorkspace = localStorage.getItem("spatial-active-workspace") || "general"; } catch {}
   if (!workspaceProfiles[activeWorkspace]) activeWorkspace = "general";
+  try {
+    const savedStates = JSON.parse(localStorage.getItem("spatial-workspace-app-states-v1") || "{}");
+    Object.entries(savedStates).forEach(([name, states]) => {
+      if (!workspaceProfiles[name] || !states) return;
+      workspaceAppStates[name] = { ...workspaceAppStates[name], ...states };
+    });
+  } catch {}
   $$("[data-workspace]").forEach(button => button.addEventListener("click", () => renderWorkspace(button.dataset.workspace)));
   $("#workspaceStatus").addEventListener("click", () => setUniversalSearchOpen(true));
   $("#overviewWindowGrid").addEventListener("click", event => {
@@ -2775,9 +2904,9 @@ setMusicPlaying(true);
 updateTimer();
 syncApps();
 requestAnimationFrame(() => {
-  loadLayout();
-  ensureOpenWindowGeometry();
-  bringToFront("dolphin");
+  loadLayout(activeWorkspace);
+  restoreWorkspaceWindowLayout();
+  if (frontApp) bringToFront(frontApp);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
 });
 
@@ -2792,3 +2921,5 @@ window.addEventListener("resize", () => {
 window.addEventListener("pointermove", event => {
   if (!event.pointerType || event.pointerType === "mouse") lastDesktopPointerX = event.clientX;
 }, { passive: true });
+
+window.addEventListener("pagehide", () => captureCurrentWorkspaceSession());
