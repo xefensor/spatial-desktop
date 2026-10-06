@@ -61,6 +61,8 @@
       </div>
     </aside>
 
+    <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
+
     <section class="workspace-zone" aria-label="Main app area">
       <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="empty-workspace" id="emptyWorkspace" hidden><div class="empty-mark"><svg><use href="#i-grid"/></svg></div><strong>No app in the main area</strong><span>Restore one from the Apps area.</span></div>
@@ -85,6 +87,8 @@
       <article class="app-frame simple-app" data-app-frame="terminal" aria-label="Terminal" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge green"><svg><use href="#i-terminal"/></svg></span><div><b>Konsole</b><small>xef@desktop</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close"><svg><use href="#i-close"/></svg></button></div></header><div class="terminal-screen" id="terminalScreen"><p><b>xef@desktop</b>:<i>~</i>$ neofetch</p><p class="terminal-output">OS: openSUSE Tumbleweed<br>DE: KDE Plasma 6 · Wayland<br>Shell: spatial-plasma<br>Resolution: adaptive</p><label><b>xef@desktop</b>:<i>~</i>$ <input id="terminalInput" autocomplete="off" aria-label="Terminal command"></label></div></article>
       <article class="app-frame simple-app" data-app-frame="notes" aria-label="Notes" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge amber"><svg><use href="#i-note"/></svg></span><div><b>Notes</b><small>Desktop shell</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close"><svg><use href="#i-close"/></svg></button></div></header><div class="notes-layout"><nav><button class="nav-choice is-active">Desktop concept</button><button class="nav-choice">Interaction rules</button><button class="nav-choice">Open questions</button></nav><textarea aria-label="Note">The center is a free-form workspace. Windows can overlap, move and resize.&#10;&#10;Drag a title bar into Apps to park the window as a live card. Drag that card back to restore it where you release.&#10;&#10;The right side contains system state and short interactions.</textarea></div></article>
     </section>
+
+    <button class="zone-resizer zone-resizer-right" data-zone-resizer="systems" type="button" role="separator" aria-label="Resize Workspace and Systems areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
     <aside class="zone systems-zone" aria-label="Systems area">
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>

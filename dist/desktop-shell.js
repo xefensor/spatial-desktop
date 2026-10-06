@@ -370,6 +370,168 @@ function bindMiniDrag(card) {
   });
 }
 
+const zoneLayout = { apps: .25, systems: .25 };
+let zoneFitFrame;
+
+function zoneLimits() {
+  const shell = $(".desktop-shell");
+  const width = shell.clientWidth;
+  return {
+    shell,
+    width,
+    minApps: Math.max(200, width * .15),
+    minSystems: Math.max(220, width * .15),
+    maxSide: width * .45,
+    minWorkspace: Math.min(520, width * .43)
+  };
+}
+
+function fittedZonePixels() {
+  const limits = zoneLimits();
+  let apps = Math.min(limits.maxSide, Math.max(limits.minApps, zoneLayout.apps * limits.width));
+  let systems = Math.min(limits.maxSide, Math.max(limits.minSystems, zoneLayout.systems * limits.width));
+  const available = limits.width - limits.minWorkspace;
+  const overflow = apps + systems - available;
+  if (overflow > 0) {
+    const appsRoom = Math.max(0, apps - limits.minApps);
+    const systemsRoom = Math.max(0, systems - limits.minSystems);
+    const room = appsRoom + systemsRoom;
+    if (room > 0) {
+      apps -= overflow * appsRoom / room;
+      systems -= overflow * systemsRoom / room;
+    }
+  }
+  return { ...limits, apps, systems };
+}
+
+function scheduleWindowFit() {
+  cancelAnimationFrame(zoneFitFrame);
+  zoneFitFrame = requestAnimationFrame(() => {
+    $$("[data-app-frame]").forEach(frame => {
+      if (frame.hidden || frame.classList.contains("is-dragging")) return;
+      const current = readGeometry(frame);
+      const fitted = clampGeometry(current);
+      const changed = ["x", "y", "width", "height"].some(key => Math.abs(current[key] - fitted[key]) > 1);
+      if (changed) {
+        applyGeometry(frame.dataset.appFrame, fitted, false);
+        windowGeometry.set(frame.dataset.appFrame, fitted);
+      }
+    });
+    saveLayout();
+  });
+}
+
+function updateZoneAccessibility(apps, systems, width) {
+  const limits = zoneLimits();
+  const appsPercent = Math.round(apps / width * 100);
+  const systemsPercent = Math.round(systems / width * 100);
+  const workspacePercent = Math.max(0, 100 - appsPercent - systemsPercent);
+  const left = $('[data-zone-resizer="apps"]');
+  const right = $('[data-zone-resizer="systems"]');
+  left.setAttribute("aria-valuemin", Math.round(limits.minApps / width * 100));
+  left.setAttribute("aria-valuemax", Math.round(limits.maxSide / width * 100));
+  left.setAttribute("aria-valuenow", appsPercent);
+  left.setAttribute("aria-valuetext", "Apps " + appsPercent + "%, Workspace " + workspacePercent + "%");
+  right.setAttribute("aria-valuemin", Math.round(limits.minSystems / width * 100));
+  right.setAttribute("aria-valuemax", Math.round(limits.maxSide / width * 100));
+  right.setAttribute("aria-valuenow", systemsPercent);
+  right.setAttribute("aria-valuetext", "Systems " + systemsPercent + "%, Workspace " + workspacePercent + "%");
+}
+
+function applyZoneLayout(save = false) {
+  const fitted = fittedZonePixels();
+  fitted.shell.style.setProperty("--apps-width", fitted.apps + "px");
+  fitted.shell.style.setProperty("--systems-width", fitted.systems + "px");
+  zoneLayout.apps = fitted.apps / fitted.width;
+  zoneLayout.systems = fitted.systems / fitted.width;
+  updateZoneAccessibility(fitted.apps, fitted.systems, fitted.width);
+  scheduleWindowFit();
+  if (save) {
+    try {
+      localStorage.setItem("spatial-zone-layout-v1", JSON.stringify(zoneLayout));
+    } catch {}
+  }
+}
+
+function setZonePixels(which, requestedPixels, save = false) {
+  const fitted = fittedZonePixels();
+  if (which === "apps") {
+    const max = Math.min(fitted.maxSide, fitted.width - fitted.systems - fitted.minWorkspace);
+    zoneLayout.apps = Math.max(fitted.minApps, Math.min(requestedPixels, max)) / fitted.width;
+  } else {
+    const max = Math.min(fitted.maxSide, fitted.width - fitted.apps - fitted.minWorkspace);
+    zoneLayout.systems = Math.max(fitted.minSystems, Math.min(requestedPixels, max)) / fitted.width;
+  }
+  applyZoneLayout(save);
+}
+
+function resetZoneLayout() {
+  zoneLayout.apps = .25;
+  zoneLayout.systems = .25;
+  applyZoneLayout(true);
+  showToast("Areas reset to 25 / 50 / 25");
+}
+
+function prepareZoneResizers() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("spatial-zone-layout-v1") || "null");
+    if (saved && Number.isFinite(saved.apps) && Number.isFinite(saved.systems)) {
+      zoneLayout.apps = saved.apps;
+      zoneLayout.systems = saved.systems;
+    }
+  } catch {}
+  applyZoneLayout(false);
+
+  $$("[data-zone-resizer]").forEach(resizer => {
+    const which = resizer.dataset.zoneResizer;
+    resizer.addEventListener("pointerdown", event => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      const shell = $(".desktop-shell");
+      resizer.setPointerCapture(event.pointerId);
+      resizer.classList.add("is-dragging");
+      shell.classList.add("is-resizing");
+
+      const move = moveEvent => {
+        const rect = shell.getBoundingClientRect();
+        const requested = which === "apps" ? moveEvent.clientX - rect.left : rect.right - moveEvent.clientX;
+        setZonePixels(which, requested, false);
+      };
+      const finish = () => {
+        resizer.removeEventListener("pointermove", move);
+        resizer.removeEventListener("pointerup", finish);
+        resizer.removeEventListener("pointercancel", finish);
+        resizer.classList.remove("is-dragging");
+        shell.classList.remove("is-resizing");
+        applyZoneLayout(true);
+      };
+      resizer.addEventListener("pointermove", move);
+      resizer.addEventListener("pointerup", finish);
+      resizer.addEventListener("pointercancel", finish);
+    });
+
+    resizer.addEventListener("keydown", event => {
+      const step = event.shiftKey ? 40 : 16;
+      let direction = 0;
+      if (event.key === "ArrowLeft") direction = which === "apps" ? -1 : 1;
+      if (event.key === "ArrowRight") direction = which === "apps" ? 1 : -1;
+      if (event.key === "Home") {
+        event.preventDefault();
+        resetZoneLayout();
+        return;
+      }
+      if (!direction) return;
+      event.preventDefault();
+      const fitted = fittedZonePixels();
+      setZonePixels(which, fitted[which] + direction * step, true);
+    });
+    resizer.addEventListener("dblclick", event => {
+      event.preventDefault();
+      resetZoneLayout();
+    });
+  });
+}
+
 function prepareWindows() {
   $$("[data-app-frame]").forEach(frame => {
     const actions = $(".window-actions", frame);
@@ -571,6 +733,7 @@ $("#terminalInput").addEventListener("keydown", event => {
   event.target.value = "";
 });
 
+prepareZoneResizers();
 prepareWindows();
 updateClock();
 setInterval(updateClock, 1000);
@@ -585,6 +748,7 @@ requestAnimationFrame(() => {
 });
 
 window.addEventListener("resize", () => {
+  applyZoneLayout(false);
   windowGeometry.forEach((geometry, name) => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
