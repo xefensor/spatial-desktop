@@ -4901,7 +4901,8 @@ function contextMenuEntries(context) {
     { action: "desktop-new-folder", icon: "i-folder", label: "New Folder" },
     { action: "desktop-paste", icon: "i-clipboard", label: "Paste" },
     separator,
-    { action: "desktop-settings", icon: "i-monitor", label: "Display Settings" }
+    { action: "desktop-settings", icon: "i-monitor", label: "Display Settings" },
+    { action: "desktop-guide", icon: "i-note", label: "Philosophy & guide" }
   ];
   if (context.kind === "file") return [
     { action: "file-open", icon: "i-folder", label: "Open" },
@@ -5008,6 +5009,7 @@ function executeContextAction(action) {
   if (action === "app-move-display") transferAppToDisplay(context.name, otherDisplaySlot(), "right", frameFor(context.name)?.getBoundingClientRect());
   if (action === "app-close") closeApp(context.name);
   if (action === "desktop-overview") setUniversalSearchOpen(true);
+  if (action === "desktop-guide") window.location.href = "philosophy.html";
   if (action === "desktop-new-folder") createDesktopFolder(context.point);
   if (action === "desktop-paste") showToast("Clipboard pasted to the desktop");
   if (action === "desktop-settings") showToast("Display Settings opened");

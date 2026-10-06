@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1218">
+  <meta name="description" content="The philosophy, mental models, material language, interaction rules and design decisions behind Spatial Desktop.">
+  <title>Philosophy & Guide — Spatial Desktop</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="philosophy.css?v=153">
+  <script src="philosophy.js?v=153" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to guide</a>
+  <header class="guide-header">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>Spatial Desktop</a>
+    <div><a class="desktop-link" href="./">Open desktop</a><button id="guideTheme" type="button" aria-label="Switch to light appearance">Light</button></div>
+  </header>
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <p class="eyebrow">PHILOSOPHY & GUIDE</p>
+      <nav aria-label="Guide chapters">
+        <a href="#premise"><span>01</span>The idea</a>
+        <a href="#models"><span>02</span>Mental models</a>
+        <a href="#areas"><span>03</span>Areas & spatial layout</a>
+        <a href="#windows"><span>04</span>Windows & tiling</a>
+        <a href="#overview"><span>05</span>The Overview</a>
+        <a href="#materials"><span>06</span>ABS & acrylic glass</a>
+        <a href="#light"><span>07</span>Light & interaction</a>
+        <a href="#identity"><span>08</span>Colour & legibility</a>
+        <a href="#attention"><span>09</span>Attention & widgets</a>
+        <a href="#screens"><span>10</span>Different screens</a>
+        <a href="#files"><span>11</span>Folders & portability</a>
+        <a href="#workflow"><span>12</span>A working example</a>
+        <a href="#decisions"><span>13</span>What we tried & why</a>
+        <a href="#controls"><span>14</span>How to use the demo</a>
+        <a href="#limits"><span>15</span>Prototype & open questions</a>
+      </nav>
+      <a class="material-link" href="material-guide.html">Interactive material reference</a>
+      <p class="sidebar-note">Design record · October 2026<br>Concept by Xef</p>
+    </aside>
+    <main id="main">
+      <header class="guide-intro">
+        <p class="eyebrow">A TACTILE, PROJECT-CENTRED COMPUTING ENVIRONMENT</p>
+        <h1>A place for the work.<br>Not just its windows.</h1>
+        <p class="lede">Spatial Desktop explores a desktop organised around what you are doing, the resources it needs, and the context you want to return to.</p>
+        <p>It combines docked Areas, useful parked applications and project-specific working Modes with a restrained physical language: ABS for application surfaces, edge-lit acrylic for contextual surfaces.</p>
+        <div class="intro-links"><a href="./">Try the desktop</a><a href="#models">Understand the model</a><a href="#controls">Find a control</a></div>
+        <p class="scope-note">This is a design rationale and guide to a browser prototype, not a claim that a new operating system has been implemented. Native application, filesystem and security behaviour remains a separate engineering problem.</p>
+      </header>
+
+      <section id="premise" class="chapter">
+        <p class="chapter-number">01 / THE IDEA</p><h2>Keep the context of work visible.</h2>
+        <p>A folder tells you where files live. An application tells you which tool is open. A window arrangement tells you what is on screen. None of those, on its own, describes the whole activity: the note you were following, the reference video elsewhere on disk, the tools you need next, or the stage of the project you were working on.</p>
+        <p>The central question is: <strong>can the desktop carry that context, instead of asking the user to reconstruct it every time?</strong> This is why the design grew from a material experiment into a working environment.</p>
+        <div class="principles">
+          <article><h3>Context before chrome</h3><p>Show relevant resources and useful controls. A border, toolbar or card exists only when it explains a boundary or enables an action.</p></article>
+          <article><h3>Stable places, flexible tools</h3><p>Areas form the spatial frame. Windows fit inside it by default; an explicit manual gesture can override that arrangement.</p></article>
+          <article><h3>State you can read</h3><p>A pressed toggle, a parked player and a saved Mode should explain their state without requiring a click to inspect it.</p></article>
+        </div>
+        <p>The General Workspace remains a familiar starting point. You do not have to organise your life into Projects before you can open a browser or listen to music. The additional structure should earn its complexity.</p>
+      </section>
+
+      <section id="models" class="chapter">
+        <p class="chapter-number">02 / MENTAL MODELS</p><h2>Workspace, Project, Mode. Three different questions.</h2>
+        <div class="model-cards">
+          <article class="workspace-model"><span class="model-label">WORKSPACE</span><h3>Where am I working?</h3><p>General, School, Work or Gaming. A broad personal context with its own Home, favourites, Areas, widgets, app session and clipboard context.</p></article>
+          <article class="project-model"><span class="model-label">PROJECT</span><h3>What am I working on?</h3><p>A named body of work attached to a real folder: Spatial Desktop, Retold or a school assignment. It gathers resources, notes, launchers and working Modes.</p></article>
+          <article class="mode-model"><span class="model-label">MODE</span><h3>How am I working on it?</h3><p>A saved tool and window arrangement inside one Project: Modeling, Texturing, Coding or Testing. It is not a task or a second copy of the Project.</p></article>
+        </div>
+        <figure class="relationship">
+          <div class="workspace-strip"><b>Workspace · Work</b><span>Home + Apps + System + current session</span></div>
+          <div class="project-strip"><b>Open Project · Retold</b><span>Folder + notes + linked resources + project context</span></div>
+          <div class="mode-strip"><div><b>Mode · Coding</b><span>Editor + terminal + reference</span></div><div><b>Mode · Testing</b><span>Game + logs + notes</span></div></div>
+          <figcaption>A Workspace opens a Project; it does not exclusively own it. The same Project is available from School, Work or General. Modes belong to the Project.</figcaption>
+        </figure>
+        <h3>A Workspace is almost a separate sign-in, not a security boundary.</h3>
+        <p>The intended feeling is a fresh personal environment without changing user accounts. Its root folder is its Home: Documents, Desktop and Downloads live directly inside it. There is no extra <code>Home</code> directory nested below the Workspace root.</p>
+        <p>Other Workspace folders remain accessible. That is deliberate: separating context must not trap files. It also means Workspace separation must not be described as permission isolation, a sandbox, or a separate authenticated identity.</p>
+        <h3>A Project is an association, not a file prison.</h3>
+        <p>Create a Project in any folder. The active Workspace’s <code>Projects</code> folder is just the default location. Attach a video from another drive or a reference document elsewhere without pretending it has moved into the root folder. The Project Area should distinguish a local file, an external link and an unavailable resource.</p>
+        <h3>A Mode preserves a way of working.</h3>
+        <p>One Project is open at a time in the active context. Switching its Mode changes the working setup, not the underlying project files. A Project with one Mode should not display a pointless Mode switcher; it appears when there is an actual choice.</p>
+        <p>There is no extra virtual-desktop layer in this design. A former “work versus gaming desktop” maps to Workspaces. A former “modeling versus texturing desktop” maps to Modes within the same Project. These are contextual distinctions, not numbered empty canvases.</p>
+      </section>
+
+      <section id="areas" class="chapter">
+        <p class="chapter-number">03 / AREAS & SPATIAL LAYOUT</p><h2>A frame around the work, not a collection of floating panels.</h2>
+        <p>Areas are docked, tiled regions. They can change edge, position, monitor and size, but they do not become ordinary overlapping windows. This keeps the environment’s structure recognisable while application windows remain movable tools.</p>
+        <div class="table-scroll"><table><thead><tr><th>Area</th><th>What belongs here</th><th>Why it stays available</th></tr></thead><tbody>
+          <tr><td>Project</td><td>Project folder, quick note, resources, Modes and relevant launchers.</td><td>Connects the tools to the work they are for.</td></tr>
+          <tr><td>Apps</td><td>Favourite/open apps, hotbar numbers, live parked cards and the application catalogue.</td><td>Lets a running app become small without becoming useless.</td></tr>
+          <tr><td>System</td><td>Notifications and timers above; clock, calendar, device connection and persistent controls below.</td><td>Separates environmental information from the main application.</td></tr>
+        </tbody></table></div>
+        <p>The initial centre-half / two-side-areas composition was a starting point, not a permanent 50% rule. The current layout is resizable. When space competes, the design priority is <strong>Project, then Apps, then System</strong>; explicit user placement still matters.</p>
+        <h3>Two everyday sizes, with one deliberate exception.</h3>
+        <p><strong>Expanded</strong> shows the Area’s content. <strong>On-rail</strong> preserves its identity and essential actions in a narrow strip. The separate Compact state was removed: a second halfway layout made resizing harder to understand.</p>
+        <p>Apps and System are currently persistent: you can resize them to a rail, but cannot remove or hide them. Project may be hidden when it is not needed. A full-screen app can temporarily cover remaining local Areas, with edge access, without deleting their state.</p>
+        <p>Use the Area’s border handles to change its size. Resizing should produce the rail naturally, not require a dedicated “Compact” button. Rail headers retain their identifying colour, and rail actions must remain useful rather than becoming a decorative icon column.</p>
+        <h3>Why automatic movement needed limits.</h3>
+        <p>Earlier versions let Areas continuously react to nearby windows. Combined with automatic tiling, that created a feedback loop: a window changed the Area, the Area changed the available space, and tiling moved the window again.</p>
+        <p>The current rule is more predictable. Normal left-button tiling respects the existing Area frame. Manual floating interaction or true full screen may explicitly borrow Area space. Areas return when that pressure is gone, with a wider return threshold to reduce flicker.</p>
+        <p>Crossing an Area boundary has resistance. The intention is to let a window touch an edge without accidentally pushing the environment aside. Keep pushing to signal intent. It is a threshold, not an impassable wall.</p>
+      </section>
+
+      <section id="windows" class="chapter">
+        <p class="chapter-number">04 / WINDOWS & TILING</p><h2>Automatic by default. Manual when you mean it.</h2>
+        <p>Opening an app inserts it into a bounded, recursively split window layout. The desktop should choose a useful split, respect minimum usable dimensions and preserve the docked Areas. It should not create a tiny unusable window just to keep everything technically visible.</p>
+        <p>The nested-splitting experiment was influenced by the Trellis / Fractal Window Management direction discussed during the design. Here, there is deliberately <strong>no zooming canvas</strong>. If expanding one tool leaves no usable space for another, the displaced app becomes a live card in Apps.</p>
+        <div class="rule-pair"><article><h3>Left-button drag</h3><p>Arrange a window in the tiled workspace. Drop beside another tile to split that position, or into Apps to park it. A previously floating window can return to tiling this way.</p></article><article><h3>Held wheel or Alt + left drag</h3><p>On the title bar, explicitly float a window and place it manually. It remains floating after release. This gesture can borrow Area space after crossing the resistant boundary.</p></article></div>
+        <h3>Floating does not make a window invisible to the layout.</h3>
+        <p>A visible floating window reserves its occupied space. Existing tiles and new apps try to use clear rectangles around it, including both sides where useful, leaving the normal small gutter. They do not move the manually positioned window to make their job easier.</p>
+        <p>If no clear space can hold an app at its usable size, it parks in Apps instead of being placed underneath the float. Minimising or closing the floating window releases the space again. Hidden, closed and other-monitor windows do not reserve space on this monitor.</p>
+        <h3>Maximise and full screen mean different things.</h3>
+        <p>A left click on maximise focuses the app between Areas, temporarily parking neighbouring tiles. Repeating it restores the prior arrangement. A middle click on the same control uses the whole demo viewport; repeating restores the previous tiled or floating state.</p>
+        <p>True full screen can temporarily move Areas to a second display if there is room. The purpose is to preserve useful context elsewhere, not silently hide it. When full screen ends, temporary placement is released unless the user has made a new explicit Area choice.</p>
+        <h3>Parking is not closing.</h3>
+        <p>A parked music player exposes transport controls; a parked note exposes its content; a parked file tool exposes useful file actions. These are purpose-built compact interfaces, not unreadable screenshots and not giant “Restore app” buttons. Restore from the card’s header or drag it back into the workspace.</p>
+        <p>In a native desktop this requires application integration. The browser demo illustrates it with its own simulated apps; it cannot manufacture a live mini-interface for an arbitrary installed application.</p>
+      </section>
+
+      <section id="overview" class="chapter">
+        <p class="chapter-number">05 / THE OVERVIEW</p><h2>One entry point. Useful before you type.</h2>
+        <p>Super opens the full-screen Overview, not a separate app-only search. It presents Workspaces, Projects, applications, current windows and useful system information. Typing narrows the view; an empty search must still be useful.</p>
+        <p>The content follows the same predominantly vertical organisation as Areas. Important information should be visible immediately rather than buried behind a sequence of tabs. A separate miniature desktop preview was removed: the translucent background already keeps the surrounding desktop present.</p>
+        <p>Categories organise the app catalogue. App entries use recognisable full-colour icons; small symbolic icons remain appropriate for commands and compact controls. The catalogue changes between one, two and three columns according to the space it actually has.</p>
+        <p>In the eventual shell, the same entry point should connect app launching, files, resources, system actions and web search. In this demo, file results and several system actions are examples, not a real filesystem index.</p>
+        <p>The Overview is square because it belongs to the desktop frame, not to an application. Workspaces and Projects should be accessible from it without first entering an unrelated app.</p>
+      </section>
+
+      <section id="materials" class="chapter">
+        <p class="chapter-number">06 / ABS & ACRYLIC GLASS</p><h2>Two materials. Two responsibilities.</h2>
+        <p>The original idea came from touching a mouse or keyboard: a control should feel connected to the material beneath the finger. The goal is not a museum of realistic objects. It is a physical vocabulary that makes hierarchy, action and state easier to read.</p>
+        <div class="material-comparison">
+          <article class="abs-example"><span class="model-label">APPLICATION / ABS</span><h3>A tool you work inside</h3><p>Solid, slightly shaped, matte and stable. Shallow edges suggest a mouse-button shell, without tall keyboard-key sidewalls.</p><div class="material-caption">Squircle window · opaque content · restrained relief</div></article>
+          <article class="glass-example"><span class="model-label">AREA / ACRYLIC</span><h3>Context around the tool</h3><p>Translucent, edge-lit and lightly engraved. Thin boundaries admit the environment without turning every element into a glowing object.</p><div class="material-caption">Square Area · translucent frame · fine edge light</div></article>
+        </div>
+        <h3>The non-negotiable content rule.</h3>
+        <p><strong>The main content of an application window always has a solid, non-transparent background.</strong> File rows, documents and notes need a dependable reading surface. Secondary inserts or chrome may use glass when there is a clear reason.</p>
+        <p>Glass on glass, ABS on ABS: controls inherit the material of the surface they occupy. An ABS window can contain a small glass section, but the transition should be explicit. Arbitrarily mixing shiny buttons and matte controls in the same region weakens the language.</p>
+        <h3>Shape is a quiet classification system.</h3>
+        <p>Areas, their interior modules, the Overview and glass context menus use square corners. Application shells use squircles. Application controls may be rounded, but nested clipping must not create strange rounded bites in the content. The reading surface remains clean and continuous.</p>
+        <p>Thickness is not the same as tactility. We removed oversized borders, repeated icon frames, deep inset notes and heavy Area rims because they consumed content space. Not every row is a button; grouping, spacing and typography can communicate structure without more chrome.</p>
+        <h3>The mobile branch follows a different physical contact.</h3>
+        <p>On a phone, the finger touches a rigid screen rather than a moving mouse button. The material experiment therefore favours engraved glass and local light response instead of mechanically depressed keycaps. It is the same goal—legible contact and state—with a different physical metaphor.</p>
+        <p>This is a visual metaphor, not a reading of electricity in a finger. The browser receives pointer coordinates, not a capacitive-field measurement. The larger electric effects explored earlier were rejected as distracting.</p>
+        <p><a href="material-guide.html">Open the interactive material reference</a> for separate ABS and glass buttons, toggles, sliders and fields.</p>
+      </section>
+
+      <section id="light" class="chapter">
+        <p class="chapter-number">07 / LIGHT & INTERACTION</p><h2>Light carries information, not decoration.</h2>
+        <div class="table-scroll"><table><thead><tr><th>Meaning</th><th>ABS plastic</th><th>Acrylic glass</th></tr></thead><tbody>
+          <tr><td>Material response</td><td>A small LED-like source or light pipe in the shell.</td><td>Light caught by an engraved line or the edge of the acrylic.</td></tr>
+          <tr><td>Momentary button</td><td>Quick mechanical down/up relief. No persistent state line.</td><td>Local, restrained contact response. No persistent state line.</td></tr>
+          <tr><td>Toggle</td><td>A visible indicator line identifies the control; an active LED communicates “on”.</td><td>A visible etched indicator identifies the control; edge-guided light communicates “on”.</td></tr>
+          <tr><td>Slider</td><td>The active track follows the same LED vocabulary as buttons.</td><td>The active track reads as an illuminated engraving, not a separate neon effect.</td></tr>
+          <tr><td>Field</td><td>A shallow inset and modest darker value indicate a receiving surface.</td><td>A restrained engraved/inset boundary indicates entry, with readable foreground content.</td></tr>
+        </tbody></table></div>
+        <p>The persistent line is reserved for toggles and latched controls. An off toggle still has an identifiable indicator; it need not glow. A pressed-only button must not look as if it has a permanent “on” state.</p>
+        <p>Active Dolphin tabs illustrate the distinction: the selected tab sits lower and slightly darker, like a latched physical button, while a thin light strip makes selection legible. Darker does not mean pitch black; depth should not destroy contrast.</p>
+        <h3>Fast down. Fast up. Then a stable state.</h3>
+        <p>Press feedback should follow the mouse click immediately. A toggle does not get a slow animation merely because it stays on. The press has the same fast response as a momentary control; only the final latched state differs.</p>
+        <p>Any local hover or contact light should follow the actual pointer or touch position. Large permanent halos and screen-wide ripples were rejected. Light should not make reading compete with interaction feedback.</p>
+        <p>Longer animation is justified for an attention event, such as a new notification, not for the basic button press. Reduced motion should preserve the state cue without requiring moving light.</p>
+      </section>
+
+      <section id="identity" class="chapter">
+        <p class="chapter-number">08 / COLOUR & LEGIBILITY</p><h2>Identity belongs to the app. Contrast belongs to the user.</h2>
+        <p>An application supplies a primary colour. That colour can connect its title bar, hotbar entry, parked card, selection and relevant controls. Developers are encouraged to use compatible tints inside the app so its identity continues beyond the window border.</p>
+        <div class="app-colours" aria-label="Prototype application colour identities"><span style="--app-colour:#2a9fff">Dolphin · blue</span><span style="--app-colour:#a483ff">Elisa · violet</span><span style="--app-colour:#55d8e9">Web · cyan</span><span style="--app-colour:#64d782">Konsole · green</span><span style="--app-colour:#ffb553">Notes · amber</span></div>
+        <p>The colour is an identity token, not a licence to tint everything indiscriminately. Text and background values still need to work in light, graphite and OLED appearances. The title bar uses a coherent colour treatment rather than an isolated colour fade unsupported elsewhere.</p>
+        <p>Areas have slight identifying tints and distinct headers, including on-rail. Their shape and labels carry meaning as well, so colour is never the only way to recognise a region.</p>
+        <h3>Breathability does not mean empty padding.</h3>
+        <p>Remove redundant frames and oversized control containers before shrinking text. Give content a usable reading surface, clear grouping and consistent alignment. The note should use its available area, not occupy a small well inside a thick frame.</p>
+        <p>Blur cannot substitute for contrast. A bright or detailed background must not erase labels. Headers and footers bound a separate scrollable content region; content should not slide underneath them. Transparency belongs where context is useful, not where it compromises the main work.</p>
+        <h3>The cursor is feedback too.</h3>
+        <p>The cursor experiments moved toward a familiar Breeze-like silhouette with a glassy interior, a visible single-colour border, restrained left/right press cues and context-specific variants. Light belongs on the relevant side, not on the bottom tail.</p>
+        <p>Inversion was explored to improve visibility, but the simulated browser cursor is not equivalent to a native compositor cursor. Visibility is more important than perfect transparency. Resize, text-entry, drag and ordinary pointer states must remain recognisable and must reset after an interrupted gesture.</p>
+      </section>
+
+      <section id="attention" class="chapter">
+        <p class="chapter-number">09 / ATTENTION & WIDGETS</p><h2>Put the event where its context already lives.</h2>
+        <p>The System Area has persistent information and event-driven information. Clock, calendar and device status sit lower; new notifications and active timers have priority near the top. A timer should not consume space forever when no timer is running.</p>
+        <p>If notifications are already visible in an expanded Area, another pop-up duplicates the event. The proposed behaviour is a light cue circulating around the new notification, long enough to notice but local enough not to disturb the whole desktop.</p>
+        <p>On-rail, show a discreet nearby preview because the full content is not visible. If the Area is temporarily covered by full screen, preserve a way to reach the event. Earlier hidden-Area experiments also used a pop-up fallback; persistent Apps/System rules now limit that situation.</p>
+        <p>Notifications must not steal keyboard focus. The eventual system also needs urgency levels, do-not-disturb behaviour, a static alternative to moving light and a way to dismiss or inspect an event without losing the current work.</p>
+        <h3>Teach the next useful shortcut, not every shortcut.</h3>
+        <p>The app rack and parked cards repeat the same visible hotbar numbers. Hover descriptions and context menus put shortcuts beside actions the user already understands. The design direction is contextual discovery, not a compulsory tutorial or repeated hints that interrupt an experienced user.</p>
+        <p>For example, show “Super + 3” where the Web app is already available. The shortcut becomes a faster path to an existing action, not another mental model to learn.</p>
+      </section>
+
+      <section id="screens" class="chapter">
+        <p class="chapter-number">10 / DIFFERENT SCREENS</p><h2>Extend the environment. Do not duplicate it.</h2>
+        <div class="screen-stories">
+          <article><h3>Laptop</h3><p>Protect usable application space. Keep Apps and System on-rail when needed, expand the relevant Area intentionally, and use the Overview for the larger catalogue. A parked app is preferable to a document crushed below its usable size.</p></article>
+          <article><h3>Ultrawide</h3><p>Use several meaningful columns and bounded app windows. Areas occupy stable locations; a single app need not stretch across the entire display just because the pixels are available.</p></article>
+          <article><h3>Two monitors</h3><p>Keep Areas on their preferred monitor when there is room. Full screen or explicit manual pressure can borrow space by temporarily moving Areas to a free second monitor. Never assume that a monitor containing other windows is empty.</p></article>
+        </div>
+        <figure class="monitor-model"><div><b>Display 1 · focused application</b><span class="monitor-app">Full-screen tool</span></div><div><b>Display 2 · contextual scene</b><span class="monitor-areas"><i>Project</i><i>Apps</i><i>System</i></span></div><figcaption>When the second display has no application windows, moved Areas can use the screen as three useful columns. This is temporary allocation, not a new Workspace.</figcaption></figure>
+        <p>Window and Area placement must remain associated with the correct Workspace and Project Mode. Switching context should recompute occupancy from that context’s windows, not inherit a stale compacted state from the previous one.</p>
+        <p>The browser demonstration uses same-origin, same-browser-profile pages to simulate an extended desktop. Open the site on two displays and let them share state. Different browsers or isolated profiles do not automatically share that local channel. This is not native monitor management or cross-computer synchronisation.</p>
+        <p>A native implementation would also need to handle disconnected displays, different scale factors, hot-plugging and a reliable primary-display preference. An application’s full-screen action in the demo fills its page viewport, not the browser’s own operating-system window.</p>
+      </section>
+
+      <section id="files" class="chapter">
+        <p class="chapter-number">11 / FOLDERS & PORTABILITY</p><h2>Inspectable context, carried with the work.</h2>
+        <p>The intended storage model uses editable settings files inside the associated folders. Workspace settings are represented as <code>.spatial-workspace.toml</code>; Project settings as <code>.spatial-project.toml</code>. They may be hidden by default but should not require a proprietary editor.</p>
+        <div class="folder-example"><div><b>Workspace root = Home</b><pre><code>/home/xef/Workspaces/Work/
+  .spatial-workspace.toml
+  Desktop/
+  Documents/
+  Downloads/
+  Projects/
+    Retold/
+      .spatial-project.toml
+      src/</code></pre></div><div><b>A Project elsewhere is equally valid</b><pre><code>/mnt/projects/Spatial Desktop/
+  .spatial-project.toml
+  designs/
+  references/
+
+Linked resource, not moved:
+/mnt/videos/reference-demo.mp4</code></pre></div></div>
+        <p class="caption">Illustrative paths. The current browser demo displays this model; it does not create these folders or TOML files on your computer.</p>
+        <h3>Pack the context, but ask what should travel.</h3>
+        <p>Three sharing intentions emerged: a <strong>Template</strong> for the setup, a <strong>Portable copy</strong> for selected settings and files, and a <strong>Handoff snapshot</strong> for resuming the working context.</p>
+        <p>External links need an explicit choice: keep the reference, copy the resource, or omit it. Missing resources and unavailable applications must be disclosed during import. A copied Project should not overwrite its source or silently claim that the recipient has the same folder paths.</p>
+        <p>Passwords, tokens, cookies, SSH keys, device identity and private history must not travel by default. Clipboard contents and absolute paths need particular care. A handoff cannot promise to transfer every live process or authenticated session.</p>
+        <p>The packaging interface is a concept preview. It is not a complete archive exporter, privacy scanner or universal application-session serializer.</p>
+        <h3>Clipboard scope must be visible.</h3>
+        <p>Workspaces and Projects are intended to carry their own clipboard context. A native design still needs a clear rule for which scope receives a copy, how users deliberately move an item between scopes, and what is excluded from sharing. The demo does not replace the operating system’s global clipboard.</p>
+      </section>
+
+      <section id="workflow" class="chapter">
+        <p class="chapter-number">12 / A WORKING EXAMPLE</p><h2>One project. More than one way to work.</h2>
+        <ol class="workflow-steps">
+          <li><h3>Enter Work.</h3><p>Your Work Home, favourite tools and System widgets form the surrounding context. General and Gaming are still accessible; their folders have not become inaccessible user accounts.</p></li>
+          <li><h3>Open Retold from the Overview.</h3><p>The Project Area gathers its root folder, quick note and linked reference material. A reference video on another drive can belong to this Project without being copied.</p></li>
+          <li><h3>Use the Coding Mode.</h3><p>The editor, terminal and reference windows occupy a sensible tiled arrangement. Park a music player in Apps and keep its playback controls available.</p></li>
+          <li><h3>Switch to Testing.</h3><p>Restore the testing arrangement for the same Project. This is not “another Retold” and not a new numbered virtual desktop. Files and shared project resources remain the same.</p></li>
+          <li><h3>Float a reference deliberately.</h3><p>Use a held-wheel title-bar drag or Alt + left drag. The other tiles work around it. A normal left drag returns it to tiling.</p></li>
+          <li><h3>Leave without losing the setup.</h3><p>The Project’s save/park-window behaviour is intended to preserve its working arrangement for later. Switching to School changes your broader context; Retold remains a Project you can reopen from there.</p></li>
+        </ol>
+        <p>This example describes the intended complete workflow. The demo’s five simulated application windows demonstrate the shell behaviour, not real editor or game processes.</p>
+      </section>
+
+      <section id="decisions" class="chapter">
+        <p class="chapter-number">13 / WHAT WE TRIED & WHY</p><h2>The current design is a set of corrections, not a first draft.</h2>
+        <div class="decision-list">
+          <article><h3>Keyboard keys to mouse-button ABS</h3><p><b>Tried:</b> conspicuous keycap relief and thick mechanical edges. <b>Kept:</b> material contact and fast press feedback. <b>Changed:</b> shallower mouse-shell shaping so the interface stays readable and content-dense.</p></article>
+          <article><h3>Recessed content versus raised content</h3><p><b>Tried:</b> darker recessed file surfaces, raised-content compositions and OLED-black wells. <b>Kept:</b> a clear surface hierarchy. <b>Changed:</b> the main content is always opaque; depth is subtle and must not depend on extreme black.</p></article>
+          <article><h3>A digital glass strip among plastic controls</h3><p><b>Tried:</b> a touch-bar-like digital accent. <b>Kept:</b> glass as a contextual or display-like material. <b>Changed:</b> consistent glass-on-glass controls and small deliberate transitions instead of arbitrary mixed materials.</p></article>
+          <article><h3>More depth was not always more tactile</h3><p><b>Tried:</b> framed icons, thick glass rims, inset modules and generous inner padding. <b>Kept:</b> a thin readable boundary and action feedback. <b>Changed:</b> remove unnecessary containers; let the content occupy the surface.</p></article>
+          <article><h3>Expanded, Compact, Rail and Hidden</h3><p><b>Tried:</b> several intermediate sizes and explicit compacting buttons. <b>Kept:</b> border-handle resizing and useful rails. <b>Changed:</b> remove Compact; keep Apps/System persistent and allow Project to be hidden.</p></article>
+          <article><h3>Always-moving Areas</h3><p><b>Tried:</b> continuous avoidance, enlargement and shrinking near all windows. <b>Kept:</b> contextual movement for explicit manual pressure and full screen. <b>Changed:</b> ordinary tiling gets a stable frame, avoiding a mutual window/Area layout loop.</p></article>
+          <article><h3>One large central app to nested windows</h3><p><b>Tried:</b> a main region focused on one app, then freely arranged overlapping windows. <b>Kept:</b> manual placement as an override. <b>Changed:</b> recursive tiling is the default; useful live cards receive overflow rather than a zooming canvas.</p></article>
+          <article><h3>Separate app search to one Overview</h3><p><b>Tried:</b> an app-only entry point beside a broader search. <b>Kept:</b> quick app access. <b>Changed:</b> Super opens one useful overview/search surface with Workspaces, Projects, apps and system information.</p></article>
+          <article><h3>Electricity as a touch metaphor</h3><p><b>Tried:</b> stronger blue/electric touch effects. <b>Kept:</b> restrained local response. <b>Changed:</b> reject distracting effects and require any contact cue to follow the real interaction position.</p></article>
+          <article><h3>Stateful buttons that felt slower</h3><p><b>Tried:</b> longer transitions on latched controls. <b>Kept:</b> visible state lines for toggles. <b>Changed:</b> a toggle presses as fast as an ordinary mouse button; persistence belongs to the state, not the animation.</p></article>
+          <article><h3>Duplicate displays to an extended scene</h3><p><b>Tried:</b> synchronised copies of the desktop. <b>Kept:</b> shared context. <b>Changed:</b> each display has its own placement and occupancy; temporary Area moves must respect windows already on the destination.</p></article>
+          <article><h3>Projects to Workspaces plus Modes</h3><p><b>Tried:</b> putting broad life contexts and individual working arrangements into Project switching. <b>Kept:</b> saved context. <b>Changed:</b> Workspace is the broad environment; Project is the work; Mode is the tool arrangement within it.</p></article>
+          <article><h3>A transparent cursor that disappeared</h3><p><b>Tried:</b> stronger transparency, inverted colours and more visible borders. <b>Kept:</b> a familiar silhouette and contextual feedback. <b>Changed:</b> prioritise a readable border, subtle side light and reliable cancellation over visual novelty.</p></article>
+          <article><h3>Floating windows ignored by tiling</h3><p><b>Tried:</b> detached floats independent of the tiled tree. <b>Kept:</b> their manually chosen position. <b>Changed:</b> tiles now reserve clear space around them and choose new splits using the actual free region.</p></article>
+        </div>
+        <p>These are decisions made through prototype iteration, not findings from a formal usability study. A convincing metaphor still needs to be tested with people who did not help invent it.</p>
+      </section>
+
+      <section id="controls" class="chapter">
+        <p class="chapter-number">14 / HOW TO USE THE DEMO</p><h2>A short field guide.</h2>
+        <div class="table-scroll"><table><thead><tr><th>Action</th><th>Control</th><th>Result</th></tr></thead><tbody>
+          <tr><td>Open the Overview</td><td><kbd>Super</kbd> or the square Overview control</td><td>Apps, Workspaces, Projects and system context. Type to search.</td></tr>
+          <tr><td>Browser fallback</td><td><kbd>Alt + Space</kbd> or <kbd>Ctrl + Space</kbd></td><td>Toggle the Overview when the OS intercepts Super.</td></tr>
+          <tr><td>Hotbar app</td><td><kbd>Super + 1–9</kbd>; demo fallback <kbd>Alt + 1–9</kbd></td><td>Open/restore a closed or parked app, or focus an open one. Press its number again while it is frontmost to park it, not quit it.</td></tr>
+          <tr><td>Arrange a tile</td><td>Left-drag its title bar</td><td>Drop beside another tile or into Apps.</td></tr>
+          <tr><td>Float manually</td><td>Held wheel or <kbd>Alt</kbd> + left-drag on its title bar</td><td>Place a floating window; Areas can yield after boundary resistance.</td></tr>
+          <tr><td>Return a float to tiling</td><td>Normal left title-bar drag; or its context menu</td><td>Reinsert it into the tiled arrangement.</td></tr>
+          <tr><td>Resize a tile</td><td>Drag a divider or the window resize handle</td><td>Redistribute bounded space; squeezed neighbours can park in Apps.</td></tr>
+          <tr><td>Grow/shrink a tile</td><td><kbd>Alt</kbd> + wheel over its title bar</td><td>Adjust its share of the tiled layout.</td></tr>
+          <tr><td>Maximise between Areas</td><td>Left-click maximise or double-click title bar</td><td>Focus the app while retaining the Area frame; repeat to restore.</td></tr>
+          <tr><td>True full screen</td><td>Middle-click maximise</td><td>Fill the demo viewport and allow temporary Area relocation; repeat to restore.</td></tr>
+          <tr><td>Resize an Area to a rail</td><td>Drag its border handle inward</td><td>Expanded content becomes a useful narrow rail.</td></tr>
+          <tr><td>Move an Area</td><td>Drag its Area header</td><td>Change docked placement, not a floating panel layer.</td></tr>
+          <tr><td>Find contextual actions</td><td>Right-click an app, Area, resource or desktop</td><td>A square translucent context menu.</td></tr>
+          <tr><td>Open/manage Projects</td><td>Project entries in the Overview</td><td>Create/remove a Project or manage Modes. Removing it does not delete its folder.</td></tr>
+          <tr><td>Leave an overlay</td><td><kbd>Escape</kbd></td><td>Dismiss the relevant overview/dialog; full screen also has an Escape path.</td></tr>
+        </tbody></table></div>
+        <p>Operating-system and browser shortcuts can take precedence over the page. The visible controls and fallback shortcuts exist so the model remains testable. If a gesture is interrupted or the browser loses focus, the drag state and custom cursor should be released rather than leaving the window unusable.</p>
+      </section>
+
+      <section id="limits" class="chapter">
+        <p class="chapter-number">15 / PROTOTYPE & OPEN QUESTIONS</p><h2>What this demonstrates. What it does not.</h2>
+        <div class="status-columns">
+          <article><h3>Working shell interactions</h3><ul><li>Simulated app opening, tiling, floating and live-card parking.</li><li>Obstacle-aware placement around visible floating windows.</li><li>Docked Area resizing and placement, useful rails and two maximise modes.</li><li>Workspace and Project/Mode session models, creation and removal controls.</li><li>Overview, app categories, hotbar numbers, context menus and material feedback.</li><li>Same-origin multi-page extended-display simulation.</li></ul></article>
+          <article><h3>Concepts, not native services</h3><ul><li>Real installed applications and their mini-interfaces.</li><li>Filesystem creation, indexing and editable TOML persistence.</li><li>Separate native clipboard routing and process isolation.</li><li>Real calendar/device integrations and OS notification delivery.</li><li>Portable archive export, privacy enforcement and live-session handoff.</li><li>Native global shortcuts, compositor cursors and monitor management.</li></ul></article>
+        </div>
+        <p>The demo stores much of its state locally in the browser. Several file, setting and package actions show an interface or illustrative confirmation rather than performing the native operation. Clearing browser storage can remove saved prototype state.</p>
+        <h3>Questions worth testing next</h3>
+        <ul class="open-questions"><li>Can a new user distinguish Workspace, Project and Mode without being taught the entire model?</li><li>Does a useful rail remain understandable without accidental expansion or excessive icon density?</li><li>How much boundary resistance feels intentional rather than broken, across mice and trackpads?</li><li>When should an app park rather than move to another monitor, and how does the user undo that decision?</li><li>What must an app expose to provide a safe, useful parked interface?</li><li>How should a Project session behave if the same Project is opened from two Workspaces or machines?</li><li>How do keyboard-only, screen-reader, reduced-motion and high-contrast workflows retain the same model?</li><li>Can material lighting stay legible over arbitrary wallpapers without becoming constant visual noise?</li></ul>
+        <p>The aim is not to replace familiar tools for the sake of novelty. It is to make returning to a piece of work, seeing what matters and choosing the next action require less reconstruction.</p>
+        <div class="closing"><p>Try a workflow, not just a theme.</p><a href="./">Return to Spatial Desktop</a></div>
+      </section>
+      <footer class="guide-footer"><span>Spatial Desktop · Philosophy & Guide · October 2026</span><a href="#main">Back to top</a></footer>
+    </main>
+  </div>
+</body>
+</html>
