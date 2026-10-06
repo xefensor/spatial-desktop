@@ -1753,20 +1753,103 @@ const projectSpaces = {
     accent: "#5cbcff",
     root: "~/Projects/plasma-redesign",
     files: [["desktop-shell.css", "Modified 8 min ago", "document"], ["interaction-notes.md", "Modified today", "document"]],
-    links: [["keyboard-reference.mp4", "Linked · ~/Videos", "video", "i-video"], ["Ocean design", "Linked web reference", "web", "i-web"]],
-    clipboard: ["#2a9fff", "Project clipboard · pinned colour"]
+    note: "Keep the interaction physical, but let the content stay quiet and readable.",
+    resources: [["keyboard-reference.mp4", "Linked · ~/Videos", "video", "i-video"], ["Ocean design", "Web reference", "web", "i-web"]],
+    keepWindows: true
   },
   retold: {
     name: "Retold",
     accent: "#65d881",
     root: "~/Projects/retold-mod",
     files: [["src/main/java", "Gameplay sources", "folder"], ["gradle.properties", "Modified yesterday", "document"]],
-    links: [["v0.3 test recording.mp4", "Linked · ~/Videos/Captures", "video", "i-video"], ["Fabric documentation", "Linked web reference", "web", "i-web"]],
-    clipboard: ["./gradlew runClient", "Project clipboard · last command"]
+    note: "Test the new movement controller, then record the climbing animation bug.",
+    resources: [["v0.3 test recording.mp4", "Linked · ~/Videos/Captures", "video", "i-video"], ["Fabric documentation", "Web reference", "web", "i-web"]],
+    keepWindows: true
   }
 };
 
 let activeProjectName = "plasma";
+let projectNoteSaveTimer;
+const projectWindowSessions = {};
+
+function projectSessionKey(name) {
+  return activeWorkspace + ":" + name;
+}
+
+function persistProjectState() {
+  try {
+    const content = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
+      note: project.note,
+      resources: project.resources,
+      keepWindows: project.keepWindows
+    }]));
+    localStorage.setItem("spatial-project-content-v1", JSON.stringify(content));
+    localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(projectWindowSessions));
+  } catch {}
+}
+
+function loadProjectState() {
+  try {
+    const content = JSON.parse(localStorage.getItem("spatial-project-content-v1") || "{}");
+    Object.entries(content).forEach(([name, saved]) => {
+      if (!projectSpaces[name] || !saved) return;
+      if (typeof saved.note === "string") projectSpaces[name].note = saved.note;
+      if (Array.isArray(saved.resources)) projectSpaces[name].resources = saved.resources;
+      if (typeof saved.keepWindows === "boolean") projectSpaces[name].keepWindows = saved.keepWindows;
+    });
+    Object.assign(projectWindowSessions, JSON.parse(localStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
+  } catch {}
+}
+
+function resourceMarkup([label, detail, type = "web", itemIcon = "i-link"]) {
+  return '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + escapeHtml(type) + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>';
+}
+
+function projectSession(name) {
+  return projectWindowSessions[projectSessionKey(name)] || null;
+}
+
+function sessionAge(savedAt) {
+  const minutes = Math.max(0, Math.round((Date.now() - Number(savedAt || 0)) / 60000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return minutes + " min ago";
+  return Math.round(minutes / 60) + " h ago";
+}
+
+function refreshProjectSessionUi(name = activeProjectName) {
+  const project = name ? projectSpaces[name] : null;
+  const session = name ? projectSession(name) : null;
+  const count = session?.apps?.length || 0;
+  const toggle = $("#projectSessionToggle");
+  if (toggle && project) {
+    toggle.classList.toggle("is-active", project.keepWindows);
+    toggle.setAttribute("aria-pressed", String(project.keepWindows));
+    $("#projectSessionSummary").textContent = count
+      ? count + (count === 1 ? " window saved · " : " windows saved · ") + sessionAge(session.savedAt)
+      : project.keepWindows ? "Close or switch to park open windows here" : "Windows stay on the desktop when this closes";
+  }
+  $$('[data-project-select]').forEach(choice => {
+    const choiceSession = projectSession(choice.dataset.projectSelect);
+    const choiceCount = choiceSession?.apps?.length || 0;
+    choice.dataset.savedWindows = String(choiceCount);
+    choice.title = projectSpaces[choice.dataset.projectSelect].name + (choiceCount ? " · " + choiceCount + " saved window" + (choiceCount === 1 ? "" : "s") : "");
+  });
+}
+
+function setProjectClosedState(closed) {
+  $("#projectSpaceContent").hidden = closed;
+  $("#projectSessionBar").hidden = closed;
+  $("#projectClosedState").hidden = !closed;
+  $("#closeProjectButton").disabled = closed;
+  $$(".project-pack-key").forEach(button => { button.disabled = closed; });
+  if (closed) {
+    $("#projectAreaName").textContent = "Projects";
+    $$('[data-project-select]').forEach(choice => {
+      choice.classList.remove("is-active");
+      choice.setAttribute("aria-pressed", "false");
+    });
+  }
+}
 
 function renderProjectSpace(name) {
   const project = projectSpaces[name];
@@ -1777,11 +1860,12 @@ function renderProjectSpace(name) {
   $("#projectAreaName").textContent = project.name;
   $("#projectRootPath").textContent = project.root;
   $("#projectRootItems").innerHTML = project.files.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
-  $("#projectLinkedItems").innerHTML = project.links.map(([label, detail, type, itemIcon]) => '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + type + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>').join("");
-  const [clip, clipDetail] = project.clipboard;
-  $("#projectClipboard").innerHTML = '<span class="clipboard-mark">' + icon("i-clipboard") + '</span><span><b>' + escapeHtml(clip) + '</b><small>' + escapeHtml(clipDetail) + '</small></span><button class="surface-key project-small-key" data-project-copy="' + escapeHtml(clip) + '">Copy</button>';
-  $("#projectRailCopy").dataset.projectCopy = clip;
-  $("#projectRailCopy").title = "Copy " + clip;
+  $("#projectQuickNote").value = project.note || "";
+  $("#projectNoteState").textContent = "Saved";
+  $("#projectLinkedItems").innerHTML = project.resources.map(resourceMarkup).join("");
+  $("#projectResourceCount").textContent = project.resources.length + (project.resources.length === 1 ? " linked" : " linked");
+  setProjectClosedState(false);
+  refreshProjectSessionUi(name);
   $$("[data-overview-project]").forEach(card => {
     const selected = card.dataset.overviewProject === name;
     card.classList.toggle("is-active", selected);
@@ -1793,16 +1877,104 @@ function renderProjectSpace(name) {
 function activateProject(name, announce = true) {
   const project = projectSpaces[name];
   if (!project) return;
+  if (activeProjectName && activeProjectName !== name && projectSpaces[activeProjectName].keepWindows) {
+    parkProjectWindows(activeProjectName, false);
+  }
   $$('[data-project-select]').forEach(choice => {
     const selected = choice.dataset.projectSelect === name;
     choice.classList.toggle("is-active", selected);
     choice.setAttribute("aria-pressed", String(selected));
   });
   renderProjectSpace(name);
-  if (announce) showToast(project.name + " project opened");
+  const restored = restoreProjectWindows(name, false);
+  if (announce) showToast(project.name + (restored ? " opened · " + restored + " saved window" + (restored === 1 ? " restored" : "s restored") : " project opened"));
+}
+
+function parkProjectWindows(name, announce = true) {
+  const project = projectSpaces[name];
+  if (!project) return 0;
+  const names = Object.keys(appState).filter(appName => appState[appName] === "open");
+  const geometry = {};
+  names.forEach(appName => {
+    const frame = frameFor(appName);
+    geometry[appName] = frame?.dataset.maximized === "true"
+      ? maximizeRestore.get(appName) || windowGeometry.get(appName) || readGeometry(frame)
+      : readGeometry(frame);
+    windowGeometry.set(appName, geometry[appName]);
+    appState[appName] = "closed";
+    clearWindowAutoAvoidance?.(appName);
+  });
+  projectWindowSessions[projectSessionKey(name)] = { apps: names, geometry, savedAt: Date.now() };
+  frontApp = topOpenApp();
+  syncApps();
+  saveLayout();
+  persistProjectState();
+  refreshProjectSessionUi(name);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (announce) showToast(project.name + " saved · " + names.length + " window" + (names.length === 1 ? "" : "s") + " parked");
+  return names.length;
+}
+
+function restoreProjectWindows(name, announce = true) {
+  const session = projectSession(name);
+  if (!session?.apps?.length) return 0;
+  session.apps.forEach(appName => {
+    if (!appInfo[appName]) return;
+    appState[appName] = "open";
+    if (session.geometry?.[appName]) windowGeometry.set(appName, session.geometry[appName]);
+  });
+  syncApps();
+  session.apps.forEach(appName => {
+    if (appState[appName] === "open" && windowGeometry.has(appName)) applyGeometry(appName, windowGeometry.get(appName), false);
+  });
+  frontApp = session.apps.at(-1) || frontApp;
+  if (frontApp) bringToFront(frontApp);
+  delete projectWindowSessions[projectSessionKey(name)];
+  persistProjectState();
+  refreshProjectSessionUi(name);
+  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+  if (announce) showToast(session.apps.length + " saved window" + (session.apps.length === 1 ? " restored" : "s restored"));
+  return session.apps.length;
+}
+
+function closeActiveProject() {
+  if (!activeProjectName) return;
+  const name = activeProjectName;
+  const project = projectSpaces[name];
+  const parked = project.keepWindows ? parkProjectWindows(name, false) : 0;
+  activeProjectName = null;
+  setProjectClosedState(true);
+  showToast(project.name + " closed" + (project.keepWindows ? " · " + parked + " window" + (parked === 1 ? " saved" : "s saved") : ""));
+}
+
+function addProjectResource(value) {
+  if (!activeProjectName) return;
+  const raw = value.trim();
+  if (!raw) return;
+  let label = raw;
+  let detail = "Linked resource";
+  let type = "web";
+  let itemIcon = "i-link";
+  try {
+    const url = new URL(raw.includes("://") ? raw : "https://" + raw);
+    label = url.hostname.replace(/^www\./, "") + (url.pathname !== "/" ? url.pathname.replace(/\/$/, "") : "");
+    detail = "Web resource · " + url.hostname;
+    itemIcon = "i-web";
+  } catch {
+    const pieces = raw.split(/[\\/]/);
+    label = pieces.at(-1) || raw;
+    detail = "Linked · " + raw;
+    type = /\.(mp4|webm|mov)$/i.test(raw) ? "video" : "web";
+    itemIcon = type === "video" ? "i-video" : "i-folder";
+  }
+  projectSpaces[activeProjectName].resources.unshift([label, detail, type, itemIcon]);
+  persistProjectState();
+  renderProjectSpace(activeProjectName);
+  showToast(label + " added to " + projectSpaces[activeProjectName].name);
 }
 
 function prepareProjectSpaces() {
+  loadProjectState();
   $$('[data-project-select]').forEach(button => button.addEventListener("click", () => activateProject(button.dataset.projectSelect)));
   $$("[data-overview-project]").forEach(button => button.addEventListener("click", () => {
     activateProject(button.dataset.overviewProject);
@@ -1811,11 +1983,48 @@ function prepareProjectSpaces() {
   }));
   $(".project-area").addEventListener("click", event => {
     const item = event.target.closest("[data-project-item]");
-    const copy = event.target.closest("[data-project-copy]");
     if (item) showToast("Opening " + item.dataset.projectItem);
-    if (copy) showToast("Copied " + copy.dataset.projectCopy);
   });
-  activateProject("plasma", false);
+  $("#projectSessionToggle").addEventListener("click", () => {
+    if (!activeProjectName) return;
+    const project = projectSpaces[activeProjectName];
+    project.keepWindows = !project.keepWindows;
+    persistProjectState();
+    refreshProjectSessionUi();
+    showToast(project.keepWindows ? "Project windows will be saved on close" : "Project windows will stay on the desktop");
+  });
+  $("#projectCloseAction").addEventListener("click", closeActiveProject);
+  $("#closeProjectButton").addEventListener("click", closeActiveProject);
+  $("#projectQuickNote").addEventListener("input", event => {
+    if (!activeProjectName) return;
+    projectSpaces[activeProjectName].note = event.target.value;
+    $("#projectNoteState").textContent = "Saving…";
+    clearTimeout(projectNoteSaveTimer);
+    projectNoteSaveTimer = setTimeout(() => {
+      persistProjectState();
+      $("#projectNoteState").textContent = "Saved";
+    }, 320);
+  });
+  $("#projectResourceForm").addEventListener("submit", event => {
+    event.preventDefault();
+    addProjectResource($("#projectResourceInput").value);
+    $("#projectResourceInput").value = "";
+  });
+  $("#projectRailNote").addEventListener("click", () => {
+    showArea("projects");
+    if (!activeProjectName) activateProject("plasma", false);
+    requestAnimationFrame(() => $("#projectQuickNote").focus());
+  });
+  $("#projectRailResource").addEventListener("click", () => {
+    showArea("projects");
+    if (!activeProjectName) activateProject("plasma", false);
+    requestAnimationFrame(() => $("#projectResourceInput").focus());
+  });
+  $("#projectRailSession").addEventListener("click", () => {
+    if (!activeProjectName) activateProject("plasma");
+    else if (!restoreProjectWindows(activeProjectName)) showToast("No saved windows for this project");
+  });
+  renderProjectSpace("plasma");
 }
 
 const workspaceProfiles = {
@@ -1938,6 +2147,7 @@ function renderWorkspace(name, announce = true) {
   applyAppPrimaryColors($("#appRack"));
   prepareControlSemantics($("#appRack"));
   syncApps();
+  if (activeProjectName) refreshProjectSessionUi(activeProjectName);
   const status = $("#workspaceStatus");
   $("b", status).textContent = profile.label;
   $("small", status).textContent = profile.subtitle;

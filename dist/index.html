@@ -148,13 +148,13 @@
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon violet"><svg><use href="#i-folder"/></svg></span><span><b id="projectAreaName">Plasma Redesign</b><small>Project Space</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher" aria-label="Projects">
         <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true" title="Plasma Redesign"><i class="project-color project-color-blue"></i><svg class="project-choice-icon" aria-hidden="true"><use href="#i-folder"/></svg><span>Plasma Redesign</span></button>
         <button class="surface-key project-choice" data-project-select="retold" aria-pressed="false" title="Retold"><i class="project-color project-color-green"></i><svg class="project-choice-icon" aria-hidden="true"><use href="#i-gamepad"/></svg><span>Retold</span></button>
       </nav>
-      <div class="project-space-content">
+      <div class="project-space-content" id="projectSpaceContent">
         <section class="project-module project-root-module">
           <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
           <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">~/Projects/plasma-redesign</span></button>
@@ -163,31 +163,32 @@
             <button data-toast="Opening interaction-notes.md"><i class="document-glyph"></i><span><b>interaction-notes.md</b><small>Modified today</small></span></button>
           </div>
         </section>
-        <section class="project-module project-links-module">
-          <header><span><svg><use href="#i-link"/></svg><b>Linked resources</b></span><button class="surface-key project-small-key" data-toast="Add a linked resource">Add</button></header>
-          <div class="project-items" id="projectLinkedItems">
-            <button data-toast="Opening keyboard-reference.mp4"><span class="linked-type video"><svg><use href="#i-video"/></svg></span><span><b>keyboard-reference.mp4</b><small>Linked · ~/Videos</small></span><i class="link-badge"><svg><use href="#i-link"/></svg></i></button>
-            <button data-toast="Opening Ocean design"><span class="linked-type web"><svg><use href="#i-web"/></svg></span><span><b>Ocean design</b><small>Linked web reference</small></span><i class="link-badge"><svg><use href="#i-link"/></svg></i></button>
-          </div>
+        <section class="project-module project-note-module">
+          <header><span><svg><use href="#i-note"/></svg><b>Quick note</b></span><span class="project-save-state" id="projectNoteState">Saved</span></header>
+          <textarea id="projectQuickNote" class="project-quick-note" aria-label="Project quick note" placeholder="Write something to keep with this project…"></textarea>
         </section>
-        <section class="project-module project-context-module">
-          <header><span><svg><use href="#i-clipboard"/></svg><b>Context</b></span><span class="project-widget-count">2 widgets</span></header>
-          <div class="project-quick-apps" aria-label="Project quick launch">
-            <button class="project-app" data-open-app="browser" aria-label="Open Firefox"><svg class="app-art"><use href="#app-browser"/></svg></button>
-            <button class="project-app" data-open-app="dolphin" aria-label="Open Dolphin"><svg class="app-art"><use href="#app-dolphin"/></svg></button>
-            <button class="project-app" data-open-app="notes" aria-label="Open Notes"><svg class="app-art"><use href="#app-notes"/></svg></button>
-            <button class="project-app project-app-generic" data-toast="Krita launched" aria-label="Open Krita"><svg><use href="#i-palette"/></svg></button>
-          </div>
-          <div class="project-clipboard" id="projectClipboard"><span class="clipboard-mark"><svg><use href="#i-clipboard"/></svg></span><span><b>#2a9fff</b><small>Project clipboard · pinned colour</small></span><button class="surface-key project-small-key" data-toast="Copied #2a9fff">Copy</button></div>
-          <button class="project-note-widget" data-toast="Project notes opened"><svg><use href="#i-note"/></svg><span><b>Interaction notes</b><small>Tabs, buttons and window behaviour</small></span></button>
+        <section class="project-module project-resources-module">
+          <header><span><svg><use href="#i-link"/></svg><b>Resources</b></span><span class="project-widget-count" id="projectResourceCount">2 linked</span></header>
+          <form class="project-resource-form" id="projectResourceForm">
+            <label><svg><use href="#i-link"/></svg><input id="projectResourceInput" autocomplete="off" aria-label="Resource path or web address" placeholder="Paste a file path or web address"></label>
+            <button class="surface-key project-small-key" type="submit">Add</button>
+          </form>
+          <div class="project-items project-resource-items" id="projectLinkedItems"></div>
         </section>
       </div>
+      <section class="project-session-bar" id="projectSessionBar" aria-label="Project window session">
+        <button class="surface-key project-session-toggle is-active" id="projectSessionToggle" data-toggle aria-pressed="true"><span class="session-toggle-icon"><svg><use href="#i-monitor"/></svg></span><span><b>Keep windows with project</b><small id="projectSessionSummary">Close or switch to park open windows here</small></span><i class="session-toggle-light"></i></button>
+        <button class="surface-key project-close-key" id="projectCloseAction"><svg><use href="#i-min"/></svg><span>Close project</span></button>
+      </section>
+      <section class="project-closed-state" id="projectClosedState" hidden>
+        <span><svg><use href="#i-folder"/></svg></span><div><b>No project open</b><small>Choose a project above. Saved windows will return with it.</small></div>
+      </section>
       <nav class="project-rail-tools" aria-label="Project quick actions">
         <button class="surface-key project-rail-tool" data-toast="Project folder opened" aria-label="Open project folder" title="Open project folder"><svg><use href="#i-folder"/></svg></button>
-        <button class="surface-key project-rail-tool" data-open-app="dolphin" aria-label="Open project in Dolphin" title="Open in Dolphin"><svg class="app-art"><use href="#app-dolphin"/></svg></button>
-        <button class="surface-key project-rail-tool" data-open-app="notes" aria-label="Open project notes" title="Open project notes"><svg class="app-art"><use href="#app-notes"/></svg></button>
-        <button class="surface-key project-rail-tool" id="projectRailCopy" data-project-copy="#2a9fff" aria-label="Copy project clipboard" title="Copy #2a9fff"><svg><use href="#i-clipboard"/></svg></button>
-        <button class="surface-key project-rail-tool" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button>
+        <button class="surface-key project-rail-tool" id="projectRailNote" aria-label="Edit project quick note" title="Edit quick note"><svg><use href="#i-note"/></svg></button>
+        <button class="surface-key project-rail-tool" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg><use href="#i-link"/></svg></button>
+        <button class="surface-key project-rail-tool" id="projectRailSession" aria-label="Restore saved project windows" title="Restore saved windows"><svg><use href="#i-monitor"/></svg></button>
+        <button class="surface-key project-rail-tool project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button>
       </nav>
       <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Project Space" title="Drag this border to resize"></button>
     </aside>

@@ -4178,6 +4178,127 @@ body[data-theme="light"] .workspace-home-card,
 body[data-theme="light"] .overview-app-library{background:rgba(239,245,248,.94)}
 body[data-theme="light"] .overview-widget{border-color:rgba(45,72,86,.14);background:rgba(242,247,249,.86);box-shadow:inset 0 1px rgba(255,255,255,.78)}
 
+/* v82 — A Project is a small working context: folder, note, resources and a
+   restorable window session. Content stays solid; only its enclosing Area is acrylic. */
+.project-area{--project-solid:color-mix(in srgb,var(--content-surface) 96%,#081016 4%)}
+body[data-theme="light"] .project-area{--project-solid:#edf2f4}
+.project-space-content{grid-template-columns:1fr .9fr 1.12fr}
+.project-module{
+  background:var(--project-solid);
+  border-color:color-mix(in srgb,var(--text) 10%,transparent);
+}
+.project-save-state{color:var(--muted);font-size:11px;white-space:nowrap}
+.project-quick-note{
+  width:100%;
+  height:calc(100% - 32px);
+  min-height:78px;
+  padding:9px 10px;
+  resize:none;
+  border:1px solid color-mix(in srgb,var(--text) 12%,transparent);
+  border-radius:8px;
+  outline:0;
+  color:var(--text);
+  background:var(--content-surface-raised);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.035);
+  font:500 13px/1.45 system-ui,sans-serif;
+}
+.project-quick-note:focus{
+  border-color:color-mix(in srgb,var(--project-accent) 55%,transparent);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18),0 0 0 2px color-mix(in srgb,var(--project-accent) 17%,transparent);
+}
+.project-resource-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;margin-bottom:4px}
+.project-resource-form label{
+  min-width:0;
+  height:31px;
+  padding:0 8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid color-mix(in srgb,var(--text) 12%,transparent);
+  border-radius:7px;
+  background:var(--content-surface-raised);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18);
+}
+.project-resource-form label:focus-within{border-color:color-mix(in srgb,var(--project-accent) 55%,transparent)}
+.project-resource-form label svg{flex:0 0 14px;width:14px;height:14px;color:var(--project-accent)}
+.project-resource-form input{min-width:0;width:100%;border:0;outline:0;color:var(--text);background:transparent;font:500 12px/1 system-ui,sans-serif}
+.project-resource-form input::placeholder{color:color-mix(in srgb,var(--muted) 80%,transparent)}
+.project-resource-items{max-height:92px;overflow:auto;scrollbar-width:thin}
+.project-resource-items:empty::after{content:"Add a file, folder or web address";min-height:42px;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.project-session-bar{
+  flex:0 0 49px;
+  min-height:49px;
+  margin-top:7px;
+  padding-top:6px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px;
+  border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent);
+}
+.project-space-content[hidden],.project-session-bar[hidden]{display:none!important}
+.project-session-toggle{
+  --state-tone:var(--project-accent);
+  min-width:0;
+  height:41px;
+  padding:4px 12px 6px 7px;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  text-align:left;
+}
+.project-session-toggle>span:nth-child(2){min-width:0}
+.project-session-toggle b,.project-session-toggle small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-session-toggle b{font-size:12px}.project-session-toggle small{margin-top:2px;color:var(--muted);font-size:10px}
+.session-toggle-icon{width:29px;height:29px;border-radius:7px;display:grid;place-items:center;color:var(--project-accent);background:color-mix(in srgb,var(--project-accent) 11%,transparent)}
+.session-toggle-icon svg{width:16px;height:16px}.session-toggle-light{display:none}
+.project-close-key{height:41px;padding:0 11px;display:flex;align-items:center;gap:6px;font-size:12px}.project-close-key svg{width:14px;height:14px;color:var(--project-accent)}
+.project-closed-state{
+  min-height:0;
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  padding:18px;
+  border:1px solid color-mix(in srgb,var(--text) 9%,transparent);
+  border-radius:9px;
+  color:var(--muted);
+  background:var(--project-solid);
+}
+.project-closed-state[hidden]{display:none!important}
+.project-closed-state>span{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--project-accent);background:color-mix(in srgb,var(--project-accent) 12%,transparent)}
+.project-closed-state svg{width:21px;height:21px}.project-closed-state b,.project-closed-state small{display:block}.project-closed-state b{color:var(--text);font-size:14px}.project-closed-state small{margin-top:4px;font-size:12px;line-height:1.35}
+.project-choice[data-saved-windows]:not([data-saved-windows="0"])::before{
+  content:attr(data-saved-windows);
+  flex:0 0 18px;
+  width:18px;
+  height:18px;
+  order:4;
+  border-radius:9px;
+  display:grid;
+  place-items:center;
+  color:#061018;
+  background:var(--project-accent);
+  font:800 10px/1 system-ui,sans-serif;
+}
+.project-area[data-dock-edge="left"] .project-space-content,
+.project-area[data-dock-edge="right"] .project-space-content{padding-right:3px}
+.project-area[data-dock-edge="left"] .project-note-module,
+.project-area[data-dock-edge="right"] .project-note-module{min-height:142px}
+.project-area[data-dock-edge="left"] .project-resources-module,
+.project-area[data-dock-edge="right"] .project-resources-module{min-height:156px}
+.project-area[data-dock-edge="left"] .project-resource-items,
+.project-area[data-dock-edge="right"] .project-resource-items{max-height:none}
+.project-area[data-area-state="compact"] .project-space-content{display:flex;flex-direction:column;overflow:auto}
+.project-area[data-area-state="compact"] .project-root-module .project-items,
+.project-area[data-area-state="compact"] .project-resources-module .project-items{max-height:45px;overflow:hidden}
+.project-area[data-area-state="compact"] .project-note-module{min-height:118px}
+.project-area[data-area-state="compact"] .project-session-bar{grid-template-columns:1fr}.project-area[data-area-state="compact"] .project-close-key{display:none}
+.project-area[data-area-state="rail"] .project-session-bar,
+.project-area[data-area-state="rail"] .project-closed-state{display:none!important}
+body[data-theme="light"] .project-quick-note,body[data-theme="light"] .project-resource-form label{box-shadow:inset 0 2px 5px rgba(40,62,73,.13),inset 0 1px rgba(255,255,255,.75)}
+
 @media(min-width:1450px){
   .universal-result-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
