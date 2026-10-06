@@ -578,3 +578,45 @@ body[data-theme="light"] .desktop-shell{
   opacity:.8;
   box-shadow:0 0 7px rgba(42,159,255,.16);
 }
+
+/* Static system widgets stay put; activity widgets exist only while relevant */
+.system-launchers{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.system-launcher{
+  min-width:0;
+  height:34px;
+  padding:0 9px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+  color:var(--muted);
+  font-size:10px;
+}
+.system-launcher svg{width:14px;height:14px;color:var(--blue)}
+.system-launcher span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dynamic-widget-stack{display:grid;gap:8px}
+.dynamic-widget-stack:empty{display:none}
+.dynamic-widget{
+  opacity:0;
+  transform:translateY(-6px) scale(.992);
+  transform-origin:50% 0;
+  transition:opacity 150ms ease,transform 150ms ease;
+}
+.dynamic-widget.is-visible{opacity:1;transform:none}
+.dynamic-widget[hidden]{display:none}
+.notification.is-leaving{
+  opacity:0;
+  transform:translateX(9px);
+  transition:opacity 130ms ease,transform 130ms ease;
+}
+.notification-widget,.timer-widget{
+  border-color:color-mix(in srgb,var(--blue) 20%,var(--line));
+  background:color-mix(in srgb,var(--shell) 76%,transparent);
+}
+.timer-widget .widget-heading{height:27px}
+.timer-face{padding:3px 0 6px}
+.timer-actions button{height:31px;padding:0 8px}

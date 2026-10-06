@@ -809,8 +809,35 @@ function updateTimer() {
   $("#timerToggle").textContent = focusRunning ? "Pause" : "Start";
 }
 
-$("#timerToggle").addEventListener("click", () => {
-  focusRunning = !focusRunning;
+function revealDynamicWidget(widget) {
+  widget.hidden = false;
+  requestAnimationFrame(() => widget.classList.add("is-visible"));
+}
+
+function concealDynamicWidget(widget) {
+  widget.classList.remove("is-visible");
+  window.setTimeout(() => {
+    if (!widget.classList.contains("is-visible")) widget.hidden = true;
+  }, 170);
+}
+
+function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
+  const item = document.createElement("article");
+  item.className = "notification";
+  item.innerHTML = '<span class="app-badge ' + tone + '">' + icon(glyph) + '</span><div><b>' + escapeHtml(title) + '</b><small>' + escapeHtml(detail) + '</small></div><button class="dismiss-button" aria-label="Dismiss">×</button>';
+  $("#notificationList").prepend(item);
+  syncNotifications();
+}
+
+function syncNotifications() {
+  const count = $$(".notification", $("#notificationList")).length;
+  $("#notificationCount").textContent = count;
+  if (count) revealDynamicWidget($("#notificationWidget"));
+  else concealDynamicWidget($("#notificationWidget"));
+}
+
+function setFocusRunning(running) {
+  focusRunning = running;
   clearInterval(focusTimer);
   if (focusRunning) focusTimer = setInterval(() => {
     focusSeconds = Math.max(0, focusSeconds - 1);
@@ -818,10 +845,22 @@ $("#timerToggle").addEventListener("click", () => {
       focusRunning = false;
       clearInterval(focusTimer);
       showToast("Focus timer finished");
+      addNotification("Focus timer finished", "25 minute session completed", "blue", "i-timer");
+      concealDynamicWidget($("#timerWidget"));
     }
     updateTimer();
   }, 1000);
   updateTimer();
+}
+
+$("#launchTimer").addEventListener("click", () => {
+  if (!focusSeconds) focusSeconds = 25 * 60;
+  revealDynamicWidget($("#timerWidget"));
+  setFocusRunning(true);
+});
+
+$("#timerToggle").addEventListener("click", () => {
+  setFocusRunning(!focusRunning);
 });
 
 $("#timerReset").addEventListener("click", () => {
@@ -829,14 +868,23 @@ $("#timerReset").addEventListener("click", () => {
   focusRunning = false;
   focusSeconds = 25 * 60;
   updateTimer();
+  concealDynamicWidget($("#timerWidget"));
 });
 
-$$(".dismiss-button").forEach(button => button.addEventListener("click", () => {
-  button.closest(".notification").remove();
-  const count = $$(".notification").length;
-  $("#notificationCount").textContent = count;
-  if (!count) $("#notificationList").innerHTML = '<div class="notification-empty">You are all caught up.</div>';
-}));
+$("#launchNotification").addEventListener("click", () => {
+  addNotification("KDE Connect", "Pixel 8a shared a clipboard item", "green", "i-phone");
+});
+
+$("#notificationList").addEventListener("click", event => {
+  const button = event.target.closest(".dismiss-button");
+  if (!button) return;
+  const item = button.closest(".notification");
+  item.classList.add("is-leaving");
+  window.setTimeout(() => {
+    item.remove();
+    syncNotifications();
+  }, 140);
+});
 
 $("#terminalInput").addEventListener("keydown", event => {
   if (event.key !== "Enter") return;
