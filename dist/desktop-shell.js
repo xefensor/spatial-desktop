@@ -742,6 +742,11 @@ const dockState = {
 };
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 let dockPreview;
+const areaStateRank = { rail: 0, compact: 1, expanded: 2 };
+const layoutModes = ["auto", "focus", "expanded"];
+let layoutMode = "auto";
+let currentDisplayProfile = "desktop";
+let lastDesktopPointerX = window.innerWidth / 2;
 
 function areaFor(name) {
   return document.querySelector('[data-area-window="' + name + '"]');
@@ -781,6 +786,120 @@ function edgePriority(edge) {
   return priorities.length ? Math.min(...priorities) : Infinity;
 }
 
+function displayProfileFor(width, height) {
+  const ratio = width / Math.max(1, height);
+  if (ratio >= 2.75 && width >= 2200) return "dual";
+  if (ratio >= 2.05 || width >= 2100) return "ultrawide";
+  if (width <= 1180 || height <= 700) return "laptop";
+  return "desktop";
+}
+
+function initialAreaStates(profile) {
+  if (layoutMode === "focus") return { projects: "expanded", apps: "rail", systems: "rail" };
+  if (layoutMode === "expanded") return { projects: "expanded", apps: "expanded", systems: "expanded" };
+  if (profile === "laptop") return {
+    projects: "expanded",
+    apps: areaFor("projects")?.hidden ? "compact" : "rail",
+    systems: "rail"
+  };
+  if (profile === "desktop") return { projects: "expanded", apps: "compact", systems: "compact" };
+  return { projects: "expanded", apps: "expanded", systems: "expanded" };
+}
+
+function stateSideMinimum(name, state) {
+  const values = {
+    projects: { rail: 82, compact: 226, expanded: 270 },
+    apps: { rail: 82, compact: 188, expanded: 256 },
+    systems: { rail: 86, compact: 218, expanded: 280 }
+  };
+  return values[name][state];
+}
+
+function stateHorizontalMinimum(name, state) {
+  if (state === "rail") return 118;
+  if (name === "projects") return state === "expanded" ? 210 : 178;
+  return state === "expanded" ? 190 : 162;
+}
+
+function edgeStateMinimum(edge, states) {
+  const names = dockGroup(edge);
+  if (!names.length) return 0;
+  const vertical = edge === "left" || edge === "right";
+  return Math.max(...names.map(name => vertical ? stateSideMinimum(name, states[name]) : stateHorizontalMinimum(name, states[name])));
+}
+
+function preferredSideSize(edge, states, profile) {
+  const names = dockGroup(edge);
+  if (!names.length) return 0;
+  const minimum = edgeStateMinimum(edge, states);
+  if (names.every(name => states[name] === "rail")) return minimum;
+  const compactOnly = names.every(name => areaStateRank[states[name]] <= areaStateRank.compact);
+  const target = compactOnly ? Math.min(dockSizes[edge], 232) : dockSizes[edge];
+  return Math.min(420, Math.max(minimum, target));
+}
+
+function downgradeArea(states, name) {
+  if (states[name] === "expanded") states[name] = "compact";
+  else if (states[name] === "compact") states[name] = "rail";
+  else return false;
+  return true;
+}
+
+function minimumWorkspaceWidth(profile, width) {
+  if (profile === "dual") return Math.min(width * .56, 1780);
+  if (profile === "ultrawide") return Math.min(width * .56, 1340);
+  if (profile === "laptop") return Math.min(620, width * .57);
+  return Math.min(820, width * .54);
+}
+
+function resolvedAreaLayout(width, height) {
+  const profile = displayProfileFor(width, height);
+  const states = initialAreaStates(profile);
+  const gap = 12;
+  const minimumWorkspace = minimumWorkspaceWidth(profile, width);
+  const sideWidth = edge => preferredSideSize(edge, states, profile);
+  const occupiedSides = () => ["left", "right"].filter(edge => dockGroup(edge).length);
+  const required = () => occupiedSides().reduce((sum, edge) => sum + sideWidth(edge), 0) + (occupiedSides().length + 1) * gap + minimumWorkspace;
+
+  ["systems", "apps", "projects"].forEach(name => {
+    while (required() > width && downgradeArea(states, name)) {}
+  });
+
+  const sizes = { ...dockSizes };
+  sizes.left = sideWidth("left");
+  sizes.right = sideWidth("right");
+  sizes.top = Math.min(340, Math.max(edgeStateMinimum("top", states), dockSizes.top));
+  sizes.bottom = Math.min(340, Math.max(edgeStateMinimum("bottom", states), dockSizes.bottom));
+
+  let overflow = sizes.left + sizes.right + (occupiedSides().length + 1) * gap + minimumWorkspace - width;
+  ["right", "left"].sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
+    if (overflow <= 0 || !dockGroup(edge).length) return;
+    const minimum = edgeStateMinimum(edge, states);
+    const reduction = Math.min(overflow, Math.max(0, sizes[edge] - minimum));
+    sizes[edge] -= reduction;
+    overflow -= reduction;
+  });
+  return { profile, states, sizes, minimumWorkspace };
+}
+
+function layoutStateLabel(state) {
+  return state === "rail" ? "Rail" : state === "compact" ? "Compact" : "Expanded";
+}
+
+function syncLayoutModeUI(profile = currentDisplayProfile) {
+  const modeLabel = layoutMode[0].toUpperCase() + layoutMode.slice(1);
+  const profileLabel = profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
+  const control = $("#layoutModeToggle");
+  if (control) {
+    $("span", control).textContent = "Layout: " + modeLabel;
+    control.classList.toggle("is-active", layoutMode === "auto");
+    control.setAttribute("aria-pressed", String(layoutMode === "auto"));
+    control.title = "Area layout: " + modeLabel + " · " + profileLabel;
+  }
+  const status = $("#overviewLayoutStatus");
+  if (status) status.textContent = modeLabel + " · " + profileLabel;
+}
+
 function fitOpposingDockSizes(firstEdge, secondEdge, available, minimumWorkspace, minimumDock) {
   const occupied = [firstEdge, secondEdge].filter(edge => dockGroup(edge).length);
   if (!occupied.length) return;
@@ -816,21 +935,29 @@ function layoutDockAreas(save = false) {
   const width = shell.clientWidth;
   const height = shell.clientHeight;
   const gap = 12;
-  dockSizes.left = Math.min(420, Math.max(230, dockSizes.left));
-  dockSizes.right = Math.min(420, Math.max(230, dockSizes.right));
-  dockSizes.top = Math.min(340, Math.max(180, dockSizes.top));
-  dockSizes.bottom = Math.min(340, Math.max(180, dockSizes.bottom));
-  fitOpposingDockSizes("left", "right", width, Math.min(520, width * .44), 220);
-  fitOpposingDockSizes("top", "bottom", height, Math.min(360, height * .48), 170);
+  const resolved = resolvedAreaLayout(width, height);
+  const effectiveSizes = resolved.sizes;
+  currentDisplayProfile = resolved.profile;
+  document.body.dataset.displayProfile = resolved.profile;
+  document.body.dataset.layoutMode = layoutMode;
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (!area) return;
+    const state = resolved.states[name];
+    area.dataset.areaState = state;
+    const context = $(".area-window-identity small", area);
+    if (context) context.dataset.layoutState = layoutStateLabel(state);
+  });
+  syncLayoutModeUI(resolved.profile);
 
   const left = dockGroup("left");
   const right = dockGroup("right");
   const top = dockGroup("top");
   const bottom = dockGroup("bottom");
-  const leftWidth = left.length ? dockSizes.left : 0;
-  const rightWidth = right.length ? dockSizes.right : 0;
-  const topHeight = top.length ? dockSizes.top : 0;
-  const bottomHeight = bottom.length ? dockSizes.bottom : 0;
+  const leftWidth = left.length ? effectiveSizes.left : 0;
+  const rightWidth = right.length ? effectiveSizes.right : 0;
+  const topHeight = top.length ? effectiveSizes.top : 0;
+  const bottomHeight = bottom.length ? effectiveSizes.bottom : 0;
   const centerLeft = gap + (left.length ? leftWidth + gap : 0);
   const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
   const centerWidth = Math.max(220, centerRight - centerLeft);
@@ -1001,6 +1128,17 @@ function prepareAreaWindows() {
     setDockPosition(name, dockEdges[(current + 1) % dockEdges.length]);
   }));
   dockEdges.forEach(normalizeDockOrder);
+  try {
+    const savedMode = localStorage.getItem("spatial-layout-mode-v1");
+    if (layoutModes.includes(savedMode)) layoutMode = savedMode;
+  } catch {}
+  const layoutControl = $("#layoutModeToggle");
+  if (layoutControl) layoutControl.addEventListener("click", () => {
+    layoutMode = layoutModes[(layoutModes.indexOf(layoutMode) + 1) % layoutModes.length];
+    try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
+    layoutDockAreas(false);
+    showToast("Area layout: " + layoutMode[0].toUpperCase() + layoutMode.slice(1));
+  });
   layoutDockAreas(false);
 }
 
@@ -1453,6 +1591,8 @@ function setUniversalSearchOpen(open) {
   document.body.classList.toggle("universal-search-open", open);
 
   if (open) {
+    if (currentDisplayProfile === "dual") overlay.dataset.monitor = lastDesktopPointerX < window.innerWidth / 2 ? "left" : "right";
+    else delete overlay.dataset.monitor;
     universalLastFocus = document.activeElement;
     $("#universalSearchInput").value = "";
     $("#allAppsToggle").classList.add("is-active");
@@ -1869,3 +2009,7 @@ window.addEventListener("resize", () => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
 });
+
+window.addEventListener("pointermove", event => {
+  if (!event.pointerType || event.pointerType === "mouse") lastDesktopPointerX = event.clientX;
+}, { passive: true });

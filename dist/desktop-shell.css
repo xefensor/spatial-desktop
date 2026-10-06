@@ -2643,3 +2643,70 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
 @media(max-width:800px){
   .overview-project-grid{grid-template-columns:1fr}
 }
+
+/* v62 — adaptive Areas preserve the workspace before decorative density. */
+.area-window-identity small[data-layout-state]::after{content:" · " attr(data-layout-state);color:color-mix(in srgb,var(--blue) 74%,var(--muted))}
+.layout-mode-control{grid-column:1/-1}
+.layout-mode-control.is-active{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,var(--line))}
+.overview-layout-status{display:inline-flex;align-items:center;gap:6px;margin-top:5px;color:var(--muted);font-size:12px;font-weight:650}.overview-layout-status svg{width:14px;height:14px;color:var(--blue)}
+.universal-search-shell{width:min(100%,1760px);margin-inline:auto}
+
+/* Compact keeps the useful state but removes secondary chrome. */
+.apps-zone[data-area-state="compact"] .app-rack{grid-template-columns:repeat(3,minmax(0,1fr));height:auto;min-height:112px}
+.apps-zone[data-area-state="compact"] .app-key:nth-child(n+4){margin-top:3px}
+.apps-zone[data-area-state="compact"] .app-key span{display:none}
+.apps-zone[data-area-state="compact"] .mini-card{padding:6px}
+.apps-zone[data-area-state="compact"] .mini-card header small,.apps-zone[data-area-state="compact"] .mini-files span{display:none}
+.systems-zone[data-area-state="compact"] .calendar-grid,.systems-zone[data-area-state="compact"] .calendar-week{display:none}
+.systems-zone[data-area-state="compact"] .calendar-widget{display:block}
+.systems-zone[data-area-state="compact"] .notification:nth-child(n+2){display:none}
+.systems-zone[data-area-state="compact"] .system-launchers{grid-template-columns:1fr}
+.project-area[data-area-state="compact"] .project-context-module{display:none!important}
+
+/* Rail is an icon-and-live-status state, not a hidden panel. */
+.area-window[data-area-state="rail"]{min-width:76px;padding:6px;border-radius:13px}
+.area-window[data-area-state="rail"] .area-window-bar{min-height:39px;flex-basis:39px;margin:-6px -6px 5px;padding:4px;justify-content:center}
+.area-window[data-area-state="rail"] .area-window-identity>span:last-child{display:none}
+.area-window[data-area-state="rail"] .area-window-icon{width:28px;height:28px;flex-basis:28px;border-radius:7px}
+.area-window[data-area-state="rail"] .area-window-actions{display:flex;gap:0}
+.area-window[data-area-state="rail"] [data-area-auto],.area-window[data-area-state="rail"] .project-pack-key{display:none}
+.area-window[data-area-state="rail"] [data-area-hide]{width:27px;height:27px}
+.apps-zone[data-area-state="rail"] .app-rack{height:auto;min-height:0;flex:1;grid-template-columns:1fr;align-content:start;gap:4px;padding:2px;overflow-y:auto}
+.apps-zone[data-area-state="rail"] .app-key{height:49px;min-height:49px;border-color:transparent;background:transparent;box-shadow:none}
+.apps-zone[data-area-state="rail"] .app-key .app-art{width:31px;height:31px}
+.apps-zone[data-area-state="rail"] .app-key span,.apps-zone[data-area-state="rail"] .mini-section{display:none}
+.apps-zone[data-area-state="rail"] .apps-bottom{grid-template-columns:1fr;gap:4px;padding-top:5px}
+.apps-zone[data-area-state="rail"] .overview-launch,.apps-zone[data-area-state="rail"] .workspace-status{width:100%;height:38px;min-height:38px;padding:0;display:grid;place-items:center}
+.apps-zone[data-area-state="rail"] .workspace-status{grid-template-columns:1fr}
+.apps-zone[data-area-state="rail"] .workspace-status>i{width:19px;height:4px;box-shadow:0 0 6px color-mix(in srgb,var(--workspace-accent) 48%,transparent)}
+.apps-zone[data-area-state="rail"] .workspace-status>span,.apps-zone[data-area-state="rail"] .workspace-status>svg{display:none}
+.systems-zone[data-area-state="rail"]{gap:5px;overflow:hidden}
+.systems-zone[data-area-state="rail"] .time-block{min-height:37px;padding:3px 0 6px;justify-content:center;border-bottom-color:color-mix(in srgb,var(--text) 12%,transparent)}
+.systems-zone[data-area-state="rail"] .time-block>span{font-size:17px;font-weight:680;letter-spacing:-.03em}
+.systems-zone[data-area-state="rail"] .time-block>div{display:none}
+.systems-zone[data-area-state="rail"] .system-launchers{grid-template-columns:1fr;gap:4px}
+.systems-zone[data-area-state="rail"] .system-launcher{height:38px;padding:0;justify-content:center}
+.systems-zone[data-area-state="rail"] .system-launcher svg{width:18px;height:18px}
+.systems-zone[data-area-state="rail"] .system-launcher span{display:none}
+.systems-zone[data-area-state="rail"] .dynamic-widget-stack{gap:4px}
+.systems-zone[data-area-state="rail"] .dynamic-widget{padding:5px}
+.systems-zone[data-area-state="rail"] .widget-heading{height:31px;align-items:center;justify-content:center}
+.systems-zone[data-area-state="rail"] .widget-heading>div{gap:0}.systems-zone[data-area-state="rail"] .widget-heading h2{display:none}
+.systems-zone[data-area-state="rail"] .widget-heading>span{position:absolute;margin:0 0 20px 24px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;display:grid;place-items:center;color:#051018;background:var(--blue);font-size:10px}
+.systems-zone[data-area-state="rail"] #notificationList,.systems-zone[data-area-state="rail"] .timer-face,.systems-zone[data-area-state="rail"] .timer-actions,.systems-zone[data-area-state="rail"] .static-widget-stack{display:none}
+.systems-zone[data-area-state="rail"] .dynamic-widget[hidden]{display:none}
+.project-area[data-area-state="rail"] .project-switcher{grid-template-columns:1fr!important}.project-area[data-area-state="rail"] .project-choice span,.project-area[data-area-state="rail"] .project-space-content{display:none}
+
+body[data-display-profile="laptop"] .workspace-depth{opacity:.55}
+body[data-display-profile="ultrawide"] .workspace-zone,body[data-display-profile="dual"] .workspace-zone{padding:8px}
+body[data-display-profile="dual"] .universal-search[data-monitor="left"]{left:0;right:auto;width:50vw}
+body[data-display-profile="dual"] .universal-search[data-monitor="right"]{left:auto;right:0;width:50vw}
+body[data-display-profile="dual"] .universal-search[data-monitor]{padding-left:clamp(18px,3vw,48px);padding-right:clamp(18px,3vw,48px);box-shadow:0 0 0 100vmax rgba(2,8,14,.20),inset 0 1px rgba(255,255,255,.28),inset 0 -1px rgba(0,0,0,.42)}
+
+@media(max-width:1180px){
+  .app-frame{min-height:260px}
+  .app-frame[data-app-frame="elisa"]{grid-template-rows:48px 142px 58px minmax(0,1fr)}
+  .music-hero{grid-template-columns:104px minmax(0,1fr);padding:10px}.album-block{height:120px}.equalizer{display:none}
+  .dolphin-layout{grid-template-columns:112px minmax(0,1fr)}
+  .file-head,.content-row{grid-template-columns:minmax(150px,1fr) 72px 84px}
+}
