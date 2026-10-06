@@ -450,7 +450,7 @@ let tileInteraction = false;
 let tileLayoutFrame = 0;
 let tileDropPreview = null;
 let lastTileContext = "";
-let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, canvas: {} };
+let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, hidden: {}, canvas: {} };
 let applyingIntentAreas = false;
 
 function tileContextKey() {
@@ -985,10 +985,10 @@ function refreshIntentAreas() {
     });
     const areas = areaPriority.filter(name => !areaFor(name)?.hidden).map(name => ({ name, edge: dockState[name].edge, display: Math.min(roster.length, Number(assignments.areas[name]) || 1), size: dockSizes[dockState[name].edge] }));
     const next = window.SpatialIntent.plan({ areas, displays, windows, demands });
-    // Fullscreen covers Areas on this monitor but never removes them. An edge
-    // tab exposes any Area that could not be relocated, even after user edits.
+    // True fullscreen transfers Areas when they fit elsewhere. Any Area left
+    // on the covered display is temporarily hidden, without changing its saved state.
     demands.filter(demand => demand.fullscreen).forEach(demand => {
-      areas.filter(area => (next.moves[area.name] || area.display) === demand.display).forEach(area => { next.overlays[area.name] = true; });
+      areas.filter(area => (next.moves[area.name] || area.display) === demand.display).forEach(area => { next.hidden[area.name] = true; delete next.overlays[area.name]; });
     });
     const changed = JSON.stringify(next) !== JSON.stringify(intentAreaPlan);
     intentAreaPlan = next;
@@ -1009,7 +1009,7 @@ function renderIntentAreaEdges() {
     shelf.setAttribute("aria-label", "Areas available over this window");
     $(".desktop-shell").append(shelf);
   }
-  const names = areaPriority.filter(name => intentAreaPlan.overlays[name] && isLocalArea(name));
+  const names = areaPriority.filter(name => intentAreaPlan.overlays[name] && !intentAreaPlan.hidden?.[name] && isLocalArea(name));
   const signature = names.map(name => name + ":" + dockState[name].edge).join("|");
   if (shelf.dataset.signature !== signature) {
     shelf.dataset.signature = signature;
@@ -1024,6 +1024,9 @@ function renderIntentAreaEdges() {
   }
   areaPriority.forEach(name => {
     const area = areaFor(name);
+    const hiddenForFullscreen = Boolean(intentAreaPlan.hidden?.[name]);
+    area?.classList.toggle("is-intent-hidden", hiddenForFullscreen);
+    if (area) area.inert = hiddenForFullscreen;
     area?.classList.toggle("is-intent-overlay", names.includes(name));
     if (!names.includes(name)) area?.classList.remove("is-intent-revealed");
   });

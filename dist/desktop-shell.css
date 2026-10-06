@@ -7205,6 +7205,7 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 .app-frame.is-dragging{z-index:1400!important}
 .universal-search-footer .overview-guide-link{margin-left:auto;color:var(--text);font-size:.875rem;text-underline-offset:3px;white-space:nowrap}
 .universal-search-footer .overview-guide-link:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
+.area-window.is-intent-hidden{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 .area-window.is-intent-overlay{z-index:1000!important;opacity:0;pointer-events:none;transition:opacity 70ms linear}
 .area-window.is-intent-overlay.is-intent-revealed{opacity:1;pointer-events:auto}
 #intentAreaEdges{position:fixed;inset:0;z-index:1100;pointer-events:none}

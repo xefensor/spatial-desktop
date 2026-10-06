@@ -9,7 +9,7 @@
       : { width: Math.max(a.width, b.width), height: a.height + b.height + 8 };
   }
   function plan({ areas, displays, windows, demands, railSize = 70 }) {
-    const moves = {}, rails = {}, overlays = {}, canvas = {};
+    const moves = {}, rails = {}, overlays = {}, hidden = {}, canvas = {};
     const assigned = area => moves[area.name] || area.display;
     const laneSize = (group, edge) => {
       const lane = group.filter(area => area.edge === edge);
@@ -42,16 +42,17 @@
         if (target) group.forEach(area => { moves[area.name] = target.slot; });
         else group.forEach(area => {
           rails[area.name] = true;
-          if (demand.fullscreen || demand.overlayEdges?.includes(edge)) overlays[area.name] = true;
+          if (demand.fullscreen) hidden[area.name] = true;
+          else if (demand.overlayEdges?.includes(edge)) overlays[area.name] = true;
         });
       }
     }
     for (const display of displays) {
-      const group = areas.filter(area => assigned(area) === display.slot);
+      const group = areas.filter(area => assigned(area) === display.slot && !hidden[area.name]);
       const hasWindows = windows.some(item => item.display === display.slot);
       if (!hasWindows && group.length > 1 && group.some(area => moves[area.name])) canvas[display.slot] = group.map(area => area.name);
     }
-    return { moves, rails, overlays, canvas };
+    return { moves, rails, overlays, hidden, canvas };
   }
   const api = { minimumTree, plan };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
