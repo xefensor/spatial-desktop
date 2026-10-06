@@ -3609,7 +3609,11 @@ document.addEventListener("keydown", event => {
 
   const hotbarMatch = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
   const superHeld = event.metaKey || event.getModifierState?.("OS");
-  if (hotbarMatch && superHeld && !event.ctrlKey && !event.altKey) {
+  /* Browsers on Windows/KDE may never receive OS-reserved Super+number.
+     Alt+number mirrors it only inside this prototype so the behavior remains
+     testable; the desktop-shell binding remains Super+number. */
+  const demoHotbarHeld = event.altKey && !event.metaKey && !event.ctrlKey;
+  if (hotbarMatch && !event.repeat && (superHeld || demoHotbarHeld) && !event.ctrlKey) {
     event.preventDefault();
     event.stopPropagation();
     superKeyAlone = false;
