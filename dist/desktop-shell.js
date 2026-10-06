@@ -53,6 +53,17 @@ let focusRunning = false;
 let focusTimer;
 let noteDraft = "";
 let terminalPreview = "Ready for a command";
+let cursorBusyTimer;
+
+function pulseBusyCursor(duration = 700) {
+  clearTimeout(cursorBusyTimer);
+  document.body.classList.add("cursor-busy");
+  window.dispatchEvent(new CustomEvent("material-cursor-mode"));
+  cursorBusyTimer = setTimeout(() => {
+    document.body.classList.remove("cursor-busy");
+    window.dispatchEvent(new CustomEvent("material-cursor-mode"));
+  }, duration);
+}
 
 function icon(name) {
   return '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
@@ -770,6 +781,7 @@ $$("[data-open-app]").forEach(button => button.addEventListener("click", () => {
 }));
 
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
+  pulseBusyCursor();
   showToast(button.dataset.launchApp + " launched");
   setAllAppsOpen(false);
 }));
@@ -817,7 +829,7 @@ function prepareMaterialCursor() {
   const desktop = $(".desktop-shell");
   if (!cursor || !desktop || !window.matchMedia("(pointer:fine)").matches) return;
 
-  const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-diag-resize", "is-grab", "is-grabbing"];
+  const cursorModes = ["is-pointer", "is-text", "is-col-resize", "is-diag-resize", "is-grab", "is-grabbing", "is-move", "is-forbidden", "is-help", "is-progress", "is-copy"];
   let lastX = 0;
   let lastY = 0;
 
@@ -827,12 +839,28 @@ function prepareMaterialCursor() {
   };
   const syncMode = (target, buttons = 0) => {
     cursor.classList.remove(...cursorModes);
+    if (document.body.classList.contains("cursor-busy")) {
+      cursor.classList.add("is-progress");
+      return;
+    }
+    if ($(".drag-ghost")) {
+      cursor.classList.add("is-copy");
+      return;
+    }
+    if ($(".app-frame.is-dragging")) {
+      cursor.classList.add("is-move");
+      return;
+    }
     if (!target || !target.closest) return;
-    if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
+    const explicitMode = target.closest("[data-cursor]")?.dataset.cursor;
+    if (target.closest(":disabled,[aria-disabled='true']")) cursor.classList.add("is-forbidden");
+    else if (explicitMode === "help") cursor.classList.add("is-help");
+    else if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
     else if (target.closest(".resize-handle")) cursor.classList.add("is-diag-resize");
     else if (target.closest("textarea,[contenteditable='true'],input:not([type]),input[type='text'],input[type='search']")) cursor.classList.add("is-text");
+    else if (target.closest(".app-titlebar") && !target.closest("button,input,a")) cursor.classList.add("is-move");
+    else if (target.closest(".mini-card header") && !target.closest("button,input,a")) cursor.classList.add((buttons & 1) ? "is-grabbing" : "is-grab");
     else if (target.closest("button,a,label,input[type='range'],select")) cursor.classList.add("is-pointer");
-    else if (target.closest(".app-titlebar,.mini-card header")) cursor.classList.add((buttons & 1) ? "is-grabbing" : "is-grab");
   };
   const release = () => {
     syncButtons(0);
@@ -866,6 +894,7 @@ function prepareMaterialCursor() {
   window.addEventListener("pointerup", release);
   window.addEventListener("pointercancel", release);
   window.addEventListener("blur", release);
+  window.addEventListener("material-cursor-mode", () => syncMode(document.elementFromPoint(lastX, lastY), 0));
 }
 
 document.addEventListener("keydown", event => {

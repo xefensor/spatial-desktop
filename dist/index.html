@@ -7,7 +7,7 @@
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preload" as="image" href="wallpaper-river-v34.jpg">
-  <link rel="stylesheet" href="desktop-shell.css?v=47">
+  <link rel="stylesheet" href="desktop-shell.css?v=48">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -97,7 +97,7 @@
             <button class="launcher-category" data-category-filter="internet"><svg><use href="#i-web"/></svg><span>Internet</span></button>
             <button class="launcher-category" data-category-filter="office"><svg><use href="#i-office"/></svg><span>Office</span></button>
             <button class="launcher-category" data-category-filter="multimedia"><svg><use href="#i-video"/></svg><span>Multimedia</span></button>
-            <button class="launcher-category" data-category-filter="help"><svg><use href="#i-help"/></svg><span>Help</span></button>
+            <button class="launcher-category" data-category-filter="help" data-cursor="help"><svg><use href="#i-help"/></svg><span>Help</span></button>
             <button class="launcher-category" data-category-filter="utilities"><svg><use href="#i-tools"/></svg><span>Utilities</span></button>
             <button class="launcher-category" data-category-filter="system"><svg><use href="#i-settings"/></svg><span>System</span></button>
             <button class="launcher-category" data-category-filter="education"><svg><use href="#i-graduation"/></svg><span>Education</span></button>
@@ -137,7 +137,7 @@
               <button class="launcher-app" data-launch-app="Kate" data-category="development"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-code"/></svg></span><span>Kate</span></button>
               <button class="launcher-app" data-launch-app="KDevelop" data-category="development"><span class="launcher-icon app-tile tile-blue"><b>K</b></span><span>KDevelop</span></button>
               <button class="launcher-app" data-launch-app="Qt Creator" data-category="development"><span class="launcher-icon app-tile tile-green"><b>Qt</b></span><span>Qt Creator</span></button>
-              <button class="launcher-app" data-launch-app="Help Center" data-category="help"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-help"/></svg></span><span>Help Center</span></button>
+              <button class="launcher-app" data-launch-app="Help Center" data-category="help" data-cursor="help"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-help"/></svg></span><span>Help Center</span></button>
               <button class="launcher-app" data-launch-app="Legacy Tools" data-category="lost"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-lost"/></svg></span><span>Legacy Tools</span></button>
             </div>
             <p class="all-apps-empty" id="allAppsEmpty" hidden>No matching apps</p>
@@ -215,8 +215,28 @@
       <path class="cursor-glass" d="M5 17v-5a2 2 0 0 1 4 0v4-8a2 2 0 0 1 4 0v8-10a2 2 0 0 1 4 0v10-8a2 2 0 0 1 4 0v9-5a2 2 0 0 1 4 0v9c0 8-4 12-11 12h-1C7 33 5 28 5 23Z"/>
       <path class="cursor-edge" d="M5 17v-5a2 2 0 0 1 4 0v4-8a2 2 0 0 1 4 0v8-10a2 2 0 0 1 4 0v10-8a2 2 0 0 1 4 0v9-5a2 2 0 0 1 4 0v9c0 8-4 12-11 12h-1C7 33 5 28 5 23Z"/>
     </svg>
+    <svg class="cursor-glyph glyph-move" viewBox="0 0 28 36"><path class="cursor-line" d="M14 3v30M14 3l-4 4M14 3l4 4M14 33l-4-4M14 33l4-4M2 18h24M2 18l4-4M2 18l4 4M26 18l-4-4M26 18l-4 4"/></svg>
+    <svg class="cursor-glyph glyph-forbidden" viewBox="0 0 28 36"><circle class="cursor-glass" cx="14" cy="18" r="10"/><circle class="cursor-edge" cx="14" cy="18" r="10"/><path class="cursor-line" d="M7 11l14 14"/></svg>
+    <svg class="cursor-glyph glyph-help" viewBox="0 0 28 36">
+      <path class="cursor-outline" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-glass" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-edge" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <circle class="cursor-badge" cx="21" cy="27" r="5"/><path class="cursor-badge-mark" d="M19.6 25.5a1.6 1.6 0 1 1 2.2 1.5c-.6.3-.8.7-.8 1.1M21 30h.01"/>
+    </svg>
+    <svg class="cursor-glyph glyph-progress" viewBox="0 0 28 36">
+      <path class="cursor-outline" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-glass" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-edge" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <circle class="cursor-badge" cx="21" cy="27" r="5"/><circle class="cursor-badge-mark cursor-spinner" cx="21" cy="27" r="3"/>
+    </svg>
+    <svg class="cursor-glyph glyph-copy" viewBox="0 0 28 36">
+      <path class="cursor-outline" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-glass" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <path class="cursor-edge" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
+      <circle class="cursor-badge" cx="21" cy="27" r="5"/><path class="cursor-badge-mark" d="M18.5 27h5M21 24.5v5"/>
+    </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=47"></script>
+  <script src="desktop-shell.js?v=48"></script>
 </body>
 </html>
