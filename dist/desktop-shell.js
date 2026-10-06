@@ -58,6 +58,25 @@ function icon(name) {
   return '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
 }
 
+function appArt(name, extraClass = "") {
+  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + name + '"/></svg>';
+}
+
+function hydrateAppArtwork() {
+  $$('[data-app-frame]').forEach(frame => {
+    const name = frame.dataset.appFrame;
+    const badge = $('.app-titlebar .app-badge', frame);
+    if (badge && appInfo[name]) badge.innerHTML = appArt(name, "app-art-compact");
+  });
+
+  $$('.notification', $('#notificationList')).forEach(notification => {
+    const title = $('b', notification)?.textContent || "";
+    const name = title.includes("Elisa") ? "elisa" : title.includes("Download") ? "dolphin" : "";
+    const badge = $('.app-badge', notification);
+    if (badge && name) badge.innerHTML = appArt(name, "app-art-compact");
+  });
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
     "&": "&amp;",
@@ -241,7 +260,7 @@ function toggleMaximize(name) {
 
 function miniMarkup(name) {
   const info = appInfo[name];
-  const header = '<header title="Drag this card back into the workspace"><div><span class="app-badge ' + info.tone + '">' + icon(info.icon) + '</span><span><b>' + info.label + '</b><small>' + info.detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const header = '<header title="Drag this card back into the workspace"><div><span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + info.detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>running out of time</b><small>eenspire · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -948,6 +967,7 @@ $("#terminalInput").addEventListener("keydown", event => {
 prepareNoteSync();
 prepareZoneResizers();
 prepareWindows();
+hydrateAppArtwork();
 prepareControlSemantics();
 updateClock();
 setInterval(updateClock, 1000);

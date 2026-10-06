@@ -1593,7 +1593,29 @@ body[data-theme="light"]{
   transition-duration:var(--button-press-time);
 }
 
-/* Full-colour application artwork is reserved for the Apps shelf. */
+/* Full-colour application artwork consistently marks app identity. */
+.app-art{
+  color:initial;
+  fill:initial;
+  stroke:none;
+  overflow:visible;
+}
+.app-badge .app-art{
+  width:26px;
+  height:26px;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.28));
+}
+.notification .app-badge .app-art{
+  width:24px;
+  height:24px;
+}
+.mini-card header .app-badge .app-art{
+  width:22px;
+  height:22px;
+}
+body[data-theme="light"] .app-badge .app-art{
+  filter:drop-shadow(0 1px 1px rgba(34,46,52,.18));
+}
 .apps-zone .app-key .app-art{
   width:36px;
   height:36px;
