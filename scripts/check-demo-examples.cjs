@@ -86,7 +86,7 @@ function storageAdapter(seed) {
   const noteField = { value: D.note, addEventListener() {} };
   const context = vm.createContext({
     SpatialDemoExamples: D,
-    workspaceProfiles: { general: { home: '/home/demo' } },
+    workspaceProfiles: { general: { home: '/home/demo' }, school: { home: '/home/demo/Workspaces/School' }, work: { home: '/home/demo/Workspaces/Work' }, gaming: { home: '/home/demo/Workspaces/Gaming' } },
     appInfo: { browser: {}, dolphin: {}, notes: {}, terminal: {}, elisa: {} },
     activeWorkspace: 'general',
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
@@ -97,7 +97,7 @@ function storageAdapter(seed) {
   vm.runInContext(slice('function slugifyProject(', 'function resourceMarkup('), context);
   vm.runInContext(slice('function prepareNoteSync(', 'function pointInside('), context);
   vm.runInContext('loadProjectState(); prepareNoteSync();', context);
-  return { storage, noteField };
+  return { storage, noteField, context };
 }
 const sessions = { 'general:plasma:testing': { savedAt: 100, apps: ['notes'] } };
 const seeded = storageAdapter({
@@ -121,6 +121,97 @@ assert.deepEqual(JSON.parse(deleted.storage.get('spatial-project-spaces-v2')), {
 const legacyContent = storageAdapter({ 'spatial-project-content-v1': JSON.stringify({ plasma: { note: oldWebsite.note, resources: oldWebsite.resources } }) });
 assert.equal(JSON.parse(legacyContent.storage.get('spatial-project-spaces-v2')).plasma.note, D.projects.plasma.note);
 console.log('Desktop storage adapter passed: active project, window sessions, deleted projects, legacy content and empty notes preserved.');
+
+// Workspace project selection is independent; project definitions remain shared.
+const isolated = storageAdapter({
+  'spatial-workspace-project-states-v1': JSON.stringify({
+    general: { project: 'plasma', mode: 'visual' },
+    school: { project: null, mode: null },
+    work: { project: 'retold', mode: 'development' },
+    gaming: { project: 'plasma', mode: 'testing' }
+  })
+});
+const ctx = isolated.context;
+vm.runInContext('activeWorkspace = "gaming"; restoreWorkspaceProject(activeWorkspace);', ctx);
+assert.equal(vm.runInContext('activeProjectName', ctx), 'plasma');
+assert.equal(vm.runInContext('projectModeId(activeProjectName)', ctx), 'testing');
+vm.runInContext('activeWorkspace = "general"; restoreWorkspaceProject(activeWorkspace);', ctx);
+assert.equal(vm.runInContext('projectModeId(activeProjectName)', ctx), 'visual', 'Same shared Project retains a separate Mode per Workspace');
+vm.runInContext('activeProjectName = null; persistProjectState(); activeWorkspace = "work"; restoreWorkspaceProject(activeWorkspace);', ctx);
+assert.equal(vm.runInContext('activeProjectName', ctx), 'retold', 'Closing General does not close Work’s Project');
+vm.runInContext('activeWorkspace = "school"; restoreWorkspaceProject(activeWorkspace); persistProjectState();', ctx);
+assert.equal(vm.runInContext('activeProjectName', ctx), null, 'No Project leaks into an unused Workspace');
+const reloaded = storageAdapter(Object.fromEntries(isolated.storage));
+assert.equal(vm.runInContext('activeProjectName', reloaded.context), null, 'Explicitly closed Project stays closed on reload');
+assert.equal(JSON.parse(seeded.storage.get('spatial-workspace-project-states-v1')).school.project, null, 'Legacy global selection migrates only into its owning Workspace');
+assert.equal(vm.runInContext('normalizedWorkspaceProjects({}, "plasma", "gaming").general.project', ctx), null, 'Legacy migration must not also seed General when Gaming owns the old selection');
+vm.runInContext('delete projectSpaces.retold; const cleaned = normalizedWorkspaceProjects(workspaceProjectStates);', ctx);
+assert.equal(vm.runInContext('cleaned.work.project', ctx), null, 'Deleted Projects never reopen from a stale Workspace');
+
+// Exercise real Workspace switching, including restoration before Area/window layout.
+const ui = storageAdapter({});
+const elements = new Map();
+function element(id) {
+  if (!elements.has(id)) elements.set(id, { hidden: false, scrollTop: 0, innerHTML: '', textContent: '', value: '', style: { setProperty() {} }, classList: { remove() {}, toggle() {} }, setAttribute() {} });
+  return elements.get(id);
+}
+const widgets = [element('calendar'), element('phone')];
+const raf = [];
+const calls = [];
+Object.assign(ui.context, {
+  Date, focusRunning: false, focusSeconds: 1500, notificationAttentionTimer: null,
+  document: { body: { dataset: {}, style: { setProperty() {} } } },
+  $: selector => element(selector),
+  $$: selector => selector === '.static-widget-stack>.system-widget' ? widgets : [],
+  areaFor: name => element('area:' + name),
+  appState: { dolphin: 'open', elisa: 'open', browser: 'closed', terminal: 'closed', notes: 'closed' },
+  workspaceAppStates: {
+    general: { dolphin: 'open', elisa: 'open', browser: 'closed', terminal: 'closed', notes: 'closed' },
+    school: { dolphin: 'closed', elisa: 'closed', browser: 'open', terminal: 'closed', notes: 'closed' }
+  },
+  desktopSyncApplying: false, frontApp: null, layoutMode: 'manual',
+  requestAnimationFrame: fn => raf.push(fn), clearTimeout() {},
+  hideNotificationPeek() {}, syncNotifications() {}, setFocusRunning(running) { ui.context.focusRunning = running; },
+  persistWorkspaceAppStates() { ui.context.workspaceAppStates[ui.context.activeWorkspace] = { ...ui.context.appState }; },
+  loadLayout(name) { calls.push(['windows', name, vm.runInContext('activeProjectName', ui.context)]); },
+  applyAreaSession(name) { calls.push(['areas', name, vm.runInContext('activeProjectName', ui.context)]); },
+  saveAreaLayout() {}, saveLayout() {},
+  refreshWorkspaceContext() {}, workspaceFavoriteMarkup() {}, escapeHtml: x => x, icon: () => '', appArt: () => '',
+  applyAppPrimaryColors() {}, prepareControlSemantics() {}, syncApps() {},
+  renderOverviewProjects() {}, setProjectClosedState(closed) { element('project').hidden = closed; },
+  renderProjectSpace(name) { vm.runInContext('activeProjectName = ' + JSON.stringify(name) + '; rememberWorkspaceProject();', ui.context); element('project').hidden = false; },
+  restoreWorkspaceWindowLayout() { calls.push(['restore', ui.context.activeWorkspace]); }, bringToFront() {}, showToast() {}
+});
+for (const [name, profile] of Object.entries(ui.context.workspaceProfiles)) Object.assign(profile, { label: name, accent: '#56baff', icon: 'i-grid', favorites: [], folders: [], rack: [], agenda: ['', '', ''] });
+vm.runInContext(slice('function snapshotWorkspaceAreaContent(', 'function workspaceFavoriteMarkup('), ui.context);
+vm.runInContext(slice('function renderWorkspace(', 'function prepareWorkspaces('), ui.context);
+vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
+element('#notificationList').innerHTML = 'General notification';
+element('.system-scroll-region').scrollTop = 120;
+widgets[1].hidden = true;
+ui.context.focusRunning = true;
+ui.context.focusSeconds = 1400;
+element('#timerWidget').hidden = false;
+vm.runInContext('renderWorkspace("school", false);', ui.context);
+assert.equal(vm.runInContext('activeProjectName', ui.context), null);
+assert.equal(element('project').hidden, true);
+assert.equal(element('#notificationList').innerHTML, '', 'School gets its own notifications');
+assert.equal(element('.system-scroll-region').scrollTop, 0);
+assert.equal(widgets[1].hidden, false, 'General widget removal does not alter School');
+assert.equal(ui.context.focusRunning, false, 'General timer does not become School’s timer');
+assert.deepEqual(calls.slice(0, 2), [['windows', 'school', null], ['areas', 'school', null]], 'Project context changes before restoring Areas and tiling');
+element('#notificationList').innerHTML = 'School notification';
+element('.system-scroll-region').scrollTop = 24;
+vm.runInContext('renderWorkspace("general", false);', ui.context);
+assert.equal(vm.runInContext('activeProjectName', ui.context), 'plasma');
+assert.equal(element('#notificationList').innerHTML, 'General notification');
+assert.equal(element('.system-scroll-region').scrollTop, 120);
+assert.equal(widgets[1].hidden, true);
+assert.equal(ui.context.focusRunning, true);
+assert.ok(ui.context.focusSeconds <= 1400 && ui.context.focusSeconds >= 1399);
+raf.forEach(fn => fn());
+assert.deepEqual(calls.filter(call => call[0] === 'restore'), [['restore', 'general']], 'A delayed callback from the previous Workspace cannot relayout the current one');
+console.log('Workspace sessions passed: isolated Projects/Modes, legacy migration, reload, widget visibility, notifications, timer, scroll and switch ordering.');
 
 // A sample filename rename must never rewrite a stylesheet or script URL.
 const dist = path.join(__dirname, '../dist');

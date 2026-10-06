@@ -2893,6 +2893,8 @@ function bindDockResize(name, area) {
 }
 
 function prepareAreaWindows() {
+  // New Workspaces start from the neutral dock layout, never the last one's edits.
+  defaultAreaSession = JSON.parse(JSON.stringify(snapshotAreaLayout()));
   let saved = null;
   try {
     const sessions = JSON.parse(localStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
@@ -2970,13 +2972,40 @@ function prepareAreaWindows() {
   });
   layoutDockAreas(false);
   workspaceAreaSessions[activeWorkspace] = snapshotAreaLayout();
-  defaultAreaSession = JSON.parse(JSON.stringify(workspaceAreaSessions.general || workspaceAreaSessions[activeWorkspace]));
   persistAreaSessions();
 }
 
 const projectSpaces = JSON.parse(JSON.stringify(SpatialDemoExamples.projects));
 
 let activeProjectName = "plasma";
+// Projects are shared resources; which one is open (and its Mode) belongs to a Workspace.
+const workspaceProjectStates = Object.create(null);
+const workspaceAreaContents = Object.create(null);
+let defaultAreaContent = null;
+
+function normalizedWorkspaceProjects(saved = {}, legacyProject = undefined, workspaceName = activeWorkspace) {
+  const result = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, { project: name === "general" && projectSpaces.plasma ? "plasma" : null, mode: null }]));
+  Object.entries(saved || {}).forEach(([name, context]) => {
+    if (!result[name]) return;
+    const project = context?.project && projectSpaces[context.project];
+    result[name] = { project: project ? context.project : null, mode: project?.modes[context?.mode] ? context.mode : null };
+  });
+  if (legacyProject !== undefined && result[workspaceName]) {
+    Object.values(result).forEach(context => { context.project = null; context.mode = null; });
+    result[workspaceName] = { project: projectSpaces[legacyProject] ? legacyProject : null, mode: null };
+  }
+  return result;
+}
+
+function rememberWorkspaceProject() {
+  workspaceProjectStates[activeWorkspace] = { project: activeProjectName || null, mode: activeProjectName ? projectModeId(activeProjectName) : null };
+}
+
+function restoreWorkspaceProject(workspaceName) {
+  const context = workspaceProjectStates[workspaceName];
+  activeProjectName = context?.project && projectSpaces[context.project] ? context.project : null;
+  if (activeProjectName && projectSpaces[activeProjectName].modes[context.mode]) projectSpaces[activeProjectName].activeMode = context.mode;
+}
 let projectNoteSaveTimer;
 const projectWindowSessions = {};
 let projectEditorState = null;
@@ -3052,7 +3081,9 @@ function projectSessionKey(name, modeId = projectModeId(name)) {
 }
 
 function persistProjectState() {
+  rememberWorkspaceProject();
   try {
+    localStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(workspaceProjectStates));
     const content = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
       note: project.note,
       resources: project.resources,
@@ -3086,7 +3117,9 @@ function loadProjectState() {
     });
     Object.assign(projectWindowSessions, JSON.parse(localStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
     const savedActiveProject = localStorage.getItem("spatial-active-project-v1");
-    if (savedActiveProject !== null) activeProjectName = projectSpaces[savedActiveProject] ? savedActiveProject : null;
+    const savedContexts = localStorage.getItem("spatial-workspace-project-states-v1");
+    Object.assign(workspaceProjectStates, normalizedWorkspaceProjects(savedContexts ? JSON.parse(savedContexts) : {}, savedContexts ? undefined : savedActiveProject === null ? undefined : savedActiveProject));
+    restoreWorkspaceProject(activeWorkspace);
     persistProjectState();
   } catch {}
 }
@@ -3180,6 +3213,7 @@ function renderProjectSpace(name) {
   const area = areaFor("projects");
   if (!project || !area) return;
   activeProjectName = name;
+  rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
   $("#projectAreaName").textContent = project.name;
   renderProjectModes(name);
@@ -3197,6 +3231,8 @@ function renderProjectSpace(name) {
   refreshProjectSessionUi(name);
   renderOverviewProjects();
   applyAppPrimaryColors(area);
+  refreshWorkspaceContext();
+  persistProjectState();
 }
 
 function projectModeGeometry(layout, index, count) {
@@ -3477,6 +3513,9 @@ function deleteProject(projectName) {
   const label = project.name;
   clearProjectSessions(projectName);
   delete projectSpaces[projectName];
+  Object.values(workspaceProjectStates).forEach(context => {
+    if (context.project === projectName) { context.project = null; context.mode = null; }
+  });
   if (activeProjectName === projectName) {
     activeProjectName = null;
     setProjectClosedState(true);
@@ -3675,9 +3714,7 @@ function prepareProjectSpaces() {
   });
   prepareProjectEditor();
   renderOverviewProjects();
-  const initialProject = activeProjectName && projectSpaces[activeProjectName]
-    ? activeProjectName
-    : Object.keys(projectSpaces)[0] || null;
+  const initialProject = activeProjectName && projectSpaces[activeProjectName] ? activeProjectName : null;
   if (initialProject) renderProjectSpace(initialProject);
   else {
     activeProjectName = null;
@@ -3737,8 +3774,45 @@ function persistWorkspaceAppStates() {
   try { localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(workspaceAppStates)); } catch {}
 }
 
+function snapshotWorkspaceAreaContent() {
+  return {
+    notificationsHtml: $("#notificationList").innerHTML,
+    focus: { running: focusRunning, seconds: focusSeconds, visible: !$("#timerWidget").hidden, savedAt: Date.now() },
+    hiddenWidgets: $$(".static-widget-stack>.system-widget", areaFor("systems")).map(widget => Boolean(widget.hidden)),
+    scroll: { apps: $("#miniStack").scrollTop, systems: $(".system-scroll-region").scrollTop, projects: $("#projectSpaceContent").scrollTop }
+  };
+}
+
+function restoreWorkspaceAreaContent(workspaceName) {
+  const saved = workspaceAreaContents[workspaceName] || {
+    ...defaultAreaContent, notificationsHtml: workspaceName === "general" ? defaultAreaContent.notificationsHtml : ""
+  };
+  hideNotificationPeek();
+  clearTimeout(notificationAttentionTimer);
+  $("#notificationList").innerHTML = saved.notificationsHtml || "";
+  $$(".notification", $("#notificationList")).forEach(item => item.classList.remove("is-leaving", "is-new-attention"));
+  areaFor("systems").classList.remove("has-notification-attention");
+  $("#notificationWidget").classList.remove("has-new-attention");
+  $$(".static-widget-stack>.system-widget", areaFor("systems")).forEach((widget, index) => { widget.hidden = Boolean(saved.hiddenWidgets?.[index]); });
+  const timer = saved.focus || defaultAreaContent.focus;
+  const elapsed = timer.running ? Math.max(0, Math.floor((Date.now() - timer.savedAt) / 1000)) : 0;
+  focusSeconds = Math.max(0, timer.seconds - elapsed);
+  $("#timerWidget").hidden = !timer.visible || !focusSeconds;
+  $("#timerWidget").classList.toggle("is-visible", !$("#timerWidget").hidden);
+  setFocusRunning(Boolean(timer.running && focusSeconds));
+  syncNotifications();
+  const scroll = saved.scroll || {};
+  $("#miniStack").scrollTop = scroll.apps || 0;
+  $(".system-scroll-region").scrollTop = scroll.systems || 0;
+  $("#projectSpaceContent").scrollTop = scroll.projects || 0;
+}
+
 function captureCurrentWorkspaceSession() {
   if (!workspaceProfiles[activeWorkspace]) return;
+  rememberWorkspaceProject();
+  persistProjectState();
+  workspaceAreaContents[activeWorkspace] = snapshotWorkspaceAreaContent();
+  try { localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents)); } catch {}
   persistWorkspaceAppStates();
   saveLayout();
   saveAreaLayout();
@@ -3800,8 +3874,9 @@ function prepareOverviewViews() {
 function renderWorkspace(name, announce = true) {
   const profile = workspaceProfiles[name];
   if (!profile) return;
-  if (name !== activeWorkspace) captureCurrentWorkspaceSession();
+  if (name !== activeWorkspace && !desktopSyncApplying) captureCurrentWorkspaceSession();
   activeWorkspace = name;
+  restoreWorkspaceProject(name);
   Object.assign(appState, workspaceAppStates[name]);
   loadLayout(name);
   applyAreaSession(name);
@@ -3842,8 +3917,10 @@ function renderWorkspace(name, announce = true) {
   }).join("");
   applyAppPrimaryColors($("#appRack"));
   prepareControlSemantics($("#appRack"));
+  if (activeProjectName) renderProjectSpace(activeProjectName);
+  else { setProjectClosedState(true); renderOverviewProjects(); }
   syncApps();
-  if (activeProjectName) refreshProjectSessionUi(activeProjectName);
+  restoreWorkspaceAreaContent(name);
   const status = $("#workspaceStatus");
   $("b", status).textContent = profile.label;
   $("small", status).textContent = profile.subtitle;
@@ -3851,7 +3928,9 @@ function renderWorkspace(name, announce = true) {
   status.title = profile.label + " workspace";
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
   persistWorkspaceAppStates();
+  persistProjectState();
   requestAnimationFrame(() => {
+    if (activeWorkspace !== name) return;
     restoreWorkspaceWindowLayout();
     if (frontApp) bringToFront(frontApp);
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
@@ -3861,6 +3940,8 @@ function renderWorkspace(name, announce = true) {
 
 function prepareWorkspaces() {
   if (!workspaceProfiles[activeWorkspace]) activeWorkspace = "general";
+  defaultAreaContent = snapshotWorkspaceAreaContent();
+  try { Object.assign(workspaceAreaContents, JSON.parse(localStorage.getItem("spatial-workspace-area-contents-v1") || "{}")); } catch {}
   try {
     const savedStates = JSON.parse(localStorage.getItem("spatial-workspace-app-states-v1") || "{}");
     Object.entries(savedStates).forEach(([name, states]) => {
@@ -5422,9 +5503,14 @@ function captureDesktopSyncState() {
   windowLayouts[activeWorkspace] = Object.fromEntries(windowGeometry);
 
   const projects = cloneDesktopState(projectSpaces);
+  rememberWorkspaceProject();
+  const areaContents = cloneDesktopState(workspaceAreaContents);
+  areaContents[activeWorkspace] = snapshotWorkspaceAreaContent();
 
   return {
-    schema: 3,
+    schema: 4,
+    workspaceProjects: cloneDesktopState(workspaceProjectStates),
+    areaContents,
     theme: document.body.dataset.theme,
     activeWorkspace,
     workspaceStates,
@@ -5460,6 +5546,8 @@ function persistIncomingDesktopState(state) {
     localStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
     localStorage.setItem("spatial-project-spaces-v2", JSON.stringify(state.projects || {}));
     localStorage.setItem("spatial-active-project-v1", state.activeProjectName || "");
+    localStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(state.workspaceProjects || normalizedWorkspaceProjects({}, state.activeProjectName || null, state.activeWorkspace)));
+    localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(state.areaContents || {}));
     localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
     localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
     localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
@@ -5469,7 +5557,7 @@ function persistIncomingDesktopState(state) {
 }
 
 function applyDesktopSyncState(state) {
-  if (!state || ![1, 2, 3].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
+  if (!state || ![1, 2, 3, 4].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {
     if (state.tileSessions) tileSessions = cloneDesktopState(state.tileSessions);
@@ -5507,15 +5595,12 @@ function applyDesktopSyncState(state) {
     document.body.dataset.theme = state.theme || document.body.dataset.theme;
     persistIncomingDesktopState({ ...state, projects: projectSpaces, noteDraft });
 
+    Object.keys(workspaceProjectStates).forEach(name => delete workspaceProjectStates[name]);
+    Object.assign(workspaceProjectStates, normalizedWorkspaceProjects(state.workspaceProjects || {}, state.workspaceProjects ? undefined : state.activeProjectName || null, state.activeWorkspace));
+    Object.keys(workspaceAreaContents).forEach(name => delete workspaceAreaContents[name]);
+    Object.assign(workspaceAreaContents, cloneDesktopState(state.areaContents || {}));
     activeWorkspace = state.activeWorkspace;
     renderWorkspace(activeWorkspace, false);
-
-    activeProjectName = state.activeProjectName && projectSpaces[state.activeProjectName]
-      ? state.activeProjectName
-      : null;
-    renderOverviewProjects();
-    if (activeProjectName) renderProjectSpace(activeProjectName);
-    else setProjectClosedState(true);
 
     const notesField = $(".notes-layout textarea");
     if (notesField) notesField.value = noteDraft;
