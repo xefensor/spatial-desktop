@@ -7198,6 +7198,20 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 /* Bounded fractal splits: window surfaces remain ABS; only the transient
    placement cue uses the desktop's acrylic material. No viewport scaling. */
 .app-frame.is-tiled{min-width:0;min-height:0}
+.app-frame.is-floating{position:fixed!important;margin:0!important;z-index:600!important;transition:none}
+.app-frame.is-floating.is-front{z-index:700!important}
+.app-frame.is-fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;min-width:0;min-height:0;margin:0!important;border-radius:0!important;z-index:800!important;transition:none;filter:none}
+.app-frame.is-fullscreen .resize-handle{display:none}
+.app-frame.is-dragging{z-index:1400!important}
+.area-window.is-intent-overlay{z-index:1000!important;opacity:0;pointer-events:none;transition:opacity 70ms linear}
+.area-window.is-intent-overlay.is-intent-revealed{opacity:1;pointer-events:auto}
+#intentAreaEdges{position:fixed;inset:0;z-index:1100;pointer-events:none}
+.intent-area-tab{position:absolute;pointer-events:auto;padding:7px 10px;border:1px solid var(--sd-glass-edge);border-radius:0;color:var(--text);background:var(--sd-glass-face);backdrop-filter:blur(20px);font-family:inherit;font-size:12px;font-weight:600;line-height:1.2;box-shadow:inset 0 1px rgba(255,255,255,.18);cursor:pointer}
+.intent-area-tab[data-edge="left"]{left:0;top:calc(38% + var(--tab-index)*46px)}
+.intent-area-tab[data-edge="right"]{right:0;top:calc(38% + var(--tab-index)*46px)}
+.intent-area-tab[data-edge="top"]{top:0;left:calc(35% + var(--tab-index)*110px)}
+.intent-area-tab[data-edge="bottom"]{bottom:0;left:calc(35% + var(--tab-index)*110px)}
+.intent-area-tab[aria-expanded="true"]{border-color:var(--blue);box-shadow:inset 0 1px rgba(255,255,255,.18),inset 0 -2px var(--blue)}
 .app-frame.is-tiled.is-auto-tiling{transition:left 100ms ease-out,top 100ms ease-out,width 100ms ease-out,height 100ms ease-out}
 .app-frame.tile-will-park{visibility:hidden;pointer-events:none}
 .tile-divider{position:absolute;z-index:190;touch-action:none;outline:none}

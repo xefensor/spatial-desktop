@@ -75,7 +75,7 @@ const frames = Object.fromEntries(Object.keys(minimums).map(name => {
 }));
 const store = new Map();
 const sandbox = {
-  window: { SpatialTiling: T }, localStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
+  window: { SpatialTiling: T, innerWidth: 1616, innerHeight: 1016 }, localStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   activeWorkspace: "general", activeProjectName: "project", projectModeId: () => "modeling", localDisplaySlot: () => 1,
   appState: Object.fromEntries(Object.keys(frames).map(name => [name, "closed"])),
   appInfo: Object.fromEntries(Object.keys(frames).map(name => [name, { label: name }])), appMaximizedState: {},
@@ -125,7 +125,7 @@ console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app
 // Window activity must never steal dock space or move Areas to another display.
 const areaFrames = Object.fromEntries(["projects", "apps", "systems"].map(name => [name, {
   hidden: false, dataset: {}, style: { removeProperty() {} },
-  classList: { add() {}, remove() {} },
+  classList: { add() {}, remove() {}, toggle() {} },
   handle: { listeners: new Map(), setPointerCapture() {},
     addEventListener(type, fn) { this.listeners.set(type, fn); },
     removeEventListener(type) { this.listeners.delete(type); }
@@ -135,6 +135,7 @@ const shell = { clientWidth: 1600, clientHeight: 900,
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
   tileEngine: T, activeWorkspace: "general", window: { innerWidth: 1600 },
+  intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
   localStorage: sandbox.localStorage, isLocalArea: () => true,
@@ -203,3 +204,70 @@ const html = fs.readFileSync(require("node:path").join(__dirname, "../dist/index
 assert(!html.includes("data-area-auto"), "Move dock buttons are removed");
 assert(!/data-(?:area-hide|overview-area-visibility)="(?:apps|systems)"/.test(html), "No Apps/System hide buttons remain");
 console.log("Persistent Areas: hidden-state migration, blocked hide actions, context-menu policy and removed controls passed.");
+
+// Mixed tile/float/fullscreen state is preserved through normal re-layouts.
+sandbox.projectModeId = () => "modeling";
+vm.runInContext(slice("function syncMaximizeButton(", "function hotbarSlotFor("), sandbox);
+vm.runInContext('openApp("notes"); floatWindow("notes", {left: 480, top: 90, width: 440, height: 350});', sandbox);
+assert.equal(frames.notes.classList.contains("is-floating"), true, "Manual placement detaches a window from the tile tree");
+assert.equal(vm.runInContext('tileEngine.contains(tileSession().root, "notes")', sandbox), false);
+const floatRect = vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox);
+vm.runInContext('renderTileLayout("dolphin")', sandbox);
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), floatRect, "Automatic layout never retakes a manually placed window");
+const splitBeforeFull = vm.runInContext('JSON.stringify(tileSession().root)', sandbox);
+vm.runInContext('toggleAppFullscreen("notes")', sandbox);
+assert.equal(frames.notes.classList.contains("is-fullscreen"), true, "True fullscreen is separate from bounded maximize");
+assert.equal(frames.notes.style.width, "1616px");
+assert.equal(vm.runInContext('JSON.stringify(tileSession().root)', sandbox), splitBeforeFull, "Fullscreen does not overwrite the prior split tree");
+vm.runInContext('toggleAppFullscreen("notes")', sandbox);
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), floatRect, "Leaving fullscreen restores the prior floating rectangle");
+vm.runInContext('toggleMaximize("notes"); toggleMaximize("notes")', sandbox);
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)', sandbox), floatRect, "Bounded maximize also restores prior manual placement");
+vm.runInContext('splitWindowIntoTile("notes")', sandbox);
+assert.equal(vm.runInContext('Boolean(tileSession().floating.notes)', sandbox), false, "Left docking explicitly returns a window to tiling");
+assert.equal(frames.notes.classList.contains("is-tiled"), true);
+vm.runInContext('toggleMaximize("dolphin"); toggleAppFullscreen("dolphin"); toggleAppFullscreen("dolphin")', sandbox);
+assert.equal(vm.runInContext('tileSession().focus.name', sandbox), "dolphin", "Fullscreen returns to bounded maximize when that was the prior state");
+vm.runInContext('toggleMaximize("dolphin")', sandbox);
+
+// Exercise the actual held-middle pointer lifecycle (not just its helpers).
+Object.assign(sandbox, { AREA_BOUNDARY_RESISTANCE: 120, AREA_BOUNDARY_INSET: 2,
+  dockEdges: ["left", "right", "top", "bottom"], dockSizes: {left: 310, right: 300, top: 250, bottom: 250},
+  baseDockLaneRects: new Map(), areaBoundaryStage: () => "expanded", setAreaBoundaryFeedback() {},
+  resistAreaBoundaries: position => ({...position, resisted: false}), displayTransferTarget: () => 0 });
+frames.notes.getBoundingClientRect = () => ({left: parseFloat(frames.notes.style.left), top: parseFloat(frames.notes.style.top), width: parseFloat(frames.notes.style.width), height: parseFloat(frames.notes.style.height)});
+vm.runInContext(slice("function beginManualWindowInteraction(", "function bindWindowDrag("), sandbox);
+const dragHandle = {listeners: new Map(), setPointerCapture() {}, addEventListener(type, fn) {this.listeners.set(type, fn);}, removeEventListener(type) {this.listeners.delete(type);} };
+sandbox.dragHandle = dragHandle;
+vm.runInContext('beginManualWindowInteraction({button:1,clientX:550,clientY:110,pointerId:3,preventDefault(){},stopPropagation(){}}, frameFor("notes"), dragHandle)', sandbox);
+dragHandle.listeners.get("pointermove")({clientX:620, clientY:165});
+dragHandle.listeners.get("pointerup")({type:"pointerup", clientX:620, clientY:165});
+assert.equal(frames.notes.classList.contains("is-floating"), true, "Releasing middle drag keeps manual placement");
+vm.runInContext('tileSession().floating.notes = {left:330,top:300,width:440,height:350,yieldEdges:["left"]}; updateFloatingYield("notes", {passed:new Set(),preferredSizes:dockSizes})', sandbox);
+assert.equal(vm.runInContext('tileSession().floating.notes.yieldEdges.includes("left")', sandbox), true, "Area return has a larger hysteresis boundary");
+vm.runInContext('tileSession().floating.notes.left = 400; updateFloatingYield("notes", {passed:new Set(),preferredSizes:dockSizes})', sandbox);
+assert.equal(vm.runInContext('tileSession().floating.notes.yieldEdges.includes("left")', sandbox), false, "Moving the manual window clear releases borrowed space");
+console.log("Intent interactions: middle pointer lifecycle, float persistence, both maximize modes, exact restoration, explicit retiling and Area-return hysteresis passed.");
+
+// Check the desktop's real planner adapter, not just the pure docking policy.
+const intentAssignments = {apps:Object.fromEntries(Object.keys(frames).map(name => [name,1])),areas:{projects:1,apps:1,systems:1}};
+Object.assign(sandbox, {
+  areaPriority:["projects","apps","systems"], dockState:{projects:{edge:"left"},apps:{edge:"right"},systems:{edge:"right"}},
+  areaFor:name => areaFrames[name], displayAssignmentsFor:() => intentAssignments,
+  activeDisplayRoster:() => [{width:1616,height:1016},{width:1616,height:1016}], extendedDesktopActive:() => true,
+  layoutDockAreas() {}, persistDisplayAssignments() {}
+});
+sandbox.window.SpatialIntent = require("../dist/spatial-intent.js");
+vm.runInContext('renderIntentAreaEdges = () => {};', sandbox);
+vm.runInContext(slice("function isLocalArea(", "function persistDisplayAssignments("), sandbox);
+areaFrames.projects.hidden = false;
+vm.runInContext('toggleAppFullscreen("dolphin")', sandbox);
+assert.equal(vm.runInContext('intentAreaPlan.moves.systems', sandbox), 2, "Fullscreen adapter relocates the System Area to the free monitor");
+assert.equal(intentAssignments.areas.systems, 1, "Underlying preferred monitor assignment stays untouched");
+vm.runInContext('toggleAppFullscreen("dolphin")', sandbox);
+assert.equal(vm.runInContext('Object.keys(intentAreaPlan.moves).length', sandbox), 0, "Fullscreen exit releases temporary display moves");
+vm.runInContext('tileSession().floating.notes.yieldEdges = ["left"]; refreshIntentAreas()', sandbox);
+assert.equal(vm.runInContext('intentAreaPlan.moves.projects', sandbox), 2, "A manual window's lease reaches the actual Area planner");
+vm.runInContext('manualAreaOverride("projects"); refreshIntentAreas()', sandbox);
+assert.equal(vm.runInContext('intentAreaPlan.moves.projects', sandbox), undefined, "An explicit Area edit releases its temporary automatic move");
+console.log("Desktop Area adapter: actual fullscreen and manual leases, temporary monitor allocation, return and manual override passed.");

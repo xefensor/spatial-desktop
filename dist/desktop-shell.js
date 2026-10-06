@@ -448,6 +448,8 @@ let tileInteraction = false;
 let tileLayoutFrame = 0;
 let tileDropPreview = null;
 let lastTileContext = "";
+let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, canvas: {} };
+let applyingIntentAreas = false;
 
 function tileContextKey() {
   return [activeWorkspace, activeProjectName || "desktop", activeProjectName ? projectModeId(activeProjectName) : "default", localDisplaySlot()].join(":");
@@ -458,6 +460,7 @@ function tileSession() {
   tileSessions[key] ||= { root: null, parked: {}, focus: null };
   const session = tileSessions[key];
   session.parked ||= {};
+  session.floating ||= {};
   return session;
 }
 
@@ -474,7 +477,7 @@ function tilePriority(name) { return Number(frameFor(name)?.style.zIndex || 0); 
 
 function reconcileTileTree(preferredName = frontApp) {
   const session = tileSession();
-  const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name));
+  const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name]);
   session.root = tileEngine.normalize(session.root, open);
   open.forEach(name => {
     if (tileEngine.contains(session.root, name)) return;
@@ -511,6 +514,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
   tileRendering = true;
   try {
     const session = reconcileTileTree(preferredName);
+    renderFloatingWindows(session);
     $$(".tile-will-park").forEach(frame => frame.classList.remove("tile-will-park"));
     $(".tile-pressure-hint")?.remove();
     const key = tileContextKey();
@@ -523,7 +527,9 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
     parkTileWindows(fitted.parked, "Made room for " + (appInfo[preferredName]?.label || "a window"), announce);
     fitted.windows.forEach((rect, name) => {
       const frame = frameFor(name);
-      if (!frame || frame.classList.contains("is-dragging")) return;
+      if (!frame || frame.classList.contains("is-dragging") || session.fullscreen?.name === name) return;
+      const workspaceElement = $(".workspace-zone");
+      if (workspaceElement && frame.parentElement !== workspaceElement) workspaceElement.append(frame);
       autoTiledWindows.add(name);
       frame.classList.add("is-tiled");
       const focused = session.focus?.name === name;
@@ -540,6 +546,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
       windowGeometry.set(name, geometry);
     });
     renderTileDividers(fitted.splits);
+    if (session.fullscreen && appState[session.fullscreen.name] === "open") renderFullscreenWindow(session.fullscreen.name);
     saveLayout();
     saveTileSessions();
   } finally { tileRendering = false; }
@@ -576,11 +583,15 @@ function scheduleWindowTiling(name = frontApp) {
 
 function splitWindowIntoTile(name, point = null, preferredTarget = frontApp) {
   const session = tileSession();
+  delete session.floating[name];
+  frameFor(name)?.classList.remove("is-floating");
+  if (session.fullscreen?.name === name) session.fullscreen = null;
   const target = tileDropTarget(name, point);
   session.focus = null;
   session.root = tileEngine.insert(session.root, name, target?.name || preferredTarget, target?.side, tileBounds(), minimumUsableWindowSize);
   delete session.parked[name];
   tileOpenWindows(name);
+  refreshIntentAreas();
 }
 
 function tileDropTarget(name, point) {
@@ -783,6 +794,10 @@ function focusTileWindow(name) {
     delete frameFor(name).dataset.maximized;
     frameFor(name).classList.remove("is-maximized");
     appMaximizedState[name] = false;
+    if (focus.returnFloating) {
+      session.floating[name] = focus.returnFloating;
+      session.root = tileEngine.remove(session.root, name);
+    }
     syncApps();
     renderTileLayout(name, true, true);
   } else {
@@ -797,7 +812,204 @@ function focusTileWindow(name) {
   }
   syncMaximizeButton(frameFor(name));
   saveTileSessions();
+  refreshIntentAreas();
   queueDesktopStateBroadcast();
+}
+
+function intentContextPrefix() {
+  return [activeWorkspace, activeProjectName || "desktop", activeProjectName ? projectModeId(activeProjectName) : "default"].join(":") + ":";
+}
+
+function screenWindowRect(frame) {
+  const rect = frame.getBoundingClientRect();
+  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+}
+
+function applyFloatingGeometry(name, rect) {
+  const frame = frameFor(name);
+  const minimum = minimumUsableWindowSize(name);
+  const width = Math.max(Math.min(minimum.width, window.innerWidth - 16), Math.min(rect.width, window.innerWidth - 16));
+  const height = Math.max(Math.min(minimum.height, window.innerHeight - 16), Math.min(rect.height, window.innerHeight - 16));
+  const next = { ...rect, left: Math.max(0, Math.min(rect.left, window.innerWidth - width)), top: Math.max(0, Math.min(rect.top, window.innerHeight - height)), width, height };
+  const shell = $(".desktop-shell");
+  if (shell && frame.parentElement !== shell) shell.append(frame);
+  frame.classList.add("is-floating");
+  frame.classList.remove("is-tiled");
+  Object.entries({ left: next.left, top: next.top, width, height }).forEach(([key, value]) => { frame.style[key] = value + "px"; });
+  return next;
+}
+
+function renderFloatingWindows(session) {
+  $$('[data-app-frame]').forEach(frame => {
+    const name = frame.dataset.appFrame;
+    if (frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
+    frame.classList.toggle("is-fullscreen", session.fullscreen?.name === name && appState[name] === "open");
+    if (!session.floating[name] || appState[name] !== "open" || !isLocalApp(name)) {
+      frame.classList.remove("is-floating");
+      return;
+    }
+    if (session.fullscreen?.name === name) return;
+    delete frame.dataset.maximized;
+    appMaximizedState[name] = false;
+    frame.classList.remove("is-maximized");
+    autoTiledWindows.delete(name);
+    session.floating[name] = applyFloatingGeometry(name, session.floating[name]);
+    syncMaximizeButton(frame);
+  });
+}
+
+function floatWindow(name, rect = null) {
+  const frame = frameFor(name);
+  rect ||= screenWindowRect(frame);
+  const session = tileSession();
+  if (session.fullscreen?.name === name) toggleAppFullscreen(name);
+  if (session.focus?.name === name) focusTileWindow(name);
+  session.root = tileEngine.remove(session.root, name);
+  session.floating[name] = { ...rect, yieldEdges: session.floating[name]?.yieldEdges || [] };
+  delete frame.dataset.maximized;
+  frame.classList.remove("is-maximized", "is-fullscreen");
+  appMaximizedState[name] = false;
+  autoTiledWindows.delete(name);
+  applyFloatingGeometry(name, session.floating[name]);
+  renderTileLayout(name);
+  saveTileSessions();
+}
+
+function renderFullscreenWindow(name) {
+  const frame = frameFor(name);
+  const shell = $(".desktop-shell");
+  if (shell && frame.parentElement !== shell) shell.append(frame);
+  frame.classList.add("is-fullscreen", "is-maximized");
+  frame.classList.remove("is-floating", "is-tiled");
+  frame.dataset.maximized = "true";
+  appMaximizedState[name] = true;
+  Object.assign(frame.style, { left: "0px", top: "0px", width: window.innerWidth + "px", height: window.innerHeight + "px" });
+  syncMaximizeButton(frame);
+}
+
+function toggleAppFullscreen(name) {
+  if (appState[name] !== "open" || !isLocalApp(name)) return;
+  const session = tileSession();
+  if (session.fullscreen?.name === name) {
+    session.fullscreen = null;
+    const frame = frameFor(name);
+    frame.classList.remove("is-fullscreen", "is-maximized");
+    delete frame.dataset.maximized;
+    appMaximizedState[name] = false;
+  } else {
+    // Keep the split tree, floating rectangle and bounded focus untouched.
+    session.fullscreen = { name };
+    bringToFront(name);
+  }
+  saveTileSessions();
+  refreshIntentAreas();
+  renderTileLayout(name);
+  queueDesktopStateBroadcast(0);
+}
+
+function updateFloatingYield(name, gate = null) {
+  const floating = tileSession().floating[name];
+  if (!floating) return;
+  const edgeClearance = edge => edge === "left" ? floating.left : edge === "right" ? window.innerWidth - floating.left - floating.width : edge === "top" ? floating.top : window.innerHeight - floating.top - floating.height;
+  const previous = new Set(floating.yieldEdges || []);
+  floating.yieldEdges = dockEdges.filter(edge => {
+    const size = gate?.preferredSizes?.[edge] ?? dockSizes[edge];
+    const clearance = edgeClearance(edge);
+    if (previous.has(edge)) return clearance < size + 64;
+    return clearance < size - 2 && (!gate || gate.passed.has(edge));
+  });
+  floating.overlayEdges = floating.yieldEdges.filter(edge => edgeClearance(edge) < 68);
+  refreshIntentAreas();
+}
+
+function manualAreaOverride(name) {
+  if (intentAreaPlan.moves[name] && intentAreaPlan.moves[name] === localDisplaySlot()) {
+    displayAssignmentsFor().areas[name] = localDisplaySlot();
+    persistDisplayAssignments();
+  }
+  const prefix = intentContextPrefix();
+  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
+    Object.values(session.floating || {}).forEach(rect => { rect.excludeAreas = [...new Set([...(rect.excludeAreas || []), name])]; });
+    if (session.fullscreen) session.fullscreen.excludeAreas = [...new Set([...(session.fullscreen.excludeAreas || []), name])];
+  });
+  saveTileSessions();
+}
+
+function refreshIntentAreas() {
+  if (applyingIntentAreas || !window.SpatialIntent) return;
+  applyingIntentAreas = true;
+  try {
+    const prefix = intentContextPrefix();
+    const assignments = displayAssignmentsFor();
+    const sessions = Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix));
+    const windows = [], demands = [];
+    sessions.forEach(([key, session]) => {
+      const display = Number(key.slice(prefix.length));
+      const openHere = name => appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
+      tileEngine.names(session.root).filter(openHere).forEach(name => windows.push({ name, display }));
+      Object.entries(session.floating || {}).filter(([name]) => openHere(name)).forEach(([name, rect]) => {
+        windows.push({ name, display, floating: true, rect });
+        if (rect.yieldEdges?.length) demands.push({ display, edges: rect.yieldEdges, overlayEdges: rect.overlayEdges, exclude: rect.excludeAreas });
+      });
+      if (session.fullscreen && openHere(session.fullscreen.name)) demands.push({ display, fullscreen: true, edges: [...dockEdges], exclude: session.fullscreen.excludeAreas });
+    });
+    Object.keys(appState).filter(name => appState[name] === "open" && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
+    const roster = activeDisplayRoster();
+    const displays = roster.map((display, index) => {
+      const session = tileSessions[prefix + (index + 1)];
+      const openNames = Object.keys(appState).filter(name => appState[name] === "open" && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
+      const openTree = tileEngine.normalize(session?.root, openNames);
+      const minimum = window.SpatialIntent.minimumTree(openTree, minimumUsableWindowSize);
+      if (!openTree && openNames.length) {
+        minimum.width = Math.max(...openNames.map(name => minimumUsableWindowSize(name).width));
+        minimum.height = openNames.reduce((sum, name) => sum + minimumUsableWindowSize(name).height, 0) + (openNames.length - 1) * 8;
+      }
+      return { slot: index + 1, width: display.width || window.innerWidth, height: display.height || window.innerHeight, minimum };
+    });
+    const areas = areaPriority.filter(name => !areaFor(name)?.hidden).map(name => ({ name, edge: dockState[name].edge, display: Math.min(roster.length, Number(assignments.areas[name]) || 1), size: dockSizes[dockState[name].edge] }));
+    const next = window.SpatialIntent.plan({ areas, displays, windows, demands });
+    // Fullscreen covers Areas on this monitor but never removes them. An edge
+    // tab exposes any Area that could not be relocated, even after user edits.
+    demands.filter(demand => demand.fullscreen).forEach(demand => {
+      areas.filter(area => (next.moves[area.name] || area.display) === demand.display).forEach(area => { next.overlays[area.name] = true; });
+    });
+    const changed = JSON.stringify(next) !== JSON.stringify(intentAreaPlan);
+    intentAreaPlan = next;
+    if (changed) {
+      areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", !isLocalArea(name)));
+      layoutDockAreas(false, false);
+      scheduleWindowTiling();
+    }
+    renderIntentAreaEdges();
+  } finally { applyingIntentAreas = false; }
+}
+
+function renderIntentAreaEdges() {
+  let shelf = $("#intentAreaEdges");
+  if (!shelf) {
+    shelf = document.createElement("nav");
+    shelf.id = "intentAreaEdges";
+    shelf.setAttribute("aria-label", "Areas available over this window");
+    $(".desktop-shell").append(shelf);
+  }
+  const names = areaPriority.filter(name => intentAreaPlan.overlays[name] && isLocalArea(name));
+  const signature = names.map(name => name + ":" + dockState[name].edge).join("|");
+  if (shelf.dataset.signature !== signature) {
+    shelf.dataset.signature = signature;
+    shelf.innerHTML = names.map((name, index) => '<button class="intent-area-tab" data-intent-area="' + name + '" data-edge="' + dockState[name].edge + '" style="--tab-index:' + index + '" aria-expanded="false">' + escapeHtml(areaLabel(name)) + '</button>').join("");
+    $$('[data-intent-area]', shelf).forEach(button => button.addEventListener("click", () => {
+      const area = areaFor(button.dataset.intentArea);
+      const show = !area.classList.contains("is-intent-revealed");
+      area.classList.toggle("is-intent-revealed", show);
+      button.setAttribute("aria-expanded", String(show));
+      layoutDockAreas(false, false);
+    }));
+  }
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    area?.classList.toggle("is-intent-overlay", names.includes(name));
+    if (!names.includes(name)) area?.classList.remove("is-intent-revealed");
+  });
 }
 
 function restoreWorkspaceWindowLayout() {
@@ -815,6 +1027,7 @@ function restoreWorkspaceWindowLayout() {
     applyGeometry(name, geometry, false);
   });
   saveLayout();
+  refreshIntentAreas();
   scheduleWindowTiling();
 }
 
@@ -873,10 +1086,13 @@ function openApp(name, dropPoint = null) {
   appState[name] = "open";
   frameFor(name).hidden = false;
   syncApps();
-  if (previousState !== "open" || dropPoint) {
+  if (tileSession().floating[name] && !dropPoint) {
+    renderTileLayout(name);
+  } else if (previousState !== "open" || dropPoint) {
     splitWindowIntoTile(name, dropPoint, splitTarget);
   } else renderTileLayout(name);
   bringToFront(name);
+  refreshIntentAreas();
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
@@ -894,6 +1110,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   syncMaximizeButton(frame);
   appState[name] = "minimized";
+  if (tileSession().fullscreen?.name === name) tileSession().fullscreen = null;
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
   if (tileSession().focus?.name === name) tileSession().focus = null;
@@ -902,6 +1119,7 @@ function minimizeApp(name, preserveGeometry = false) {
   saveTileSessions();
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
+  refreshIntentAreas();
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
@@ -914,6 +1132,8 @@ function closeApp(name) {
   frame?.classList.remove("is-maximized");
   if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
+  delete tileSession().floating[name];
+  if (tileSession().fullscreen?.name === name) tileSession().fullscreen = null;
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
   if (tileSession().focus?.name === name) tileSession().focus = null;
@@ -923,6 +1143,7 @@ function closeApp(name) {
   if (frame) syncMaximizeButton(frame);
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
+  refreshIntentAreas();
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
@@ -932,12 +1153,30 @@ function closeApp(name) {
 
 function syncMaximizeButton(frame) {
   const button = $('[data-window-action="maximize"]', frame);
-  if (button) button.setAttribute("aria-pressed", String(frame.dataset.maximized === "true"));
+  if (button) {
+    button.setAttribute("aria-pressed", String(frame.dataset.maximized === "true"));
+    button.title = "Left click: maximize between Areas · middle click: full screen · repeat to restore";
+    button.setAttribute("aria-label", "Maximize between Areas; middle click for full screen");
+  }
 }
 
 function toggleMaximize(name) {
   const frame = frameFor(name);
   if (!frame || !isLocalApp(name)) return;
+  const session = tileSession();
+  if (session.fullscreen?.name === name) {
+    toggleAppFullscreen(name);
+    if (session.focus?.name === name) return;
+  }
+  if (session.floating[name]) {
+    const returnFloating = { ...session.floating[name] };
+    splitWindowIntoTile(name);
+    focusTileWindow(name);
+    tileSession().focus.returnFloating = returnFloating;
+    saveTileSessions();
+    refreshIntentAreas();
+    return;
+  }
   if (frame.classList.contains("is-tiled") || tileEngine.contains(tileSession().root, name)) {
     focusTileWindow(name);
     return;
@@ -1215,7 +1454,7 @@ function setAreaBoundaryFeedback(hit, rect) {
 }
 
 function resistAreaBoundaries(position, size, gate, bypass = false) {
-  if (layoutMode !== "auto" || bypass) {
+  if ((!areasFollowWindows() && !gate.manual) || bypass) {
     setAreaBoundaryFeedback(null);
     return { ...position, resisted: false };
   }
@@ -1279,12 +1518,90 @@ function resistAreaBoundaries(position, size, gate, bypass = false) {
   return next;
 }
 
+function beginManualWindowInteraction(event, frame, handle, resizing = false) {
+  event.preventDefault();
+  event.stopPropagation();
+  const name = frame.dataset.appFrame;
+  if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
+  const start = screenWindowRect(frame);
+  const startX = event.clientX, startY = event.clientY;
+  const priorFloating = tileSession().floating[name] ? { ...tileSession().floating[name] } : null;
+  const gate = { manual: true, threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set(priorFloating?.yieldEdges || []), stages: new Map(), baselines: new Map(), preferredSizes: { ...dockSizes } };
+  dockEdges.forEach(edge => { gate.stages.set(edge, areaBoundaryStage(edge)); gate.baselines.set(edge, 0); });
+  let moved = false;
+  tileInteraction = true;
+  bringToFront(name);
+  handle.setPointerCapture(event.pointerId);
+  const move = pointer => {
+    if (!moved) {
+      if (Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 6) return;
+      moved = true;
+      floatWindow(name, start);
+      frame.classList.add(resizing ? "is-resizing" : "is-dragging");
+    }
+    const candidate = resizing
+      ? { ...start, width: start.width + pointer.clientX - startX, height: start.height + pointer.clientY - startY }
+      : { ...start, left: start.left + pointer.clientX - startX, top: start.top + pointer.clientY - startY };
+    if (!resizing) {
+      const resisted = resistAreaBoundaries(candidate, candidate, gate);
+      candidate.left = resisted.left;
+      candidate.top = resisted.top;
+    } else {
+      const raw = { ...candidate, right: candidate.left + candidate.width, bottom: candidate.top + candidate.height };
+      dockEdges.forEach(edge => {
+        const lane = baseDockLaneRects.get(edge);
+        if (!lane || gate.passed.has(edge)) return;
+        const pressure = areaBoundaryPenetration(edge, raw, lane);
+        if (pressure >= gate.threshold) gate.passed.add(edge);
+        else if (pressure > 0) {
+          if (edge === "right") candidate.width = lane.left - start.left - AREA_BOUNDARY_INSET;
+          if (edge === "bottom") candidate.height = lane.top - start.top - AREA_BOUNDARY_INSET;
+        }
+      });
+    }
+    const metadata = tileSession().floating[name];
+    const geometry = applyFloatingGeometry(name, candidate);
+    tileSession().floating[name] = { ...metadata, ...geometry };
+    delete tileSession().floating[name].excludeAreas;
+    updateFloatingYield(name, gate);
+    saveTileSessions();
+    queueDesktopStateBroadcast(80);
+  };
+  const finish = pointer => {
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", finish);
+    handle.removeEventListener("pointercancel", finish);
+    frame.classList.remove("is-dragging", "is-resizing");
+    setAreaBoundaryFeedback(null);
+    tileInteraction = false;
+    if (moved && pointer.type === "pointercancel") {
+      if (priorFloating) tileSession().floating[name] = priorFloating;
+      else { delete tileSession().floating[name]; splitWindowIntoTile(name); }
+    } else if (moved) {
+      const target = displayTransferTarget(pointer.clientX);
+      if (target) transferAppToDisplay(name, target, pointer.clientX < window.innerWidth / 2 ? "left" : "right", screenWindowRect(frame));
+    }
+    saveTileSessions();
+    refreshIntentAreas();
+    renderTileLayout(name);
+    queueDesktopStateBroadcast(0);
+  };
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", finish);
+}
+
 function bindWindowDrag(frame) {
   const titlebar = $(".app-titlebar", frame);
   titlebar.addEventListener("pointerdown", event => {
+    if ((event.button === 1 || (event.button === 0 && event.altKey)) && !event.target.closest("button,input,a")) {
+      beginManualWindowInteraction(event, frame, titlebar);
+      return;
+    }
     if (event.button !== 0 || event.target.closest("button,input,a")) return;
     event.preventDefault();
     const name = frame.dataset.appFrame;
+    if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
     autoTiledWindows.delete(name);
     bringToFront(name);
     tileInteraction = true;
@@ -1388,6 +1705,10 @@ function bindResize(frame) {
   frame.append(handle);
 
   handle.addEventListener("pointerdown", event => {
+    if (event.button === 1 || (event.button === 0 && event.altKey) || (event.button === 0 && frame.classList.contains("is-floating"))) {
+      beginManualWindowInteraction(event, frame, handle, true);
+      return;
+    }
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
@@ -1744,6 +2065,7 @@ function applyAreaSession(workspaceName) {
   autoAvoidanceSource = null;
   layoutDockAreas(false, false);
   applyAutoAvoidance();
+  refreshIntentAreas();
 }
 
 function captureVisibleWindowViewportRects() {
@@ -1824,6 +2146,7 @@ function initialAreaStates(profile) {
     areaPriority.forEach(name => {
       const edge = dockState[name].edge;
       states[name] = areaStateForSize(edge, dockSizes[edge]);
+      if (intentAreaPlan.rails[name]) states[name] = "rail";
     });
     return states;
   }
@@ -1951,7 +2274,8 @@ function syncAreaControls(states) {
 }
 
 function syncLayoutModeUI(profile = currentDisplayProfile) {
-  const modeLabel = tileEngine ? "Fixed" : layoutMode[0].toUpperCase() + layoutMode.slice(1);
+  const borrowed = Object.keys(intentAreaPlan.moves).length || Object.keys(intentAreaPlan.rails).length;
+  const modeLabel = tileEngine ? (borrowed ? "Adapted" : "Fixed") : layoutMode[0].toUpperCase() + layoutMode.slice(1);
   const profileLabel = extendedDesktopActive()
     ? "Extended · " + localDisplayRoleLabel()
     : profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
@@ -1961,7 +2285,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
     control.classList.toggle("is-active", areasFollowWindows());
     if (control.matches("button")) control.setAttribute("aria-pressed", String(areasFollowWindows()));
     control.title = tileEngine
-      ? "Areas stay fixed · drag an Area border to resize, or its header to move · " + profileLabel
+      ? "Left drag keeps Areas fixed · middle drag and full screen may borrow Area space · " + profileLabel
       : layoutMode === "auto"
       ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
@@ -2205,6 +2529,8 @@ function freezeCurrentAreaLayout() {
 }
 
 function secondaryAreaCanvasNames() {
+  const intentional = intentAreaPlan.canvas[localDisplaySlot()];
+  if (intentional?.length) return intentional.filter(name => isLocalArea(name) && !areaFor(name)?.hidden);
   if (!areasFollowWindows() || !extendedDesktopActive() || localDisplaySlot() === 1) return [];
   const hasLocalWindow = Object.keys(appState).some(name => appState[name] === "open" && isLocalApp(name));
   if (hasLocalWindow) return [];
@@ -2331,6 +2657,22 @@ function layoutDockAreas(save = false, fitWindows = true) {
     bottom: bottom.length ? bottomHeight + gap * 2 : gap,
     top: top.length ? topHeight + gap * 2 : gap
   };
+  // A revealed edge panel expands over the current scene, without taking
+  // more tile space. Its preferred dock size remains unchanged.
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (!intentAreaPlan.overlays[name] || !isLocalArea(name) || !area?.classList.contains("is-intent-revealed")) return;
+    const edge = dockState[name].edge;
+    const vertical = edge === "left" || edge === "right";
+    const thickness = Math.max(vertical ? stateSideMinimum(name, "expanded") : stateHorizontalMinimum(name, "expanded"), dockSizes[edge]);
+    area.dataset.areaState = "expanded";
+    applyDockRect(name, {
+      x: edge === "right" ? width - thickness : parseFloat(area.style.left) || 0,
+      y: edge === "bottom" ? height - thickness : parseFloat(area.style.top) || 0,
+      width: vertical ? thickness : parseFloat(area.style.width) || centerWidth,
+      height: vertical ? parseFloat(area.style.height) || height : thickness
+    });
+  });
   captureBaseDockLaneRects();
   applyAutoAvoidance();
   document.body.classList.add("areas-docked");
@@ -2360,6 +2702,7 @@ function showArea(name, announce = true) {
 
 function setDockPosition(name, edge, insertion = null, announce = true) {
   if (!dockEdges.includes(edge)) return;
+  manualAreaOverride(name);
   const previousEdge = dockState[name].edge;
   dockState[name].edge = edge;
   normalizeDockOrder(previousEdge);
@@ -2369,6 +2712,7 @@ function setDockPosition(name, edge, insertion = null, announce = true) {
   peers.forEach((item, order) => { dockState[item].order = order; });
   autoSpatialEdgeStates.clear();
   layoutDockAreas(true);
+  refreshIntentAreas();
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
   if (announce) showToast(areaLabel(name) + " docked " + edge);
 }
@@ -2445,6 +2789,7 @@ function bindDockResize(name, area) {
     event.stopPropagation();
     const shellRect = $(".desktop-shell").getBoundingClientRect();
     const resizeEdge = dockState[name].edge;
+    manualAreaOverride(name);
     dockSizeManual[resizeEdge] = !areasFollowWindows();
     handle.setPointerCapture(event.pointerId);
     area.classList.add("is-area-resizing");
@@ -2466,6 +2811,7 @@ function bindDockResize(name, area) {
       handle.removeEventListener("pointercancel", finish);
       area.classList.remove("is-area-resizing");
       saveAreaLayout();
+      refreshIntentAreas();
       if (areasFollowWindows()) {
         if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
         scheduleSpatialAutoLayout();
@@ -3643,7 +3989,10 @@ function prepareWindows() {
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
       if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
     });
-    $(".app-titlebar", frame).title = "Drag beside another window to split · double-click to focus · Alt+wheel for more or less space";
+    $(".app-titlebar", frame).title = "Left drag: tile · middle drag or Alt+drag: float and borrow Area space · double-click: maximize between Areas";
+    frame.addEventListener("auxclick", event => {
+      if (event.button === 1 && event.target.closest(".app-titlebar,.resize-handle")) event.preventDefault();
+    });
     $(".app-titlebar", frame).addEventListener("wheel", event => {
       if (!event.altKey || event.ctrlKey || !event.deltaY) return;
       event.preventDefault();
@@ -3658,6 +4007,17 @@ function prepareWindows() {
     if (button.dataset.windowAction === "maximize") toggleMaximize(name);
     if (button.dataset.windowAction === "close") closeApp(name);
   }));
+  $$('[data-window-action="maximize"]').forEach(button => button.addEventListener("pointerdown", event => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    event.stopPropagation();
+    toggleAppFullscreen(button.closest("[data-app-frame]").dataset.appFrame);
+  }));
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape" || !tileSession().fullscreen || $("#universalSearch").classList.contains("is-open")) return;
+    event.preventDefault();
+    toggleAppFullscreen(tileSession().fullscreen.name);
+  });
   const observer = new ResizeObserver(() => { if (windowViewportLockReady) scheduleWindowTiling(); });
   observer.observe($(".workspace-zone"));
 }
@@ -4462,7 +4822,9 @@ function contextMenuEntries(context) {
     return [
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
-      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore split layout" : "Focus · park other windows", shortcut: "Alt+Enter" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / maximize between Areas" : "Maximize between Areas", shortcut: "Alt+Enter" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave full screen" : "Full screen · borrow Area space", shortcut: "Middle click" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-grow", icon: "i-max", label: "Give more space", shortcut: "Alt+wheel up" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-shrink", icon: "i-min", label: "Give less space", shortcut: "Alt+wheel down" } : null,
       extendedDesktopActive() ? { action: "app-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
@@ -4573,6 +4935,11 @@ function executeContextAction(action) {
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
   if (action === "app-maximize") toggleMaximize(context.name);
+  if (action === "app-fullscreen") toggleAppFullscreen(context.name);
+  if (action === "app-float") {
+    if (tileSession().floating[context.name]) splitWindowIntoTile(context.name);
+    else floatWindow(context.name);
+  }
   if (action === "app-grow") growTileWindow(context.name, 1);
   if (action === "app-shrink") growTileWindow(context.name, -1);
   if (action === "app-move-display") transferAppToDisplay(context.name, otherDisplaySlot(), "right", frameFor(context.name)?.getBoundingClientRect());
@@ -4768,7 +5135,7 @@ function isLocalApp(name) {
 }
 
 function isLocalArea(name) {
-  return !extendedDesktopActive() || Number(displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
+  return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
 }
 
 function persistDisplayAssignments() {
@@ -4790,7 +5157,7 @@ function applyExtendedDesktopPartition() {
   if (count > 1) {
     const workspace = workspaceBounds();
     $$('[data-app-frame]').forEach(frame => {
-      if (frame.hidden || frame.dataset.maximized !== "true") return;
+      if (frame.hidden || frame.dataset.maximized !== "true" || frame.classList.contains("is-fullscreen")) return;
       applyGeometry(frame.dataset.appFrame, {
         x: 8,
         y: 8,
@@ -4880,6 +5247,17 @@ function displayTransferTarget(clientX) {
 
 function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = null) {
   if (!appInfo[name] || !extendedDesktopActive()) return;
+  const sourceSession = tileSession();
+  if (sourceSession.floating[name]) {
+    const display = activeDisplayRoster()[targetSlot - 1];
+    const rect = sourceSession.floating[name];
+    const key = intentContextPrefix() + targetSlot;
+    tileSessions[key] ||= { root: null, parked: {}, focus: null, floating: {} };
+    tileSessions[key].floating ||= {};
+    tileSessions[key].floating[name] = { ...rect, left: edge === "left" ? Math.max(8, (display?.width || window.innerWidth) - rect.width - 24) : 24, top: 24, yieldEdges: [], overlayEdges: [] };
+    delete sourceSession.floating[name];
+    saveTileSessions();
+  }
   const assignments = displayAssignmentsFor();
   assignments.apps[name] = targetSlot;
   const workspace = workspaceBounds();
@@ -4895,6 +5273,7 @@ function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = nul
   persistDisplayAssignments();
   saveLayout();
   if (layoutMode === "auto") rebalanceAreaDisplays();
+  refreshIntentAreas();
   applyExtendedDesktopPartition();
   queueDesktopStateBroadcast(0);
   showToast(appInfo[name].label + " moved to Display " + targetSlot);
@@ -4902,10 +5281,12 @@ function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = nul
 
 function transferAreaToDisplay(name, targetSlot, edge = "right") {
   if (!areaPriority.includes(name) || !extendedDesktopActive()) return;
+  manualAreaOverride(name);
   displayAssignmentsFor().areas[name] = targetSlot;
   dockState[name].edge = edge === "left" ? "right" : "left";
   persistDisplayAssignments();
   saveAreaLayout();
+  refreshIntentAreas();
   applyExtendedDesktopPartition();
   queueDesktopStateBroadcast(0);
   showToast(areaLabel(name) + " moved to Display " + targetSlot);
@@ -5057,6 +5438,7 @@ function applyDesktopSyncState(state) {
 
     requestAnimationFrame(() => {
       const areasChanged = layoutMode === "auto" && rebalanceAreaDisplays();
+      refreshIntentAreas();
       applyExtendedDesktopPartition();
       renderTileLayout(state.frontApp || frontApp);
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
@@ -5106,6 +5488,7 @@ function queueDesktopStateBroadcast(delay = 55) {
 }
 
 function updateDesktopSyncPresence() {
+  refreshIntentAreas();
   const now = Date.now();
   desktopSyncPeers.forEach((peer, source) => {
     if (now - peer.seenAt > 6500) desktopSyncPeers.delete(source);
@@ -5213,6 +5596,8 @@ window.addEventListener("resize", () => {
     if (appState[name] === "open") applyGeometry(name, geometry, false);
   });
   suspendWindowViewportLock = false;
+  refreshIntentAreas();
+  renderTileLayout(frontApp);
   if (layoutMode === "auto") {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
