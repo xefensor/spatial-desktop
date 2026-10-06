@@ -2904,7 +2904,8 @@ body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
   box-shadow:0 0 5px color-mix(in srgb,var(--state-tone,var(--acrylic-charge)) 58%,transparent);
 }
 
-/* App icons remain artwork, but sit on shallow borderless ABS mouse-button pads. */
+/* App icons remain artwork; this is their shared key geometry. The final
+   surface material is assigned by the substrate-aware pass below. */
 .apps-zone .app-key.control-toggle{
   border:0;
   border-radius:9px;
@@ -2960,7 +2961,8 @@ body[data-theme="light"] .start-page,
 body[data-theme="light"] .notes-layout textarea,
 body[data-theme="light"] .recessed-field{box-shadow:inset 0 2px 5px rgba(42,53,58,.20),0 1px rgba(255,255,255,.78)}
 
-/* Overview uses the same acrylic sheet and ABS controls instead of a third material. */
+/* Overview uses the same acrylic sheet. Controls inherit either that acrylic
+   or the solid content island directly below them. */
 .universal-search{
   background:color-mix(in srgb,var(--acrylic-field) 88%,rgba(4,13,22,.36));
   -webkit-backdrop-filter:blur(28px) saturate(1.08);
@@ -4328,4 +4330,147 @@ body[data-theme="light"] .project-quick-note,body[data-theme="light"] .project-r
   .overview-project-grid,.overview-widgets{grid-template-columns:1fr}
   .universal-result-grid{grid-template-columns:1fr}
   .universal-search-footer span:nth-child(n+2){display:none}
+}
+
+/* v83 — Controls inherit the material directly below them.
+   Acrylic surfaces use edge-lit glass keys; solid islands and app casings use ABS. */
+:root{
+  --glass-key-edge:rgba(206,239,255,.24);
+  --glass-key-top:rgba(244,252,255,.135);
+  --glass-key-mid:rgba(170,211,231,.045);
+  --glass-key-bottom:rgba(2,10,15,.13);
+  --glass-key-contact:rgba(0,0,0,.24);
+}
+body[data-theme="light"]{
+  --glass-key-edge:rgba(41,77,96,.27);
+  --glass-key-top:rgba(255,255,255,.48);
+  --glass-key-mid:rgba(238,250,255,.19);
+  --glass-key-bottom:rgba(70,102,119,.10);
+  --glass-key-contact:rgba(29,54,68,.20);
+}
+
+:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle){
+  --glass-key-tone:var(--state-tone,var(--area-header-accent,var(--workspace-accent,var(--blue))));
+  border:1px solid color-mix(in srgb,var(--glass-key-tone) 14%,var(--glass-key-edge));
+  color:var(--text);
+  background:
+    linear-gradient(180deg,var(--glass-key-top),var(--glass-key-mid) 46%,rgba(255,255,255,.018) 47%,var(--glass-key-bottom)),
+    color-mix(in srgb,var(--glass-field) 37%,transparent);
+  box-shadow:
+    0 2px 3px var(--glass-key-contact),
+    inset 0 1px rgba(239,251,255,.22),
+    inset 1px 0 rgba(230,248,255,.065),
+    inset 0 -1px rgba(0,0,0,.30);
+  filter:none;
+}
+:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle):hover{
+  border-color:color-mix(in srgb,var(--glass-key-tone) 31%,var(--glass-key-edge));
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--glass-key-top) 82%,white 18%),var(--glass-key-mid) 46%,rgba(255,255,255,.025) 47%,var(--glass-key-bottom)),
+    color-mix(in srgb,var(--glass-field) 43%,transparent);
+  box-shadow:
+    0 2px 3px var(--glass-key-contact),
+    inset 0 1px rgba(244,253,255,.29),
+    inset 1px 0 rgba(230,248,255,.08),
+    inset 0 -1px rgba(0,0,0,.28),
+    0 0 7px color-mix(in srgb,var(--glass-key-tone) 9%,transparent);
+  filter:none;
+}
+:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle):active{
+  transform:translateY(var(--control-press)) scaleY(.985);
+  border-color:color-mix(in srgb,var(--glass-key-tone) 34%,var(--glass-key-edge));
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.12),rgba(255,255,255,.025)),
+    color-mix(in srgb,var(--glass-field-deep) 62%,transparent);
+  box-shadow:
+    inset 0 3px 6px rgba(0,0,0,.36),
+    inset 0 1px rgba(255,255,255,.045),
+    0 0 5px color-mix(in srgb,var(--glass-key-tone) 8%,transparent);
+  filter:none;
+  transition-duration:var(--button-press-time);
+}
+:is(.area-window,.universal-search,.package-window) .material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+  transform:translateY(var(--control-held));
+  border-color:color-mix(in srgb,var(--state-tone,var(--glass-key-tone)) 32%,var(--glass-key-edge));
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.075),rgba(255,255,255,.028)),
+    color-mix(in srgb,var(--glass-field-deep) 76%,var(--state-tone,var(--glass-key-tone)) 7%);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.055);
+}
+:is(.area-window,.universal-search,.package-window) .material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]):active{
+  transform:translateY(var(--control-press)) scaleY(.985);
+}
+
+/* Normal app artwork remains unframed. Its large hit target is a very quiet
+   glass key whose edge only becomes obvious on hover or press. */
+.apps-zone .app-key.material-glass-button{
+  border-color:rgba(216,242,255,.07);
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.045));
+  box-shadow:inset 0 1px rgba(255,255,255,.045);
+}
+.apps-zone .app-key.material-glass-button:hover{
+  border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 25%,var(--glass-key-edge));
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(16,32,41,.10));
+  box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 6px color-mix(in srgb,var(--app-primary,var(--blue)) 7%,transparent);
+}
+.apps-zone .app-key.material-glass-button:active,
+.apps-zone .app-key.material-glass-button.is-active{
+  background:color-mix(in srgb,var(--glass-field-deep) 82%,var(--app-primary,var(--blue)) 7%);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.32);
+}
+body[data-theme="light"] .apps-zone .app-key.material-glass-button{border-color:rgba(41,74,91,.10);background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(74,103,119,.045))}
+
+/* Rail controls are still glass, but read as engraved panel keys rather than
+   a stack of thick floating tiles. */
+.area-window[data-area-state="rail"] .material-glass-button:is(.control-push,.control-toggle){
+  border-color:color-mix(in srgb,var(--area-header-accent) 15%,rgba(220,245,255,.09));
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(0,0,0,.055));
+  box-shadow:inset 0 1px rgba(255,255,255,.055),inset 0 -1px rgba(0,0,0,.16);
+}
+.area-window[data-area-state="rail"] .material-glass-button:is(.control-push,.control-toggle):hover{border-color:color-mix(in srgb,var(--area-header-accent) 34%,var(--glass-key-edge));background:color-mix(in srgb,var(--area-header-accent) 7%,transparent)}
+
+/* ABS is deliberately opaque. This keeps controls physically connected to
+   application casings and the solid content islands inside glass Areas. */
+.material-abs-button:is(.control-push,.control-toggle){
+  border:1px solid var(--control-edge);
+  color:var(--text);
+  background:
+    linear-gradient(180deg,var(--control-highlight),transparent 42%),
+    linear-gradient(180deg,var(--control-top),var(--control-bottom));
+  box-shadow:0 2px 3px var(--control-contact),inset 0 1px var(--control-highlight);
+  filter:none;
+}
+.material-abs-button:is(.control-push,.control-toggle):hover{filter:brightness(1.055)}
+.material-abs-button:is(.control-push,.control-toggle):active{
+  transform:translateY(var(--control-press)) scaleY(.985);
+  background:linear-gradient(180deg,var(--control-bottom),var(--control-top));
+  box-shadow:inset 0 2px 4px var(--control-contact),inset 0 1px rgba(255,255,255,.04);
+  filter:brightness(.94);
+  transition-duration:var(--button-press-time);
+}
+.material-abs-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
+  transform:translateY(var(--control-held));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--control-bottom) 84%,var(--state-tone) 16%),var(--control-bottom));
+  box-shadow:inset 0 2px 4px var(--control-contact),inset 0 1px rgba(255,255,255,.04);
+}
+.material-abs-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]):active{transform:translateY(var(--control-press)) scaleY(.985)}
+.app-frame .window-key.danger.material-abs-button{
+  border-color:rgba(77,15,10,.72);
+  color:#fff;
+  background:linear-gradient(180deg,#ff755d,#a6281e);
+  box-shadow:0 2px 3px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.28);
+}
+
+/* Navigation lists remain flush with their ABS surface until interacted with;
+   they are not turned into a wall of raised caps. */
+.app-frame .nav-choice.material-abs-button{
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+}
+.app-frame .nav-choice.material-abs-button:hover{background:color-mix(in srgb,var(--app-primary) 8%,var(--app-content-raised));filter:none}
+.app-frame .nav-choice.material-abs-button:is(.is-active,[aria-pressed="true"]){background:color-mix(in srgb,var(--app-primary) 14%,var(--app-content-raised));box-shadow:inset 0 2px 4px rgba(0,0,0,.24)}
+
+@media(prefers-reduced-transparency:reduce){
+  :is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle){background:color-mix(in srgb,var(--glass-field) 94%,var(--glass-key-tone) 3%)}
 }

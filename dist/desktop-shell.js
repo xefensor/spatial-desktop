@@ -10,15 +10,61 @@ const toggleControlSelector = [
   "#timerToggle",
   "#allAppsToggle",
   "[data-project-select]",
+  "[data-workspace]",
+  "[data-package-mode]",
+  "[data-category-filter]",
+  "[data-overview-project]",
+  "#layoutModeToggle",
   "[data-window-action=\"maximize\"]"
 ].join(",");
+
+const materialControlSelector = [
+  ".surface-key",
+  ".quick-toggle",
+  ".folder-tab",
+  ".nav-choice",
+  ".app-key",
+  ".dismiss-button",
+  ".workspace-tab",
+  ".workspace-action",
+  ".launcher-category",
+  ".areas-reset",
+  ".overview-area-row > button",
+  ".package-mode-switch > button",
+  ".package-secondary",
+  ".package-primary",
+  ".project-path",
+  ".system-launcher",
+  ".overview-launch",
+  ".workspace-status"
+].join(",");
+
+const solidMaterialSurfaceSelector = [
+  ".app-frame",
+  ".project-module",
+  ".workspace-home-card",
+  ".overview-app-library",
+  ".all-apps-drawer",
+  ".package-panel",
+  ".import-map"
+].join(",");
+
+function applyControlMaterial(button) {
+  if (!button.matches(materialControlSelector)) return;
+  const glassSurface = button.closest(".area-window,.universal-search,.package-window");
+  const solidSurface = button.closest(solidMaterialSurfaceSelector);
+  const sitsOnSolid = Boolean(solidSurface && (!glassSurface || glassSurface.contains(solidSurface)));
+  button.classList.toggle("material-glass-button", Boolean(glassSurface && !sitsOnSolid));
+  button.classList.toggle("material-abs-button", Boolean(sitsOnSolid || (!glassSurface && button.closest(".workspace-zone"))));
+}
 
 function prepareControlSemantics(root = document) {
   const buttons = root.matches?.("button") ? [root, ...$$("button", root)] : $$("button", root);
   buttons.forEach(button => {
-    const managed = button.matches(".surface-key,.quick-toggle,.folder-tab,.nav-choice,.app-key,.dismiss-button");
-    if (!managed) return;
+    applyControlMaterial(button);
     const toggle = button.matches(toggleControlSelector);
+    const managed = button.matches(materialControlSelector);
+    if (!managed) return;
     button.classList.toggle("control-toggle", toggle);
     button.classList.toggle("control-push", !toggle);
     if (button.matches(".play-toggle")) {
