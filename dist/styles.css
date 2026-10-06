@@ -247,61 +247,23 @@ body[data-scene="phone"] .phone-stage { display:grid; }
 .key-row.actions .enter-key { background:#97c3ff; color:#062d59; }
 .phone.keyboard-open { grid-template-rows:57px 60px 55px 1fr 0 38px; }
 .phone.keyboard-open .phone-nav, .phone.keyboard-open .phone-fab { opacity:0; pointer-events:none; }
-.screen-light { position:absolute; width:150px; height:150px; border-radius:50%; pointer-events:none; z-index:8; opacity:0; transform:translate(-50%,-50%); background:radial-gradient(circle,rgba(115,210,255,.3),rgba(45,152,255,.12) 38%,transparent 72%); filter:blur(2px); mix-blend-mode:screen; transition:opacity .25s; }
+.screen-light { position:absolute; width:82px; height:82px; border-radius:50%; pointer-events:none; z-index:8; opacity:0; transform:translate(-50%,-50%); background:radial-gradient(circle,rgba(134,218,255,.2),rgba(45,152,255,.07) 42%,transparent 72%); filter:blur(2px); mix-blend-mode:screen; transition:opacity .18s; }
 .screen-light.is-on { opacity:1; transition:none; }
-body[data-theme="light"] .screen-light { mix-blend-mode:multiply; background:radial-gradient(circle,rgba(0,126,215,.2),rgba(0,126,215,.08) 42%,transparent 72%); }
+body[data-theme="light"] .screen-light { mix-blend-mode:multiply; background:radial-gradient(circle,rgba(0,126,215,.12),rgba(0,126,215,.045) 42%,transparent 72%); }
 .capacitive-field {
   --touch-x:50%; --touch-y:50%; position:absolute; inset:8px; overflow:hidden; border-radius:39px;
-  z-index:19; pointer-events:none; color:#63c5ff;
-}
-.capacitive-field::before {
-  content:""; position:absolute; inset:0; opacity:.032;
-  background-image:
-    linear-gradient(rgba(86,189,249,.8) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(86,189,249,.8) 1px,transparent 1px);
-  background-size:24px 24px;
-}
-.electrode-grid {
-  position:absolute; inset:0; opacity:0;
-  background-image:
-    radial-gradient(circle at center,rgba(159,225,255,.86) 0 1px,transparent 2px),
-    linear-gradient(rgba(58,177,246,.55) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(58,177,246,.55) 1px,transparent 1px);
-  background-size:24px 24px,24px 24px,24px 24px;
-  -webkit-mask-image:radial-gradient(circle 115px at var(--touch-x) var(--touch-y),#000 0 35%,rgba(0,0,0,.7) 58%,transparent 100%);
-  mask-image:radial-gradient(circle 115px at var(--touch-x) var(--touch-y),#000 0 35%,rgba(0,0,0,.7) 58%,transparent 100%);
-  transition:opacity .22s;
-}
-.active-electrodes {
-  position:absolute; inset:0; opacity:0;
-  background:
-    linear-gradient(90deg,transparent,rgba(90,200,255,.7) 43%,#d4f4ff 50%,rgba(90,200,255,.7) 57%,transparent) 0 var(--touch-y)/100% 1px no-repeat,
-    linear-gradient(180deg,transparent,rgba(90,200,255,.7) 43%,#d4f4ff 50%,rgba(90,200,255,.7) 57%,transparent) var(--touch-x) 0/1px 100% no-repeat;
-  filter:drop-shadow(0 0 4px rgba(66,181,255,.8));
+  z-index:19; pointer-events:none;
 }
 .field-cross {
-  position:absolute; left:var(--touch-x); top:var(--touch-y); width:78px; height:78px; border:1px solid rgba(114,208,255,.68); border-radius:50%;
-  opacity:0; transform:translate(-50%,-50%) scale(.35); box-shadow:0 0 18px rgba(54,175,255,.28),inset 0 0 14px rgba(72,186,255,.18);
+  position:absolute; left:var(--touch-x); top:var(--touch-y); width:40px; height:40px; border:1px solid rgba(120,205,250,.3); border-radius:50%;
+  opacity:0; transform:translate(-50%,-50%) scale(.55); box-shadow:0 0 10px rgba(54,175,255,.1);
 }
-.field-cross::before,.field-cross::after { content:""; position:absolute; border-radius:50%; }
-.field-cross::before { inset:12px; border:1px solid rgba(177,230,255,.55); }
-.field-cross::after { width:7px; height:7px; left:50%; top:50%; transform:translate(-50%,-50%); background:#d5f4ff; box-shadow:0 0 14px #49baff; }
-.cap-readout {
-  position:absolute; left:50%; bottom:82px; display:flex; align-items:center; gap:7px; padding:6px 10px;
-  opacity:0; transform:translate(-50%,7px); border:1px solid rgba(80,185,245,.34); border-radius:10px;
-  background:rgba(0,14,24,.72); box-shadow:inset 0 0 12px rgba(37,148,220,.13),0 0 18px rgba(24,142,220,.15);
-  color:#b9e7ff; font:600 9px/1 ui-monospace,monospace; letter-spacing:.06em; white-space:nowrap;
-}
-.cap-readout b { color:#5bc2ff; letter-spacing:.12em; }
-.cap-readout span { min-width:34px; color:white; }
-.cap-readout i { color:#76a8c3; font-style:normal; text-transform:uppercase; }
-.capacitive-field.is-sensing .electrode-grid,.capacitive-field.is-sensing .active-electrodes { opacity:1; }
-.capacitive-field.is-sensing .field-cross { animation:cap-ring .72s ease-out both; }
-.capacitive-field.is-sensing .cap-readout { opacity:1; transform:translate(-50%,0); transition:opacity .1s,transform .14s; }
+.field-cross::after { content:""; position:absolute; width:3px; height:3px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:rgba(215,245,255,.82); box-shadow:0 0 7px rgba(73,186,255,.58); }
+.capacitive-field.is-sensing .field-cross { animation:cap-ring .36s ease-out both; }
 @keyframes cap-ring {
-  0% { opacity:0; transform:translate(-50%,-50%) scale(.28); }
-  32% { opacity:1; }
-  100% { opacity:.76; transform:translate(-50%,-50%) scale(1); }
+  0% { opacity:0; transform:translate(-50%,-50%) scale(.52); }
+  35% { opacity:.55; }
+  100% { opacity:.18; transform:translate(-50%,-50%) scale(1); }
 }
 .interaction-notes { width:260px; color:var(--muted); line-height:1.5; }
 .interaction-notes span { font:700 11px/1 ui-monospace,monospace; letter-spacing:.16em; color:var(--blue); }
@@ -448,7 +410,6 @@ body[data-scene="music"] .music-stage { display:grid; place-items:center; }
 }
 .music-phone::after { content:""; position:absolute; inset:7px; border-radius:36px; pointer-events:none; z-index:20; box-shadow:inset 0 1px rgba(255,255,255,.2),inset 0 0 0 1px rgba(255,255,255,.025); }
 .music-phone .capacitive-field { border-radius:35px; }
-.music-phone .cap-readout { bottom:68px; }
 .music-phone .phone-status { padding-top:15px; }
 .mobile-now-label { display:grid; place-items:center; align-content:center; gap:5px; position:relative; z-index:3; }
 .mobile-now-label span { font-weight:700; }

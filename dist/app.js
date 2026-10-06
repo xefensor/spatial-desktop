@@ -225,28 +225,23 @@ const musicTouchLight = $('.music-touch-light');
 function attachCapacitiveSurface(surface, light) {
   surface.insertAdjacentHTML('beforeend',
     '<div class="capacitive-field" aria-hidden="true">' +
-      '<div class="electrode-grid"></div><div class="active-electrodes"></div>' +
       '<div class="field-cross"></div>' +
-      '<div class="cap-readout"><b>ΔC</b><span>+0,00</span><i>kontakt</i></div>' +
     '</div>'
   );
   const field = $('.capacitive-field', surface);
-  const reading = $('.cap-readout span', field);
   let releaseTimer;
 
   function sense(event) {
     const rect = surface.getBoundingClientRect();
     const x = Math.max(8, Math.min(rect.width - 8, event.clientX - rect.left));
     const y = Math.max(8, Math.min(rect.height - 8, event.clientY - rect.top));
-    const capacitance = (0.72 + ((x * 0.0031 + y * 0.0017) % 0.22)).toFixed(2).replace('.', ',');
     surface.style.setProperty('--touch-x', x + 'px');
     surface.style.setProperty('--touch-y', y + 'px');
-    reading.textContent = '+' + capacitance;
     field.classList.add('is-sensing');
     light.style.left = x + 'px';
     light.style.top = y + 'px';
     light.classList.add('is-on');
-    setMaterialState('press', 'ΔC +' + capacitance);
+    setMaterialState('press', 'DOTYK');
     clearTimeout(releaseTimer);
   }
 
