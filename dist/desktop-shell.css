@@ -647,3 +647,38 @@ body[data-theme="light"] .desktop-shell{
   transition-duration:var(--button-press-time);
   transition-timing-function:linear;
 }
+
+/* Parked apps prioritize live content over a decorative shell */
+.mini-stack{gap:8px;padding-inline:0}
+.mini-card{
+  padding:9px;
+  border-color:color-mix(in srgb,var(--soft-line) 18%,transparent);
+  border-radius:10px;
+  box-shadow:0 2px 5px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.045);
+}
+.mini-card::after{left:10px;right:10px;height:2px}
+.mini-card header{margin-bottom:8px}
+.mini-card header>div{gap:7px}
+.mini-card header .app-badge{width:28px;height:28px}
+.mini-card header .app-badge svg{width:15px;height:15px}
+.mini-card .mini-actions{gap:4px}
+.mini-card .mini-control{width:28px;height:27px}
+.mini-card-note{padding:7px}
+.mini-card-note header{
+  min-height:31px;
+  margin-bottom:5px;
+  padding:0 2px;
+}
+.mini-card-note .mini-note-field{
+  display:block;
+  min-height:132px;
+  border-color:color-mix(in srgb,var(--line) 58%,transparent);
+  border-radius:7px;
+  padding:7px 8px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.34);
+  font-size:11px;
+  line-height:1.42;
+}
+.mini-card-note .mini-note-field:focus{
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.34),0 0 0 1px rgba(42,159,255,.2);
+}
