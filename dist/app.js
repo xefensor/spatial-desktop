@@ -53,7 +53,7 @@ $$('[data-theme-button]').forEach(button => {
 
 const meter = $('.material-meter');
 const stateLabel = $('#stateLabel');
-function setMaterialState(state = 'rest', label = 'KLID') {
+function setMaterialState(state = 'rest', label = 'IDLE') {
   meter.dataset.state = state;
   stateLabel.textContent = label;
 }
@@ -66,13 +66,13 @@ document.addEventListener('pointerout', event => {
 });
 document.addEventListener('pointerdown', event => {
   if (!event.target.closest('button, .recess-field, input[type="range"]')) return;
-  setMaterialState('press', body.dataset.scene === 'phone' ? 'DOTYK' : 'STISK');
+  setMaterialState('press', body.dataset.scene === 'phone' ? 'TOUCH' : 'PRESS');
 });
 document.addEventListener('pointerup', () => {
-  setMaterialState(document.activeElement?.matches('input') ? 'focus' : 'rest', document.activeElement?.matches('input') ? 'FOKUS' : 'KLID');
+  setMaterialState(document.activeElement?.matches('input') ? 'focus' : 'rest', document.activeElement?.matches('input') ? 'FOCUS' : 'IDLE');
 });
 document.addEventListener('focusin', event => {
-  if (event.target.matches('input')) setMaterialState('focus', 'FOKUS');
+  if (event.target.matches('input')) setMaterialState('focus', 'FOCUS');
 });
 document.addEventListener('focusout', event => {
   if (event.target.matches('input')) setMaterialState();
@@ -90,7 +90,7 @@ $$('.folder-tab').forEach(tab => {
         if (wasActive && replacement) {
           replacement.click();
         }
-        showToast('Záložka zavřena');
+        showToast('Tab closed');
       }
       return;
     }
@@ -107,7 +107,7 @@ $$('[data-place]').forEach(place => {
   place.addEventListener('click', () => {
     $$('[data-place]').forEach(item => item.classList.toggle('is-active', item === place));
     $('.address-field input').value = place.dataset.place;
-    showToast('Otevřeno: ' + place.dataset.place);
+    showToast('Opened: ' + place.dataset.place);
   });
 });
 
@@ -115,21 +115,21 @@ $$('.file-row').forEach(row => {
   row.addEventListener('click', () => {
     $$('.file-row').forEach(item => item.classList.toggle('is-selected', item === row));
   });
-  row.addEventListener('dblclick', () => showToast('Otevírám ' + row.dataset.name));
+  row.addEventListener('dblclick', () => showToast('Opening ' + row.dataset.name));
 });
 
 const filter = $('#fileFilter');
 function applyDesktopFilter() {
-  const query = filter.value.toLocaleLowerCase('cs');
+  const query = filter.value.toLocaleLowerCase('en-GB');
   let folders = 0;
   let files = 0;
   $$('.file-row').forEach(row => {
-    const visible = row.dataset.name.toLocaleLowerCase('cs').includes(query);
+    const visible = row.dataset.name.toLocaleLowerCase('en-GB').includes(query);
     row.hidden = !visible;
     if (visible && row.querySelector('.folder-icon')) folders += 1;
     if (visible && row.querySelector('.doc-icon')) files += 1;
   });
-  $('#fileCount').textContent = query ? folders + ' složky, ' + files + ' soubory nalezeny' : '4 složky, 4 soubory';
+  $('#fileCount').textContent = query ? folders + ' folders, ' + files + ' files found' : '4 folders, 4 files';
 }
 filter.addEventListener('input', applyDesktopFilter);
 $('#focusFilter').addEventListener('click', () => filter.focus());
@@ -145,28 +145,28 @@ $('#zoomRange').addEventListener('input', event => {
 });
 
 const basePhoneItems = [
-  ['Signal space vstupenky', '4 položky'],
-  ['Lured In', '17 položek'],
-  ['YTDLnis', '2 položky'],
-  ['log', '1 položka'],
-  ['Quick Share', '1 položka'],
-  ['plastic-plasma-oled-4k', '6,8 MB'],
-  ['cs_CZ-refined-fonts', '221,9 kB']
+  ['Signal space tickets', '4 items'],
+  ['Lured In', '17 items'],
+  ['YTDLnis', '2 items'],
+  ['log', '1 item'],
+  ['Quick Share', '1 item'],
+  ['plastic-plasma-oled-4k', '6.8 MB'],
+  ['cs_CZ-refined-fonts', '221.9 kB']
 ];
 let phoneItems = [...basePhoneItems];
-let currentPhoneView = 'Soubory';
+let currentPhoneView = 'Files';
 
 function renderPhoneItems(view = currentPhoneView) {
-  const query = $('#phoneSearch').value.toLocaleLowerCase('cs');
-  const items = phoneItems.filter(([name]) => name.toLocaleLowerCase('cs').includes(query));
+  const query = $('#phoneSearch').value.toLocaleLowerCase('en-GB');
+  const items = phoneItems.filter(([name]) => name.toLocaleLowerCase('en-GB').includes(query));
   $('#phoneList').innerHTML = items.length ? items.map(([name, detail], index) =>
     '<button class="phone-item" data-phone-item="' + index + '"><i class="phone-folder"></i><span><b>' +
-    name + '</b><small>' + (view === 'Nedávné' ? 'dnes, 1:' + String(31 + index).padStart(2, '0') : detail) +
+    name + '</b><small>' + (view === 'Recent' ? 'today, 1:' + String(31 + index).padStart(2, '0') : detail) +
     '</small></span></button>'
-  ).join('') : '<p class="phone-empty">Nic takového tu není.</p>';
+  ).join('') : '<p class="phone-empty">No matching items.</p>';
   $$('.phone-item').forEach(item => item.addEventListener('click', () => {
     $$('.phone-item').forEach(other => other.classList.toggle('is-selected', other === item));
-    showToast('Vybráno: ' + $('b', item).textContent);
+    showToast('Selected: ' + $('b', item).textContent);
   }));
 }
 renderPhoneItems();
@@ -207,9 +207,9 @@ $$('[data-key]', keyboard).forEach(key => {
 });
 
 $('#addFolder').addEventListener('click', () => {
-  phoneItems.unshift(['Nová složka ' + (phoneItems.length - basePhoneItems.length + 1), 'prázdná']);
+  phoneItems.unshift(['New folder ' + (phoneItems.length - basePhoneItems.length + 1), 'empty']);
   renderPhoneItems(currentPhoneView);
-  showToast('Složka vytvořena');
+  showToast('Folder created');
 });
 
 $$('[data-phone-view]').forEach(button => {
@@ -298,7 +298,7 @@ function attachCapacitiveSurface(surface) {
     const entry = { element, control: null, startedAt: performance.now() };
     contacts.set(event.pointerId, entry);
     updateContact(entry, event);
-    setMaterialState('press', 'DOTYK');
+    setMaterialState('press', 'TOUCH');
   });
   window.addEventListener('pointermove', event => {
     const entry = contacts.get(event.pointerId);
@@ -339,7 +339,7 @@ window.addEventListener('keydown', event => {
 });
 
 const musicData = [
-  { title: 'running out of time', artist: 'eenspire', album: 'Mix z roku Escape', seconds: 138 },
+  { title: 'running out of time', artist: 'eenspire', album: 'Mix from Escape', seconds: 138 },
   { title: 'Genesis', artist: 'Justice', album: 'Justice', seconds: 234 },
   { title: 'Let There Be Light', artist: 'Justice', album: 'Justice', seconds: 295 },
   { title: 'D.A.N.C.E.', artist: 'Justice', album: 'Justice', seconds: 242 },
@@ -363,14 +363,14 @@ function formatTime(total) {
 }
 
 function renderMusicTracks() {
-  const query = $('#musicSearch').value.trim().toLocaleLowerCase('cs');
+  const query = $('#musicSearch').value.trim().toLocaleLowerCase('en-GB');
   const visible = musicData.map((track, index) => ({ track, index })).filter(({ track }) =>
-    (track.title + ' ' + track.artist + ' ' + track.album).toLocaleLowerCase('cs').includes(query)
+    (track.title + ' ' + track.artist + ' ' + track.album).toLocaleLowerCase('en-GB').includes(query)
   );
   $('#musicTracks').innerHTML = visible.length ? visible.map(({ track, index }) =>
     '<button class="music-track music-track-grid' + (index === currentTrackIndex ? ' is-active' : '') + '" data-music-index="' + index + '">' +
     '<span>' + String(index + 1).padStart(2, '0') + '</span><span>' + track.title + '</span><span>' + track.artist + '</span><span>' + formatTime(track.seconds) + '</span></button>'
-  ).join('') : '<p class="music-empty">Žádná skladba neodpovídá hledání.</p>';
+  ).join('') : '<p class="music-empty">No tracks match your search.</p>';
   $$('.music-track').forEach(row => row.addEventListener('click', () => selectMusicTrack(Number(row.dataset.musicIndex), true)));
 }
 
@@ -382,7 +382,7 @@ function renderQueues() {
   $('#queueTracks').innerHTML = queue;
   $('#mobileQueue').innerHTML = queue;
   $$('[data-queue-index]').forEach(row => row.addEventListener('click', () => selectMusicTrack(Number(row.dataset.queueIndex), true)));
-  $('#queueCount').textContent = (musicData.length - 1) + ' skladeb';
+  $('#queueCount').textContent = (musicData.length - 1) + ' tracks';
 }
 
 function syncProgress() {
@@ -403,9 +403,9 @@ function syncPlaybackState() {
     button.classList.toggle('is-active', musicPlaying);
     button.setAttribute('aria-pressed', String(musicPlaying));
     $('span', button).textContent = musicPlaying ? '❚❚' : '▶';
-    button.setAttribute('aria-label', musicPlaying ? 'Pozastavit' : 'Přehrát');
+    button.setAttribute('aria-label', musicPlaying ? 'Pause' : 'Play');
   });
-  $('.mobile-main-play b').textContent = musicPlaying ? 'Pauza' : 'Přehrát';
+  $('.mobile-main-play b').textContent = musicPlaying ? 'Pause' : 'Play';
 }
 
 function setPlaying(playing) {
@@ -450,7 +450,7 @@ $$('.volume-range').forEach(range => range.addEventListener('input', event => {
     other.value = event.target.value;
     if (other.closest('.phone, .music-phone')) syncGlassRange(other);
   });
-  showToast('Hlasitost ' + event.target.value + ' %');
+  showToast('Volume ' + event.target.value + '%');
 }));
 
 for (const selector of ['.shuffle-toggle', '.repeat-toggle']) {
@@ -470,7 +470,7 @@ $('.like-button').addEventListener('click', event => {
   event.currentTarget.setAttribute('aria-pressed', String(event.currentTarget.classList.contains('is-active')));
   event.currentTarget.textContent = event.currentTarget.classList.contains('is-active') ? '♥' : '♡';
 });
-$('.share-button').addEventListener('click', () => showToast('Odkaz na skladbu zkopírován'));
+$('.share-button').addEventListener('click', () => showToast('Track link copied'));
 $('.queue-toggle').addEventListener('click', () => $('.music-body').classList.toggle('queue-hidden'));
 $('.queue-close').addEventListener('click', () => $('.music-body').classList.add('queue-hidden'));
 $('.mobile-queue-toggle').addEventListener('click', () => {

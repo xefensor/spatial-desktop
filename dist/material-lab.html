@@ -1,48 +1,48 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101214">
-  <meta name="description" content="Interaktivní prototyp hmotného rozhraní pro KDE Plasma a telefon.">
+  <meta name="description" content="Interactive material-interface prototype for KDE Plasma and mobile.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101315'/%3E%3Cpath d='M14 35h36' stroke='%232a9dff' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='15' y='15' width='34' height='28' rx='10' fill='none' stroke='%23eef4f8' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
   <title>Material Interface Lab</title>
 </head>
 <body data-theme="oled" data-scene="desktop">
-  <header class="lab-bar" aria-label="Ovládání prototypu">
+  <header class="lab-bar" aria-label="Prototype controls">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>Material Lab</span>
     </div>
     <div class="lab-controls">
-      <div class="switcher" role="group" aria-label="Zařízení">
+      <div class="switcher" role="group" aria-label="Device">
         <button class="switch-option is-active" data-scene-button="desktop">Desktop</button>
-        <button class="switch-option" data-scene-button="phone">Telefon</button>
-        <button class="switch-option" data-scene-button="music">Hudba</button>
+        <button class="switch-option" data-scene-button="phone">Phone</button>
+        <button class="switch-option" data-scene-button="music">Music</button>
       </div>
-      <div class="switcher theme-switcher" role="group" aria-label="Povrch">
+      <div class="switcher theme-switcher" role="group" aria-label="Surface">
         <button class="switch-option" data-theme-button="light">Light</button>
         <button class="switch-option" data-theme-button="graphite">Graphite</button>
         <button class="switch-option is-active" data-theme-button="oled">OLED</button>
       </div>
-      <div class="material-meter" aria-live="polite"><i></i><span id="stateLabel">KLID</span></div>
+      <div class="material-meter" aria-live="polite"><i></i><span id="stateLabel">IDLE</span></div>
     </div>
   </header>
 
   <main>
-    <section class="stage desktop-stage" aria-label="Interaktivní desktop KDE Plasma">
+    <section class="stage desktop-stage" aria-label="Interactive KDE Plasma desktop">
       <div class="desktop">
-        <aside class="plasma-rail" aria-label="Panel aplikací">
+        <aside class="plasma-rail" aria-label="Application panel">
           <button class="rail-key"><span>⌘</span></button>
           <div class="rail-stack">
-            <button class="rail-key is-running" data-toast="Dolphin už je otevřený"><span>▰</span></button>
+            <button class="rail-key is-running" data-toast="Dolphin is already open"><span>▰</span></button>
             <button class="rail-key" data-toast="Firefox"><span>◉</span></button>
-            <button class="rail-key" data-toast="Terminál"><span>›_</span></button>
-            <button class="rail-key" data-toast="Nastavení"><span>⚙</span></button>
+            <button class="rail-key" data-toast="Terminal"><span>›_</span></button>
+            <button class="rail-key" data-toast="Settings"><span>⚙</span></button>
           </div>
           <div class="rail-spacer"></div>
-          <div class="rail-display" aria-label="Digitální systémový panel">
+          <div class="rail-display" aria-label="Digital system panel">
             <span>13:14</span>
             <i></i>
             <span>78%</span>
@@ -51,73 +51,73 @@
 
         <article class="dolphin-window">
           <header class="window-titlebar">
-            <span class="window-title">Stahování — Dolphin</span>
+            <span class="window-title">Downloads — Dolphin</span>
             <div class="window-controls">
-              <button aria-label="Minimalizovat">−</button>
-              <button aria-label="Maximalizovat">□</button>
-              <button class="close-button" aria-label="Zavřít">×</button>
+              <button aria-label="Minimize">−</button>
+              <button aria-label="Maximize">□</button>
+              <button class="close-button" aria-label="Close">×</button>
             </div>
           </header>
 
           <div class="toolbar">
             <div class="nav-keys">
-              <button class="shell-key" data-toast="Zpět">‹</button>
-              <button class="shell-key" data-toast="Vpřed">›</button>
-              <button class="shell-key compact" data-toast="Zobrazení">⌘</button>
+              <button class="shell-key" data-toast="Back">‹</button>
+              <button class="shell-key" data-toast="Forward">›</button>
+              <button class="shell-key compact" data-toast="View">⌘</button>
             </div>
             <label class="recess-field address-field">
               <span class="field-leading">›</span>
               <span class="field-light" aria-hidden="true"></span>
-              <input value="Stahování" aria-label="Cesta">
+              <input value="Downloads" aria-label="Path">
             </label>
             <div class="nav-keys">
-              <button class="shell-key text-key" data-toast="Rozdělené zobrazení">▣ Rozdělit</button>
-              <button class="shell-key" id="focusFilter" aria-label="Hledat">⌕</button>
-              <button class="shell-key" data-toast="Nabídka">≡</button>
+              <button class="shell-key text-key" data-toast="Split view">▣ Split</button>
+              <button class="shell-key" id="focusFilter" aria-label="Search">⌕</button>
+              <button class="shell-key" data-toast="Menu">≡</button>
             </div>
           </div>
 
           <div class="dolphin-body">
             <aside class="places">
-              <p class="section-label">Místa</p>
+              <p class="section-label">Places</p>
               <nav>
-                <button data-place="Domovská složka"><span>⌂</span>Domovská složka</button>
-                <button data-place="Pracovní plocha"><span>▣</span>Pracovní plocha</button>
-                <button class="is-active" data-place="Stahování"><span>↓</span>Stahování</button>
-                <button data-place="Dokumenty"><span>▤</span>Dokumenty</button>
-                <button data-place="Hudba"><span>♫</span>Hudba</button>
-                <button data-place="Videa"><span>▦</span>Videa</button>
-                <button data-place="Obrázky"><span>▧</span>Obrázky</button>
-                <button data-place="Projekty"><span>⚙</span>Projekty</button>
+                <button data-place="Home"><span>⌂</span>Home</button>
+                <button data-place="Desktop"><span>▣</span>Desktop</button>
+                <button class="is-active" data-place="Downloads"><span>↓</span>Downloads</button>
+                <button data-place="Documents"><span>▤</span>Documents</button>
+                <button data-place="Music"><span>♫</span>Music</button>
+                <button data-place="Videos"><span>▦</span>Videos</button>
+                <button data-place="Pictures"><span>▧</span>Pictures</button>
+                <button data-place="Projects"><span>⚙</span>Projects</button>
               </nav>
-              <p class="section-label">Vzdálené</p>
+              <p class="section-label">Remote</p>
               <nav>
-                <button data-place="Síť"><span>⌁</span>Síť</button>
+                <button data-place="Network"><span>⌁</span>Network</button>
                 <button data-place="Server"><span>▱</span>Server</button>
               </nav>
             </aside>
 
             <section class="content-module">
-              <div class="tabs" role="tablist" aria-label="Otevřené složky">
+              <div class="tabs" role="tablist" aria-label="Open folders">
                 <button class="folder-tab" role="tab" aria-selected="false" data-tab="color-schemes"><span>▱</span>color-schemes<i>×</i></button>
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Filmy"><span>▱</span>Filmy<i>×</i></button>
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Movies"><span>▱</span>Movies<i>×</i></button>
                 <button class="folder-tab" role="tab" aria-selected="false" data-tab="ocean-design-master"><span>▱</span>ocean-design-master<i>×</i></button>
-                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Koš"><span>♜</span>Koš<i>×</i></button>
-                <button class="folder-tab is-active" role="tab" aria-selected="true" data-tab="Stahování"><span>↓</span>Stahování<i>×</i></button>
+                <button class="folder-tab" role="tab" aria-selected="false" data-tab="Trash"><span>♜</span>Trash<i>×</i></button>
+                <button class="folder-tab is-active" role="tab" aria-selected="true" data-tab="Downloads"><span>↓</span>Downloads<i>×</i></button>
               </div>
               <div class="file-well">
                 <div class="file-head file-grid">
-                  <span>Název</span><span>Velikost</span><span>Změněno</span><span>Typ</span>
+                  <span>Name</span><span>Size</span><span>Modified</span><span>Type</span>
                 </div>
-                <div id="fileRows" class="file-rows" role="listbox" aria-label="Soubory">
-                  <button class="file-row file-grid" data-name="ocean-design-master"><span><i class="folder-icon"></i>ocean-design-master</span><span>8 položek</span><span>10.09.26 21:53</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="pebble_time_2_reminky_vsechny"><span><i class="folder-icon"></i>pebble_time_2_reminky_vsechny</span><span>21 položek</span><span>05.09.26 18:47</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="DeusEx_MapPatch13"><span><i class="folder-icon"></i>DeusEx_MapPatch13</span><span>2 položky</span><span>15.08.26 17:55</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="DeusExe-v5.3"><span><i class="folder-icon"></i>DeusExe-v5.3</span><span>4 položky</span><span>15.08.26 17:15</span><span>Folder</span></button>
-                  <button class="file-row file-grid" data-name="ocean-breeze-papirus-app-icons.png"><span><i class="doc-icon image-doc"></i>ocean-breeze-papirus-app-icons.png</span><span>527,3 KiB</span><span>10.09.26 21:43</span><span>obrázek PNG</span></button>
-                  <button class="file-row file-grid" data-name="PXL_20260910_152343895.MP.jpg"><span><i class="doc-icon image-doc"></i>PXL_20260910_152343895.MP.jpg</span><span>6,7 MiB</span><span>10.09.26 17:23</span><span>obrázek JPEG</span></button>
-                  <button class="file-row file-grid" data-name="vestnik_UPV_201203.pdf"><span><i class="doc-icon pdf-doc"></i>vestnik_UPV_201203.pdf</span><span>7,3 MiB</span><span>18.08.26 22:45</span><span>dokument PDF</span></button>
-                  <button class="file-row file-grid" data-name="ceske_hry.ods"><span><i class="doc-icon sheet-doc"></i>ceske_hry.ods</span><span>43,9 KiB</span><span>14.08.26 13:03</span><span>Sešit OpenDocument</span></button>
+                <div id="fileRows" class="file-rows" role="listbox" aria-label="Files">
+                  <button class="file-row file-grid" data-name="ocean-design-master"><span><i class="folder-icon"></i>ocean-design-master</span><span>8 items</span><span>10 Sep 2026, 21:53</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="pebble_time_2_reminky_vsechny"><span><i class="folder-icon"></i>pebble_time_2_reminky_vsechny</span><span>21 items</span><span>5 Sep 2026, 18:47</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="DeusEx_MapPatch13"><span><i class="folder-icon"></i>DeusEx_MapPatch13</span><span>2 items</span><span>15 Aug 2026, 17:55</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="DeusExe-v5.3"><span><i class="folder-icon"></i>DeusExe-v5.3</span><span>4 items</span><span>15 Aug 2026, 17:15</span><span>Folder</span></button>
+                  <button class="file-row file-grid" data-name="ocean-breeze-papirus-app-icons.png"><span><i class="doc-icon image-doc"></i>ocean-breeze-papirus-app-icons.png</span><span>527.3 KiB</span><span>10 Sep 2026, 21:43</span><span>PNG image</span></button>
+                  <button class="file-row file-grid" data-name="PXL_20260910_152343895.MP.jpg"><span><i class="doc-icon image-doc"></i>PXL_20260910_152343895.MP.jpg</span><span>6.7 MiB</span><span>10 Sep 2026, 17:23</span><span>JPEG image</span></button>
+                  <button class="file-row file-grid" data-name="vestnik_UPV_201203.pdf"><span><i class="doc-icon pdf-doc"></i>vestnik_UPV_201203.pdf</span><span>7.3 MiB</span><span>18 Aug 2026, 22:45</span><span>PDF document</span></button>
+                  <button class="file-row file-grid" data-name="ceske_hry.ods"><span><i class="doc-icon sheet-doc"></i>ceske_hry.ods</span><span>43.9 KiB</span><span>14 Aug 2026, 13:03</span><span>OpenDocument spreadsheet</span></button>
                 </div>
                 <div class="scroll-track"><div class="scroll-thumb"></div></div>
               </div>
@@ -127,38 +127,38 @@
           <footer class="status-area">
             <label class="recess-field filter-field">
               <span>⌕</span>
-              <input id="fileFilter" placeholder="Filtrovat…" aria-label="Filtrovat soubory">
+              <input id="fileFilter" placeholder="Filter…" aria-label="Filter files">
             </label>
-            <span id="fileCount">4 složky, 4 soubory</span>
-            <label class="zoom-control">Zvětšení:
-              <input id="zoomRange" type="range" min="0" max="2" step="1" value="0" aria-label="Velikost řádků">
+            <span id="fileCount">4 folders, 4 files</span>
+            <label class="zoom-control">Zoom:
+              <input id="zoomRange" type="range" min="0" max="2" step="1" value="0" aria-label="Row size">
             </label>
-            <span>276,8 GiB volno</span>
+            <span>276.8 GiB free</span>
           </footer>
         </article>
       </div>
     </section>
 
-    <section class="stage phone-stage" aria-label="Interaktivní telefonní rozhraní">
+    <section class="stage phone-stage" aria-label="Interactive phone interface">
       <div class="phone-wrap">
         <article class="phone">
           <header class="phone-status"><b>1:45</b><span>⌁ ▥ ◉ <strong>60</strong>ϟ</span></header>
           <div class="phone-toolbar recessed-glass">
-            <button id="phoneBack" aria-label="Zpět">‹</button>
-            <label><span>⌕</span><input id="phoneSearch" placeholder="Hledat"></label>
-            <button data-phone-action="Domů" aria-label="Domů">⌂</button>
-            <button data-phone-action="Řazení" aria-label="Řazení">≡</button>
-            <button data-phone-action="Nabídka" aria-label="Nabídka">⋮</button>
+            <button id="phoneBack" aria-label="Back">‹</button>
+            <label><span>⌕</span><input id="phoneSearch" placeholder="Search"></label>
+            <button data-phone-action="Home" aria-label="Home">⌂</button>
+            <button data-phone-action="Sort" aria-label="Sort">≡</button>
+            <button data-phone-action="Menu" aria-label="Menu">⋮</button>
           </div>
-          <div class="breadcrumbs"><button class="glass-chip">Interní</button><span>›</span><span id="phonePath">Download</span></div>
+          <div class="breadcrumbs"><button class="glass-chip">Internal storage</button><span>›</span><span id="phonePath">Downloads</span></div>
           <main class="phone-content">
             <div id="phoneList" class="phone-list"></div>
           </main>
-          <button class="phone-fab" id="addFolder" aria-label="Přidat složku">＋</button>
-          <nav class="phone-nav recessed-glass" aria-label="Spodní navigace">
-            <button class="is-active" data-phone-view="Soubory"><span>▰</span>Soubory</button>
-            <button data-phone-view="Nedávné"><span>◷</span>Nedávné</button>
-            <button data-phone-view="Úložiště"><span>≡</span>Úložiště</button>
+          <button class="phone-fab" id="addFolder" aria-label="Add folder">＋</button>
+          <nav class="phone-nav recessed-glass" aria-label="Bottom navigation">
+            <button class="is-active" data-phone-view="Files"><span>▰</span>Files</button>
+            <button data-phone-view="Recent"><span>◷</span>Recent</button>
+            <button data-phone-view="Storage"><span>≡</span>Storage</button>
           </nav>
           <div class="keyboard" id="keyboard" aria-hidden="true">
             <div class="key-row" data-keys="qwertyuiop"></div>
@@ -166,115 +166,115 @@
             <div class="key-row" data-keys="zxcvbnm"></div>
             <div class="key-row actions">
               <button data-key="clear">123</button>
-              <button class="space-key" data-key=" ">mezerník</button>
+              <button class="space-key" data-key=" ">space</button>
               <button class="enter-key" data-key="enter">✓</button>
             </div>
           </div>
           <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
         </article>
         <aside class="interaction-notes">
-          <span>PEVNÉ SKLO / LOKÁLNÍ SVĚTLO</span>
+          <span>SOLID GLASS / LOCAL LIGHT</span>
           <dl>
-            <div><dt>Klid</dt><dd>souvislá plocha</dd></div>
-            <div><dt>Dotyk</dt><dd>přesný elektrický otisk</dd></div>
-            <div><dt>Akce</dt><dd>svítí stejná rytina</dd></div>
-            <div><dt>Volba</dt><dd>klidný trvalý náboj</dd></div>
+            <div><dt>Idle</dt><dd>one continuous surface</dd></div>
+            <div><dt>Touch</dt><dd>precise electrical contact</dd></div>
+            <div><dt>Action</dt><dd>the same engraving lights up</dd></div>
+            <div><dt>Selection</dt><dd>a calm, persistent charge</dd></div>
           </dl>
         </aside>
       </div>
     </section>
 
-    <section class="stage music-stage" aria-label="Interaktivní hudební aplikace">
+    <section class="stage music-stage" aria-label="Interactive music applications">
       <div class="music-workbench">
         <article class="music-window">
           <header class="music-titlebar">
             <span class="music-app-mark" aria-hidden="true">♫</span>
             <strong id="musicWindowTitle">running out of time — Elisa</strong>
             <div class="window-controls">
-              <button aria-label="Minimalizovat">−</button>
-              <button aria-label="Maximalizovat">□</button>
-              <button class="close-button" aria-label="Zavřít">×</button>
+              <button aria-label="Minimize">−</button>
+              <button aria-label="Maximize">□</button>
+              <button class="close-button" aria-label="Close">×</button>
             </div>
           </header>
 
           <section class="music-display">
-            <div class="album-art compact-art" aria-label="Obal alba">
+            <div class="album-art compact-art" aria-label="Album cover">
               <span>RUNNING<br>OUT OF TIME</span>
             </div>
             <div class="display-copy">
-              <span class="display-label">PRÁVĚ HRAJE</span>
+              <span class="display-label">NOW PLAYING</span>
               <strong class="now-title">running out of time</strong>
-              <span class="now-artist">eenspire · Mix z roku Escape</span>
+              <span class="now-artist">eenspire · Mix from Escape</span>
             </div>
             <div class="spectrum" aria-hidden="true">
               <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
             </div>
           </section>
 
-          <section class="music-transport" aria-label="Přehrávání">
+          <section class="music-transport" aria-label="Playback">
             <div class="transport-cluster">
-              <button class="music-key previous-track" aria-label="Předchozí skladba">|‹</button>
-              <button class="music-key main-play" aria-label="Přehrát"><span>▶</span></button>
-              <button class="music-key next-track" aria-label="Další skladba">›|</button>
+              <button class="music-key previous-track" aria-label="Previous track">|‹</button>
+              <button class="music-key main-play" aria-label="Play"><span>▶</span></button>
+              <button class="music-key next-track" aria-label="Next track">›|</button>
             </div>
             <span class="elapsed-time">0:00</span>
             <label class="music-progress">
-              <span class="sr-only">Pozice skladby</span>
+              <span class="sr-only">Track position</span>
               <input class="track-progress" type="range" min="0" max="138" value="0">
             </label>
             <span class="duration-time">2:18</span>
-            <button class="music-key mode-key shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
-            <button class="music-key mode-key repeat-toggle is-active" aria-label="Opakování">↻</button>
+            <button class="music-key mode-key shuffle-toggle" aria-label="Shuffle">⌘</button>
+            <button class="music-key mode-key repeat-toggle is-active" aria-label="Repeat">↻</button>
             <label class="volume-well">
               <span>◖</span>
-              <input class="volume-range" type="range" min="0" max="100" value="74" aria-label="Hlasitost">
+              <input class="volume-range" type="range" min="0" max="100" value="74" aria-label="Volume">
             </label>
           </section>
 
           <div class="music-body">
             <aside class="music-sidebar">
-              <p class="section-label">Knihovna</p>
+              <p class="section-label">Library</p>
               <nav>
-                <button><span>▤</span>Nyní přehrávám</button>
-                <button><span>◷</span>Nedávno hrané</button>
-                <button><span>▥</span>Často hrané</button>
-                <button class="is-active"><span>▰</span>Alba</button>
-                <button><span>♙</span>Umělci</button>
-                <button><span>♫</span>Skladby</button>
-                <button><span>✦</span>Žánry</button>
-                <button><span>▱</span>Soubory</button>
+                <button><span>▤</span>Now playing</button>
+                <button><span>◷</span>Recently played</button>
+                <button><span>▥</span>Frequently played</button>
+                <button class="is-active"><span>▰</span>Albums</button>
+                <button><span>♙</span>Artists</button>
+                <button><span>♫</span>Tracks</button>
+                <button><span>✦</span>Genres</button>
+                <button><span>▱</span>Files</button>
               </nav>
-              <div class="library-counter"><b>128</b><span>alb</span></div>
+              <div class="library-counter"><b>128</b><span>albums</span></div>
             </aside>
 
             <section class="music-library">
               <div class="library-head">
-                <button class="music-key album-back" aria-label="Zpět">‹</button>
+                <button class="music-key album-back" aria-label="Back">‹</button>
                 <div class="mini-cover album-art"><span>ROT</span></div>
                 <div>
-                  <strong>Mix z roku Escape</strong>
-                  <span>12 skladeb · 48 min</span>
+                  <strong>Mix from Escape</strong>
+                  <span>12 tracks · 48 min</span>
                 </div>
-                <button class="music-key library-play" aria-label="Přehrát album">▶</button>
-                <button class="music-key queue-toggle" aria-label="Zobrazit frontu">▤</button>
+                <button class="music-key library-play" aria-label="Play album">▶</button>
+                <button class="music-key queue-toggle" aria-label="Show queue">▤</button>
               </div>
               <label class="recess-field music-search">
                 <span>⌕</span>
-                <input id="musicSearch" placeholder="Hledat skladbu nebo umělce…" aria-label="Hledat v hudbě">
+                <input id="musicSearch" placeholder="Search for a track or artist…" aria-label="Search music">
               </label>
               <div class="music-table-head music-track-grid">
-                <span>#</span><span>Skladba</span><span>Interpret</span><span>Čas</span>
+                <span>#</span><span>Track</span><span>Artist</span><span>Time</span>
               </div>
-              <div class="music-tracks" id="musicTracks" role="listbox" aria-label="Skladby"></div>
+              <div class="music-tracks" id="musicTracks" role="listbox" aria-label="Tracks"></div>
             </section>
 
             <aside class="music-queue" id="musicQueue">
               <header>
-                <div><span>FRONTA</span><strong>Následuje</strong></div>
-                <button class="music-key queue-close" aria-label="Skrýt frontu">×</button>
+                <div><span>QUEUE</span><strong>Up next</strong></div>
+                <button class="music-key queue-close" aria-label="Hide queue">×</button>
               </header>
               <div id="queueTracks"></div>
-              <footer><span id="queueCount">11 skladeb</span><span>47:31</span></footer>
+              <footer><span id="queueCount">11 tracks</span><span>47:31</span></footer>
             </aside>
           </div>
         </article>
@@ -282,40 +282,40 @@
         <article class="music-phone">
           <header class="phone-status"><b>11:59</b><span>⌁ ▥ ◉ <strong>83</strong>ϟ</span></header>
           <div class="mobile-now-label">
-            <span>Právě hraje</span>
-            <strong>Mix z roku Escape</strong>
+            <span>Now playing</span>
+            <strong>Mix from Escape</strong>
           </div>
-          <div class="album-art phone-art" aria-label="Obal alba">
+          <div class="album-art phone-art" aria-label="Album cover">
             <span>RUNNING<br>OUT OF TIME</span>
           </div>
           <div class="mobile-track-info">
             <div><strong class="now-title">running out of time</strong><span class="now-artist">eenspire</span></div>
             <div class="mobile-actions">
-              <button class="glass-control share-button" aria-label="Sdílet">↗</button>
-              <button class="glass-control like-button" aria-label="Přidat do oblíbených" aria-pressed="false">♡</button>
+              <button class="glass-control share-button" aria-label="Share">↗</button>
+              <button class="glass-control like-button" aria-label="Add to favourites" aria-pressed="false">♡</button>
             </div>
           </div>
           <div class="mobile-progress">
             <span class="elapsed-time">0:00</span>
-            <input class="track-progress" type="range" min="0" max="138" value="0" aria-label="Pozice skladby">
+            <input class="track-progress" type="range" min="0" max="138" value="0" aria-label="Track position">
             <span class="duration-time">2:18</span>
           </div>
           <div class="mobile-transport">
-            <button class="glass-control previous-track" aria-label="Předchozí skladba">|‹</button>
-            <button class="glass-control main-play mobile-main-play" aria-label="Přehrát"><span>▶</span><b>Přehrát</b></button>
-            <button class="glass-control next-track" aria-label="Další skladba">›|</button>
+            <button class="glass-control previous-track" aria-label="Previous track">|‹</button>
+            <button class="glass-control main-play mobile-main-play" aria-label="Play"><span>▶</span><b>Play</b></button>
+            <button class="glass-control next-track" aria-label="Next track">›|</button>
           </div>
           <div class="mobile-modes">
-            <button class="glass-control" data-toast="Fronta">♬</button>
-            <button class="glass-control" data-toast="Časovač vypnutí">◔</button>
-            <button class="glass-control shuffle-toggle" aria-label="Náhodné pořadí">⌘</button>
-            <button class="glass-control repeat-toggle is-active" aria-label="Opakování">↻</button>
-            <button class="glass-control mobile-queue-toggle" aria-label="Otevřít frontu">⋮</button>
+            <button class="glass-control" data-toast="Queue">♬</button>
+            <button class="glass-control" data-toast="Sleep timer">◔</button>
+            <button class="glass-control shuffle-toggle" aria-label="Shuffle">⌘</button>
+            <button class="glass-control repeat-toggle is-active" aria-label="Repeat">↻</button>
+            <button class="glass-control mobile-queue-toggle" aria-label="Open queue">⋮</button>
           </div>
           <footer class="system-nav"><span>■</span><span>●</span><span>◀</span></footer>
           <section class="mobile-queue-sheet" id="mobileQueueSheet" aria-hidden="true">
             <div class="sheet-handle"></div>
-            <header><strong>Další skladby</strong><button class="sheet-close" aria-label="Zavřít">×</button></header>
+            <header><strong>Up next</strong><button class="sheet-close" aria-label="Close">×</button></header>
             <div id="mobileQueue"></div>
           </section>
         </article>

@@ -304,7 +304,7 @@ function renderMiniApps() {
 }
 
 function terminalResult(command) {
-  if (command === "date") return new Date().toLocaleString();
+  if (command === "date") return new Date().toLocaleString("en-GB");
   if (command === "git status") return "On branch main · working tree clean";
   if (command === "pwd") return "/home/xef";
   if (command === "clear") return "Terminal cleared";
@@ -843,11 +843,11 @@ function bindMusicControls() {
 
 function updateClock() {
   const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   $$(".live-time").forEach(label => label.textContent = time);
-  $("#dayLabel").textContent = now.toLocaleDateString([], { weekday: "long" });
-  $("#dateLabel").textContent = now.toLocaleDateString([], { day: "numeric", month: "long" });
-  $("#monthLabel").textContent = now.toLocaleDateString([], { month: "long" });
+  $("#dayLabel").textContent = now.toLocaleDateString("en-GB", { weekday: "long" });
+  $("#dateLabel").textContent = now.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
 function renderCalendar() {
