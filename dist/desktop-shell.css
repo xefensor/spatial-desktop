@@ -6158,3 +6158,33 @@ body[data-theme="light"].areas-docked .area-window{
   border-radius:0!important;
   corner-shape:square!important;
 }
+
+/* v114 — Keep the cursor glassy inside, but give every glyph a crisp,
+   opaque two-tone edge. The dark outer keyline survives bright surfaces and
+   the cool-white inner edge survives dark ones without filling the cursor. */
+.cursor-outline{
+  fill:none!important;
+  stroke:#071014!important;
+  stroke-width:3.35!important;
+  stroke-linejoin:round!important;
+  filter:drop-shadow(0 1px .55px rgba(0,0,0,.58))!important;
+}
+.cursor-edge{
+  fill:rgba(174,222,242,.04)!important;
+  stroke:#eefaff!important;
+  stroke-width:1.3!important;
+  stroke-linejoin:round!important;
+  paint-order:stroke fill!important;
+  filter:none!important;
+}
+.cursor-line{
+  stroke:#eefaff!important;
+  stroke-width:2.25!important;
+  filter:
+    drop-shadow(0 0 .75px #071014)
+    drop-shadow(0 1px .6px rgba(0,0,0,.78))!important;
+}
+.cursor-badge{
+  stroke:#eefaff!important;
+  stroke-width:1.3!important;
+}
