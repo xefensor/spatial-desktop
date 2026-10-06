@@ -4900,3 +4900,82 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
 @media(max-width:850px){
   :root{--window-corner:18px;--window-card-corner:13px}
 }
+
+/* v87 — the silhouette language continues through each surface's contents. */
+:root{
+  --area-content-corner:4px;
+  --window-panel-corner:16px;
+  --window-control-corner:10px;
+}
+
+/* Area contents remain architectural: cards, widgets, launchers and fields
+   share the same tight geometry as their docked parent. App artwork, status
+   dots and circular indicators keep their native silhouettes. */
+.area-window :where(
+  button,
+  input:not([type="range"]),
+  textarea,
+  select,
+  label,
+  section,
+  article,
+  nav,
+  .app-rack,
+  .mini-card,
+  .system-widget,
+  .project-module,
+  .project-path,
+  .project-quick-note,
+  .project-closed-state,
+  .all-apps-drawer,
+  .all-apps-search,
+  .notification,
+  .timer-face,
+  .next-event,
+  .device-row
+){
+  border-radius:var(--area-content-corner);
+}
+
+/* Small pieces inside movable windows use compact squircles, while full
+   content wells use a broader version of the same curve. */
+:is(.app-frame,.package-window,.desktop-context-menu) :where(
+  button,
+  input:not([type="range"]),
+  textarea,
+  select,
+  label,
+  .app-badge,
+  .folder-tab,
+  .nav-choice
+){
+  border-radius:var(--window-control-corner);
+}
+:is(.app-frame,.package-window) :where(
+  .file-well,
+  .music-hero,
+  .playlist,
+  .start-page,
+  .terminal-screen,
+  .notes-layout nav,
+  .notes-layout textarea,
+  .album-block,
+  .package-panel,
+  .import-map
+){
+  border-radius:var(--window-panel-corner);
+}
+
+@supports (corner-shape:squircle){
+  .area-window :where(button,input:not([type="range"]),textarea,select,label,section,article,nav,.app-rack,.mini-card,.system-widget,.project-module,.project-path,.project-quick-note,.project-closed-state,.all-apps-drawer,.all-apps-search,.notification,.timer-face,.next-event,.device-row){
+    corner-shape:round;
+  }
+  :is(.app-frame,.package-window,.desktop-context-menu) :where(button,input:not([type="range"]),textarea,select,label,.app-badge,.folder-tab,.nav-choice),
+  :is(.app-frame,.package-window) :where(.file-well,.music-hero,.playlist,.start-page,.terminal-screen,.notes-layout nav,.notes-layout textarea,.album-block,.package-panel,.import-map){
+    corner-shape:squircle;
+  }
+}
+
+@media(max-width:850px){
+  :root{--window-panel-corner:13px;--window-control-corner:8px}
+}
