@@ -5966,23 +5966,25 @@ body.areas-docked .area-window{
 .area-window::before,
 .universal-search::before{display:none!important}
 
-/* The header is a tint within the same sheet, not another floating layer.
-   It stays flat (no colour fade) and is separated by one engraved groove. */
+/* A stronger, uniform tint distinguishes each Area from its body. The header
+   stays translucent, square and flat, including on the rail; no colour fade. */
 .area-window .area-window-bar,
 .area-window[data-area-state="rail"] .area-window-bar{
   border:0!important;
-  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 18%,var(--sd-glass-groove))!important;
+  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 42%,var(--sd-glass-groove))!important;
   border-radius:0!important;
-  background:color-mix(in srgb,var(--area-header-accent) 8%,transparent)!important;
+  background:color-mix(in srgb,var(--area-header-accent) 32%,rgba(10,18,24,.76))!important;
   box-shadow:inset 0 -1px rgba(0,0,0,.12)!important;
 }
 body[data-theme="light"] .area-window .area-window-bar,
 body[data-theme="light"] .area-window[data-area-state="rail"] .area-window-bar{
-  background:color-mix(in srgb,var(--area-header-accent) 7%,rgba(255,255,255,.08))!important;
+  background:color-mix(in srgb,var(--area-header-accent) 27%,rgba(247,251,253,.82))!important;
   box-shadow:inset 0 -1px rgba(40,66,79,.08)!important;
 }
-.area-window .area-window-bar .area-window-identity b{color:var(--sd-glass-text)!important}
-.area-window .area-window-bar .area-window-identity small{color:var(--sd-glass-muted)!important}
+.area-window .area-window-bar .area-window-identity b{color:#f0f7fc!important}
+.area-window .area-window-bar .area-window-identity small{color:#d0dfe9!important}
+body[data-theme="light"] .area-window .area-window-bar .area-window-identity b{color:#172832!important}
+body[data-theme="light"] .area-window .area-window-bar .area-window-identity small{color:#3a505e!important}
 .area-window-icon.material-glass-element{
   border:1px solid color-mix(in srgb,currentColor 22%,var(--sd-glass-groove))!important;
   border-radius:2px!important;
@@ -6435,8 +6437,8 @@ body[data-theme="light"].areas-docked .area-window{
   bottom:-1px;
   height:1px;
   pointer-events:none;
-  background:color-mix(in srgb,var(--area-header-accent) 16%,var(--sd-glass-groove));
-  opacity:.72;
+  background:color-mix(in srgb,var(--area-header-accent) 42%,var(--sd-glass-groove));
+  opacity:.85;
 }
 
 /* Apps: only the live-card list scrolls. The app rack and bottom launcher are
