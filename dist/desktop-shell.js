@@ -820,15 +820,15 @@ function initialAreaStates(profile) {
 
 function stateSideMinimum(name, state) {
   const values = {
-    projects: { rail: 82, compact: 226, expanded: 270 },
-    apps: { rail: 82, compact: 188, expanded: 256 },
-    systems: { rail: 86, compact: 218, expanded: 280 }
+    projects: { rail: 68, compact: 226, expanded: 270 },
+    apps: { rail: 68, compact: 188, expanded: 256 },
+    systems: { rail: 70, compact: 218, expanded: 280 }
   };
   return values[name][state];
 }
 
 function stateHorizontalMinimum(name, state) {
-  if (state === "rail") return 118;
+  if (state === "rail") return 96;
   if (name === "projects") return state === "expanded" ? 210 : 178;
   return state === "expanded" ? 190 : 162;
 }
@@ -1359,7 +1359,7 @@ function renderWorkspace(name, announce = true) {
   $("#appRack").innerHTML = profile.rack.map(appName => {
     const info = appInfo[appName];
     const state = appState[appName];
-    return '<button class="app-key ' + (state !== "closed" ? "is-open " : "") + (state === "open" && appName === frontApp ? "is-active" : "") + '" data-open-app="' + appName + '" aria-label="' + escapeHtml(info.label) + '">' + appArt(appName) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
+    return '<button class="app-key ' + (state !== "closed" ? "is-open " : "") + (state === "open" && appName === frontApp ? "is-active" : "") + '" data-open-app="' + appName + '" aria-label="' + escapeHtml(info.label) + '" title="' + escapeHtml(info.label) + '">' + appArt(appName) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   }).join("");
   applyAppPrimaryColors($("#appRack"));
   prepareControlSemantics($("#appRack"));
@@ -1367,6 +1367,7 @@ function renderWorkspace(name, announce = true) {
   const status = $("#workspaceStatus");
   $("b", status).textContent = profile.label;
   $("small", status).textContent = profile.subtitle;
+  status.title = profile.label + " workspace";
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
   if (announce) showToast(profile.label + " workspace loaded");
 }

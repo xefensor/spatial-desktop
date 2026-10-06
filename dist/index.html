@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell with portable Workspaces, Projects and persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=66">
+  <link rel="stylesheet" href="desktop-shell.css?v=67">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -76,11 +76,11 @@
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-auto aria-label="Move Apps dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="apps" aria-label="Hide Apps area" title="Hide Apps area"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="app-rack" id="appRack" aria-label="Favourite and open applications">
-        <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
-        <button class="app-key is-open" data-open-app="elisa" aria-label="Elisa"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg><span>Elisa</span><i></i></button>
-        <button class="app-key" data-open-app="browser" aria-label="Web browser"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg><span>Web</span><i></i></button>
-        <button class="app-key" data-open-app="terminal" aria-label="Terminal"><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg><span>Konsole</span><i></i></button>
-        <button class="app-key" data-open-app="notes" aria-label="Notes"><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg><span>Notes</span><i></i></button>
+        <button class="app-key is-open is-active" data-open-app="dolphin" aria-label="Dolphin" title="Dolphin"><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>Dolphin</span><i></i></button>
+        <button class="app-key is-open" data-open-app="elisa" aria-label="Elisa" title="Elisa"><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg><span>Elisa</span><i></i></button>
+        <button class="app-key" data-open-app="browser" aria-label="Web browser" title="Web browser"><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg><span>Web</span><i></i></button>
+        <button class="app-key" data-open-app="terminal" aria-label="Terminal" title="Konsole"><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg><span>Konsole</span><i></i></button>
+        <button class="app-key" data-open-app="notes" aria-label="Notes" title="Notes"><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg><span>Notes</span><i></i></button>
       </nav>
       <section class="mini-section" aria-labelledby="minimizedTitle">
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
@@ -88,7 +88,7 @@
       </section>
       <div class="apps-bottom">
         <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
-        <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview"><i></i><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
+        <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview" title="General workspace"><i></i><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag this border to resize"></button>
     </aside>
@@ -129,8 +129,8 @@
       </header>
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
-        <button class="surface-key system-launcher" id="launchTimer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
-        <button class="surface-key system-launcher" data-toast="System settings"><svg><use href="#i-settings"/></svg><span>System Settings</span></button>
+        <button class="surface-key system-launcher" id="launchTimer" title="Focus timer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
+        <button class="surface-key system-launcher" data-toast="System settings" title="System Settings"><svg><use href="#i-settings"/></svg><span>System Settings</span></button>
         <button class="surface-key system-launcher layout-mode-control is-active" id="layoutModeToggle" aria-pressed="true" title="Cycle adaptive area layout"><svg><use href="#i-monitor"/></svg><span>Layout: Auto</span></button>
       </nav>
       <div class="dynamic-widget-stack" id="dynamicWidgetStack" aria-live="polite">
@@ -151,8 +151,8 @@
         <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" data-area-auto aria-label="Move Project Space dock" title="Move dock"><svg><use href="#i-grid"/></svg></button><button class="surface-key area-window-key" data-area-hide="projects" aria-label="Hide Project Space" title="Hide Project Space"><svg><use href="#i-min"/></svg></button></div>
       </header>
       <nav class="project-switcher" aria-label="Projects">
-        <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true"><i class="project-color project-color-blue"></i><span>Plasma Redesign</span></button>
-        <button class="surface-key project-choice" data-project-select="retold" aria-pressed="false"><i class="project-color project-color-green"></i><span>Retold</span></button>
+        <button class="surface-key project-choice is-active" data-project-select="plasma" aria-pressed="true" title="Plasma Redesign"><i class="project-color project-color-blue"></i><span>Plasma Redesign</span></button>
+        <button class="surface-key project-choice" data-project-select="retold" aria-pressed="false" title="Retold"><i class="project-color project-color-green"></i><span>Retold</span></button>
       </nav>
       <div class="project-space-content">
         <section class="project-module project-root-module">
@@ -423,6 +423,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=66"></script>
+  <script src="desktop-shell.js?v=67"></script>
 </body>
 </html>

@@ -3056,3 +3056,304 @@ body[data-theme="light"] .recessed-field{box-shadow:inset 0 2px 5px rgba(42,53,5
 }
 .material-cursor.is-row-resize .glyph-arrow{display:none}
 .material-cursor.is-row-resize .glyph-row-resize{display:block}
+
+/* v67 — a collapsed Area becomes a KDE-style panel. Compact and expanded
+   Areas retain normal window chrome; Rail keeps only panel structure. */
+.area-window[data-area-state="rail"]{
+  min-width:62px;
+  padding:5px;
+  border-radius:10px;
+  background:color-mix(in srgb,var(--acrylic-field) 84%,rgba(0,0,0,.28));
+  box-shadow:
+    0 5px 14px rgba(0,0,0,.20),
+    inset 1px 1px rgba(255,255,255,.075),
+    inset -1px -1px var(--acrylic-dark-edge),
+    0 0 0 1px rgba(0,0,0,.24);
+}
+body[data-theme="light"] .area-window[data-area-state="rail"]{
+  background:color-mix(in srgb,var(--acrylic-field) 90%,rgba(232,239,242,.72));
+  box-shadow:0 5px 14px rgba(34,50,58,.15),inset 1px 1px rgba(255,255,255,.74),inset -1px -1px var(--acrylic-dark-edge);
+}
+.area-window[data-area-state="rail"]::before{display:none}
+.area-window[data-area-state="rail"] .area-window-bar{
+  min-height:44px;
+  flex-basis:44px;
+  margin:-5px -5px 5px;
+  padding:4px;
+  justify-content:center;
+  border-bottom:1px solid var(--acrylic-engrave);
+  background:color-mix(in srgb,var(--content-surface) 28%,transparent);
+  box-shadow:none;
+}
+.area-window[data-area-state="rail"] .area-window-identity{
+  width:100%;
+  justify-content:center;
+}
+.area-window[data-area-state="rail"] .area-window-icon{
+  width:35px;
+  height:35px;
+  flex-basis:35px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.area-window[data-area-state="rail"] .area-window-icon svg{width:20px;height:20px}
+.area-window[data-area-state="rail"] .area-window-actions{display:none}
+
+/* Apps rail: full-colour launchers, a restrained hover plate and a
+   workspace-facing task indicator, like a vertical Plasma task manager. */
+.apps-zone[data-area-state="rail"] .app-rack{
+  min-height:0;
+  height:auto;
+  flex:1;
+  padding:2px 0;
+  gap:3px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.apps-zone[data-area-state="rail"] .app-rack::-webkit-scrollbar{display:none}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle{
+  width:100%;
+  min-width:0;
+  height:48px;
+  min-height:48px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+  transform:none;
+}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle:hover{
+  transform:none;
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 10%,var(--content-surface-raised) 34%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent);
+}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle:active{
+  transform:translateY(2px) scaleY(.985);
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 16%,var(--content-surface-raised) 40%);
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.34);
+}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active{
+  transform:none;
+  background:color-mix(in srgb,var(--item-tone,var(--blue)) 10%,transparent);
+  box-shadow:none;
+}
+.apps-zone[data-area-state="rail"] .app-key .app-art{width:34px;height:34px}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle::after{
+  top:9px;
+  bottom:9px;
+  left:auto;
+  right:0;
+  width:2px;
+  height:auto;
+  border-radius:2px 0 0 2px;
+  background:transparent;
+  opacity:0;
+}
+.apps-zone[data-area-state="rail"][data-dock-edge="right"] .app-key.control-toggle::after{
+  left:0;
+  right:auto;
+  border-radius:0 2px 2px 0;
+}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-open::after,
+.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active::after{
+  background:var(--state-tone,var(--blue));
+  box-shadow:0 0 5px color-mix(in srgb,var(--state-tone,var(--blue)) 48%,transparent);
+  opacity:1;
+}
+.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active::after{width:3px}
+.apps-zone[data-area-state="rail"] .apps-bottom{
+  grid-template-columns:1fr;
+  gap:3px;
+  padding-top:5px;
+  border-top:1px solid var(--acrylic-engrave);
+}
+.apps-zone[data-area-state="rail"] .overview-launch,
+.apps-zone[data-area-state="rail"] .workspace-status{
+  width:100%;
+  height:42px;
+  min-height:42px;
+  padding:0;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.apps-zone[data-area-state="rail"] .overview-launch:hover,
+.apps-zone[data-area-state="rail"] .workspace-status:hover{
+  background:color-mix(in srgb,var(--workspace-accent,var(--blue)) 10%,transparent);
+}
+.apps-zone[data-area-state="rail"] .overview-launch svg{width:21px;height:21px}
+.apps-zone[data-area-state="rail"] .workspace-status>i{
+  width:24px;
+  height:3px;
+  border-radius:2px;
+}
+
+/* System rail follows tray conventions: actions and live indicators above,
+   clock anchored at the bottom. */
+.systems-zone[data-area-state="rail"]{
+  gap:3px;
+  overflow:hidden;
+}
+.systems-zone[data-area-state="rail"] .system-launchers{
+  order:1;
+  grid-template-columns:1fr;
+  gap:3px;
+  padding-bottom:5px;
+  border-bottom:1px solid var(--acrylic-engrave);
+}
+.systems-zone[data-area-state="rail"] .system-launcher{
+  width:100%;
+  height:42px;
+  padding:0;
+  justify-content:center;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.systems-zone[data-area-state="rail"] .system-launcher:hover{
+  background:color-mix(in srgb,var(--blue) 9%,transparent);
+}
+.systems-zone[data-area-state="rail"] .system-launcher svg{width:20px;height:20px}
+.systems-zone[data-area-state="rail"] .dynamic-widget-stack{order:2;gap:3px}
+.systems-zone[data-area-state="rail"] .dynamic-widget{
+  padding:3px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.systems-zone[data-area-state="rail"] .widget-heading{
+  height:38px;
+  align-items:center;
+  justify-content:center;
+}
+.systems-zone[data-area-state="rail"] .widget-heading svg{width:20px;height:20px;color:var(--text)}
+.systems-zone[data-area-state="rail"] .time-block{
+  order:10;
+  min-height:auto;
+  margin-top:auto;
+  padding:8px 0 5px;
+  justify-content:center;
+  border-top:1px solid var(--acrylic-engrave);
+  border-bottom:0;
+}
+.systems-zone[data-area-state="rail"] .time-block>span{
+  font:650 13px/1 ui-monospace,monospace;
+  letter-spacing:-.03em;
+}
+
+/* Project Rail behaves like a small activity switcher rather than a clipped window. */
+.project-area[data-area-state="rail"] .project-switcher{
+  display:grid;
+  grid-template-columns:1fr!important;
+  gap:3px;
+  margin:0;
+  overflow:auto;
+  scrollbar-width:none;
+}
+.project-area[data-area-state="rail"] .project-choice{
+  width:100%;
+  height:42px;
+  padding:0;
+  justify-content:center;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  box-shadow:none;
+}
+.project-area[data-area-state="rail"] .project-choice:hover{
+  background:color-mix(in srgb,var(--project-accent) 10%,transparent);
+}
+.project-area[data-area-state="rail"] .project-choice::after{
+  top:9px;
+  bottom:9px;
+  left:auto;
+  right:0;
+  width:2px;
+  height:auto;
+}
+.project-area[data-area-state="rail"][data-dock-edge="right"] .project-choice::after{left:0;right:auto}
+.project-area[data-area-state="rail"] .project-color{width:13px;height:13px;flex-basis:13px}
+
+/* A horizontal Rail rotates the same panel grammar instead of stacking a
+   vertical task manager into a short strip. */
+.area-window[data-area-state="rail"][data-dock-edge="top"],
+.area-window[data-area-state="rail"][data-dock-edge="bottom"]{
+  min-width:240px;
+  flex-direction:row;
+  align-items:stretch;
+  gap:4px;
+}
+.area-window[data-area-state="rail"][data-dock-edge="top"] .area-window-bar,
+.area-window[data-area-state="rail"][data-dock-edge="bottom"] .area-window-bar{
+  width:46px;
+  min-width:46px;
+  min-height:0;
+  flex:0 0 46px;
+  margin:-5px 0 -5px -5px;
+  border-right:1px solid var(--acrylic-engrave);
+  border-bottom:0;
+}
+.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-rack,
+.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-rack{
+  display:grid;
+  grid-template-columns:none;
+  grid-auto-flow:column;
+  grid-auto-columns:48px;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.apps-zone[data-area-state="rail"][data-dock-edge="top"] .apps-bottom,
+.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .apps-bottom{
+  display:grid;
+  grid-template-columns:42px 42px;
+  align-content:center;
+  padding:0 0 0 5px;
+  border-top:0;
+  border-left:1px solid var(--acrylic-engrave);
+}
+.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-key.control-toggle::after,
+.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle::after{
+  top:auto;
+  bottom:0;
+  left:9px;
+  right:9px;
+  width:auto;
+  height:2px;
+  border-radius:2px 2px 0 0;
+}
+.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle::after{top:0;bottom:auto}
+.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-key.control-toggle.is-active::after,
+.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle.is-active::after{height:3px;width:auto}
+.systems-zone[data-area-state="rail"][data-dock-edge="top"] .system-launchers,
+.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .system-launchers{
+  display:grid;
+  grid-template-columns:repeat(3,42px);
+  align-content:center;
+  padding:0 5px 0 0;
+  border-right:1px solid var(--acrylic-engrave);
+  border-bottom:0;
+}
+.systems-zone[data-area-state="rail"][data-dock-edge="top"] .dynamic-widget-stack,
+.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .dynamic-widget-stack{display:flex;align-items:center}
+.systems-zone[data-area-state="rail"][data-dock-edge="top"] .time-block,
+.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .time-block{
+  margin:0 0 0 auto;
+  padding:0 8px;
+  align-items:center;
+  border-top:0;
+  border-left:1px solid var(--acrylic-engrave);
+}
+.project-area[data-area-state="rail"][data-dock-edge="top"] .project-switcher,
+.project-area[data-area-state="rail"][data-dock-edge="bottom"] .project-switcher{
+  grid-template-columns:repeat(2,42px)!important;
+  align-content:center;
+}
