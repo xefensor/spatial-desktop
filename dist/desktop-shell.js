@@ -824,6 +824,90 @@ $("#appSearch").addEventListener("input", event => {
 
 filterLauncher();
 
+let activeUniversalScope = "all";
+let universalLastFocus = null;
+
+function filterUniversalSearch() {
+  const query = $("#universalSearchInput").value.trim().toLowerCase();
+  let localVisible = 0;
+
+  $$(".universal-result", $("#universalResults")).forEach(result => {
+    const group = result.closest("[data-universal-group]").dataset.universalGroup;
+    const inScope = activeUniversalScope === "all" || activeUniversalScope === group;
+    const isWeb = group === "web";
+    const searchable = (result.dataset.universalSearch || result.textContent).toLowerCase();
+    const matchesQuery = !query || isWeb || searchable.includes(query);
+    result.hidden = !(inScope && matchesQuery);
+    if (!result.hidden && !isWeb) localVisible += 1;
+  });
+
+  $$(".universal-group", $("#universalResults")).forEach(group => {
+    group.hidden = !$(".universal-result:not([hidden])", group);
+  });
+
+  $("#universalWebLabel").textContent = query ? `Search the web for “${$("#universalSearchInput").value.trim()}”` : "Search the web";
+  $("#universalEmpty").hidden = !(query && localVisible === 0 && activeUniversalScope !== "web");
+}
+
+function setUniversalSearchOpen(open) {
+  const overlay = $("#universalSearch");
+  if (open === overlay.classList.contains("is-open")) return;
+  overlay.classList.toggle("is-open", open);
+  overlay.setAttribute("aria-hidden", String(!open));
+  document.body.classList.toggle("universal-search-open", open);
+
+  if (open) {
+    universalLastFocus = document.activeElement;
+    setAllAppsOpen(false);
+    activeUniversalScope = "all";
+    $("#universalSearchInput").value = "";
+    $$('[data-universal-scope]').forEach(choice => {
+      const selected = choice.dataset.universalScope === "all";
+      choice.classList.toggle("is-active", selected);
+      choice.setAttribute("aria-pressed", String(selected));
+    });
+    filterUniversalSearch();
+    requestAnimationFrame(() => {
+      $("#universalSearchInput").focus();
+      $("#universalSearchInput").select();
+    });
+  } else if (universalLastFocus && universalLastFocus.focus) {
+    universalLastFocus.focus({preventScroll:true});
+  }
+}
+
+function openApplicationSearch() {
+  setUniversalSearchOpen(false);
+  setAllAppsOpen(true);
+  requestAnimationFrame(() => $("#appSearch").focus());
+}
+
+$("#universalSearchInput").addEventListener("input", filterUniversalSearch);
+
+$$('[data-universal-scope]').forEach(button => button.addEventListener("click", () => {
+  activeUniversalScope = button.dataset.universalScope;
+  $$('[data-universal-scope]').forEach(choice => {
+    const selected = choice === button;
+    choice.classList.toggle("is-active", selected);
+    choice.setAttribute("aria-pressed", String(selected));
+  });
+  filterUniversalSearch();
+  $("#universalSearchInput").focus();
+}));
+
+$$('.universal-result').forEach(button => button.addEventListener("click", () => setUniversalSearchOpen(false)));
+$("#universalWebResult").addEventListener("click", () => {
+  openApp("browser");
+  const query = $("#universalSearchInput").value.trim();
+  showToast(query ? `Searching the web for “${query}”` : "Web search opened");
+});
+$("#universalTimer").addEventListener("click", () => $("#launchTimer").click());
+$("#universalSearch").addEventListener("pointerdown", event => {
+  if (event.target === $("#universalSearch")) setUniversalSearchOpen(false);
+});
+
+filterUniversalSearch();
+
 function prepareMaterialCursor() {
   const cursor = $("#materialCursor");
   const desktop = $(".desktop-shell");
@@ -867,42 +951,95 @@ function prepareMaterialCursor() {
     syncMode(document.elementFromPoint(lastX, lastY), 0);
   };
 
-  desktop.addEventListener("pointerenter", event => {
-    if (event.pointerType && event.pointerType !== "mouse") return;
-    cursor.classList.add("is-visible");
+  [desktop, $("#universalSearch")].filter(Boolean).forEach(surface => {
+    surface.addEventListener("pointerenter", event => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      cursor.classList.add("is-visible");
+    });
+    surface.addEventListener("pointerleave", () => {
+      cursor.classList.remove("is-visible");
+      release();
+    });
+    surface.addEventListener("pointermove", event => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      cursor.style.setProperty("--cursor-x", event.clientX + "px");
+      cursor.style.setProperty("--cursor-y", event.clientY + "px");
+      cursor.classList.add("is-visible");
+      syncButtons(event.buttons);
+      syncMode(document.elementFromPoint(event.clientX, event.clientY), event.buttons);
+    }, {passive:true});
+    surface.addEventListener("pointerdown", event => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      syncButtons(event.buttons);
+      syncMode(event.target, event.buttons);
+    });
+    surface.addEventListener("contextmenu", event => event.preventDefault());
   });
-  desktop.addEventListener("pointerleave", () => {
-    cursor.classList.remove("is-visible");
-    release();
-  });
-  desktop.addEventListener("pointermove", event => {
-    if (event.pointerType && event.pointerType !== "mouse") return;
-    lastX = event.clientX;
-    lastY = event.clientY;
-    cursor.style.setProperty("--cursor-x", event.clientX + "px");
-    cursor.style.setProperty("--cursor-y", event.clientY + "px");
-    cursor.classList.add("is-visible");
-    syncButtons(event.buttons);
-    syncMode(document.elementFromPoint(event.clientX, event.clientY), event.buttons);
-  }, {passive:true});
-  desktop.addEventListener("pointerdown", event => {
-    if (event.pointerType && event.pointerType !== "mouse") return;
-    syncButtons(event.buttons);
-    syncMode(event.target, event.buttons);
-  });
-  desktop.addEventListener("contextmenu", event => event.preventDefault());
   window.addEventListener("pointerup", release);
   window.addEventListener("pointercancel", release);
   window.addEventListener("blur", release);
   window.addEventListener("material-cursor-mode", () => syncMode(document.elementFromPoint(lastX, lastY), 0));
 }
 
+let superKeyAlone = false;
 document.addEventListener("keydown", event => {
+  const isSuper = event.key === "Meta" || event.key === "OS";
+  if (isSuper && !event.repeat) {
+    superKeyAlone = true;
+    return;
+  }
+  if (event.metaKey && !isSuper) superKeyAlone = false;
+
+  const universalShortcut = event.code === "Space" && (event.metaKey || event.altKey || event.ctrlKey);
+  if (universalShortcut) {
+    event.preventDefault();
+    superKeyAlone = false;
+    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
+    return;
+  }
+
+  if (event.key === "Escape" && $("#universalSearch").classList.contains("is-open")) {
+    event.preventDefault();
+    setUniversalSearchOpen(false);
+    return;
+  }
+
   if (event.key === "Escape" && $("#allAppsDrawer").classList.contains("is-open")) {
     setAllAppsOpen(false);
     $("#allAppsToggle").focus();
+    return;
+  }
+
+  if ($("#universalSearch").classList.contains("is-open") && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+    event.preventDefault();
+    const results = $$(".universal-result:not([hidden])", $("#universalResults"));
+    if (!results.length) return;
+    const current = results.indexOf(document.activeElement);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const next = current === -1 ? (direction > 0 ? 0 : results.length - 1) : (current + direction + results.length) % results.length;
+    results[next].focus();
+  }
+
+  if ($("#universalSearch").classList.contains("is-open") && event.key === "Enter" && document.activeElement === $("#universalSearchInput")) {
+    const first = $(".universal-result:not([hidden])", $("#universalResults"));
+    if (first) {
+      event.preventDefault();
+      first.click();
+    }
   }
 });
+
+document.addEventListener("keyup", event => {
+  const isSuper = event.key === "Meta" || event.key === "OS";
+  if (isSuper && superKeyAlone) {
+    event.preventDefault();
+    openApplicationSearch();
+  }
+  if (isSuper) superKeyAlone = false;
+});
+window.addEventListener("blur", () => { superKeyAlone = false; });
 
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));
 $$("[data-toggle]").forEach(button => button.addEventListener("click", () => {

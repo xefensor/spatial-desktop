@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#07090a">
   <meta name="description" content="An interactive KDE desktop shell built around persistent app and system areas.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=50">
+  <link rel="stylesheet" href="desktop-shell.css?v=51">
   <title>Plasma Spatial Shell</title>
 </head>
 <body data-theme="oled">
@@ -195,6 +195,61 @@
       </div>
     </aside>
   </main>
+  <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true">
+    <div class="universal-search-shell">
+      <header class="universal-search-header">
+        <div class="universal-search-title"><span class="eyebrow">UNIVERSAL SEARCH</span><h2 id="universalSearchTitle">Search everything</h2></div>
+        <label class="universal-search-field">
+          <svg aria-hidden="true"><use href="#i-search"/></svg>
+          <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Apps, files, settings, actions or the web" aria-label="Search everything">
+          <kbd>Esc</kbd>
+        </label>
+      </header>
+      <div class="universal-search-layout">
+        <nav class="universal-search-scopes" aria-label="Search scope">
+          <button class="universal-scope is-active" data-universal-scope="all" aria-pressed="true"><svg><use href="#i-search"/></svg><span>Everything</span></button>
+          <button class="universal-scope" data-universal-scope="apps" aria-pressed="false"><svg><use href="#i-grid"/></svg><span>Applications</span></button>
+          <button class="universal-scope" data-universal-scope="files" aria-pressed="false"><svg><use href="#i-folder"/></svg><span>Files</span></button>
+          <button class="universal-scope" data-universal-scope="settings" aria-pressed="false"><svg><use href="#i-settings"/></svg><span>Settings</span></button>
+          <button class="universal-scope" data-universal-scope="web" aria-pressed="false"><svg><use href="#i-web"/></svg><span>Web</span></button>
+        </nav>
+        <div class="universal-results" id="universalResults" aria-live="polite">
+          <section class="universal-group" data-universal-group="apps">
+            <h3>Applications</h3>
+            <div class="universal-result-grid">
+              <button class="universal-result" data-open-app="dolphin" data-universal-search="dolphin files folders downloads file manager"><svg class="app-art"><use href="#app-dolphin"/></svg><span><b>Dolphin</b><small>File manager</small></span><kbd>Enter</kbd></button>
+              <button class="universal-result" data-open-app="elisa" data-universal-search="elisa music audio player songs"><svg class="app-art"><use href="#app-elisa"/></svg><span><b>Elisa</b><small>Music player</small></span></button>
+              <button class="universal-result" data-open-app="terminal" data-universal-search="konsole terminal command shell"><svg class="app-art"><use href="#app-terminal"/></svg><span><b>Konsole</b><small>Terminal</small></span></button>
+            </div>
+          </section>
+          <section class="universal-group" data-universal-group="files">
+            <h3>Files</h3>
+            <div class="universal-result-grid">
+              <button class="universal-result" data-universal-search="desktop layout notes markdown document" data-toast="Opening desktop-layout-notes.md"><span class="universal-file-icon"><i class="document-glyph"></i></span><span><b>desktop-layout-notes.md</b><small>Documents · modified today</small></span></button>
+              <button class="universal-result" data-universal-search="plasma shell study image png design" data-toast="Opening plasma-shell-study.png"><span class="universal-file-icon"><i class="document-glyph image"></i></span><span><b>plasma-shell-study.png</b><small>Pictures · 6.8 MiB</small></span></button>
+              <button class="universal-result" data-universal-search="retold project folder minecraft" data-toast="Opening Retold"><span class="universal-file-icon"><i class="folder-glyph"></i></span><span><b>Retold</b><small>Projects · 84 items</small></span></button>
+            </div>
+          </section>
+          <section class="universal-group" data-universal-group="settings">
+            <h3>Settings and actions</h3>
+            <div class="universal-result-grid">
+              <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
+              <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
+              <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
+            </div>
+          </section>
+          <section class="universal-group" data-universal-group="web">
+            <h3>Web</h3>
+            <div class="universal-result-grid">
+              <button class="universal-result universal-web-result" id="universalWebResult" data-universal-search="web browser internet search"><span class="universal-symbol cyan"><svg><use href="#i-web"/></svg></span><span><b id="universalWebLabel">Search the web</b><small>Open in your default browser</small></span><svg class="result-arrow"><use href="#i-right"/></svg></button>
+            </div>
+          </section>
+          <p class="universal-empty" id="universalEmpty" hidden>No local results. Press Enter to search the web.</p>
+        </div>
+      </div>
+      <footer class="universal-search-footer"><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>Enter</kbd> Open</span><span><kbd>Super</kbd><kbd>Space</kbd> Toggle search</span></footer>
+    </div>
+  </section>
   <div class="material-cursor" id="materialCursor" aria-hidden="true">
     <svg class="cursor-glyph glyph-arrow" viewBox="0 0 28 36">
       <path class="cursor-outline" d="M3 2.5l.35 25.55c.01.72.9 1.05 1.39.52l4.75-5.18 5.17 10.69c.29.61 1.02.86 1.63.56l3.39-1.65c.61-.3.86-1.03.57-1.64l-5.13-10.61 7.68-.18c.73-.02 1.02-.93.47-1.4L4.33 1.9C3.8 1.46 3 1.83 3 2.5Z"/>
@@ -236,6 +291,6 @@
     </svg>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=50"></script>
+  <script src="desktop-shell.js?v=51"></script>
 </body>
 </html>
