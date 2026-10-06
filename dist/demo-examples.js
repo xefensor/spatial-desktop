@@ -166,7 +166,7 @@
       { projects: { edge: "left", order: 1 }, apps: { edge: "left", order: 0 }, systems: { edge: "right", order: 0 } },
       { left: 68, right: 280 }, leaf("dolphin"), {
         note: "Personal notes\n\nBook the train tickets.\nBack up the holiday photographs.",
-        folder: "Home", files: [["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Pictures", "Travel and family", "folder"], ["Music", "18 albums", "folder"], ["Projects", "Personal projects", "folder"]],
+        folder: "Home", files: [["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Pictures", "231 items", "folder"], ["Music", "18 albums", "folder"], ["Projects", "7 items", "folder"]],
         browser: { title: "Your day", subtitle: "Personal start page", intro: "Mail, the weather and the next trip — a quiet place for everyday browsing.", links: ["Mail", "Weather", "Train tickets", "Reading list"] },
         notifications: [], hiddenWidgets: [false, false]
       }),
@@ -174,7 +174,7 @@
       { projects: { edge: "left", order: 0 }, apps: { edge: "bottom", order: 0 }, systems: { edge: "right", order: 0 } },
       { left: 280, right: 280, bottom: 96 }, leaf("browser"), {
         note: "Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.",
-        folder: "Documents/Biology", files: [["Field guide.pdf", "4.2 MiB", "document"], ["Course notes", "12 documents", "folder"], ["Reading list.md", "3 KiB", "document"]],
+        folder: "Documents/Biology", files: [["Field guide.pdf", "4.2 MiB", "document"], ["Course notes", "12 files", "folder"], ["Reading list.md", "3 KiB", "document"]],
         browser: { title: "Urban habitats & biodiversity", subtitle: "Biology · course reading", intro: "Habitat structure, shade and soil moisture influence the species found in urban green spaces. Compare sites using the same survey method, then record the limits of your sample.", links: ["Course reading", "Sampling methods", "Citation guide", "Assignment brief"] },
         notifications: [["Feedback available", "Biology · your field survey outline", "amber", "i-graduation"]], focus: { running: false, seconds: 1500, visible: true }, hiddenWidgets: [false, true]
       }),
@@ -182,7 +182,7 @@
       { projects: { edge: "right", order: 0 }, apps: { edge: "left", order: 0 }, systems: { edge: "bottom", order: 0 } },
       { left: 68, right: 300, bottom: 96 }, { kind: "split", axis: "y", ratio: .58, a: leaf("browser"), b: leaf("terminal") }, {
         note: "Launch checklist\n\nConfirm the contact form.\nCheck keyboard navigation.\nSend the staging link for review.",
-        folder: "Projects/website-launch", files: [["src", "Application source", "folder"], ["public", "Images and fonts", "folder"], ["package.json", "Project dependencies", "document"], ["README.md", "Build instructions", "document"]],
+        folder: "Projects/website-launch", files: [["src", "24 files", "folder"], ["public", "18 files", "folder"], ["package.json", "2 KiB", "document"], ["README.md", "4 KiB", "document"]],
         browser: { title: "Northstar Studio", subtitle: "Website Launch · local preview", intro: "Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.", links: ["Our projects", "About the studio", "Contact", "Preview checklist"] },
         notifications: [["Review in 15 minutes", "Website Launch · bring the staging preview", "violet", "i-calendar"]], hiddenWidgets: [false, true]
       }),
