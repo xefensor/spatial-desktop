@@ -210,6 +210,8 @@ let musicTimer;
 let focusSeconds = 25 * 60;
 let focusRunning = false;
 let focusTimer;
+let notificationPeekTimer;
+let notificationAttentionTimer;
 let noteDraft = "";
 let terminalPreview = "Ready for a command";
 let cursorBusyTimer;
@@ -3629,12 +3631,99 @@ function concealDynamicWidget(widget) {
   }, 170);
 }
 
+function positionNotificationPeek() {
+  const peek = $("#notificationPeek");
+  if (!peek?.classList.contains("is-visible")) return;
+  const area = areaFor("systems");
+  const edge = area?.dataset.dockEdge || dockState.systems?.edge || "right";
+  const railVisible = area && !area.hidden && !area.classList.contains("is-on-other-display") && area.dataset.areaState === "rail";
+  const rect = railVisible ? area.getBoundingClientRect() : null;
+  const gap = 8;
+  const inset = 12;
+  const width = Math.min(292, Math.max(224, window.innerWidth - inset * 2));
+  const height = peek.offsetHeight || 58;
+  const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+  let left;
+  let top;
+
+  peek.style.width = width + "px";
+  peek.dataset.edge = edge;
+  if (edge === "left") {
+    left = rect ? rect.right + gap : inset;
+    top = rect ? clamp(rect.top + 58, inset, window.innerHeight - height - inset) : clamp(window.innerHeight * .28, inset, window.innerHeight - height - inset);
+  } else if (edge === "right") {
+    left = rect ? rect.left - width - gap : window.innerWidth - width - inset;
+    top = rect ? clamp(rect.top + 58, inset, window.innerHeight - height - inset) : clamp(window.innerHeight * .28, inset, window.innerHeight - height - inset);
+  } else if (edge === "top") {
+    left = rect ? clamp(rect.right - width - 8, inset, window.innerWidth - width - inset) : window.innerWidth - width - inset;
+    top = rect ? rect.bottom + gap : inset;
+  } else {
+    left = rect ? clamp(rect.right - width - 8, inset, window.innerWidth - width - inset) : window.innerWidth - width - inset;
+    top = rect ? rect.top - height - gap : window.innerHeight - height - inset;
+  }
+  peek.style.left = clamp(left, inset, window.innerWidth - width - inset) + "px";
+  peek.style.top = clamp(top, inset, window.innerHeight - height - inset) + "px";
+}
+
+function hideNotificationPeek() {
+  const peek = $("#notificationPeek");
+  clearTimeout(notificationPeekTimer);
+  peek?.classList.remove("is-visible");
+  peek?.setAttribute("aria-hidden", "true");
+}
+
+function showNotificationPeek(title, detail, tone, glyph) {
+  const peek = $("#notificationPeek");
+  if (!peek) return;
+  peek.style.setProperty("--peek-tone", "var(--" + tone + ")");
+  const iconElement = $("#notificationPeekIcon");
+  iconElement.className = "notification-peek-icon " + tone;
+  iconElement.innerHTML = icon(glyph);
+  $("#notificationPeekTitle").textContent = title;
+  $("#notificationPeekDetail").textContent = detail;
+  peek.setAttribute("aria-hidden", "false");
+  peek.classList.add("is-visible");
+  requestAnimationFrame(positionNotificationPeek);
+  clearTimeout(notificationPeekTimer);
+  notificationPeekTimer = setTimeout(hideNotificationPeek, 3400);
+}
+
+function drawAttentionToNotification(item, title, detail, tone, glyph) {
+  const area = areaFor("systems");
+  const local = area && !area.hidden && !area.classList.contains("is-on-other-display") && isLocalArea("systems");
+  const expanded = local && area.dataset.areaState === "expanded" && !$("#universalSearch")?.classList.contains("is-open");
+  clearTimeout(notificationAttentionTimer);
+  $$(".notification.is-new-attention", $("#notificationList")).forEach(notification => notification.classList.remove("is-new-attention"));
+  area?.classList.remove("has-notification-attention");
+  $("#notificationWidget")?.classList.remove("has-new-attention");
+
+  if (expanded) {
+    hideNotificationPeek();
+    item.classList.add("is-new-attention");
+    area.classList.add("has-notification-attention");
+    $("#notificationWidget").classList.add("has-new-attention");
+    item.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    notificationAttentionTimer = setTimeout(() => {
+      item.classList.remove("is-new-attention");
+      area.classList.remove("has-notification-attention");
+      $("#notificationWidget")?.classList.remove("has-new-attention");
+    }, 1450);
+    return;
+  }
+
+  if (local && area.dataset.areaState === "rail") area.classList.add("has-notification-attention");
+  showNotificationPeek(title, detail, tone, glyph);
+  notificationAttentionTimer = setTimeout(() => area?.classList.remove("has-notification-attention"), 1450);
+}
+
 function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
   const item = document.createElement("article");
   item.className = "notification";
+  item.style.setProperty("--notification-tone", "var(--" + tone + ")");
   item.innerHTML = '<span class="app-badge ' + tone + '">' + icon(glyph) + '</span><div><b>' + escapeHtml(title) + '</b><small>' + escapeHtml(detail) + '</small></div><button class="dismiss-button" aria-label="Dismiss">×</button>';
   $("#notificationList").prepend(item);
   syncNotifications();
+  requestAnimationFrame(() => drawAttentionToNotification(item, title, detail, tone, glyph));
 }
 
 function syncNotifications() {
@@ -3652,7 +3741,6 @@ function setFocusRunning(running) {
     if (!focusSeconds) {
       focusRunning = false;
       clearInterval(focusTimer);
-      showToast("Focus timer finished");
       addNotification("Focus timer finished", "25 minute session completed", "blue", "i-timer");
       concealDynamicWidget($("#timerWidget"));
     }
@@ -3689,6 +3777,19 @@ $("#notificationList").addEventListener("click", event => {
     syncNotifications();
   }, 140);
 });
+
+$("#notificationPeek").addEventListener("click", () => {
+  hideNotificationPeek();
+  showArea("systems", false);
+  const newest = $(".notification", $("#notificationList"));
+  if (newest && areaFor("systems")?.dataset.areaState === "expanded") {
+    requestAnimationFrame(() => newest.scrollIntoView({ block: "nearest" }));
+  }
+});
+
+$$('[data-phone-ping]').forEach(button => button.addEventListener("click", () => {
+  addNotification("Phone ping sent", "Pixel 8a is ringing", "cyan", "i-phone");
+}));
 
 $("#terminalInput").addEventListener("keydown", event => {
   if (event.key !== "Enter") return;
@@ -4328,8 +4429,23 @@ function applyDesktopSyncState(state) {
     });
 
     if (typeof state.notificationsHtml === "string") {
+      const previousNotificationCount = $$(".notification", $("#notificationList")).length;
       $("#notificationList").innerHTML = state.notificationsHtml;
       syncNotifications();
+      const newest = $(".notification", $("#notificationList"));
+      const incomingNotificationCount = $$(".notification", $("#notificationList")).length;
+      if (newest && incomingNotificationCount > previousNotificationCount) {
+        const badge = $(".app-badge", newest);
+        const tone = ["blue", "cyan", "violet", "green", "amber", "rose"].find(name => badge?.classList.contains(name)) || "blue";
+        const glyph = $("use", badge)?.getAttribute("href")?.replace(/^#/, "") || "i-bell";
+        requestAnimationFrame(() => drawAttentionToNotification(
+          newest,
+          $("b", newest)?.textContent || "New notification",
+          $("small", newest)?.textContent || "",
+          tone,
+          glyph
+        ));
+      }
     }
 
     if (state.music) {
@@ -4503,6 +4619,7 @@ window.addEventListener("resize", () => {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
   }
+  positionNotificationPeek();
 });
 
 window.addEventListener("pointermove", event => {

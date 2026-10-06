@@ -7020,3 +7020,101 @@ body[data-theme="light"].areas-docked .area-window{
 .overview-open-windows .workspace-no-windows>span{width:40px;height:40px;display:grid;place-items:center}.overview-open-windows .workspace-no-windows svg{width:22px;height:22px}.overview-open-windows .workspace-no-windows b{font-size:14px;color:var(--text)}.overview-open-windows .workspace-no-windows small{max-width:260px;font-size:12px;line-height:1.4}
 body[data-theme="light"] .universal-search .overview-open-windows .overview-window{background:linear-gradient(180deg,color-mix(in srgb,var(--overview-app) 5%,#f4f7f8),#dfe5e8)!important;box-shadow:0 5px 12px rgba(45,70,82,.14),inset 0 1px white!important}
 @media(max-width:1280px){.universal-search .overview-open-windows .overview-window{grid-template-columns:1fr!important;grid-template-rows:48px minmax(0,1fr)!important;flex-basis:146px;height:146px!important;min-height:146px!important}.universal-search .overview-open-windows .overview-window-titlebar{padding:6px 8px;grid-template-columns:30px minmax(0,1fr) 8px;border-right:0;border-bottom:1px solid var(--control-edge)}.universal-search .overview-open-windows .overview-window-titlebar>.app-art{width:30px;height:30px}}
+
+/* v136 — notifications announce themselves through the System Area. When the
+   Area is open, a short acrylic edge-light traces only the new row. A rail or
+   hidden Area uses one restrained edge-adjacent preview instead of a generic
+   desktop toast. */
+.notification.is-new-attention{isolation:isolate}
+.notification.is-new-attention::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:1px 0;
+  pointer-events:none;
+  border:1px solid color-mix(in srgb,var(--notification-tone,var(--blue)) 72%,var(--sd-glass-edge));
+  background:color-mix(in srgb,var(--notification-tone,var(--blue)) 5%,transparent);
+  box-shadow:inset 2px 0 color-mix(in srgb,var(--notification-tone,var(--blue)) 82%,white 8%),inset -1px 0 color-mix(in srgb,var(--notification-tone,var(--blue)) 28%,transparent);
+  animation:notification-edge-attention 1.35s ease-out both;
+}
+.notification-widget.has-new-attention .widget-heading>div>svg,
+.notification-widget.has-new-attention #notificationCount{
+  color:color-mix(in srgb,var(--blue) 84%,white 16%);
+  text-shadow:0 0 5px color-mix(in srgb,var(--blue) 42%,transparent);
+}
+.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{
+  box-shadow:inset 2px 0 color-mix(in srgb,var(--blue) 76%,white 8%);
+  animation:notification-rail-attention 1.35s ease-out both;
+}
+.systems-zone[data-area-state="rail"][data-dock-edge="right"].has-notification-attention .notification-widget .widget-heading{
+  box-shadow:inset -2px 0 color-mix(in srgb,var(--blue) 76%,white 8%);
+}
+@keyframes notification-edge-attention{
+  0%{opacity:.15;border-color:transparent;background:transparent}
+  16%{opacity:1}
+  58%{opacity:.72}
+  100%{opacity:0;border-color:transparent;background:transparent}
+}
+@keyframes notification-rail-attention{0%{background:transparent}18%{background:color-mix(in srgb,var(--blue) 12%,transparent)}100%{background:transparent}}
+
+.notification-peek{
+  --peek-tone:var(--blue);
+  position:fixed;
+  z-index:140;
+  min-height:56px;
+  margin:0;
+  padding:7px 9px;
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--peek-tone) 20%,var(--sd-glass-edge));
+  border-radius:0;
+  color:var(--sd-glass-text);
+  text-align:left;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.045)),transparent 42%),var(--sd-glass-face);
+  box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px var(--sd-glass-highlight),inset 2px 0 color-mix(in srgb,var(--peek-tone) 60%,transparent);
+  -webkit-backdrop-filter:blur(20px) saturate(1.08);
+  backdrop-filter:blur(20px) saturate(1.08);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translateX(5px);
+  transition:opacity 110ms linear,transform 110ms ease-out,visibility 0s linear 110ms;
+}
+.notification-peek[data-edge="left"]{transform:translateX(-5px)}
+.notification-peek[data-edge="top"]{transform:translateY(-5px)}
+.notification-peek[data-edge="bottom"]{transform:translateY(5px)}
+.notification-peek.is-visible{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:none;
+  transition:opacity 110ms linear,transform 110ms ease-out,visibility 0s;
+}
+.notification-peek-icon{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-left:1px solid color-mix(in srgb,currentColor 48%,var(--sd-glass-groove));
+  color:var(--peek-tone);
+  background:color-mix(in srgb,currentColor 6%,transparent);
+}
+.notification-peek-icon.blue{--peek-tone:var(--blue);color:var(--blue)}
+.notification-peek-icon.cyan{--peek-tone:var(--cyan);color:var(--cyan)}
+.notification-peek-icon.violet{--peek-tone:var(--violet);color:var(--violet)}
+.notification-peek-icon.green{--peek-tone:var(--green);color:var(--green)}
+.notification-peek-icon.amber{--peek-tone:var(--amber);color:var(--amber)}
+.notification-peek-icon.rose{--peek-tone:var(--rose);color:var(--rose)}
+.notification-peek-icon svg{width:18px;height:18px}
+.notification-peek-copy{min-width:0;display:block}
+.notification-peek-copy b,.notification-peek-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notification-peek-copy b{font-size:12px;line-height:1.25}
+.notification-peek-copy small{margin-top:3px;color:var(--sd-glass-muted);font-size:10.5px;line-height:1.2}
+body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.32)),transparent 42%),var(--sd-glass-face);box-shadow:0 8px 20px rgba(42,64,76,.16),inset 0 1px white,inset 2px 0 color-mix(in srgb,var(--peek-tone) 54%,transparent)}
+@media(prefers-reduced-motion:reduce){
+  .notification.is-new-attention::before,.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{animation:none;opacity:1}
+  .notification-peek,.notification-peek.is-visible{transition:none}
+}

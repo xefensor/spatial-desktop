@@ -143,7 +143,7 @@
       </div>
       <div class="static-widget-stack" aria-label="Pinned system widgets">
       <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b id="systemAgendaTitle">Retold test pass</b><small id="systemAgendaMeta">14:30 · 45 min</small></div></div></section>
-      <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></div></section>
+      <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Pixel 8a</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-phone-ping>Ping</button></div></section>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle" aria-label="Change color theme" title="Change color theme"><span class="theme-dot"></span><span>Surface</span></button></section>
       </div>
       </div>
@@ -328,7 +328,7 @@
             </div>
           </section>
           <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b>24</b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Retold test pass</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
-          <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Pixel 8a</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-toast="Phone is ringing">Ping</button></section>
+          <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Pixel 8a</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
         </aside>
       </div>
 
@@ -452,7 +452,11 @@
     <div class="context-menu-title" id="contextMenuTitle"></div>
     <div class="context-menu-items" id="contextMenuItems"></div>
   </div>
+  <button class="notification-peek" id="notificationPeek" type="button" aria-live="polite" aria-hidden="true">
+    <span class="notification-peek-icon blue" id="notificationPeekIcon"><svg><use href="#i-bell"/></svg></span>
+    <span class="notification-peek-copy"><b id="notificationPeekTitle">New notification</b><small id="notificationPeekDetail"></small></span>
+  </button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="desktop-shell.js?v=133"></script>
+  <script src="desktop-shell.js?v=136"></script>
 </body>
 </html>
