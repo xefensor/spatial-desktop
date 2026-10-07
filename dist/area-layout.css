@@ -81,15 +81,6 @@
   min-height:54px;
   height:auto;
 }
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-bottom{
-  display:flex;
-  flex-direction:row;
-  min-height:0;
-  align-items:center;
-  gap:6px;
-  padding-top:5px;
-  margin-top:5px;
-}
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .overview-launch{
   flex:0 0 36px;
   width:36px;
@@ -207,7 +198,6 @@
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-note-module>header{flex:0 0 27px}
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-quick-note{flex:1 1 auto;height:auto;min-height:54px}
 .project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-resource-items{max-height:none}
-.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-session-bar{margin-top:5px;min-height:38px}
 
 /* Rails rotate into a single panel row. Keep identity and overview outside
    the scroll viewport; all controls remain reachable on shorter shared docks. */
@@ -238,16 +228,6 @@
   justify-content:start;
   overflow-x:auto;
   overflow-y:hidden;
-}
-.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .apps-bottom{
-  flex:0 0 92px;
-  margin:0;
-  padding:0 0 0 5px;
-  display:grid;
-  grid-template-columns:42px 42px;
-  align-content:center;
-  gap:3px;
-  border-top:0;
 }
 .systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.system-scroll-region{
   flex:1 1 0;
@@ -325,9 +305,6 @@
     max-width:calc(100% - clamp(280px,40cqw,510px) - 160px);
   }
 }
-.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-session-bar{padding-top:5px;gap:8px}
-.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-mode-status{min-height:36px;height:36px;padding-block:3px}
-.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-close-key{height:36px}
 
 :is(.system-scroll-region,.mini-stack,.project-space-content):focus-visible{
   outline:1px solid var(--area-header-accent,var(--blue));
@@ -343,3 +320,62 @@
 /* Hiding and display ownership outrank orientation, including after a switch
    from a workspace whose Project occupied a horizontal rail. */
 .area-window[data-area-state][data-dock-edge]:is([hidden],.is-intent-hidden,.is-on-other-display){display:none!important}
+
+/* Area actions belong to the header. The body owns all remaining space;
+   there is no footer or reserved bottom action row. */
+.apps-zone[data-area-state] .area-window-bar .apps-header-actions{
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  gap:4px;
+}
+.apps-zone[data-area-state] .area-window-bar :is(.overview-launch,.workspace-status){
+  position:relative;
+  display:grid;
+  place-items:center;
+  grid-template-columns:1fr;
+  flex:0 0 32px;
+  width:32px;
+  min-width:32px;
+  height:30px;
+  min-height:30px;
+  margin:0;
+  padding:0;
+}
+.apps-zone[data-area-state] .area-window-bar .workspace-status>:is(i,span,svg){display:none}
+.apps-zone[data-area-state] .area-window-bar .rail-workspace-glyph{
+  display:grid;
+  place-items:center;
+  width:auto;
+  height:auto;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:var(--workspace-accent);
+  font:750 12px/1 system-ui,sans-serif;
+}
+.apps-zone[data-area-state="rail"]>.area-window-bar{
+  flex-direction:column;
+  justify-content:flex-start;
+  gap:4px;
+}
+.apps-zone[data-area-state="rail"] .area-window-bar .apps-header-actions{flex-direction:column}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar{
+  flex:0 0 auto;
+  min-height:110px;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
+  flex-direction:row;
+  align-items:center;
+  flex:0 0 116px;
+  width:116px;
+  min-width:116px;
+  padding:4px;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-bar .area-window-identity{
+  flex:0 0 35px;
+  width:35px;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-bar .apps-header-actions{flex-direction:row}
+

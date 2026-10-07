@@ -3303,11 +3303,11 @@ function refreshProjectSessionUi(name = activeProjectName) {
   const activeModeId = projectModeId(name);
   const activeMode = project.modes[activeModeId];
   const openCount = Object.values(appState).filter(state => state === "open").length;
-  $("#projectActiveModeLabel").textContent = activeMode.label + " mode";
-  $("#projectSessionSummary").textContent = openCount
+  const sessionSummary = openCount
     ? openCount + (openCount === 1 ? " window active · autosaved" : " windows active · autosaved")
     : "Window layout saves automatically";
   $("#projectAreaContext").textContent = activeMode.label + " mode";
+  $("#projectAreaContext").title = sessionSummary;
   $$('[data-project-mode]').forEach(choice => {
     const modeId = choice.dataset.projectMode;
     const choiceSession = projectSession(name, modeId);
@@ -3352,7 +3352,6 @@ function setProjectClosedState(closed) {
   syncProjectWindowScopes(closed);
   areaFor("projects").dataset.projectLibraryOpen = String(closed);
   $("#projectSpaceContent").hidden = closed;
-  $("#projectSessionBar").hidden = closed;
   $("#projectClosedState").hidden = !closed;
   const project = activeProjectName ? projectSpaces[activeProjectName] : null;
   $("#projectModeSwitcher").hidden = closed || !project || Object.keys(project.modes).length <= 1;
@@ -3362,6 +3361,7 @@ function setProjectClosedState(closed) {
   if (closed) {
     renderAvailableProjectLibrary();
     $("#projectAreaName").textContent = "Projects";
+    $("#projectAreaContext").removeAttribute("title");
     const count = Object.keys(projectSpaces).length;
     $("#projectAreaContext").textContent = count + (count === 1 ? " project available" : " projects available");
     $$("[data-overview-project]").forEach(card => {
@@ -3881,7 +3881,6 @@ function prepareProjectSpaces() {
     const item = event.target.closest("[data-project-item]");
     if (item) showToast("Opening " + item.dataset.projectItem);
   });
-  $("#projectCloseAction").addEventListener("click", closeActiveProject);
   $("#closeProjectButton").addEventListener("click", closeActiveProject);
   $("#projectQuickNote").addEventListener("input", event => {
     if (!activeProjectName) return;

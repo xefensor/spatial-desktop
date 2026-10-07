@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="desktop-shell.css?v=176">
   <title>Spatial Desktop — WIP Prototype</title>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
-  <link rel="stylesheet" href="area-layout.css?v=171">
+  <link rel="stylesheet" href="area-layout.css?v=172">
   <link rel="stylesheet" href="desktop-dialogs.css?v=174">
   <link rel="stylesheet" href="project-surface.css?v=4">
   <link rel="stylesheet" href="semantic-colors.css?v=3">
@@ -83,6 +83,10 @@
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><span class="area-window-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
+        <div class="area-window-actions apps-header-actions">
+          <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
+          <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview" title="General workspace"><i></i><em class="rail-workspace-glyph" id="workspaceRailGlyph" aria-hidden="true">G</em><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
+        </div>
       </header>
       <div class="apps-scroll-region">
       <nav class="app-rack" id="appRack" aria-label="Favourite and open applications">
@@ -96,10 +100,6 @@
         <header class="section-heading"><h2 id="minimizedTitle">Minimized</h2><span id="miniCount">0 parked</span></header>
         <div class="mini-stack" id="miniStack" tabindex="0" aria-label="Minimized application cards" aria-live="polite"></div>
       </section>
-      </div>
-      <div class="apps-bottom">
-        <button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button>
-        <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview" title="General workspace"><i></i><em class="rail-workspace-glyph" id="workspaceRailGlyph" aria-hidden="true">G</em><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag this border to resize"></button>
     </aside>
@@ -187,10 +187,6 @@
           <div class="project-items project-resource-items" id="projectLinkedItems"></div>
         </section>
       </div>
-      <section class="project-session-bar" id="projectSessionBar" aria-label="Project window session">
-        <div class="project-session-toggle project-mode-status is-active" id="projectSessionToggle" role="status"><span class="session-toggle-icon"><svg><use href="#i-monitor"/></svg></span><span><b id="projectActiveModeLabel">Design mode</b><small id="projectSessionSummary">Window layout saves automatically</small></span></div>
-        <button class="surface-key project-close-key" id="projectCloseAction"><svg><use href="#i-min"/></svg><span>Close project</span></button>
-      </section>
       <section class="project-closed-state project-library" id="projectClosedState" aria-label="Available projects" hidden>
         <div class="project-library-list" id="projectLibraryList"></div>
       </section>
@@ -479,7 +475,7 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
-  <script src="desktop-shell.js?v=191"></script>
+  <script src="desktop-shell.js?v=192"></script>
 </body>
 </html>
 
