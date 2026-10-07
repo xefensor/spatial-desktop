@@ -128,6 +128,23 @@ escapeCtx.handleEscape({ key: 'Escape', preventDefault() {} });
 assert.equal(exits, 1);
 // Mutations need to sync even when no pointer event precedes them.
 for (const [start, end] of [['function openApp(', 'function minimizeApp('], ['function minimizeApp(', 'function closeApp('], ['function closeApp(', 'function syncMaximizeButton('], ['function activateHotbarSlot(', 'document.addEventListener("keydown",']]) assert(slice(start, end).includes('queueDesktopStateBroadcast();'), start + ': keyboard actions publish state');
+const html = fs.readFileSync(path.join(__dirname, '../dist/index.html'), 'utf8');
+const quickSettings = [...html.matchAll(/<button class="quick-toggle[^"\n]*" data-toggle[^>]*>[\s\S]*?<span>(Wi-Fi|Bluetooth|Sound|Focus)<\/span>/g)];
+assert.equal(quickSettings.length, 7);
+for (const match of quickSettings) assert(match[0].includes(`aria-label="${match[1]}"`), 'Rail quick settings retain a name when text is hidden');
+let localReferences = 0;
+const dist = path.join(__dirname, '../dist');
+for (const filename of fs.readdirSync(dist).filter(name => name.endsWith('.html'))) {
+  const page = fs.readFileSync(path.join(dist, filename), 'utf8');
+  for (const [, reference] of page.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
+    if (/^(?:https?:|data:|mailto:|#|\/\/)/.test(reference)) continue;
+    const clean = reference.split(/[?#]/)[0];
+    if (!clean) continue;
+    assert(fs.existsSync(path.join(dist, clean)), filename + ': missing ' + reference);
+    localReferences++;
+  }
+}
+console.log(`${localReferences} local HTML asset/navigation references passed.`);
 console.log('Desktop workflows passed: 19 resource cases, shared terminal commands, project/resource/note search, safe markup, duplicate system toggles, keyboard events and Escape priority.');
 
 // Project rail actions must reveal the editor rather than focus hidden content.
