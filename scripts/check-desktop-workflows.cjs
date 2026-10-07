@@ -130,6 +130,25 @@ assert.equal(exits, 1);
 for (const [start, end] of [['function openApp(', 'function minimizeApp('], ['function minimizeApp(', 'function closeApp('], ['function closeApp(', 'function syncMaximizeButton('], ['function activateHotbarSlot(', 'document.addEventListener("keydown",']]) assert(slice(start, end).includes('queueDesktopStateBroadcast();'), start + ': keyboard actions publish state');
 console.log('Desktop workflows passed: 19 resource cases, shared terminal commands, project/resource/note search, safe markup, duplicate system toggles, keyboard events and Escape priority.');
 
+// Project rail actions must reveal the editor rather than focus hidden content.
+for (const edge of ['left', 'right', 'top', 'bottom']) {
+  let focused = false, scrolled = false, shown = false;
+  const rail = vm.createContext({
+    dockState: { projects: { edge } }, dockSizes: { [edge]: 64 }, dockSizeManual: {},
+    autoSpatialEdgeStates: new Map([[edge, 'rail']]), manualAreaOverride() {},
+    showArea(name) { assert.equal(name, 'projects'); shown = true; }, refreshIntentAreas() {},
+    requestAnimationFrame: callback => callback(),
+    $: () => ({ focus() { focused = true; }, scrollIntoView() { scrolled = true; } })
+  });
+  vm.runInContext(slice('function focusProjectControl(', 'const projectAccentPalette'), rail);
+  rail.focusProjectControl('#projectQuickNote');
+  assert(rail.dockSizes[edge] >= (edge === 'left' || edge === 'right' ? 300 : 250));
+  assert.equal(rail.dockSizeManual[edge], true);
+  assert.equal(rail.autoSpatialEdgeStates.has(edge), false);
+  assert(shown && focused && scrolled);
+}
+console.log('Project rail editors passed: all four dock edges expand before focus.');
+
 // Seeded mixed open/close/resize/persist sequences, including narrow and ultrawide workspaces.
 const minimums = { dolphin: { width: 440, height: 340 }, elisa: { width: 460, height: 360 }, browser: { width: 420, height: 320 }, terminal: { width: 390, height: 300 }, notes: { width: 400, height: 300 } };
 const names = Object.keys(minimums), min = name => minimums[name];

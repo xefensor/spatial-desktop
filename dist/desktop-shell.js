@@ -3578,6 +3578,23 @@ function addProjectResource(value) {
   showToast(resource[0] + " added to " + projectSpaces[activeProjectName].name);
 }
 
+function focusProjectControl(selector) {
+  // A rail command requesting an editor must expose it before moving focus.
+  manualAreaOverride("projects");
+  const edge = dockState.projects.edge;
+  const vertical = edge === "left" || edge === "right";
+  dockSizes[edge] = Math.max(dockSizes[edge], vertical ? 300 : 250);
+  dockSizeManual[edge] = true;
+  autoSpatialEdgeStates.delete(edge);
+  showArea("projects", false);
+  refreshIntentAreas();
+  requestAnimationFrame(() => {
+    const field = $(selector);
+    field.focus();
+    field.scrollIntoView({ block: "nearest" });
+  });
+}
+
 const projectAccentPalette = ["#5cbcff", "#a88aff", "#65d881", "#ff9b68", "#f4c95d", "#48d1c8"];
 
 function clearProjectSessions(projectName, modeId = null) {
@@ -3851,7 +3868,7 @@ function prepareProjectSpaces() {
       if (firstProject) activateProject(firstProject, false);
       else return openProjectEditor("create-project");
     }
-    requestAnimationFrame(() => $("#projectQuickNote").focus());
+    focusProjectControl("#projectQuickNote");
   });
   $("#projectRailResource").addEventListener("click", () => {
     showArea("projects");
@@ -3860,7 +3877,7 @@ function prepareProjectSpaces() {
       if (firstProject) activateProject(firstProject, false);
       else return openProjectEditor("create-project");
     }
-    requestAnimationFrame(() => $("#projectResourceInput").focus());
+    focusProjectControl("#projectResourceInput");
   });
   $("#projectRailSession").addEventListener("click", () => {
     if (!activeProjectName) {
@@ -4569,7 +4586,7 @@ $("#universalProjectResults").addEventListener("click", event => {
   activateProject(result.dataset.searchProject);
   showArea("projects", false);
   setUniversalSearchOpen(false);
-  if (result.dataset.searchProjectNote) requestAnimationFrame(() => $("#projectQuickNote").focus());
+  if (result.dataset.searchProjectNote) focusProjectControl("#projectQuickNote");
   if (result.dataset.searchResource) showToast("Opening " + result.dataset.searchResource);
 });
 
