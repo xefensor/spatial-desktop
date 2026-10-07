@@ -176,7 +176,7 @@ const transfer = vm.createContext({
   activeProjectName: null, windowMembership: {}, desktopPageAnimating: false,
   openApp(name) { transfer.appState[name] = 'open'; },
   changeDesktopPage(page) { transfer.desktopPages.go('work', page); },
-  saveDesktopPages() {}, saveIndependentSessions() {}
+  removeOffPageWindowTiles() {}, saveDesktopPages() {}, saveIndependentSessions() {}
 });
 vm.runInContext(slice('const originalOpenApp = openApp;', 'function removeWindowFromSavedProjects('), transfer);
 transfer.desktopPages.go('work', 1);
@@ -185,4 +185,32 @@ assert.equal(transfer.desktopPages.current('work'), 0, 'Existing hotbar windows 
 transfer.desktopPages.go('work', 1);
 transfer.openApp('notes');
 assert.equal(transfer.desktopPages.pageOf('work', 'notes'), 1, 'New windows belong to the desktop being viewed');
+transfer.appState.notes = 'minimized';
+transfer.desktopPages.assign('work', 'notes', 0);
+transfer.openApp('notes');
+assert.equal(transfer.desktopPages.current('work'), 1, 'Restoring a minimized card never jumps back to its former desktop');
+assert.equal(transfer.desktopPages.pageOf('work', 'notes'), 1, 'Minimized windows travel onto the current desktop when restored');
+
+const hotbar = vm.createContext({
+  activeWorkspace: 'work', workspaceProfiles: { work: { rack: ['browser', 'closed', 'parked'] } },
+  appState: { browser: 'open', closed: 'closed', parked: 'minimized', other: 'open', instance: 'open' },
+  isLocalApp: name => ['browser', 'instance'].includes(name)
+});
+vm.runInContext(slice('function workspaceHotbarNames(', 'function renderInstanceRack('), hotbar);
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['browser', 'instance'], 'Top hotbar excludes closed, minimized and off-page windows');
+assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['browser', 'instance', 'parked'], 'Minimized cards keep unique keyboard slots without duplicate top icons');
+hotbar.isLocalApp = () => false;
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), [], 'An empty desktop has an empty top hotbar');
+assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['parked'], 'Minimized shortcuts remain available on an empty desktop');
+let restored = null;
+Object.assign(hotbar, {
+  appInfo: { parked: {} }, desktopHasWindowFocus: false, frontApp: null,
+  openApp: name => { restored = name; }, queueDesktopStateBroadcast() {},
+  $: selector => selector === '#universalSearch' ? { classList: { contains: () => false } } : null
+});
+vm.runInContext(slice('function activateHotbarSlot(', 'document.addEventListener("keydown",'), hotbar);
+assert.equal(hotbar.activateHotbarSlot(1), true);
+assert.equal(restored, 'parked', 'Keyboard shortcuts restore travelling cards even without a top hotbar button');
+assert.equal(hotbar.activateHotbarSlot(2), false);
+
 console.log('Vertical desktops passed: page bounds, workspace isolation, reload/sync, wheel gestures/momentum, focus ownership, zoom/menu guards and lossless legacy session migration.');

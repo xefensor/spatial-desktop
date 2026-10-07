@@ -1418,7 +1418,7 @@ function miniMarkup(name) {
   const info = appInfo[name];
   const slot = hotbarSlotFor(name);
   const hotkey = slot === null ? "" : '<kbd class="mini-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>';
-  const shortcut = slot === null ? "" : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
+  const shortcut = slot === null ? "" : slot > 20 ? " · Click · slot " + slot : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = parked ? "Parked · still running" : info.detail;
   const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
@@ -4760,9 +4760,7 @@ function trapDialogFocus(root, event) {
 }
 
 function activateHotbarSlot(slot) {
-  const button = $('#appRack [data-hotbar-slot="' + slot + '"]');
-  if (!button) return false;
-  const name = button.dataset.openApp;
+  const name = workspaceShortcutNames()[slot - 1];
   if (!appInfo[name]) return false;
 
   /* Match a desktop taskbar while retaining the game-hotbar directness:
@@ -6354,10 +6352,18 @@ function createAppInstance(name) {
   return id;
 }
 function workspaceHotbarNames() {
-  return [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState).filter(name => appState[name] !== 'closed')])];
+  return [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState)])]
+    .filter(name => appState[name] === 'open' && isLocalApp(name));
+}
+function workspaceShortcutNames() {
+  // Visible windows get the first slots; travelling minimized cards continue
+  // the numbering below them without being duplicated in the top hotbar.
+  return [...workspaceHotbarNames(), ...Object.keys(appState).filter(name => appState[name] === 'minimized')];
 }
 function renderInstanceRack() {
-  $('#appRack').innerHTML = workspaceHotbarNames().map((name, index) => {
+  const names = workspaceHotbarNames();
+  $('#appRack').hidden = names.length === 0;
+  $('#appRack').innerHTML = names.map((name, index) => {
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
@@ -6367,7 +6373,7 @@ function renderInstanceRack() {
 }
 const originalSyncRack = syncRack;
 syncRack = function() { renderInstanceRack(); originalSyncRack(); };
-hotbarSlotFor = name => { const index = workspaceHotbarNames().indexOf(name); return index < 0 ? null : index + 1; };
+hotbarSlotFor = name => { const index = workspaceShortcutNames().indexOf(name); return index < 0 ? null : index + 1; };
 function captureWorkspaceContent() {
   const frames = {};
   Object.keys(appInfo).forEach(name => {
@@ -6436,8 +6442,11 @@ openApp = function(name, point = null) {
     setTimeout(() => openApp(name, point), 230);
     return;
   }
-  if (newlyOpened) { desktopPages.assign(activeWorkspace, name); saveDesktopPages(); }
-  else changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
+  if (newlyOpened || appState[name] === 'minimized') {
+    removeOffPageWindowTiles(name);
+    desktopPages.assign(activeWorkspace, name);
+    saveDesktopPages();
+  } else changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
   originalOpenApp(name, point);
   saveIndependentSessions();
 };
