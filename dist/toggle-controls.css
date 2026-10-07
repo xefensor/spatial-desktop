@@ -49,6 +49,14 @@ body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-b
   --toggle-line-glow:none;
   --toggle-line-opacity:.7;
 }
+/* Flat navigation and choice rows use only the shared bottom indicator.
+   Legacy selection shadows on the left otherwise add a second state marker
+   in Places, Notes, application categories and Overview project/results. */
+body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.nav-choice,.launcher-category,.overview-project,.universal-result) {
+  --toggle-line-inset:auto 7px 0;
+  border:0!important;
+  box-shadow:none!important;
+}
 /* Workspace tabs and package choices already have an inset bottom line.
    Drive that existing line with the shared state; do not draw a pseudo rail. */
 body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.workspace-tab,[data-package-mode]) {
