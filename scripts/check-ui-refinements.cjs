@@ -104,6 +104,51 @@ materialCtx.applyControlMaterial(appButton);
 assert(appButton.classes.has('material-abs-button'),'Application controls retain ABS');
 console.log('Material inheritance passed: Pack/Import, project editor, Overview, context menus, toast, notification preview, stale ABS removal and application distinction.');
 
+// Persistent choices need toggle semantics even without a surface-key class.
+// Preserve the real ARIA state when controls are prepared again after render.
+const controlCtx = vm.createContext({musicPlaying:false});
+vm.runInContext(source.slice(source.indexOf('const toggleControlSelector'), source.indexOf('function observeMaterialInheritance(')), controlCtx);
+function controlFixture(classes, attributes, parent) {
+  const button = materialNode('button', parent);
+  classes.forEach(value => button.classes.add(value));
+  const attrs = {...attributes};
+  button.querySelectorAll = () => [];
+  button.matches = selectors => selectors.split(',').some(value => {
+    const selector = value.trim();
+    if (selector === 'button') return true;
+    if (/^\.[\w-]+$/.test(selector)) return button.classes.has(selector.slice(1));
+    const attr = selector.match(/^\[([\w-]+)(?:="([^"]*)")?\]$/);
+    return Boolean(attr && Object.hasOwn(attrs, attr[1]) && (attr[2] === undefined || attrs[attr[1]] === attr[2]));
+  });
+  button.hasAttribute = name => Object.hasOwn(attrs, name);
+  button.setAttribute = (name,value) => {attrs[name] = value;};
+  return {button, attrs};
+}
+for (const parent of [utilitySurfaces[3], absApp]) {
+  for (const [classes, attrs, expectedState] of [
+    [[], {'data-overview-project':'custom', 'aria-pressed':'true'}, ['aria-pressed','true']],
+    [[], {'aria-pressed':'false'}, ['aria-pressed','false']],
+    [[], {'aria-checked':'true'}, ['aria-checked','true']],
+    [['folder-tab'], {'aria-selected':'false'}, ['aria-selected','false']],
+    [['nav-choice','is-active'], {}, ['aria-pressed','true']]
+  ]) {
+    const fixture = controlFixture(classes, attrs, parent);
+    controlCtx.prepareControlSemantics(fixture.button);
+    assert(fixture.button.classes.has('control-toggle'), 'Persistent choice receives a toggle indicator');
+    assert(!fixture.button.classes.has('control-push'));
+    assert.equal(fixture.attrs[expectedState[0]], expectedState[1]);
+    fixture.attrs[expectedState[0]] = 'false';
+    controlCtx.prepareControlSemantics(fixture.button);
+    assert.equal(fixture.attrs[expectedState[0]], 'false', 'Re-render preserves the disabled state');
+    if (expectedState[0] !== 'aria-pressed') assert(!Object.hasOwn(fixture.attrs,'aria-pressed'), 'No conflicting pressed state on tabs or radio choices');
+  }
+  const push = controlFixture(['surface-key'], {}, parent);
+  controlCtx.prepareControlSemantics(push.button);
+  assert(push.button.classes.has('control-push'));
+  assert(!push.button.classes.has('control-toggle'), 'Momentary actions never receive a toggle indicator');
+}
+console.log('Toggle semantics passed: project cards, app navigation, tabs, radio choices and momentary actions on glass and ABS.');
+
 // Exercise real preference handling and media changes, including persistence and
 // cross-display packets: Auto must remain Auto, rather than save its palette.
 const createTheme = require('../dist/desktop-theme.js');
@@ -155,3 +200,4 @@ assert.equal(blocked.preference, 'light', 'Blocked storage does not disable them
 assert(html.indexOf('desktop-theme.js') < html.indexOf('class="icon-sprite"'), 'Resolve preference before desktop markup');
 assert(source.includes('themePreference: SpatialDesktopTheme.preference'), 'Sync carries the preference separately');
 console.log('Theme checks passed: live system changes, manual override, reload, cross-tab changes, Auto sync and blocked storage.');
+

@@ -1,0 +1,45 @@
+/* A persistent control always has a bottom engraving. Its current state,
+   rather than hover or the last click, determines whether it emits light.
+   This final rule also replaces old side rails and hidden app indicators. */
+body[data-theme] button.control-toggle {position:relative}
+body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button)::after {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:auto 7px 3px!important;
+  width:auto!important;
+  height:2px!important;
+  border:0!important;
+  border-radius:1px!important;
+  background:var(--sd-glass-groove,var(--control-rail))!important;
+  box-shadow:none!important;
+  opacity:.7!important;
+  transform:none!important;
+  pointer-events:none!important;
+}
+body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(
+  [aria-pressed="true"],
+  [aria-selected="true"],
+  [aria-checked="true"],
+  .is-open,
+  .is-active:not([aria-pressed]):not([aria-selected]):not([aria-checked])
+)::after {
+  background:color-mix(in srgb,var(--state-tone,var(--ui-neutral)) 86%,var(--sd-glass-text) 14%)!important;
+  box-shadow:0 0 4px color-mix(in srgb,var(--state-tone,var(--ui-neutral)) 45%,transparent)!important;
+  opacity:1!important;
+}
+/* Explicit false state wins over stale visual classes. Open app launchers
+   keep their light even when another window has keyboard focus. */
+body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):not(.is-open):is(
+  [aria-pressed="false"],
+  [aria-selected="false"],
+  [aria-checked="false"]
+)::after {
+  background:var(--sd-glass-groove,var(--control-rail))!important;
+  box-shadow:none!important;
+  opacity:.7!important;
+}
+body[data-theme] button.control-push::after {
+  content:none!important;
+  display:none!important;
+}

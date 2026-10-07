@@ -3,7 +3,10 @@ const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)]
 try { SpatialDemoExamples.seedWorkspaces(localStorage); } catch {}
 
 const toggleControlSelector = [
-  "[data-package-mode]",
+  "[aria-pressed]",
+  "[aria-selected]",
+  "[aria-checked]",
+  ".nav-choice",
   "[data-open-app]",
   "[data-toggle]",
   ".folder-tab",
@@ -162,7 +165,7 @@ function prepareControlSemantics(root = document) {
   buttons.forEach(button => {
     applyControlMaterial(button);
     const toggle = button.matches(toggleControlSelector);
-    const managed = button.matches(materialControlSelector);
+    const managed = toggle || button.matches(materialControlSelector);
     if (!managed) return;
     button.classList.toggle("control-toggle", toggle);
     button.classList.toggle("control-push", !toggle);
@@ -171,7 +174,7 @@ function prepareControlSemantics(root = document) {
       button.setAttribute("aria-pressed", String(musicPlaying));
       return;
     }
-    if (toggle && !button.hasAttribute("aria-pressed") && !button.hasAttribute("aria-selected")) {
+    if (toggle && !button.hasAttribute("aria-pressed") && !button.hasAttribute("aria-selected") && !button.hasAttribute("aria-checked")) {
       button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
     }
   });
