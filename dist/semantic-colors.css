@@ -1,0 +1,107 @@
+/* Neutral materials; colour identifies an entity or communicates an action. */
+body[data-theme] {
+  --ui-neutral:#c1c3c5;
+  --action-play:#70cd94; --action-pause:#e4c16e; --action-danger:#ed8e85;
+  --sd-glass-face:rgba(13,13,15,.68); --sd-glass-face-deep:rgba(5,5,7,.34);
+  --sd-glass-edge:rgba(240,240,244,.24); --sd-glass-edge-soft:rgba(240,240,244,.095);
+  --sd-glass-highlight:rgba(255,255,255,.15); --sd-glass-groove:rgba(226,226,230,.14);
+  --sd-glass-groove-low:rgba(0,0,0,.46); --sd-glass-hover:rgba(242,242,246,.055);
+  --sd-glass-down:rgba(0,0,0,.16); --sd-glass-text:rgba(248,248,250,.96);
+  --sd-glass-muted:rgba(226,226,230,.70); --blue-glow:transparent;
+}
+body[data-theme="light"] {
+  --ui-neutral:#53565a;
+  --action-play:#237647; --action-pause:#916718; --action-danger:#ac3830;
+  --sd-glass-face:rgba(234,234,237,.72); --sd-glass-face-deep:rgba(200,200,205,.23);
+  --sd-glass-edge:rgba(255,255,255,.76); --sd-glass-edge-soft:rgba(255,255,255,.37);
+  --sd-glass-highlight:rgba(255,255,255,.76); --sd-glass-groove:rgba(63,63,68,.19);
+  --sd-glass-groove-low:rgba(48,48,53,.22); --sd-glass-hover:rgba(255,255,255,.24);
+  --sd-glass-down:rgba(75,75,80,.11); --sd-glass-text:rgba(27,27,31,.96);
+  --sd-glass-muted:rgba(52,52,58,.70);
+}
+
+/* Areas and Overview sections are infrastructure, not separate identities. */
+.area-window,.universal-search,.all-apps-drawer,.desktop-context-menu,.desktop-glass-dialog {
+  --area-header-accent:var(--ui-neutral)!important;
+  --area-body-tint:var(--ui-neutral)!important;
+  --state-tone:var(--ui-neutral)!important;
+}
+.overview-zone-lane,.overview-apps-section,.open-windows-section,.overview-widgets {
+  --lane-accent:var(--ui-neutral)!important;
+}
+.system-widget {--widget-tone:var(--ui-neutral)!important}
+body[data-theme] .area-window .area-window-bar {
+  background:var(--sd-glass-face-deep)!important;
+  border-color:var(--sd-glass-groove)!important;
+}
+body[data-theme] .area-window .area-window-bar .area-window-identity b {color:var(--sd-glass-text)!important}
+body[data-theme] .area-window .area-window-bar .area-window-identity small {color:var(--sd-glass-muted)!important}
+body[data-theme] :is(.area-window-icon,.area-list-icon,.overview-zone-mark,.project-editor-mark,.package-mark) {
+  color:var(--ui-neutral)!important;background:transparent!important;
+  border-color:var(--sd-glass-groove)!important;box-shadow:none!important;
+}
+body[data-theme] .project-area[data-project-library-open="false"] .area-window-icon {color:var(--project-accent)!important}
+.overview-system-heading,.overview-zone-heading,.overview-section-heading {
+  background:var(--sd-glass-face-deep)!important;color:var(--sd-glass-text)!important;
+}
+body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow {color:var(--sd-glass-muted)!important}
+.desktop-glass-dialog :is(.package-titlebar,.project-editor-titlebar) {background:var(--sd-glass-face-deep)!important}
+.project-editor-titlebar small,.package-window :is(.package-mark,.package-size,.package-mode-switch svg,.package-primary svg,.import-count),
+.overview-layout-status svg,.overview-areas-widget>header svg,.apps-zone .overview-launch svg,
+.system-launcher svg,.widget-heading svg,.launcher-category svg,.overview-area-row>button {
+  color:var(--ui-neutral)!important;
+}
+.package-window .package-size {background:var(--sd-glass-face-deep)!important}
+.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--ui-neutral)!important;box-shadow:none!important}
+
+/* Generic controls, selection and focus stay neutral, including inside apps. */
+button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--ui-neutral)!important;--glass-key-tone:var(--ui-neutral)!important}
+body[data-theme] :where(button,a,input,textarea,select,[tabindex]):focus-visible {outline-color:var(--ui-neutral)!important}
+:where(input,textarea) {caret-color:var(--ui-neutral)}
+.quick-toggle:is(.is-active,[aria-pressed="true"]),.nav-choice.is-active {color:var(--text)!important}
+.quick-toggle svg {color:inherit!important}
+.project-mode-status {background:var(--sd-glass-face-deep)!important;border-color:var(--sd-glass-groove)!important}
+.content-row.is-selected {background:color-mix(in srgb,var(--ui-neutral) 12%,var(--well-2));box-shadow:inset 2px 0 var(--ui-neutral)}
+.calendar-grid button.is-today {color:var(--text)!important;box-shadow:inset 0 -2px var(--ui-neutral)!important}
+.next-event>i,.timer-progress i,.equalizer i,.overview-track i {background:var(--ui-neutral)!important;box-shadow:none!important}
+input[type="range"] {accent-color:var(--ui-neutral)!important}
+body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track {background:linear-gradient(to right,var(--ui-neutral) var(--range-progress,0%),var(--sd-glass-groove) var(--range-progress,0%))!important;box-shadow:none!important}
+body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress {background:var(--ui-neutral)!important;box-shadow:none!important}
+
+/* Keep entity colour in the icon and a small identity/selection marker. */
+button[data-open-app] {--state-tone:var(--app-primary)!important;--glass-key-tone:var(--app-primary)!important}
+button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!important}
+.workspace-tab,.workspace-glyph,.workspace-home-icon {background:transparent!important;box-shadow:none!important}
+.workspace-tab.is-active {box-shadow:inset 0 -2px var(--tab-color)!important}
+.universal-search .overview-project {--state-tone:var(--project-card-accent)!important}
+.app-frame .app-titlebar {background:var(--abs-top)!important}
+.app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav) {background:var(--control-top)!important;border-color:var(--control-edge)!important}
+.app-frame button.material-abs-button {background:linear-gradient(var(--control-top),var(--control-bottom))!important;border-color:var(--control-edge)!important}
+.app-frame button.material-abs-button:is(:active,.is-active,[aria-pressed="true"]) {background:linear-gradient(var(--control-bottom),var(--control-top))!important}
+.overview-project,.workspace-context-card,.workspace-folder,.workspace-config-file {
+  background:transparent!important;
+}
+.universal-search .overview-project:is(.is-active,[aria-selected="true"]) {background:var(--sd-glass-hover)!important}
+.project-window-scope {background:transparent!important}
+.app-key .app-hotkey,.mini-card .mini-hotkey {background:transparent!important;box-shadow:none!important}
+.app-key:not(.is-active) .app-hotkey {color:var(--sd-glass-muted)!important;border-color:var(--sd-glass-groove)!important}
+
+/* Action colour follows the available action, rather than the parent app. */
+button.play-toggle[aria-label="Play"],#timerToggle[aria-pressed="false"] {
+  --state-tone:var(--action-play)!important;--glass-key-tone:var(--action-play)!important;color:var(--action-play)!important;
+}
+button.play-toggle[aria-label="Pause"],#timerToggle[aria-pressed="true"],button[data-music="stop"] {
+  --state-tone:var(--action-pause)!important;--glass-key-tone:var(--action-pause)!important;color:var(--action-pause)!important;
+}
+button.play-toggle svg {color:inherit!important}
+button.project-editor-danger,.context-menu-item.is-danger {
+  --state-tone:var(--action-danger)!important;--glass-key-tone:var(--action-danger)!important;color:var(--action-danger)!important;
+}
+.context-menu-item.is-danger svg {color:var(--action-danger)!important}
+/* Closing a window is an ordinary action; destructive dialogs stay red. */
+.app-frame .window-key.danger {color:var(--muted)!important;background:linear-gradient(var(--control-top),var(--control-bottom))!important;border-color:var(--control-edge)!important}
+
+@media(prefers-reduced-transparency:reduce) {
+  body[data-theme] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#19191c!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  body[data-theme="light"] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#eeeef1!important}
+}
