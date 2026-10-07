@@ -47,7 +47,7 @@ const ctx = vm.createContext({
   $: key => nodes[key] || node(key), $$: () => [],
   document: { addEventListener(type, callback) { listeners['document:' + type] = callback; } },
   performance: { now: () => clock },
-  syncRack() {}, renderOverviewWindows() {}, saveDesktopPages() {},
+  syncRack() { throw new Error("Rebuilding the hotbar would detach the clicked Area button"); }, originalSyncRack() {}, renderOverviewWindows() {}, saveDesktopPages() {},
   migrateProjectDesktops() {}, isLocalApp: () => true, bringToFront() {},
   tileSession: () => ({})
 });
@@ -76,6 +76,35 @@ assert.equal(e.prevented, undefined, 'Browser zoom is preserved');
 nodes['#desktopContextMenu'].hidden = false;
 clock = 800; e = event(); listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented, undefined, 'Menus block desktop navigation');
+// All three Areas release app focus, including headers and interactive fields.
+// The capture listener must leave their native click/focus actions intact.
+nodes['#desktopContextMenu'].hidden = true;
+let workspaceFocusCalls = 0;
+nodes['.workspace-zone'].focus = () => workspaceFocusCalls++;
+for (const areaName of ['apps', 'projects', 'systems']) {
+  for (const control of ['header', 'button', 'input', 'textarea']) {
+    ctx.desktopHasWindowFocus = true;
+    let blurred = false;
+    ctx.document.activeElement = { closest: () => ({}), blur: () => { blurred = true; } };
+    const areaEvent = {
+      target: { closest: selector => selector === '[data-area-window]' ? { areaName, control } : null },
+      preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; }
+    };
+    listeners['document:pointerdown'](areaEvent);
+    assert.equal(ctx.desktopHasWindowFocus, false, areaName + ' ' + control + ' releases window focus');
+    assert.equal(blurred, true, 'The previous app field loses keyboard focus');
+    assert.equal(areaEvent.prevented, undefined, 'Area control default actions are preserved');
+    assert.equal(areaEvent.stopped, undefined, 'Area dragging and resize handlers receive the event');
+  }
+}
+assert.equal(workspaceFocusCalls, 0, 'Area clicks do not steal focus into the canvas');
+ctx.desktopHasWindowFocus = true;
+listeners['document:pointerdown']({ target: { closest: () => null } });
+assert.equal(ctx.desktopHasWindowFocus, true, 'Clicking inside an app does not release its focus');
+nodes['.desktop-shell'] = { inert: true };
+listeners['document:pointerdown']({ target: { closest: () => ({}) } });
+assert.equal(ctx.desktopHasWindowFocus, true, 'Modal background isolation is preserved');
+
 
 // Migrate two saved modes reusing a live window without overwriting its content.
 const migration = vm.createContext({

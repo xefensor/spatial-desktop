@@ -5677,7 +5677,8 @@ function focusDesktop(moveKeyboardFocus = true) {
   desktopWheel.reset();
   $$("[data-app-frame]").forEach(frame => frame.classList.remove("is-front"));
   updateDesktopPageUi();
-  syncRack();
+  // Keep the clicked Area control in the DOM until its normal click runs.
+  originalSyncRack();
   renderOverviewWindows();
   if (moveKeyboardFocus) $(".workspace-zone").focus({ preventScroll: true });
 }
@@ -5830,6 +5831,14 @@ function prepareDesktopPages() {
   workspace.addEventListener("pointerdown", event => {
     if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();
   });
+  document.addEventListener("pointerdown", event => {
+    if (!event.target.closest("[data-area-window]") || $(".desktop-shell").inert) return;
+    // Capture runs before Area handles stop propagation. Leave native focus
+    // and the control's click action to the Area rather than focusing the canvas.
+    focusDesktop(false);
+    const focused = document.activeElement;
+    if (focused?.closest("[data-app-frame]")) focused.blur();
+  }, { capture: true });
   document.addEventListener("focusin", event => {
     const frame = event.target.closest("[data-app-frame]");
     if (frame && !frame.hidden && isLocalApp(frame.dataset.appFrame)) bringToFront(frame.dataset.appFrame);
