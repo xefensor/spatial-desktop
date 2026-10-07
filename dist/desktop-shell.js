@@ -5569,7 +5569,7 @@ function applyExtendedDesktopPartition() {
       }, false);
     });
   }
-  document.title = count > 1 ? "Spatial Desktop — " + localDisplayRoleLabel() : "Spatial Desktop";
+  document.title = count > 1 ? "Spatial Desktop — " + localDisplayRoleLabel() + " · WIP Prototype" : "Spatial Desktop — WIP Prototype";
 }
 
 function mainDisplayWindowRects() {
