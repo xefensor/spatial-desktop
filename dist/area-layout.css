@@ -363,14 +363,14 @@
 .apps-zone[data-area-state="rail"] .area-window-bar .apps-header-actions{flex-direction:column}
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar{
   flex:0 0 auto;
-  min-height:110px;
+  min-height:76px;
 }
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
   flex-direction:row;
   align-items:center;
-  flex:0 0 116px;
-  width:116px;
-  min-width:116px;
+  flex:0 0 80px;
+  width:80px;
+  min-width:80px;
   padding:4px;
 }
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-bar .area-window-identity{
