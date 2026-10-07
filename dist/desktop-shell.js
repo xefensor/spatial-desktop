@@ -238,7 +238,7 @@ function icon(name) {
 }
 
 function appArt(name, extraClass = "") {
-  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + name + '"/></svg>';
+  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + (appInfo[name]?.base || name) + '"/></svg>';
 }
 
 function applyAppPrimaryColors(root = document) {
@@ -302,7 +302,7 @@ const windowUsableSizes = {
 };
 
 function minimumUsableWindowSize(name) {
-  return windowUsableSizes[name] || { width: 400, height: 300 };
+  return windowUsableSizes[appInfo[name]?.base || name] || { width: 400, height: 300 };
 }
 
 function workspaceBounds() {
@@ -1391,8 +1391,8 @@ function hotbarSlotFor(name) {
 function miniMarkup(name) {
   const info = appInfo[name];
   const slot = hotbarSlotFor(name);
-  const hotkey = slot === null ? "" : '<kbd class="mini-hotkey" aria-hidden="true">' + slot + '</kbd>';
-  const shortcut = slot === null ? "" : " · Super+" + slot;
+  const hotkey = slot === null ? "" : '<kbd class="mini-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>';
+  const shortcut = slot === null ? "" : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = parked ? "Parked · still running" : info.detail;
   const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
@@ -3423,22 +3423,31 @@ function projectModeGeometry(layout, index, count) {
 function seedProjectModeWindows(name, modeId) {
   const mode = projectSpaces[name]?.modes[modeId];
   if (!mode) return 0;
-  mode.apps.forEach((appName, index) => {
+  const names = mode.apps.map(base => {
+    if (appState[base] === 'closed' && (!windowMembership[activeWorkspace]?.[base] || windowMembership[activeWorkspace][base] === name)) return base;
+    const id = base + '--' + (++instanceSequence);
+    instanceDefinitions[id] = appInfo[base].base || base;
+    installInstance(id, instanceDefinitions[id]);
+    return id;
+  });
+  names.forEach((appName, index) => {
     if (!appInfo[appName]) return;
+    windowMembership[activeWorkspace] ||= {};
+    windowMembership[activeWorkspace][appName] = name;
     appState[appName] = "open";
     displayAssignmentsFor().apps[appName] = 1;
     appMaximizedState[appName] = false;
-    windowGeometry.set(appName, projectModeGeometry(mode.layout, index, mode.apps.length));
+    windowGeometry.set(appName, projectModeGeometry(mode.layout, index, names.length));
   });
   syncApps();
-  mode.apps.forEach(appName => {
+  names.forEach(appName => {
     if (appState[appName] === "open" && isLocalApp(appName)) applyGeometry(appName, windowGeometry.get(appName), false);
   });
-  frontApp = mode.apps[0] || frontApp;
+  frontApp = names[0] || frontApp;
   if (frontApp && isLocalApp(frontApp)) bringToFront(frontApp);
   saveLayout();
   persistDisplayAssignments();
-  return mode.apps.length;
+  return names.length;
 }
 
 function activateProject(name, announce = true) {
@@ -3452,6 +3461,8 @@ function activateProject(name, announce = true) {
   }
   if (activeProjectName) parkProjectWindows(activeProjectName, false);
   renderProjectSpace(name);
+  workspaceProjects[activeWorkspace] = name;
+  saveIndependentSessions();
   const restored = restoreProjectWindows(name, false, true);
   if (announce) showToast(project.name + " opened · " + project.modes[projectModeId(name)].label + " mode · " + restored + " window" + (restored === 1 ? "" : "s"));
 }
@@ -3473,7 +3484,7 @@ function switchProjectMode(modeId, announce = true) {
 function parkProjectWindows(name, announce = true, modeId = projectModeId(name)) {
   const project = projectSpaces[name];
   if (!project) return 0;
-  const names = Object.keys(appState).filter(appName => appState[appName] !== "closed");
+  const names = Object.keys(appState).filter(appName => appState[appName] !== "closed" && windowMembership[activeWorkspace]?.[appName] === name);
   const states = Object.fromEntries(names.map(appName => [appName, appState[appName]]));
   const geometry = {};
   const displays = {};
@@ -3517,6 +3528,8 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
   }
   session.apps.forEach(appName => {
     if (!appInfo[appName]) return;
+    windowMembership[activeWorkspace] ||= {};
+    windowMembership[activeWorkspace][appName] = name;
     appState[appName] = session.states?.[appName] === "minimized" ? "minimized" : "open";
     if (session.geometry?.[appName]) windowGeometry.set(appName, session.geometry[appName]);
     if (session.displays?.[appName]) displayAssignmentsFor().apps[appName] = session.displays[appName];
@@ -3540,8 +3553,11 @@ function closeActiveProject() {
   if (!activeProjectName) return;
   const name = activeProjectName;
   const project = projectSpaces[name];
+  captureWorkspaceContent();
   const parked = parkProjectWindows(name, false);
   activeProjectName = null;
+  workspaceProjects[activeWorkspace] = null;
+  saveIndependentSessions();
   setProjectClosedState(true);
   persistProjectState();
   renderOverviewProjects();
@@ -4322,8 +4338,8 @@ function ensureOpenWindowGeometry() {
   });
 }
 
-function prepareWindows() {
-  $$("[data-app-frame]").forEach(frame => {
+function prepareWindows(root = document) {
+  $$("[data-app-frame]", root).forEach(frame => {
     const actions = $(".window-actions", frame);
     if (!$('[data-window-action="maximize"]', actions)) {
       const maximize = document.createElement("button");
@@ -4352,26 +4368,26 @@ function prepareWindows() {
     }, { passive: false });
   });
 
-  $$("[data-window-action]").forEach(button => button.addEventListener("click", event => {
+  $$("[data-window-action]", root).forEach(button => button.addEventListener("click", event => {
     event.stopPropagation();
     const name = button.closest("[data-app-frame]").dataset.appFrame;
     if (button.dataset.windowAction === "minimize") minimizeApp(name);
     if (button.dataset.windowAction === "maximize") toggleMaximize(name);
     if (button.dataset.windowAction === "close") closeApp(name);
   }));
-  $$('[data-window-action="maximize"]').forEach(button => button.addEventListener("pointerdown", event => {
+  $$('[data-window-action="maximize"]', root).forEach(button => button.addEventListener("pointerdown", event => {
     if (event.button !== 1) return;
     event.preventDefault();
     event.stopPropagation();
     toggleAppFullscreen(button.closest("[data-app-frame]").dataset.appFrame);
   }));
-  document.addEventListener("keydown", event => {
+  if (root === document) document.addEventListener("keydown", event => {
     if (event.key !== "Escape" || !tileSession().fullscreen || ["#universalSearch", "#packageDialog", "#projectEditorDialog"].some(selector => $(selector).classList.contains("is-open")) || !$("#desktopContextMenu").hidden) return;
     event.preventDefault();
     toggleAppFullscreen(tileSession().fullscreen.name);
   });
   const observer = new ResizeObserver(() => { if (windowViewportLockReady) scheduleWindowTiling(); });
-  observer.observe($(".workspace-zone"));
+  if (root === document) observer.observe($(".workspace-zone"));
 }
 
 $("#allAppsToggle").addEventListener("click", () => {
@@ -4384,7 +4400,8 @@ $("#allAppsToggle").addEventListener("click", () => {
 document.addEventListener("click", event => {
   const button = event.target.closest("[data-open-app]");
   if (!button) return;
-  openApp(button.dataset.openApp);
+  if (event.shiftKey) createAppInstance(button.dataset.openApp);
+  else openApp(button.dataset.openApp);
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 });
 
@@ -4792,7 +4809,7 @@ document.addEventListener("keydown", event => {
   }
   if (event.metaKey && !isSuper) superKeyAlone = false;
 
-  const hotbarMatch = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+  const hotbarMatch = /^(?:Digit|Numpad)([0-9])$/.exec(event.code);
   const superHeld = event.metaKey || event.getModifierState?.("OS");
   /* Browsers on Windows/KDE may never receive OS-reserved Super+number.
      Alt+number mirrors it only inside this prototype so the behavior remains
@@ -4802,7 +4819,7 @@ document.addEventListener("keydown", event => {
     event.preventDefault();
     event.stopPropagation();
     superKeyAlone = false;
-    activateHotbarSlot(Number(hotbarMatch[1]));
+    activateHotbarSlot((Number(hotbarMatch[1]) || 10) + (event.shiftKey ? 10 : 0));
     return;
   }
 
@@ -5302,6 +5319,10 @@ function contextMenuEntries(context) {
     const frame = frameFor(context.name);
     const maximized = frame?.dataset.maximized === "true";
     return [
+      { action: "app-new-instance", icon: "i-add", label: "New window", shortcut: "Shift+click" },
+      ...(state !== "closed" ? Object.entries(workspaceProfiles).filter(([id]) => id !== activeWorkspace).map(([id, profile]) => ({action: "move-workspace:" + id, icon: "i-monitor", label: "Move to " + profile.label + " workspace"})) : []),
+      ...(state !== "closed" ? Object.entries(projectSpaces).map(([id, project]) => ({action: "move-project:" + id, icon: "i-folder", label: "Move to " + project.name})) : []),
+      state !== "closed" && windowMembership[activeWorkspace]?.[context.name] ? {action: "detach-project", icon: "i-folder", label: "Take out of project · keep open"} : null,
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / maximize between Areas" : "Maximize between Areas", shortcut: "Alt+Enter" } : null,
@@ -5415,6 +5436,10 @@ function createDesktopFolder(point) {
 function executeContextAction(action) {
   const context = contextMenuState;
   if (!context) return;
+  if (action === "app-new-instance") createAppInstance(context.name);
+  if (action.startsWith("move-workspace:")) moveAppWorkspace(context.name, action.split(":")[1]);
+  if (action.startsWith("move-project:")) moveAppProject(context.name, action.split(":")[1]);
+  if (action === "detach-project") { windowMembership[activeWorkspace][context.name] = null; saveIndependentSessions(); showToast("Window detached · stays open when the project closes"); }
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
   if (action === "app-maximize") toggleMaximize(context.name);
@@ -5795,6 +5820,7 @@ function captureDesktopSyncState() {
     schema: 4,
     workspaceProjects: cloneDesktopState(workspaceProjectStates),
     areaContents,
+    independent: {instances: instanceDefinitions, content: workspaceContent, membership: windowMembership, projects: workspaceProjects, sequence: instanceSequence},
     theme: document.body.dataset.theme,
     themePreference: SpatialDesktopTheme.preference,
     activeWorkspace,
@@ -5824,6 +5850,14 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.independent) {
+    Object.entries(state.independent.instances || {}).forEach(([id, base]) => { instanceDefinitions[id] = base; installInstance(id, base); });
+    Object.assign(workspaceContent, state.independent.content || {});
+    Object.assign(windowMembership, state.independent.membership || {});
+    Object.assign(workspaceProjects, state.independent.projects || {});
+    instanceSequence = Math.max(instanceSequence, state.independent.sequence || 0);
+    saveIndependentSessions();
+  }
   try {
     localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(state.workspaceStates));
     localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
@@ -6048,6 +6082,183 @@ function prepareCrossDisplaySync() {
   window.addEventListener("pagehide", () => postDesktopSyncMessage({ type: "goodbye" }));
 }
 
+// Window identities and workspace-owned content sessions.
+const baseAppNames = Object.keys(appInfo);
+const pristineFrames = Object.fromEntries(baseAppNames.map(name => [name, frameFor(name).cloneNode(true)]));
+let independentSessions = {};
+try { independentSessions = JSON.parse(localStorage.getItem('spatial-independent-sessions-v1') || '{}'); } catch {}
+const instanceDefinitions = independentSessions.instances || {};
+const workspaceContent = independentSessions.content || {};
+const workspaceProjects = independentSessions.projects || {general: activeProjectName, school: null, work: null, gaming: null};
+const windowMembership = independentSessions.membership || {general: {dolphin: activeProjectName, elisa: null}};
+let instanceSequence = Number(independentSessions.sequence) || 0;
+function saveIndependentSessions() {
+  try { localStorage.setItem('spatial-independent-sessions-v1', JSON.stringify({instances: instanceDefinitions, content: workspaceContent, projects: workspaceProjects, membership: windowMembership, sequence: instanceSequence})); } catch {}
+}
+function installInstance(id, base, bind = true) {
+  if (appInfo[id] || !pristineFrames[base]) return;
+  const frame = pristineFrames[base].cloneNode(true);
+  frame.dataset.appFrame = id;
+  frame.hidden = true;
+  frame.querySelectorAll('[id]').forEach(element => { element.id += '-' + id; });
+  appInfo[id] = {...appInfo[base], base, label: appInfo[base].label + ' · ' + id.split('--').at(-1)};
+  appState[id] = 'closed';
+  appMaximizedState[id] = false;
+  $('.workspace-zone').append(frame);
+  if (base === 'elisa') {
+    let playing = false;
+    frame.querySelectorAll('[data-music="play"]').forEach(button => button.addEventListener('click', () => { playing = !playing; button.innerHTML = icon(playing ? 'i-pause' : 'i-play'); button.setAttribute('aria-pressed', String(playing)); }));
+  }
+  if (bind) prepareWindows({querySelectorAll: selector => selector === '[data-app-frame]' ? [frame] : frame.querySelectorAll(selector)});
+  applyAppPrimaryColors();
+}
+Object.entries(instanceDefinitions).forEach(([id, base]) => installInstance(id, base, false));
+function createAppInstance(name) {
+  const base = appInfo[name]?.base || name;
+  if (!pristineFrames[base]) return;
+  const id = base + '--' + (++instanceSequence);
+  instanceDefinitions[id] = base;
+  installInstance(id, base);
+  windowMembership[activeWorkspace] ||= {};
+  windowMembership[activeWorkspace][id] = activeProjectName;
+  openApp(id);
+  saveIndependentSessions();
+  showToast('New ' + appInfo[base].label + ' window · separate hotbar slot');
+  return id;
+}
+function workspaceHotbarNames() {
+  return [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState).filter(name => appState[name] !== 'closed')])];
+}
+function renderInstanceRack() {
+  $('#appRack').innerHTML = workspaceHotbarNames().map((name, index) => {
+    const info = appInfo[name];
+    const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
+    const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
+    return '<button class="app-key" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + ' · ' + shortcut + ' · Shift+click: new window') + '" aria-label="' + escapeHtml(info.label + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
+  }).join('');
+  applyAppPrimaryColors($('#appRack'));
+}
+const originalSyncRack = syncRack;
+syncRack = function() { renderInstanceRack(); originalSyncRack(); };
+hotbarSlotFor = name => { const index = workspaceHotbarNames().indexOf(name); return index < 0 ? null : index + 1; };
+function captureWorkspaceContent() {
+  const frames = {};
+  Object.keys(appInfo).forEach(name => {
+    const frame = frameFor(name);
+    if (!frame) return;
+    frames[name] = [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].map(field => ({value: field.isContentEditable ? field.innerHTML : field.value, checked: field.checked}));
+  });
+  workspaceContent[activeWorkspace] = {frames, systemFields: [...areaFor('systems')?.querySelectorAll('input,select') || []].map(field => field.value), focusSeconds, music: {playing: musicPlaying, position: musicPosition}, note: noteDraft, terminal: terminalPreview, history: workspaceContent[activeWorkspace]?.history || []};
+  workspaceProjects[activeWorkspace] = activeProjectName;
+  saveIndependentSessions();
+}
+function renderWorkspaceHistory() {
+  Object.keys(appInfo).filter(id => (appInfo[id].base || id) === 'browser').forEach(id => {
+    const frame = frameFor(id);
+    let details = frame.querySelector('.workspace-browser-history');
+    if (!details) { details = document.createElement('details'); details.className = 'workspace-browser-history'; frame.querySelector('.start-page').append(details); }
+    const history = workspaceContent[activeWorkspace]?.history || [];
+    details.innerHTML = '<summary>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' browsing history (' + history.length + ')</summary>' + history.slice(-20).reverse().map(item => '<p>' + escapeHtml(item.address) + '</p>').join('');
+  });
+}
+function restoreWorkspaceContent(name) {
+  const saved = workspaceContent[name];
+  Object.keys(appInfo).forEach(id => {
+    const frame = frameFor(id), base = appInfo[id].base || id;
+    if (!frame) return;
+    const defaults = [...pristineFrames[base].querySelectorAll('input,textarea,select,[contenteditable]')];
+    [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].forEach((field, index) => {
+      const value = saved?.frames?.[id]?.[index]?.value ?? defaults[index]?.value ?? '';
+      if (field.isContentEditable) field.innerHTML = saved?.frames?.[id]?.[index]?.value || '';
+      else field.value = value;
+      if (field.type === 'checkbox') field.checked = saved?.frames?.[id]?.[index]?.checked ?? defaults[index]?.checked ?? false;
+    });
+  });
+  noteDraft = saved?.note || '';
+  $('.notes-layout textarea').value = noteDraft;
+  terminalPreview = saved?.terminal || 'Ready for a command';
+  focusSeconds = saved?.focusSeconds ?? 25 * 60;
+  focusRunning = false; clearInterval(focusTimer); updateTimer();
+  [...areaFor('systems')?.querySelectorAll('input,select') || []].forEach((field, index) => { if (saved?.systemFields?.[index] !== undefined) field.value = saved.systemFields[index]; });
+  musicPosition = saved?.music?.position || 0;
+  setMusicPlaying(saved?.music?.playing ?? false);
+  renderWorkspaceHistory();
+}
+const originalCaptureWorkspace = captureCurrentWorkspaceSession;
+captureCurrentWorkspaceSession = function() { captureWorkspaceContent(); originalCaptureWorkspace(); };
+const originalRenderWorkspace = renderWorkspace;
+renderWorkspace = function(name, announce = true) {
+  if (!workspaceProfiles[name]) return;
+  if (name !== activeWorkspace) captureCurrentWorkspaceSession();
+  Object.keys(appState).forEach(id => { appState[id] = 'closed'; });
+  activeProjectName = workspaceProjects[name] || null;
+  activeWorkspace = name;
+  originalRenderWorkspace(name, announce);
+  restoreWorkspaceContent(name);
+  if (activeProjectName && projectSpaces[activeProjectName]) renderProjectSpace(activeProjectName);
+  else setProjectClosedState(true);
+  windowMembership[name] ||= {};
+  saveIndependentSessions();
+};
+const originalOpenApp = openApp;
+openApp = function(name, point = null) {
+  const newlyOpened = appState[name] === 'closed';
+  if (newlyOpened) { windowMembership[activeWorkspace] ||= {}; if (!(name in windowMembership[activeWorkspace])) windowMembership[activeWorkspace][name] = activeProjectName; }
+  originalOpenApp(name, point);
+  saveIndependentSessions();
+};
+function removeWindowFromSavedProjects(name) {
+  Object.entries(projectWindowSessions).forEach(([key, session]) => {
+    if (!key.startsWith(activeWorkspace + ':')) return;
+    session.apps = (session.apps || []).filter(id => id !== name);
+    ['states','geometry','displays'].forEach(field => { if (session[field]) delete session[field][name]; });
+  });
+}
+function moveAppWorkspace(name, destination) {
+  if (!workspaceProfiles[destination] || appState[name] === 'closed') return;
+  captureWorkspaceContent();
+  const state = appState[name], contents = workspaceContent[activeWorkspace]?.frames?.[name];
+  // Base windows already exist in every workspace. Transfer into a fresh identity
+  // so an existing destination window is never overwritten.
+  const base = appInfo[name].base || name, id = base + '--' + (++instanceSequence);
+  instanceDefinitions[id] = base; installInstance(id, base);
+  workspaceAppStates[destination][id] = state;
+  workspaceContent[destination] ||= {frames: {}, music: {playing:false, position:0}, history: []};
+  workspaceContent[destination].frames ||= {};
+  workspaceContent[destination].frames[id] = contents;
+  windowMembership[destination] ||= {}; windowMembership[destination][id] = null;
+  removeWindowFromSavedProjects(name);
+  closeApp(name); windowMembership[activeWorkspace][name] = null;
+  persistProjectState(); persistWorkspaceAppStates(); saveIndependentSessions();
+  showToast('Window moved to ' + workspaceProfiles[destination].label + ' · content preserved');
+}
+function moveAppProject(name, destination) {
+  if (!projectSpaces[destination] || appState[name] === 'closed') return;
+  removeWindowFromSavedProjects(name);
+  windowMembership[activeWorkspace] ||= {};
+  windowMembership[activeWorkspace][name] = destination;
+  if (destination !== activeProjectName) {
+    const key = projectSessionKey(destination);
+    const session = projectWindowSessions[key] ||= {apps:[], states:{}, geometry:{}, displays:{}};
+    session.apps.push(name); session.states[name] = appState[name];
+    session.geometry[name] = windowGeometry.get(name) || readGeometry(frameFor(name));
+    session.displays[name] = displayAssignmentsFor().apps[name] || 1;
+    closeApp(name);
+  }
+  persistProjectState(); saveIndependentSessions();
+  showToast('Window moved to ' + projectSpaces[destination].name);
+}
+document.addEventListener('change', event => {
+  const frame = event.target.closest('[data-app-frame]');
+  if ((appInfo[frame?.dataset.appFrame]?.base || frame?.dataset.appFrame) === 'browser' && event.target.matches('input')) {
+    workspaceContent[activeWorkspace] ||= {frames: {}, history: []};
+    const history = workspaceContent[activeWorkspace].history ||= [];
+    if (event.target.value) history.push({address:event.target.value, time:Date.now()});
+  }
+  captureWorkspaceContent();
+  renderWorkspaceHistory();
+});
+
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
@@ -6066,7 +6277,7 @@ updateClock();
 setInterval(updateClock, 1000);
 renderCalendar();
 bindMusicControls();
-setMusicPlaying(true);
+restoreWorkspaceContent(activeWorkspace);
 updateTimer();
 syncApps();
 requestAnimationFrame(() => {
@@ -6099,3 +6310,4 @@ window.addEventListener("pointermove", event => {
 }, { passive: true });
 
 window.addEventListener("pagehide", () => captureCurrentWorkspaceSession());
+

@@ -7416,3 +7416,20 @@ body[data-theme="light"] .overview-project-zone .workspace-config-file{
 body[data-theme="light"] .app-frame .terminal-screen{color:#22302b}
 body[data-theme="light"] .app-frame .terminal-screen b{color:#227646}
 body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
+
+
+.workspace-browser-history {font-size:14px; width:100%; max-height:180px; overflow:auto; text-align:left; padding:12px;}
+.workspace-browser-history summary {cursor:pointer;}
+.workspace-browser-history p {font-size:14px; overflow-wrap:anywhere;}
+
+/* Multiple app instances must reserve space for every hotbar row. */
+.apps-zone:not([data-area-state="rail"]) .app-rack{
+  height:auto;
+  min-height:66px;
+  grid-auto-rows:66px;
+  align-content:start;
+  max-height:45%;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+}
