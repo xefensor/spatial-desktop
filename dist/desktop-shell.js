@@ -458,6 +458,7 @@ try { tileSessions = JSON.parse(localStorage.getItem("spatial-split-layouts-v1")
 let tileRendering = false;
 let tileInteraction = false;
 let manualWindowInteraction = false;
+let activeDesktopDrag = null;
 let tileLayoutFrame = 0;
 let tileDropPreview = null;
 let lastTileContext = "";
@@ -494,14 +495,14 @@ function fitDesktopTiles(root = tileSession().root, preferredName = frontApp) {
   // Float coordinates belong to the monitor; tile coordinates belong to the
   // workspace between Areas. Only visible floats on this monitor reserve space.
   const obstacles = session.fullscreen ? [] : Object.entries(session.floating)
-    .filter(([name]) => appState[name] === "open" && isLocalApp(name))
+    .filter(([name]) => appState[name] === "open" && isLocalApp(name) && name !== activeDesktopDrag?.name)
     .map(([,rect]) => ({x:rect.left-workspace.rect.left, y:rect.top-workspace.rect.top, width:rect.width, height:rect.height}));
   return tileEngine.fitAvoiding(root, tileBounds(), minimumUsableWindowSize, preferredName, tilePriority, obstacles);
 }
 
 function reconcileTileTree(preferredName = frontApp) {
   const session = tileSession();
-  const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name]);
+  const open = Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name] && name !== activeDesktopDrag?.name);
   session.root = tileEngine.normalize(session.root, open);
   open.forEach(name => {
     if (tileEngine.contains(session.root, name)) return;
@@ -636,7 +637,7 @@ function scheduleWindowVisibility() {
 function renderTileLayout(preferredName = frontApp, announce = false, animate = false) {
   // A held manual gesture owns its screen geometry. Retile neighbours once
   // on release, rather than parking them against a moving obstacle.
-  if (tileRendering || manualWindowInteraction) return;
+  if (tileRendering || (manualWindowInteraction && !activeDesktopDrag?.switching)) return;
   tileRendering = true;
   try {
     parkFullscreenPeers(tileSession());
@@ -1702,10 +1703,58 @@ function resistAreaBoundaries(position, size, gate, bypass = false) {
 
 let cancelWindowPointerInteraction = null;
 
+function detachDraggedDesktopWindow(name, page) {
+  const prefix = [activeWorkspace, "desktop", page].join(":") + ":";
+  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
+    session.root = tileEngine.remove(session.root, name);
+    if (session.focus?.name === name) session.focus = null;
+    if (session.focus?.root) session.focus.root = tileEngine.remove(session.focus.root, name);
+    delete session.floating?.[name];
+    delete session.parked?.[name];
+  });
+}
+
+function changeDraggedDesktopPage(drag, page) {
+  const previous = desktopPages.current(activeWorkspace);
+  if (page === previous || page < 0 || page > desktopPages.last(activeWorkspace) || desktopPageAnimating) return false;
+  const floating = tileSession().floating[drag.name];
+  detachDraggedDesktopWindow(drag.name, previous);
+  desktopPages.go(activeWorkspace, page);
+  // Restore the destination's fullscreen peers before the held window joins it.
+  if (tileSession().fullscreen) leaveAppFullscreen();
+  desktopPages.assign(activeWorkspace, drag.name, page);
+  if (floating) tileSession().floating[drag.name] = floating;
+  drag.changed = true;
+  drag.switching = true;
+  try {
+    syncApps();
+    refreshIntentAreas();
+    renderTileLayout(drag.name);
+    bringToFront(drag.name);
+  } finally { drag.switching = false; }
+  saveDesktopPages();
+  saveTileSessions();
+  queueDesktopStateBroadcast(0);
+  return true;
+}
+
+function cancelDraggedDesktopPages(drag) {
+  if (!drag.changed) return;
+  detachDraggedDesktopWindow(drag.name, desktopPages.current(activeWorkspace));
+  Object.entries(drag.sessions).forEach(([key, session]) => { tileSessions[key] = session; });
+  desktopPages.assign(activeWorkspace, drag.name, drag.page);
+  desktopPages.go(activeWorkspace, drag.page);
+  syncApps();
+  refreshIntentAreas();
+  saveDesktopPages();
+  saveTileSessions();
+  queueDesktopStateBroadcast(0);
+}
+
 // A floating window is reparented out of the clipped workspace. Capture on
 // its titlebar can be lost during that move, so the window owns the gesture;
 // element capture is only an aid, never the sole route to pointerup.
-function trackWindowPointer(event, handle, move, finish) {
+function trackWindowPointer(event, handle, move, finish, desktopDrag = null) {
   cancelWindowPointerInteraction?.();
   cancelAnimationFrame(tileLayoutFrame);
   tileLayoutFrame = 0;
@@ -1714,6 +1763,13 @@ function trackWindowPointer(event, handle, move, finish) {
   const heldButton = event.button === 1 ? 4 : 1;
   let lastPointer = event;
   let finished = false;
+  const drag = event.button === 0 && desktopDrag ? {
+    ...desktopDrag, page: desktopPages.current(activeWorkspace), changed: false,
+    sessions: JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(tileSessions)
+      .filter(([key]) => key.startsWith([activeWorkspace, "desktop", desktopPages.current(activeWorkspace)].join(":") + ":")))))
+  } : null;
+  const wheel = drag ? SpatialDesktopPages.wheelGate() : null;
+  if (drag) activeDesktopDrag = drag;
   const capture = () => {
     if (finished) return;
     try { handle.setPointerCapture(pointerId); } catch { /* Global tracking still works. */ }
@@ -1725,17 +1781,44 @@ function trackWindowPointer(event, handle, move, finish) {
     window.removeEventListener("pointerup", end, true);
     window.removeEventListener("pointercancel", end, true);
     window.removeEventListener("blur", cancel);
+    window.removeEventListener("wheel", onWheel, true);
+    window.removeEventListener("keydown", onKey, true);
     document.removeEventListener("visibilitychange", visibilityChanged);
     if (cancelWindowPointerInteraction === cancel) cancelWindowPointerInteraction = null;
     try { handle.releasePointerCapture(pointerId); } catch { /* Capture may already be gone. */ }
-    try { finish(pointer); }
+    try {
+      if (drag && pointer.type === "pointercancel") cancelDraggedDesktopPages(drag);
+      if (activeDesktopDrag === drag) activeDesktopDrag = null;
+      finish(pointer);
+    }
     finally {
+      if (activeDesktopDrag === drag) activeDesktopDrag = null;
       tileInteraction = false;
       window.dispatchEvent(new CustomEvent("material-cursor-release"));
     }
   };
   const cancel = () => end({ type: "pointercancel", pointerId, clientX: lastPointer.clientX, clientY: lastPointer.clientY });
   const visibilityChanged = () => { if (document.hidden) cancel(); };
+  const onKey = key => {
+    if (!drag || key.key !== "Escape") return;
+    key.preventDefault();
+    key.stopPropagation();
+    cancel();
+  };
+  const onWheel = scroll => {
+    if (!drag || finished || scroll.ctrlKey || scroll.metaKey || scroll.shiftKey || Math.abs(scroll.deltaX) > Math.abs(scroll.deltaY)) return;
+    scroll.preventDefault();
+    scroll.stopPropagation();
+    const delta = scroll.deltaY * (scroll.deltaMode === 1 ? 16 : scroll.deltaMode === 2 ? $(".workspace-zone").clientHeight : 1);
+    const direction = wheel.feed(delta, performance.now());
+    const page = desktopPages.current(activeWorkspace) + direction;
+    if (!direction || desktopPageAnimating || page < 0 || page > desktopPages.last(activeWorkspace)) return;
+    try {
+      // Wheel alone is a deliberate move, even before the six-pixel threshold.
+      move(lastPointer, true);
+      if (changeDraggedDesktopPage(drag, page)) { move(lastPointer, true); capture(); }
+    } catch (error) { cancel(); throw error; }
+  };
   const onMove = pointer => {
     if (pointer.pointerId !== pointerId || finished) return;
     // Recover even if release happened outside the browser and no up arrived.
@@ -1752,6 +1835,10 @@ function trackWindowPointer(event, handle, move, finish) {
   window.addEventListener("pointerup", end, true);
   window.addEventListener("pointercancel", end, true);
   window.addEventListener("blur", cancel);
+  if (drag) {
+    window.addEventListener("wheel", onWheel, { capture: true, passive: false });
+    window.addEventListener("keydown", onKey, true);
+  }
   document.addEventListener("visibilitychange", visibilityChanged);
   capture();
   return capture;
@@ -1774,9 +1861,9 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
   let moved = false;
   tileInteraction = true;
   bringToFront(name);
-  const move = pointer => {
+  const move = (pointer, force = false) => {
     if (!moved) {
-      if (Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 6) return;
+      if (!force && Math.hypot(pointer.clientX - startX, pointer.clientY - startY) < 6) return;
       moved = true;
       manualWindowInteraction = true;
       frame.classList.remove("is-auto-tiling");
@@ -1830,7 +1917,7 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
     renderTileLayout(name);
     queueDesktopStateBroadcast(0);
   };
-  const recapture = trackWindowPointer(event, handle, move, finish);
+  const recapture = trackWindowPointer(event, handle, move, finish, resizing ? null : { name });
 }
 
 function bindWindowDrag(frame) {
@@ -1871,9 +1958,9 @@ function bindWindowDrag(frame) {
     frame.style.width = startRect.width + "px";
     frame.style.height = startRect.height + "px";
 
-    const move = moveEvent => {
+    const move = (moveEvent, force = false) => {
       if (!hasMoved) {
-        if (Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) < 6) return;
+        if (!force && Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) < 6) return;
         hasMoved = true;
         if (frame.dataset.maximized === "true") focusTileWindow(name);
       }
@@ -1929,7 +2016,7 @@ function bindWindowDrag(frame) {
       if (layoutMode === "auto") scheduleSpatialAutoLayout();
     };
 
-    trackWindowPointer(event, titlebar, move, finish);
+    trackWindowPointer(event, titlebar, move, finish, { name });
   });
 }
 
@@ -4356,7 +4443,7 @@ function prepareWindows(root = document) {
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
       if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
     });
-    $(".app-titlebar", frame).title = "Left drag: tile · middle drag or Alt+drag: float and borrow Area space · double-click: maximize between Areas";
+    $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow Area space · double-click: maximize between Areas";
     frame.addEventListener("auxclick", event => {
       if (event.button === 1 && event.target.closest(".app-titlebar,.resize-handle")) event.preventDefault();
     });

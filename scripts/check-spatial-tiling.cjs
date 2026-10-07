@@ -114,6 +114,7 @@ const store = new Map();
 const sandbox = {
   window: { SpatialTiling: T, innerWidth: 1616, innerHeight: 1016 }, localStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   desktopPages: require("../dist/desktop-pages.js").create(),
+  SpatialDesktopPages: require("../dist/desktop-pages.js"),
   activeWorkspace: "general", activeProjectName: "project", projectModeId: () => "modeling", localDisplaySlot: () => 1,
   appState: Object.fromEntries(Object.keys(frames).map(name => [name, "closed"])),
   appInfo: Object.fromEntries(Object.keys(frames).map(name => [name, { label: name }])), appMaximizedState: {},
@@ -412,6 +413,95 @@ pointer("pointermove", 680, 220, 1);
 sandbox.window.dispatchEvent({type:"blur"});
 assertCleanGesture();
 assert.equal(frames.notes.classList.contains("is-tiled"), true, "Interrupted left drag restores its tile");
+
+// A real left title drag owns wheel navigation, even before pointer movement.
+const localityBeforeCarry = sandbox.isLocalApp;
+const pagesBeforeCarry = sandbox.desktopPages.snapshot();
+const sessionsBeforeCarry = vm.runInContext('JSON.stringify(tileSessions)', sandbox);
+let carryClock = 0;
+Object.assign(sandbox, { performance: {now: () => carryClock}, saveDesktopPages() {} });
+sandbox.isLocalApp = name => sandbox.desktopPages.visible("general", name);
+workspaceElement.clientHeight = 1016;
+Object.keys(sandbox.appState).forEach(name => {sandbox.appState[name] = ["notes", "dolphin", "elisa"].includes(name) ? "open" : "closed";});
+for (const name of ["notes", "dolphin"]) sandbox.desktopPages.assign("general", name, 4);
+sandbox.desktopPages.assign("general", "elisa", 5);
+sandbox.desktopPages.go("general", 5);
+vm.runInContext('renderTileLayout("elisa")', sandbox);
+sandbox.desktopPages.go("general", 4);
+vm.runInContext('renderTileLayout("notes")', sandbox);
+const wheelCarry = (delta = 80, modifiers = {}) => {
+  const scroll = {type:"wheel", deltaY:delta, deltaX:0, deltaMode:0, ...modifiers,
+    preventDefault(){this.prevented=true;}, stopPropagation(){this.stopped=true;}};
+  sandbox.window.dispatchEvent(scroll);
+  return scroll;
+};
+startLeftDrag();
+const heldRect = {...frames.notes.style};
+assert.equal(wheelCarry(80, {ctrlKey:true}).prevented, undefined, "Holding a titlebar does not hijack browser zoom");
+assert.equal(wheelCarry(80, {deltaX:160}).prevented, undefined, "Horizontal scrolling does not carry a window");
+const carried = wheelCarry();
+assert.equal(carried.prevented, true);
+assert.equal(carried.stopped, true, "Held-wheel cannot also scroll an app or Area");
+assert.equal(sandbox.desktopPages.current("general"), 5);
+assert.equal(sandbox.desktopPages.pageOf("general", "notes"), 5);
+assert.equal(frames.notes.hidden, false, "The held frame remains visible on the destination");
+for (const key of ["left", "top", "width", "height"]) assert.equal(frames.notes.style[key], heldRect[key], "Wheel navigation does not move the held frame");
+assert.equal(sandbox.appState.dolphin, "open", "The source peer stays running on its own desktop");
+assert.equal(sandbox.desktopPages.pageOf("general", "dolphin"), 4);
+assert.equal(sandbox.appState.elisa, "open", "Destination peers cannot be parked by the moving window");
+assert.deepEqual(Array.from(vm.runInContext('tileEngine.names(tileSession().root)', sandbox)), ["elisa"], "Held windows are outside the destination split until release");
+for (carryClock = 15; carryClock <= 300; carryClock += 15) wheelCarry();
+assert.equal(sandbox.desktopPages.current("general"), 5, "A wheel burst and its momentum switch only one page during a drag");
+pointer("pointerup", 550, 110, 0);
+assertCleanGesture();
+assert.equal(vm.runInContext('activeDesktopDrag', sandbox), null);
+assert.equal(vm.runInContext('tileEngine.contains(tileSession().root, "notes")', sandbox), true, "Releasing without pointer motion still places the carried window");
+assert.equal(vm.runInContext('tileEngine.contains(tileSessions["general:desktop:4:1"].root, "notes")', sandbox), false, "The window is removed from its old split");
+assert.equal(wheelCarry().prevented, undefined, "Normal wheel routing returns immediately after release");
+
+// Cross several pages while held, reverse, then cancel through Escape or blur.
+const beforeReturn = vm.runInContext('JSON.stringify(tileSession())', sandbox);
+startLeftDrag();
+carryClock = 600; wheelCarry();
+assert.equal(sandbox.desktopPages.current("general"), 6, "A fresh gesture can reach the spare empty desktop");
+carryClock = 900; wheelCarry();
+assert.equal(sandbox.desktopPages.current("general"), 7, "Carrying a window creates the next spare desktop");
+carryClock = 1200; wheelCarry(-80);
+assert.equal(sandbox.desktopPages.current("general"), 6, "Reverse scrolling works while the same pointer remains held");
+sandbox.window.dispatchEvent({type:"keydown", key:"Escape", preventDefault(){}, stopPropagation(){}});
+assertCleanGesture();
+assert.equal(sandbox.desktopPages.current("general"), 5);
+assert.equal(sandbox.desktopPages.pageOf("general", "notes"), 5, "Cancel restores the original page assignment");
+assert.equal(vm.runInContext('JSON.stringify(tileSession())', sandbox), beforeReturn, "Cancel restores the original split and floating state");
+for (const page of [6,7]) assert.equal(vm.runInContext(`tileEngine.contains(tileSessions["general:desktop:${page}:1"].root, "notes")`, sandbox), false, "Cancelled carry leaves no duplicate on a visited page");
+startLeftDrag();
+carryClock = 1500; wheelCarry(-80);
+sandbox.window.dispatchEvent({type:"blur"});
+assertCleanGesture();
+assert.equal(sandbox.desktopPages.pageOf("general", "notes"), 5, "Losing browser focus also returns the carried window");
+
+// Alt-left floating carries use the same wheel owner, but resize and middle do not.
+startGesture(0);
+carryClock = 1800; wheelCarry();
+assert.equal(sandbox.desktopPages.current("general"), 6);
+pointer("pointerup", 550, 110, 0);
+assertCleanGesture();
+assert.equal(frames.notes.classList.contains("is-floating"), true);
+assert.equal(vm.runInContext('Boolean(tileSession().floating.notes)', sandbox), true, "Manual placement remains floating after a desktop transfer");
+startGesture(0, true);
+assert.equal(wheelCarry().prevented, undefined, "Resize gestures do not switch desktops");
+pointer("pointerup", 550, 110, 0);
+assertCleanGesture();
+startGesture(1);
+assert.equal(wheelCarry().prevented, undefined, "Middle drag keeps its existing wheel behavior");
+pointer("pointerup", 550, 110, 0);
+assertCleanGesture();
+sandbox.isLocalApp = localityBeforeCarry;
+sandbox.desktopPages.load(pagesBeforeCarry);
+sandbox.savedCarrySessions = JSON.parse(sessionsBeforeCarry);
+vm.runInContext('tileSessions = savedCarrySessions', sandbox);
+delete sandbox.savedCarrySessions;
+console.log("Held-window desktops: wheel-only carry, geometry continuity, source/destination peers, momentum, repeated/reversed pages, release, Escape/blur rollback, floating carry, zoom/horizontal guards and no leaked hooks passed.");
 sandbox.$ = oldSelector;
 sandbox.desktopPages.go("general", pageBeforeLeftDrag);
 Object.assign(sandbox.appState, appsBeforeLeftDrag);
