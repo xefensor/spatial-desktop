@@ -1,0 +1,17 @@
+/* Desktop navigation belongs to the Apps header, including its narrow rail. */
+.apps-zone[data-area-state] .area-window-bar .desktop-focus-key {
+  position:relative;display:grid;place-items:center;flex:0 0 32px;
+  width:32px;min-width:32px;height:30px;min-height:30px;margin:0;padding:0;
+  font:650 12px/1 system-ui,sans-serif;
+}
+.desktop-focus-key svg{width:20px;height:20px}
+.desktop-focus-key b{position:absolute;right:3px;bottom:4px;font:700 9px/1 system-ui,sans-serif;padding:1px;background:var(--sd-glass-face)}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
+  flex-basis:116px;width:116px;min-width:116px;
+}
+.desktop-page-ghost{position:absolute;inset:0;pointer-events:none;z-index:100;overflow:hidden}
+.desktop-page-ghost *{pointer-events:none!important}
+.workspace-zone[data-desktop-focused="true"]{cursor:default}
+.workspace-zone:focus{outline:none}
+.workspace-zone:focus-visible{outline:1px solid var(--text-muted);outline-offset:-4px}
+.desktop-folder[hidden]{display:none!important}

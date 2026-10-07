@@ -219,7 +219,7 @@ Object.assign(ui.context, {
     general: { dolphin: 'open', elisa: 'open', browser: 'closed', terminal: 'closed', notes: 'closed' },
     school: { dolphin: 'closed', elisa: 'closed', browser: 'open', terminal: 'closed', notes: 'closed' }
   },
-  desktopSyncApplying: false, frontApp: null, layoutMode: 'manual',
+  desktopSyncApplying: false, desktopHasWindowFocus: true, frontApp: null, layoutMode: 'manual',
   requestAnimationFrame: fn => raf.push(fn), clearTimeout() {},
   hideNotificationPeek() {}, syncNotifications() {}, setFocusRunning(running) { ui.context.focusRunning = running; },
   persistWorkspaceAppStates() { ui.context.workspaceAppStates[ui.context.activeWorkspace] = { ...ui.context.appState }; },
@@ -280,3 +280,4 @@ for (const htmlName of fs.readdirSync(dist).filter(name => name.endsWith('.html'
   }
 }
 console.log('Website asset checks passed: local stylesheet and script types and paths.');
+

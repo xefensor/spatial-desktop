@@ -113,10 +113,11 @@ const frames = Object.fromEntries(Object.keys(minimums).map(name => {
 const store = new Map();
 const sandbox = {
   window: { SpatialTiling: T, innerWidth: 1616, innerHeight: 1016 }, localStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
+  desktopPages: require("../dist/desktop-pages.js").create(),
   activeWorkspace: "general", activeProjectName: "project", projectModeId: () => "modeling", localDisplaySlot: () => 1,
   appState: Object.fromEntries(Object.keys(frames).map(name => [name, "closed"])),
   appInfo: Object.fromEntries(Object.keys(frames).map(name => [name, { label: name }])), appMaximizedState: {},
-  frontApp: null, layoutMode: "manual", windowGeometry: new Map(), autoTiledWindows: new Set(), autoWindowAvoidance: new Map(),
+  desktopPageAnimating: false, frontApp: null, layoutMode: "manual", windowGeometry: new Map(), autoTiledWindows: new Set(), autoWindowAvoidance: new Map(),
   isLocalApp: () => true, minimumUsableWindowSize: min, frameFor: name => frames[name],
   workspaceBounds: () => ({ width: 1616, height: 1016, rect: { left: 0, top: 0 } }),
   syncMaximizeButton() {}, saveLayout() {}, showToast() {}, queueDesktopStateBroadcast() {}, scheduleSpatialAutoLayout() {},
@@ -154,9 +155,11 @@ sandbox.activeWorkspace = "school";
 vm.runInContext('renderTileLayout("dolphin")', sandbox);
 sandbox.activeWorkspace = "general";
 assert.equal(vm.runInContext("JSON.stringify(tileSession().root)", sandbox), rootBefore, "Workspace trees are separate");
-sandbox.projectModeId = () => "texturing";
-assert.equal(vm.runInContext("tileSession().root", sandbox), null, "Project modes have independent split trees");
-console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app exclusion, workspace and mode isolation passed.");
+sandbox.desktopPages.go("general", 1);
+assert.equal(vm.runInContext("tileSession().root", sandbox), null, "Desktop pages have independent split trees");
+sandbox.desktopPages.go("general", 0);
+assert.equal(vm.runInContext("JSON.stringify(tileSession().root)", sandbox), rootBefore, "Returning to a desktop preserves its split tree");
+console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app exclusion, workspace and desktop page isolation passed.");
 
 // Run the real dock layout/session/resize paths, including legacy Auto data.
 // Window activity must never steal dock space or move Areas to another display.
@@ -387,8 +390,9 @@ sandbox.$ = oldSelector;
 // Normal left dragging still docks a floating window back into the tree,
 // and now shares the same interruption-safe global gesture owner.
 const appsBeforeLeftDrag = {...sandbox.appState};
-const modeBeforeLeftDrag = sandbox.projectModeId;
-sandbox.projectModeId = () => "pointer-lifecycle-left";
+const pageBeforeLeftDrag = sandbox.desktopPages.current("general");
+sandbox.desktopPages.assign("general", "fixture-page", 2);
+sandbox.desktopPages.go("general", 2);
 vm.runInContext('renderTileLayout("notes")', sandbox);
 const workspaceElement = {append(frame) {frame.parentElement = workspaceElement;}, getBoundingClientRect: () => ({left:0, top:0, right:1616, bottom:1016})};
 const appsElement = {getBoundingClientRect: () => ({left:0, top:0, right:200, bottom:1016})};
@@ -409,7 +413,7 @@ sandbox.window.dispatchEvent({type:"blur"});
 assertCleanGesture();
 assert.equal(frames.notes.classList.contains("is-tiled"), true, "Interrupted left drag restores its tile");
 sandbox.$ = oldSelector;
-sandbox.projectModeId = modeBeforeLeftDrag;
+sandbox.desktopPages.go("general", pageBeforeLeftDrag);
 Object.assign(sandbox.appState, appsBeforeLeftDrag);
 vm.runInContext('syncApps(); renderTileLayout("notes")', sandbox);
 vm.runInContext('tileSession().floating.notes = {left:330,top:300,width:440,height:350,yieldEdges:["left"]}; updateFloatingYield("notes", {passed:new Set(),preferredSizes:dockSizes})', sandbox);
@@ -421,8 +425,9 @@ console.log("Intent interactions: Alt/middle drag and resize, capture loss on re
 // Detaching a noodle-shaped tile gives it a normal app footprint, anchored
 // under the held pointer. Existing manual sizes and resize gestures are kept.
 const beforeDetachApps = {...sandbox.appState};
-const beforeDetachMode = sandbox.projectModeId;
-sandbox.projectModeId = () => "detach-footprint";
+const beforeDetachPage = sandbox.desktopPages.current("general");
+sandbox.desktopPages.assign("general", "fixture-page", 3);
+sandbox.desktopPages.go("general", 3);
 Object.keys(sandbox.appState).forEach(name => {sandbox.appState[name] = name === "notes" ? "open" : "closed";});
 vm.runInContext('renderTileLayout("notes")',sandbox);
 Object.assign(frames.notes.style,{left:"80px",top:"80px",width:"1400px",height:"340px"});
@@ -463,7 +468,7 @@ const smallRect=vm.runInContext('detachedDragRect("notes",{left:8,top:8,width:44
 assert.equal(smallRect.width,444,"Detached size adapts to a small available workspace");
 assert.equal(smallRect.height,334);
 sandbox.workspaceBounds=wideBounds;
-sandbox.projectModeId=beforeDetachMode;
+sandbox.desktopPages.go("general", beforeDetachPage);
 Object.assign(sandbox.appState,beforeDetachApps);
 vm.runInContext('syncApps();renderTileLayout("notes")',sandbox);
 console.log("Detached footprints: movement threshold, sensible app sizes, pointer anchoring, repeated drag, explicit resize, cancel, Float menu and limited space passed.");
@@ -506,7 +511,8 @@ console.log("Desktop Area adapter: actual fullscreen and manual leases, temporar
 
 // Actual openApp/render adapter: screen-space floats must be translated to
 // workspace coordinates, including a workspace offset caused by docked Areas.
-sandbox.projectModeId = () => "float-aware-opening";
+sandbox.desktopPages.assign("general", "fixture-page", 4);
+sandbox.desktopPages.go("general", 4);
 Object.keys(sandbox.appState).forEach(name => {sandbox.appState[name] = "closed";});
 sandbox.window.innerWidth = 2416;
 sandbox.window.innerHeight = 1216;
@@ -531,7 +537,8 @@ console.log("Float-aware desktop: new app opening, coordinate offsets, pinned fl
 
 // Visibility is per monitor/workspace and based on complete geometric coverage,
 // including the union of several foreground windows, not just the front app.
-sandbox.projectModeId = () => "visibility-policy";
+sandbox.desktopPages.assign("general", "fixture-page", 5);
+sandbox.desktopPages.go("general", 5);
 sandbox.window.innerWidth = 1616;
 sandbox.window.innerHeight = 1016;
 sandbox.workspaceBounds = () => ({width:1616,height:1016,rect:{left:0,top:0}});

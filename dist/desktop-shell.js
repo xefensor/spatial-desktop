@@ -211,6 +211,10 @@ const windowGeometry = new Map();
 const autoTiledWindows = new Set();
 const maximizeRestore = new Map();
 let frontApp = "dolphin";
+let desktopHasWindowFocus = true;
+const desktopPages = SpatialDesktopPages.create(readDesktopStorage("spatial-desktop-pages-v1"));
+const desktopWheel = SpatialDesktopPages.wheelGate();
+let desktopPageAnimating = false;
 let zCounter = 20;
 let toastTimer;
 let musicPlaying = true;
@@ -461,7 +465,7 @@ let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, hidden: {}, canvas: {
 let applyingIntentAreas = false;
 
 function tileContextKey() {
-  return [activeWorkspace, activeProjectName || "desktop", activeProjectName ? projectModeId(activeProjectName) : "default", localDisplaySlot()].join(":");
+  return [activeWorkspace, "desktop", desktopPages.current(activeWorkspace), localDisplaySlot()].join(":");
 }
 
 function tileSession() {
@@ -619,7 +623,7 @@ function scheduleWindowVisibility() {
   if (windowVisibilityFrame) return;
   windowVisibilityFrame = requestAnimationFrame(() => {
     windowVisibilityFrame = 0;
-    if (!windowViewportLockReady || tileInteraction || tileRendering || tileLayoutFrame) return;
+    if (!windowViewportLockReady || desktopPageAnimating || tileInteraction || tileRendering || tileLayoutFrame) return;
     // Check settled geometry, not the intermediate overlap of animated tiles.
     if ($$(".app-frame.is-auto-tiling").length) {
       setTimeout(scheduleWindowVisibility, 160);
@@ -946,7 +950,7 @@ function focusTileWindow(name) {
 }
 
 function intentContextPrefix() {
-  return [activeWorkspace, activeProjectName || "desktop", activeProjectName ? projectModeId(activeProjectName) : "default"].join(":") + ":";
+  return [activeWorkspace, "desktop", desktopPages.current(activeWorkspace)].join(":") + ":";
 }
 
 function screenWindowRect(frame) {
@@ -1096,7 +1100,7 @@ function refreshIntentAreas() {
     const windows = [], demands = [];
     sessions.forEach(([key, session]) => {
       const display = Number(key.slice(prefix.length));
-      const openHere = name => appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
+      const openHere = name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
       tileEngine.names(session.root).filter(openHere).forEach(name => windows.push({ name, display }));
       Object.entries(session.floating || {}).filter(([name]) => openHere(name)).forEach(([name, rect]) => {
         windows.push({ name, display, floating: true, rect });
@@ -1104,11 +1108,11 @@ function refreshIntentAreas() {
       });
       if (session.fullscreen && openHere(session.fullscreen.name)) demands.push({ display, fullscreen: true, edges: [...dockEdges], exclude: session.fullscreen.excludeAreas });
     });
-    Object.keys(appState).filter(name => appState[name] === "open" && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
+    Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
     const roster = activeDisplayRoster();
     const displays = roster.map((display, index) => {
       const session = tileSessions[prefix + (index + 1)];
-      const openNames = Object.keys(appState).filter(name => appState[name] === "open" && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
+      const openNames = Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
       const openTree = tileEngine.normalize(session?.root, openNames);
       const minimum = window.SpatialIntent.minimumTree(openTree, minimumUsableWindowSize);
       if (!openTree && openNames.length) {
@@ -1190,9 +1194,9 @@ function syncRack() {
     const name = button.dataset.openApp;
     const state = appState[name];
     button.classList.toggle("is-open", state !== "closed");
-    button.classList.toggle("is-active", state === "open" && name === frontApp && isLocalApp(name));
+    button.classList.toggle("is-active", desktopHasWindowFocus && state === "open" && name === frontApp && isLocalApp(name));
     button.classList.toggle("is-minimized", state === "minimized");
-    button.setAttribute("aria-pressed", String(state === "open" && name === frontApp));
+    button.setAttribute("aria-pressed", String(desktopHasWindowFocus && state === "open" && name === frontApp && isLocalApp(name)));
   });
 }
 
@@ -1204,10 +1208,12 @@ function topOpenApp(except = null) {
 
 function bringToFront(name) {
   if (appState[name] !== "open" || !isLocalApp(name)) return;
+  desktopHasWindowFocus = true;
   frontApp = name;
   zCounter += 1;
   $$("[data-app-frame]").forEach(frame => frame.classList.toggle("is-front", frame.dataset.appFrame === name));
   frameFor(name).style.zIndex = zCounter;
+  updateDesktopPageUi();
   syncRack();
   scheduleWindowVisibility();
 }
@@ -1224,7 +1230,9 @@ function syncApps() {
   syncRack();
   renderMiniApps();
   renderOverviewWindows();
-  if (frontApp) bringToFront(frontApp);
+  if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
+  if (!frontApp) desktopHasWindowFocus = false;
+  updateDesktopPageUi();
   persistWorkspaceAppStates();
   /* An otherwise empty secondary display is an Area workspace. Re-run the
      Area layout whenever its local window occupancy changes so it can enter
@@ -1259,7 +1267,20 @@ function openApp(name, dropPoint = null) {
   queueDesktopStateBroadcast();
 }
 
+function removeOffPageWindowTiles(name) {
+  if (desktopPages.visible(activeWorkspace, name)) return;
+  const prefix = activeWorkspace + ":desktop:" + desktopPages.pageOf(activeWorkspace, name) + ":";
+  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
+    session.root = tileEngine.remove(session.root, name);
+    delete session.floating?.[name];
+    delete session.parked?.[name];
+    if (session.focus?.name === name) session.focus = null;
+    if (session.fullscreen?.name === name) session.fullscreen = null;
+  });
+}
+
 function minimizeApp(name, preserveGeometry = false) {
+  removeOffPageWindowTiles(name);
   const frame = frameFor(name);
   if (appState[name] !== "open") return;
   if (!preserveGeometry && !frame.dataset.maximized) windowGeometry.set(name, readGeometry(frame));
@@ -1287,6 +1308,7 @@ function minimizeApp(name, preserveGeometry = false) {
 }
 
 function closeApp(name) {
+  removeOffPageWindowTiles(name);
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   const frame = frameFor(name);
   frame?.classList.remove("is-maximized");
@@ -3301,36 +3323,15 @@ function sessionAge(savedAt) {
 function refreshProjectSessionUi(name = activeProjectName) {
   const project = name ? projectSpaces[name] : null;
   if (!project) return;
-  const activeModeId = projectModeId(name);
-  const activeMode = project.modes[activeModeId];
-  const openCount = Object.values(appState).filter(state => state === "open").length;
-  const sessionSummary = openCount
-    ? openCount + (openCount === 1 ? " window active · autosaved" : " windows active · autosaved")
-    : "Window layout saves automatically";
-  $("#projectAreaContext").textContent = activeMode.label + " mode";
-  $("#projectAreaContext").title = sessionSummary;
-  $$('[data-project-mode]').forEach(choice => {
-    const modeId = choice.dataset.projectMode;
-    const choiceSession = projectSession(name, modeId);
-    const choiceCount = modeId === activeModeId
-      ? openCount
-      : choiceSession?.apps?.length || 0;
-    choice.dataset.savedWindows = String(choiceCount);
-    choice.title = project.modes[modeId].label + (choiceCount ? " · " + choiceCount + " window" + (choiceCount === 1 ? "" : "s") : " · empty");
-  });
+  const openCount = Object.keys(appState).filter(id => appState[id] !== "closed" && windowMembership[activeWorkspace]?.[id] === name).length;
+  $("#projectAreaContext").textContent = "Project resources";
+  $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
 }
 
-function renderProjectModes(name) {
-  const project = projectSpaces[name];
-  if (!project) return;
-  const activeModeId = projectModeId(name);
-  const modeEntries = Object.entries(project.modes);
-  $("#projectModeSwitcher").innerHTML = modeEntries.map(([modeId, mode]) => {
-    const selected = modeId === activeModeId;
-    return '<button class="surface-key project-choice project-mode-choice' + (selected ? " is-active" : "") + '" data-project-mode="' + escapeHtml(modeId) + '" aria-pressed="' + selected + '" title="' + escapeHtml(mode.label) + '"><svg class="project-choice-icon" aria-hidden="true"><use href="#' + mode.icon + '"/></svg><span>' + escapeHtml(mode.label) + '</span></button>';
-  }).join("");
-  $("#projectModeSwitcher").hidden = modeEntries.length <= 1;
-  prepareControlSemantics($("#projectModeSwitcher"));
+function renderProjectModes() {
+  // Old project metadata remains importable; desktop pages own live layouts.
+  $("#projectModeSwitcher").replaceChildren();
+  $("#projectModeSwitcher").hidden = true;
 }
 
 function renderOverviewProjects() {
@@ -3340,12 +3341,11 @@ function renderOverviewProjects() {
   $("#overviewProjectCount").textContent = entries.length + (entries.length === 1 ? " project" : " projects");
   grid.innerHTML = entries.map(([name, project]) => {
     const selected = activeProjectName === name;
-    const modeCount = Object.keys(project.modes).length;
     const resourceCount = project.resources.length;
     const location = projectLocationMeta(project);
-    const detail = location.label + " · " + modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
+    const detail = location.label + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
     return '<button class="overview-project' + (selected ? " is-active" : "") + (location.custom ? " is-custom-location" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" title="' + escapeHtml(project.root) + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>';
-  }).join("") || '<div class="overview-project-empty"><svg><use href="#i-folder"/></svg><span><b>No projects yet</b><small>Create one to attach a folder, resources and working Modes.</small></span></div>';
+  }).join("") || '<div class="overview-project-empty"><svg><use href="#i-folder"/></svg><span><b>No projects yet</b><small>Create one to attach a folder and resources.</small></span></div>';
   prepareControlSemantics(grid);
 }
 
@@ -3355,7 +3355,7 @@ function setProjectClosedState(closed) {
   $("#projectSpaceContent").hidden = closed;
   $("#projectClosedState").hidden = !closed;
   const project = activeProjectName ? projectSpaces[activeProjectName] : null;
-  $("#projectModeSwitcher").hidden = closed || !project || Object.keys(project.modes).length <= 1;
+  $("#projectModeSwitcher").hidden = true;
   $("#closeProjectButton").disabled = closed;
   $("#manageProjectButton").disabled = closed;
   $$(".project-pack-key").forEach(button => { button.disabled = closed; });
@@ -3445,6 +3445,8 @@ function seedProjectModeWindows(name, modeId) {
     windowMembership[activeWorkspace] ||= {};
     windowMembership[activeWorkspace][appName] = name;
     appState[appName] = "open";
+    desktopPages.assign(activeWorkspace, appName);
+    saveDesktopPages();
     displayAssignmentsFor().apps[appName] = 1;
     appMaximizedState[appName] = false;
     windowGeometry.set(appName, projectModeGeometry(mode.layout, index, names.length));
@@ -3474,7 +3476,7 @@ function activateProject(name, announce = true) {
   workspaceProjects[activeWorkspace] = name;
   saveIndependentSessions();
   const restored = restoreProjectWindows(name, false, true);
-  if (announce) showToast(project.name + " opened · " + project.modes[projectModeId(name)].label + " mode · " + restored + " window" + (restored === 1 ? "" : "s"));
+  if (announce) showToast(project.name + " opened · " + restored + " window" + (restored === 1 ? "" : "s"));
 }
 
 function switchProjectMode(modeId, announce = true) {
@@ -3544,11 +3546,14 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
     if (session.geometry?.[appName]) windowGeometry.set(appName, session.geometry[appName]);
     if (session.displays?.[appName]) displayAssignmentsFor().apps[appName] = session.displays[appName];
   });
+  if (!session.apps.some(id => desktopPages.visible(activeWorkspace, id))) {
+    changeDesktopPage(desktopPages.pageOf(activeWorkspace, session.apps[0]), false);
+  }
   syncApps();
   session.apps.forEach(appName => {
     if (appState[appName] === "open" && isLocalApp(appName) && windowGeometry.has(appName)) applyGeometry(appName, windowGeometry.get(appName), false);
   });
-  frontApp = session.apps.filter(appName => appState[appName] === "open").at(-1) || topOpenApp();
+  frontApp = topOpenApp();
   if (frontApp && isLocalApp(frontApp)) bringToFront(frontApp);
   delete projectWindowSessions[projectSessionKey(name, modeId)];
   persistProjectState();
@@ -3572,7 +3577,7 @@ function closeActiveProject() {
   persistProjectState();
   renderOverviewProjects();
   queueDesktopStateBroadcast(0);
-  showToast(project.name + " closed · " + project.modes[projectModeId(name)].label + " mode saved with " + parked + " window" + (parked === 1 ? "" : "s"));
+  showToast(project.name + " closed · saved " + parked + " window" + (parked === 1 ? "" : "s"));
 }
 
 function describeProjectResource(value) {
@@ -3740,25 +3745,15 @@ function renderProjectEditor() {
     title.textContent = "Create project";
     const defaultProjectPath = workspaceProfiles[activeWorkspace].home + "/Projects/my-project";
     body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
-  } else if (state.view === "create-mode" && project) {
-    kicker.textContent = project.name.toUpperCase();
-    title.textContent = "Create mode";
-    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="mode"><label><span>Mode name</span><input name="name" maxlength="32" required autocomplete="off" placeholder="Texturing"></label><p>The current open apps, window arrangement and monitor placement become the starting setup for this Mode.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="manage">Back</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create mode</span></button></footer></form>';
   } else if (state.view === "delete-project" && project) {
     kicker.textContent = "REMOVE PROJECT";
     title.textContent = project.name;
-    body.innerHTML = '<section class="project-editor-confirm"><span class="project-editor-warning"><svg><use href="#i-trash"/></svg></span><div><b>Remove this Project from Spatial Desktop?</b><p>The associated folder and files stay untouched. Saved Modes and their window arrangements will be removed.</p></div><footer><button class="surface-key project-editor-secondary" data-project-editor-action="manage">Cancel</button><button class="surface-key project-editor-danger" data-project-editor-action="confirm-delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
-  } else if (state.view === "delete-mode" && project?.modes[state.modeId]) {
-    const mode = project.modes[state.modeId];
-    kicker.textContent = project.name.toUpperCase();
-    title.textContent = "Delete " + mode.label;
-    body.innerHTML = '<section class="project-editor-confirm"><span class="project-editor-warning"><svg><use href="#i-trash"/></svg></span><div><b>Delete this Mode?</b><p>Its saved app set and window arrangement will be discarded. Project files, notes, resources and other Modes stay intact.</p></div><footer><button class="surface-key project-editor-secondary" data-project-editor-action="manage">Cancel</button><button class="surface-key project-editor-danger" data-project-editor-action="confirm-delete-mode"><svg><use href="#i-trash"/></svg><span>Delete mode</span></button></footer></section>';
+    body.innerHTML = '<section class="project-editor-confirm"><span class="project-editor-warning"><svg><use href="#i-trash"/></svg></span><div><b>Remove this Project from Spatial Desktop?</b><p>The associated folder and files stay untouched. Its saved window sessions will be removed.</p></div><footer><button class="surface-key project-editor-secondary" data-project-editor-action="manage">Cancel</button><button class="surface-key project-editor-danger" data-project-editor-action="confirm-delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
   } else if (project) {
     state.view = "manage";
-    const modeEntries = Object.entries(project.modes);
     kicker.textContent = "PROJECT SETTINGS";
     title.textContent = project.name;
-    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Modes</b><small>Each Mode keeps its own app set and window layout.</small></div><button class="surface-key project-editor-primary compact" data-project-editor-action="new-mode"><svg><use href="#i-add"/></svg><span>New mode</span></button></header><div class="project-editor-mode-list">' + modeEntries.map(([modeId, mode]) => '<div class="project-editor-mode-row' + (project.activeMode === modeId ? ' is-active' : '') + '"><span class="project-editor-mode-icon"><svg><use href="#' + escapeHtml(mode.icon) + '"/></svg></span><span><b>' + escapeHtml(mode.label) + '</b><small>' + (project.activeMode === modeId ? 'Active now' : ((projectSession(state.projectName, modeId)?.apps?.length || mode.apps.length) + ' saved apps')) + '</small></span><button class="surface-key project-editor-delete-mode" data-project-editor-action="delete-mode" data-mode-id="' + escapeHtml(modeId) + '" aria-label="Delete ' + escapeHtml(mode.label) + ' mode" title="' + (modeEntries.length === 1 ? 'A Project must keep one Mode' : 'Delete mode') + '"' + (modeEntries.length === 1 ? ' disabled' : '') + '><svg><use href="#i-trash"/></svg></button></div>').join("") + '</div><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or its number in the Apps header, then scroll up or down to change desktops.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
   }
   prepareMaterialSurfaces($("#projectEditorDialog"));
   prepareControlSemantics($("#projectEditorDialog"));
@@ -3817,7 +3812,6 @@ function prepareProjectEditor() {
     event.preventDefault();
     const data = new FormData(form);
     if (form.dataset.projectEditorForm === "project") createProjectFromEditor(String(data.get("name") || ""), String(data.get("root") || ""));
-    if (form.dataset.projectEditorForm === "mode") createModeFromEditor(String(data.get("name") || ""));
   });
   dialog.addEventListener("click", event => {
     const action = event.target.closest("[data-project-editor-action]");
@@ -3829,24 +3823,8 @@ function prepareProjectEditor() {
       projectEditorState.modeId = null;
       renderProjectEditor();
     }
-    if (action.dataset.projectEditorAction === "new-mode") {
-      projectEditorState.view = "create-mode";
-      renderProjectEditor();
-      requestAnimationFrame(() => $("input", dialog)?.focus());
-    }
-    if (action.dataset.projectEditorAction === "delete-mode") {
-      projectEditorState.view = "delete-mode";
-      projectEditorState.modeId = action.dataset.modeId;
-      renderProjectEditor();
-    }
     if (action.dataset.projectEditorAction === "delete-project") {
       projectEditorState.view = "delete-project";
-      renderProjectEditor();
-    }
-    if (action.dataset.projectEditorAction === "confirm-delete-mode") {
-      const modeId = projectEditorState.modeId;
-      deleteProjectMode(projectName, modeId);
-      projectEditorState = { view: "manage", projectName, modeId: null, returnFocus: $("#manageProjectButton") };
       renderProjectEditor();
     }
     if (action.dataset.projectEditorAction === "confirm-delete-project") deleteProject(projectName);
@@ -3855,10 +3833,6 @@ function prepareProjectEditor() {
 
 function prepareProjectSpaces() {
   loadProjectState();
-  $("#projectModeSwitcher").addEventListener("click", event => {
-    const button = event.target.closest("[data-project-mode]");
-    if (button) switchProjectMode(button.dataset.projectMode);
-  });
   $("#overviewProjectGrid").addEventListener("click", event => {
     const button = event.target.closest("[data-overview-project]");
     if (!button) return;
@@ -3953,7 +3927,7 @@ const workspaceProfiles = {
   },
   work: {
     label: "Work", subtitle: "Focused session", icon: "i-office", accent: "#8d85ff", home: "/home/demo/Workspaces/Work",
-    context: "Build a website and review its preview", meta: "Website Launch · Build mode",
+    context: "Build a website and review its preview", meta: "Website Launch · Desktop",
     folders: [["Desktop", "3 items", "folder"], ["Documents", "42 items", "folder"], ["Downloads", "7 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "terminal", "dolphin", "notes"],
     favorites: [["terminal", "Konsole"], ["i-code", "Kate"], ["browser", "Firefox"], ["dolphin", "Dolphin"], ["i-mail", "Mail"]],
@@ -4047,8 +4021,8 @@ function renderOverviewWindows() {
   target.innerHTML = windowNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
-    const stateLabel = minimized ? "Minimized" : (name === frontApp ? "Active" : "Open");
-    return '<button class="overview-window ' + (name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span></button>';
+    const stateLabel = (minimized ? "Minimized" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
+    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span></button>';
   }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or restore an application and it will appear here.</small></div>';
 
   refreshWorkspaceContext();
@@ -4147,7 +4121,7 @@ function renderWorkspace(name, announce = true) {
   requestAnimationFrame(() => {
     if (activeWorkspace !== name) return;
     restoreWorkspaceWindowLayout();
-    if (frontApp) bringToFront(frontApp);
+    if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
   });
   if (announce) showToast(profile.label + " workspace loaded");
@@ -4257,7 +4231,7 @@ function packageRows(kind) {
     ["i-folder", "Project folder", "Files under the project root", "274 MB", true],
     ["i-link", "Linked resources", "Portable copies or safe relative references", "2 links", true],
     ["i-note", "Notes and widgets", "Project notes and selected widget state", "84 KB", true],
-    ["i-grid", "Project modes", "App sets, window layouts and monitor placement", Object.keys(projectSpaces[activeProjectName]?.modes || {}).length + " modes", true],
+    ["i-grid", "Window session", "Project windows across desktop pages and displays", "all desktops", true],
     ["i-clipboard", "Project clipboard", "Off by default because it may be sensitive", "optional", false]
   ];
   return kind === "project" ? projectRows : workspaceRows;
@@ -4794,7 +4768,7 @@ function activateHotbarSlot(slot) {
   /* Match a desktop taskbar while retaining the game-hotbar directness:
      first press opens/focuses, pressing the already-front slot parks it. */
   const visibleHere = appState[name] === "open" && isLocalApp(name);
-  if (visibleHere && frontApp === name) minimizeApp(name);
+  if (visibleHere && desktopHasWindowFocus && frontApp === name) minimizeApp(name);
   else if (visibleHere) bringToFront(name);
   else openApp(name);
 
@@ -5345,6 +5319,8 @@ function contextMenuEntries(context) {
     const maximized = frame?.dataset.maximized === "true";
     return [
       { action: "app-new-instance", icon: "i-add", label: "New window", shortcut: "Shift+click" },
+      state !== "closed" && desktopPages.pageOf(activeWorkspace, context.name) > 0 ? { action: "move-desktop:-1", icon: "i-monitor", label: "Move to desktop above" } : null,
+      state !== "closed" ? { action: "move-desktop:1", icon: "i-monitor", label: "Move to desktop below" } : null,
       ...(state !== "closed" ? Object.entries(workspaceProfiles).filter(([id]) => id !== activeWorkspace).map(([id, profile]) => ({action: "move-workspace:" + id, icon: "i-monitor", label: "Move to " + profile.label + " workspace"})) : []),
       ...(state !== "closed" ? Object.entries(projectSpaces).map(([id, project]) => ({action: "move-project:" + id, icon: "i-folder", label: "Move to " + project.name})) : []),
       state !== "closed" && windowMembership[activeWorkspace]?.[context.name] ? {action: "detach-project", icon: "i-folder", label: "Take out of project · keep open"} : null,
@@ -5362,6 +5338,8 @@ function contextMenuEntries(context) {
   }
   if (context.kind === "desktop") return [
     { action: "desktop-overview", icon: "i-search", label: "Open Overview", shortcut: "Super" },
+    ...(desktopPages.current(activeWorkspace) > 0 ? [{ action: "desktop-page:-1", icon: "i-monitor", label: "Desktop above", shortcut: "Page Up" }] : []),
+    ...(desktopPages.current(activeWorkspace) < desktopPages.last(activeWorkspace) ? [{ action: "desktop-page:1", icon: "i-monitor", label: "Desktop below", shortcut: "Page Down" }] : []),
     separator,
     { action: "desktop-new-folder", icon: "i-folder", label: "New Folder" },
     { action: "desktop-paste", icon: "i-clipboard", label: "Paste" },
@@ -5388,7 +5366,7 @@ function contextMenuEntries(context) {
   ].filter(Boolean);
   if (context.kind === "project") return [
     { action: "project-open", icon: "i-folder", label: "Open project" },
-    context.name === activeProjectName ? { action: "project-manage", icon: "i-settings", label: "Manage modes" } : null,
+    context.name === activeProjectName ? { action: "project-manage", icon: "i-settings", label: "Manage project" } : null,
     separator,
     { action: "project-delete", icon: "i-trash", label: "Remove project", danger: true }
   ].filter(Boolean);
@@ -5449,6 +5427,8 @@ function createDesktopFolder(point) {
   const name = desktopFolderCount ? "New Folder " + (desktopFolderCount + 1) : "New Folder";
   desktopFolderCount += 1;
   folder.className = "desktop-folder";
+  folder.dataset.desktopPage = String(desktopPages.current(activeWorkspace));
+  folder.dataset.desktopWorkspace = activeWorkspace;
   folder.title = name;
   folder.innerHTML = icon("i-folder") + "<span>" + escapeHtml(name) + "</span>";
   folder.style.left = Math.max(10, Math.min(point.x - rect.left - 31, rect.width - 74)) + "px";
@@ -5462,6 +5442,8 @@ function executeContextAction(action) {
   const context = contextMenuState;
   if (!context) return;
   if (action === "app-new-instance") createAppInstance(context.name);
+  if (action.startsWith("move-desktop:")) moveWindowToDesktop(context.name, Number(action.split(":")[1]));
+  if (action.startsWith("desktop-page:")) changeDesktopPage(desktopPages.current(activeWorkspace) + Number(action.split(":")[1]));
   if (action.startsWith("move-workspace:")) moveAppWorkspace(context.name, action.split(":")[1]);
   if (action.startsWith("move-project:")) moveAppProject(context.name, action.split(":")[1]);
   if (action === "detach-project") { windowMembership[activeWorkspace][context.name] = null; syncProjectWindowScopes(); saveIndependentSessions(); showToast("Window detached · stays open when the project closes"); }
@@ -5664,8 +5646,207 @@ function displayAssignmentsFor(workspaceName = activeWorkspace) {
   return saved;
 }
 
+function saveDesktopPages() {
+  try { localStorage.setItem("spatial-desktop-pages-v1", JSON.stringify(desktopPages.snapshot())); } catch {}
+}
+
+function updateDesktopPageUi() {
+  const page = desktopPages.current(activeWorkspace) + 1;
+  const workspace = $(".workspace-zone");
+  const button = $("#desktopFocusButton");
+  if (!workspace || !button) return;
+  const focused = !desktopHasWindowFocus;
+  workspace.dataset.desktopFocused = String(focused);
+  workspace.dataset.desktopPage = String(page);
+  workspace.setAttribute("aria-label", "Desktop " + page);
+  button.classList.toggle("is-active", focused);
+  button.setAttribute("aria-pressed", String(focused));
+  button.setAttribute("aria-label", (focused ? "Desktop " : "Focus desktop ") + page);
+  button.title = "Desktop " + page + " · click to release window focus · scroll up/down or Page Up/Down";
+  $("#desktopPageNumber").textContent = page;
+  const empty = $("#emptyWorkspace");
+  $("strong", empty).textContent = "Desktop " + page + " is empty";
+  $("span", empty).textContent = page > 1 ? "Open an app here, or scroll up to your other desktop." : "Open an app here, or scroll down for another desktop.";
+  $$(".desktop-folder").forEach(folder => {
+    folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || Number(folder.dataset.desktopPage) !== page - 1;
+  });
+}
+
+function focusDesktop(moveKeyboardFocus = true) {
+  desktopHasWindowFocus = false;
+  desktopWheel.reset();
+  $$("[data-app-frame]").forEach(frame => frame.classList.remove("is-front"));
+  updateDesktopPageUi();
+  syncRack();
+  renderOverviewWindows();
+  if (moveKeyboardFocus) $(".workspace-zone").focus({ preventScroll: true });
+}
+
+function desktopNavigationBlocked() {
+  return tileInteraction || manualWindowInteraction || desktopPageAnimating ||
+    ["#universalSearch", "#packageDialog", "#projectEditorDialog"].some(selector => $(selector)?.classList.contains("is-open")) || !$("#desktopContextMenu").hidden;
+}
+
+function changeDesktopPage(page, animate = true) {
+  const previous = desktopPages.current(activeWorkspace);
+  if (page === previous || page < 0 || page > desktopPages.last(activeWorkspace) || desktopPageAnimating) return false;
+  // Capture the departing page before visibility and tiling switch contexts.
+  const workspace = $(".workspace-zone");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ghost = animate && !reducedMotion ? document.createElement("div") : null;
+  if (ghost) {
+    ghost.className = "desktop-page-ghost";
+    ghost.inert = true;
+    ghost.setAttribute("aria-hidden", "true");
+    [...workspace.children].filter(node => (node.matches("[data-app-frame]") && !node.hidden) || (node.id === "emptyWorkspace" && !node.hidden) || node.matches(".desktop-folder:not([hidden])")).forEach(node => {
+      const clone = node.cloneNode(true);
+      [clone, ...clone.querySelectorAll("[id],[data-app-frame]")].forEach(item => { item.removeAttribute("id"); item.removeAttribute("data-app-frame"); });
+      clone.classList.remove("is-front");
+      ghost.append(clone);
+    });
+  }
+  saveLayout();
+  saveTileSessions();
+  if (tileSession().fullscreen) leaveAppFullscreen();
+  desktopPages.go(activeWorkspace, page);
+  desktopHasWindowFocus = false;
+  frontApp = topOpenApp();
+  desktopPageAnimating = Boolean(ghost);
+  syncApps();
+  focusDesktop(false);
+  refreshIntentAreas();
+  renderTileLayout(frontApp);
+  saveDesktopPages();
+  if (ghost) {
+    workspace.append(ghost);
+    const distance = (page > previous ? 1 : -1) * workspace.clientHeight;
+    const options = { duration: 220, easing: "cubic-bezier(.2,.75,.25,1)" };
+    const outgoing = ghost.animate([{ transform: "translateY(0)" }, { transform: "translateY(" + -distance + "px)" }], options);
+    [...workspace.children].filter(node => !node.hidden && (node.matches("[data-app-frame],.desktop-folder") || node.id === "emptyWorkspace")).forEach(node => node.animate([{ transform: "translateY(" + distance + "px)" }, { transform: "translateY(0)" }], options));
+    outgoing.finished.catch(() => {}).then(() => {
+      ghost.remove();
+      desktopPageAnimating = false;
+      scheduleWindowVisibility();
+    });
+  }
+  queueDesktopStateBroadcast(0);
+  return true;
+}
+
+function moveWindowToDesktop(name, direction) {
+  if (appState[name] === "closed" || !appInfo[name]) return;
+  const previous = desktopPages.pageOf(activeWorkspace, name);
+  const destination = previous + direction;
+  if (destination < 0) return;
+  // Remove only the transferred identity, preserving the other pages' trees.
+  Object.entries(tileSessions).filter(([key]) => key.startsWith(activeWorkspace + ":desktop:" + previous + ":")).forEach(([, session]) => {
+    if (session.fullscreen?.name === name) leaveAppFullscreen(session);
+    session.root = tileEngine.remove(session.root, name);
+    if (session.focus?.name === name) session.focus = null;
+    if (session.focus?.root) session.focus.root = tileEngine.remove(session.focus.root, name);
+    delete session.floating?.[name];
+    delete session.parked?.[name];
+  });
+  desktopPages.assign(activeWorkspace, name, destination);
+  appMaximizedState[name] = false;
+  frameFor(name).classList.remove("is-maximized", "is-front");
+  delete frameFor(name).dataset.maximized;
+  autoTiledWindows.delete(name);
+  saveDesktopPages();
+  saveTileSessions();
+  frontApp = topOpenApp();
+  focusDesktop();
+  syncApps();
+  renderTileLayout(frontApp);
+  queueDesktopStateBroadcast(0);
+  showToast(appInfo[name].label + " moved to Desktop " + (destination + 1));
+}
+
+function migrateProjectDesktops() {
+  const savedStates = readDesktopStorage("spatial-workspace-app-states-v1");
+  Object.keys(workspaceProfiles).forEach(workspace => {
+    const state = desktopPages.space(workspace);
+    if (state.migrated) return;
+    const used = new Set(Object.keys(savedStates[workspace] || workspaceAppStates[workspace]).filter(name => (savedStates[workspace] || workspaceAppStates[workspace])[name] !== "closed"));
+    used.forEach(name => desktopPages.assign(workspace, name, 0));
+    const context = workspaceProjectStates[workspace];
+    const oldPrefix = [workspace, context?.project || "desktop", context?.project ? context.mode || projectModeId(context.project) : "default"].join(":") + ":";
+    Object.entries(tileSessions).filter(([key]) => key.startsWith(oldPrefix)).forEach(([key, session]) => {
+      tileSessions[workspace + ":desktop:0:" + key.slice(oldPrefix.length)] = cloneDesktopState(session);
+    });
+    const combined = {};
+    Object.entries(projectWindowSessions).filter(([key]) => key.startsWith(workspace + ":")).forEach(([key, session]) => {
+      const projectName = key.split(":")[1];
+      if (!projectSpaces[projectName] || !session?.apps?.length) return;
+      const page = desktopPages.last(workspace);
+      const targetKey = workspace + ":" + projectName + ":" + projectModeId(projectName);
+      const target = combined[targetKey] ||= { apps: [], states: {}, geometry: {}, displays: {}, savedAt: session.savedAt };
+      const renamed = {};
+      session.apps.forEach(name => {
+        if (!appInfo[name]) return;
+        let id = name;
+        if (used.has(id)) {
+          id = (appInfo[name].base || name) + "--" + (++instanceSequence);
+          instanceDefinitions[id] = appInfo[name].base || name;
+          installInstance(id, instanceDefinitions[id], false);
+          if (workspaceContent[workspace]?.frames?.[name]) workspaceContent[workspace].frames[id] = cloneDesktopState(workspaceContent[workspace].frames[name]);
+        }
+        used.add(id); renamed[name] = id;
+        desktopPages.assign(workspace, id, page);
+        windowMembership[workspace] ||= {};
+        windowMembership[workspace][id] = projectName;
+        target.apps.push(id);
+        ["states", "geometry", "displays"].forEach(field => { if (session[field]?.[name] !== undefined) target[field][id] = cloneDesktopState(session[field][name]); });
+      });
+      Object.entries(tileSessions).filter(([tileKey]) => tileKey.startsWith(key + ":")).forEach(([tileKey, session]) => {
+        // Rename object keys as well as leaf identities when a saved Mode reused
+        // a base window already present on another desktop.
+        let serialized = JSON.stringify(session);
+        Object.entries(renamed).forEach(([oldId, newId]) => { serialized = serialized.split(JSON.stringify(oldId)).join(JSON.stringify(newId)); });
+        tileSessions[workspace + ":desktop:" + page + ":" + tileKey.slice(key.length + 1)] = JSON.parse(serialized);
+      });
+      delete projectWindowSessions[key];
+    });
+    Object.assign(projectWindowSessions, combined);
+    state.migrated = true;
+  });
+  saveIndependentSessions();
+  persistProjectState();
+  saveTileSessions();
+  saveDesktopPages();
+}
+
+function prepareDesktopPages() {
+  migrateProjectDesktops();
+  const workspace = $(".workspace-zone");
+  $("#desktopFocusButton").addEventListener("click", () => focusDesktop());
+  workspace.addEventListener("pointerdown", event => {
+    if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();
+  });
+  document.addEventListener("focusin", event => {
+    const frame = event.target.closest("[data-app-frame]");
+    if (frame && !frame.hidden && isLocalApp(frame.dataset.appFrame)) bringToFront(frame.dataset.appFrame);
+  });
+  workspace.addEventListener("wheel", event => {
+    if (desktopHasWindowFocus || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    if (desktopNavigationBlocked() && !desktopPageAnimating) return;
+    event.preventDefault();
+    const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? workspace.clientHeight : 1);
+    const direction = desktopWheel.feed(delta, performance.now());
+    if (direction && !desktopPageAnimating) changeDesktopPage(desktopPages.current(activeWorkspace) + direction);
+  }, { passive: false });
+  document.addEventListener("keydown", event => {
+    if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || desktopNavigationBlocked() || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
+    if (event.key === "Escape" && !tileSession().fullscreen) { event.preventDefault(); focusDesktop(); }
+    if (!desktopHasWindowFocus && ["PageUp", "PageDown"].includes(event.key)) {
+      event.preventDefault(); changeDesktopPage(desktopPages.current(activeWorkspace) + (event.key === "PageDown" ? 1 : -1));
+    }
+  });
+  updateDesktopPageUi();
+}
+
 function isLocalApp(name) {
-  return !extendedDesktopActive() || Number(displayAssignmentsFor().apps[name] || 1) === localDisplaySlot();
+  return desktopPages.visible(activeWorkspace, name) && (!extendedDesktopActive() || Number(displayAssignmentsFor().apps[name] || 1) === localDisplaySlot());
 }
 
 function isLocalArea(name) {
@@ -5843,6 +6024,8 @@ function captureDesktopSyncState() {
 
   return {
     schema: 4,
+    desktopPages: desktopPages.snapshot(),
+    desktopHasWindowFocus,
     workspaceProjects: cloneDesktopState(workspaceProjectStates),
     areaContents,
     independent: {instances: instanceDefinitions, content: workspaceContent, membership: windowMembership, projects: workspaceProjects, sequence: instanceSequence},
@@ -5875,6 +6058,8 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.desktopPages) { desktopPages.load(state.desktopPages); saveDesktopPages(); }
+  if (typeof state.desktopHasWindowFocus === "boolean") desktopHasWindowFocus = state.desktopHasWindowFocus;
   if (state.independent) {
     Object.entries(state.independent.instances || {}).forEach(([id, base]) => { instanceDefinitions[id] = base; installInstance(id, base); });
     Object.assign(workspaceContent, state.independent.content || {});
@@ -5997,7 +6182,8 @@ function applyDesktopSyncState(state) {
         }
         if (Boolean(maximized) !== (frame.dataset.maximized === "true")) toggleMaximize(name);
       });
-      if (state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
+      if (desktopHasWindowFocus && state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
+      if (!desktopHasWindowFocus) focusDesktop(false);
       updateDesktopSyncPresence();
       if (areasChanged && localDisplaySlot() === 1) {
         setTimeout(() => queueDesktopStateBroadcast(0), 0);
@@ -6229,6 +6415,13 @@ const originalOpenApp = openApp;
 openApp = function(name, point = null) {
   const newlyOpened = appState[name] === 'closed';
   if (newlyOpened) { windowMembership[activeWorkspace] ||= {}; if (!(name in windowMembership[activeWorkspace])) windowMembership[activeWorkspace][name] = activeProjectName; }
+  if (!appInfo[name]) return;
+  if (desktopPageAnimating) {
+    setTimeout(() => openApp(name, point), 230);
+    return;
+  }
+  if (newlyOpened) { desktopPages.assign(activeWorkspace, name); saveDesktopPages(); }
+  else changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
   originalOpenApp(name, point);
   saveIndependentSessions();
 };
@@ -6252,6 +6445,7 @@ function moveAppWorkspace(name, destination) {
   workspaceContent[destination].frames ||= {};
   workspaceContent[destination].frames[id] = contents;
   windowMembership[destination] ||= {}; windowMembership[destination][id] = null;
+  desktopPages.assign(destination, id); saveDesktopPages();
   removeWindowFromSavedProjects(name);
   closeApp(name); windowMembership[activeWorkspace][name] = null; syncProjectWindowScopes();
   persistProjectState(); persistWorkspaceAppStates(); saveIndependentSessions();
@@ -6288,6 +6482,7 @@ document.addEventListener('change', event => {
 prepareNoteSync();
 prepareAreaWindows();
 prepareProjectSpaces();
+prepareDesktopPages();
 prepareOverviewViews();
 prepareWorkspaces();
 preparePackages();
@@ -6310,7 +6505,7 @@ requestAnimationFrame(() => {
   loadLayout(activeWorkspace);
   restoreWorkspaceWindowLayout();
   windowViewportLockReady = true;
-  if (frontApp) bringToFront(frontApp);
+  if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
   scheduleWindowTiling();
 });
@@ -6370,8 +6565,7 @@ function renderAvailableProjectLibrary() {
   const entries = Object.entries(projectSpaces);
   if (!activeProjectName) $("#projectAreaContext").textContent = entries.length + (entries.length === 1 ? " project available" : " projects available");
   list.innerHTML = entries.map(([id, project]) => {
-    const modeCount = Object.keys(project.modes).length;
-    const detail = modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + projectLocationMeta(project).label;
+    const detail = projectLocationMeta(project).label + " · " + project.resources.length + " resources";
     return '<button type="button" class="surface-key project-library-entry" data-open-area-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';
   }).join("") || '<div class="project-library-empty"><p>No projects yet.</p><button type="button" class="surface-key" data-create-area-project>Create project</button></div>';
   prepareControlSemantics(list);
