@@ -18,6 +18,7 @@ const reloaded = Pages.create(pages.snapshot());
 assert.deepEqual(reloaded.snapshot(), pages.snapshot(), 'Page and window assignments survive reload/sync');
 const snapshot = pages.snapshot(); snapshot.work.windows.browser = 9;
 assert.equal(pages.pageOf('work', 'browser'), 0, 'Snapshots cannot mutate live state');
+assert.equal(Pages.create({ work: { active: 100, windows: { browser: -4 } } }).current('work'), 1, 'Corrupt saved indices cannot create unreachable desktops');
 
 const wheel = Pages.wheelGate();
 assert.equal(wheel.feed(12, 0), 0);
@@ -109,4 +110,50 @@ const migrated = JSON.stringify(migration.desktopPages.snapshot());
 migration.migrateProjectDesktops();
 assert.equal(JSON.stringify(migration.desktopPages.snapshot()), migrated, 'Migration is idempotent');
 assert.equal(migration.instanceSequence, 2);
+
+// Real visibility/focus adapter: leaving a page keeps its windows open.
+const classes = () => { const values = new Set(); return { contains: key => values.has(key), remove: key => values.delete(key), toggle(key, on) { on ? values.add(key) : values.delete(key); } }; };
+const frames = Object.fromEntries(['browser', 'notes'].map(name => [name, { dataset: { appFrame: name }, style: { zIndex: 20 }, classList: classes() }]));
+const adapter = vm.createContext({
+  desktopPages: Pages.create(), activeWorkspace: 'work', appState: { browser: 'open', notes: 'open' },
+  frontApp: 'browser', desktopHasWindowFocus: true, zCounter: 20,
+  frameFor: name => frames[name], extendedDesktopActive: () => false,
+  localDisplaySlot: () => 1, displayAssignmentsFor: () => ({ apps: {} }),
+  $: () => ({}), $$: () => Object.values(frames),
+  syncProjectWindowScopes() {}, syncRack() {}, renderMiniApps() {}, renderOverviewWindows() {},
+  updateDesktopPageUi() {}, scheduleWindowVisibility() {}, persistWorkspaceAppStates() {},
+  windowViewportLockReady: false
+});
+vm.runInContext(slice('function isLocalApp(', 'function isLocalArea('), adapter);
+vm.runInContext(slice('function topOpenApp(', 'function openApp('), adapter);
+adapter.desktopPages.assign('work', 'notes', 1);
+adapter.syncApps();
+assert.equal(frames.browser.hidden, false); assert.equal(frames.notes.hidden, true);
+adapter.desktopPages.go('work', 1); adapter.desktopHasWindowFocus = false;
+adapter.syncApps();
+assert.equal(frames.browser.hidden, true); assert.equal(frames.notes.hidden, false);
+assert.equal(adapter.appState.browser, 'open', 'Off-page windows are neither minimized nor closed');
+assert.equal(adapter.desktopHasWindowFocus, false, 'Sync/retile cannot steal desktop focus');
+adapter.bringToFront('notes');
+assert.equal(adapter.desktopHasWindowFocus, true);
+assert.equal(frames.notes.classList.contains('is-front'), true);
+adapter.desktopPages.go('work', 0); adapter.desktopHasWindowFocus = false;
+adapter.syncApps();
+assert.equal(frames.browser.hidden, false); assert.equal(adapter.appState.notes, 'open');
+
+const transfer = vm.createContext({
+  desktopPages: adapter.desktopPages, activeWorkspace: 'work',
+  appInfo: { browser: {}, notes: {} }, appState: { browser: 'open', notes: 'closed' },
+  activeProjectName: null, windowMembership: {}, desktopPageAnimating: false,
+  openApp(name) { transfer.appState[name] = 'open'; },
+  changeDesktopPage(page) { transfer.desktopPages.go('work', page); },
+  saveDesktopPages() {}, saveIndependentSessions() {}
+});
+vm.runInContext(slice('const originalOpenApp = openApp;', 'function removeWindowFromSavedProjects('), transfer);
+transfer.desktopPages.go('work', 1);
+transfer.openApp('browser');
+assert.equal(transfer.desktopPages.current('work'), 0, 'Existing hotbar windows navigate to their own desktop');
+transfer.desktopPages.go('work', 1);
+transfer.openApp('notes');
+assert.equal(transfer.desktopPages.pageOf('work', 'notes'), 1, 'New windows belong to the desktop being viewed');
 console.log('Vertical desktops passed: page bounds, workspace isolation, reload/sync, wheel gestures/momentum, focus ownership, zoom/menu guards and lossless legacy session migration.');

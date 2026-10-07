@@ -9,6 +9,7 @@
         if (!entry || typeof entry !== 'object') return;
         spaces[id] = { active: index(entry.active), windows: Object.fromEntries(Object.entries(entry.windows || {}).map(([name, page]) => [name, index(page)])), migrated: Boolean(entry.migrated) };
       });
+      Object.values(spaces).forEach(entry => { entry.active = Math.min(entry.active, Math.max(0, ...Object.values(entry.windows)) + 1); });
     }
     load(saved);
     const space = id => spaces[id] ||= { active: 0, windows: {}, migrated: false };

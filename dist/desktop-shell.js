@@ -5738,6 +5738,7 @@ function moveWindowToDesktop(name, direction) {
   const previous = desktopPages.pageOf(activeWorkspace, name);
   const destination = previous + direction;
   if (destination < 0) return;
+  const floating = tileSessions[[activeWorkspace, "desktop", previous, localDisplaySlot()].join(":")]?.floating?.[name];
   // Remove only the transferred identity, preserving the other pages' trees.
   Object.entries(tileSessions).filter(([key]) => key.startsWith(activeWorkspace + ":desktop:" + previous + ":")).forEach(([, session]) => {
     if (session.fullscreen?.name === name) leaveAppFullscreen(session);
@@ -5748,6 +5749,12 @@ function moveWindowToDesktop(name, direction) {
     delete session.parked?.[name];
   });
   desktopPages.assign(activeWorkspace, name, destination);
+  if (floating) {
+    const key = [activeWorkspace, "desktop", destination, localDisplaySlot()].join(":");
+    const target = tileSessions[key] ||= { root: null, parked: {}, focus: null };
+    target.floating ||= {};
+    target.floating[name] = cloneDesktopState(floating);
+  }
   appMaximizedState[name] = false;
   frameFor(name).classList.remove("is-maximized", "is-front");
   delete frameFor(name).dataset.maximized;
