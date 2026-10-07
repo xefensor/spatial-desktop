@@ -54,7 +54,7 @@ body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow 
 .package-window .package-size {background:var(--sd-glass-face-deep)!important}
 .area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--ui-neutral)!important;box-shadow:none!important}
 
-/* Generic controls, selection and focus stay neutral, including inside apps. */
+/* Desktop controls stay neutral; app controls inherit their window identity. */
 button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--ui-neutral)!important;--glass-key-tone:var(--ui-neutral)!important}
 body[data-theme] :where(button,a,input,textarea,select,[tabindex]):focus-visible {outline-color:var(--ui-neutral)!important}
 :where(input,textarea) {caret-color:var(--ui-neutral)}
@@ -68,16 +68,12 @@ input[type="range"] {accent-color:var(--ui-neutral)!important}
 body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track {background:linear-gradient(to right,var(--ui-neutral) var(--range-progress,0%),var(--sd-glass-groove) var(--range-progress,0%))!important;box-shadow:none!important}
 body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress {background:var(--ui-neutral)!important;box-shadow:none!important}
 
-/* Keep entity colour in the icon and a small identity/selection marker. */
+/* Entity colour identifies launchers, workspaces and projects. */
 button[data-open-app] {--state-tone:var(--app-primary)!important;--glass-key-tone:var(--app-primary)!important}
 button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!important}
 .workspace-tab,.workspace-glyph,.workspace-home-icon {background:transparent!important;box-shadow:none!important}
 .workspace-tab.is-active {box-shadow:inset 0 -2px var(--tab-color)!important}
 .universal-search .overview-project {--state-tone:var(--project-card-accent)!important}
-.app-frame .app-titlebar {background:var(--abs-top)!important}
-.app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav) {background:var(--control-top)!important;border-color:var(--control-edge)!important}
-.app-frame button.material-abs-button {background:linear-gradient(var(--control-top),var(--control-bottom))!important;border-color:var(--control-edge)!important}
-.app-frame button.material-abs-button:is(:active,.is-active,[aria-pressed="true"]) {background:linear-gradient(var(--control-bottom),var(--control-top))!important}
 .overview-project,.workspace-context-card,.workspace-folder,.workspace-config-file {
   background:transparent!important;
 }
@@ -85,6 +81,36 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 .project-window-scope {background:transparent!important}
 .app-key .app-hotkey,.mini-card .mini-hotkey {background:transparent!important;box-shadow:none!important}
 .app-key:not(.is-active) .app-hotkey {color:var(--sd-glass-muted)!important;border-color:var(--sd-glass-groove)!important}
+
+/* The app accent belongs to the whole opaque window, not just its icon.
+   Stronger casing tint and quieter document tint keep text easy to read. */
+.app-frame {
+  --app-content-surface:color-mix(in srgb,var(--content-surface) 92%,var(--app-primary) 8%);
+  --app-content-raised:color-mix(in srgb,var(--content-surface-raised) 88%,var(--app-primary) 12%);
+  --app-content:var(--app-content-surface);
+}
+.app-frame.material-surface-abs {
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--control-top) 84%,var(--app-primary) 16%),
+    color-mix(in srgb,var(--control-bottom) 88%,var(--app-primary) 12%));
+}
+.app-frame .app-titlebar {
+  background:color-mix(in srgb,var(--abs-mid) 80%,var(--app-primary) 20%);
+}
+.app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav) {
+  background:color-mix(in srgb,var(--control-top) 88%,var(--app-primary) 12%);
+  border-color:color-mix(in srgb,var(--app-primary) 20%,var(--control-edge));
+}
+.app-frame button:is(.material-glass-button,.material-abs-button) {
+  --state-tone:var(--app-primary)!important;
+  --glass-key-tone:var(--app-primary)!important;
+}
+body[data-theme] .app-frame :where(button,a,input,textarea,select,[tabindex]):focus-visible {
+  outline-color:var(--app-primary)!important;
+}
+.app-frame :where(input,textarea) {caret-color:var(--app-primary)}
+.app-frame input[type="range"] {accent-color:var(--app-primary)!important}
+.app-frame .equalizer i {background:var(--app-primary)!important}
 
 /* Action colour follows the available action, rather than the parent app. */
 button.play-toggle[aria-label="Play"],#timerToggle[aria-pressed="false"] {
