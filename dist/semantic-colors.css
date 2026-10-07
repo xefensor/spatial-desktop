@@ -56,18 +56,16 @@ body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow 
 
 /* Adjacent Areas remain separate sheets even when their dock rectangles meet.
    A recessed seam marks the leading edges, without outlining the desktop. */
-.apps-zone {--area-sheet-shade:rgba(0,0,0,.18);--area-header-shade:rgba(0,0,0,.30)}
-.project-area {--area-sheet-shade:rgba(255,255,255,.025);--area-header-shade:rgba(255,255,255,.055)}
-.systems-zone {--area-sheet-shade:rgba(255,255,255,.065);--area-header-shade:rgba(255,255,255,.12)}
 body[data-theme] .area-window {
+  --area-sheet-shade:rgba(255,255,255,.025);
+  --area-header-shade:rgba(255,255,255,.055);
   --area-seam-dark:rgba(0,0,0,.60);
   --area-seam-light:rgba(255,255,255,.20);
   background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important;
 }
-body[data-theme="light"] .apps-zone {--area-sheet-shade:rgba(60,60,65,.08);--area-header-shade:rgba(60,60,65,.14)}
-body[data-theme="light"] .project-area {--area-sheet-shade:rgba(255,255,255,.18);--area-header-shade:rgba(255,255,255,.36)}
-body[data-theme="light"] .systems-zone {--area-sheet-shade:rgba(255,255,255,.46);--area-header-shade:rgba(255,255,255,.70)}
 body[data-theme="light"] .area-window {
+  --area-sheet-shade:rgba(255,255,255,.18);
+  --area-header-shade:rgba(255,255,255,.36);
   --area-seam-dark:rgba(45,45,50,.30);
   --area-seam-light:rgba(255,255,255,.85);
 }
