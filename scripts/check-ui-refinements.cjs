@@ -149,6 +149,22 @@ for (const parent of [utilitySurfaces[3], absApp]) {
 }
 console.log('Toggle semantics passed: project cards, app navigation, tabs, radio choices and momentary actions on glass and ABS.');
 
+// A workspace change must update both visual selection and the state used by
+// its light. Reproduce Home -> Documents -> Home without clicking a Place.
+const places = ['Home','Downloads','Documents'].map(label => controlFixture(['nav-choice'], {'aria-pressed':'false'}, absApp));
+places.forEach((fixture,index) => {fixture.button.textContent = ['Home','Downloads','Documents'][index];});
+const placesCtx = vm.createContext({$$: () => places.map(fixture => fixture.button), frameFor: () => absApp, example: {folder:'Home'}});
+const placesSync = source.slice(source.indexOf('  $$(".places-list .nav-choice", frameFor("dolphin")).forEach'), source.indexOf('  const activeTab = $(".folder-tab.is-active", frameFor("dolphin"));'));
+for (const [folder,selected] of [['Home','Home'],['Documents/School','Documents'],['Home','Home']]) {
+  placesCtx.example.folder = folder;
+  vm.runInContext(placesSync, placesCtx);
+  for (const fixture of places) {
+    assert.equal(fixture.button.classes.has('is-active'), fixture.button.textContent === selected);
+    assert.equal(fixture.attrs['aria-pressed'], String(fixture.button.textContent === selected));
+  }
+}
+console.log('Workspace navigation lights passed: restored selection and ARIA state stay synchronized.');
+
 // Exercise real preference handling and media changes, including persistence and
 // cross-display packets: Auto must remain Auto, rather than save its palette.
 const createTheme = require('../dist/desktop-theme.js');

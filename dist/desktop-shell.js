@@ -4178,7 +4178,11 @@ function renderWorkspaceExample(name) {
   appInfo.terminal.detail = name === "work" ? "Development server" : profile.label + " Home";
   const files = $(".file-list", frameFor("dolphin"));
   files.innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join("");
-  $$(".places-list .nav-choice", frameFor("dolphin")).forEach(choice => choice.classList.toggle("is-active", choice.textContent.trim() === (example.folder === "Home" ? "Home" : example.folder.startsWith("Documents") ? "Documents" : "")));
+  $$(".places-list .nav-choice", frameFor("dolphin")).forEach(choice => {
+    const selected = choice.textContent.trim() === (example.folder === "Home" ? "Home" : example.folder.startsWith("Documents") ? "Documents" : "");
+    choice.classList.toggle("is-active", selected);
+    choice.setAttribute("aria-pressed", String(selected));
+  });
   const activeTab = $(".folder-tab.is-active", frameFor("dolphin"));
   if (activeTab) activeTab.innerHTML = escapeHtml(example.folder.split("/").at(-1)) + '<span>×</span>';
   $(".app-status span", frameFor("dolphin")).textContent = example.files.length + " items";
