@@ -3333,6 +3333,7 @@ function renderProjectModes(name) {
 }
 
 function renderOverviewProjects() {
+  renderAvailableProjectLibrary();
   const grid = $("#overviewProjectGrid");
   const entries = Object.entries(projectSpaces);
   $("#overviewProjectCount").textContent = entries.length + (entries.length === 1 ? " project" : " projects");
@@ -3349,6 +3350,7 @@ function renderOverviewProjects() {
 
 function setProjectClosedState(closed) {
   syncProjectSurface(closed);
+  areaFor("projects").dataset.projectLibraryOpen = String(closed);
   $("#projectSpaceContent").hidden = closed;
   $("#projectSessionBar").hidden = closed;
   $("#projectClosedState").hidden = !closed;
@@ -3358,8 +3360,10 @@ function setProjectClosedState(closed) {
   $("#manageProjectButton").disabled = closed;
   $$(".project-pack-key").forEach(button => { button.disabled = closed; });
   if (closed) {
+    renderAvailableProjectLibrary();
     $("#projectAreaName").textContent = "Projects";
-    $("#projectAreaContext").textContent = "No project open";
+    const count = Object.keys(projectSpaces).length;
+    $("#projectAreaContext").textContent = count + (count === 1 ? " project available" : " projects available");
     $$("[data-overview-project]").forEach(card => {
       card.classList.remove("is-active");
       card.setAttribute("aria-pressed", "false");
@@ -3862,6 +3866,18 @@ function prepareProjectSpaces() {
     setUniversalSearchOpen(false);
   });
   $(".project-area").addEventListener("click", event => {
+    const project = event.target.closest("[data-open-area-project]");
+    if (project) {
+      activateProject(project.dataset.openAreaProject);
+      const rail = areaFor("projects").dataset.areaState === "rail";
+      if (rail) showArea("projects");
+      requestAnimationFrame(() => {
+        const focusTarget = $("#projectSpaceContent");
+        if (focusTarget && !focusTarget.hidden) focusTarget.focus({ preventScroll: true });
+      });
+      return;
+    }
+    if (event.target.closest("[data-create-area-project]")) return openProjectEditor("create-project");
     const item = event.target.closest("[data-project-item]");
     if (item) showToast("Opening " + item.dataset.projectItem);
   });
@@ -6357,4 +6373,17 @@ function syncProjectSurface(closed = false) {
     label.title = owner === activeProjectName ? project?.name + " · saved with this project" : "Independent window · stays open when the project closes";
   });
   if (wasOpen !== Boolean(project) && windowViewportLockReady) scheduleWindowTiling();
+}
+
+function renderAvailableProjectLibrary() {
+  const list = $("#projectLibraryList");
+  if (!list) return;
+  const entries = Object.entries(projectSpaces);
+  if (!activeProjectName) $("#projectAreaContext").textContent = entries.length + (entries.length === 1 ? " project available" : " projects available");
+  list.innerHTML = entries.map(([id, project]) => {
+    const modeCount = Object.keys(project.modes).length;
+    const detail = modeCount + (modeCount === 1 ? " mode" : " modes") + " · " + projectLocationMeta(project).label;
+    return '<button type="button" class="surface-key project-library-entry" data-open-area-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';
+  }).join("") || '<div class="project-library-empty"><p>No projects yet.</p><button type="button" class="surface-key" data-create-area-project>Create project</button></div>';
+  prepareControlSemantics(list);
 }
