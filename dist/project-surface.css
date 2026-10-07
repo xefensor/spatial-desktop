@@ -1,38 +1,10 @@
-/* A glass perimeter marks the open Project without covering the wallpaper. */
-.project-surface {
-  position:absolute; inset:0; z-index:0; pointer-events:none;
-  background:transparent;
-  border:1px solid color-mix(in srgb,var(--open-project-accent) 65%,var(--sd-glass-edge));
-  box-shadow:inset 0 0 0 1px var(--sd-glass-highlight),inset 0 0 12px color-mix(in srgb,var(--open-project-accent) 12%,transparent);
-}
-.project-surface[hidden],.project-window-scope[hidden]{display:none!important}
-.project-frame-edge {
-  position:absolute; display:block;
-  background:color-mix(in srgb,var(--open-project-accent) 16%,var(--sd-glass-face));
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-  box-shadow:inset 0 1px var(--sd-glass-highlight);
-}
-.project-frame-left {left:0;top:40px;bottom:7px;width:7px;border-right:1px solid var(--sd-glass-groove)}
-.project-frame-right {right:0;top:40px;bottom:7px;width:7px;border-left:1px solid var(--sd-glass-groove)}
-.project-frame-bottom {left:0;right:0;bottom:0;height:7px;border-top:1px solid var(--sd-glass-groove)}
-.project-surface-heading {
-  height:40px; display:flex; align-items:center; gap:12px; padding:0 14px;
-  background:linear-gradient(120deg,color-mix(in srgb,var(--open-project-accent) 12%,transparent),transparent 70%),var(--sd-glass-face);
-  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--sd-glass-groove); color:var(--sd-glass-text);
-  box-shadow:inset 0 1px var(--sd-glass-highlight); font-size:14px;
-}
-.project-surface-heading strong {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
-.project-open-label {flex:none;font-weight:700;color:var(--sd-glass-text);padding-left:9px;border-left:3px solid var(--open-project-accent)}
-#projectSurfaceMode {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sd-glass-muted);margin-left:auto}
-.desktop-shell[data-project-surface-open="true"] .project-area .area-window-bar {
-  background:linear-gradient(120deg,color-mix(in srgb,var(--open-project-accent) 12%,transparent),transparent 70%),var(--sd-glass-face)!important;
-}
+/* Project membership labels and the available project list. */
+.project-window-scope[hidden]{display:none!important}
 .project-window-scope {flex:none;font-size:12px;line-height:20px;padding:0 6px;border:1px solid var(--soft-line);color:var(--muted);white-space:nowrap}
 .app-frame[data-project-scope="project"] .project-window-scope {border-color:var(--open-project-accent);color:var(--text);background:color-mix(in srgb,var(--open-project-accent) 14%,var(--content-surface))}
-.desktop-shell[data-project-surface-open="true"] .app-frame[data-project-scope="project"] .app-titlebar {box-shadow:inset 0 2px var(--open-project-accent)}
-.desktop-shell[data-project-surface-open="true"] .workspace-depth {display:none}
-@container (max-width:420px){.project-window-scope{font-size:12px;padding:0 3px}.project-surface-heading{gap:8px}#projectSurfaceMode{display:none}}
+.desktop-shell[data-project-open="true"] .app-frame[data-project-scope="project"] .app-titlebar {box-shadow:inset 0 2px var(--open-project-accent)}
+@container (max-width:420px){.project-window-scope{font-size:12px;padding:0 3px}}
+
 
 /* With no open Project, the Area is a scrollable project launcher. */
 .project-area .project-closed-state.project-library {

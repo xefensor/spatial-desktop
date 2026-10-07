@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="ui-refinements.css?v=179">
   <link rel="stylesheet" href="area-layout.css?v=171">
   <link rel="stylesheet" href="desktop-dialogs.css?v=174">
-  <link rel="stylesheet" href="project-surface.css?v=3">
+  <link rel="stylesheet" href="project-surface.css?v=4">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -105,16 +105,6 @@
     <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
     <section class="workspace-zone" aria-label="Main app area">
-      <div class="project-surface" id="projectSurface" hidden>
-        <span class="project-frame-edge project-frame-left" aria-hidden="true"></span>
-        <span class="project-frame-edge project-frame-right" aria-hidden="true"></span>
-        <span class="project-frame-edge project-frame-bottom" aria-hidden="true"></span>
-        <header class="project-surface-heading">
-          <span class="project-open-label">Project open</span>
-          <strong id="projectSurfaceName"></strong>
-          <span id="projectSurfaceMode"></span>
-        </header>
-      </div>
       <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="empty-workspace" id="emptyWorkspace" hidden><div class="empty-mark"><svg><use href="#i-grid"/></svg></div><strong>No app in the main area</strong><span>Restore one from the Apps area.</span></div>
       <article class="app-frame is-active" data-app-frame="dolphin" aria-label="Dolphin file manager">
@@ -487,7 +477,7 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
-  <script src="desktop-shell.js?v=188"></script>
+  <script src="desktop-shell.js?v=189"></script>
 </body>
 </html>
 

@@ -131,21 +131,10 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 const slice = (first, last) => source.slice(source.indexOf(first), source.indexOf(last, source.indexOf(first)));
-vm.runInContext(slice("function projectSurfaceInset(", "function syncProjectSurface("), sandbox);
 vm.runInContext(slice("function clampGeometry(", "function saveLayout("), sandbox);
 vm.runInContext(slice("const tileEngine =", "function restoreWorkspaceWindowLayout("), sandbox);
 vm.runInContext("renderTileDividers = () => {};", sandbox);
 vm.runInContext(slice("function openApp(", "function syncMaximizeButton("), sandbox);
-// The Project status strip reserves real space for both tiled and floating windows.
-const ordinaryQuery = sandbox.$;
-sandbox.$ = selector => selector === ".desktop-shell" ? {dataset:{projectSurfaceOpen:"true"}} : ordinaryQuery(selector);
-assert.equal(vm.runInContext("tileBounds().y", sandbox), 48);
-assert.equal(vm.runInContext("tileBounds().height", sandbox), 960);
-const projectFloat = vm.runInContext('clampGeometry({x:8,y:0,width:440,height:1016},"dolphin")', sandbox);
-assert.equal(projectFloat.y, 48);
-assert.equal(projectFloat.y + projectFloat.height, 1008);
-sandbox.$ = ordinaryQuery;
-assert.equal(vm.runInContext("tileBounds().y", sandbox), 8, "Closing Project restores the full canvas");
 vm.runInContext('openApp("dolphin"); openApp("elisa"); openApp("notes");', sandbox);
 assert.equal(sandbox.appState.notes, "open");
 vm.runInContext('focusTileWindow("dolphin")', sandbox);

@@ -320,8 +320,7 @@ function clampGeometry(geometry, name = null) {
   const workspace = workspaceBounds();
   const usable = minimumUsableWindowSize(name);
   const maximumWidth = Math.max(1, workspace.width - 16);
-  const surfaceInset = projectSurfaceInset();
-  const maximumHeight = Math.max(1, workspace.height - 16 - surfaceInset);
+  const maximumHeight = Math.max(1, workspace.height - 16);
   /* A tiled window must obey the tile it was given. Applying the normal app
      minimum here used to enlarge narrow cells after layout, making windows
      overlap and disappear behind the Areas. App container layouts provide a
@@ -333,7 +332,7 @@ function clampGeometry(geometry, name = null) {
   const height = Math.max(minHeight, Math.min(geometry.height, maximumHeight));
   return {
     x: Math.max(8, Math.min(geometry.x, workspace.width - width - 8)),
-    y: Math.max(8 + surfaceInset, Math.min(geometry.y, workspace.height - height - 8)),
+    y: Math.max(8, Math.min(geometry.y, workspace.height - height - 8)),
     width,
     height
   };
@@ -473,8 +472,7 @@ function tileSession() {
 
 function tileBounds() {
   const workspace = workspaceBounds();
-  const inset = projectSurfaceInset();
-  return { x: 8, y: 8 + inset, width: Math.max(1, workspace.width - 16), height: Math.max(1, workspace.height - 16 - inset) };
+  return { x: 8, y: 8, width: Math.max(1, workspace.width - 16), height: Math.max(1, workspace.height - 16) };
 }
 
 function saveTileSessions() {
@@ -1212,7 +1210,7 @@ function bringToFront(name) {
 }
 
 function syncApps() {
-  syncProjectSurface();
+  syncProjectWindowScopes();
   $$("[data-app-frame]").forEach(frame => {
     const visible = appState[frame.dataset.appFrame] === "open" && isLocalApp(frame.dataset.appFrame);
     frame.hidden = !visible;
@@ -2531,7 +2529,6 @@ function applyDockRect(name, rect) {
   const area = areaFor(name);
   if (!area) return;
   area.dataset.dockEdge = dockState[name].edge;
-  if (name === "projects") $(".desktop-shell").dataset.projectSurfaceEdge = dockState[name].edge;
   area.style.left = Math.round(rect.x) + "px";
   area.style.top = Math.round(rect.y) + "px";
   area.style.width = Math.round(rect.width) + "px";
@@ -3349,7 +3346,7 @@ function renderOverviewProjects() {
 }
 
 function setProjectClosedState(closed) {
-  syncProjectSurface(closed);
+  syncProjectWindowScopes(closed);
   areaFor("projects").dataset.projectLibraryOpen = String(closed);
   $("#projectSpaceContent").hidden = closed;
   $("#projectSessionBar").hidden = closed;
@@ -5460,7 +5457,7 @@ function executeContextAction(action) {
   if (action === "app-new-instance") createAppInstance(context.name);
   if (action.startsWith("move-workspace:")) moveAppWorkspace(context.name, action.split(":")[1]);
   if (action.startsWith("move-project:")) moveAppProject(context.name, action.split(":")[1]);
-  if (action === "detach-project") { windowMembership[activeWorkspace][context.name] = null; syncProjectSurface(); saveIndependentSessions(); showToast("Window detached · stays open when the project closes"); }
+  if (action === "detach-project") { windowMembership[activeWorkspace][context.name] = null; syncProjectWindowScopes(); saveIndependentSessions(); showToast("Window detached · stays open when the project closes"); }
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
   if (action === "app-maximize") toggleMaximize(context.name);
@@ -6249,7 +6246,7 @@ function moveAppWorkspace(name, destination) {
   workspaceContent[destination].frames[id] = contents;
   windowMembership[destination] ||= {}; windowMembership[destination][id] = null;
   removeWindowFromSavedProjects(name);
-  closeApp(name); windowMembership[activeWorkspace][name] = null; syncProjectSurface();
+  closeApp(name); windowMembership[activeWorkspace][name] = null; syncProjectWindowScopes();
   persistProjectState(); persistWorkspaceAppStates(); saveIndependentSessions();
   showToast('Window moved to ' + workspaceProfiles[destination].label + ' · content preserved');
 }
@@ -6267,7 +6264,7 @@ function moveAppProject(name, destination) {
     closeApp(name);
   }
   persistProjectState(); saveIndependentSessions();
-  syncProjectSurface();
+  syncProjectWindowScopes();
   showToast('Window moved to ' + projectSpaces[destination].name);
 }
 document.addEventListener('change', event => {
@@ -6334,28 +6331,14 @@ window.addEventListener("pointermove", event => {
 window.addEventListener("pagehide", () => captureCurrentWorkspaceSession());
 
 
-// An open Project has an opaque work surface, distinct from the free desktop.
-function projectSurfaceInset() {
-  return $(".desktop-shell")?.dataset?.projectSurfaceOpen === "true" ? 40 : 0;
-}
-
-function syncProjectSurface(closed = false) {
-  const shell = $(".desktop-shell"), surface = $("#projectSurface");
-  if (!shell || !surface) return;
+// Window labels show which windows are saved with the current Project.
+function syncProjectWindowScopes(closed = false) {
+  const shell = $(".desktop-shell");
+  if (!shell) return;
   const project = !closed && activeProjectName ? projectSpaces[activeProjectName] : null;
-  const wasOpen = shell.dataset.projectSurfaceOpen === "true";
-  shell.dataset.projectSurfaceOpen = String(Boolean(project));
-  shell.dataset.projectSurfaceEdge = dockState.projects?.edge || "left";
-  surface.hidden = !project;
-  if (project) {
-    shell.style.setProperty("--open-project-accent", project.accent);
-    $("#projectSurfaceName").textContent = project.name;
-    const modes = Object.values(project.modes);
-    $("#projectSurfaceMode").textContent = modes.length > 1 ? project.modes[projectModeId(activeProjectName)].label + " mode" : "";
-    surface.setAttribute("aria-label", "Open project: " + project.name);
-  } else {
-    shell.style.removeProperty("--open-project-accent");
-  }
+  shell.dataset.projectOpen = String(Boolean(project));
+  if (project) shell.style.setProperty("--open-project-accent", project.accent);
+  else shell.style.removeProperty("--open-project-accent");
   const memberships = windowMembership[activeWorkspace] || {};
   $$("[data-app-frame]").forEach(frame => {
     const name = frame.dataset.appFrame, owner = memberships[name];
@@ -6372,7 +6355,6 @@ function syncProjectSurface(closed = false) {
     label.textContent = owner === activeProjectName ? "Project" : "Workspace";
     label.title = owner === activeProjectName ? project?.name + " · saved with this project" : "Independent window · stays open when the project closes";
   });
-  if (wasOpen !== Boolean(project) && windowViewportLockReady) scheduleWindowTiling();
 }
 
 function renderAvailableProjectLibrary() {
