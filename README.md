@@ -90,6 +90,12 @@ The detailed reasoning, experiments and workflow models are in [`dist/philosophy
 | `docs/history/` | Version map and exact original Git history |
 | `.openai/hosting.json` | Existing Sites hosting metadata; not needed for local use |
 
+## Workflow research and testing
+
+- [Cross-platform workflow audit: 100 scenarios](docs/workflow-audit-2026-10-07.md) — research, tested prototype behaviour, alternatives and tradeoffs.
+- [Filterable workflow matrix (CSV)](docs/workflow-matrix-2026-10-07.csv).
+- [Broad desktop testing report](docs/testing-2026-10-07.md).
+
 ## Checks
 
 With Node.js installed:
