@@ -20,7 +20,7 @@ body[data-theme="light"] {
   --sd-glass-muted:rgba(52,52,58,.70);
 }
 
-/* Areas and Overview sections are infrastructure, not separate identities. */
+/* Area roles use neutral material contrast; colour remains entity-specific. */
 .area-window,.universal-search,.all-apps-drawer,.desktop-context-menu,.desktop-glass-dialog {
   --area-header-accent:var(--ui-neutral)!important;
   --area-body-tint:var(--ui-neutral)!important;
@@ -53,6 +53,62 @@ body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow 
 }
 .package-window .package-size {background:var(--sd-glass-face-deep)!important}
 .area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--ui-neutral)!important;box-shadow:none!important}
+
+/* Adjacent Areas remain separate sheets even when their dock rectangles meet.
+   A recessed seam marks the leading edges, without outlining the desktop. */
+.apps-zone {--area-sheet-shade:rgba(0,0,0,.18);--area-header-shade:rgba(0,0,0,.30)}
+.project-area {--area-sheet-shade:rgba(255,255,255,.025);--area-header-shade:rgba(255,255,255,.055)}
+.systems-zone {--area-sheet-shade:rgba(255,255,255,.065);--area-header-shade:rgba(255,255,255,.12)}
+body[data-theme] .area-window {
+  --area-seam-dark:rgba(0,0,0,.60);
+  --area-seam-light:rgba(255,255,255,.20);
+  background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important;
+}
+body[data-theme="light"] .apps-zone {--area-sheet-shade:rgba(60,60,65,.08);--area-header-shade:rgba(60,60,65,.14)}
+body[data-theme="light"] .project-area {--area-sheet-shade:rgba(255,255,255,.18);--area-header-shade:rgba(255,255,255,.36)}
+body[data-theme="light"] .systems-zone {--area-sheet-shade:rgba(255,255,255,.46);--area-header-shade:rgba(255,255,255,.70)}
+body[data-theme="light"] .area-window {
+  --area-seam-dark:rgba(45,45,50,.30);
+  --area-seam-light:rgba(255,255,255,.85);
+}
+body[data-theme] .area-window::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:30;
+  pointer-events:none;
+  background:
+    linear-gradient(to right,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px),
+    linear-gradient(to bottom,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
+}
+body[data-theme] .area-window>.area-window-bar {
+  background:linear-gradient(var(--area-header-shade),var(--area-header-shade)),var(--sd-glass-face)!important;
+  border-bottom:1px solid var(--area-seam-light)!important;
+  box-shadow:none!important;
+}
+body[data-theme] .area-window>.area-window-bar::after {content:none}
+
+/* Rail labels distinguish Area roles alongside the icons and coloured tools. */
+.area-window[data-area-state="rail"] .area-window-identity {
+  flex-direction:column;
+  gap:2px;
+}
+.area-window[data-area-state="rail"] .area-window-identity::after {
+  display:block;
+  color:var(--sd-glass-text);
+  font:650 10px/12px system-ui,sans-serif;
+}
+.apps-zone[data-area-state="rail"] .area-window-identity::after {content:"Apps"}
+.project-area[data-area-state="rail"] .area-window-identity::after {content:"Project"}
+.systems-zone[data-area-state="rail"] .area-window-identity::after {content:"System"}
+.area-window[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar {
+  flex-basis:60px;
+  min-height:60px;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar {
+  flex:0 0 auto;
+  min-height:94px;
+}
 
 /* Desktop controls stay neutral; app controls inherit their window identity. */
 button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--ui-neutral)!important;--glass-key-tone:var(--ui-neutral)!important}
@@ -145,4 +201,6 @@ button.project-editor-danger,.context-menu-item.is-danger {
 @media(prefers-reduced-transparency:reduce) {
   body[data-theme] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#19191c!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   body[data-theme="light"] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#eeeef1!important}
+  body[data-theme] .area-window {--sd-glass-face:#19191c;background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important}
+  body[data-theme="light"] .area-window {--sd-glass-face:#eeeef1}
 }
