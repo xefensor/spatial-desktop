@@ -98,7 +98,11 @@ With Node.js installed:
 node scripts/check-spatial-intent.cjs
 node scripts/check-spatial-tiling.cjs
 node scripts/check-demo-examples.cjs
+node scripts/check-ui-refinements.cjs
+node scripts/check-desktop-workflows.cjs
 ```
+
+The [desktop testing report](docs/testing-2026-10-07.md) records browser workflows, regression coverage, confirmed fixes and remaining hardware/browser checks. The workflow suite also runs 1,200 deterministic mixed layout steps across eight workspace sizes.
 
 ## Development history
 

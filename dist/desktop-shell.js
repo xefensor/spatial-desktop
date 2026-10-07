@@ -1252,6 +1252,7 @@ function openApp(name, dropPoint = null) {
     scheduleSpatialAutoLayout();
     scheduleWindowTiling(name);
   }
+  queueDesktopStateBroadcast();
 }
 
 function minimizeApp(name, preserveGeometry = false) {
@@ -1278,6 +1279,7 @@ function minimizeApp(name, preserveGeometry = false) {
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     scheduleSpatialAutoLayout();
   }
+  queueDesktopStateBroadcast();
 }
 
 function closeApp(name) {
@@ -1303,6 +1305,7 @@ function closeApp(name) {
     scheduleSpatialAutoLayout();
   }
   showToast(appInfo[name].label + " closed");
+  queueDesktopStateBroadcast();
 }
 
 function syncMaximizeButton(frame) {
@@ -1425,9 +1428,11 @@ function renderMiniApps() {
 }
 
 function terminalResult(command) {
+  if (command === "help") return "Try: clear, date, pwd, git status, echo hello";
   if (command === "date") return new Date().toLocaleString("en-GB");
   if (command === "git status") return "On branch main · working tree clean";
-  if (command === "pwd") return "/home/demo";
+  if (command === "pwd") return projectSpaces[activeProjectName]?.root || workspaceProfiles[activeWorkspace]?.home || "/home/demo";
+  if (command === "echo" || command.startsWith("echo ")) return command.slice(4).trimStart();
   if (command === "clear") return "Terminal cleared";
   return "command not found: " + command;
 }
@@ -3544,30 +3549,33 @@ function closeActiveProject() {
   showToast(project.name + " closed · " + project.modes[projectModeId(name)].label + " mode saved with " + parked + " window" + (parked === 1 ? "" : "s"));
 }
 
+function describeProjectResource(value) {
+  const raw = value.trim();
+  if (!raw) return null;
+  const localPath = /^(?:[\\/~]|\.{1,2}[\\/]|[a-z]:[\\/]|file:)/i.test(raw)
+    || /\.(?:mp4|webm|mov|mkv|mp3|wav|ogg|flac|png|jpe?g|svg|webp|pdf|txt|md|csv|zip|blend|kra)(?:$|[?#])/i.test(raw) && !/^https?:\/\//i.test(raw) && !/^[^/]+\.[^/]+[/?#]/.test(raw);
+  const webAddress = !localPath && (/^https?:\/\//i.test(raw) || /^(?:localhost(?::\d+)?|(?:[\p{L}\d-]+\.)+[\p{L}\d-]+)(?::\d+)?(?:[/?#]|$)/u.test(raw));
+  if (webAddress) {
+    try {
+      const url = new URL(/^https?:\/\//i.test(raw) ? raw : "https://" + raw);
+      return [url.hostname.replace(/^www\./, "") + (url.pathname !== "/" ? decodeURI(url.pathname).replace(/\/$/, "") : ""), "Web resource · " + url.hostname, "web", "i-web"];
+    } catch { return null; }
+  }
+  if (/^[a-z][a-z\d+.-]*:/i.test(raw) && !/^(?:[a-z]:[\\/]|file:)/i.test(raw)) return null;
+  const path = raw.replace(/^file:\/\//i, "").replace(/[\\/]+$/, "");
+  const label = path.split(/[\\/]/).at(-1) || raw;
+  const video = /\.(mp4|webm|mov|mkv)$/i.test(path);
+  return [label, "Linked · " + raw, video ? "video" : "file", video ? "i-video" : "i-folder"];
+}
+
 function addProjectResource(value) {
   if (!activeProjectName) return;
-  const raw = value.trim();
-  if (!raw) return;
-  let label = raw;
-  let detail = "Linked resource";
-  let type = "web";
-  let itemIcon = "i-link";
-  try {
-    const url = new URL(raw.includes("://") ? raw : "https://" + raw);
-    label = url.hostname.replace(/^www\./, "") + (url.pathname !== "/" ? url.pathname.replace(/\/$/, "") : "");
-    detail = "Web resource · " + url.hostname;
-    itemIcon = "i-web";
-  } catch {
-    const pieces = raw.split(/[\\/]/);
-    label = pieces.at(-1) || raw;
-    detail = "Linked · " + raw;
-    type = /\.(mp4|webm|mov)$/i.test(raw) ? "video" : "web";
-    itemIcon = type === "video" ? "i-video" : "i-folder";
-  }
-  projectSpaces[activeProjectName].resources.unshift([label, detail, type, itemIcon]);
+  const resource = describeProjectResource(value);
+  if (!resource) { if (value.trim()) showToast("Use a file path or an HTTP(S) web address"); return; }
+  projectSpaces[activeProjectName].resources.unshift(resource);
   persistProjectState();
   renderProjectSpace(activeProjectName);
-  showToast(label + " added to " + projectSpaces[activeProjectName].name);
+  showToast(resource[0] + " added to " + projectSpaces[activeProjectName].name);
 }
 
 const projectAccentPalette = ["#5cbcff", "#a88aff", "#65d881", "#ff9b68", "#f4c95d", "#48d1c8"];
@@ -4341,7 +4349,7 @@ function prepareWindows() {
     toggleAppFullscreen(button.closest("[data-app-frame]").dataset.appFrame);
   }));
   document.addEventListener("keydown", event => {
-    if (event.key !== "Escape" || !tileSession().fullscreen || $("#universalSearch").classList.contains("is-open")) return;
+    if (event.key !== "Escape" || !tileSession().fullscreen || ["#universalSearch", "#packageDialog", "#projectEditorDialog"].some(selector => $(selector).classList.contains("is-open")) || !$("#desktopContextMenu").hidden) return;
     event.preventDefault();
     toggleAppFullscreen(tileSession().fullscreen.name);
   });
@@ -4451,6 +4459,29 @@ function buildUniversalAppResults(query) {
   return matches.length;
 }
 
+function projectSearchResults(query) {
+  const results = [];
+  Object.entries(projectSpaces).forEach(([id, project]) => {
+    const searchable = [project.name, project.root, project.summary, ...Object.values(project.modes).map(mode => mode.label)].join(" ");
+    if (matchesSearch(searchable, query)) results.push({ id, label: project.name, detail: project.root, search: searchable });
+    (project.resources || []).forEach(([label, detail]) => {
+      const search = label + " " + detail;
+      if (matchesSearch(search, query)) results.push({ id, label, detail: project.name + " · " + detail, search, resource: label });
+    });
+    if (matchesSearch(project.note || "", query)) results.push({ id, label: project.name + " · Quick note", detail: "Open this project's note", search: project.note, note: true });
+  });
+  return results;
+}
+
+function buildUniversalProjectResults(query) {
+  $("#universalProjectResults").innerHTML = projectSearchResults(query).map(result =>
+    '<button class="universal-result" data-search-project="' + escapeHtml(result.id) + '" data-universal-search="' + escapeHtml(result.search) + '"' +
+    (result.resource ? ' data-search-resource="' + escapeHtml(result.resource) + '"' : '') + (result.note ? ' data-search-project-note="true"' : '') +
+    '><span class="universal-symbol violet">' + icon(result.note ? "i-note" : "i-folder") + '</span><span><b>' + escapeHtml(result.label) + '</b><small>' + escapeHtml(result.detail) + '</small></span></button>'
+  ).join("");
+  prepareControlSemantics($("#universalProjectResults"));
+}
+
 function filterUniversalSearch() {
   const rawQuery = $("#universalSearchInput").value.trim();
   const query = rawQuery.toLowerCase();
@@ -4465,6 +4496,7 @@ function filterUniversalSearch() {
   }
 
   let localVisible = buildUniversalAppResults(query);
+  buildUniversalProjectResults(query);
 
   $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
@@ -4529,6 +4561,16 @@ $("#universalAppResults").addEventListener("click", event => {
     showToast(result.dataset.searchLaunchApp + " launched");
   }
   setUniversalSearchOpen(false);
+});
+
+$("#universalProjectResults").addEventListener("click", event => {
+  const result = event.target.closest("[data-search-project]");
+  if (!result || !projectSpaces[result.dataset.searchProject]) return;
+  activateProject(result.dataset.searchProject);
+  showArea("projects", false);
+  setUniversalSearchOpen(false);
+  if (result.dataset.searchProjectNote) requestAnimationFrame(() => $("#projectQuickNote").focus());
+  if (result.dataset.searchResource) showToast("Opening " + result.dataset.searchResource);
 });
 
 $$('.universal-result').forEach(button => button.addEventListener("click", () => setUniversalSearchOpen(false)));
@@ -4705,6 +4747,7 @@ function activateHotbarSlot(slot) {
     currentButton.classList.add("is-hotkey-pulse");
     window.setTimeout(() => currentButton.classList.remove("is-hotkey-pulse"), 90);
   }
+  queueDesktopStateBroadcast();
   return true;
 }
 
@@ -4794,6 +4837,8 @@ document.addEventListener("keydown", event => {
 });
 
 document.addEventListener("keyup", event => {
+  const projectEditorDialog = $("#projectEditorDialog");
+  const packageDialog = $("#packageDialog");
   if (projectEditorDialog.classList.contains("is-open") || packageDialog.classList.contains("is-open")) {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -4813,9 +4858,26 @@ document.addEventListener("keyup", event => {
 window.addEventListener("blur", () => { superKeyAlone = false; });
 
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));
+function setSystemToggle(label, active, persist = true) {
+  $$(".quick-toggle").filter(button => button.id !== "themeToggle" && button.textContent.trim() === label).forEach(button => {
+    button.classList.toggle("is-active", Boolean(active));
+    button.setAttribute("aria-pressed", String(Boolean(active)));
+  });
+  if (persist) {
+    const saved = readDesktopStorage("spatial-system-toggles-v1");
+    saved[label] = Boolean(active);
+    try { localStorage.setItem("spatial-system-toggles-v1", JSON.stringify(saved)); } catch {}
+  }
+}
+
+Object.entries(readDesktopStorage("spatial-system-toggles-v1")).forEach(([label, active]) => setSystemToggle(label, active, false));
 $$("[data-toggle]").forEach(button => button.addEventListener("click", () => {
-  button.classList.toggle("is-active");
-  button.setAttribute("aria-pressed", String(button.classList.contains("is-active")));
+  const active = !button.classList.contains("is-active");
+  if (button.classList.contains("quick-toggle")) setSystemToggle(button.textContent.trim(), active);
+  else {
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  }
 }));
 
 SpatialDesktopTheme.bind($("#themeToggle"));
@@ -5139,10 +5201,12 @@ $("#terminalInput").addEventListener("keydown", event => {
   if (!value) return;
   const line = document.createElement("p");
   line.className = "terminal-output";
-  line.textContent = value === "help" ? "Try: clear, date, echo hello" : value === "date" ? new Date().toString() : "command not found: " + value;
+  terminalPreview = terminalResult(value);
+  line.textContent = terminalPreview;
   event.target.closest("label").before(line);
   if (value === "clear") $$(".terminal-screen > p").forEach(item => item.remove());
   event.target.value = "";
+  queueDesktopStateBroadcast();
 });
 
 let desktopFolderCount = 0;
@@ -5810,10 +5874,7 @@ function applyDesktopSyncState(state) {
     if (notesField) notesField.value = noteDraft;
 
     (state.quickToggles || []).forEach(saved => {
-      const button = $$(".quick-toggle").find(candidate => candidate.id !== "themeToggle" && candidate.textContent.trim() === saved.label);
-      if (!button) return;
-      button.classList.toggle("is-active", Boolean(saved.active));
-      button.setAttribute("aria-pressed", String(Boolean(saved.active)));
+      setSystemToggle(saved.label, saved.active);
     });
 
     if (typeof state.notificationsHtml === "string") {
