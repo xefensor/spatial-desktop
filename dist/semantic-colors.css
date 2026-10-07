@@ -82,6 +82,21 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 .app-key .app-hotkey,.mini-card .mini-hotkey {background:transparent!important;box-shadow:none!important}
 .app-key:not(.is-active) .app-hotkey {color:var(--sd-glass-muted)!important;border-color:var(--sd-glass-groove)!important}
 
+/* Parked app identity is a full top light strip. Reset both axes: legacy
+   side-strip width/right/bottom values otherwise shrink it to a tiny dot. */
+.apps-zone .mini-card[data-mini-card]::after {
+  content:"";
+  position:absolute;
+  inset:0 9px auto;
+  width:auto;
+  height:3px;
+  border-radius:0 0 2px 2px;
+  background:var(--app-primary);
+  box-shadow:0 0 5px color-mix(in srgb,var(--app-primary) 35%,transparent);
+  opacity:1;
+  pointer-events:none;
+}
+
 /* The app accent belongs to the whole opaque window, not just its icon.
    Stronger casing tint and quieter document tint keep text easy to read. */
 .app-frame {
