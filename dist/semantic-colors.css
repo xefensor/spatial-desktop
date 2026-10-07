@@ -55,12 +55,14 @@ body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow 
 .area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--ui-neutral)!important;box-shadow:none!important}
 
 /* Adjacent Areas remain separate sheets even when their dock rectangles meet.
-   A recessed seam marks the leading edges, without outlining the desktop. */
+   The glass edge faces the working canvas; shared seams divide dock peers. */
 body[data-theme] .area-window {
   --area-sheet-shade:rgba(255,255,255,.025);
   --area-header-shade:rgba(255,255,255,.055);
   --area-seam-dark:rgba(0,0,0,.60);
   --area-seam-light:rgba(255,255,255,.20);
+  --area-glass-edge-direction:to right;
+  --area-join-seam:linear-gradient(transparent,transparent);
   background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important;
 }
 body[data-theme="light"] .area-window {
@@ -76,8 +78,18 @@ body[data-theme] .area-window::after {
   z-index:30;
   pointer-events:none;
   background:
-    linear-gradient(to right,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px),
-    linear-gradient(to bottom,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
+    linear-gradient(var(--area-glass-edge-direction),var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px),
+    var(--area-join-seam);
+}
+body[data-theme] .area-window[data-dock-edge="left"] {--area-glass-edge-direction:to left}
+body[data-theme] .area-window[data-dock-edge="right"] {--area-glass-edge-direction:to right}
+body[data-theme] .area-window[data-dock-edge="top"] {--area-glass-edge-direction:to top}
+body[data-theme] .area-window[data-dock-edge="bottom"] {--area-glass-edge-direction:to bottom}
+body[data-theme] .area-window[data-area-join-edge="top"] {
+  --area-join-seam:linear-gradient(to bottom,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
+}
+body[data-theme] .area-window[data-area-join-edge="left"] {
+  --area-join-seam:linear-gradient(to right,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
 }
 body[data-theme] .area-window>.area-window-bar {
   background:linear-gradient(var(--area-header-shade),var(--area-header-shade)),var(--sd-glass-face)!important;

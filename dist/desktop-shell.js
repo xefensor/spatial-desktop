@@ -2532,6 +2532,7 @@ function applyDockRect(name, rect) {
   const area = areaFor(name);
   if (!area) return;
   area.dataset.dockEdge = dockState[name].edge;
+  area.dataset.areaJoinEdge = rect.joinEdge || "none";
   area.style.left = Math.round(rect.x) + "px";
   area.style.top = Math.round(rect.y) + "px";
   area.style.width = Math.round(rect.width) + "px";
@@ -2860,13 +2861,13 @@ function layoutDockAreas(save = false, fitWindows = true) {
     if (!names.length) return;
     const availableHeight = height - gap * 2 - gap * (names.length - 1);
     const panelHeight = availableHeight / names.length;
-    names.forEach((name, index) => applyDockRect(name, { x, y: gap + index * (panelHeight + gap), width: sideWidth, height: panelHeight }));
+    names.forEach((name, index) => applyDockRect(name, { x, y: gap + index * (panelHeight + gap), width: sideWidth, height: panelHeight, joinEdge: index ? "top" : "none" }));
   };
   const layoutHorizontal = (names, edge, y, panelHeight) => {
     if (!names.length) return;
     const availableWidth = centerWidth - gap * (names.length - 1);
     const panelWidth = availableWidth / names.length;
-    names.forEach((name, index) => applyDockRect(name, { x: centerLeft + index * (panelWidth + gap), y, width: panelWidth, height: panelHeight }));
+    names.forEach((name, index) => applyDockRect(name, { x: centerLeft + index * (panelWidth + gap), y, width: panelWidth, height: panelHeight, joinEdge: index ? "left" : "none" }));
   };
 
   layoutSide(left, "left", gap, leftWidth);
