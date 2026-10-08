@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="project-surface.css?v=4">
   <link rel="stylesheet" href="semantic-colors.css?v=6">
   <link rel="stylesheet" href="toggle-controls.css?v=3">
-  <link rel="stylesheet" href="desktop-pages.css?v=5">
+  <link rel="stylesheet" href="desktop-pages.css?v=6">
   <link rel="stylesheet" href="material-shapes.css?v=6">
   <link rel="stylesheet" href="area-rails.css?v=4">
 </head>
@@ -105,6 +105,13 @@
 
     <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
+    <header class="desktop-context-header material-surface-glass" aria-label="Current desktop context">
+      <button class="desktop-context-toggle" id="desktopContextToggle" aria-label="Open desktop map · General / Workspace · Desktop 1" aria-controls="universalSearch" aria-expanded="false" aria-pressed="false" title="Open desktop map · Shift+scroll: switch columns">
+        <svg class="desktop-context-icon" aria-hidden="true"><use href="#i-grid"/></svg>
+        <span class="desktop-context-workspace">General</span><span class="desktop-context-separator" aria-hidden="true">/</span><strong class="desktop-context-current">Workspace</strong>
+        <span class="desktop-context-page">Desktop 1</span><svg class="desktop-context-map-icon" aria-hidden="true"><use href="#i-grid"/></svg>
+      </button>
+    </header>
     <section class="workspace-zone" aria-label="Desktop 1" tabindex="-1">
       <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="empty-workspace" id="emptyWorkspace" hidden><div class="empty-mark material-surface-glass"><svg><use href="#i-grid"/></svg></div><strong>Empty desktop</strong><span>Open an app here, or scroll up to your other desktop.</span></div>
@@ -494,7 +501,7 @@
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
   <script src="desktop-pages.js?v=3"></script>
-<script src="desktop-shell.js?v=210"></script>
+<script src="desktop-shell.js?v=211"></script>
 </body>
 </html>
 

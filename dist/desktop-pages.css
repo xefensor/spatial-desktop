@@ -18,6 +18,22 @@ body[data-theme] .apps-zone .workspace-overview svg{color:var(--desktop-column-a
 .workspace-zone:focus-visible{outline:1px solid var(--text-muted);outline-offset:-4px}
 .desktop-folder[hidden]{display:none!important}
 
+/* The context header owns a strip above the canvas, including bounded focus.
+   It shares the dock insets rather than covering any window content. */
+.desktop-shell>.desktop-context-header{position:absolute;left:var(--workspace-left,0px);right:var(--workspace-right,0px);top:var(--workspace-top,0px);height:32px;z-index:750;border-radius:0;background:var(--sd-glass-face);backdrop-filter:blur(18px);color:var(--sd-glass-text)}
+body.areas-docked .desktop-shell>.workspace-zone{top:calc(var(--workspace-top,0px) + 32px)!important}
+body[data-theme] .desktop-context-header button.desktop-context-toggle{display:flex;align-items:center;gap:9px;width:100%;height:100%;min-width:0;padding:0 12px;border:1px solid var(--sd-glass-groove)!important;border-radius:0!important;corner-shape:square!important;background:var(--sd-glass-face)!important;color:var(--sd-glass-text)!important;box-shadow:inset 0 1px var(--sd-glass-edge)!important;text-align:left;--state-tone:var(--context-accent)!important}
+body[data-theme] .desktop-context-header button.desktop-context-toggle:hover{background:var(--sd-glass-hover)!important}
+body[data-theme] .desktop-context-header button.desktop-context-toggle:active{background:var(--sd-glass-down)!important}
+.desktop-context-icon{width:18px;height:18px;flex:none}
+.desktop-context-workspace,.desktop-context-separator{font-size:12px;color:var(--muted);flex:none}
+.desktop-context-current{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desktop-context-toggle[data-project="true"] :is(.desktop-context-current,.desktop-context-icon){color:color-mix(in srgb,var(--context-accent) 72%,var(--sd-glass-text))}
+.desktop-context-page{margin-left:auto;flex:none;font-size:11px;color:var(--muted)}
+.desktop-context-map-icon{width:15px;height:15px;flex:none;color:var(--muted)}
+body.secondary-area-canvas .desktop-context-header{display:none}
+@media(max-width:600px){.desktop-context-header button.desktop-context-toggle{gap:6px;padding-inline:8px}.desktop-context-workspace{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.desktop-context-map-icon{display:none}}
+
 /* Columns are places, each containing its own vertical stack of desktops. */
 .desktop-column-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:6px}
 .desktop-column-card{min-width:0;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);border-radius:0}

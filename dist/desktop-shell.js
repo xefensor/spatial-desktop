@@ -64,6 +64,7 @@ const glassMaterialSurfaceSelector = [
   ".package-window",
   ".notification-peek",
   ".toast",
+  ".desktop-context-header",
   ".app-frame .recessed-field",
   ".app-frame input[type=range]"
 ].join(",");
@@ -4702,6 +4703,11 @@ function setUniversalSearchOpen(open) {
   overlay.setAttribute("aria-hidden", String(!open));
   $(".desktop-shell").inert = open;
   document.body.classList.toggle("universal-search-open", open);
+  const contextToggle = $("#desktopContextToggle");
+  if (contextToggle) {
+    contextToggle.setAttribute("aria-expanded", String(open));
+    contextToggle.setAttribute("aria-pressed", String(open));
+  }
 
   if (open) {
     if (currentDisplayProfile === "dual") overlay.dataset.monitor = lastDesktopPointerX < window.innerWidth / 2 ? "left" : "right";
@@ -6050,6 +6056,16 @@ function updateDesktopPageUi() {
   $("#openWindowsTitle").textContent = context;
   button.setAttribute("aria-label", "Open " + context + " overview · Desktop " + page);
   button.title = "Overview · " + context + " · Desktop " + page + " · Super · Shift+scroll: switch columns";
+  const contextToggle = $("#desktopContextToggle");
+  if (contextToggle) {
+    $(".desktop-context-workspace", contextToggle).textContent = label;
+    $(".desktop-context-current", contextToggle).textContent = project?.name || "Workspace";
+    $(".desktop-context-page", contextToggle).textContent = "Desktop " + page;
+    $(".desktop-context-icon use", contextToggle).setAttribute("href", "#" + (project?.icon || workspaceProfiles[activeWorkspace].icon));
+    contextToggle.dataset.project = String(Boolean(project));
+    contextToggle.style?.setProperty("--context-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
+    contextToggle.setAttribute("aria-label", "Open desktop map · " + label + " / " + (project?.name || "Workspace") + " · Desktop " + page);
+  }
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
@@ -6221,6 +6237,10 @@ function migrateProjectDesktops() {
 function prepareDesktopPages() {
   migrateProjectDesktops();
   migrateDesktopColumns();
+  $("#desktopContextToggle").addEventListener("click", () => {
+    focusDesktop(false);
+    setUniversalSearchOpen(true);
+  });
   const workspace = $(".workspace-zone");
   workspace.addEventListener("pointerdown", event => {
     if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();

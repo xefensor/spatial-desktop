@@ -52,7 +52,7 @@ assert.equal(JSON.stringify(migration.desktopPages.snapshot()),migrated);
 // Exercise real scene navigation and visibility, using reduced motion to settle synchronously.
 const classes=()=>({contains:()=>false,add(){},remove(){},toggle(){}});
 const nodes={};
-const node=key=>nodes[key] ||= {hidden:true,dataset:{},style:{setProperty(){}},classList:classes(),setAttribute(){},removeAttribute(){},focus(){},clientHeight:800,clientWidth:1000,children:[]};
+const node=key=>nodes[key] ||= {hidden:true,dataset:{},style:{setProperty(){}},classList:classes(),setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){},clientHeight:800,clientWidth:1000,children:[]};
 const frames=Object.fromEntries(['personal','draft'].map(name=>[name,{...node(name),dataset:{appFrame:name},style:{zIndex:20}}]));
 const ctx=vm.createContext({
   desktopPages:Pages.create(),desktopWheel:Pages.wheelGate(),desktopColumnWheel:Pages.wheelGate(),
@@ -82,12 +82,17 @@ vm.runInContext(slice('function detachDraggedDesktopWindow(', '// A floating win
 ctx.desktopPages.assign('work','personal',0,'workspace');
 ctx.desktopPages.assign('work','draft',0,'site');
 ctx.syncApps();ctx.keepPersistentAreasVisible();
+assert.equal(node('.desktop-context-current').textContent,'Workspace');
+assert.equal(node('#desktopContextToggle')['aria-label'],'Open desktop map · Work / Workspace · Desktop 1');
 assert.equal(frames.personal.hidden,false);assert.equal(frames.draft.hidden,true);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'true');
 assert.equal(ctx.changeDesktopColumn('site'),true);
+assert.equal(node('.desktop-context-current').textContent,'Website Launch');
+assert.equal(node('#desktopContextToggle').dataset.project,'true');
 assert.equal(frames.personal.hidden,true);assert.equal(frames.draft.hidden,false);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'false');
 assert.equal(ctx.appState.personal,'open');
 assert.equal(ctx.changeDesktopColumn('unknown'),false);
 ctx.changeDesktopPage(1,false);
+assert.equal(node('.desktop-context-page').textContent,'Desktop 2');
 ctx.changeDesktopColumn('workspace');
 ctx.changeDesktopColumn('site');
 assert.equal(ctx.desktopPages.current('work'),1);
