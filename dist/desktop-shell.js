@@ -2304,6 +2304,7 @@ let lastDesktopPointerX = window.innerWidth / 2;
 const autoWindowAvoidance = new Map();
 const baseDockLaneRects = new Map();
 const autoSpatialEdgeStates = new Map();
+let systemRailExpansion = null;
 let baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
 let autoAvoidanceSource = null;
 let spatialLayoutFrame = 0;
@@ -3007,6 +3008,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   });
   captureBaseDockLaneRects();
   applyAutoAvoidance();
+  applySystemRailExpansion(width, height);
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
   if (areasFollowWindows() && fitWindows && !windowViewportLockReady) scheduleWindowFit();
@@ -3034,6 +3036,7 @@ function showArea(name, announce = true) {
 
 function setDockPosition(name, edge, insertion = null, announce = true) {
   if (!dockEdges.includes(edge)) return;
+  if (name === "systems") endSystemRailExpansion(false);
   manualAreaOverride(name);
   const previousEdge = dockState[name].edge;
   dockState[name].edge = edge;
@@ -3117,6 +3120,7 @@ function bindDockResize(name, area) {
   if (!handle) return;
   handle.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
+    if (name === "systems") endSystemRailExpansion(false);
     event.preventDefault();
     event.stopPropagation();
     const shellRect = $(".desktop-shell").getBoundingClientRect();
@@ -4156,6 +4160,7 @@ function prepareOverviewViews() {
 }
 
 function renderWorkspace(name, announce = true) {
+  if (name !== activeWorkspace) endSystemRailExpansion(false);
   const profile = workspaceProfiles[name];
   if (!profile) return;
   if (name !== activeWorkspace && !desktopSyncApplying) captureCurrentWorkspaceSession();
@@ -5285,23 +5290,85 @@ function setFocusRunning(running) {
 }
 
 // Rails use the same workspace state as their expanded widgets.
-function revealSystemRailWidget(selector) {
-  manualAreaOverride("systems");
+function systemRailExpansionOwns(target) {
+  if (areaFor("systems")?.contains(target)) return true;
+  // A context menu opened by the panel is still part of its current task.
+  return Boolean(target?.closest?.("#desktopContextMenu") &&
+    (contextMenuState?.name === "systems" || areaFor("systems")?.contains(contextMenuState?.element)));
+}
+
+function endSystemRailExpansion(reflow = true) {
+  if (!systemRailExpansion) return;
+  systemRailExpansion = null;
+  const area = areaFor("systems");
+  delete area.dataset.railExpanded;
+  if (reflow) {
+    if (area.contains(document.activeElement)) document.activeElement.blur();
+    layoutDockAreas(false, false);
+  }
+}
+
+function applySystemRailExpansion(width, height) {
+  if (!systemRailExpansion) return;
+  const area = areaFor("systems");
   const edge = dockState.systems.edge;
+  if (systemRailExpansion.workspace !== activeWorkspace || systemRailExpansion.edge !== edge ||
+      area.hidden || !isLocalArea("systems") || area.dataset.areaState !== "rail") {
+    endSystemRailExpansion(false);
+    return;
+  }
   const vertical = edge === "left" || edge === "right";
-  dockSizes[edge] = Math.max(dockSizes[edge], vertical ? 280 : 250);
-  dockSizeManual[edge] = true;
-  autoSpatialEdgeStates.delete(edge);
-  showArea("systems", false);
-  refreshIntentAreas();
-  requestAnimationFrame(() => {
-    const widget = $(selector);
-    if (widget && !widget.hidden) {
-      widget.tabIndex = -1;
-      widget.focus({ preventScroll: true });
-      widget.scrollIntoView({ block: "nearest" });
-    }
+  const thickness = Math.min(vertical ? width : height, vertical ? 280 : 250);
+  const base = {
+    x: parseFloat(area.style.left) || 0,
+    y: parseFloat(area.style.top) || 0,
+    width: parseFloat(area.style.width),
+    height: parseFloat(area.style.height),
+    joinEdge: area.dataset.areaJoinEdge
+  };
+  area.dataset.areaState = "expanded";
+  area.dataset.railExpanded = "true";
+  applyDockRect("systems", {
+    ...base,
+    x: edge === "right" ? width - thickness : base.x,
+    y: edge === "bottom" ? height - thickness : base.y,
+    width: vertical ? thickness : base.width,
+    height: vertical ? base.height : thickness
   });
+  area.style.zIndex = "230";
+}
+
+function revealSystemRailWidget(selector) {
+  const area = areaFor("systems");
+  if (area.dataset.areaState === "rail") {
+    systemRailExpansion = { workspace: activeWorkspace, edge: dockState.systems.edge, trigger: document.activeElement };
+    layoutDockAreas(false, false);
+  } else if (area.hidden) showArea("systems", false);
+  const expansion = systemRailExpansion;
+  requestAnimationFrame(() => {
+    if (expansion && expansion !== systemRailExpansion) return;
+    const widget = $(selector);
+    const focusTarget = widget && !widget.hidden ? widget : $(".system-scroll-region", area);
+    focusTarget.tabIndex = -1;
+    focusTarget.focus({ preventScroll: true });
+    focusTarget.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function prepareSystemRailExpansion() {
+  const leave = event => {
+    if (systemRailExpansion && !systemRailExpansionOwns(event.target)) endSystemRailExpansion();
+  };
+  document.addEventListener("pointerdown", leave, { capture: true });
+  document.addEventListener("focusin", leave, { capture: true });
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape" || !systemRailExpansion || !$("#desktopContextMenu").hidden) return;
+    const trigger = systemRailExpansion.trigger;
+    endSystemRailExpansion();
+    trigger?.focus({ preventScroll: true });
+    event.preventDefault();
+  });
+  window.addEventListener("blur", () => endSystemRailExpansion());
 }
 $("#systemRailNotifications").addEventListener("click", () => revealSystemRailWidget("#notificationWidget"));
 $("#systemRailCalendar").addEventListener("click", () => revealSystemRailWidget(".calendar-widget"));
@@ -5342,11 +5409,7 @@ $("#notificationList").addEventListener("click", event => {
 
 $("#notificationPeek").addEventListener("click", () => {
   hideNotificationPeek();
-  showArea("systems", false);
-  const newest = $(".notification", $("#notificationList"));
-  if (newest && areaFor("systems")?.dataset.areaState === "expanded") {
-    requestAnimationFrame(() => newest.scrollIntoView({ block: "nearest" }));
-  }
+  revealSystemRailWidget("#notificationWidget");
 });
 
 $$('[data-phone-ping]').forEach(button => button.addEventListener("click", () => {
@@ -6632,6 +6695,7 @@ document.addEventListener('change', event => {
 
 prepareNoteSync();
 prepareAreaWindows();
+prepareSystemRailExpansion();
 prepareProjectSpaces();
 prepareDesktopPages();
 prepareOverviewViews();
