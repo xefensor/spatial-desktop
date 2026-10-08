@@ -6838,7 +6838,7 @@ body[data-theme="light"] :where(button,input,textarea,select,[tabindex]):focus-v
 /* v122 — A single restrained LED on the System Area confirms that another
    fullscreen Site window is participating in the same local desktop session. */
 .systems-zone .area-window-icon{position:relative}
-body.is-session-synced .systems-zone .area-window-icon::after{
+body.is-session-synced .systems-zone .area-window-icon::before{
   content:"";
   position:absolute;
   right:2px;
@@ -6849,7 +6849,7 @@ body.is-session-synced .systems-zone .area-window-icon::after{
   background:#64dff2;
   box-shadow:0 0 4px rgba(100,223,242,.72);
 }
-body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::after{
+body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::before{
   background:#087f9d;
   box-shadow:0 0 3px rgba(8,127,157,.36);
 }

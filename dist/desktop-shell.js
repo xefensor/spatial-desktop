@@ -87,7 +87,7 @@ const materialFieldSelector = [
 
 const materialElementSelector = [
   ".app-badge",
-  ".area-window-icon",
+  ".area-window-icon:not(button)",
   ".area-list-icon",
   ".universal-symbol",
   ".universal-file-icon",
