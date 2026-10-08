@@ -1,8 +1,8 @@
 /* Material owns the silhouette. Important declarations in this layer take
    precedence over legacy component shapes, including nested glass in ABS. */
 @layer material-shapes {
-  /* Every surface owns its contents, including unclassified preview displays
-     and app panels. Nested material surfaces reset the inherited geometry. */
+  /* Layout joins stay square inside every surface. Discrete ABS controls and
+     outer windows receive their own squircle below. */
   :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
       .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet) {
     --material-content-radius:0px;
@@ -10,8 +10,8 @@
   }
   :is(.material-surface-abs,.abs-example,.abs-surface,.abs-side,
       .intro-copy,.rule-card,.abs-menu,.abs-banner,.dolphin-window,.music-window,.plasma-rail) {
-    --material-content-radius:var(--window-control-corner,10px);
-    --material-content-shape:squircle;
+    --material-content-radius:0px;
+    --material-content-shape:square;
   }
   :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
       .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet,
@@ -39,6 +39,18 @@
       .music-window .recess-field,.rail-key,.shell-key) {
     border-radius:var(--window-control-corner,10px)!important;
     corner-shape:squircle!important;
+  }
+
+  /* An editor or selectable row is part of the document, even when it also
+     carries a field/button material class. Avoid rounded seams between panes. */
+  :is(.app-frame,.package-window) :where(
+      .app-titlebar,.app-toolbar,.browser-toolbar,.music-controls,.app-status,
+      .app-body,.files-module,.places-sidebar,.file-well,.file-head,.file-list,
+      .music-hero,.playlist,.start-page,.terminal-screen,
+      .notes-layout,.notes-layout nav,.notes-layout textarea,
+      .package-panel,.import-map,.content-row) {
+    border-radius:0!important;
+    corner-shape:square!important;
   }
 
   :is(.material-surface-glass,.material-glass-button,.material-glass-field,.material-glass-element,
