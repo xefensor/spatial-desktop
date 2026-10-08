@@ -35,7 +35,10 @@
       .notification,.timer-face,.next-event,.device-row,
       .project-closed-state,.project-library-list,.linked-type,
       .overview-task-meta,.overview-task-desktop,.package-size,
-      .package-panel,.import-map,.import-tree>span,.import-hero,.import-grid) {
+      .package-panel,.import-map,.import-tree>span,.import-hero,.import-grid,
+      .mini-location,.live-slit,.widget-heading>span,.timer-progress,.timer-progress>i,
+      .battery-track,.battery-track>i,.overview-track,.overview-category-field,
+      .overview-area-row,.context-menu-title,.app-key>i,.next-event>i) {
     border-radius:0!important;
     corner-shape:square!important;
   }
