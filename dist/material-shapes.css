@@ -1,20 +1,22 @@
 /* Material owns the silhouette. Important declarations in this layer take
    precedence over legacy component shapes, including nested glass in ABS. */
 @layer material-shapes {
-  /* The sheet owns all of its contents, including unclassified preview
-     displays. A component does not need a material class to stay square.
-     Explicit ABS objects below override this inherited glass geometry. */
+  /* Every surface owns its contents, including unclassified preview displays
+     and app panels. Nested material surfaces reset the inherited geometry. */
   :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
       .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet) {
     --material-content-radius:0px;
     --material-content-shape:square;
   }
-  .material-surface-abs {
+  :is(.material-surface-abs,.abs-example,.abs-surface,.abs-side,
+      .intro-copy,.rule-card,.abs-menu,.abs-banner,.dolphin-window,.music-window,.plasma-rail) {
     --material-content-radius:var(--window-control-corner,10px);
     --material-content-shape:squircle;
   }
   :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
-      .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet)
+      .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet,
+      .material-surface-abs,.abs-example,.abs-surface,.abs-side,
+      .intro-copy,.rule-card,.abs-menu,.abs-banner,.dolphin-window,.music-window,.plasma-rail)
       :where(*):not(:where(
         .material-surface-abs,
         .app-art,.app-art *, .app-tile,.app-tile *, .mini-art,.mini-art *,
