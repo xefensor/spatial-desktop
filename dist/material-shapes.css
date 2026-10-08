@@ -1,6 +1,30 @@
 /* Material owns the silhouette. Important declarations in this layer take
    precedence over legacy component shapes, including nested glass in ABS. */
 @layer material-shapes {
+  /* The sheet owns all of its contents, including unclassified preview
+     displays. A component does not need a material class to stay square.
+     Explicit ABS objects below override this inherited glass geometry. */
+  :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
+      .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet) {
+    --material-content-radius:0px;
+    --material-content-shape:square;
+  }
+  .material-surface-abs {
+    --material-content-radius:var(--window-control-corner,10px);
+    --material-content-shape:squircle;
+  }
+  :is(.material-surface-glass,.desktop-glass-dialog,.glass-surface,.glass-side,
+      .glass-menu,.glass-banner,.glass-row,.guide-nav,.theme-switch,.mobile-queue-sheet)
+      :where(*):not(:where(
+        .material-surface-abs,
+        .app-art,.app-art *, .app-tile,.app-tile *, .mini-art,.mini-art *,
+        .online-dot,.theme-dot,.link-badge,
+        .folder-glyph,.document-glyph,
+        .overview-window-titlebar>i,.overview-mini-browser>i,
+        svg,svg *)) {
+    border-radius:var(--material-content-radius,0px)!important;
+    corner-shape:var(--material-content-shape,square)!important;
+  }
   :is(.material-surface-abs,.abs-example,.abs-surface,.intro-copy,.rule-card,.abs-menu,.abs-banner,
       .dolphin-window,.music-window,.plasma-rail) {
     border-radius:var(--window-corner,22px)!important;
@@ -27,22 +51,7 @@
     border-radius:0!important;
     corner-shape:square!important;
   }
-  /* Content is joined to the glass sheet, including small keys and badges.
-     App artwork and status dots keep the shapes of the symbols they depict. */
-  :is(.material-surface-glass,.desktop-glass-dialog) :where(
-      header,footer,section,article,nav,form,kbd,
-      .universal-search-shell,.workspace-context-card,.app-rack,
-      .notification,.timer-face,.next-event,.device-row,
-      .project-closed-state,.project-library-list,.linked-type,
-      .overview-task-meta,.overview-task-desktop,.package-size,
-      .package-panel,.import-map,.import-tree>span,.import-hero,.import-grid,
-      .mini-location,.live-slit,.widget-heading>span,.timer-progress,.timer-progress>i,
-      .battery-track,.battery-track>i,.overview-track,.overview-category-field,
-      .overview-area-row,.context-menu-title,.app-key>i,.next-event>i) {
-    border-radius:0!important;
-    corner-shape:square!important;
-  }
-  :is(.material-glass-button,.glass-button,.glass-tab)::after {
+  :is(.material-surface-glass,.material-glass-button,.glass-button,.glass-tab)::after {
     border-radius:0!important;
     corner-shape:square!important;
   }
