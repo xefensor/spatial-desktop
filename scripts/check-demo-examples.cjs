@@ -86,19 +86,19 @@ assert.equal(D.seedWorkspaces(freshScene.storage), true);
 const sceneApps = freshScene.read('spatial-workspace-app-states-v1');
 const sceneAreas = freshScene.read('spatial-workspace-area-layouts-v1');
 const sceneProjects = freshScene.read('spatial-workspace-project-states-v1');
-assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin']);
+assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin', 'notes']);
 assert.equal(sceneProjects.general.project, null);
-assert.equal(sceneAreas.general.hidden.projects, true);
+assert.equal(sceneAreas.general.hidden.projects, false);
 assert.equal(sceneProjects.school.project, 'research');
-assert.equal(sceneAreas.school.state.apps.edge, 'bottom');
-assert.equal(sceneAreas.work.state.projects.edge, 'right');
-assert.equal(sceneProjects.work.mode, 'prototype');
+assert.equal(sceneAreas.school.state.apps.edge, 'left');
+assert.equal(sceneAreas.work.state.projects.edge, 'left');
+assert.equal(sceneProjects.work.mode, 'default');
 assert.equal(sceneApps.gaming.elisa, 'minimized');
 assert.equal(sceneAreas.gaming.sizes.right, 70);
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
-assert.equal(tiles['work:plasma:prototype:1'].root.axis, 'y');
-assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:plasma:prototype:1'].root), ['browser', 'terminal']);
+assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
+assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'terminal--demo-site-server']);
 freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));
 assert.equal(D.seedWorkspaces(freshScene.storage), false);
 assert.deepEqual(freshScene.read('spatial-workspace-app-states-v1'), { general: { notes: 'open' } });
@@ -116,12 +116,12 @@ assert.deepEqual(customScene.read('spatial-workspace-app-states-v1').work, { not
 assert.deepEqual(customScene.read('spatial-workspace-area-layouts-v1').work, { sizes: { left: 330 } });
 assert.equal(customScene.read('spatial-project-spaces-v2').plasma.note, 'My draft');
 assert.equal(customScene.read('spatial-workspace-area-contents-v1').general.noteDraft, 'Keep this text');
-assert(customScene.storage.getItem('spatial-demo-scenes-backup-v1'));
+assert(customScene.storage.getItem('spatial-demo-columns-backup-v1'));
 const emptyLibrary = sceneStore({ 'spatial-project-spaces-v2': '{}' });
 D.seedWorkspaces(emptyLibrary.storage);
 assert.deepEqual(emptyLibrary.read('spatial-project-spaces-v2'), {});
 assert.equal(emptyLibrary.read('spatial-workspace-project-states-v1').school.project, null);
-assert.equal(emptyLibrary.read('spatial-workspace-area-layouts-v1').school.hidden.projects, true);
+assert.equal(emptyLibrary.read('spatial-workspace-area-layouts-v1').school.hidden.projects, false);
 assert.equal(D.migrateProject('plasma', { ...D.projects.plasma, root: '/home/demo/Projects/website-launch', originWorkspace: 'general' }).originWorkspace, 'work');
 console.log('Demo scenes passed: distinct activities, one General window, no empty Project Area, single-mode research, one-time migration, custom data and deleted library.');
 
@@ -175,6 +175,7 @@ console.log('Desktop storage adapter passed: active project, window sessions, de
 
 // Workspace project selection is independent; project definitions remain shared.
 const isolated = storageAdapter({
+  'spatial-project-spaces-v2': JSON.stringify({plasma:oldWebsite,retold:oldFilm}),
   'spatial-workspace-project-states-v1': JSON.stringify({
     general: { project: 'plasma', mode: 'visual' },
     school: { project: null, mode: null },
@@ -295,3 +296,58 @@ const multipleReload = storageAdapter(Object.fromEntries(multiple.storage));
 assert.deepEqual(JSON.parse(multipleReload.storage.get('spatial-open-projects-v1')).general,['plasma','retold']);
 assert.deepEqual(JSON.parse(multipleReload.storage.get('spatial-open-projects-v1')).school,[]);
 console.log('Open projects persist across reload with independent workspace lists.');
+
+// Native column snapshots must survive without the legacy Mode migration.
+const columnPages=require('../dist/desktop-pages.js').create(freshScene.read('spatial-desktop-pages-v1'));
+const independent=freshScene.read('spatial-independent-sessions-v1');
+assert.deepEqual(freshScene.read('spatial-open-projects-v1').work,['plasma','retold']);
+assert.equal(columnPages.column('work'),'plasma');
+for (const [workspace,example] of Object.entries(D.scenarios)) {
+  for (const column of example.windows) {
+    for (const window of column.windows) {
+      assert.equal(columnPages.columnOf(workspace,window.id),column.column);
+      assert.equal(columnPages.pageOf(workspace,window.id),window.page);
+      assert.equal(independent.membership[workspace][window.id],column.column==='workspace'?null:column.column);
+      if (window.id!==window.base) assert.equal(independent.instances[window.id],window.base);
+    }
+  }
+}
+assert.equal(columnPages.pageOf('work','notes--demo-site-checklist'),1);
+assert.equal(columnPages.columnOf('work','notes--demo-film-cut'),'retold');
+assert.notEqual(D.projectWindows.plasma.find(w=>w.base==='notes').content.note,D.projectWindows.retold.find(w=>w.base==='notes').content.note);
+assert.equal(sceneApps.work['elisa--demo-film-soundtrack'],'minimized');
+assert(freshScene.read('spatial-demo-columns-backup-v1'));
+
+// Exercise the actual per-window content renderer and input restoration.
+const demoFrames={};
+for (const column of D.scenarios.work.windows) for (const spec of column.windows) {
+  const fields=[{value:'old generic content',checked:false}];
+  const parts={};
+  demoFrames[spec.id]={dataset:{},fields,parts,querySelectorAll:()=>fields};
+}
+const contentCtx=vm.createContext({
+  SpatialDemoExamples:D,activeWorkspace:'work',workspaceProfiles:{work:{home:'/home/demo/Workspaces/Work'}},
+  appInfo:Object.fromEntries(D.scenarios.work.windows.flatMap(c=>c.windows.map(w=>[w.id,{label:w.base,...(w.id!==w.base?{base:w.base}:{})}]))),
+  frameFor:id=>demoFrames[id],
+  $:(selector,frame=demoFrames.notes)=>{
+    if(selector.includes('textarea') || selector.includes('input')) return frame.fields[0];
+    return frame.parts[selector] ||= {parts:{},fields:frame.fields,textContent:'',innerHTML:'',value:'',insertAdjacentHTML(position,html){this.innerHTML=html;}};
+  },$$:()=>[],escapeHtml:x=>String(x).replaceAll('<','&lt;'),prepareControlSemantics(){},
+  workspaceContent:{work:{frames:{'notes--demo-film-cut':[{value:'My edited film note'}]},note:'My studio planning'}},
+  pristineFrames:Object.fromEntries(Object.keys(D.scenarios.work.apps).filter(id=>!id.includes('--')).map(id=>[id,{querySelectorAll:()=>[{value:'pristine default'}]}])),
+  workspaceAreaContents:{},noteDraft:'',terminalPreview:'',focusSeconds:1500,focusRunning:false,focusTimer:0,
+  areaFor:()=>({querySelectorAll:()=>[]}),clearInterval(){},updateTimer(){},setMusicPlaying(){},renderWorkspaceHistory(){}
+});
+for (const id of ['terminal','dolphin','elisa']) contentCtx.appInfo[id] = {label:id};
+vm.runInContext(slice('function renderDemoAppExample(', 'function renderWorkspaceExample('),contentCtx);
+for (const column of D.scenarios.work.windows) for (const spec of column.windows) contentCtx.renderDemoAppExample(spec.id,spec.content);
+assert.match(demoFrames['notes--demo-film-cut'].fields[0].value,/station transition/);
+assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/contact form/);
+assert.equal(demoFrames['dolphin--demo-film-footage'].fields[0].value,D.projects.retold.root);
+assert.match(demoFrames['browser--demo-site-preview'].parts['.start-page'].innerHTML,/Northstar Studio/);
+vm.runInContext(slice('function restoreWorkspaceContent(', 'const originalCaptureWorkspace'),contentCtx);
+contentCtx.restoreWorkspaceContent('work');
+assert.equal(demoFrames['notes--demo-film-cut'].fields[0].value,'My edited film note');
+assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/contact form/,'Unsaved example fields retain their specific initial content');
+assert.equal(demoFrames.notes.fields[0].value,'My studio planning');
+console.log('Column examples passed: multiple open projects, distinct identities/content, two desktops, minimized soundtrack, native ownership, backups and edited note restoration.');

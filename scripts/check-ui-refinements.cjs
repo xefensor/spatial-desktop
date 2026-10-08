@@ -153,9 +153,9 @@ console.log('Toggle semantics passed: project cards, app navigation, tabs, radio
 // its light. Reproduce Home -> Documents -> Home without clicking a Place.
 const places = ['Home','Downloads','Documents'].map(label => controlFixture(['nav-choice'], {'aria-pressed':'false'}, absApp));
 places.forEach((fixture,index) => {fixture.button.textContent = ['Home','Downloads','Documents'][index];});
-const placesCtx = vm.createContext({$$: () => places.map(fixture => fixture.button), frameFor: () => absApp, example: {folder:'Home'}});
-const placesSync = source.slice(source.indexOf('  $$(".places-list .nav-choice", frameFor("dolphin")).forEach'), source.indexOf('  const activeTab = $(".folder-tab.is-active", frameFor("dolphin"));'));
-for (const [folder,selected] of [['Home','Home'],['Documents/School','Documents'],['Home','Home']]) {
+const placesCtx = vm.createContext({$$: () => places.map(fixture => fixture.button), frame: absApp, activeWorkspace:'general',workspaceProfiles:{general:{home:'/home/demo'}},example:{folder:'/home/demo'}});
+const placesSync = source.slice(source.indexOf('    $$(".places-list .nav-choice", frame).forEach'), source.indexOf('    $(".app-status span", frame).textContent'));
+for (const [folder,selected] of [['/home/demo','Home'],['/home/demo/Documents/School','Documents'],['/home/demo','Home']]) {
   placesCtx.example.folder = folder;
   vm.runInContext(placesSync, placesCtx);
   for (const fixture of places) {

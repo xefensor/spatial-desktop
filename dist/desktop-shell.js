@@ -3577,7 +3577,10 @@ function projectModeGeometry(layout, index, count) {
 function seedProjectModeWindows(name, modeId) {
   const mode = projectSpaces[name]?.modes[modeId];
   if (!mode) return 0;
-  const names = mode.apps.map(base => {
+  const definition = SpatialDemoExamples.projects[name];
+  const example = modeId === "default" && definition?.name === projectSpaces[name].name && definition?.root === projectSpaces[name].root ? SpatialDemoExamples.projectWindows[name] : null;
+  const specs = example || mode.apps.map(base => ({base, page:desktopPages.current(activeWorkspace, name), state:"open"}));
+  const names = specs.map(({base}) => {
     if (appState[base] === 'closed' && (!(base in desktopPages.space(activeWorkspace).owners) || desktopPages.columnOf(activeWorkspace, base) === name)) return base;
     const id = base + '--' + (++instanceSequence);
     instanceDefinitions[id] = appInfo[base].base || base;
@@ -3588,12 +3591,16 @@ function seedProjectModeWindows(name, modeId) {
     if (!appInfo[appName]) return;
     windowMembership[activeWorkspace] ||= {};
     windowMembership[activeWorkspace][appName] = name;
-    appState[appName] = "open";
-    desktopPages.assign(activeWorkspace, appName, desktopPages.current(activeWorkspace, name), name);
+    const spec = specs[index];
+    appState[appName] = spec.state;
+    desktopPages.assign(activeWorkspace, appName, spec.page, name);
+    if (spec.content) renderDemoAppExample(appName, spec.content);
     saveDesktopPages();
     displayAssignmentsFor().apps[appName] = 1;
     appMaximizedState[appName] = false;
-    windowGeometry.set(appName, projectModeGeometry(mode.layout, index, names.length));
+    const peers = specs.filter(spec => spec.page === specs[index].page && spec.state === "open");
+    const peerIndex = specs.slice(0,index).filter(spec => spec.page === specs[index].page && spec.state === "open").length;
+    windowGeometry.set(appName, projectModeGeometry(mode.layout, peerIndex, Math.max(1,peers.length)));
   });
   syncApps();
   names.forEach(appName => {
@@ -3603,6 +3610,7 @@ function seedProjectModeWindows(name, modeId) {
   if (frontApp && isLocalApp(frontApp)) bringToFront(frontApp);
   saveLayout();
   persistDisplayAssignments();
+  captureWorkspaceContent();
   return names.length;
 }
 
@@ -4294,40 +4302,63 @@ function renderWorkspace(name, announce = true) {
   if (announce) showToast(profile.label + " workspace loaded");
 }
 
+function renderDemoAppExample(id, example) {
+  const frame = frameFor(id);
+  if (!frame || !example) return;
+  const key = activeWorkspace + ":" + JSON.stringify(example);
+  if (frame.dataset.demoExample === key) return;
+  frame.dataset.demoExample = key;
+  $(".app-identity small", frame).textContent = example.shortTitle;
+  appInfo[id].detail = example.shortTitle;
+  if (appInfo[id].base) appInfo[id].label = appInfo[appInfo[id].base].label + " · " + example.shortTitle;
+  if (example.note !== undefined) {
+    $(".notes-layout .nav-choice", frame).textContent = example.shortTitle;
+    $(".notes-layout textarea", frame).value = example.note;
+  }
+  if (example.browser) {
+    const page = example.browser;
+    $(".browser-toolbar input", frame).value = example.address || page.subtitle;
+    $(".start-page", frame).innerHTML = '<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(page.subtitle) + '</span><h2>' + escapeHtml(page.title) + '</h2><p>' + escapeHtml(page.intro) + '</p><div class="site-grid">' + page.links.map(label => '<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>').join('') + '</div><section class="demo-page-detail"><h3>' + escapeHtml(example.shortTitle) + '</h3><p>' + escapeHtml(page.detail || page.intro) + '</p></section></div>';
+  }
+  if (example.folder) {
+    $(".address-bar input", frame).value = example.folder;
+    $(".file-list", frame).innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join('');
+    const tab = $(".folder-tab.is-active", frame);
+    if (tab) tab.innerHTML = escapeHtml(example.folder.split('/').at(-1) || "Home") + '<span>×</span>';
+    $$(".places-list .nav-choice", frame).forEach(choice => {
+      const selected = choice.textContent.trim() === (example.folder === workspaceProfiles[activeWorkspace].home ? "Home" : example.folder.includes('/Documents') ? "Documents" : "");
+      choice.classList.toggle("is-active", selected);
+      choice.setAttribute("aria-pressed", String(selected));
+    });
+    $(".app-status span", frame).textContent = example.files.length + " items";
+  }
+  if (example.terminal) {
+    const terminal = $(".terminal-screen", frame);
+    $$("p", terminal).forEach(line => line.remove());
+    $("label", terminal).insertAdjacentHTML("beforebegin", '<p><b>demo@desktop</b>:<i>' + escapeHtml(example.terminal.path) + '</i>$ ' + escapeHtml(example.terminal.command) + '</p><p class="terminal-output">' + escapeHtml(example.terminal.output).replaceAll('\n','<br>') + '</p>');
+  }
+  if (example.music) {
+    $(".track-copy h2", frame).textContent = example.music.title;
+    $(".track-copy p", frame).textContent = example.music.artist;
+    $(".album-block span", frame).textContent = example.shortTitle;
+    $(".playlist", frame).innerHTML = example.music.tracks.map((track,index) => '<button class="content-row' + (index === 0 ? ' is-selected' : '') + '"><span>' + String(index+1).padStart(2,'0') + ' · ' + escapeHtml(track) + '</span><small>' + escapeHtml(example.music.artist) + '</small><small>3:38</small></button>').join('');
+  }
+  prepareControlSemantics(frame);
+}
+
 function renderWorkspaceExample(name) {
   const example = SpatialDemoExamples.scenarios[name];
   if (!example) return;
-  const profile = workspaceProfiles[name];
-  const path = example.folder === "Home" ? profile.home : profile.home + "/" + example.folder;
-  $("#dolphinContext").textContent = profile.label + " · " + example.folder;
-  $(".address-bar input").value = path;
-  appInfo.dolphin.detail = example.folder;
-  const browser = frameFor("browser");
-  $(".app-identity small", browser).textContent = example.browser.subtitle;
-  $(".browser-toolbar input", browser).value = name === "work" ? "localhost:5173 · Northstar Studio" : example.browser.subtitle;
-  appInfo.browser.detail = example.browser.title;
-  $(".start-page", browser).innerHTML = '<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(example.browser.subtitle) + '</span><h2>' + escapeHtml(example.browser.title) + '</h2><p>' + escapeHtml(example.browser.intro) + '</p><div class="site-grid">' + example.browser.links.map(label => '<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>').join("") + '</div><section class="demo-page-detail"><h3>' + (name === "school" ? "Compare sites fairly" : name === "work" ? "Built for the people who use it" : name === "gaming" ? "Tonight’s plan" : "Your everyday tools") + '</h3><p>' + (name === "school" ? "Record the same number of samples at each site. Note the time of day, temperature and recent rainfall. Separate your measured results from your interpretation." : name === "work" ? "Our latest courtyard renovation brings daylight into a family home. Local materials, flexible rooms and a sheltered garden make a modest space feel generous." : name === "gaming" ? "20:00 — join voice chat. 20:15 — choose the next co-op mission. Jamie and Morgan are online; Sam will join after dinner." : "Open a file or start another app when you need it. A project is optional — the desktop works without one.") + '</p></section></div>';
-  $(".app-identity small", frameFor("notes")).textContent = name === "school" ? "Field observations" : name === "work" ? "Launch checklist" : name === "gaming" ? "Game night" : "Personal notes";
-  appInfo.notes.detail = $(".app-identity small", frameFor("notes")).textContent;
-  $(".notes-layout .nav-choice").textContent = appInfo.notes.detail;
-  const terminal = $("#terminalScreen");
-  $$("p", terminal).forEach(line => line.remove());
-  $("#terminalInput").closest("label").insertAdjacentHTML("beforebegin", name === "work"
-    ? '<p><b>demo@desktop</b>:<i>~/Workspaces/Work/Projects/website-launch</i>$ npm run dev</p><p class="terminal-output">Northstar Studio · development preview<br>Build completed · no errors<br>Local: http://localhost:5173/<br>Watching source files for changes…</p>'
-    : '<p><b>demo@desktop</b>:<i>~</i>$ pwd</p><p class="terminal-output">' + escapeHtml(profile.home) + '</p>');
-  $(".app-identity small", frameFor("terminal")).textContent = name === "work" ? "Website Launch · dev server" : profile.label + " · Home";
-  appInfo.terminal.detail = name === "work" ? "Development server" : profile.label + " Home";
-  const files = $(".file-list", frameFor("dolphin"));
-  files.innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join("");
-  $$(".places-list .nav-choice", frameFor("dolphin")).forEach(choice => {
-    const selected = choice.textContent.trim() === (example.folder === "Home" ? "Home" : example.folder.startsWith("Documents") ? "Documents" : "");
-    choice.classList.toggle("is-active", selected);
-    choice.setAttribute("aria-pressed", String(selected));
-  });
-  const activeTab = $(".folder-tab.is-active", frameFor("dolphin"));
-  if (activeTab) activeTab.innerHTML = escapeHtml(example.folder.split("/").at(-1)) + '<span>×</span>';
-  $(".app-status span", frameFor("dolphin")).textContent = example.files.length + " items";
-  prepareControlSemantics(browser);
+  // Seeded identities keep their own content; switching columns never replaces
+  // a project’s notes with the workspace’s personal draft.
+  for (const column of example.windows) {
+    for (const window of column.windows) {
+      if (desktopPages.columnOf(name, window.id) !== column.column) continue;
+      renderDemoAppExample(window.id, window.content);
+    }
+  }
+  const personal = SpatialDemoExamples.workspaceWindows[name].find(window => window.base === "notes");
+  if (personal && !workspaceAreaContents[name]?.noteDraft) noteDraft = personal.content.note;
 }
 
 function persistWorkspaceNote() {
@@ -6915,13 +6946,13 @@ function restoreWorkspaceContent(name) {
     if (!frame) return;
     const defaults = [...pristineFrames[base].querySelectorAll('input,textarea,select,[contenteditable]')];
     [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].forEach((field, index) => {
-      const value = saved?.frames?.[id]?.[index]?.value ?? defaults[index]?.value ?? '';
+      const value = saved?.frames?.[id]?.[index]?.value ?? (frame.dataset.demoExample ? field.value : defaults[index]?.value ?? '');
       if (field.isContentEditable) field.innerHTML = saved?.frames?.[id]?.[index]?.value || '';
       else field.value = value;
       if (field.type === 'checkbox') field.checked = saved?.frames?.[id]?.[index]?.checked ?? defaults[index]?.checked ?? false;
     });
   });
-  noteDraft = saved?.note || '';
+  noteDraft = saved?.note ?? workspaceAreaContents[name]?.noteDraft ?? SpatialDemoExamples.workspaceWindows[name]?.find(window => window.base === 'notes')?.content.note ?? '';
   $('.notes-layout textarea').value = noteDraft;
   terminalPreview = saved?.terminal || 'Ready for a command';
   focusSeconds = saved?.focusSeconds ?? 25 * 60;

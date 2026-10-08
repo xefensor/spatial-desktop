@@ -153,12 +153,23 @@
     resources: [["Field guide.pdf", "Linked · School/Documents/Biology", "document", "i-note"], ["Survey map", "Linked · School/Pictures", "document", "i-web"]],
     activeMode: "study", modes: { study: { label: "Research", icon: "i-graduation", apps: ["browser"], layout: "canvas" } }
   };
+  const previousPublicProjects = JSON.parse(JSON.stringify(projects));
+  for (const project of Object.values(projects)) {
+    project.activeMode = "default";
+    project.modes = {default: {label: "Project", icon: project.icon, apps: [], layout: "canvas"}};
+  }
+  projects.plasma.modes.default.apps = ["browser", "terminal", "dolphin", "notes"];
+  projects.retold.modes.default.apps = ["dolphin", "notes", "elisa", "browser"];
+  projects.research.modes.default.apps = ["browser", "notes", "dolphin"];
+  projects.retold.summary = "Organise footage, review sound and collect cut feedback";
+  projects.retold.note = "Rough cut: 02:48. Check the station transition at 01:12 and reduce the music under dialogue. Keep review feedback on Desktop 2.";
+  projects.retold.files = [["Footage", "Source clips", "folder"], ["rough-cut.mp4", "Review copy · 02:48", "document"], ["edit-notes.md", "Cut feedback", "document"]];
   const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed" };
   const leaf = name => ({ kind: "window", name });
   const scene = (project, mode, apps, docks, sizes, tree, extras = {}) => ({
     project, mode, apps: { ...closedApps, ...apps }, tree,
     areas: { state: docks, sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
-      hidden: { projects: !project, apps: false, systems: false },
+      hidden: { projects: false, apps: false, systems: false },
       manual: { left: true, right: true, top: true, bottom: true }, layoutMode: "manual" }, ...extras
   });
   const scenarios = {
@@ -196,47 +207,118 @@
       })
   };
 
-  // A one-time refresh of the built-in demonstration scenes. Keep edited Project
-  // definitions and Workspaces attached to a custom Project. Retain the old scene
-  // data in a backup, and never reseed layouts on subsequent visits or switches.
+  // Columns replace Modes. Each window has one owner and an explicit desktop.
+  const reading = (title, subtitle, intro, links, detail) => ({title, subtitle, intro, links, detail});
+  const windowSpec = (id, base, page, content, state = "open") => ({id, base, page, content, state});
+  const projectWindows = {
+    plasma: [
+      windowSpec("browser--demo-site-preview", "browser", 0, {shortTitle:"Preview", browser: scenarios.work.browser, address:"http://localhost:5173/"}),
+      windowSpec("terminal--demo-site-server", "terminal", 0, {shortTitle:"Dev server", terminal:{path:projects.plasma.root, command:"npm run dev", output:"Northstar Studio · development preview\nBuild completed · no errors\nLocal: http://localhost:5173/\nWatching source files for changes…"}}),
+      windowSpec("dolphin--demo-site-files", "dolphin", 1, {shortTitle:"Source files", folder:projects.plasma.root, files:scenarios.work.files}),
+      windowSpec("notes--demo-site-checklist", "notes", 1, {shortTitle:"Launch checklist", note:scenarios.work.note})
+    ],
+    retold: [
+      windowSpec("dolphin--demo-film-footage", "dolphin", 0, {shortTitle:"Footage", folder:projects.retold.root, files:projects.retold.files}),
+      windowSpec("notes--demo-film-cut", "notes", 0, {shortTitle:"Edit notes", note:"Short Film · rough cut\n\n00:24 — hold the opening shot longer.\n01:12 — soften the station transition.\n02:06 — lower the music under dialogue.\n\nReview copy: rough-cut.mp4 · 02:48."}),
+      windowSpec("browser--demo-film-review", "browser", 1, {shortTitle:"Cut feedback", address:"Review board · Short Film", browser:reading("Rough cut review", "Short Film · feedback", "Collect notes on the 02:48 review copy. Keep the source footage on Desktop 1 while you compare feedback here.", ["Opening scene", "Station transition", "Dialogue mix", "Export checklist"], "Opening feels clear. The station cut at 01:12 needs a softer transition. Export the next preview after checking the dialogue mix.")}),
+      windowSpec("elisa--demo-film-soundtrack", "elisa", 1, {shortTitle:"Soundtrack", music:{title:"Station ambience", artist:"Short Film · production audio", tracks:["Station ambience", "Dialogue reference", "Closing theme"]}}, "minimized")
+    ],
+    research: [
+      windowSpec("browser--demo-study-reading", "browser", 0, {shortTitle:"Field guide", address:"Biology · field guide", browser:scenarios.school.browser}),
+      windowSpec("notes--demo-study-observations", "notes", 0, {shortTitle:"Observations", note:scenarios.school.note}),
+      windowSpec("dolphin--demo-study-evidence", "dolphin", 1, {shortTitle:"Survey evidence", folder:projects.research.root, files:projects.research.files})
+    ]
+  };
+  const workspaceWindows = {
+    general: [windowSpec("dolphin", "dolphin", 0, {shortTitle:"Home", folder:"/home/demo", files:scenarios.general.files}), windowSpec("notes", "notes", 1, {shortTitle:"Personal notes", note:scenarios.general.note})],
+    school: [windowSpec("browser", "browser", 0, {shortTitle:"Student portal", address:"School · student portal", browser:reading("This week at school", "School · student portal", "Course announcements, assignment dates and the timetable live in your workspace. Urban Ecology has its own project column.", ["Timetable", "Assignments", "Course announcements", "Library"], "Biology report due Friday. Bring the field observations to Thursday’s seminar.")}), windowSpec("notes", "notes", 1, {shortTitle:"Class planning", note:"Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology column."})],
+    work: [windowSpec("browser", "browser", 0, {shortTitle:"Studio desk", address:"Work · studio desk", browser:reading("Studio desk", "Work · daily administration", "Keep everyday studio planning here. Website Launch and Short Film are open beside this workspace, each with its own windows and desktops.", ["Meeting agenda", "Studio inbox", "Shared calendar", "Invoices"], "10:00 — weekly planning. 14:30 — website review. 16:00 — film feedback. Switch project tabs to return to the relevant work.")}), windowSpec("notes", "notes", 1, {shortTitle:"Studio planning", note:"Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their project columns."})],
+    gaming: [windowSpec("browser", "browser", 0, {shortTitle:"Game library", address:"Gaming · game library", browser:scenarios.gaming.browser}), windowSpec("elisa", "elisa", 0, {shortTitle:"Game-night mix", music:{title:"Evening Light", artist:"Northbound · game-night mix", tracks:["Evening Light", "City Lights", "Blue Horizon"]}}, "minimized"), windowSpec("notes", "notes", 1, {shortTitle:"Co-op planning", note:scenarios.gaming.note})]
+  };
+  const openProjects = {general:[], school:["research"], work:["plasma","retold"], gaming:[]};
+  for (const [workspace, example] of Object.entries(scenarios)) {
+    example.project = openProjects[workspace][0] || null;
+    example.mode = example.project ? "default" : null;
+    example.areas.hidden.projects = false;
+    example.windows = [{column:"workspace", windows:workspaceWindows[workspace]}, ...openProjects[workspace].map(column=>({column, windows:projectWindows[column]}))];
+    example.apps = {...closedApps};
+    example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
+  }
+  scenarios.school.areas.state.apps = {edge:"left",order:1};
+  scenarios.school.areas.sizes = {left:280,right:280,top:250,bottom:250};
+  scenarios.work.areas.state = {apps:{edge:"left",order:0},projects:{edge:"left",order:1},systems:{edge:"right",order:0}};
+  scenarios.work.areas.sizes = {left:280,right:280,top:250,bottom:250};
+  scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
+
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "2") return false;
-    const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1"];
-    const backup = Object.fromEntries(keys.map(key => [key, storage.getItem(key)]));
-    const values = Object.fromEntries(keys.map(key => [key, JSON.parse(storage.getItem(key) || "{}") ]));
-    const savedProjectsRaw = storage.getItem("spatial-project-spaces-v2");
-    const savedProjects = savedProjectsRaw === null ? JSON.parse(JSON.stringify(projects)) : JSON.parse(savedProjectsRaw || "{}");
-    // Introduce the new research example beside existing examples, but respect
-    // an intentionally empty project library and an existing custom research ID.
+    if (storage.getItem(versionKey) === "3") return false;
+    const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
+    const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
+    const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
+    const rawProjects = storage.getItem("spatial-project-spaces-v2");
+    const savedProjects = rawProjects === null ? JSON.parse(JSON.stringify(projects)) : JSON.parse(rawProjects || "{}");
     if (Object.keys(savedProjects).length && !savedProjects.research) savedProjects.research = JSON.parse(JSON.stringify(projects.research));
-    let refreshedActive = false;
-    for (const [name, example] of Object.entries(scenarios)) {
-      const previousProject = values[keys[2]][name]?.project || (name === (storage.getItem("spatial-active-workspace") || "general") ? storage.getItem("spatial-active-project-v1") : null);
-      if (previousProject && !["plasma", "retold", "research"].includes(previousProject)) continue;
-      const contextProject = savedProjects[example.project] ? example.project : null;
-      values[keys[0]][name] = JSON.parse(JSON.stringify(example.apps));
-      values[keys[1]][name] = JSON.parse(JSON.stringify(example.areas));
-      values[keys[1]][name].hidden.projects = !contextProject;
-      values[keys[2]][name] = { project: contextProject, mode: contextProject ? example.mode : null };
-      const legacyDraft = storage.getItem("spatial-note-draft-v1");
-      const personalDraft = name === "general" && legacyDraft !== null && legacyDraft !== note && legacyDraft !== legacyNote ? legacyDraft : example.note;
-      const noteValue = values[keys[3]][name]?.noteDraft ?? personalDraft;
-      values[keys[3]][name] = { noteDraft: noteValue, notifications: example.notifications,
-        focus: { running: false, seconds: 1500, visible: false, ...example.focus, savedAt: Date.now() },
-        hiddenWidgets: example.hiddenWidgets, scroll: { apps: 0, systems: 0, projects: 0 } };
-      for (const key of Object.keys(values[keys[4]])) if (key.startsWith(name + ":")) delete values[keys[4]][key];
-      const tileKey = [name, contextProject || "desktop", contextProject ? example.mode : "default", 1].join(":");
-      values[keys[4]][tileKey] = { root: JSON.parse(JSON.stringify(example.tree)), parked: {}, floating: {}, focus: Object.keys(example.apps).find(app => example.apps[app] === "open") };
-      delete values[keys[5]][name];
-      values[keys[6]][name] = { areas: { projects: 1, apps: 1, systems: 1 }, apps: Object.fromEntries(Object.keys(closedApps).map(app => [app, 1])) };
-      if (storage.getItem("spatial-active-workspace") === name) refreshedActive = true;
+    for (const [id, project] of Object.entries(savedProjects)) {
+      const before = previousPublicProjects[id], after = projects[id];
+      if (before && project.name === before.name && project.root === before.root && JSON.stringify(project.modes) === JSON.stringify(before.modes)) {
+        project.modes = JSON.parse(JSON.stringify(after.modes)); project.activeMode = "default";
+      }
     }
-    storage.setItem("spatial-demo-scenes-backup-v1", JSON.stringify(backup));
+    const independent = values["spatial-independent-sessions-v1"];
+    independent.instances ||= {}; independent.membership ||= {}; independent.projects ||= {}; independent.content ||= {};
+    for (const [workspace, example] of Object.entries(scenarios)) {
+      const existing = values["spatial-workspace-project-states-v1"][workspace]?.project;
+      const opened = values["spatial-open-projects-v1"][workspace] || [];
+      if ([existing,...opened].some(id=>id && (!projects[id] || (savedProjects[id] && (savedProjects[id].name !== projects[id].name || savedProjects[id].root !== projects[id].root))))) continue;
+      const columns = example.windows.filter(column=>column.column === "workspace" || savedProjects[column.column]);
+      const apps = {...closedApps}, owners = {}, pages = {};
+      independent.membership[workspace] = {};
+      const activeColumn = columns[1]?.column || "workspace";
+      const project = activeColumn === "workspace" ? null : activeColumn;
+      const oldNote = values["spatial-workspace-area-contents-v1"][workspace]?.noteDraft;
+      const storedNote = oldNote ?? (workspace === "general" ? storage.getItem("spatial-note-draft-v1") : null);
+      const defaultNote = workspaceWindows[workspace].find(w=>w.base==="notes")?.content.note;
+      const defaultDrafts = [example.note, note, legacyNote];
+      const personalNote = storedNote !== null && defaultDrafts.includes(storedNote) ? defaultNote : storedNote;
+      const content = independent.content[workspace];
+      if (content && defaultDrafts.includes(content.note)) content.note = defaultNote;
+      const notes = content?.frames?.notes;
+      if (notes) for (const field of notes) if (defaultDrafts.includes(field.value)) field.value = defaultNote;
+      const browserFields = content?.frames?.browser;
+      if (browserFields && ["Search the web", "localhost:5173 · Northstar Studio", example.browser.subtitle].includes(browserFields[0]?.value)) browserFields[0].value = workspaceWindows[workspace].find(w=>w.base==="browser")?.content.address || "Search the web";
+      values["spatial-workspace-area-contents-v1"][workspace] = {noteDraft:personalNote ?? workspaceWindows[workspace].find(w=>w.base==="notes")?.content.note ?? example.note, notifications:example.notifications, focus:{running:false,seconds:1500,visible:Boolean(example.focus?.visible),savedAt:Date.now()}, hiddenWidgets:example.hiddenWidgets, scroll:{apps:0,systems:0,projects:0}};
+      for (const key of Object.keys(values["spatial-split-layouts-v1"])) if (key.startsWith(workspace+":")) delete values["spatial-split-layouts-v1"][key];
+      for (const column of columns) {
+        for (const window of column.windows) {
+          apps[window.id]=window.state; owners[window.id]=column.column; pages[window.id]=window.page;
+          independent.membership[workspace][window.id]=column.column === "workspace" ? null : column.column;
+          if (window.id !== window.base) independent.instances[window.id]=window.base;
+        }
+        const usedPages = [...new Set(column.windows.map(w=>w.page))];
+        for (const page of usedPages) {
+          const windows = column.windows.filter(w=>w.page===page && w.state==="open");
+          const tree = windows.reduce((root,w)=>root ? {kind:"split",axis:"x",ratio:.5,a:root,b:leaf(w.id)} : leaf(w.id), null);
+          const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
+          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{}};
+        }
+      }
+      values["spatial-workspace-app-states-v1"][workspace]=apps;
+      values["spatial-workspace-area-layouts-v1"][workspace]=JSON.parse(JSON.stringify(example.areas));
+      values["spatial-workspace-project-states-v1"][workspace]={project,mode:project ? savedProjects[project].activeMode : null};
+      values["spatial-open-projects-v1"][workspace]=columns.filter(c=>c.column!=="workspace").map(c=>c.column);
+      values["spatial-desktop-pages-v1"][workspace]={active:0,activeColumn,windows:pages,owners,columns:Object.fromEntries(columns.filter(c=>c.column!=="workspace").map(c=>[c.column,{active:0}])),migrated:true,columnsMigrated:true};
+      independent.projects[workspace]=project;
+      delete values["spatial-workspace-window-layouts-v1"][workspace];
+      values["spatial-workspace-display-assignments-v1"][workspace]={areas:{projects:1,apps:1,systems:1},apps:Object.fromEntries(Object.keys(apps).map(id=>[id,1]))};
+      for (const key of Object.keys(values["spatial-project-window-sessions-v1"])) if (key.startsWith(workspace+":")) delete values["spatial-project-window-sessions-v1"][key];
+    }
+    // Retain the complete previous session before refreshing built-in scenes.
+    backup["spatial-project-spaces-v2"] = rawProjects;
+    storage.setItem("spatial-demo-columns-backup-v1", JSON.stringify(backup));
     storage.setItem("spatial-project-spaces-v2", JSON.stringify(savedProjects));
     for (const key of keys) storage.setItem(key, JSON.stringify(values[key]));
-    if (refreshedActive || !storage.getItem("spatial-active-workspace")) storage.setItem("spatial-active-workspace", "general");
-    storage.setItem(versionKey, "2");
+    storage.setItem(versionKey,"3");
     return true;
   }
 
@@ -411,7 +493,7 @@
     }
     for (const [modeId, mode] of Object.entries(next.modes || {})) {
       const oldMode = before.modes[modeId];
-      const newMode = after.modes[modeId];
+      const newMode = previousPublicProjects[id]?.modes[modeId];
       if (!oldMode || !newMode) continue;
       for (const field of ["label", "icon", "apps", "layout"]) {
         if (same(mode[field], oldMode[field])) mode[field] = JSON.parse(JSON.stringify(newMode[field]));
@@ -424,5 +506,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, scenarios, seedWorkspaces, note, migrateProject, migrateNote };
+  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, note, migrateProject, migrateNote };
 });
+
