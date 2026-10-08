@@ -202,13 +202,14 @@ assert.equal(vm.runInContext('cleaned.work.project', ctx), null, 'Deleted Projec
 const ui = storageAdapter({ 'spatial-workspace-project-states-v1': JSON.stringify({ general: { project: 'plasma', mode: 'visual' }, school: { project: null, mode: null } }) });
 const elements = new Map();
 function element(id) {
-  if (!elements.has(id)) elements.set(id, { hidden: false, scrollTop: 0, innerHTML: '', textContent: '', value: '', closest() { return this; }, insertAdjacentHTML(position, html) { this.innerHTML = html; }, style: { setProperty() {} }, classList: { remove() {}, toggle() {} }, setAttribute() {} });
+  if (!elements.has(id)) elements.set(id, { dataset: {}, hidden: false, scrollTop: 0, innerHTML: '', textContent: '', value: '', closest() { return this; }, insertAdjacentHTML(position, html) { this.innerHTML = html; }, style: { setProperty() {} }, classList: { remove() {}, toggle() {} }, setAttribute() {} });
   return elements.get(id);
 }
 const widgets = [element('calendar'), element('phone')];
 const raf = [];
 const calls = [];
 Object.assign(ui.context, {
+  desktopPages: require('../dist/desktop-pages.js').create(),
   Date, focusRunning: false, focusSeconds: 1500, notificationAttentionTimer: null,
   document: { body: { dataset: {}, style: { setProperty() {} } } },
   $: selector => element(selector),
@@ -236,6 +237,7 @@ Object.assign(ui.context, {
 for (const [name, profile] of Object.entries(ui.context.workspaceProfiles)) Object.assign(profile, { label: name, accent: '#56baff', icon: 'i-grid', favorites: [], folders: [], rack: [], agenda: ['', '', ''] });
 vm.runInContext(slice('function snapshotWorkspaceAreaContent(', 'function workspaceFavoriteMarkup('), ui.context);
 vm.runInContext(slice('function renderWorkspace(', 'function renderWorkspaceExample('), ui.context);
+vm.runInContext(slice('function updateDesktopPageUi(', 'function focusDesktop('), ui.context);
 vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
 element('#notificationList').innerHTML = 'General notification';
 element('.system-scroll-region').scrollTop = 120;

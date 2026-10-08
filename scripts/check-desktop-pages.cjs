@@ -38,11 +38,11 @@ const node = key => ({ key, hidden: true, dataset: {}, textContent: '',
   addEventListener(type, callback) { listeners[key + ':' + type] = callback; },
   focus() {}, clientHeight: 800
 });
-const nodes = Object.fromEntries(['.workspace-zone', '#desktopFocusButton', '#desktopPageNumber', '#emptyWorkspace', 'strong', 'span', '#desktopContextMenu'].map(key => [key, node(key)]));
+const nodes = Object.fromEntries(['.workspace-zone', '#allAppsToggle', '#desktopPageNumber', '#emptyWorkspace', 'strong', 'span', '#desktopContextMenu'].map(key => [key, node(key)]));
 let clock = 0;
 const ctx = vm.createContext({
   SpatialDesktopPages: Pages, desktopPages: Pages.create(), desktopWheel: Pages.wheelGate(),
-  activeWorkspace: 'work', desktopHasWindowFocus: true, desktopPageAnimating: false,
+  activeWorkspace: 'work', workspaceProfiles: {work: {label: 'Work'}}, desktopHasWindowFocus: true, desktopPageAnimating: false,
   tileInteraction: false, manualWindowInteraction: false,
   $: key => nodes[key] || node(key), $$: () => [],
   document: { addEventListener(type, callback) { listeners['document:' + type] = callback; } },
@@ -59,9 +59,12 @@ ctx.prepareDesktopPages();
 const event = (delta = 80) => ({ deltaY: delta, deltaX: 0, deltaMode: 0, preventDefault() { this.prevented = true; } });
 let e = event(); listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented, undefined); assert.equal(changes.length, 0, 'Focused app owns its scrolling');
-listeners['#desktopFocusButton:click']();
+listeners['.workspace-zone:pointerdown']({target: {closest: () => null}});
 assert.equal(ctx.desktopHasWindowFocus, false);
-assert.equal(nodes['#desktopFocusButton']['aria-pressed'], 'true');
+assert.equal(nodes['.workspace-zone'].dataset.desktopFocused, 'true');
+assert.equal(nodes['#desktopPageNumber'].textContent, 1);
+assert.equal(nodes['#allAppsToggle']['aria-label'], 'Open Work workspace overview · Desktop 1');
+assert.equal(nodes['#allAppsToggle']['aria-pressed'], undefined, 'Updating the page badge does not alter the Overview toggle state');
 e = event(); listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented, true); assert.deepEqual(changes, [1]);
 ctx.desktopPageAnimating = true;

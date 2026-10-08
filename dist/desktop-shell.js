@@ -4199,8 +4199,7 @@ function renderWorkspace(name, announce = true) {
   restoreWorkspaceAreaContent(name);
   const overview = $("#allAppsToggle");
   $("use", overview).setAttribute("href", "#" + profile.icon);
-  overview.setAttribute("aria-label", "Open " + profile.label + " workspace overview");
-  overview.title = "Overview · " + profile.label + " workspace · Super";
+  updateDesktopPageUi();
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
   persistWorkspaceAppStates();
   persistProjectState();
@@ -5736,16 +5735,15 @@ function saveDesktopPages() {
 function updateDesktopPageUi() {
   const page = desktopPages.current(activeWorkspace) + 1;
   const workspace = $(".workspace-zone");
-  const button = $("#desktopFocusButton");
+  const button = $("#allAppsToggle");
   if (!workspace || !button) return;
   const focused = !desktopHasWindowFocus;
   workspace.dataset.desktopFocused = String(focused);
   workspace.dataset.desktopPage = String(page);
   workspace.setAttribute("aria-label", "Desktop " + page);
-  button.classList.toggle("is-active", focused);
-  button.setAttribute("aria-pressed", String(focused));
-  button.setAttribute("aria-label", (focused ? "Desktop " : "Focus desktop ") + page);
-  button.title = "Desktop " + page + " · click to release window focus · scroll up/down or Page Up/Down";
+  const label = workspaceProfiles[activeWorkspace].label;
+  button.setAttribute("aria-label", "Open " + label + " workspace overview · Desktop " + page);
+  button.title = "Overview · " + label + " workspace · Desktop " + page + " · Super";
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
@@ -5910,7 +5908,6 @@ function migrateProjectDesktops() {
 function prepareDesktopPages() {
   migrateProjectDesktops();
   const workspace = $(".workspace-zone");
-  $("#desktopFocusButton").addEventListener("click", () => focusDesktop());
   workspace.addEventListener("pointerdown", event => {
     if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();
   });
