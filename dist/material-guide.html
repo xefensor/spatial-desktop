@@ -247,7 +247,7 @@
         <aside class="rule-card" aria-label="Three core rules">
           <div class="rule"><span>1</span><div><b>Role chooses material</b><small>Persistent and physical uses ABS. Transient and ambient uses glass.</small></div></div>
           <div class="rule"><span>2</span><div><b>State chooses light</b><small>Persistent light belongs only to toggles, selections and progress.</small></div></div>
-          <div class="rule"><span>3</span><div><b>Object chooses shape</b><small>Desktop Areas are square. Movable app windows are squircles.</small></div></div>
+          <div class="rule"><span>3</span><div><b>Material chooses shape</b><small>Glass surfaces and controls are square. ABS shells and controls are squircles.</small></div></div>
         </aside>
       </header>
 
@@ -346,7 +346,7 @@
 
       <section id="tokens">
         <div class="section-head"><div><h2>Reference tokens</h2><p>Recommended defaults. Scale spatial values, not interaction timing.</p></div><span class="section-number">07</span></div>
-        <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--state-line-size</td><td>2 px</td><td>Shared horizontal ABS state trace</td></tr><tr><td>--abs-live-slit</td><td>3 × 23 px</td><td>Vertical identity or live-state marker</td></tr><tr><td>--abs-led-bloom</td><td>6 px / 56%</td><td>Single restrained halo used by the real desktop controls</td></tr><tr><td>--abs-inactive-guide</td><td>28%</td><td>Thin neutral continuation of an unfilled slider</td></tr><tr><td>--glass-groove</td><td>1 px neutral</td><td>Visible but unlit engraving in the shared acrylic sheet</td></tr><tr><td>--acrylic-injection-edge</td><td>Local segments only</td><td>Shows where concealed LEDs feed light into the sheet</td></tr><tr><td>--acrylic-edge-stack</td><td>1 px + 2 px + 3 px inset</td><td>Neutral parallel reflections that reveal panel thickness</td></tr><tr><td>--acrylic-etch-bloom</td><td>1 px core + 4 px / 34%</td><td>Sharp engraving with short local optical scatter</td></tr><tr><td>--acrylic-clean-emission</td><td>0%</td><td>Unmarked clear sheet does not visibly emit colour</td></tr><tr><td>--hover-tint</td><td>3–7%</td><td>Temporary interaction preview, never committed state</td></tr><tr><td>--slider-follow</td><td>0 ms</td><td>Progress light must stay attached to the thumb</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0–2 px</td><td>Docked structural surface</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>Controls and inset displays</td></tr><tr><td>--edge</td><td>1 px</td><td>Neutral material boundary</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop acrylic only</td></tr></tbody></table>
+        <table class="token-table"><thead><tr><th>Token</th><th>Default</th><th>Purpose</th></tr></thead><tbody><tr><td>--press</td><td>8 ms</td><td>Mouse-switch downstroke</td></tr><tr><td>--release</td><td>16 ms</td><td>One-frame release</td></tr><tr><td>--state-line-size</td><td>2 px</td><td>Shared horizontal ABS state trace</td></tr><tr><td>--abs-live-slit</td><td>3 × 23 px</td><td>Vertical identity or live-state marker</td></tr><tr><td>--abs-led-bloom</td><td>6 px / 56%</td><td>Single restrained halo used by the real desktop controls</td></tr><tr><td>--abs-inactive-guide</td><td>28%</td><td>Thin neutral continuation of an unfilled slider</td></tr><tr><td>--glass-groove</td><td>1 px neutral</td><td>Visible but unlit engraving in the shared acrylic sheet</td></tr><tr><td>--acrylic-injection-edge</td><td>Local segments only</td><td>Shows where concealed LEDs feed light into the sheet</td></tr><tr><td>--acrylic-edge-stack</td><td>1 px + 2 px + 3 px inset</td><td>Neutral parallel reflections that reveal panel thickness</td></tr><tr><td>--acrylic-etch-bloom</td><td>1 px core + 4 px / 34%</td><td>Sharp engraving with short local optical scatter</td></tr><tr><td>--acrylic-clean-emission</td><td>0%</td><td>Unmarked clear sheet does not visibly emit colour</td></tr><tr><td>--hover-tint</td><td>3–7%</td><td>Temporary interaction preview, never committed state</td></tr><tr><td>--slider-follow</td><td>0 ms</td><td>Progress light must stay attached to the thumb</td></tr><tr><td>--window-radius</td><td>22 px</td><td>Movable app squircle</td></tr><tr><td>--area-radius</td><td>0 px</td><td>Every glass surface and control</td></tr><tr><td>--inner-radius</td><td>8–14 px</td><td>ABS controls and inset wells; glass uses 0 px</td></tr><tr><td>--edge</td><td>1 px</td><td>Neutral material boundary</td></tr><tr><td>--glass-blur</td><td>20–24 px</td><td>Transient and desktop acrylic only</td></tr></tbody></table>
       </section>
 
       <section id="templates">
@@ -362,6 +362,9 @@
 &lt;button class="abs-button toggle-button" aria-pressed="true"&gt;
   Toggle action
 &lt;/button&gt;
+
+.abs-button { border-radius: 10px; corner-shape: squircle; }
+.glass-button { border-radius: 0; corner-shape: square; }
 
 /* Same ON state; two physically different emitters. */
 .abs-button[aria-pressed="true"] .light-bar {
@@ -400,7 +403,8 @@
 }
 .glass-range .thumb {
   border: 1px solid var(--glass-edge);
-  border-radius: 2px;
+  border-radius: 0;
+  corner-shape: square;
   background: transparent;
   box-shadow: var(--acrylic-edge-stack);
 }</pre></details>
