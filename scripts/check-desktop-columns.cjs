@@ -182,3 +182,67 @@ assert.deepEqual(copy(ctx.openProjectNames('school')),['film'],'Lists are worksp
 ctx.updateDesktopPageUi();
 assert.equal(node('.desktop-context-header').hidden,true,'Other workspaces cannot expose the header here');
 console.log('Open-project header passed: zero/one/multiple projects, all labels, switching without shelving/reseeding, remembered desktops, independent closure and workspace isolation.');
+
+// Test the production transition with controlled animation completion.
+(async () => {
+  const animations=[];
+  class Element {
+    constructor(kind, attrs={}) { this.kind=kind;this.attrs={...attrs};this.dataset={};this.hidden=false;this.children=[];this.clientWidth=1200;this.clientHeight=800;this.classes=new Set();this.classList={add:name=>this.classes.add(name)}; }
+    append(child) { this.children.push(child); child.parent=this; }
+    remove() { this.parent.children=this.parent.children.filter(child=>child!==this); }
+    setAttribute(key,value) { this.attrs[key]=value; }
+    removeAttribute(key) { delete this.attrs[key]; }
+    querySelectorAll() { return this.children.flatMap(child=>[child,...child.querySelectorAll()]).filter(child=>child.attrs.id || child.attrs['data-app-frame']); }
+    matches(selector) { return (selector.includes('[data-app-frame]') && Boolean(this.attrs['data-app-frame'])) || (selector.includes('.desktop-folder') && this.kind==='folder'); }
+    get id() { return this.attrs.id; }
+    cloneNode() { const clone=new Element(this.kind,this.attrs);clone.hidden=this.hidden;clone.dataset={...this.dataset};this.children.forEach(child=>clone.append(child.cloneNode(true)));return clone; }
+    animate(keyframes,options) { let resolve,reject;const finished=new Promise((a,b)=>{resolve=a;reject=b});animations.push({node:this,keyframes,options,resolve,reject});return {finished}; }
+  }
+  const body=new Element('body'),shell=new Element('shell'),canvas=new Element('canvas');
+  const area=new Element('area',{id:'projectArea'}),frame=new Element('frame',{'data-app-frame':'draft',id:'window'});
+  shell.append(area);shell.append(canvas);canvas.append(frame);body.append(shell);
+  let reduced=false,visibilityChecks=0;
+  const animationCtx=vm.createContext({
+    desktopPages:Pages.create(),activeWorkspace:'work',activeProjectName:'site',desktopPageAnimating:false,desktopHasWindowFocus:false,
+    document:{body,createElement:()=>new Element('ghost')},window:{matchMedia:()=>({matches:reduced})},
+    $:selector=>selector==='.workspace-zone'?canvas:shell,openProjectNames:()=>['site','film'],
+    saveLayout(){},saveTileSessions(){},tileSession:()=>({}),captureWorkspaceContent(){},
+    renderProjectSpace(name){animationCtx.activeProjectName=name;area.dataset.project=name;},
+    endSystemRailExpansion(){},layoutDockAreas(){},topOpenApp:()=>null,
+    syncApps(){},focusDesktop(){},refreshIntentAreas(){},renderTileLayout(){},saveDesktopPages(){},queueDesktopStateBroadcast(){},scheduleWindowVisibility(){visibilityChecks++;}
+  });
+  animationCtx.desktopPages.assign('work','draft',0,'site');
+  animationCtx.desktopPages.select('work','site');area.dataset.project='site';
+  vm.runInContext(slice('function changeDesktopPage(', 'function moveWindowToDesktop('),animationCtx);
+  const settle=async()=>{animations.forEach(a=>a.resolve());await new Promise(resolve=>setImmediate(resolve));animations.length=0;};
+  assert.equal(animationCtx.changeDesktopPage(1,true),true);
+  assert.equal(animations.length,2);
+  assert.equal(animations[1].node,frame,'Only canvas windows move vertically');
+  assert.equal(animations[1].keyframes[0].transform,'translateY(800px)');
+  assert.equal(body.children.length,1,'Vertical motion never clones Areas');
+  assert.equal(animationCtx.changeDesktopPage(0,true),false,'Concurrent navigation is guarded');
+  await settle();
+  assert.equal(canvas.children.length,1,'The outgoing canvas is removed');
+  assert.equal(animationCtx.changeDesktopPage(0,true,'film'),true);
+  assert.equal(animations[1].node,shell,'Projects animate the entire incoming scene');
+  assert.equal(animations[1].keyframes[0].transform,'translateX(1200px)');
+  const ghost=body.children[1];
+  assert.equal(ghost.children[0].dataset.project,'site','Outgoing Areas retain the old project');
+  assert.equal(area.dataset.project,'film');
+  assert.equal(ghost.inert,true);assert.equal(ghost.attrs['aria-hidden'],'true');
+  assert.equal(ghost.querySelectorAll().length,0,'Scene clones contain no duplicate IDs or window identities');
+  await settle();
+  assert.equal(body.children.length,1);assert.equal(shell.dataset.desktopTransition,undefined);
+  assert.equal(animationCtx.changeDesktopPage(1,true,'site'),true);
+  assert.equal(animations[1].keyframes[0].transform,'translateX(-1200px)','Project-to-project motion follows the tab order');
+  animations[0].reject(Error('cancelled'));animations[1].resolve();
+  await new Promise(resolve=>setImmediate(resolve));animations.length=0;
+  assert.equal(animationCtx.desktopPageAnimating,false,'Cancellation releases navigation');
+  assert.equal(body.children.length,1);
+  reduced=true;
+  assert.equal(animationCtx.changeDesktopPage(0,true,'workspace'),true);
+  assert.equal(animations.length,0,'Reduced motion applies the scene without sliding');
+  assert.equal(animationCtx.desktopPageAnimating,false);
+  assert.equal(visibilityChecks,3);
+  console.log('Scene animations passed: vertical canvas only, horizontal whole scene, old Area snapshot, tab-order direction, cleanup, cancellation, navigation guard and reduced motion.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

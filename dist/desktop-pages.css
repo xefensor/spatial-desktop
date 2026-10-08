@@ -56,3 +56,8 @@ body[data-theme] .desktop-context-header button.desktop-context-column{display:f
 .desktop-context-column svg{width:16px;height:16px;color:var(--column-accent);flex:none}
 .desktop-context-column.is-active{font-weight:700}
 body[data-theme] .desktop-context-header button.desktop-context-column:hover{background:var(--sd-glass-hover)!important}
+
+/* Project columns include the Areas and their context header in one movement. */
+.desktop-shell.desktop-column-ghost{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-height:0!important;z-index:9999!important;pointer-events:none!important}
+.desktop-column-ghost *{pointer-events:none!important}
+.desktop-shell[data-desktop-transition="column"]{will-change:transform;pointer-events:none}

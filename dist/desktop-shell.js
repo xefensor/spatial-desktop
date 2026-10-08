@@ -3617,8 +3617,9 @@ function activateProject(name, announce = true) {
     return;
   }
   captureWorkspaceContent();
-  renderProjectSpace(name);
+  workspaceOpenProjects[activeWorkspace] = [...openProjectNames(), name];
   changeDesktopColumn(name, false);
+  if (activeProjectName !== name) renderProjectSpace(name);
   workspaceProjects[activeWorkspace] = name;
   saveIndependentSessions();
   const restored = restoreProjectWindows(name, false, true);
@@ -6148,19 +6149,22 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   const previousColumn = desktopPages.column(activeWorkspace);
   const horizontal = column !== previousColumn;
   if ((!horizontal && page === previous) || page < 0 || page > desktopPages.last(activeWorkspace, column) || desktopPageAnimating) return false;
-  // Capture the departing page before visibility and tiling switch contexts.
+  // A desktop moves inside the canvas; a project moves the complete scene.
+  // Capture before changing Project Area content or window visibility.
   const workspace = $(".workspace-zone");
+  const shell = $(".desktop-shell");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const ghost = animate && !reducedMotion ? document.createElement("div") : null;
+  const ghost = animate && !reducedMotion ? (horizontal ? shell.cloneNode(true) : document.createElement("div")) : null;
   if (ghost) {
-    ghost.className = "desktop-page-ghost";
+    if (horizontal) ghost.classList.add("desktop-column-ghost");
+    else {
+      ghost.className = "desktop-page-ghost";
+      [...workspace.children].filter(node => (node.matches("[data-app-frame]") && !node.hidden) || (node.id === "emptyWorkspace" && !node.hidden) || node.matches(".desktop-folder:not([hidden])")).forEach(node => ghost.append(node.cloneNode(true)));
+    }
     ghost.inert = true;
     ghost.setAttribute("aria-hidden", "true");
-    [...workspace.children].filter(node => (node.matches("[data-app-frame]") && !node.hidden) || (node.id === "emptyWorkspace" && !node.hidden) || node.matches(".desktop-folder:not([hidden])")).forEach(node => {
-      const clone = node.cloneNode(true);
-      [clone, ...clone.querySelectorAll("[id],[data-app-frame]")].forEach(item => { item.removeAttribute("id"); item.removeAttribute("data-app-frame"); });
-      clone.classList.remove("is-front");
-      ghost.append(clone);
+    [ghost, ...ghost.querySelectorAll("[id],[data-app-frame],[data-area-window]")].forEach(item => {
+      item.removeAttribute("id"); item.removeAttribute("data-app-frame"); item.removeAttribute("data-area-window");
     });
   }
   saveLayout();
@@ -6182,15 +6186,22 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   renderTileLayout(frontApp);
   saveDesktopPages();
   if (ghost) {
-    workspace.append(ghost);
+    const columns = ["workspace", ...openProjectNames()];
+    const from = columns.indexOf(previousColumn), to = columns.indexOf(column);
+    const direction = horizontal ? (from < 0 ? (column === "workspace" ? -1 : 1) : Math.sign(to - from)) : (page > previous ? 1 : -1);
     const axis = horizontal ? "X" : "Y";
-    const direction = horizontal ? (column === "workspace" ? -1 : 1) : (page > previous ? 1 : -1);
-    const distance = direction * (horizontal ? workspace.clientWidth : workspace.clientHeight);
+    const distance = direction * (horizontal ? shell.clientWidth : workspace.clientHeight);
     const options = { duration: 220, easing: "cubic-bezier(.2,.75,.25,1)" };
+    if (horizontal) {
+      document.body.append(ghost);
+      shell.dataset.desktopTransition = "column";
+    } else workspace.append(ghost);
     const outgoing = ghost.animate([{ transform: "translate" + axis + "(0)" }, { transform: "translate" + axis + "(" + -distance + "px)" }], options);
-    [...workspace.children].filter(node => !node.hidden && (node.matches("[data-app-frame],.desktop-folder") || node.id === "emptyWorkspace")).forEach(node => node.animate([{ transform: "translate" + axis + "(" + distance + "px)" }, { transform: "translate" + axis + "(0)" }], options));
-    outgoing.finished.catch(() => {}).then(() => {
+    const incomingNodes = horizontal ? [shell] : [...workspace.children].filter(node => !node.hidden && (node.matches("[data-app-frame],.desktop-folder") || node.id === "emptyWorkspace"));
+    const incoming = incomingNodes.map(node => node.animate([{ transform: "translate" + axis + "(" + distance + "px)" }, { transform: "translate" + axis + "(0)" }], options));
+    Promise.allSettled([outgoing.finished, ...incoming.map(animation => animation.finished)]).then(() => {
       ghost.remove();
+      delete shell.dataset.desktopTransition;
       desktopPageAnimating = false;
       scheduleWindowVisibility();
     });
