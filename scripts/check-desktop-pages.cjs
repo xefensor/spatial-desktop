@@ -197,11 +197,11 @@ const hotbar = vm.createContext({
   isLocalApp: name => ['browser', 'instance'].includes(name)
 });
 vm.runInContext(slice('function workspaceHotbarNames(', 'function renderInstanceRack('), hotbar);
-assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['browser', 'instance'], 'Top hotbar excludes closed, minimized and off-page windows');
-assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['browser', 'instance', 'parked'], 'Minimized cards keep unique keyboard slots without duplicate top icons');
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['browser', 'instance', 'parked'], 'Top hotbar keeps minimized icons while excluding closed and off-page open windows');
+assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['browser', 'instance', 'parked'], 'Minimized cards share their icon’s unique keyboard slot');
 hotbar.isLocalApp = () => false;
-assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), [], 'An empty desktop has an empty top hotbar');
-assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['parked'], 'Minimized shortcuts remain available on an empty desktop');
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['parked'], 'Minimized icons remain in the hotbar when the desktop has no visible windows');
+assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['parked'], 'Minimized shortcuts appear exactly once on an empty desktop');
 let restored = null;
 Object.assign(hotbar, {
   appInfo: { parked: {} }, desktopHasWindowFocus: false, frontApp: null,
@@ -210,7 +210,7 @@ Object.assign(hotbar, {
 });
 vm.runInContext(slice('function activateHotbarSlot(', 'document.addEventListener("keydown",'), hotbar);
 assert.equal(hotbar.activateHotbarSlot(1), true);
-assert.equal(restored, 'parked', 'Keyboard shortcuts restore travelling cards even without a top hotbar button');
+assert.equal(restored, 'parked', 'Keyboard shortcuts restore travelling minimized windows from their shared slot');
 assert.equal(hotbar.activateHotbarSlot(2), false);
 
 console.log('Vertical desktops passed: page bounds, workspace isolation, reload/sync, wheel gestures/momentum, focus ownership, zoom/menu guards and lossless legacy session migration.');

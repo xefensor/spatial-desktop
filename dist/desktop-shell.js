@@ -6439,13 +6439,14 @@ function createAppInstance(name) {
   return id;
 }
 function workspaceHotbarNames() {
-  return [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState)])]
-    .filter(name => appState[name] === 'open' && isLocalApp(name));
+  const names = [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState)])];
+  // Minimized windows travel with the Apps Area, including its icon-only rail.
+  return [...names.filter(name => appState[name] === 'open' && isLocalApp(name)),
+    ...names.filter(name => appState[name] === 'minimized')];
 }
 function workspaceShortcutNames() {
-  // Visible windows get the first slots; travelling minimized cards continue
-  // the numbering below them without being duplicated in the top hotbar.
-  return [...workspaceHotbarNames(), ...Object.keys(appState).filter(name => appState[name] === 'minimized')];
+  // Icons and their useful cards share a single slot for each window.
+  return workspaceHotbarNames();
 }
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
