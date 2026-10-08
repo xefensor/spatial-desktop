@@ -28,8 +28,7 @@ body[data-theme] .apps-zone .workspace-overview svg{color:var(--desktop-column-a
 .desktop-column-page{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:6px 8px;text-align:left;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);color:var(--text);--state-tone:var(--column-accent)}
 .desktop-column-page b,.desktop-column-page small{display:block;font-size:12px}
 .desktop-column-page small{font-size:10px;color:var(--muted)}
-.desktop-column-page[aria-pressed="true"]{border-bottom:3px solid var(--column-accent)}
-.desktop-column-page.control-toggle::after{display:none!important}
+body[data-theme] .universal-search button.desktop-column-page{--state-tone:var(--column-accent)!important}
 .desktop-column-page:hover{background:color-mix(in srgb,var(--column-accent) 8%,var(--sd-glass-face))}
 .desktop-column-apps{display:flex;gap:3px}
 .desktop-column-apps .app-art{width:22px;height:22px;min-width:22px}
