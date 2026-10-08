@@ -7273,7 +7273,7 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 }
 
 /* Hotbar numbers use a neutral contrast plate, independent of app colour.
-   Reserve a row above the icon so numbers never cover its artwork. */
+   Numbers overlay the icon corner without reserving another row. */
 .apps-zone{
   --hotkey-face:#18212b;
   --hotkey-ink:#f8fafc;
@@ -7309,17 +7309,6 @@ body[data-theme="light"] .apps-zone{
   z-index:2;
   top:2px;
   left:2px;
-}
-.apps-zone .app-key{
-  height:72px;
-  padding-top:26px;
-}
-.apps-zone:not([data-area-state="rail"]) .app-rack{
-  grid-auto-rows:76px;
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle{
-  height:64px;
-  min-height:64px;
 }
 .apps-zone .mini-card .mini-hotkey{
   position:static;
@@ -7397,7 +7386,7 @@ body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
 .apps-zone:not([data-area-state="rail"]) .app-rack{
   height:auto;
   min-height:66px;
-  grid-auto-rows:76px;
+  grid-auto-rows:66px;
   align-content:start;
   max-height:45%;
   overflow-y:auto;
