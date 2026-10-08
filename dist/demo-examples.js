@@ -252,13 +252,13 @@
 
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "3") return false;
+    if (storage.getItem(versionKey) === "4") return false;
     const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
     const rawProjects = storage.getItem("spatial-project-spaces-v2");
     const savedProjects = rawProjects === null ? JSON.parse(JSON.stringify(projects)) : JSON.parse(rawProjects || "{}");
-    if (Object.keys(savedProjects).length && !savedProjects.research) savedProjects.research = JSON.parse(JSON.stringify(projects.research));
+    if (Object.keys(savedProjects).length && !savedProjects.research && !storage.getItem(versionKey)) savedProjects.research = JSON.parse(JSON.stringify(projects.research));
     for (const [id, project] of Object.entries(savedProjects)) {
       const before = previousPublicProjects[id], after = projects[id];
       if (before && project.name === before.name && project.root === before.root && JSON.stringify(project.modes) === JSON.stringify(before.modes)) {
@@ -285,6 +285,9 @@
       if (content && defaultDrafts.includes(content.note)) content.note = defaultNote;
       const notes = content?.frames?.notes;
       if (notes) for (const field of notes) if (defaultDrafts.includes(field.value)) field.value = defaultNote;
+      const fileFields = content?.frames?.dolphin;
+      const oldDefaultPaths = ["/home/demo/Downloads", workspace === "general" ? "/home/demo" : "/home/demo/Workspaces/" + workspace[0].toUpperCase() + workspace.slice(1) + "/" + example.folder];
+      if (fileFields && oldDefaultPaths.includes(fileFields[0]?.value)) fileFields[0].value = workspaceWindows[workspace].find(w=>w.base==="dolphin")?.content.folder || "/home/demo/Workspaces/" + workspace[0].toUpperCase() + workspace.slice(1);
       const browserFields = content?.frames?.browser;
       if (browserFields && ["Search the web", "localhost:5173 · Northstar Studio", example.browser.subtitle].includes(browserFields[0]?.value)) browserFields[0].value = workspaceWindows[workspace].find(w=>w.base==="browser")?.content.address || "Search the web";
       values["spatial-workspace-area-contents-v1"][workspace] = {noteDraft:personalNote ?? workspaceWindows[workspace].find(w=>w.base==="notes")?.content.note ?? example.note, notifications:example.notifications, focus:{running:false,seconds:1500,visible:Boolean(example.focus?.visible),savedAt:Date.now()}, hiddenWidgets:example.hiddenWidgets, scroll:{apps:0,systems:0,projects:0}};
@@ -298,7 +301,7 @@
         const usedPages = [...new Set(column.windows.map(w=>w.page))];
         for (const page of usedPages) {
           const windows = column.windows.filter(w=>w.page===page && w.state==="open");
-          const tree = windows.reduce((root,w)=>root ? {kind:"split",axis:"x",ratio:.5,a:root,b:leaf(w.id)} : leaf(w.id), null);
+          const tree = windows.reduce((root,w)=>root ? {kind:"split",axis:"y",ratio:.5,a:root,b:leaf(w.id)} : leaf(w.id), null);
           const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
           values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{}};
         }
@@ -318,7 +321,7 @@
     storage.setItem("spatial-demo-columns-backup-v1", JSON.stringify(backup));
     storage.setItem("spatial-project-spaces-v2", JSON.stringify(savedProjects));
     for (const key of keys) storage.setItem(key, JSON.stringify(values[key]));
-    storage.setItem(versionKey,"3");
+    storage.setItem(versionKey,"4");
     return true;
   }
 

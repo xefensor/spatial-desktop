@@ -97,7 +97,7 @@ assert.equal(sceneApps.gaming.elisa, 'minimized');
 assert.equal(sceneAreas.gaming.sizes.right, 70);
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
-assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
+assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'y');
 assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'terminal--demo-site-server']);
 freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));
 assert.equal(D.seedWorkspaces(freshScene.storage), false);
@@ -123,7 +123,7 @@ assert.deepEqual(emptyLibrary.read('spatial-project-spaces-v2'), {});
 assert.equal(emptyLibrary.read('spatial-workspace-project-states-v1').school.project, null);
 assert.equal(emptyLibrary.read('spatial-workspace-area-layouts-v1').school.hidden.projects, false);
 assert.equal(D.migrateProject('plasma', { ...D.projects.plasma, root: '/home/demo/Projects/website-launch', originWorkspace: 'general' }).originWorkspace, 'work');
-console.log('Demo scenes passed: distinct activities, one General window, no empty Project Area, single-mode research, one-time migration, custom data and deleted library.');
+console.log('Demo scenes passed: distinct activities, two General desktops, persistent Project Area, single-mode research, one-time migration, custom data and deleted library.');
 
 // Exercise the actual storage adapter, including the older content-only key.
 const fs = require('node:fs');

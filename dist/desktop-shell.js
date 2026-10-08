@@ -4358,7 +4358,7 @@ function renderWorkspaceExample(name) {
     }
   }
   const personal = SpatialDemoExamples.workspaceWindows[name].find(window => window.base === "notes");
-  if (personal && !workspaceAreaContents[name]?.noteDraft) noteDraft = personal.content.note;
+  if (personal && typeof workspaceAreaContents[name]?.noteDraft !== "string") noteDraft = personal.content.note;
 }
 
 function persistWorkspaceNote() {
