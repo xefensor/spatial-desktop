@@ -184,6 +184,7 @@ const docks = {
   extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
   captureBaseDockLaneRects() {}, syncAreaControls() {}, syncLayoutModeUI() {},
+  applySystemRailExpansion() {}, endSystemRailExpansion() {},
   setWorkspaceInsets(left, right, bottom, top) { docks.insets = { left, right, bottom, top }; },
   showToast() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
   applyExtendedDesktopPartition() { throw Error("Area resized another display"); }

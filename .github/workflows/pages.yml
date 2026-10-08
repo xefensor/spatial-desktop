@@ -34,6 +34,7 @@ jobs:
           node scripts/check-spatial-tiling.cjs
           node scripts/check-demo-examples.cjs
           node scripts/check-ui-refinements.cjs
+          node scripts/check-system-rail.cjs
           node scripts/check-desktop-workflows.cjs
 
       - name: Upload website
