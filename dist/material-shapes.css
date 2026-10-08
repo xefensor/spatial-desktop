@@ -43,7 +43,7 @@
 
   /* An editor or selectable row is part of the document, even when it also
      carries a field/button material class. Avoid rounded seams between panes. */
-  :is(.app-frame,.package-window) :where(
+  :is(.app-frame,.package-window) :is(
       .app-titlebar,.app-toolbar,.browser-toolbar,.music-controls,.app-status,
       .app-body,.files-module,.places-sidebar,.file-well,.file-head,.file-list,
       .music-hero,.playlist,.start-page,.terminal-screen,
