@@ -231,8 +231,8 @@
   };
   const workspaceWindows = {
     general: [windowSpec("dolphin", "dolphin", 0, {shortTitle:"Home", folder:"/home/demo", files:scenarios.general.files}), windowSpec("notes", "notes", 1, {shortTitle:"Personal notes", note:scenarios.general.note})],
-    school: [windowSpec("browser", "browser", 0, {shortTitle:"Student portal", address:"School · student portal", browser:reading("This week at school", "School · student portal", "Course announcements, assignment dates and the timetable live in your workspace. Urban Ecology has its own project column.", ["Timetable", "Assignments", "Course announcements", "Library"], "Biology report due Friday. Bring the field observations to Thursday’s seminar.")}), windowSpec("notes", "notes", 1, {shortTitle:"Class planning", note:"Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology column."})],
-    work: [windowSpec("browser", "browser", 0, {shortTitle:"Studio desk", address:"Work · studio desk", browser:reading("Studio desk", "Work · daily administration", "Keep everyday studio planning here. Website Launch and Short Film are open beside this workspace, each with its own windows and desktops.", ["Meeting agenda", "Studio inbox", "Shared calendar", "Invoices"], "10:00 — weekly planning. 14:30 — website review. 16:00 — film feedback. Switch project tabs to return to the relevant work.")}), windowSpec("notes", "notes", 1, {shortTitle:"Studio planning", note:"Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their project columns."})],
+    school: [windowSpec("browser", "browser", 0, {shortTitle:"Student portal", address:"School · student portal", browser:reading("This week at school", "School · student portal", "Course announcements, assignment dates and the timetable live in your workspace. Urban Ecology has its own desktops.", ["Timetable", "Assignments", "Course announcements", "Library"], "Biology report due Friday. Bring the field observations to Thursday’s seminar.")}), windowSpec("notes", "notes", 1, {shortTitle:"Class planning", note:"Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology project."})],
+    work: [windowSpec("browser", "browser", 0, {shortTitle:"Studio desk", address:"Work · studio desk", browser:reading("Studio desk", "Work · daily administration", "Keep everyday studio planning here. Website Launch and Short Film are open beside this workspace, each with its own windows and desktops.", ["Meeting agenda", "Studio inbox", "Shared calendar", "Invoices"], "10:00 — weekly planning. 14:30 — website review. 16:00 — film feedback. Switch project tabs to return to the relevant work.")}), windowSpec("notes", "notes", 1, {shortTitle:"Studio planning", note:"Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their projects."})],
     gaming: [windowSpec("browser", "browser", 0, {shortTitle:"Game library", address:"Gaming · game library", browser:scenarios.gaming.browser}), windowSpec("elisa", "elisa", 0, {shortTitle:"Game-night mix", music:{title:"Evening Light", artist:"Northbound · game-night mix", tracks:["Evening Light", "City Lights", "Blue Horizon"]}}, "minimized"), windowSpec("notes", "notes", 1, {shortTitle:"Co-op planning", note:scenarios.gaming.note})]
   };
   const openProjects = {general:[], school:["research"], work:["plasma","retold"], gaming:[]};
@@ -506,6 +506,11 @@
   }
 
   function migrateNote(value) {
+    const renamedDefaults = {
+      "Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology column.": workspaceWindows.school.find(window => window.base === "notes").content.note,
+      "Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their project columns.": workspaceWindows.work.find(window => window.base === "notes").content.note
+    };
+    if (Object.hasOwn(renamedDefaults, value)) return renamedDefaults[value];
     return value === legacyNote ? note : value;
   }
 

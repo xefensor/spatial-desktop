@@ -1424,7 +1424,7 @@ function miniMarkup(name) {
   const shortcut = slot === null ? "" : slot > 20 ? " · Click · slot " + slot : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = parked ? "Parked · still running" : info.detail;
-  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Restore ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>Evening Light</b><small>Northbound · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -2129,7 +2129,7 @@ function bindMiniDrag(card) {
       if (ghost) ghost.remove();
       if (pointInside(workspace.getBoundingClientRect(), upEvent.clientX, upEvent.clientY)) {
         openApp(name, { x: upEvent.clientX, y: upEvent.clientY });
-        showToast(appInfo[name].label + " restored to workspace");
+        showToast(appInfo[name].label + " unparked onto desktop");
       }
     };
     header.addEventListener("pointermove", move);
@@ -3446,7 +3446,7 @@ function refreshProjectSessionUi(name = activeProjectName) {
   const openCount = Object.keys(appState).filter(id => appState[id] !== "closed" && windowMembership[activeWorkspace]?.[id] === name).length;
   const savedCount = projectSession(name)?.apps?.length || 0;
   $("#projectRailWindowCount").textContent = openCount || savedCount;
-  $("#projectRailSession").title = "Show project desktop column · " + openCount + " windows";
+  $("#projectRailSession").title = "Show project desktops · " + openCount + " windows";
   if (projectColumnActive()) {
     $("#projectAreaContext").textContent = "Project resources";
     $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
@@ -4196,9 +4196,9 @@ function renderOverviewWindows() {
   target.innerHTML = windowNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
-    const stateLabel = (minimized ? "Minimized" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
+    const stateLabel = (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
     return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span></button>';
-  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or restore an application and it will appear here.</small></div>';
+  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or unpark an application and it will appear here.</small></div>';
 
   refreshWorkspaceContext();
   renderDesktopColumnMap();
@@ -5622,8 +5622,8 @@ function contextMenuEntries(context) {
       ...(state !== "closed" ? Object.entries(workspaceProfiles).filter(([id]) => id !== activeWorkspace).map(([id, profile]) => ({action: "move-workspace:" + id, icon: "i-monitor", label: "Move to " + profile.label + " workspace"})) : []),
       ...(state !== "closed" ? Object.entries(projectSpaces).map(([id, project]) => ({action: "move-project:" + id, icon: "i-folder", label: "Move to " + project.name})) : []),
       state !== "closed" && windowMembership[activeWorkspace]?.[context.name] ? {action: "detach-project", icon: "i-folder", label: "Take out of project · keep open"} : null,
-      { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Restore" : "Open" },
-      state === "open" ? { action: "app-minimize", icon: "i-min", label: "Minimize to Apps Area" } : null,
+      { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Unpark" : "Open" },
+      state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps Area" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / maximize between Areas" : "Maximize between Areas", shortcut: "Alt+Enter" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave full screen" : "Full screen · borrow Area space", shortcut: "Middle click" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
@@ -6113,7 +6113,7 @@ function updateDesktopPageUi() {
   $("#appsAreaContext").textContent = context + " · Desktop " + page;
   $("#openWindowsTitle").textContent = context;
   button.setAttribute("aria-label", "Open " + context + " overview · Desktop " + page);
-  button.title = "Overview · " + context + " · Desktop " + page + " · Super · Shift+scroll: switch columns";
+  button.title = "Overview · " + context + " · Desktop " + page + " · Super · Shift+scroll: switch projects";
   const contextToggle = $("#desktopContextToggle");
   if (contextToggle) {
     $(".desktop-context-page", contextToggle).textContent = "Desktop " + page;
@@ -6125,7 +6125,7 @@ function updateDesktopPageUi() {
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
-  $("span", empty).textContent = "Open an app here. Scroll for another desktop" + (activeProjectName ? " · Shift+scroll to switch columns." : ". Open a project in Overview to add its column.");
+  $("span", empty).textContent = "Open an app here. Scroll for another desktop" + (activeProjectName ? " · Shift+scroll to switch projects." : ". Open a project in Overview to use its desktops.");
   $$(".desktop-folder").forEach(folder => {
     folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || (folder.dataset.desktopColumn || "workspace") !== column || Number(folder.dataset.desktopPage) !== page - 1;
   });
@@ -6948,11 +6948,12 @@ function restoreWorkspaceContent(name) {
     [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].forEach((field, index) => {
       const value = saved?.frames?.[id]?.[index]?.value ?? (frame.dataset.demoExample ? field.value : defaults[index]?.value ?? '');
       if (field.isContentEditable) field.innerHTML = saved?.frames?.[id]?.[index]?.value || '';
-      else field.value = value;
+      else field.value = field.tagName === 'TEXTAREA' ? SpatialDemoExamples.migrateNote(value) : value;
       if (field.type === 'checkbox') field.checked = saved?.frames?.[id]?.[index]?.checked ?? defaults[index]?.checked ?? false;
     });
   });
   noteDraft = saved?.note ?? workspaceAreaContents[name]?.noteDraft ?? SpatialDemoExamples.workspaceWindows[name]?.find(window => window.base === 'notes')?.content.note ?? '';
+  noteDraft = SpatialDemoExamples.migrateNote(noteDraft);
   $('.notes-layout textarea').value = noteDraft;
   terminalPreview = saved?.terminal || 'Ready for a command';
   focusSeconds = saved?.focusSeconds ?? 25 * 60;

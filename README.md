@@ -41,7 +41,7 @@ GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/
 ## Explore the desktop
 
 - **Apps Area:** launch apps, use the numbered app hotbar and control parked windows through live cards.
-- **Project Area:** organise a project folder, linked resources, notes, quick launches and saved window arrangements. Projects can have multiple modes for different kinds of work.
+- **Project Area:** organise a project folder, linked resources, notes, quick launches and saved window arrangements. Each open Project has its own desktops and windows; several Projects can stay open at once.
 - **System Area:** keep relevant system widgets and notifications visible.
 - **Overview:** access workspaces, projects, apps and system tools together. The Super/Windows key works when the browser receives it; the operating system may intercept it.
 - **Windows:** ordinary dragging uses the tiled layout. Middle-button dragging or Alt + left-button dragging enables manual floating movement. New tiled windows try to avoid floating windows.
@@ -55,11 +55,13 @@ The public demo starts with four distinct, resumable scenes:
 | Workspace | Activity | Initial layout |
 | --- | --- | --- |
 | General | Everyday files, no open Project | One Dolphin window, Apps on a left rail, System right |
-| School | Urban Ecology research, reading with project notes and linked sources | Project left, reading window centre, System right, Apps on a bottom rail |
-| Work | Website Launch in Build mode | Preview above development terminal, Project right, Apps on a left rail, System on a bottom rail |
+| School | Urban Ecology research, reading with project notes and linked sources | Project left, reading and observations in the centre, System right, Apps on a bottom rail |
+| Work | Website Launch and Short Film, each with two desktops | Preview above development terminal, Project right, Apps on a left rail, System on a bottom rail |
 | Gaming | Co-op session, no open Project | Games and friends in Web, music in a live Apps card on the left, System on a right rail |
 
-The library also contains **Short Film** (Editing, Review, Delivery), kept on another drive to demonstrate that a Project can live in any folder. Urban Ecology has one mode, so it does not show a mode switcher. Website Launch has Design, Build and Review modes. Files, resources, notifications, music and browser pages are illustrative data.
+**Website Launch** pairs its preview with a development server on Desktop 1, and source files with a launch checklist on Desktop 2. **Short Film**, kept on another drive, pairs footage with edit notes on Desktop 1, and cut feedback with a parked soundtrack player on Desktop 2. **Urban Ecology** has reading and observations on Desktop 1, and survey evidence on Desktop 2. General and Gaming use Workspace desktops without an open Project. Files, resources, notifications, music and browser pages are illustrative data.
+
+Use the top tabs or **Shift + scroll** to switch Projects or return to Workspace. Scroll vertically to change desktops within the current Project or Workspace. The Apps Area holds **Parked** windows: use **Park** to put a window away and **Unpark** to bring it onto the current desktop. Closing a Project saves its windows and desktop arrangement.
 
 This scene update refreshes the built-in workspace arrangements once and retains a backup of their previous session data. Workspaces attached to custom Projects are left alone; edited Project definitions and existing workspace notes are preserved. Later visits and workspace switches restore the user's changes rather than reset the examples. Historical commits retain their original examples.
 
@@ -123,3 +125,4 @@ See [`docs/history/README.md`](docs/history/README.md) for checking out versions
 Spatial Desktop is still under active development. This is a design demonstration, not a native desktop environment. Its apps, files, system widgets and project/workspace packaging illustrate interactions; they do not provide complete operating-system integrations. Demo data is stored in the browser.
 
 See the [UI and UX refinement notes](docs/ui-ux-review.md) for the latest overview and accessibility changes.
+
