@@ -7272,43 +7272,41 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
   .app-frame .terminal-screen{padding:12px}
 }
 
-/* Hotbar numbers use a neutral contrast plate, independent of app colour.
-   Numbers overlay the icon corner without reserving another row. */
+/* Keep the app artwork primary: only the outlined digit overlays its corner. */
 .apps-zone{
-  --hotkey-face:#18212b;
   --hotkey-ink:#f8fafc;
-  --hotkey-edge:#718096;
+  --hotkey-outline:#111827;
 }
 body[data-theme="light"] .apps-zone{
-  --hotkey-face:#f7f9fc;
   --hotkey-ink:#111827;
-  --hotkey-edge:#64748b;
+  --hotkey-outline:#f8fafc;
 }
 .apps-zone .app-key .app-hotkey,
 .apps-zone .mini-card .mini-hotkey{
-  min-width:24px;
-  height:24px;
+  min-width:0;
+  height:18px;
   box-sizing:border-box;
   margin:0;
-  padding:0 3px;
+  padding:0;
   display:grid;
   place-items:center;
   pointer-events:none;
-  border:1px solid var(--hotkey-edge)!important;
+  border:0!important;
   border-radius:0!important;
   color:var(--hotkey-ink)!important;
-  background:var(--hotkey-face)!important;
+  background:transparent!important;
   box-shadow:none!important;
   font:800 16px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
   font-variant-numeric:tabular-nums;
   letter-spacing:0;
-  text-shadow:none;
+  text-shadow:-1px -1px 0 var(--hotkey-outline),1px -1px 0 var(--hotkey-outline),-1px 1px 0 var(--hotkey-outline),1px 1px 0 var(--hotkey-outline);
 }
 .apps-zone .app-key .app-hotkey{
   position:absolute;
   z-index:2;
-  top:2px;
-  left:2px;
+  top:0;
+  right:0;
+  left:auto;
 }
 .apps-zone .mini-card .mini-hotkey{
   position:static;
