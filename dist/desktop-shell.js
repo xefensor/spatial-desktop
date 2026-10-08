@@ -5286,10 +5286,21 @@ function setFocusRunning(running) {
 
 // Rails use the same workspace state as their expanded widgets.
 function revealSystemRailWidget(selector) {
+  manualAreaOverride("systems");
+  const edge = dockState.systems.edge;
+  const vertical = edge === "left" || edge === "right";
+  dockSizes[edge] = Math.max(dockSizes[edge], vertical ? 280 : 250);
+  dockSizeManual[edge] = true;
+  autoSpatialEdgeStates.delete(edge);
   showArea("systems", false);
+  refreshIntentAreas();
   requestAnimationFrame(() => {
     const widget = $(selector);
-    if (widget && !widget.hidden) widget.scrollIntoView({ block: "nearest" });
+    if (widget && !widget.hidden) {
+      widget.tabIndex = -1;
+      widget.focus({ preventScroll: true });
+      widget.scrollIntoView({ block: "nearest" });
+    }
   });
 }
 $("#systemRailNotifications").addEventListener("click", () => revealSystemRailWidget("#notificationWidget"));
