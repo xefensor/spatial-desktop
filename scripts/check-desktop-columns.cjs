@@ -35,6 +35,7 @@ const migration = vm.createContext({
   tileSessions:{'work:desktop:1:1':{root:{kind:'split',axis:'x',ratio:.6,a:T.leaf('personal'),b:T.leaf('draft')},floating:{draft:{left:20}},parked:{personal:{}},focus:{name:'draft',root:T.leaf('personal')}}},
   saveDesktopPages(){},saveTileSessions(){},saveIndependentSessions(){}
 });
+migration.openProjectNames = workspace => migration.workspaceProjectStates[workspace]?.project ? [migration.workspaceProjectStates[workspace].project] : [];
 vm.runInContext(slice('function migrateDesktopColumns(', 'function updateDesktopPageUi('), migration);
 migration.migrateDesktopColumns();
 assert.equal(migration.desktopPages.column('work'), 'site');
@@ -58,6 +59,9 @@ const ctx=vm.createContext({
   desktopPages:Pages.create(),desktopWheel:Pages.wheelGate(),desktopColumnWheel:Pages.wheelGate(),
   activeWorkspace:'work',activeProjectName:'site',projectSpaces:{site:{name:'Website Launch',icon:'i-folder',accent:'#5af'}},workspaceProfiles:{work:{label:'Work',icon:'i-grid',accent:'#fa5'}},
   appInfo:{personal:{label:'Files'},draft:{label:'Notes'}},appState:{personal:'open',draft:'open'},windowMembership:{work:{personal:null,draft:'site'}},
+  workspaceOpenProjects:{work:['site']},workspaceProjectStates:{},workspaceProjects:{work:'site'},
+  icon:name=>'<svg>'+name+'</svg>',escapeHtml:value=>String(value),prepareControlSemantics(){},scheduleWindowTiling(){},
+  renderProjectSpace(name){ctx.activeProjectName=name; ctx.workspaceOpenProjects[ctx.activeWorkspace]=[...new Set([...ctx.openProjectNames(),name])];},
   windowViewportLockReady:false,desktopPageAnimating:false,desktopHasWindowFocus:false,frontApp:null,zCounter:20,
   tileSessions:{},tileEngine:T,tileInteraction:false,tileRendering:false,manualWindowInteraction:false,
   window:{matchMedia:()=>({matches:true})},document:{body:{dataset:{},style:{setProperty(){},removeProperty(){}}}},
@@ -71,6 +75,7 @@ const ctx=vm.createContext({
   tileSession(){return ctx.tileSessions[ctx.desktopPages.context('work')+'1'] ||= {root:null,parked:{},floating:{}}},
   layoutDockAreas(){ctx.keepPersistentAreasVisible()}
 });
+vm.runInContext(slice('function openProjectNames(', 'const workspaceAreaContents'),ctx);
 vm.runInContext(slice('function projectColumnActive(', 'function renderDesktopColumnMap('),ctx);
 vm.runInContext(slice('function setProjectClosedState(', 'function renderProjectSpace('),ctx);
 vm.runInContext(source.match(/const persistentAreas = new Set\([^;]+;/)[0],ctx);
@@ -82,11 +87,13 @@ vm.runInContext(slice('function detachDraggedDesktopWindow(', '// A floating win
 ctx.desktopPages.assign('work','personal',0,'workspace');
 ctx.desktopPages.assign('work','draft',0,'site');
 ctx.syncApps();ctx.keepPersistentAreasVisible();
-assert.equal(node('.desktop-context-current').textContent,'Workspace');
+assert.equal(node('.desktop-context-header').hidden,false);
+assert.match(node('#desktopContextColumns').innerHTML,/Workspace/);
+assert.match(node('#desktopContextColumns').innerHTML,/Website Launch/);
 assert.equal(node('#desktopContextToggle')['aria-label'],'Open desktop map · Work / Workspace · Desktop 1');
 assert.equal(frames.personal.hidden,false);assert.equal(frames.draft.hidden,true);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'true');
 assert.equal(ctx.changeDesktopColumn('site'),true);
-assert.equal(node('.desktop-context-current').textContent,'Website Launch');
+assert.equal(node('#desktopContextToggle')['aria-label'],'Open desktop map · Work / Website Launch · Desktop 1');
 assert.equal(node('#desktopContextToggle').dataset.project,'true');
 assert.equal(frames.personal.hidden,true);assert.equal(frames.draft.hidden,false);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'false');
 assert.equal(ctx.appState.personal,'open');
@@ -132,9 +139,46 @@ ctx.closeActiveProject();
 assert.equal(ctx.activeProjectName,null);assert.equal(ctx.desktopPages.column('work'),'workspace');
 assert.equal(ctx.appState.personal,'open');assert.equal(ctx.appState.draft,'closed');
 assert.equal(ctx.projectWindowSessions['work:site:default'].pages.draft,0);
-ctx.activeProjectName='site';ctx.changeDesktopColumn('site');ctx.restoreProjectWindows('site',false,true);
+ctx.renderProjectSpace('site');ctx.changeDesktopColumn('site');ctx.restoreProjectWindows('site',false,true);
 assert.equal(ctx.desktopPages.current('work'),1,'Reopen returns to the remembered desktop, including an empty desktop');
 assert.equal(ctx.appState.draft,'open');assert.equal(frames.draft.hidden,true);
 ctx.appState.draft='closed';ctx.parkProjectWindows('site',false);
 assert.equal(ctx.restoreProjectWindows('site',false,true),0);
 console.log('Project shelf passed: independent windows stay open, project pages and minimized states persist, and an empty session never seeds replacement windows.');
+
+// Multiple open projects share the header, but never share their windows or pages.
+ctx.workspaceProfiles.school={label:'School',icon:'i-grid',accent:'#f85'};
+ctx.projectSpaces.film={name:'Short Film',icon:'i-video',accent:'#f85',modes:{default:{label:'Project'}}};
+ctx.workspaceOpenProjects.work=[];
+ctx.activeProjectName=null;
+ctx.desktopPages.select('work','workspace');
+ctx.updateDesktopPageUi();
+assert.equal(node('.desktop-context-header').hidden,true,'No project means no header');
+vm.runInContext(slice('function activateProject(', 'function switchProjectMode('),ctx);
+const seed=[];
+ctx.seedProjectModeWindows=name=>{seed.push(name);const id=name==='site'?'draft':'cut';ctx.appInfo[id]={label:id};ctx.appState[id]='open';ctx.windowMembership.work[id]=name;ctx.desktopPages.assign('work',id,0,name);return 1;};
+ctx.projectWindowSessions={};
+ctx.activateProject('site',false);
+assert.equal(node('.desktop-context-header').hidden,false);
+ctx.changeDesktopPage(1,false);
+ctx.activateProject('film',false);
+assert.deepEqual(copy(ctx.openProjectNames()),['site','film']);
+assert.equal(ctx.appState.draft,'open','Opening a second project never shelves the first');
+assert.match(node('#desktopContextColumns').innerHTML,/Website Launch/);
+assert.match(node('#desktopContextColumns').innerHTML,/Short Film/);
+assert.equal(ctx.adjacentDesktopColumn(-1),'site');
+ctx.activateProject('site',false);
+assert.equal(ctx.desktopPages.current('work'),1,'Already open projects retain their last desktop');
+assert.deepEqual(seed,['site','film'],'Switching an open project never reseeds its windows');
+ctx.closeActiveProject();
+assert.deepEqual(copy(ctx.openProjectNames()),['film']);
+assert.equal(node('.desktop-context-header').hidden,false,'Closing one leaves the header visible');
+assert.equal(ctx.appState.cut,'open','Closing one project keeps the other project open');
+ctx.activateProject('film',false);
+ctx.closeActiveProject();
+assert.equal(node('.desktop-context-header').hidden,true,'Closing the final project hides the header');
+ctx.workspaceOpenProjects.school=['film','film','deleted'];
+assert.deepEqual(copy(ctx.openProjectNames('school')),['film'],'Lists are workspace specific, unique and exclude deleted projects');
+ctx.updateDesktopPageUi();
+assert.equal(node('.desktop-context-header').hidden,true,'Other workspaces cannot expose the header here');
+console.log('Open-project header passed: zero/one/multiple projects, all labels, switching without shelving/reseeding, remembered desktops, independent closure and workspace isolation.');

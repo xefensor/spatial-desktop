@@ -53,6 +53,8 @@ const ctx = vm.createContext({
   tileSession: () => ({})
 });
 vm.runInContext(slice('function updateDesktopPageUi(', 'function changeDesktopPage('), ctx);
+ctx.renderDesktopContextColumns = () => {}; // Header rendering is exercised by check-desktop-columns.
+ctx.openProjectNames = () => ctx.activeProjectName ? [ctx.activeProjectName] : [];
 vm.runInContext(slice('function prepareDesktopPages(', 'function isLocalApp('), ctx);
 const changes = [];
 ctx.changeDesktopPage = page => { changes.push(page); ctx.desktopPages.go('work', page); return true; };

@@ -143,6 +143,7 @@ function storageAdapter(seed) {
     $: () => noteField,
     noteDraft: ''
   });
+  vm.runInContext(slice('function readDesktopStorage(', 'function localDisplayDescriptor('), context);
   vm.runInContext(slice('const projectSpaces =', 'function projectLocationMeta('), context);
   vm.runInContext(slice('function slugifyProject(', 'function resourceMarkup('), context);
   vm.runInContext(slice('function prepareNoteSync(', 'function pointInside('), context);
@@ -238,6 +239,7 @@ for (const [name, profile] of Object.entries(ui.context.workspaceProfiles)) Obje
 vm.runInContext(slice('function snapshotWorkspaceAreaContent(', 'function workspaceFavoriteMarkup('), ui.context);
 vm.runInContext(slice('function renderWorkspace(', 'function renderWorkspaceExample('), ui.context);
 vm.runInContext(slice('function updateDesktopPageUi(', 'function focusDesktop('), ui.context);
+ui.context.renderDesktopContextColumns = () => {}; // Real header rendering is covered by the column integration suite.
 vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
 element('#notificationList').innerHTML = 'General notification';
 element('.system-scroll-region').scrollTop = 120;
@@ -283,3 +285,13 @@ for (const htmlName of fs.readdirSync(dist).filter(name => name.endsWith('.html'
 }
 console.log('Website asset checks passed: local stylesheet and script types and paths.');
 
+
+const multiple = storageAdapter({
+  'spatial-open-projects-v1': JSON.stringify({general:['plasma','retold'],school:[],work:['retold']}),
+  'spatial-workspace-project-states-v1': JSON.stringify({general:{project:'retold'},school:{project:null},work:{project:'retold'}})
+});
+assert.deepEqual(JSON.parse(multiple.storage.get('spatial-open-projects-v1')).general,['plasma','retold']);
+const multipleReload = storageAdapter(Object.fromEntries(multiple.storage));
+assert.deepEqual(JSON.parse(multipleReload.storage.get('spatial-open-projects-v1')).general,['plasma','retold']);
+assert.deepEqual(JSON.parse(multipleReload.storage.get('spatial-open-projects-v1')).school,[]);
+console.log('Open projects persist across reload with independent workspace lists.');

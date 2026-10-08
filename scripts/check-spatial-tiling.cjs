@@ -773,6 +773,7 @@ const columnCarrySelector = sandbox.$;
 sandbox.$ = selector => selector === '.apps-zone' ? appsElement : selector === '.workspace-zone' ? workspaceElement : columnCarrySelector(selector);
 Object.assign(sandbox, {
   projectSpaces:{project:{name:'Test project'}},workspaceProfiles:{general:{label:'General'}},
+  openProjectNames:()=>['project'], renderProjectSpace(name){sandbox.activeProjectName=name;},
   windowMembership:{general:{notes:null,dolphin:null,elisa:'project'}},
   endSystemRailExpansion(){},saveIndependentSessions(){},projectColumnActive:()=>true,
   extendedDesktopActive:()=>false,isLocalApp:name=>sandbox.desktopPages.visible('general',name),

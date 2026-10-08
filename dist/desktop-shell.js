@@ -1747,6 +1747,7 @@ function cancelDraggedDesktopPages(drag) {
   Object.entries(drag.sessions).forEach(([key, session]) => { tileSessions[key] = session; });
   if (desktopPages.column(activeWorkspace) !== drag.column) {
     desktopPages.select(activeWorkspace, drag.column);
+    if (drag.column !== "workspace" && drag.column !== activeProjectName) renderProjectSpace(drag.column);
     windowMembership[activeWorkspace][drag.name] = drag.column === "workspace" ? null : drag.column;
     layoutDockAreas(false, false);
     saveIndependentSessions();
@@ -3268,6 +3269,13 @@ const projectSpaces = JSON.parse(JSON.stringify(SpatialDemoExamples.projects));
 let activeProjectName = null;
 // Projects are shared resources; which one is open (and its Mode) belongs to a Workspace.
 const workspaceProjectStates = Object.create(null);
+const workspaceOpenProjects = readDesktopStorage("spatial-open-projects-v1");
+
+function openProjectNames(workspace = activeWorkspace) {
+  const legacy = workspaceProjectStates[workspace]?.project || (workspace === activeWorkspace ? activeProjectName : null);
+  const saved = workspaceOpenProjects[workspace];
+  return [...new Set(Array.isArray(saved) ? saved : legacy ? [legacy] : [])].filter(name => projectSpaces[name]);
+}
 const workspaceAreaContents = Object.create(null);
 let defaultAreaContent = null;
 
@@ -3375,6 +3383,7 @@ function projectSessionKey(name, modeId = projectModeId(name)) {
 function persistProjectState() {
   rememberWorkspaceProject();
   try {
+    localStorage.setItem("spatial-open-projects-v1", JSON.stringify(Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, openProjectNames(name)]))));
     localStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(workspaceProjectStates));
     const content = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
       note: project.note,
@@ -3456,7 +3465,7 @@ function renderOverviewProjects() {
   const entries = Object.entries(projectSpaces);
   $("#overviewProjectCount").textContent = entries.length + (entries.length === 1 ? " project" : " projects");
   grid.innerHTML = entries.map(([name, project]) => {
-    const selected = activeProjectName === name;
+    const selected = openProjectNames().includes(name);
     const resourceCount = project.resources.length;
     const location = projectLocationMeta(project);
     const detail = location.label + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
@@ -3506,6 +3515,8 @@ function renderProjectSpace(name) {
   const area = areaFor("projects");
   if (!project || !area) return;
   activeProjectName = name;
+  workspaceOpenProjects[activeWorkspace] = [...new Set([...openProjectNames(), name])];
+  workspaceProjects[activeWorkspace] = name;
   rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
   $("#projectAreaName").textContent = project.name;
@@ -3599,13 +3610,13 @@ function activateProject(name, announce = true) {
   if (desktopPageAnimating) { setTimeout(() => activateProject(name, announce), 230); return; }
   const project = projectSpaces[name];
   if (!project) return;
-  if (activeProjectName === name) {
+  if (openProjectNames().includes(name)) {
     changeDesktopColumn(name);
     renderProjectSpace(name);
     if (announce) showToast(project.name + " is already open");
     return;
   }
-  if (activeProjectName) parkProjectWindows(activeProjectName, false);
+  captureWorkspaceContent();
   renderProjectSpace(name);
   changeDesktopColumn(name, false);
   workspaceProjects[activeWorkspace] = name;
@@ -3706,14 +3717,16 @@ function closeActiveProject() {
   captureWorkspaceContent();
   if (tileSession().fullscreen) leaveAppFullscreen();
   const parked = parkProjectWindows(name, false);
+  workspaceOpenProjects[activeWorkspace] = openProjectNames().filter(id => id !== name);
   changeDesktopColumn("workspace", false);
-  activeProjectName = null;
-  workspaceProjects[activeWorkspace] = null;
+  activeProjectName = openProjectNames()[0] || null;
+  workspaceProjects[activeWorkspace] = activeProjectName;
   saveIndependentSessions();
   setProjectClosedState(true);
   layoutDockAreas(false, false);
   persistProjectState();
   renderOverviewProjects();
+  updateDesktopPageUi();
   queueDesktopStateBroadcast(0);
   showToast(project.name + " closed · saved " + parked + " window" + (parked === 1 ? "" : "s"));
 }
@@ -3855,9 +3868,18 @@ function deleteProject(projectName) {
   const project = projectSpaces[projectName];
   if (!project) return;
   const label = project.name;
+  if (desktopPageAnimating) { setTimeout(() => deleteProject(projectName), 230); return; }
   if (activeProjectName === projectName) closeActiveProject();
+  else if (openProjectNames().includes(projectName)) parkProjectWindows(projectName, false);
+  Object.entries(windowMembership).forEach(([workspace, membership]) => {
+    Object.entries(membership).filter(([, owner]) => owner === projectName).forEach(([name]) => {
+      if (workspaceAppStates[workspace]) workspaceAppStates[workspace][name] = "closed";
+    });
+    if (workspaceProjects[workspace] === projectName) workspaceProjects[workspace] = null;
+  });
   clearProjectSessions(projectName);
   delete projectSpaces[projectName];
+  Object.keys(workspaceProfiles).forEach(workspace => { workspaceOpenProjects[workspace] = openProjectNames(workspace).filter(name => name !== projectName); });
   Object.entries(workspaceProjectStates).forEach(([workspace, context]) => {
     if (context.project === projectName) { context.project = null; context.mode = null; }
     if (desktopPages.column(workspace) === projectName) desktopPages.select(workspace, "workspace");
@@ -3870,6 +3892,9 @@ function deleteProject(projectName) {
   renderOverviewProjects();
   closeProjectEditor();
   queueDesktopStateBroadcast(0);
+  updateDesktopPageUi();
+  saveIndependentSessions();
+  persistWorkspaceAppStates();
   showToast(label + " removed · folder and files kept");
 }
 
@@ -5901,13 +5926,13 @@ function desktopColumnLabel(column = desktopPages.column(activeWorkspace)) {
 }
 
 function adjacentDesktopColumn(direction) {
-  if (!direction || !activeProjectName) return null;
-  const column = desktopPages.column(activeWorkspace);
-  return direction > 0 && column === "workspace" ? activeProjectName : direction < 0 && column !== "workspace" ? "workspace" : null;
+  if (!direction) return null;
+  const columns = ["workspace", ...openProjectNames()];
+  return columns[columns.indexOf(desktopPages.column(activeWorkspace)) + Math.sign(direction)] || null;
 }
 
 function changeDesktopColumn(column, announce = true) {
-  if (column !== "workspace" && column !== activeProjectName) return false;
+  if (column !== "workspace" && !openProjectNames().includes(column)) return false;
   if (desktopPages.column(activeWorkspace) === column) return false;
   captureWorkspaceContent();
   const changed = changeDesktopPage(desktopPages.current(activeWorkspace, column), true, column);
@@ -5916,7 +5941,7 @@ function changeDesktopColumn(column, announce = true) {
 }
 
 function moveWindowToColumn(name, column, follow = true) {
-  if (!appInfo[name] || appState[name] === "closed" || (column !== "workspace" && column !== activeProjectName)) return false;
+  if (!appInfo[name] || appState[name] === "closed" || (column !== "workspace" && !openProjectNames().includes(column))) return false;
   const previous = desktopPages.columnOf(activeWorkspace, name);
   if (previous === column) return false;
   const page = desktopPages.pageOf(activeWorkspace, name);
@@ -5942,10 +5967,11 @@ function moveWindowToColumn(name, column, follow = true) {
 }
 
 function changeDraggedDesktopColumn(drag, column) {
-  if (column === desktopPages.column(activeWorkspace) || (column !== "workspace" && column !== activeProjectName)) return false;
+  if (column === desktopPages.column(activeWorkspace) || (column !== "workspace" && !openProjectNames().includes(column))) return false;
   const floating = tileSession().floating[drag.name];
   detachDraggedDesktopWindow(drag.name, desktopPages.current(activeWorkspace));
   desktopPages.select(activeWorkspace, column);
+  if (column !== "workspace" && column !== activeProjectName) renderProjectSpace(column);
   if (tileSession().fullscreen) leaveAppFullscreen();
   desktopPages.assign(activeWorkspace, drag.name);
   windowMembership[activeWorkspace] ||= {};
@@ -5970,7 +5996,7 @@ function changeDraggedDesktopColumn(drag, column) {
 function renderDesktopColumnMap() {
   const target = $("#desktopColumnMap");
   if (!target) return;
-  const columns = ["workspace", ...(activeProjectName ? [activeProjectName] : [])];
+  const columns = ["workspace", ...openProjectNames()];
   target.innerHTML = columns.map(column => {
     const project = column === "workspace" ? null : projectSpaces[column];
     const current = desktopPages.column(activeWorkspace) === column;
@@ -5990,7 +6016,7 @@ function migrateDesktopColumns() {
     const state = desktopPages.space(workspace);
     const openedProject = workspaceProjectStates[workspace]?.project;
     if (state.columnsMigrated) {
-      if (desktopPages.column(workspace) !== "workspace" && desktopPages.column(workspace) !== openedProject) desktopPages.select(workspace, "workspace");
+      if (desktopPages.column(workspace) !== "workspace" && !openProjectNames(workspace).includes(desktopPages.column(workspace))) desktopPages.select(workspace, "workspace");
       return;
     }
     const previousPage = state.active;
@@ -6058,14 +6084,12 @@ function updateDesktopPageUi() {
   button.title = "Overview · " + context + " · Desktop " + page + " · Super · Shift+scroll: switch columns";
   const contextToggle = $("#desktopContextToggle");
   if (contextToggle) {
-    $(".desktop-context-workspace", contextToggle).textContent = label;
-    $(".desktop-context-current", contextToggle).textContent = project?.name || "Workspace";
     $(".desktop-context-page", contextToggle).textContent = "Desktop " + page;
-    $(".desktop-context-icon use", contextToggle).setAttribute("href", "#" + (project?.icon || workspaceProfiles[activeWorkspace].icon));
     contextToggle.dataset.project = String(Boolean(project));
     contextToggle.style?.setProperty("--context-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
     contextToggle.setAttribute("aria-label", "Open desktop map · " + label + " / " + (project?.name || "Workspace") + " · Desktop " + page);
   }
+  renderDesktopContextColumns();
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
@@ -6073,6 +6097,33 @@ function updateDesktopPageUi() {
   $$(".desktop-folder").forEach(folder => {
     folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || (folder.dataset.desktopColumn || "workspace") !== column || Number(folder.dataset.desktopPage) !== page - 1;
   });
+}
+
+function renderDesktopContextColumns() {
+  const header = $(".desktop-context-header");
+  const nav = $("#desktopContextColumns");
+  if (!header || !nav) return;
+  const projects = openProjectNames();
+  const wasHidden = header.hidden;
+  header.hidden = projects.length === 0;
+  $(".desktop-shell").style.setProperty("--desktop-context-height", header.hidden ? "0px" : "32px");
+  $(".desktop-context-workspace", header).textContent = workspaceProfiles[activeWorkspace].label;
+  const columns = ["workspace", ...projects];
+  const key = JSON.stringify(columns.map(id => { const value = id === "workspace" ? workspaceProfiles[activeWorkspace] : projectSpaces[id]; return [id, value.name || value.label, value.icon, value.accent]; }));
+  if (nav.dataset.contentsKey !== key) {
+    nav.dataset.contentsKey = key;
+    nav.innerHTML = columns.map(id => {
+      const project = id === "workspace" ? null : projectSpaces[id];
+      return '<button class="desktop-context-column" data-context-column="' + escapeHtml(id) + '" aria-pressed="false" aria-label="' + escapeHtml('Switch to ' + desktopColumnLabel(id)) + '" style="--column-accent:' + escapeHtml(project?.accent || workspaceProfiles[activeWorkspace].accent) + '">' + icon(project?.icon || workspaceProfiles[activeWorkspace].icon) + '<span>' + escapeHtml(project?.name || 'Workspace') + '</span></button>';
+    }).join("");
+    prepareControlSemantics(nav);
+  }
+  $$("[data-context-column]", nav).forEach(button => {
+    const selected = button.dataset.contextColumn === desktopPages.column(activeWorkspace);
+    button.setAttribute("aria-pressed", String(selected));
+    button.classList.toggle("is-active", selected);
+  });
+  if (wasHidden !== header.hidden && windowViewportLockReady && !tileInteraction && !manualWindowInteraction) scheduleWindowTiling();
 }
 
 function focusDesktop(moveKeyboardFocus = true) {
@@ -6115,6 +6166,10 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   saveLayout();
   saveTileSessions();
   if (tileSession().fullscreen) leaveAppFullscreen();
+  if (horizontal && column !== "workspace" && column !== activeProjectName) {
+    captureWorkspaceContent();
+    renderProjectSpace(column);
+  }
   desktopPages.select(activeWorkspace, column);
   desktopPages.go(activeWorkspace, page);
   if (horizontal) { endSystemRailExpansion(false); layoutDockAreas(false, false); }
@@ -6241,6 +6296,13 @@ function prepareDesktopPages() {
     focusDesktop(false);
     setUniversalSearchOpen(true);
   });
+  $("#desktopContextColumns").addEventListener("click", event => {
+    const button = event.target.closest("[data-context-column]");
+    if (!button) return;
+    const column = button.dataset.contextColumn;
+    focusDesktop(false);
+    changeDesktopColumn(column);
+  });
   const workspace = $(".workspace-zone");
   workspace.addEventListener("pointerdown", event => {
     if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();
@@ -6286,7 +6348,7 @@ function prepareDesktopPages() {
     const button = event.target.closest("[data-desktop-column]");
     if (!button) return;
     const column = button.dataset.desktopColumn;
-    if (column !== "workspace" && column !== activeProjectName) return;
+    if (column !== "workspace" && !openProjectNames().includes(column)) return;
     setUniversalSearchOpen(false);
     changeDesktopPage(Number(button.dataset.columnPage), true, column);
   });
@@ -6474,6 +6536,7 @@ function captureDesktopSyncState() {
     schema: 4,
     desktopPages: desktopPages.snapshot(),
     desktopHasWindowFocus,
+    openProjects: Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, openProjectNames(name)])),
     workspaceProjects: cloneDesktopState(workspaceProjectStates),
     areaContents,
     independent: {instances: instanceDefinitions, content: workspaceContent, membership: windowMembership, projects: workspaceProjects, sequence: instanceSequence},
@@ -6506,6 +6569,11 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.openProjects) {
+    Object.keys(workspaceOpenProjects).forEach(name => delete workspaceOpenProjects[name]);
+    Object.keys(workspaceProfiles).forEach(name => { workspaceOpenProjects[name] = Array.isArray(state.openProjects[name]) ? state.openProjects[name].filter(id => state.projects?.[id] || projectSpaces[id]) : []; });
+    try { localStorage.setItem("spatial-open-projects-v1", JSON.stringify(workspaceOpenProjects)); } catch {}
+  }
   if (state.desktopPages) { desktopPages.load(state.desktopPages); saveDesktopPages(); }
   if (typeof state.desktopHasWindowFocus === "boolean") desktopHasWindowFocus = state.desktopHasWindowFocus;
   if (state.independent) {
@@ -6917,7 +6985,7 @@ function moveAppWorkspace(name, destination) {
 }
 function moveAppProject(name, destination) {
   if (!projectSpaces[destination] || appState[name] === 'closed') return;
-  if (destination === activeProjectName) { moveWindowToColumn(name, destination); return; }
+  if (openProjectNames().includes(destination)) { moveWindowToColumn(name, destination); return; }
   removeWindowFromSavedProjects(name);
   const page = desktopPages.current(activeWorkspace, destination);
   const key = projectSessionKey(destination);
