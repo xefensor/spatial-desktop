@@ -1,0 +1,76 @@
+/* Material owns the silhouette. Important declarations in this layer take
+   precedence over legacy component shapes, including nested glass in ABS. */
+@layer material-shapes {
+  :is(.material-surface-abs,.abs-example,.abs-surface,.intro-copy,.rule-card,.abs-menu,.abs-banner,
+      .dolphin-window,.music-window,.plasma-rail) {
+    border-radius:var(--window-corner,22px)!important;
+    corner-shape:squircle!important;
+  }
+  :is(.material-abs-button,.material-abs-field,.material-abs-element,
+      .abs-button,.abs-field,.abs-choice,.abs-side .tab,.abs-menu .menu-item,
+      .abs-side .row-icon,.rule span,.monitor-app,.material-chip.abs,
+      .dolphin-window button,.music-window button,.dolphin-window .recess-field,
+      .music-window .recess-field,.rail-key,.shell-key) {
+    border-radius:var(--window-control-corner,10px)!important;
+    corner-shape:squircle!important;
+  }
+
+  :is(.material-surface-glass,.material-glass-button,.material-glass-field,.material-glass-element,
+      .desktop-glass-dialog,.glass-example,.glass-surface,.glass-button,.glass-field,.glass-choice,
+      .glass-tab,.glass-menu,.glass-banner,.glass-row,.glass-side .recessed-field,
+      .glass-side .tab,.glass-side .row-icon,.glass-menu .menu-item,
+      .guide-nav,.theme-switch,.theme-switch button,.top-link,.material-chip.glass,
+      .glass-side .menu-demo,.glass-side .menu-item,.glass-side kbd,
+      .glass-control,.glass-chip,.recessed-glass,.glass-contact,
+      .phone button,.phone .phone-toolbar label,.music-phone button,.mobile-queue-sheet,
+      .tile-drop-preview,.tile-pressure-hint,.intent-area-tab) {
+    border-radius:0!important;
+    corner-shape:square!important;
+  }
+  /* Content is joined to the glass sheet, including small keys and badges.
+     App artwork and status dots keep the shapes of the symbols they depict. */
+  :is(.material-surface-glass,.desktop-glass-dialog) :where(
+      header,footer,section,article,nav,form,kbd,
+      .universal-search-shell,.workspace-context-card,.app-rack,
+      .notification,.timer-face,.next-event,.device-row,
+      .project-closed-state,.project-library-list,.linked-type,
+      .overview-task-meta,.overview-task-desktop,.package-size,
+      .package-panel,.import-map,.import-tree>span,.import-hero,.import-grid) {
+    border-radius:0!important;
+    corner-shape:square!important;
+  }
+  :is(.material-glass-button,.glass-button,.glass-tab)::after {
+    border-radius:0!important;
+    corner-shape:square!important;
+  }
+  .material-guide-page .brand-mark i:first-child {
+    corner-shape:squircle!important;
+  }
+  .material-guide-page .brand-mark i:last-child,
+  .glass-side .surface-tag::before {
+    border-radius:0!important;corner-shape:square!important;
+  }
+
+  /* Native range parts do not inherit their input's corner geometry. */
+  :is(.material-glass-field,.glass-range,.phone input[type="range"])::-webkit-slider-runnable-track {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  :is(.material-glass-field,.glass-range,.phone input[type="range"])::-webkit-slider-thumb {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  :is(.material-glass-field,.glass-range,.phone input[type="range"])::-moz-range-track {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  :is(.material-glass-field,.glass-range,.phone input[type="range"])::-moz-range-progress {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  :is(.material-glass-field,.glass-range,.phone input[type="range"])::-moz-range-thumb {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  :is(.material-abs-field,.abs-range)::-webkit-slider-thumb {
+    border-radius:var(--window-control-corner,10px)!important;corner-shape:squircle!important;
+  }
+  :is(.material-abs-field,.abs-range)::-moz-range-thumb {
+    border-radius:var(--window-control-corner,10px)!important;corner-shape:squircle!important;
+  }
+}
