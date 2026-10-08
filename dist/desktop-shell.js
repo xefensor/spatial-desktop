@@ -4197,11 +4197,10 @@ function renderWorkspace(name, announce = true) {
   else { setProjectClosedState(true); renderOverviewProjects(); }
   syncApps();
   restoreWorkspaceAreaContent(name);
-  const status = $("#workspaceStatus");
-  $("b", status).textContent = profile.label;
-  $("small", status).textContent = profile.subtitle;
-  $("#workspaceRailGlyph").textContent = profile.label.slice(0, 1).toUpperCase();
-  status.title = profile.label + " workspace";
+  const overview = $("#allAppsToggle");
+  $("use", overview).setAttribute("href", "#" + profile.icon);
+  overview.setAttribute("aria-label", "Open " + profile.label + " workspace overview");
+  overview.title = "Overview · " + profile.label + " workspace · Super";
   try { localStorage.setItem("spatial-active-workspace", name); } catch {}
   persistWorkspaceAppStates();
   persistProjectState();
@@ -4280,7 +4279,6 @@ function prepareWorkspaces() {
     renderWorkspace(tabs[next].dataset.workspace);
     tabs[next].focus();
   });
-  $("#workspaceStatus").addEventListener("click", () => setUniversalSearchOpen(true));
   $("#overviewWindowGrid").addEventListener("click", event => {
     const button = event.target.closest("[data-overview-open-app]");
     if (button) { openApp(button.dataset.overviewOpenApp); setUniversalSearchOpen(false); }

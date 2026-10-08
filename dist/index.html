@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="project-surface.css?v=4">
   <link rel="stylesheet" href="semantic-colors.css?v=6">
   <link rel="stylesheet" href="toggle-controls.css?v=3">
-  <link rel="stylesheet" href="desktop-pages.css?v=1">
+  <link rel="stylesheet" href="desktop-pages.css?v=2">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -83,10 +83,9 @@
   <main class="desktop-shell" aria-label="Spatial Desktop prototype (work in progress)">
     <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key overview-launch" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open desktop overview" title="Overview · Super"><svg><use href="#i-grid"/></svg></button><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
+        <div class="area-window-identity"><button class="surface-key overview-launch workspace-overview" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open General workspace overview" title="Overview · General workspace · Super"><svg aria-hidden="true"><use href="#i-grid"/></svg></button><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
         <div class="area-window-actions apps-header-actions">
             <button class="surface-key desktop-focus-key" id="desktopFocusButton" aria-pressed="false" aria-label="Focus desktop 1" title="Focus desktop · scroll up/down to change desktops"><svg aria-hidden="true"><use href="#i-monitor"/></svg><b id="desktopPageNumber" aria-hidden="true">1</b></button>
-            <button class="workspace-status" id="workspaceStatus" aria-label="Open workspace overview" title="General workspace"><i></i><em class="rail-workspace-glyph" id="workspaceRailGlyph" aria-hidden="true">G</em><span><b>General</b><small>Personal desktop</small></span><svg><use href="#i-right"/></svg></button>
         </div>
       </header>
       <div class="apps-scroll-region">
@@ -477,7 +476,7 @@
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
   <script src="desktop-pages.js?v=2"></script>
-  <script src="desktop-shell.js?v=199"></script>
+  <script src="desktop-shell.js?v=200"></script>
 </body>
 </html>
 
