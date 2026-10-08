@@ -7272,92 +7272,63 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
   .app-frame .terminal-screen{padding:12px}
 }
 
-/* v140 — Apps Area hotbar. Slot labels are engraved into the acrylic app
-   shelf rather than wrapped in another button. Super+number gives the same
-   immediate 1–9 muscle memory as a game hotbar. */
+/* Hotbar numbers use a neutral contrast plate, independent of app colour.
+   Reserve a row above the icon so numbers never cover its artwork. */
+.apps-zone{
+  --hotkey-face:#18212b;
+  --hotkey-ink:#f8fafc;
+  --hotkey-edge:#718096;
+}
+body[data-theme="light"] .apps-zone{
+  --hotkey-face:#f7f9fc;
+  --hotkey-ink:#111827;
+  --hotkey-edge:#64748b;
+}
+.apps-zone .app-key .app-hotkey,
+.apps-zone .mini-card .mini-hotkey{
+  min-width:24px;
+  height:24px;
+  box-sizing:border-box;
+  margin:0;
+  padding:0 3px;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+  border:1px solid var(--hotkey-edge)!important;
+  border-radius:0!important;
+  color:var(--hotkey-ink)!important;
+  background:var(--hotkey-face)!important;
+  box-shadow:none!important;
+  font:800 16px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+  text-shadow:none;
+}
 .apps-zone .app-key .app-hotkey{
   position:absolute;
   z-index:2;
   top:2px;
-  left:3px;
-  min-width:20px;
-  height:20px;
-  margin:0;
-  padding:0 5px;
-  display:grid;
-  place-items:center;
-  pointer-events:none;
-  border:1px solid color-mix(in srgb,var(--area-header-accent,var(--blue)) 34%,var(--sd-glass-edge));
-  border-radius:6px;
-  color:color-mix(in srgb,var(--text) 90%,white 10%);
-  background:color-mix(in srgb,var(--area-header-accent,var(--blue)) 11%,var(--sd-glass-face));
-  box-shadow:
-    inset 0 1px color-mix(in srgb,white 18%,transparent),
-    0 0 5px color-mix(in srgb,var(--area-header-accent,var(--blue)) 12%,transparent);
-  font:850 12px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:-.035em;
-  text-shadow:none;
+  left:2px;
 }
-.apps-zone .app-key:hover .app-hotkey,
-.apps-zone .app-key.is-open .app-hotkey{
-  color:color-mix(in srgb,var(--item-tone,var(--blue)) 72%,var(--text));
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 13%,var(--sd-glass-face));
-  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 48%,var(--sd-glass-edge));
-  box-shadow:
-    inset 0 1px color-mix(in srgb,white 20%,transparent),
-    0 0 7px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent);
+.apps-zone .app-key{
+  height:72px;
+  padding-top:24px;
 }
-.apps-zone .app-key.is-active .app-hotkey{
-  color:white;
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 58%,var(--sd-glass-face));
-  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 82%,white 18%);
-  box-shadow:
-    inset 0 1px rgba(255,255,255,.32),
-    0 0 8px color-mix(in srgb,var(--item-tone,var(--blue)) 34%,transparent);
+.apps-zone:not([data-area-state="rail"]) .app-rack{
+  grid-auto-rows:76px;
+}
+.apps-zone[data-area-state="rail"] .app-key{
+  height:60px;
+  min-height:60px;
+}
+.apps-zone .mini-card .mini-hotkey{
+  position:static;
+  width:auto;
+  flex:0 0 auto;
 }
 .apps-zone .app-key.is-hotkey-pulse{
   transform:translateY(2px) scaleY(.985)!important;
   transition-duration:8ms!important;
-}
-.apps-zone[data-area-state="rail"] .app-key .app-hotkey{
-  top:1px;
-  left:1px;
-}
-body[data-theme="light"] .apps-zone .app-key .app-hotkey{
-  background:color-mix(in srgb,var(--area-header-accent,var(--blue)) 10%,rgba(255,255,255,.76));
-  color:color-mix(in srgb,var(--text) 94%,var(--area-header-accent,var(--blue)));
-  border-color:color-mix(in srgb,var(--area-header-accent,var(--blue)) 42%,rgba(51,69,77,.28));
-}
-body[data-theme="light"] .apps-zone .app-key.is-active .app-hotkey{
-  color:white;
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 72%,#2b3941);
-  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 72%,white 28%);
-}
-
-/* Parked live cards keep the same stable hotbar identity as their app key. */
-.apps-zone .mini-card .mini-hotkey{
-  width:22px;
-  height:22px;
-  flex:0 0 22px;
-  display:grid;
-  place-items:center;
-  margin:0;
-  padding:0;
-  border:1px solid color-mix(in srgb,var(--item-tone,var(--blue)) 56%,var(--sd-glass-edge));
-  border-radius:6px;
-  color:color-mix(in srgb,var(--item-tone,var(--blue)) 68%,white 32%);
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 14%,var(--sd-glass-face));
-  box-shadow:
-    inset 0 1px rgba(255,255,255,.18),
-    0 0 7px color-mix(in srgb,var(--item-tone,var(--blue)) 19%,transparent);
-  font:850 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:-.035em;
-  text-shadow:none;
-}
-body[data-theme="light"] .apps-zone .mini-card .mini-hotkey{
-  color:color-mix(in srgb,var(--item-tone,var(--blue)) 76%,#182128 24%);
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 10%,rgba(255,255,255,.78));
-  border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 58%,rgba(51,69,77,.28));
 }
 @media(prefers-reduced-motion:reduce){
   .apps-zone .app-key.is-hotkey-pulse{transform:none!important}
@@ -7426,7 +7397,7 @@ body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
 .apps-zone:not([data-area-state="rail"]) .app-rack{
   height:auto;
   min-height:66px;
-  grid-auto-rows:66px;
+  grid-auto-rows:76px;
   align-content:start;
   max-height:45%;
   overflow-y:auto;
