@@ -229,7 +229,7 @@ Object.assign(ui.context, {
   saveAreaLayout() {}, saveLayout() {},
   refreshWorkspaceContext() {}, workspaceFavoriteMarkup() {}, escapeHtml: x => x, icon: () => '', appArt: () => '',
   applyAppPrimaryColors() {}, prepareControlSemantics() {}, syncApps() {},
-  renderWorkspaceExample() {}, endSystemRailExpansion() {},
+  renderWorkspaceExample() {}, endSystemRailExpansion() {}, syncProjectAreaView() {},
   renderOverviewProjects() {}, setProjectClosedState(closed) { element('project').hidden = closed; },
   renderProjectSpace(name) { vm.runInContext('activeProjectName = ' + JSON.stringify(name) + '; rememberWorkspaceProject();', ui.context); element('project').hidden = false; },
   restoreWorkspaceWindowLayout() { calls.push(['restore', ui.context.activeWorkspace]); }, bringToFront() {}, showToast() {}
