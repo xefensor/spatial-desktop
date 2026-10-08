@@ -122,7 +122,7 @@
 }
 .project-area[data-area-state="rail"] .project-pack-key{display:flex}
 .project-area[data-area-state="rail"][data-project-library-open="true"] .project-rail-tools{display:none}
-.project-area[data-area-state="rail"] .project-closed-state:not([hidden]){
+.project-area[data-area-state="rail"] .project-closed-state.project-library:not([hidden]){
   display:flex!important;
   flex:1 1 auto;
   flex-direction:column;
@@ -145,8 +145,10 @@
   gap:5px;
   padding:6px 2px;
   min-height:60px;
+  height:auto;
 }
 .project-area[data-area-state="rail"] .project-library-icon{width:23px;height:23px}
+.project-area[data-area-state="rail"] .project-library-copy{display:block}
 .project-area[data-area-state="rail"] .project-library-copy b{
   display:block;
   font-size:10px;
