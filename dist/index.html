@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="project-surface.css?v=4">
   <link rel="stylesheet" href="semantic-colors.css?v=6">
   <link rel="stylesheet" href="toggle-controls.css?v=3">
-  <link rel="stylesheet" href="desktop-pages.css?v=3">
+  <link rel="stylesheet" href="desktop-pages.css?v=4">
   <link rel="stylesheet" href="material-shapes.css?v=6">
   <link rel="stylesheet" href="area-rails.css?v=4">
 </head>
@@ -208,7 +208,7 @@
           <button class="surface-key project-rail-tool rail-action" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg aria-hidden="true"><use href="#i-link"/></svg><span>Links</span><small id="projectRailResourceCount">2</small></button>
         </section>
         <section class="rail-group project-rail-end" aria-label="Project session">
-          <button class="surface-key project-rail-tool rail-action" id="projectRailSession" aria-label="Restore saved project windows" title="Restore saved windows"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Windows</span><small id="projectRailWindowCount">0</small></button>
+          <button class="surface-key project-rail-tool rail-action" id="projectRailSession" aria-label="Show project desktop column" title="Show project desktop column"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Windows</span><small id="projectRailWindowCount">0</small></button>
           <button class="surface-key project-rail-tool rail-action project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg aria-hidden="true"><use href="#i-archive"/></svg><span>Pack</span></button>
           <button class="surface-key project-rail-tool rail-action" id="projectRailClose" aria-label="Close current project" title="Close current project"><svg aria-hidden="true"><use href="#i-close"/></svg><span>Close</span></button>
         </section>
@@ -267,6 +267,8 @@
             <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
             <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">OPEN WINDOWS</span><h3 id="openWindowsTitle">General workspace</h3></span></div><span id="workspaceOpenCount">2 windows</span></header>
+            <div class="desktop-column-map" id="desktopColumnMap" aria-label="Desktop columns"></div>
+            <p class="desktop-column-hint">Scroll: desktops · Shift + scroll: columns · Hold a window to carry it</p>
             <div class="overview-open-windows" id="overviewWindowGrid" aria-label="Open and minimized windows"></div>
           </section>
 
@@ -491,8 +493,8 @@
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
-  <script src="desktop-pages.js?v=2"></script>
-  <script src="desktop-shell.js?v=206"></script>
+  <script src="desktop-pages.js?v=3"></script>
+  <script src="desktop-shell.js?v=207"></script>
 </body>
 </html>
 

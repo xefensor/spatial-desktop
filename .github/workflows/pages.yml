@@ -35,6 +35,8 @@ jobs:
           node scripts/check-demo-examples.cjs
           node scripts/check-ui-refinements.cjs
           node scripts/check-system-rail.cjs
+          node scripts/check-desktop-pages.cjs
+          node scripts/check-desktop-columns.cjs
           node scripts/check-desktop-workflows.cjs
 
       - name: Upload website

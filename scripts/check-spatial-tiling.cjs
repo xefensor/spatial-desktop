@@ -474,7 +474,7 @@ assertCleanGesture();
 assert.equal(sandbox.desktopPages.current("general"), 5);
 assert.equal(sandbox.desktopPages.pageOf("general", "notes"), 5, "Cancel restores the original page assignment");
 assert.equal(vm.runInContext('JSON.stringify(tileSession())', sandbox), beforeReturn, "Cancel restores the original split and floating state");
-for (const page of [6,7]) assert.equal(vm.runInContext(`tileEngine.contains(tileSessions["general:desktop:${page}:1"].root, "notes")`, sandbox), false, "Cancelled carry leaves no duplicate on a visited page");
+for (const page of [6,7]) assert.equal(vm.runInContext(`tileEngine.contains(tileSessions["general:desktop:${page}:1"]?.root, "notes")`, sandbox), false, "Cancelled carry leaves no duplicate on a visited page");
 startLeftDrag();
 carryClock = 1500; wheelCarry(-80);
 sandbox.window.dispatchEvent({type:"blur"});
@@ -570,7 +570,7 @@ Object.assign(sandbox, {
   areaPriority:["projects","apps","systems"], dockState:{projects:{edge:"left"},apps:{edge:"right"},systems:{edge:"right"}},
   areaFor:name => areaFrames[name], displayAssignmentsFor:() => intentAssignments,
   activeDisplayRoster:() => [{width:1616,height:1016},{width:1616,height:1016}], extendedDesktopActive:() => true,
-  layoutDockAreas() {}, persistDisplayAssignments() {}
+  layoutDockAreas() {}, persistDisplayAssignments() {}, projectColumnActive: () => true
 });
 sandbox.window.SpatialIntent = require("../dist/spatial-intent.js");
 vm.runInContext('renderIntentAreaEdges = () => {};', sandbox);
@@ -761,3 +761,41 @@ assert.equal(frames.notes.style.top,"20px");
 sandbox.$ = selectorBeforeViewportTest;
 console.log("Manual drag stability: frozen peers/tree, both queued-frame guards, screen-space float restoration and fullscreen exclusion passed.");
 
+
+// The real held-pointer wheel owner can cross a column, commit or roll back.
+const columnCarrySelector = sandbox.$;
+sandbox.$ = selector => selector === '.apps-zone' ? appsElement : selector === '.workspace-zone' ? workspaceElement : columnCarrySelector(selector);
+Object.assign(sandbox, {
+  projectSpaces:{project:{name:'Test project'}},workspaceProfiles:{general:{label:'General'}},
+  windowMembership:{general:{notes:null,dolphin:null,elisa:'project'}},
+  endSystemRailExpansion(){},saveIndependentSessions(){},projectColumnActive:()=>true,
+  extendedDesktopActive:()=>false,isLocalApp:name=>sandbox.desktopPages.visible('general',name),
+  performance:{now:()=>carryClock}
+});
+sandbox.desktopPages.load({});
+for (const name of Object.keys(sandbox.appState)) sandbox.appState[name]=['notes','dolphin','elisa'].includes(name)?'open':'closed';
+sandbox.desktopPages.assign('general','notes',0,'workspace');
+sandbox.desktopPages.assign('general','dolphin',0,'workspace');
+sandbox.desktopPages.assign('general','elisa',0,'project');
+vm.runInContext(slice('function projectColumnActive(', 'function changeDesktopColumn('),sandbox);
+vm.runInContext(slice('function changeDraggedDesktopColumn(', 'function renderDesktopColumnMap('),sandbox);
+vm.runInContext('tileSessions = {}; renderTileLayout("notes");',sandbox);
+const beforeColumnCarry=vm.runInContext('JSON.stringify(tileSessions)',sandbox);
+startLeftDrag();carryClock=10000;wheelCarry(80,{shiftKey:true});
+assert.equal(sandbox.desktopPages.column('general'),'project');
+assert.equal(sandbox.windowMembership.general.notes,'project');
+assert.equal(sandbox.desktopPages.visible('general','dolphin'),false);
+assert.equal(vm.runInContext('tileEngine.contains(tileSessions["general:desktop:0:1"].root,"notes")',sandbox),false);
+for(carryClock=10015;carryClock<10200;carryClock+=15) wheelCarry(80,{shiftKey:true});
+assert.equal(sandbox.desktopPages.column('general'),'project','Column momentum does not repeat the transfer');
+carryClock=10500;wheelCarry(-80,{shiftKey:true});
+assert.equal(sandbox.desktopPages.column('general'),'workspace');
+sandbox.window.dispatchEvent({type:'keydown',key:'Escape',preventDefault(){},stopPropagation(){}});
+assertCleanGesture();
+assert.equal(sandbox.windowMembership.general.notes,null);
+assert.equal(vm.runInContext('JSON.stringify(tileSessions)',sandbox),beforeColumnCarry);
+startLeftDrag();carryClock=11000;wheelCarry(80,{shiftKey:true});pointer('pointerup',550,110,0);
+assertCleanGesture();
+assert.equal(sandbox.windowMembership.general.notes,'project');
+assert.equal(vm.runInContext('tileEngine.contains(tileSession().root,"notes")',sandbox),true,'Release inserts the window into its project desktop');
+console.log('Held-window columns passed: real Shift+wheel ownership transfer, source removal, momentum, reverse, Escape rollback and release commit.');

@@ -42,13 +42,14 @@ const nodes = Object.fromEntries(['.workspace-zone', '#allAppsToggle', '#desktop
 let clock = 0;
 const ctx = vm.createContext({
   SpatialDesktopPages: Pages, desktopPages: Pages.create(), desktopWheel: Pages.wheelGate(),
+  desktopColumnWheel: Pages.wheelGate(), projectSpaces: {}, activeProjectName: null,
   activeWorkspace: 'work', workspaceProfiles: {work: {label: 'Work'}}, desktopHasWindowFocus: true, desktopPageAnimating: false,
   tileInteraction: false, manualWindowInteraction: false,
   $: key => nodes[key] || node(key), $$: () => [],
   document: { addEventListener(type, callback) { listeners['document:' + type] = callback; } },
   performance: { now: () => clock },
   syncRack() { throw new Error("Rebuilding the hotbar would detach the clicked Area button"); }, originalSyncRack() {}, renderOverviewWindows() {}, saveDesktopPages() {},
-  migrateProjectDesktops() {}, isLocalApp: () => true, bringToFront() {},
+  migrateProjectDesktops() {}, migrateDesktopColumns() {}, isLocalApp: () => true, bringToFront() {},
   tileSession: () => ({})
 });
 vm.runInContext(slice('function updateDesktopPageUi(', 'function changeDesktopPage('), ctx);
@@ -195,6 +196,7 @@ assert.equal(transfer.desktopPages.current('work'), 1, 'Restoring a minimized ca
 assert.equal(transfer.desktopPages.pageOf('work', 'notes'), 1, 'Minimized windows travel onto the current desktop when restored');
 
 const hotbar = vm.createContext({
+  desktopPages: {inColumn: () => true},
   activeWorkspace: 'work', workspaceProfiles: { work: { rack: ['browser', 'closed', 'parked'] } },
   appState: { browser: 'open', closed: 'closed', parked: 'minimized', other: 'open', instance: 'open' },
   isLocalApp: name => ['browser', 'instance'].includes(name)
@@ -217,3 +219,21 @@ assert.equal(restored, 'parked', 'Keyboard shortcuts restore travelling minimize
 assert.equal(hotbar.activateHotbarSlot(2), false);
 
 console.log('Vertical desktops passed: page bounds, workspace isolation, reload/sync, wheel gestures/momentum, focus ownership, zoom/menu guards and lossless legacy session migration.');
+
+// Shift wheel uses the horizontal column axis, preserving focused app and zoom input.
+ctx.activeProjectName='site';ctx.projectSpaces.site={name:'Website Launch'};
+vm.runInContext(slice('function adjacentDesktopColumn(', 'function changeDesktopColumn('),ctx);
+const columnChanges=[];
+ctx.changeDesktopColumn=column=>{columnChanges.push(column);ctx.desktopPages.select('work',column);};
+ctx.desktopHasWindowFocus=false;clock=2000;
+e=event();e.shiftKey=true;listeners['.workspace-zone:wheel'](e);
+assert.equal(e.prevented,true);assert.deepEqual(columnChanges,['site']);
+for(clock=2015;clock<2200;clock+=15) {e=event();e.shiftKey=true;listeners['.workspace-zone:wheel'](e);}
+assert.deepEqual(columnChanges,['site']);
+clock=2500;e=event(0);e.deltaX=-80;e.shiftKey=true;listeners['.workspace-zone:wheel'](e);
+assert.deepEqual(columnChanges,['site','workspace'],'Browsers that report Shift+wheel as deltaX can also switch columns');
+ctx.desktopHasWindowFocus=true;clock=2800;e=event();e.shiftKey=true;listeners['.workspace-zone:wheel'](e);
+assert.equal(e.prevented,undefined);assert.equal(columnChanges.length,2);
+ctx.desktopHasWindowFocus=false;clock=3100;e=event();e.shiftKey=true;e.ctrlKey=true;listeners['.workspace-zone:wheel'](e);
+assert.equal(e.prevented,undefined);
+console.log('Column wheel passed: Shift axis, focused-app ownership, horizontal delta compatibility, momentum and zoom guards.');

@@ -1,5 +1,5 @@
 .apps-zone .workspace-overview{--state-tone:var(--workspace-accent)}
-body[data-theme] .apps-zone .workspace-overview svg{color:var(--workspace-accent)!important}
+body[data-theme] .apps-zone .workspace-overview svg{color:var(--desktop-column-accent,var(--workspace-accent))!important}
 
 /* One workspace/Overview control also identifies the current scroll desktop. */
 .workspace-overview #desktopPageNumber{
@@ -17,3 +17,20 @@ body[data-theme] .apps-zone .workspace-overview svg{color:var(--workspace-accent
 .workspace-zone:focus{outline:none}
 .workspace-zone:focus-visible{outline:1px solid var(--text-muted);outline-offset:-4px}
 .desktop-folder[hidden]{display:none!important}
+
+/* Columns are places, each containing its own vertical stack of desktops. */
+.desktop-column-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:6px}
+.desktop-column-card{min-width:0;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);border-radius:0}
+.desktop-column-card>header{display:flex;align-items:center;gap:7px;padding:8px;border-bottom:1px solid var(--sd-glass-groove)}
+.desktop-column-card>header svg{width:19px;height:19px;flex:none;color:var(--column-accent)}
+.desktop-column-card>header b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desktop-column-pages{display:grid;gap:4px;padding:5px;max-height:142px;overflow:auto;overscroll-behavior:contain}
+.desktop-column-page{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:6px 8px;text-align:left;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);color:var(--text);--state-tone:var(--column-accent)}
+.desktop-column-page b,.desktop-column-page small{display:block;font-size:12px}
+.desktop-column-page small{font-size:10px;color:var(--muted)}
+.desktop-column-page[aria-pressed="true"]{border-bottom:3px solid var(--column-accent)}
+.desktop-column-page.control-toggle::after{display:none!important}
+.desktop-column-page:hover{background:color-mix(in srgb,var(--column-accent) 8%,var(--sd-glass-face))}
+.desktop-column-apps{display:flex;gap:3px}
+.desktop-column-apps .app-art{width:22px;height:22px;min-width:22px}
+.desktop-column-hint{margin:0 0 10px;font-size:11px;color:var(--muted)}
