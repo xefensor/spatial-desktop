@@ -52,7 +52,7 @@ assert.equal(JSON.stringify(migration.desktopPages.snapshot()),migrated);
 // Exercise real scene navigation and visibility, using reduced motion to settle synchronously.
 const classes=()=>({contains:()=>false,add(){},remove(){},toggle(){}});
 const nodes={};
-const node=key=>nodes[key] ||= {hidden:true,dataset:{},style:{setProperty(){}},classList:classes(),setAttribute(){},focus(){},clientHeight:800,clientWidth:1000,children:[]};
+const node=key=>nodes[key] ||= {hidden:true,dataset:{},style:{setProperty(){}},classList:classes(),setAttribute(){},removeAttribute(){},focus(){},clientHeight:800,clientWidth:1000,children:[]};
 const frames=Object.fromEntries(['personal','draft'].map(name=>[name,{...node(name),dataset:{appFrame:name},style:{zIndex:20}}]));
 const ctx=vm.createContext({
   desktopPages:Pages.create(),desktopWheel:Pages.wheelGate(),desktopColumnWheel:Pages.wheelGate(),
@@ -67,11 +67,12 @@ const ctx=vm.createContext({
   intentAreaPlan:{moves:{}},syncProjectWindowScopes(){},syncRack(){},originalSyncRack(){},renderMiniApps(){},renderOverviewWindows(){},scheduleWindowVisibility(){},persistWorkspaceAppStates(){},
   captureWorkspaceContent(){},saveLayout(){},saveTileSessions(){},saveDesktopPages(){},saveIndependentSessions(){},persistProjectState(){},
   refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},endSystemRailExpansion(){},showToast(){},removeWindowFromSavedProjects(){},cloneDesktopState:copy,
-  leaveAppFullscreen(){},
+  leaveAppFullscreen(){},renderAvailableProjectLibrary(){},refreshProjectSessionUi(){},
   tileSession(){return ctx.tileSessions[ctx.desktopPages.context('work')+'1'] ||= {root:null,parked:{},floating:{}}},
   layoutDockAreas(){ctx.keepPersistentAreasVisible()}
 });
 vm.runInContext(slice('function projectColumnActive(', 'function renderDesktopColumnMap('),ctx);
+vm.runInContext(slice('function setProjectClosedState(', 'function renderProjectSpace('),ctx);
 vm.runInContext(source.match(/const persistentAreas = new Set\([^;]+;/)[0],ctx);
 vm.runInContext(slice('function keepPersistentAreasVisible(', 'function areaLabel('),ctx);
 vm.runInContext(slice('function isLocalApp(', 'function persistDisplayAssignments('),ctx);
@@ -81,9 +82,9 @@ vm.runInContext(slice('function detachDraggedDesktopWindow(', '// A floating win
 ctx.desktopPages.assign('work','personal',0,'workspace');
 ctx.desktopPages.assign('work','draft',0,'site');
 ctx.syncApps();ctx.keepPersistentAreasVisible();
-assert.equal(frames.personal.hidden,false);assert.equal(frames.draft.hidden,true);assert.equal(node('area:projects').hidden,true);
+assert.equal(frames.personal.hidden,false);assert.equal(frames.draft.hidden,true);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'true');
 assert.equal(ctx.changeDesktopColumn('site'),true);
-assert.equal(frames.personal.hidden,true);assert.equal(frames.draft.hidden,false);assert.equal(node('area:projects').hidden,false);
+assert.equal(frames.personal.hidden,true);assert.equal(frames.draft.hidden,false);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'false');
 assert.equal(ctx.appState.personal,'open');
 assert.equal(ctx.changeDesktopColumn('unknown'),false);
 ctx.changeDesktopPage(1,false);
@@ -107,8 +108,8 @@ assert.equal(ctx.tileSession().floating.personal.left,120);
 assert.equal(frames.personal.hidden,false);assert.equal(node('area:projects').hidden,false);
 ctx.cancelDraggedDesktopPages(drag);
 assert.equal(ctx.windowMembership.work.personal,null);assert.equal(ctx.desktopPages.column('work'),'workspace');
-assert.deepEqual(copy(ctx.tileSessions),drag.sessions);assert.equal(node('area:projects').hidden,true);
-console.log('Project columns passed: ownership, per-column pages, reload/sync, mixed-tree migration, visibility, Project Area isolation, transfers and gesture rollback.');
+assert.deepEqual(copy(ctx.tileSessions),drag.sessions);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'true');
+console.log('Project columns passed: ownership, per-column pages, reload/sync, mixed-tree migration, visibility, persistent Project Area context, transfers and gesture rollback.');
 
 // Closing shelves only this column; reopening preserves its last (even empty) desktop.
 Object.assign(ctx, {

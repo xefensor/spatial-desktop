@@ -2345,8 +2345,6 @@ function keepPersistentAreasVisible() {
     const area = areaFor(name);
     if (area) area.hidden = false;
   });
-  const project = areaFor("projects");
-  if (project) project.hidden = !projectColumnActive();
 }
 
 function areaLabel(name) {
@@ -2618,7 +2616,7 @@ function syncAreaControls(states) {
     });
     const row = $('[data-overview-area="' + name + '"]');
     if (row) {
-      if (name === "projects") row.hidden = !projectColumnActive();
+      if (name === "projects") row.hidden = false;
       row.classList.toggle("is-hidden", hidden);
       const detail = $("small", row);
       if (detail) detail.textContent = hidden ? "Closed" : layoutStateLabel(states[name]);
@@ -3439,8 +3437,10 @@ function refreshProjectSessionUi(name = activeProjectName) {
   const savedCount = projectSession(name)?.apps?.length || 0;
   $("#projectRailWindowCount").textContent = openCount || savedCount;
   $("#projectRailSession").title = "Show project desktop column · " + openCount + " windows";
-  $("#projectAreaContext").textContent = "Project resources";
-  $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
+  if (projectColumnActive()) {
+    $("#projectAreaContext").textContent = "Project resources";
+    $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
+  }
 }
 
 function renderProjectModes() {
@@ -3465,6 +3465,7 @@ function renderOverviewProjects() {
 }
 
 function setProjectClosedState(closed) {
+  closed = closed || !projectColumnActive();
   syncProjectWindowScopes(closed);
   areaFor("projects").dataset.projectLibraryOpen = String(closed);
   $("#projectSpaceContent").hidden = closed;
@@ -3480,10 +3481,22 @@ function setProjectClosedState(closed) {
     $("#projectAreaContext").removeAttribute("title");
     const count = Object.keys(projectSpaces).length;
     $("#projectAreaContext").textContent = count + (count === 1 ? " project available" : " projects available");
-    $$("[data-overview-project]").forEach(card => {
+    if (!activeProjectName) $$("[data-overview-project]").forEach(card => {
       card.classList.remove("is-active");
       card.setAttribute("aria-pressed", "false");
     });
+  }
+}
+
+function syncProjectAreaView() {
+  const project = projectColumnActive() ? projectSpaces[activeProjectName] : null;
+  const area = areaFor("projects");
+  if (!area) return;
+  if (area.dataset.projectLibraryOpen !== String(!project)) setProjectClosedState(!project);
+  if (project) {
+    $("#projectAreaName").textContent = project.name;
+    $("#projectRailName").textContent = project.name;
+    refreshProjectSessionUi();
   }
 }
 
@@ -3515,6 +3528,7 @@ function renderProjectSpace(name) {
   applyAppPrimaryColors(area);
   refreshWorkspaceContext();
   persistProjectState();
+  syncProjectAreaView();
 }
 
 function projectModeGeometry(layout, index, count) {
@@ -6015,6 +6029,7 @@ function migrateDesktopColumns() {
 
 
 function updateDesktopPageUi() {
+  syncProjectAreaView();
   const page = desktopPages.current(activeWorkspace) + 1;
   const workspace = $(".workspace-zone");
   const button = $("#allAppsToggle");
@@ -6263,7 +6278,6 @@ function isLocalApp(name) {
 }
 
 function isLocalArea(name) {
-  if (name === "projects" && !projectColumnActive()) return false;
   return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
 }
 

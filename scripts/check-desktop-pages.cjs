@@ -49,7 +49,7 @@ const ctx = vm.createContext({
   document: { addEventListener(type, callback) { listeners['document:' + type] = callback; } },
   performance: { now: () => clock },
   syncRack() { throw new Error("Rebuilding the hotbar would detach the clicked Area button"); }, originalSyncRack() {}, renderOverviewWindows() {}, saveDesktopPages() {},
-  migrateProjectDesktops() {}, migrateDesktopColumns() {}, isLocalApp: () => true, bringToFront() {},
+  migrateProjectDesktops() {}, migrateDesktopColumns() {}, syncProjectAreaView() {}, isLocalApp: () => true, bringToFront() {},
   tileSession: () => ({})
 });
 vm.runInContext(slice('function updateDesktopPageUi(', 'function changeDesktopPage('), ctx);

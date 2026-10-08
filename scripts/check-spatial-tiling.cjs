@@ -244,7 +244,7 @@ vm.runInContext('hideArea("projects")', docks);
 assert.equal(areaFrames.projects.hidden, false, "The project column keeps its Project Area available");
 docks.projectColumnActive = () => false;
 vm.runInContext('layoutDockAreas(false, false)', docks);
-assert.equal(areaFrames.projects.hidden, true, "The workspace column never displays the Project Area");
+assert.equal(areaFrames.projects.hidden, false, "The workspace column keeps the Project Area available");
 docks.projectColumnActive = () => true;
 vm.runInContext('layoutDockAreas(false, false)', docks);
 assert.equal(areaFrames.projects.hidden, false, "Returning to the project column restores its Project Area");
