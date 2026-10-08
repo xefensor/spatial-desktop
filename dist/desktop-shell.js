@@ -2299,7 +2299,7 @@ function prepareZoneResizers() {
 }
 
 const areaPriority = ["projects", "apps", "systems"];
-const persistentAreas = new Set(["apps", "systems"]);
+const persistentAreas = new Set(["projects", "apps", "systems"]);
 const dockEdges = ["left", "right", "top", "bottom"];
 const dockState = {
   projects: { edge: "left", order: 0 },

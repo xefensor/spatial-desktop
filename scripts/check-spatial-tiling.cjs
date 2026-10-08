@@ -241,7 +241,13 @@ for (const name of ["apps", "systems"]) {
   assert.equal(vm.runInContext(`contextMenuEntries({kind: "area", name: "${name}"}).some(item => item.action === "area-hide")`, docks), false, name + " context menu has no hide command");
 }
 vm.runInContext('hideArea("projects")', docks);
-assert.equal(areaFrames.projects.hidden, true, "Project remains optionally hideable");
+assert.equal(areaFrames.projects.hidden, false, "The project column keeps its Project Area available");
+docks.projectColumnActive = () => false;
+vm.runInContext('layoutDockAreas(false, false)', docks);
+assert.equal(areaFrames.projects.hidden, true, "The workspace column never displays the Project Area");
+docks.projectColumnActive = () => true;
+vm.runInContext('layoutDockAreas(false, false)', docks);
+assert.equal(areaFrames.projects.hidden, false, "Returning to the project column restores its Project Area");
 const html = fs.readFileSync(require("node:path").join(__dirname, "../dist/index.html"), "utf8");
 assert(!html.includes("data-area-auto"), "Move dock buttons are removed");
 assert(!/data-(?:area-hide|overview-area-visibility)="(?:apps|systems)"/.test(html), "No Apps/System hide buttons remain");
