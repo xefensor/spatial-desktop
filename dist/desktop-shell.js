@@ -3411,6 +3411,9 @@ function refreshProjectSessionUi(name = activeProjectName) {
   const project = name ? projectSpaces[name] : null;
   if (!project) return;
   const openCount = Object.keys(appState).filter(id => appState[id] !== "closed" && windowMembership[activeWorkspace]?.[id] === name).length;
+  const savedCount = projectSession(name)?.apps?.length || 0;
+  $("#projectRailWindowCount").textContent = openCount || savedCount;
+  $("#projectRailSession").title = openCount + " open windows · " + savedCount + " saved windows";
   $("#projectAreaContext").textContent = "Project resources";
   $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
 }
@@ -3467,6 +3470,9 @@ function renderProjectSpace(name) {
   rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
   $("#projectAreaName").textContent = project.name;
+  $("#projectRailName").textContent = project.name;
+  $("#projectRailName").title = project.name;
+  $("#projectRailResourceCount").textContent = project.resources.length;
   renderProjectModes(name);
   $("#projectRootPath").textContent = project.root;
   const location = projectLocationMeta(project);
@@ -3944,6 +3950,7 @@ function prepareProjectSpaces() {
     if (item) showToast("Opening " + item.dataset.projectItem);
   });
   $("#closeProjectButton").addEventListener("click", closeActiveProject);
+  $("#projectRailClose").addEventListener("click", closeActiveProject);
   $("#projectQuickNote").addEventListener("input", event => {
     if (!activeProjectName) return;
     projectSpaces[activeProjectName].note = event.target.value;
@@ -5100,6 +5107,7 @@ function updateClock() {
   $("#overviewDayLabel").textContent = day;
   $("#overviewDateLabel").textContent = date;
   $("#overviewAgendaDay").textContent = now.getDate();
+  $("#systemRailDate").textContent = now.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
@@ -5120,6 +5128,12 @@ function renderCalendar() {
 
 function updateTimer() {
   $("#timerValue").textContent = formatTime(focusSeconds);
+  $("#systemRailTimerValue").textContent = formatTime(focusSeconds);
+  const railTimer = $("#systemRailTimer");
+  railTimer.setAttribute("aria-pressed", String(focusRunning));
+  railTimer.classList.toggle("is-active", focusRunning);
+  railTimer.setAttribute("aria-label", (focusRunning ? "Pause" : "Start") + " focus timer");
+  railTimer.title = (focusRunning ? "Pause" : "Start") + " focus timer · " + formatTime(focusSeconds);
   $("#timerProgress").style.width = 100 - focusSeconds / (25 * 60) * 100 + "%";
   $("#timerState").textContent = focusRunning ? "Running" : focusSeconds === 25 * 60 ? "Ready" : "Paused";
   $("#timerToggle").textContent = focusRunning ? "Pause" : "Start";
@@ -5244,6 +5258,8 @@ function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
 function syncNotifications() {
   const count = $$(".notification", $("#notificationList")).length;
   $("#notificationCount").textContent = count;
+  $("#systemRailNotificationCount").textContent = count || "Clear";
+  $("#systemRailNotifications").title = count + (count === 1 ? " notification" : " notifications");
   $("#overviewNotifications").hidden = count === 0;
   $("#overviewNotificationCount").textContent = count;
   $("#overviewNotificationList").innerHTML = $$(".notification", $("#notificationList")).map((item, index) => '<article class="overview-notification"><span><b>' + escapeHtml($("b", item)?.textContent || "Notification") + '</b><small>' + escapeHtml($("small", item)?.textContent || "") + '</small></span><button class="dismiss-button" data-overview-dismiss="' + index + '" aria-label="Dismiss ' + escapeHtml($("b", item)?.textContent || "notification") + '">×</button></article>').join("");
@@ -5267,6 +5283,22 @@ function setFocusRunning(running) {
   }, 1000);
   updateTimer();
 }
+
+// Rails use the same workspace state as their expanded widgets.
+function revealSystemRailWidget(selector) {
+  showArea("systems", false);
+  requestAnimationFrame(() => {
+    const widget = $(selector);
+    if (widget && !widget.hidden) widget.scrollIntoView({ block: "nearest" });
+  });
+}
+$("#systemRailNotifications").addEventListener("click", () => revealSystemRailWidget("#notificationWidget"));
+$("#systemRailCalendar").addEventListener("click", () => revealSystemRailWidget(".calendar-widget"));
+$("#systemRailTimer").addEventListener("click", () => {
+  if (!focusSeconds) focusSeconds = 25 * 60;
+  revealDynamicWidget($("#timerWidget"));
+  setFocusRunning(!focusRunning);
+});
 
 $("#launchTimer").addEventListener("click", () => {
   if (!focusSeconds) focusSeconds = 25 * 60;

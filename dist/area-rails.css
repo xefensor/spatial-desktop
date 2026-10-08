@@ -1,0 +1,184 @@
+/* Rails keep a start, a working middle and an end along their dock edge. */
+.system-rail-start,.system-rail-middle{display:none}
+.area-window[data-area-state="rail"] .rail-group{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.area-window[data-area-state="rail"] .rail-action{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  height:auto;
+  padding:6px 2px 8px;
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+  color:var(--text);
+}
+.area-window[data-area-state="rail"] .rail-action svg{
+  width:19px;
+  height:19px;
+  flex-shrink:0;
+}
+.area-window[data-area-state="rail"] .rail-action>span{
+  display:block;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:600;
+}
+.area-window[data-area-state="rail"] .rail-action>small{
+  font-size:10px;
+  line-height:1.1;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.area-window[data-area-state="rail"] .rail-action:hover{
+  background:color-mix(in srgb,var(--text) 7%,transparent);
+}
+.systems-zone[data-area-state="rail"]>.system-scroll-region{
+  display:grid;
+  grid-template-rows:auto minmax(min-content,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
+  align-content:stretch;
+  gap:18px;
+  overflow-y:auto;
+}
+.systems-zone[data-area-state="rail"] .system-scroll-region>*{order:0!important}
+.systems-zone[data-area-state="rail"] .system-scroll-region>.time-block,
+.systems-zone[data-area-state="rail"] .system-scroll-region>.system-launchers,
+.systems-zone[data-area-state="rail"] .system-scroll-region>.dynamic-widget-stack{display:none!important}
+.systems-zone[data-area-state="rail"] .system-rail-middle{justify-content:center}
+.systems-zone[data-area-state="rail"] .rail-clock{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  padding:4px 0 6px;
+}
+.rail-clock strong{font-size:17px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.rail-clock small{font-size:10px;color:var(--muted);white-space:nowrap}
+.systems-zone[data-area-state="rail"] .system-scroll-region>.static-widget-stack{
+  display:block;
+  margin:0;
+  padding:0;
+  border:0;
+}
+.systems-zone[data-area-state="rail"] .quick-settings{display:grid;grid-template-columns:1fr;gap:6px}
+.systems-zone[data-area-state="rail"] .quick-toggle{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  height:44px;
+  min-height:44px;
+  padding:5px 1px 8px;
+}
+.systems-zone[data-area-state="rail"] .quick-toggle>span:not(.theme-dot){display:block;font-size:10px;line-height:1.1}
+.systems-zone[data-area-state="rail"] .quick-toggle .theme-dot{width:14px;height:14px}
+#systemRailTimer{--state-tone:var(--amber)}
+.systems-zone[data-area-state="rail"].has-notification-attention #systemRailNotifications{
+  background:color-mix(in srgb,var(--blue) 17%,transparent);
+  color:var(--blue);
+}
+.project-area[data-area-state="rail"] .project-rail-tools{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto minmax(min-content,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
+  gap:18px;
+  margin:0;
+  padding:0;
+  border:0;
+  overflow-y:auto;
+}
+.project-area[data-area-state="rail"] .project-rail-middle{justify-content:center}
+.rail-project-name{
+  display:block;
+  padding:4px 0 6px;
+  text-align:center;
+  font-size:10px;
+  line-height:1.3;
+  overflow-wrap:anywhere;
+}
+.project-area[data-area-state="rail"] .project-pack-key{display:flex}
+.project-area[data-area-state="rail"][data-project-library-open="true"] .project-rail-tools{display:none}
+.project-area[data-area-state="rail"] .project-closed-state:not([hidden]){
+  display:flex!important;
+  flex:1 1 auto;
+  flex-direction:column;
+  min-height:0;
+  padding:0;
+  gap:14px;
+}
+.project-area[data-area-state="rail"] .project-library-list{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  gap:8px;
+  min-height:0;
+  overflow-y:auto;
+}
+.project-area[data-area-state="rail"] .project-library-entry{
+  display:flex;
+  flex:0 0 auto;
+  flex-direction:column;
+  gap:5px;
+  padding:6px 2px;
+  min-height:60px;
+}
+.project-area[data-area-state="rail"] .project-library-icon{width:23px;height:23px}
+.project-area[data-area-state="rail"] .project-library-copy b{
+  display:block;
+  font-size:10px;
+  line-height:1.25;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.project-area[data-area-state="rail"] .project-library-copy small{display:none}
+.project-library-create{display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;margin-top:10px}
+.project-library-create svg{width:17px;height:17px}
+.project-area[data-area-state="rail"] .project-library-create{flex:0 0 auto;flex-direction:column;gap:4px;margin-top:auto;padding:6px 1px;font-size:10px}
+
+/* Top and bottom docks read from start to end rather than top to bottom. */
+:is(.systems-zone,.project-area)[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) :is(.system-scroll-region,.project-rail-tools){
+  display:grid;
+  grid-template-columns:auto minmax(min-content,1fr) auto;
+  grid-template-rows:minmax(0,1fr);
+  align-items:center;
+  gap:18px;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+:is(.systems-zone,.project-area)[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-group{
+  flex-direction:row;
+  align-items:center;
+  gap:5px;
+}
+:is(.systems-zone,.project-area)[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-action{
+  flex:0 0 auto;
+  width:46px;
+  min-height:46px;
+  padding:3px 1px 5px;
+}
+:is(.systems-zone,.project-area)[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-action>small{display:none}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .quick-settings{
+  grid-template-columns:repeat(4,44px);
+  grid-auto-flow:column;
+  gap:4px;
+}
+.systems-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-scroll-region>.static-widget-stack{padding:0;border:0}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-project-name{max-width:85px;padding:0 5px}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-closed-state:not([hidden]){flex-direction:row;align-items:center}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-library-list{flex-direction:row;overflow-x:auto;overflow-y:hidden}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-library-entry{width:80px;min-height:46px;padding:2px}
+.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-library-create{margin:0;width:64px}

@@ -7,7 +7,8 @@
   <meta name="description" content="Work in progress: an interactive browser prototype of a tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=178">
+  <link rel="stylesheet" href="desktop-shell.css?v=179">
+  <link rel="stylesheet" href="area-rails.css?v=1">
   <title>Spatial Desktop — WIP Prototype</title>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
   <link rel="stylesheet" href="area-layout.css?v=173">
@@ -136,6 +137,15 @@
         <div class="area-window-identity"><button class="surface-key area-window-icon cyan" data-toast="System settings" aria-label="System Settings" title="System Settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
       </header>
       <div class="system-scroll-region" tabindex="0" aria-label="System widgets">
+      <section class="rail-group system-rail-start" aria-label="Time and notifications">
+        <div class="rail-clock"><strong class="live-time">--:--</strong><small id="systemRailDate"></small></div>
+        <button class="surface-key rail-action" id="systemRailNotifications" aria-label="Show notifications" title="Show notifications"><svg aria-hidden="true"><use href="#i-bell"/></svg><span>Alerts</span><small id="systemRailNotificationCount">0</small></button>
+      </section>
+      <nav class="rail-group system-rail-middle" aria-label="Daily tools">
+        <button class="surface-key rail-action" id="systemRailTimer" aria-pressed="false" aria-label="Start focus timer" title="Start focus timer"><svg aria-hidden="true"><use href="#i-timer"/></svg><span>Focus</span><small id="systemRailTimerValue">25:00</small></button>
+        <button class="surface-key rail-action" id="systemRailCalendar" aria-label="Show calendar and agenda" title="Show calendar and agenda"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Agenda</span></button>
+        <button class="surface-key rail-action" data-phone-ping aria-label="Ping connected phone" title="Ping connected phone · 60% battery"><svg aria-hidden="true"><use href="#i-phone"/></svg><span>Phone</span><small>60%</small></button>
+      </nav>
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer" title="Focus timer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
@@ -186,13 +196,22 @@
       </div>
       <section class="project-closed-state project-library" id="projectClosedState" aria-label="Available projects" hidden>
         <div class="project-library-list" id="projectLibraryList"></div>
+        <button class="surface-key project-library-create" data-create-area-project aria-label="Create a project" title="Create a project"><svg aria-hidden="true"><use href="#i-add"/></svg><span>New project</span></button>
       </section>
       <nav class="project-rail-tools" aria-label="Project quick actions">
-        <button class="surface-key project-rail-tool" data-toast="Project folder opened" aria-label="Open project folder" title="Open project folder"><svg><use href="#i-folder"/></svg></button>
-        <button class="surface-key project-rail-tool" id="projectRailNote" aria-label="Edit project quick note" title="Edit quick note"><svg><use href="#i-note"/></svg></button>
-        <button class="surface-key project-rail-tool" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg><use href="#i-link"/></svg></button>
-        <button class="surface-key project-rail-tool" id="projectRailSession" aria-label="Restore saved project windows" title="Restore saved windows"><svg><use href="#i-monitor"/></svg></button>
-        <button class="surface-key project-rail-tool project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button>
+        <section class="rail-group project-rail-start" aria-label="Current project">
+          <strong class="rail-project-name" id="projectRailName">Website Launch</strong>
+          <button class="surface-key project-rail-tool rail-action" data-toast="Project folder opened" aria-label="Open project folder" title="Open project folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Folder</span></button>
+        </section>
+        <section class="rail-group project-rail-middle" aria-label="Project content">
+          <button class="surface-key project-rail-tool rail-action" id="projectRailNote" aria-label="Edit project quick note" title="Edit quick note"><svg aria-hidden="true"><use href="#i-note"/></svg><span>Note</span></button>
+          <button class="surface-key project-rail-tool rail-action" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg aria-hidden="true"><use href="#i-link"/></svg><span>Links</span><small id="projectRailResourceCount">2</small></button>
+        </section>
+        <section class="rail-group project-rail-end" aria-label="Project session">
+          <button class="surface-key project-rail-tool rail-action" id="projectRailSession" aria-label="Restore saved project windows" title="Restore saved windows"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Windows</span><small id="projectRailWindowCount">0</small></button>
+          <button class="surface-key project-rail-tool rail-action project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg aria-hidden="true"><use href="#i-archive"/></svg><span>Pack</span></button>
+          <button class="surface-key project-rail-tool rail-action" id="projectRailClose" aria-label="Close current project" title="Close current project"><svg aria-hidden="true"><use href="#i-close"/></svg><span>Close</span></button>
+        </section>
       </nav>
       <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Project Space" title="Drag this border to resize"></button>
     </aside>
@@ -473,7 +492,7 @@
   <script src="spatial-intent.js?v=159"></script>
   <script src="demo-examples.js?v=166"></script>
   <script src="desktop-pages.js?v=2"></script>
-  <script src="desktop-shell.js?v=203"></script>
+  <script src="desktop-shell.js?v=204"></script>
 </body>
 </html>
 
