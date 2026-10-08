@@ -62,7 +62,7 @@ const ctx=vm.createContext({
   tileSessions:{},tileEngine:T,tileInteraction:false,tileRendering:false,manualWindowInteraction:false,
   window:{matchMedia:()=>({matches:true})},document:{body:{dataset:{},style:{setProperty(){},removeProperty(){}}}},
   $:key=>node(key),$$:selector=>selector==='[data-app-frame]'?Object.values(frames):[],frameFor:name=>frames[name],
-  areaFor:name=>node('area:'+name),persistentAreas:new Set(['projects','apps','systems']),
+  areaFor:name=>node('area:'+name),
   localDisplaySlot:()=>1,extendedDesktopActive:()=>false,displayAssignmentsFor:()=>({apps:{}}),
   intentAreaPlan:{moves:{}},syncProjectWindowScopes(){},syncRack(){},originalSyncRack(){},renderMiniApps(){},renderOverviewWindows(){},scheduleWindowVisibility(){},persistWorkspaceAppStates(){},
   captureWorkspaceContent(){},saveLayout(){},saveTileSessions(){},saveDesktopPages(){},saveIndependentSessions(){},persistProjectState(){},
@@ -72,6 +72,7 @@ const ctx=vm.createContext({
   layoutDockAreas(){ctx.keepPersistentAreasVisible()}
 });
 vm.runInContext(slice('function projectColumnActive(', 'function renderDesktopColumnMap('),ctx);
+vm.runInContext(source.match(/const persistentAreas = new Set\([^;]+;/)[0],ctx);
 vm.runInContext(slice('function keepPersistentAreasVisible(', 'function areaLabel('),ctx);
 vm.runInContext(slice('function isLocalApp(', 'function persistDisplayAssignments('),ctx);
 vm.runInContext(slice('function topOpenApp(', 'function openApp('),ctx);

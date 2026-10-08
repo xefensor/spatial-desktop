@@ -2343,8 +2343,10 @@ function areaCanBeHidden(name) {
 function keepPersistentAreasVisible() {
   persistentAreas.forEach(name => {
     const area = areaFor(name);
-    if (area) area.hidden = name === "projects" && !projectColumnActive();
+    if (area) area.hidden = false;
   });
+  const project = areaFor("projects");
+  if (project) project.hidden = !projectColumnActive();
 }
 
 function areaLabel(name) {
@@ -3352,7 +3354,7 @@ function uniqueProjectId(label, existing = projectSpaces) {
   const base = slugifyProject(label);
   let id = base;
   let suffix = 2;
-  while (existing[id]) id = base + "-" + suffix++;
+  while (id === "workspace" || existing[id]) id = base + "-" + suffix++;
   return id;
 }
 
@@ -5904,8 +5906,11 @@ function moveWindowToColumn(name, column, follow = true) {
   desktopPages.assign(activeWorkspace, name, desktopPages.current(activeWorkspace, column), column);
   windowMembership[activeWorkspace] ||= {};
   windowMembership[activeWorkspace][name] = column === "workspace" ? null : column;
-  if (floating) tileSessions[desktopPages.context(activeWorkspace, undefined, column) + localDisplaySlot()] ||= {root: null, parked: {}, floating: {}};
-  if (floating) tileSessions[desktopPages.context(activeWorkspace, undefined, column) + localDisplaySlot()].floating[name] = floating;
+  if (floating) {
+    const target = tileSessions[desktopPages.context(activeWorkspace, undefined, column) + localDisplaySlot()] ||= {root: null, parked: {}, floating: {}};
+    target.floating ||= {};
+    target.floating[name] = floating;
+  }
   if (follow) changeDesktopColumn(column, false);
   syncApps();
   renderTileLayout(name);

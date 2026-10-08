@@ -179,7 +179,7 @@ const docks = {
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
-  localStorage: sandbox.localStorage, isLocalArea: () => true,
+  localStorage: sandbox.localStorage, isLocalArea: () => true, projectColumnActive: () => true,
   $: (selector, scope) => selector === ".desktop-shell" ? shell : scope?.handle,
   extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
