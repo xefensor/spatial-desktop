@@ -7312,14 +7312,14 @@ body[data-theme="light"] .apps-zone{
 }
 .apps-zone .app-key{
   height:72px;
-  padding-top:24px;
+  padding-top:26px;
 }
 .apps-zone:not([data-area-state="rail"]) .app-rack{
   grid-auto-rows:76px;
 }
-.apps-zone[data-area-state="rail"] .app-key{
-  height:60px;
-  min-height:60px;
+.apps-zone[data-area-state="rail"] .app-key.control-toggle{
+  height:64px;
+  min-height:64px;
 }
 .apps-zone .mini-card .mini-hotkey{
   position:static;
