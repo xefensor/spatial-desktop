@@ -3840,7 +3840,7 @@ function renderProjectEditor() {
     state.view = "manage";
     kicker.textContent = "PROJECT SETTINGS";
     title.textContent = project.name;
-    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or its number in the Apps header, then scroll up or down to change desktops.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or any Area to unfocus the window, then scroll up or down to change desktops. The number in the Apps header shows your current desktop.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
   }
   prepareMaterialSurfaces($("#projectEditorDialog"));
   prepareControlSemantics($("#projectEditorDialog"));
