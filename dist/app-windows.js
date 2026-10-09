@@ -71,10 +71,14 @@ function appFileRows(id, path) {
   const otherProjects = Object.entries(workspaceProfiles).find(([,profile])=>profile.home+'/Projects'===path);
   const rows = otherHome ? [...otherHome[1].folders] : otherProjects ? Object.values(projectSpaces).filter(project=>project.originWorkspace===otherProjects[0]).map(project=>[project.name,'Project','folder',project.root]) : fileLocationRows(frame, path);
   const seen = new Set(rows.map(row => row[0]));
-  workspaceDownloads.snapshot().directories.forEach(directory => {
-    const parent = directory.slice(0, directory.lastIndexOf('/')) || '/';
-    const name = directory.split('/').at(-1);
-    if (parent === path && !seen.has(name)) { rows.push([name, 'Folder', 'folder', directory]); seen.add(name); }
+  const targets=new Set(rows.map(([name,,,target])=>target||path.replace(/\/$/,'')+'/'+name));
+  const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects']),...Object.values(projectSpaces).flatMap(project=>[project.root,...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
+  directories.forEach(directory => {
+    const prefix=path==='/'?'/':path.replace(/\/$/,'')+'/';
+    if(!directory.startsWith(prefix))return;
+    const name=directory.slice(prefix.length).split('/')[0];
+    const target=prefix+name;
+    if(name&&!seen.has(name)&&!targets.has(target)){rows.push([name,'Folder','folder',target]);seen.add(name);targets.add(target);}
   });
   return rows;
 }
@@ -89,6 +93,7 @@ function appFileBreadcrumbs(path) {
 }
 function renderAppFiles(id, path, {history = true} = {}) {
   const frame = frameFor(id), model = appWindowModel(id);
+  const previousPath=frame.dataset.fileLocation,previousQuery=frame.dataset.fileQuery;
   if (history && path !== SpatialAppTools.current(model.navigation)) {
     SpatialAppTools.visit(model.navigation, path); model.query = ''; model.selected = null;
   }
@@ -111,7 +116,8 @@ function renderAppFiles(id, path, {history = true} = {}) {
   view.setAttribute('aria-pressed', String(model.grid));
   view.title = model.grid ? 'List view' : 'Grid view'; view.setAttribute('aria-label', view.title);
   $('.file-well', frame).classList.toggle('is-file-grid', model.grid);
-  $('.file-preview', frame).hidden = true;
+  if(previousPath!==path||previousQuery!==model.query)$('.file-preview', frame).hidden = true;
+  frame.dataset.fileQuery=model.query;
   const rows = appFileRows(id, path).filter(([label]) => label.toLocaleLowerCase().includes(model.query.toLocaleLowerCase())).sort((a,b) => (model.sort === 'type' ? Number(b[2] === 'folder') - Number(a[2] === 'folder') : 0) || a[0].localeCompare(b[0], undefined, {numeric: true}));
   $('.file-head', frame).innerHTML = '<span>Name</span><span>Details</span><span>Kind</span>';
   $('.file-list', frame).innerHTML = rows.map(([label, detail, type, target]) => '<button class="content-row' + (model.selected === label ? ' is-selected' : '') + '" role="option" aria-selected="' + (model.selected === label) + '" data-file-name="' + escapeHtml(label) + '"' + (type === 'folder' ? ' data-file-folder="' + escapeHtml(target || path.replace(/\/$/,'') + '/' + label) + '"' : '') + ' title="' + escapeHtml(label) + '"><span><svg class="file-entry-icon"><use href="#' + (type === 'folder' ? 'i-folder' : type === 'config' ? 'i-code' : 'i-note') + '"/></svg><b>' + escapeHtml(label) + '</b></span><small>' + escapeHtml(detail) + '</small><small>' + (type === 'folder' ? 'Folder' : type === 'config' ? 'Config' : 'File') + '</small></button>').join('') || '<p class="file-folder-empty">' + icon(model.query ? 'i-search' : 'i-folder') + '<b>' + (model.query ? 'No matching files' : 'This folder is empty') + '</b><span>' + (model.query ? 'Try a different name.' : 'Create a folder or save a demo download here.') + '</span></p>';
@@ -151,6 +157,7 @@ function newAppFolder(id) {
   while (used.has(name)) name = 'New folder ' + number++;
   workspaceDownloads.ensure(path.replace(/\/$/,'') + '/' + name); persistDownloads();
   model.query = ''; model.selected = name;
+  $('.file-preview',frameFor(id)).hidden=true;
   renderFileLocation(id,path,{history:false}); saveAppWindows();
 }
 function renderNotes(id) {
@@ -179,7 +186,7 @@ function renderBrowserPage(id) {
   const frame=frameFor(id), model=appWindowModel(id), page=SpatialAppTools.current(model.navigation);
   $('.browser-toolbar input',frame).value=page.address;
   $('.app-identity small',frame).textContent=page.title;appInfo[id].detail=page.title;
-  $('.start-page',frame).innerHTML='<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(page.subtitle) + '</span><h2>' + escapeHtml(page.title) + '</h2><p>' + escapeHtml(page.intro) + '</p><div class="site-grid">' + page.links.map(label=>'<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + icon('i-right') + '</button>').join('') + '</div><section class="demo-page-detail"><h3>' + escapeHtml(page.title) + '</h3><p>' + escapeHtml(page.detail) + '</p>' + (page.external ? '<a class="browser-external-link" href="' + escapeHtml(page.external) + '" target="_blank" rel="noopener noreferrer">Open in your browser ↗</a>' : '') + '</section></div>';
+  $('.start-page',frame).innerHTML='<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(page.subtitle) + '</span><h2>' + escapeHtml(page.title) + '</h2><p>' + escapeHtml(page.intro) + '</p><div class="site-grid">' + page.links.map(label=>'<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + icon('i-right') + '</button>').join('') + '</div><section class="demo-page-detail"><h3>Page notes</h3><p>' + escapeHtml(page.detail) + '</p>' + (page.external ? '<a class="browser-external-link" href="' + escapeHtml(page.external) + '" target="_blank" rel="noopener noreferrer">Open in your browser ↗</a>' : '') + '</section></div>';
   $('[data-app-action="browser-back"]',frame).disabled=model.navigation.index===0;
   $('[data-app-action="browser-forward"]',frame).disabled=model.navigation.index===model.navigation.items.length-1;
   refreshDownloadUi(); prepareControlSemantics(frame);
@@ -204,6 +211,7 @@ function terminalAppContext(id) {
   const paths=new Set([home,'/',...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,profile.home+'/Projects',...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name)]),...Object.values(projectSpaces).map(project=>project.root),...workspaceDownloads.snapshot().directories]);
   // Sample subfolders are navigable, without claiming access to native files.
   Object.values(projectSpaces).forEach(project=>project.files.filter(([, , type])=>type==='folder').forEach(([name])=>paths.add(project.root+'/'+name)));
+  [...paths].forEach(path=>{let parent=path.slice(0,path.lastIndexOf('/'));while(parent){paths.add(parent);parent=parent.slice(0,parent.lastIndexOf('/'));}});
   const environment=Object.fromEntries(SpatialHomeFolders.standard.map(name=>['XDG_'+name.toUpperCase().replace('DOWNLOADS','DOWNLOAD').replace('PUBLIC','PUBLICSHARE')+'_DIR',home+'/'+name]));
   return {home,environment,exists:path=>paths.has(path),list:path=>appFileRows(id,path).map(row=>row[0]),frame};
 }
@@ -327,6 +335,34 @@ function prepareAppWindows() {
   captureDesktopSyncState=function(){return {...originalSnapshot(),appWindows:appWindowStore.snapshot()};};
   const originalIncoming=persistIncomingDesktopState;
   persistIncomingDesktopState=function(state){if(state.appWindows)appWindowStore.load(state.appWindows);originalIncoming(state);saveAppWindows(false);};
+  const originalContext=contextMenuDescriptor;
+  contextMenuDescriptor=function(target,...args){
+    const context=originalContext(target,...args);
+    if(context?.kind==='file'){
+      const frame=context.element.closest('[data-app-frame]');
+      context.appId=frame.dataset.appFrame;
+      context.label=context.element.dataset.fileName||context.label;
+      context.path=context.element.dataset.fileFolder||frame.dataset.fileLocation.replace(/\/$/,'')+'/'+context.label;
+    }
+    return context;
+  };
+  const originalEntries=contextMenuEntries;
+  contextMenuEntries=function(context){return context.kind==='file' ? [
+    {action:'file-open',icon:'i-folder',label:'Open'},
+    {action:'file-copy',icon:'i-clipboard',label:'Copy location'}
+  ] : originalEntries(context);};
+  const originalAction=executeContextAction;
+  executeContextAction=function(action){
+    const context=contextMenuState;
+    if(context?.kind==='file'&&action==='file-open'){openAppFile(context.appId,context.label);return;}
+    if(context?.kind==='file'&&action==='file-copy'){
+      const copy=navigator.clipboard?.writeText(context.path);
+      if(copy)copy.then(()=>showToast('Location copied'),()=>showToast(context.path,{duration:3200}));
+      else showToast(context.path,{duration:3200});
+      return;
+    }
+    originalAction(action);
+  };
   const originalMini=miniMarkup;
   miniMarkup=function(id){return appMiniMarkup(id,originalMini(id));};
   const originalMusicSync=syncMusic;
@@ -404,6 +440,7 @@ function appWindowKey(event) {
     if(event.altKey&&['ArrowLeft','ArrowRight','ArrowUp'].includes(event.key)){performAppAction(id,{'ArrowLeft':'file-back','ArrowRight':'file-forward','ArrowUp':'file-up'}[event.key]);handled=true;}
     if(event.key==='Enter'&&event.target.matches('.address-bar input')){renderFileLocation(id,event.target.value);saveAppWindows();handled=true;}
     if(event.key==='Enter'&&event.target.closest('[data-file-name]')){openAppFile(id,event.target.closest('[data-file-name]').dataset.fileName);handled=true;}
+    if(event.key==='Escape'&&!$('.file-preview',frame).hidden){performAppAction(id,'file-preview-close');handled=true;}
     if(event.key==='Escape'&&event.target.matches('[data-file-filter]')){performAppAction(id,'file-search');handled=true;}
   } else if(model.kind==='browser'){
     if(event.key==='Enter'&&event.target.matches('.browser-toolbar input')){if(event.target.value.trim())navigateBrowser(id,event.target.value.trim());handled=true;}

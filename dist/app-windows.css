@@ -136,3 +136,5 @@
   .app-frame[data-app-kind="elisa"] .music-hero {gap:10px;padding:12px}
   .terminal-context>span:last-child {display:none}
 }
+
+.app-frame[data-app-kind="elisa"] .playlist .content-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

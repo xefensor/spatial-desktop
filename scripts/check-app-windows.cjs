@@ -55,13 +55,14 @@ const profiles={general:{home:'/home/demo',label:'General',folders:[['Documents'
 const projectSpaces={film:{root:'/mnt/Short Film',originWorkspace:null,files:[['Footage','12 files','folder'],['Downloads','Files','folder']]}};
 const downloads=H.create();downloads.ensure('/mnt/Short Film/Downloads');downloads.ensure(home+'/New folder');
 const ctx=vm.createContext({workspaceProfiles:profiles,activeWorkspace:'work',projectSpaces,workspaceDownloads:downloads,
-  frameFor:()=>({dataset:{}}),escapeHtml:x=>String(x).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')});
+  SpatialHomeFolders:H,frameFor:()=>({dataset:{}}),escapeHtml:x=>String(x).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')});
 const slice=(text,first,last)=>text.slice(text.indexOf(first),text.indexOf(last,text.indexOf(first)));
 vm.runInContext(slice(shell,'function fileLocationRows(', 'function renderFileLocation('),ctx);
 vm.runInContext(slice(ui,'function appFileRows(', 'function renderAppFiles('),ctx);
 assert.equal(ctx.appFileRows('files','/mnt/Short Film').filter(row=>row[0]==='Downloads').length,1,'A created Downloads folder is not shown twice');
 assert(ctx.appFileRows('files',home).some(row=>row[0]==='New folder'),'Created folders appear in their actual parent');
 assert(ctx.appFileRows('files','/home/demo').some(row=>row[0]==='Documents'),'Another Home remains explicitly accessible');
+assert(ctx.appFileRows('files','/home/demo/Workspaces').some(row=>row[0]==='Work'),'Parent navigation exposes the known workspace hierarchy');
 const crumbs=ctx.appFileBreadcrumbs(home+'/Documents');
 assert.match(crumbs,/Work Home/);assert.match(crumbs,/aria-current="page"/);assert(!crumbs.includes('×'),'Breadcrumbs are locations, without fake tab close controls');
 const html=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');
