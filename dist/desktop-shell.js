@@ -287,12 +287,13 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function showToast(message) {
+function showToast(message, { duration = 1600, projectSwitch = false } = {}) {
   const toast = $("#toast");
   toast.textContent = message;
+  toast.classList.toggle("is-project-switch", projectSwitch);
   toast.classList.add("is-visible");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1600);
+  toastTimer = setTimeout(() => toast.classList.remove("is-visible"), duration);
 }
 
 function frameFor(name) {
@@ -5970,7 +5971,7 @@ function changeDesktopColumn(column, announce = true) {
   if (desktopPages.column(activeWorkspace) === column) return false;
   captureWorkspaceContent();
   const changed = changeDesktopPage(desktopPages.current(activeWorkspace, column), true, column);
-  if (changed && announce) showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1));
+  if (changed && announce) showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1), { duration: 3200, projectSwitch: true });
   return changed;
 }
 
@@ -6023,7 +6024,7 @@ function changeDraggedDesktopColumn(drag, column) {
   } finally { drag.switching = false; }
   saveDesktopPages(); saveTileSessions(); saveIndependentSessions();
   queueDesktopStateBroadcast(0);
-  showToast("Move to " + desktopColumnLabel(column));
+  showToast("Move to " + desktopColumnLabel(column), { duration: 3200, projectSwitch: true });
   return true;
 }
 
@@ -6403,7 +6404,10 @@ function prepareDesktopPages() {
     const column = button.dataset.desktopColumn;
     if (column !== "workspace" && !openProjectNames().includes(column)) return;
     setUniversalSearchOpen(false);
-    changeDesktopPage(Number(button.dataset.columnPage), true, column);
+    const switchedProject = column !== desktopPages.column(activeWorkspace);
+    if (changeDesktopPage(Number(button.dataset.columnPage), true, column) && switchedProject) {
+      showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1), { duration: 3200, projectSwitch: true });
+    }
   });
   updateDesktopPageUi();
 }
