@@ -44,7 +44,7 @@ const ctx = vm.createContext({
   SpatialDesktopPages: Pages, desktopPages: Pages.create(), desktopWheel: Pages.wheelGate(),
   desktopColumnWheel: Pages.wheelGate(), projectSpaces: {}, activeProjectName: null,
   activeWorkspace: 'work', workspaceProfiles: {work: {label: 'Work'}}, desktopHasWindowFocus: true, desktopPageAnimating: false,
-  tileInteraction: false, manualWindowInteraction: false,
+  tileInteraction: false, manualWindowInteraction: false, superKeyAlone: false,
   $: key => nodes[key] || node(key), $$: () => [],
   document: { addEventListener(type, callback) { listeners['document:' + type] = callback; } },
   performance: { now: () => clock },
@@ -59,7 +59,7 @@ vm.runInContext(slice('function prepareDesktopPages(', 'function isLocalApp('), 
 const changes = [];
 ctx.changeDesktopPage = page => { changes.push(page); ctx.desktopPages.go('work', page); return true; };
 ctx.prepareDesktopPages();
-const event = (delta = 80) => ({ deltaY: delta, deltaX: 0, deltaMode: 0, preventDefault() { this.prevented = true; } });
+const event = (delta = 80) => ({ deltaY: delta, deltaX: 0, deltaMode: 0, preventDefault() { this.prevented = this.defaultPrevented = true; }, stopPropagation() { this.stopped = true; } });
 let e = event(); listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented, undefined); assert.equal(changes.length, 0, 'Focused app owns its scrolling');
 listeners['.workspace-zone:pointerdown']({target: {closest: () => null}});
@@ -239,3 +239,76 @@ assert.equal(e.prevented,undefined);assert.equal(columnChanges.length,2);
 ctx.desktopHasWindowFocus=false;clock=3100;e=event();e.shiftKey=true;e.ctrlKey=true;listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented,undefined);
 console.log('Column wheel passed: Shift axis, focused-app ownership, horizontal delta compatibility, momentum and zoom guards.');
+
+// Explicit Win shortcuts are captured above both focused app content and Areas.
+// They share the ordinary wheel gates and must never toggle Overview on release.
+nodes['#desktopContextMenu'].hidden=true;
+ctx.desktopHasWindowFocus=true;ctx.superKeyAlone=true;
+ctx.desktopWheel.reset();ctx.desktopColumnWheel.reset();
+ctx.desktopPages.select('work','workspace');ctx.desktopPages.go('work',0);
+const changeCount=changes.length;
+clock=4000;e=event();e.metaKey=true;
+listeners['document:wheel'](e);
+assert.equal(e.prevented,true);assert.equal(e.stopped,true);
+assert.equal(ctx.superKeyAlone,false,'Win+wheel consumes the standalone Overview key');
+assert.equal(changes.length,changeCount+1);
+assert.equal(ctx.desktopPages.current('work'),1,'Win+wheel navigates with a focused app');
+listeners['.workspace-zone:wheel'](e);
+assert.equal(changes.length,changeCount+1,'Capture and canvas listeners cannot process one wheel twice');
+for(clock=4015;clock<4200;clock+=15){e=event();e.metaKey=true;listeners['document:wheel'](e);}
+assert.equal(changes.length,changeCount+1,'Explicit shortcuts preserve momentum gating');
+
+clock=4500;e=event(-5);e.deltaMode=1;e.getModifierState=key=>key==='OS';
+listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.current('work'),0,'OS modifier alias and line-mode wheels work');
+const columnCount=columnChanges.length;
+clock=5000;e=event(0);e.deltaX=80;e.shiftKey=true;e.metaKey=true;
+listeners['document:wheel'](e);
+assert.equal(columnChanges.length,columnCount+1);
+assert.equal(ctx.desktopPages.column('work'),'site','Win+Shift+wheel changes projects with a focused app');
+clock=5500;e=event(-80);e.shiftKey=true;e.metaKey=true;
+listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.column('work'),'workspace','Win+Shift+wheel returns to Workspace');
+
+for(const modifier of ['ctrlKey','altKey']){
+ clock+=500;e=event();e.metaKey=true;e[modifier]=true;listeners['document:wheel'](e);
+ assert.equal(e.prevented,undefined,modifier+' combinations keep their existing behavior');
+}
+clock+=500;e=event(0);e.deltaX=80;e.metaKey=true;listeners['document:wheel'](e);
+assert.equal(e.prevented,undefined,'Horizontal scrolling alone is not a vertical desktop shortcut');
+nodes['#desktopContextMenu'].hidden=false;
+clock+=500;e=event();e.metaKey=true;listeners['document:wheel'](e);
+assert.equal(e.prevented,undefined,'Explicit shortcuts respect menu guards');
+nodes['#desktopContextMenu'].hidden=true;
+ctx.tileInteraction=true;
+clock+=500;e=event();e.metaKey=true;listeners['document:wheel'](e);
+assert.equal(e.prevented,undefined,'Document navigation leaves held-window gestures to their own handler');
+ctx.tileInteraction=false;
+clock+=500;e=event();listeners['document:wheel'](e);
+assert.equal(e.prevented,undefined,'Plain Area scrolling is never intercepted globally');
+console.log('Win wheel passed: focused app/Area capture, project axis, OS alias, line deltas, momentum, duplicate/Overview prevention and input/menu/drag guards.');
+
+// Exercise the actual window-owned pointer gesture rather than global navigation.
+const dragListeners={},carried=[];
+const held=vm.createContext({
+  cancelWindowPointerInteraction:null,cancelAnimationFrame(){},tileLayoutFrame:0,tileInteraction:false,
+  SpatialDesktopPages:Pages,desktopPages:Pages.create(),activeWorkspace:'work',tileSessions:{},
+  activeDesktopDrag:null,desktopPageAnimating:false,superKeyAlone:true,performance:{now:()=>clock},
+  $:()=>({clientHeight:800}),
+  window:{addEventListener(type,fn){dragListeners[type]=fn;},removeEventListener(type){delete dragListeners[type];},dispatchEvent(){}},
+  document:{addEventListener(){},removeEventListener(){},hidden:false},CustomEvent:function(){},
+  adjacentDesktopColumn:direction=>direction>0?'site':'workspace',
+  changeDraggedDesktopPage(drag,page){carried.push(['desktop',page]);held.desktopPages.go('work',page);return true;},
+  changeDraggedDesktopColumn(drag,column){carried.push(['project',column]);return true;},cancelDraggedDesktopPages(){}
+});
+vm.runInContext(slice('function trackWindowPointer(', 'function beginManualWindowInteraction('),held);
+held.trackWindowPointer({pointerId:1,button:0,clientX:100,clientY:100},{setPointerCapture(){},releasePointerCapture(){}},()=>{},()=>{}, {name:'notes'});
+clock=10000;e=event();e.metaKey=true;dragListeners.wheel(e);
+assert.equal(e.prevented,true);assert.equal(e.stopped,true);
+assert.deepEqual(carried,[['desktop',1]],'Win+wheel carries the held window to another desktop');
+assert.equal(held.superKeyAlone,false);
+clock=10500;e=event();e.metaKey=true;e.shiftKey=true;dragListeners.wheel(e);
+assert.deepEqual(carried,[['desktop',1],['project','site']],'Win+Shift+wheel carries the held window into a project');
+dragListeners.pointerup({pointerId:1,type:'pointerup'});
+assert.equal(dragListeners.wheel,undefined,'Release removes the window-owned wheel handler');
+console.log('Held-window Win wheel passed: desktop/project carry, standalone-key suppression and release cleanup.');

@@ -1817,7 +1817,9 @@ function trackWindowPointer(event, handle, move, finish, desktopDrag = null) {
     cancel();
   };
   const onWheel = scroll => {
-    if (!drag || finished || scroll.ctrlKey || scroll.altKey || scroll.metaKey || (!scroll.shiftKey && Math.abs(scroll.deltaX) > Math.abs(scroll.deltaY))) return;
+    const superHeld = scroll.metaKey || scroll.getModifierState?.("OS");
+    if (!drag || finished || scroll.ctrlKey || scroll.altKey || (!scroll.shiftKey && Math.abs(scroll.deltaX) > Math.abs(scroll.deltaY))) return;
+    if (superHeld) superKeyAlone = false;
     scroll.preventDefault();
     scroll.stopPropagation();
     const delta = (scroll.shiftKey ? scroll.deltaY || scroll.deltaX : scroll.deltaY) * (scroll.deltaMode === 1 ? 16 : scroll.deltaMode === 2 ? $(".workspace-zone").clientHeight : 1);
@@ -6113,7 +6115,7 @@ function updateDesktopPageUi() {
   $("#appsAreaContext").textContent = context + " · Desktop " + page;
   $("#openWindowsTitle").textContent = context;
   button.setAttribute("aria-label", "Open " + context + " overview · Desktop " + page);
-  button.title = "Overview · " + context + " · Desktop " + page + " · Super · Shift+scroll: switch projects";
+  button.title = "Overview · " + context + " · Desktop " + page + " · Super · Win+scroll: desktops · Win+Shift+scroll: projects";
   const contextToggle = $("#desktopContextToggle");
   if (contextToggle) {
     $(".desktop-context-page", contextToggle).textContent = "Desktop " + page;
@@ -6361,10 +6363,13 @@ function prepareDesktopPages() {
     const frame = event.target.closest("[data-app-frame]");
     if (frame && !frame.hidden && isLocalApp(frame.dataset.appFrame)) bringToFront(frame.dataset.appFrame);
   });
-  workspace.addEventListener("wheel", event => {
-    if (desktopHasWindowFocus || event.ctrlKey || event.altKey || event.metaKey || (!event.shiftKey && Math.abs(event.deltaX) > Math.abs(event.deltaY))) return;
+  const onDesktopWheel = event => {
+    const superHeld = event.metaKey || event.getModifierState?.("OS");
+    if (superHeld) superKeyAlone = false;
+    if (event.defaultPrevented || event.ctrlKey || event.altKey || (!superHeld && desktopHasWindowFocus) || (!event.shiftKey && Math.abs(event.deltaX) > Math.abs(event.deltaY))) return;
     if (desktopNavigationBlocked() && !desktopPageAnimating) return;
     event.preventDefault();
+    if (superHeld) event.stopPropagation();
     const delta = (event.shiftKey ? event.deltaY || event.deltaX : event.deltaY) * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? workspace.clientHeight : 1);
     if (event.shiftKey) {
       const direction = desktopColumnWheel.feed(delta, performance.now());
@@ -6374,7 +6379,13 @@ function prepareDesktopPages() {
     }
     const direction = desktopWheel.feed(delta, performance.now());
     if (direction && !desktopPageAnimating) changeDesktopPage(desktopPages.current(activeWorkspace) + direction);
-  }, { passive: false });
+  };
+  workspace.addEventListener("wheel", onDesktopWheel, { passive: false });
+  // Explicit desktop shortcuts also work over app content and Areas. Capture
+  // before their scroll handlers, while held-window gestures stay window-owned.
+  document.addEventListener("wheel", event => {
+    if (event.metaKey || event.getModifierState?.("OS")) onDesktopWheel(event);
+  }, { capture: true, passive: false });
   document.addEventListener("keydown", event => {
     if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || desktopNavigationBlocked() || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
     if (event.key === "Escape" && !tileSession().fullscreen) { event.preventDefault(); focusDesktop(); }
