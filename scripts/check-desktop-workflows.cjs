@@ -201,3 +201,6 @@ for (const [width, height] of [[320, 480], [640, 700], [900, 720], [1280, 800], 
   }
 }
 console.log(`Seed 0x5a17: ${checks} mixed layout steps across 8 sizes passed (bounds, usability, floats, overlap, persistence).`);
+
+
+require('./check-home-folders.cjs');

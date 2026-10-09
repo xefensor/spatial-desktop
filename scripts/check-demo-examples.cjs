@@ -336,7 +336,7 @@ const contentCtx=vm.createContext({
   workspaceContent:{work:{frames:{'notes--demo-film-cut':[{value:'My edited film note'}]},note:'My studio planning'}},
   pristineFrames:Object.fromEntries(Object.keys(D.scenarios.work.apps).filter(id=>!id.includes('--')).map(id=>[id,{querySelectorAll:()=>[{value:'pristine default'}]}])),
   workspaceAreaContents:{},noteDraft:'',terminalPreview:'',focusSeconds:1500,focusRunning:false,focusTimer:0,
-  areaFor:()=>({querySelectorAll:()=>[]}),clearInterval(){},updateTimer(){},setMusicPlaying(){},renderWorkspaceHistory(){}
+  areaFor:()=>({querySelectorAll:()=>[]}),clearInterval(){},updateTimer(){},setMusicPlaying(){},renderWorkspaceHistory(){},renderFileLocation(){},refreshDownloadUi(){}
 });
 for (const id of ['terminal','dolphin','elisa']) contentCtx.appInfo[id] = {label:id};
 vm.runInContext(slice('function renderDemoAppExample(', 'function renderWorkspaceExample('),contentCtx);

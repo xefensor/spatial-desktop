@@ -3330,7 +3330,7 @@ function normalizeProject(project, id) {
   const activeMode = modes[project.activeMode] ? project.activeMode : Object.keys(modes)[0];
   const fallbackRoot = "/home/demo/Projects/" + slugifyProject(project.name);
   const rawRoot = project.root || fallbackRoot;
-  const root = rawRoot.startsWith("~/") ? "/home/demo/" + rawRoot.slice(2) : rawRoot;
+  const root = rawRoot.startsWith("~/") ? (workspaceProfiles[project.originWorkspace]?.home || "/home/demo") + "/" + rawRoot.slice(2) : rawRoot;
   const detectedWorkspace = Object.entries(workspaceProfiles).find(([, profile]) => root === profile.home + "/Projects" || root.startsWith(profile.home + "/Projects/"))?.[0] || null;
   return {
     name: project.name.trim(),
@@ -3338,6 +3338,7 @@ function normalizeProject(project, id) {
     icon: project.icon || "i-folder",
     summary: project.summary || "Project",
     root,
+    downloadToProject: project.downloadToProject === true,
     originWorkspace: project.originWorkspace && workspaceProfiles[project.originWorkspace] ? project.originWorkspace : detectedWorkspace,
     files: Array.isArray(project.files) ? project.files : [],
     note: typeof project.note === "string" ? project.note : "",
@@ -3799,14 +3800,15 @@ function clearProjectSessions(projectName, modeId = null) {
   });
 }
 
-function createProjectFromEditor(name, root) {
+function createProjectFromEditor(name, root, downloadToProject = false) {
   const cleanName = name.trim();
   if (!cleanName) return;
   const id = uniqueProjectId(cleanName);
   const accent = projectAccentPalette[Object.keys(projectSpaces).length % projectAccentPalette.length];
   const workspace = workspaceProfiles[activeWorkspace];
   const defaultRoot = workspace.home + "/Projects/" + id;
-  const chosenRoot = root.trim() || defaultRoot;
+  const rawRoot = root.trim() || defaultRoot;
+  const chosenRoot = rawRoot.startsWith("~/") ? workspace.home + "/" + rawRoot.slice(2) : rawRoot;
   const originWorkspace = chosenRoot === workspace.home + "/Projects" || chosenRoot.startsWith(workspace.home + "/Projects/") ? activeWorkspace : null;
   projectSpaces[id] = {
     name: cleanName,
@@ -3814,6 +3816,7 @@ function createProjectFromEditor(name, root) {
     icon: "i-folder",
     summary: "Project",
     root: chosenRoot,
+    downloadToProject,
     originWorkspace,
     files: [],
     note: "",
@@ -3823,6 +3826,7 @@ function createProjectFromEditor(name, root) {
       default: { label: "Default", icon: "i-monitor", apps: [], layout: "canvas" }
     }
   };
+  if (downloadToProject) ensureProjectDownloads(id);
   persistProjectState();
   renderOverviewProjects();
   closeProjectEditor();
@@ -3921,7 +3925,7 @@ function renderProjectEditor() {
     kicker.textContent = "PROJECTS";
     title.textContent = "Create project";
     const defaultProjectPath = workspaceProfiles[activeWorkspace].home + "/Projects/my-project";
-    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
+    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><label class="project-download-option"><input type="checkbox" name="downloadToProject"><span>Download into this project<small>Create Downloads inside the project folder. Other Home folders still use the workspace.</small></span></label><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
   } else if (state.view === "delete-project" && project) {
     kicker.textContent = "REMOVE PROJECT";
     title.textContent = project.name;
@@ -3930,7 +3934,7 @@ function renderProjectEditor() {
     state.view = "manage";
     kicker.textContent = "PROJECT SETTINGS";
     title.textContent = project.name;
-    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or any Area to unfocus the window, then scroll up or down to change desktops. The number in the Apps header shows your current desktop.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or any Area to unfocus the window, then scroll up or down to change desktops. The number in the Apps header shows your current desktop.</p><label class="project-download-option"><input type="checkbox" data-project-download-toggle' + (project.downloadToProject ? ' checked' : '') + '><span>Download into this project<small>Creates <b>' + escapeHtml(project.root + '/Downloads') + '</b>. Only downloads from this project’s windows use it; Home and other standard folders stay in the workspace.</small></span></label><p class="project-download-destination">Downloads currently use <b>' + escapeHtml(SpatialHomeFolders.downloadDestination(workspaceProfiles, projectSpaces, activeWorkspace, state.projectName)) + '</b>.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
   }
   prepareMaterialSurfaces($("#projectEditorDialog"));
   prepareControlSemantics($("#projectEditorDialog"));
@@ -3988,7 +3992,20 @@ function prepareProjectEditor() {
     if (!form) return;
     event.preventDefault();
     const data = new FormData(form);
-    if (form.dataset.projectEditorForm === "project") createProjectFromEditor(String(data.get("name") || ""), String(data.get("root") || ""));
+    if (form.dataset.projectEditorForm === "project") createProjectFromEditor(String(data.get("name") || ""), String(data.get("root") || ""), data.has("downloadToProject"));
+  });
+  dialog.addEventListener("change", event => {
+    if (!event.target.matches("[data-project-download-toggle]")) return;
+    const name = projectEditorState?.projectName;
+    const project = projectSpaces[name];
+    if (!project) return;
+    project.downloadToProject = event.target.checked;
+    if (project.downloadToProject) ensureProjectDownloads(name);
+    persistProjectState();
+    refreshDownloadUi();
+    if (activeProjectName === name) renderProjectSpace(name);
+    $(".project-download-destination b", dialog).textContent = SpatialHomeFolders.downloadDestination(workspaceProfiles, projectSpaces, activeWorkspace, name);
+    queueDesktopStateBroadcast(0);
   });
   dialog.addEventListener("click", event => {
     const action = event.target.closest("[data-project-editor-action]");
@@ -4120,6 +4137,133 @@ const workspaceProfiles = {
     agenda: ["Gaming", "Co-op session", "20:00 · voice chat"]
   }
 };
+
+// Every workspace exposes the same standard Home folders, alongside its extras.
+Object.values(workspaceProfiles).forEach(profile => {
+  const extras = profile.folders.filter(([name]) => !SpatialHomeFolders.standard.includes(name));
+  profile.folders = [...SpatialHomeFolders.standard.map(name => [name, "Workspace folder", "folder"]), ...extras];
+});
+const workspaceDownloads = SpatialHomeFolders.create(readDesktopStorage("spatial-downloads-v1"));
+function persistDownloads() {
+  try { localStorage.setItem("spatial-downloads-v1", JSON.stringify(workspaceDownloads.snapshot())); } catch {}
+}
+function ensureProjectDownloads(name) {
+  const project = projectSpaces[name];
+  if (!project) return;
+  workspaceDownloads.ensure(project.root.replace(/\/+$/, "") + "/Downloads");
+  if (!project.files.some(([label]) => label === "Downloads")) project.files.push(["Downloads", "Downloaded files", "folder"]);
+  persistDownloads();
+}
+function downloadContext(id, workspace = activeWorkspace) {
+  const owner = desktopPages.columnOf(workspace, id);
+  return {workspace, project: owner === "workspace" ? null : owner,
+    directory: SpatialHomeFolders.downloadDestination(workspaceProfiles, projectSpaces, workspace, owner)};
+}
+function downloadPageNotes(id) {
+  const frame = frameFor(id);
+  if (!frame) return;
+  // Capture the originating window, never the last selected project.
+  const context = downloadContext(id);
+  if (context.project && projectSpaces[context.project]?.downloadToProject) ensureProjectDownloads(context.project);
+  const title = $(".app-identity small", frame).textContent || "Page notes";
+  const file = workspaceDownloads.add(context.directory, title.replace(/[\\/]/g, "-") + ".txt", {
+    ...context, source: $(".browser-toolbar input", frame).value,
+    content: $(".demo-reading-page", frame)?.textContent || $(".app-identity small", frame).textContent
+  });
+  persistDownloads();
+  refreshDownloadUi();
+  captureWorkspaceContent();
+  queueDesktopStateBroadcast(0);
+  showToast("Demo download saved · " + file.path, {duration: 3200});
+}
+function refreshDownloadUi() {
+  Object.keys(appInfo).forEach(id => {
+    const frame = frameFor(id);
+    const base = appInfo[id].base || id;
+    if (base === "browser") {
+      let section = $(".browser-downloads", frame);
+      if (!section) {
+        section = document.createElement("section");
+        section.className = "browser-downloads";
+        $(".start-page", frame).append(section);
+      }
+      const context = downloadContext(id);
+      const recent = workspaceDownloads.list(context.directory).slice(-3).reverse();
+      section.innerHTML = '<button class="surface-key" data-demo-download>Download page notes</button><small>Demo destination: <b>' + escapeHtml(context.directory) + '</b></small>' + recent.map(file => '<p>' + escapeHtml(file.name) + '</p>').join('') + '<button class="surface-key" data-open-download-folder="' + escapeHtml(context.directory) + '">Open download folder</button>';
+      prepareControlSemantics(section);
+    } else if (base === "dolphin" && frame.dataset.fileLocation) renderFileLocation(id, frame.dataset.fileLocation);
+  });
+}
+function fileLocationRows(frame, path) {
+  const profile = workspaceProfiles[activeWorkspace];
+  let rows = [];
+  if (path === profile.home) rows = profile.folders;
+  else if (path === profile.home + "/Projects") rows = Object.values(projectSpaces).filter(project => project.originWorkspace === activeWorkspace).map(project => [project.name, "Project", "folder", project.root]);
+  else {
+    const project = Object.values(projectSpaces).find(project => project.root === path);
+    if (project) rows = [[".spatial-project.toml", "Project settings", "config"], ...project.files];
+    else if (frame.dataset.fileSeedPath === path) rows = JSON.parse(frame.dataset.fileSeedRows || "[]");
+  }
+  return [...rows, ...workspaceDownloads.list(path).map(file => [file.name, "Demo download", "document"])];
+}
+function renderFileLocation(id, path) {
+  const frame = frameFor(id);
+  if (!frame || !$(".file-list", frame)) return;
+  frame.dataset.fileLocation = path;
+  frame.dataset.fileWorkspace = activeWorkspace;
+  $(".address-bar input", frame).value = path;
+  $(".app-identity small", frame).textContent = path === workspaceProfiles[activeWorkspace].home ? "Home" : path.split('/').at(-1);
+  const rows = fileLocationRows(frame, path);
+  $(".file-list", frame).innerHTML = rows.map(([label, detail, type, target]) => '<button class="content-row"' + (type === "folder" ? ' data-file-folder="' + escapeHtml(target || path.replace(/\/+$/, '') + '/' + label) + '"' : '') + '><span><i class="' + (type === "folder" ? 'folder' : 'document') + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join('') || '<p class="file-folder-empty">This folder is empty.</p>';
+  const tab = $(".folder-tab.is-active", frame);
+  if (tab) tab.innerHTML = escapeHtml(path === workspaceProfiles[activeWorkspace].home ? "Home" : path.split('/').at(-1)) + '<span>×</span>';
+  $$("[data-home-folder]", frame).forEach(button => {
+    const target = SpatialHomeFolders.folder(workspaceProfiles, activeWorkspace, button.dataset.homeFolder);
+    const selected = path === target || (button.dataset.homeFolder !== "Home" && path.startsWith(target + '/'));
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+    button.title = target;
+  });
+  $(".app-status span", frame).textContent = rows.length + " items";
+  prepareControlSemantics(frame);
+}
+function openFileLocation(path) {
+  let id = Object.keys(appInfo).find(name => (appInfo[name].base || name) === "dolphin" && appState[name] !== "closed" && desktopPages.inColumn(activeWorkspace, name));
+  if (id) openApp(id);
+  else id = createAppInstance("dolphin");
+  renderFileLocation(id, path);
+  captureWorkspaceContent();
+  setUniversalSearchOpen(false);
+}
+function prepareHomeFolders() {
+  document.addEventListener("click", event => {
+    const frame = event.target.closest("[data-app-frame]");
+    if (event.target.closest("[data-demo-download]") && frame) return downloadPageNotes(frame.dataset.appFrame);
+    const downloads = event.target.closest("[data-open-download-folder]");
+    if (downloads) return openFileLocation(downloads.dataset.openDownloadFolder);
+    const place = event.target.closest("[data-home-folder]");
+    if (place && frame) {
+      renderFileLocation(frame.dataset.appFrame, SpatialHomeFolders.folder(workspaceProfiles, activeWorkspace, place.dataset.homeFolder));
+      return captureWorkspaceContent();
+    }
+    const folder = event.target.closest("[data-file-folder]");
+    if (folder && frame) {
+      renderFileLocation(frame.dataset.appFrame, folder.dataset.fileFolder);
+      return captureWorkspaceContent();
+    }
+    const workspaceFolder = event.target.closest("[data-workspace-folder]");
+    if (workspaceFolder) openFileLocation(workspaceProfiles[activeWorkspace].home + '/' + workspaceFolder.dataset.workspaceFolder);
+    const projectItem = event.target.closest("#projectRootItems [data-project-item]");
+    if (projectItem && projectSpaces[activeProjectName]?.files.some(([name,, type]) => name === projectItem.dataset.projectItem && type === "folder")) openFileLocation(projectSpaces[activeProjectName].root + '/' + projectItem.dataset.projectItem);
+  });
+  document.addEventListener("change", event => {
+    const frame = event.target.closest('[data-app-frame]');
+    if (frame && event.target.matches('.address-bar input')) renderFileLocation(frame.dataset.appFrame, event.target.value);
+  });
+  Object.entries(projectSpaces).forEach(([name, project]) => { if (project.downloadToProject) ensureProjectDownloads(name); });
+  refreshDownloadUi();
+}
+
 
 let activeWorkspace = (() => {
   try { return localStorage.getItem("spatial-active-workspace") || "general"; }
@@ -4267,7 +4411,7 @@ function renderWorkspace(name, announce = true) {
   $("#workspaceHomeIcon use").setAttribute("href", "#" + profile.icon);
   $("#workspaceContextTitle").textContent = profile.context;
   refreshWorkspaceContext();
-  $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail, type = "folder"]) => '<button class="workspace-folder' + (type === "config" ? " workspace-config-file" : "") + '" data-toast="' + escapeHtml(type === "config" ? "Opening " + label : label + " opened") + '"><span>' + icon(type === "config" ? "i-code" : "i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  $("#workspaceFolders").innerHTML = profile.folders.map(([label, detail, type = "folder"]) => '<button class="workspace-folder' + (type === "config" ? " workspace-config-file" : "") + '" ' + (type === "config" ? 'data-toast="Opening ' + escapeHtml(label) : 'data-workspace-folder="' + escapeHtml(label)) + '"><span>' + icon(type === "config" ? "i-code" : "i-folder") + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
   $("#workspaceFavorites").innerHTML = profile.favorites.map(workspaceFavoriteMarkup).join("");
   $("#workspaceAgendaHeading").textContent = profile.agenda[0];
   $("#workspaceAgendaTitle").textContent = profile.agenda[1];
@@ -4324,6 +4468,8 @@ function renderDemoAppExample(id, example) {
     $(".start-page", frame).innerHTML = '<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(page.subtitle) + '</span><h2>' + escapeHtml(page.title) + '</h2><p>' + escapeHtml(page.intro) + '</p><div class="site-grid">' + page.links.map(label => '<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>').join('') + '</div><section class="demo-page-detail"><h3>' + escapeHtml(example.shortTitle) + '</h3><p>' + escapeHtml(page.detail || page.intro) + '</p></section></div>';
   }
   if (example.folder) {
+    frame.dataset.fileSeedPath = example.folder;
+    frame.dataset.fileSeedRows = JSON.stringify(example.files);
     $(".address-bar input", frame).value = example.folder;
     $(".file-list", frame).innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join('');
     const tab = $(".folder-tab.is-active", frame);
@@ -4346,6 +4492,8 @@ function renderDemoAppExample(id, example) {
     $(".album-block span", frame).textContent = example.shortTitle;
     $(".playlist", frame).innerHTML = example.music.tracks.map((track,index) => '<button class="content-row' + (index === 0 ? ' is-selected' : '') + '"><span>' + String(index+1).padStart(2,'0') + ' · ' + escapeHtml(track) + '</span><small>' + escapeHtml(example.music.artist) + '</small><small>3:38</small></button>').join('');
   }
+  if (example.folder) renderFileLocation(id, example.folder);
+  if (example.browser) refreshDownloadUi();
   prepareControlSemantics(frame);
 }
 
@@ -4626,10 +4774,7 @@ $("#overviewCategory").addEventListener("change", event => {
 });
 $("#overviewClose").addEventListener("click", () => setUniversalSearchOpen(false));
 $("[data-workspace-home]").addEventListener("click", () => {
-  openApp("dolphin");
-  $(".address-bar input").value = workspaceProfiles[activeWorkspace].home;
-  $("#dolphinContext").textContent = workspaceProfiles[activeWorkspace].label + " · Home";
-  setUniversalSearchOpen(false);
+  openFileLocation(SpatialHomeFolders.home(workspaceProfiles, activeWorkspace));
 });
 $("#overviewNotificationList").addEventListener("click", event => {
   const button = event.target.closest("[data-overview-dismiss]");
@@ -6607,6 +6752,7 @@ function captureDesktopSyncState() {
   return {
     schema: 4,
     desktopPages: desktopPages.snapshot(),
+    downloads: workspaceDownloads.snapshot(),
     desktopHasWindowFocus,
     openProjects: Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, openProjectNames(name)])),
     workspaceProjects: cloneDesktopState(workspaceProjectStates),
@@ -6641,6 +6787,7 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.downloads) { workspaceDownloads.load(state.downloads); persistDownloads(); }
   if (state.openProjects) {
     Object.keys(workspaceOpenProjects).forEach(name => delete workspaceOpenProjects[name]);
     Object.keys(workspaceProfiles).forEach(name => { workspaceOpenProjects[name] = Array.isArray(state.openProjects[name]) ? state.openProjects[name].filter(id => state.projects?.[id] || projectSpaces[id]) : []; });
@@ -6991,6 +7138,13 @@ function restoreWorkspaceContent(name) {
   [...areaFor('systems')?.querySelectorAll('input,select') || []].forEach((field, index) => { if (saved?.systemFields?.[index] !== undefined) field.value = saved.systemFields[index]; });
   musicPosition = saved?.music?.position || 0;
   setMusicPlaying(saved?.music?.playing ?? false);
+  Object.keys(appInfo).filter(id => (appInfo[id].base || id) === "dolphin").forEach(id => {
+    const frame = frameFor(id);
+    if (!frame) return;
+    const hasOwnPath = saved?.frames?.[id] || frame.dataset.demoExample?.startsWith(name + ":");
+    renderFileLocation(id, hasOwnPath ? $(".address-bar input", frame).value || workspaceProfiles[name].home : workspaceProfiles[name].home);
+  });
+  refreshDownloadUi();
   renderWorkspaceHistory();
 }
 const originalCaptureWorkspace = captureCurrentWorkspaceSession;
@@ -7028,6 +7182,8 @@ openApp = function(name, point = null) {
     saveDesktopPages();
   } else changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
   originalOpenApp(name, point);
+  if (newlyOpened && (appInfo[name].base || name) === "dolphin" && !frameFor(name).dataset.demoExample?.startsWith(activeWorkspace + ":")) renderFileLocation(name, workspaceProfiles[activeWorkspace].home);
+  refreshDownloadUi();
   saveIndependentSessions();
 };
 function removeWindowFromSavedProjects(name) {
@@ -7093,6 +7249,7 @@ prepareDesktopPages();
 prepareOverviewViews();
 prepareWorkspaces();
 preparePackages();
+prepareHomeFolders();
 prepareWindows();
 applyAppPrimaryColors();
 hydrateAppArtwork();

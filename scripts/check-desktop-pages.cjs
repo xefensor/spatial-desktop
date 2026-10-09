@@ -182,7 +182,7 @@ const transfer = vm.createContext({
   activeProjectName: null, windowMembership: {}, desktopPageAnimating: false,
   openApp(name) { transfer.appState[name] = 'open'; },
   changeDesktopPage(page) { transfer.desktopPages.go('work', page); },
-  removeOffPageWindowTiles() {}, saveDesktopPages() {}, saveIndependentSessions() {}
+  removeOffPageWindowTiles() {}, saveDesktopPages() {}, saveIndependentSessions() {}, refreshDownloadUi() {}
 });
 vm.runInContext(slice('const originalOpenApp = openApp;', 'function removeWindowFromSavedProjects('), transfer);
 transfer.desktopPages.go('work', 1);

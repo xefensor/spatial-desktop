@@ -65,6 +65,14 @@ Use the top tabs or **Shift + scroll** to switch Projects or return to Workspace
 
 This scene update refreshes the built-in workspace arrangements once and retains a backup of their previous session data. Workspaces attached to custom Projects are left alone; edited Project definitions and existing workspace notes are preserved. Later visits and workspace switches restore the user's changes rather than reset the examples. Historical commits retain their original examples.
 
+## Workspace folders and project downloads
+
+Each Workspace owns its Home and all eight standard Linux user folders: Desktop, Documents, Downloads, Music, Pictures, Videos, Templates and Public. General uses `/home/demo`; other Workspaces use `/home/demo/Workspaces/<Name>`. Home and Places always resolve inside the current Workspace, even while a Project is open.
+
+Projects do not override Home or any of these folders. **Download into this project**, disabled by default in project creation and settings, opts only its windows into `<project folder>/Downloads`. Enabling it creates that folder in the demo filesystem; disabling it returns new downloads to the Workspace and keeps existing files. A Project at a custom location behaves the same way. The originating window’s ownership determines the destination, including separate app instances.
+
+Use **Download page notes** in a Web window and **Open download folder** to try the routing. Demo entries, folder creation and the project preference survive reload and synchronize between demo displays. These are simulated files stored by the prototype; native Linux Home/XDG settings and the host browser’s real download directory are not changed.
+
 ## Material philosophy
 
 Windows primarily use opaque ABS plastic surfaces, with short mechanical press feedback. Secondary surfaces use transparent glass/acrylic. Their lighting communicates state instead of adding decoration everywhere.
@@ -83,6 +91,7 @@ The detailed reasoning, experiments and workflow models are in [`dist/philosophy
 | --- | --- |
 | `dist/index.html` | Current fullscreen desktop |
 | `dist/desktop-shell.js` / `.css` | Desktop behaviour and appearance |
+| `dist/home-folders.js` | Workspace Home resolution and persistent simulated downloads |
 | `dist/spatial-tiling.js` | Tiling and floating-window obstacle layout |
 | `dist/demo-examples.js` | Generic project examples and saved-data migration |
 | `dist/spatial-intent.js` | Area allocation and fullscreen intent policy |
