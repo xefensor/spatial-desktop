@@ -6125,6 +6125,7 @@ function updateDesktopPageUi() {
     contextToggle.setAttribute("aria-label", "Open desktop map · " + label + " / " + (project?.name || "Workspace") + " · Desktop " + page);
   }
   renderDesktopContextColumns();
+  renderDesktopPageRail();
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
@@ -6159,6 +6160,20 @@ function renderDesktopContextColumns() {
     button.classList.toggle("is-active", selected);
   });
   if (wasHidden !== header.hidden && windowViewportLockReady && !tileInteraction && !manualWindowInteraction) scheduleWindowTiling();
+}
+
+function renderDesktopPageRail() {
+  const rail = $("#desktopPageRail");
+  if (!rail) return;
+  const column = desktopPages.column(activeWorkspace);
+  const current = desktopPages.current(activeWorkspace);
+  const names = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.columnOf(activeWorkspace, name) === column);
+  // Include the current empty desktop, but do not advertise an unused spare.
+  const last = Math.max(current, 0, ...names.map(name => desktopPages.pageOf(activeWorkspace, name)));
+  const project = column === "workspace" ? null : projectSpaces[column];
+  rail.style?.setProperty("--desktop-marker-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
+  rail.setAttribute("aria-label", (project?.name || workspaceProfiles[activeWorkspace].label + " workspace") + " · " + (last + 1) + " desktops · Desktop " + (current + 1) + " is current");
+  rail.innerHTML = Array.from({ length: last + 1 }, (_, page) => '<span class="desktop-page-mark' + (page === current ? ' is-current' : '') + '" data-desktop-marker="' + page + '" aria-hidden="true"></span>').join("");
 }
 
 function focusDesktop(moveKeyboardFocus = true) {

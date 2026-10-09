@@ -42,7 +42,7 @@ const nodes = Object.fromEntries(['.workspace-zone', '#allAppsToggle', '#desktop
 let clock = 0;
 const ctx = vm.createContext({
   SpatialDesktopPages: Pages, desktopPages: Pages.create(), desktopWheel: Pages.wheelGate(),
-  desktopColumnWheel: Pages.wheelGate(), projectSpaces: {}, activeProjectName: null,
+  desktopColumnWheel: Pages.wheelGate(), projectSpaces: {}, activeProjectName: null, appState: {},
   activeWorkspace: 'work', workspaceProfiles: {work: {label: 'Work'}}, desktopHasWindowFocus: true, desktopPageAnimating: false,
   tileInteraction: false, manualWindowInteraction: false, superKeyAlone: false,
   $: key => nodes[key] || node(key), $$: () => [],

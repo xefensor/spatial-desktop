@@ -72,3 +72,16 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
   transform:translate(-50%,calc(-50% + 12px));
 }
 .toast.is-project-switch.is-visible{transform:translate(-50%,-50%)}
+
+/* Desktop markers occupy the existing left gutter, without moving any window. */
+.desktop-page-rail{
+  position:absolute;left:calc(var(--workspace-left,0px) + 1px);
+  top:calc(var(--workspace-top,0px) + var(--desktop-context-height,0px));
+  bottom:var(--workspace-bottom,0px);width:6px;z-index:740;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:12px 0;pointer-events:none;
+}
+.desktop-page-mark{display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;background:var(--sd-glass-muted);opacity:.5;border-radius:0}
+.desktop-page-mark.is-current{width:3px;height:34px;background:var(--desktop-marker-accent,var(--sd-glass-text));opacity:1}
+body.secondary-area-canvas .desktop-page-rail,
+.desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
