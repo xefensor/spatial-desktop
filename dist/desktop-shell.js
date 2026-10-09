@@ -4215,8 +4215,6 @@ function renderFileLocation(id, path) {
   $(".app-identity small", frame).textContent = path === workspaceProfiles[activeWorkspace].home ? "Home" : path.split('/').at(-1);
   const rows = fileLocationRows(frame, path);
   $(".file-list", frame).innerHTML = rows.map(([label, detail, type, target]) => '<button class="content-row"' + (type === "folder" ? ' data-file-folder="' + escapeHtml(target || path.replace(/\/+$/, '') + '/' + label) + '"' : '') + '><span><i class="' + (type === "folder" ? 'folder' : 'document') + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join('') || '<p class="file-folder-empty">This folder is empty.</p>';
-  const tab = $(".folder-tab.is-active", frame);
-  if (tab) tab.innerHTML = escapeHtml(path === workspaceProfiles[activeWorkspace].home ? "Home" : path.split('/').at(-1)) + '<span>×</span>';
   $$("[data-home-folder]", frame).forEach(button => {
     const target = SpatialHomeFolders.folder(workspaceProfiles, activeWorkspace, button.dataset.homeFolder);
     const selected = path === target || (button.dataset.homeFolder !== "Home" && path.startsWith(target + '/'));
@@ -4472,8 +4470,6 @@ function renderDemoAppExample(id, example) {
     frame.dataset.fileSeedRows = JSON.stringify(example.files);
     $(".address-bar input", frame).value = example.folder;
     $(".file-list", frame).innerHTML = example.files.map(([label, detail, type]) => '<button class="content-row"><span><i class="' + (type === "folder" ? "folder" : "document") + '-glyph"></i>' + escapeHtml(label) + '</span><small>' + escapeHtml(detail) + '</small><small>Today</small></button>').join('');
-    const tab = $(".folder-tab.is-active", frame);
-    if (tab) tab.innerHTML = escapeHtml(example.folder.split('/').at(-1) || "Home") + '<span>×</span>';
     $$(".places-list .nav-choice", frame).forEach(choice => {
       const selected = choice.textContent.trim() === (example.folder === workspaceProfiles[activeWorkspace].home ? "Home" : example.folder.includes('/Documents') ? "Documents" : "");
       choice.classList.toggle("is-active", selected);
@@ -7263,6 +7259,7 @@ setInterval(updateClock, 1000);
 renderCalendar();
 bindMusicControls();
 restoreWorkspaceContent(activeWorkspace);
+prepareAppWindows();
 updateTimer();
 syncApps();
 requestAnimationFrame(() => {

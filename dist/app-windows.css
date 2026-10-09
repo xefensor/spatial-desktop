@@ -1,0 +1,138 @@
+/* Consistent, opaque app interiors. Window silhouettes and app accents remain. */
+.app-frame[data-app-kind] {font-size:13px;line-height:1.45}
+.app-frame[data-app-kind] .app-titlebar {min-height:44px;padding:0 10px;gap:8px}
+.app-frame[data-app-kind] .app-identity {min-width:0}
+.app-frame[data-app-kind] .app-identity>div {min-width:0}
+.app-frame[data-app-kind] .app-identity small {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-frame[data-app-kind] .window-actions {flex-shrink:0}
+.app-frame[data-app-kind] .compact-key {width:30px;height:30px;min-width:30px;padding:5px}
+.app-frame[data-app-kind] .key-group {display:flex;gap:3px}
+.app-frame[data-app-kind] :is(.app-toolbar,.browser-toolbar) {display:flex;align-items:center;gap:6px;min-width:0;padding:6px 10px;min-height:44px}
+.app-frame[data-app-kind] :is(.app-toolbar,.browser-toolbar) .recessed-field {min-width:0;flex:1;height:30px;gap:6px;padding:0 8px}
+.app-frame[data-app-kind] :is(.app-toolbar,.browser-toolbar) input {width:100%;min-width:0;font-size:12px}
+.app-frame[data-app-kind] button:disabled {opacity:.3;pointer-events:none;box-shadow:none}
+.app-frame[data-app-kind] :is(.file-well,.note-editor,.file-navigation,.file-preview,.notes-layout nav,.playlist,.terminal-context) {border-radius:0!important;corner-shape:normal!important}
+.app-frame[data-app-kind="dolphin"] {grid-template-rows:44px 44px minmax(0,1fr) 28px}
+.app-frame[data-app-kind="dolphin"] .dolphin-layout {grid-template-columns:132px minmax(0,1fr);padding:0 10px;gap:8px;min-height:0}
+.app-frame[data-app-kind="dolphin"] .places-list {min-height:0;padding:6px 6px 8px 0;gap:3px;overflow:auto}
+.app-frame[data-app-kind="dolphin"] .places-list .nav-choice {min-height:31px;height:31px;padding:0 8px;font-size:12px;gap:8px}
+.app-frame[data-app-kind="dolphin"] .files-module {min-height:0;display:flex;flex-direction:column}
+.file-navigation {flex:none;padding:4px 0 8px}
+.file-breadcrumbs {display:flex;align-items:center;gap:4px;overflow-x:auto;min-height:30px;white-space:nowrap}
+.file-breadcrumbs>.surface-key {padding:4px 7px;font-size:12px;min-width:0;flex-shrink:0;background:transparent!important;box-shadow:none!important;border-color:transparent!important}
+.file-breadcrumbs>[aria-current] {color:var(--app-primary);font-weight:700}
+.file-breadcrumbs>span {color:var(--muted);font-size:16px}
+.file-options {display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:32px;margin-top:3px}
+.file-filter {height:30px;flex:1;min-width:0;padding:0 8px;gap:6px}
+.file-filter[hidden] {display:none}
+.file-filter input {width:100%;min-width:0;font-size:12px}
+.file-sort {display:flex;gap:5px;align-items:center;font-size:11px;color:var(--muted)}
+.file-sort select {max-width:90px;min-height:28px;padding:0 5px;font-size:12px}
+.app-frame[data-app-kind="dolphin"] .file-well {min-height:0;flex:1;padding:0;position:relative;display:flex;flex-direction:column;border:1px solid var(--line);background:var(--app-content-surface);overflow:hidden}
+.app-frame[data-app-kind="dolphin"] .file-head {flex:none;height:30px;padding:0 10px;grid-template-columns:minmax(0,1fr) 100px 56px;gap:10px;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.app-frame[data-app-kind="dolphin"] .file-list {min-height:0;overflow:auto;flex:1}
+.app-frame[data-app-kind="dolphin"] .content-row {grid-template-columns:minmax(0,1fr) 100px 56px;gap:10px;height:40px;min-width:0;padding:0 10px;box-shadow:none!important;border-radius:0!important;corner-shape:normal!important}
+.app-frame[data-app-kind="dolphin"] .content-row>span {display:flex;align-items:center;gap:9px;min-width:0}
+.app-frame[data-app-kind="dolphin"] .content-row b {font-size:12px;font-weight:450;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-entry-icon {width:20px;height:20px;flex:none;color:var(--app-primary)}
+.app-frame[data-app-kind="dolphin"] .content-row small {font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-frame[data-app-kind="dolphin"] .content-row.is-selected {background:color-mix(in srgb,var(--app-primary) 12%,var(--app-content-surface))!important}
+.file-folder-empty {height:100%;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;margin:0;color:var(--muted)}
+.file-folder-empty>svg {width:32px;height:32px;color:var(--app-primary);opacity:.65}
+.file-folder-empty b {font-size:13px;color:var(--text);font-weight:550}
+.file-folder-empty>span {max-width:30ch;font-size:12px}
+.is-file-grid .file-head {display:none}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .file-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:2px;align-content:start;padding:8px}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .content-row {display:flex;flex-direction:column;justify-content:center;gap:5px;height:112px;padding:10px 5px;text-align:center;border:0;min-width:0}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .content-row>span {display:flex;flex-direction:column;gap:7px;width:100%}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .content-row b {width:100%;text-align:center}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .file-entry-icon {width:32px;height:32px}
+.app-frame[data-app-kind="dolphin"] .is-file-grid .content-row small:last-child {display:none}
+.file-preview {position:absolute;inset:0;z-index:5;background:var(--app-content-surface);display:flex;flex-direction:column}
+.file-preview[hidden] {display:none}
+.file-preview>header {padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);flex:none}
+.file-preview>header>div {min-width:0;overflow-wrap:anywhere}
+.file-preview b,.file-preview small {display:block}
+.file-preview small {font-size:11px;color:var(--muted);margin-top:3px}
+.file-preview pre {margin:0;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;flex:1;font:12px/1.65 ui-monospace,monospace;user-select:text}
+.app-frame[data-app-kind="notes"] {grid-template-rows:44px minmax(0,1fr)}
+.app-frame[data-app-kind="notes"] .notes-layout {grid-template-columns:156px minmax(0,1fr);min-height:0;gap:0;padding:0}
+.app-frame[data-app-kind="notes"] .notes-layout nav {display:flex;flex-direction:column;padding:10px 8px;gap:5px;min-width:0;overflow:auto;border-right:1px solid var(--line)}
+.app-frame[data-app-kind="notes"] .notes-layout .nav-choice {min-height:34px;height:34px;width:100%;padding:0 7px;flex-shrink:0}
+.app-frame[data-app-kind="notes"] .notes-layout .nav-choice>span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px}
+.note-new {display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;margin-top:auto;flex-shrink:0;font-size:12px}
+.note-editor {display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--app-content-surface)}
+.note-toolbar {display:flex;gap:10px;align-items:center;min-height:44px;padding:6px 14px;border-bottom:1px solid var(--line);flex:none}
+.note-toolbar input {border:0!important;background:transparent!important;box-shadow:none!important;font-size:15px;font-weight:600;padding:3px 0;flex:1;min-width:0;color:var(--text)}
+.note-toolbar>span {font-size:10px;color:var(--muted);flex:none}
+.app-frame[data-app-kind="notes"] .notes-layout textarea {width:100%;flex:1;min-height:0;resize:none;border:0!important;box-shadow:none!important;background:var(--app-content-surface)!important;border-radius:0!important;corner-shape:normal!important;padding:18px 20px;font:inherit;font-size:15px;line-height:1.7}
+.note-status {display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px;padding:4px 14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);flex:none}
+.app-frame[data-app-kind="browser"] {grid-template-rows:44px 44px minmax(0,1fr)}
+.app-frame[data-app-kind="browser"] .start-page {display:block;overflow:auto;padding:22px 26px;background:var(--app-content-surface)}
+.app-frame[data-app-kind="browser"] .demo-reading-page {max-width:720px;margin:0 auto}
+.app-frame[data-app-kind="browser"] .demo-reading-page h2 {font-size:clamp(24px,3cqw,34px);margin:10px 0 14px;line-height:1.2}
+.app-frame[data-app-kind="browser"] .demo-reading-page p {font-size:14px;line-height:1.65}
+.app-frame[data-app-kind="browser"] .site-grid {width:100%;margin:18px 0;gap:7px}
+.app-frame[data-app-kind="browser"] .site-grid button {height:auto;min-height:39px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;text-align:left;font-size:12px}
+.app-frame[data-app-kind="browser"] .site-grid svg {width:14px;height:14px;flex-shrink:0;opacity:.55}
+.app-frame[data-app-kind="browser"] .demo-page-detail {border-top:1px solid var(--line);padding-top:14px;margin-top:8px}
+.app-frame[data-app-kind="browser"] .demo-page-detail h3 {font-size:14px;margin:0 0 8px}
+.browser-external-link {display:inline-block;margin-top:14px;color:var(--app-primary);font-size:13px}
+.app-frame[data-app-kind="browser"] .browser-downloads {margin-top:20px;font-size:12px;gap:8px}
+.app-frame[data-app-kind="terminal"] {grid-template-rows:44px 30px minmax(0,1fr)}
+.terminal-context {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 12px;border-bottom:1px solid var(--line);font-size:10px;color:var(--muted);background:var(--app-content-surface)}
+.app-frame[data-app-kind="terminal"] .terminal-screen {padding:14px 16px;font:12px/1.7 ui-monospace,monospace;overflow:auto;border-radius:0!important;corner-shape:normal!important;user-select:text}
+.app-frame[data-app-kind="terminal"] .terminal-screen p {margin:0 0 5px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+.app-frame[data-app-kind="terminal"] .terminal-screen label {display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:baseline}
+.app-frame[data-app-kind="terminal"] .terminal-screen label i {overflow-wrap:anywhere;min-width:0;max-width:100%}
+.app-frame[data-app-kind="terminal"] .terminal-screen input {min-width:100px;flex:1;color:var(--text);box-shadow:none!important}
+.app-frame[data-app-kind="elisa"] {grid-template-rows:44px 146px 52px minmax(0,1fr) 28px}
+.app-frame[data-app-kind="elisa"] .music-hero {grid-template-columns:112px minmax(0,1fr);gap:18px;padding:12px 16px;background:var(--app-content-surface)}
+.app-frame[data-app-kind="elisa"] .album-block {height:120px;width:112px;align-self:center}
+.app-frame[data-app-kind="elisa"] .track-copy {min-width:0;align-self:center}
+.app-frame[data-app-kind="elisa"] .track-copy h2 {font-size:clamp(20px,3cqw,28px);line-height:1.2;margin:9px 0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-frame[data-app-kind="elisa"] .track-copy p {font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-frame[data-app-kind="elisa"] .equalizer {display:none}
+.app-frame[data-app-kind="elisa"] .music-controls {display:flex;align-items:center;gap:8px;padding:7px 12px}
+.app-frame[data-app-kind="elisa"] .music-key {width:30px;height:30px;min-width:30px;flex:none}
+.app-frame[data-app-kind="elisa"] .music-key.primary {width:36px;height:36px;min-width:36px}
+.app-frame[data-app-kind="elisa"] .music-controls>span {font:10px ui-monospace,monospace;min-width:28px}
+.app-frame[data-app-kind="elisa"] .track-range {min-width:45px;flex:1}
+.app-frame[data-app-kind="elisa"] .volume-range {width:65px;flex:none}
+.app-frame[data-app-kind="elisa"] .playlist {min-height:0;overflow:auto;padding:0 12px;background:var(--app-content-surface)}
+.app-frame[data-app-kind="elisa"] .playlist .content-row {grid-template-columns:minmax(0,1fr) minmax(60px,120px) 38px;gap:8px;padding:0 8px;height:39px;box-shadow:none!important;border-radius:0!important;corner-shape:normal!important}
+.app-frame[data-app-kind="elisa"] .playlist .content-row>span {display:flex;gap:12px;align-items:center;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-frame[data-app-kind="elisa"] .playlist .content-row b {font:10px ui-monospace,monospace;color:var(--muted);font-weight:400}
+.music-library-status {min-height:28px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 12px;font-size:10px;color:var(--muted);border-top:1px solid var(--line)}
+.mini-file-list button>span {display:flex;align-items:center;gap:7px;min-width:0}
+.mini-file-list svg {width:16px;height:16px;flex:none}
+@container (max-width:540px) {
+  .app-frame[data-app-kind="dolphin"] .dolphin-layout {grid-template-columns:42px minmax(0,1fr);gap:5px;padding:0 7px}
+  .app-frame[data-app-kind="dolphin"] .places-list .small-heading {display:none}
+  .app-frame[data-app-kind="dolphin"] .places-list .nav-choice {font-size:0;padding:0;justify-content:center;gap:0}
+  .app-frame[data-app-kind="dolphin"] .places-list .nav-choice svg {width:18px;margin:0}
+  .app-frame[data-app-kind="dolphin"] .file-head,.app-frame[data-app-kind="dolphin"] .content-row {grid-template-columns:minmax(0,1fr) 76px}
+  .app-frame[data-app-kind="dolphin"] .file-head span:last-child,.app-frame[data-app-kind="dolphin"] .content-row small:last-child {display:none}
+  .app-frame[data-app-kind="elisa"] .volume-range {width:42px}
+  .app-frame[data-app-kind="elisa"] .playlist .content-row {grid-template-columns:minmax(0,1fr) 38px}
+  .app-frame[data-app-kind="elisa"] .playlist .content-row small:first-of-type {display:none}
+  .app-frame[data-app-kind="notes"] .notes-layout {grid-template-columns:116px minmax(0,1fr)}
+  .app-frame[data-app-kind="notes"] .notes-layout nav {flex-direction:column;padding:8px 5px}
+  .note-status>span:last-child {display:none}
+  .app-frame[data-app-kind="browser"] .start-page {padding:18px}
+}
+@container (max-width:390px) {
+  .app-frame[data-app-kind="dolphin"] .file-head,.app-frame[data-app-kind="dolphin"] .content-row {grid-template-columns:minmax(0,1fr)}
+  .app-frame[data-app-kind="dolphin"] .file-head span:nth-child(2),.app-frame[data-app-kind="dolphin"] .content-row small {display:none}
+  .app-frame[data-app-kind="dolphin"] .app-status>span:last-child {display:none}
+  .app-frame[data-app-kind="notes"] .notes-layout {grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .app-frame[data-app-kind="notes"] .notes-layout nav {flex-direction:row;border-right:0;border-bottom:1px solid var(--line);gap:5px;overflow:auto;padding:5px}
+  .app-frame[data-app-kind="notes"] .notes-layout nav .small-heading {display:none}
+  .app-frame[data-app-kind="notes"] .notes-layout .nav-choice {width:auto;max-width:150px}
+  .note-new {margin:0;min-width:32px}.note-new>span {display:none}
+  .app-frame[data-app-kind="browser"] .site-grid {grid-template-columns:1fr}
+  .app-frame[data-app-kind="elisa"] .music-controls {gap:5px;padding:7px 8px}
+  .app-frame[data-app-kind="elisa"] .music-controls>span:first-of-type,.app-frame[data-app-kind="elisa"] .volume-range {display:none}
+  .app-frame[data-app-kind="elisa"] .music-hero {gap:10px;padding:12px}
+  .terminal-context>span:last-child {display:none}
+}

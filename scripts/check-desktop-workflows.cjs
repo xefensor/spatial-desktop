@@ -204,3 +204,5 @@ console.log(`Seed 0x5a17: ${checks} mixed layout steps across 8 sizes passed (bo
 
 
 require('./check-home-folders.cjs');
+
+require('./check-app-windows.cjs');

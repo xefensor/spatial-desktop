@@ -73,6 +73,18 @@ Projects do not override Home or any of these folders. **Download into this proj
 
 Use **Download page notes** in a Web window and **Open download folder** to try the routing. Demo entries, folder creation and the project preference survive reload and synchronize between demo displays. These are simulated files stored by the prototype; native Linux Home/XDG settings and the host browser’s real download directory are not changed.
 
+## Application windows
+
+The five sample apps now use consistent toolbars, readable content and controls backed by persistent per-window state. App accents and ABS window silhouettes remain; internal layout surfaces stay square.
+
+- **Dolphin:** one actual location instead of decorative tabs, clickable breadcrumbs, Back/Forward/Up, folder filtering, sorting, list/grid views, file selection and inline previews. Double-click or Enter opens an item. New folder creates a persistent simulated folder. Ctrl+L edits the path; Ctrl+F filters; Alt+arrows navigate.
+- **Notes:** separately stored named notes, New note, document switching, autosave and word/character counts. Each window keeps its own documents. Ctrl+S also saves.
+- **Web:** local demo-page navigation, working Back/Forward/Start/Reload and address submission. External sites are clearly identified and offered as links to open outside the prototype. Downloaded page notes remain routed by window ownership.
+- **Konsole:** each window has its own working directory and command history. Enter runs supported demo commands; Up/Down recalls history; Ctrl+L clears. `pwd`, `ls`, `cd`, `echo`, `date` and `help` operate on demo folders; `$HOME` and XDG folder variables refer to the workspace.
+- **Elisa:** queue selection, previous/next, play/pause, seeking, volume and mute have independent state in each player window. Progress advances while playing in the active workspace. This is a playback simulation without audio sources.
+
+Parked cards use the owning window’s current location, note, terminal output, page or player. App sessions survive reload, transfer with windows between workspaces and synchronize between demo displays. The prototype does not execute native shell commands or load external websites inside its mock browser.
+
 ## Material philosophy
 
 Windows primarily use opaque ABS plastic surfaces, with short mechanical press feedback. Secondary surfaces use transparent glass/acrylic. Their lighting communicates state instead of adding decoration everywhere.
@@ -91,6 +103,7 @@ The detailed reasoning, experiments and workflow models are in [`dist/philosophy
 | --- | --- |
 | `dist/index.html` | Current fullscreen desktop |
 | `dist/desktop-shell.js` / `.css` | Desktop behaviour and appearance |
+| `dist/app-tools.js` / `app-windows.js` / `app-windows.css` | Persistent app sessions and app controls/layout |
 | `dist/home-folders.js` | Workspace Home resolution and persistent simulated downloads |
 | `dist/spatial-tiling.js` | Tiling and floating-window obstacle layout |
 | `dist/demo-examples.js` | Generic project examples and saved-data migration |
