@@ -156,7 +156,12 @@
     if (show) {
       const lesson = guide.lessons[Number(show.dataset.guideShow)];
       if (['overview','workspaces','folders','return'].includes(lesson.id)) setUniversalSearchOpen(true);
-      clearHighlight(); highlighted = $$(lesson.target); highlighted.forEach(element => element.classList.add('guide-target'));
+      const name = frontApp && appState[frontApp] === 'open' ? frontApp : topOpenApp();
+      const frame = name ? frameFor(name) : null;
+      const target = lesson.id === 'apps' ? areaFor('apps') : lesson.id === 'tiling' ? $('.workspace-zone') : lesson.id === 'float' ? $('.app-titlebar', frame || $('.workspace-zone')) : ['fullscreen','true-fullscreen'].includes(lesson.id) ? frame?.querySelector('[data-window-action="maximize"]') : lesson.id === 'park' ? frame?.querySelector('[data-window-action="minimize"]') : null;
+      clearHighlight(); highlighted = target ? [target] : lesson.target ? $$(lesson.target) : [];
+      if (!highlighted.length) { showToast('Open an app to try this window control.'); return; }
+      highlighted.forEach(element => element.classList.add('guide-target'));
     }
   });
   window.addEventListener('input', event => {
