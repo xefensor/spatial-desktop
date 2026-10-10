@@ -3592,6 +3592,7 @@ function setProjectClosedState(closed) {
 }
 
 function syncProjectAreaView() {
+  globalThis.SpatialMemoryDesktop?.render();
   const project = projectColumnActive() ? projectSpaces[activeProjectName] : null;
   const area = areaFor("projects");
   if (!area) return;
@@ -5031,15 +5032,16 @@ function filterUniversalSearch() {
   let localVisible = buildUniversalAppResults(query);
   const guideLimited = globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('all');
   const guideAppsOnly = guideLimited && !SpatialGuide.model.allows('projects');
+  globalThis.SpatialMemoryDesktop?.search(query);
   if (!guideAppsOnly) buildUniversalProjectResults(query);
   else $("#universalProjectResults").innerHTML = '';
 
   $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
-    if (guideLimited && !(group === 'projects' && SpatialGuide.model.allows('projects')) && !(group === 'files' && SpatialGuide.model.allows('folders'))) { result.hidden = true; return; }
+    if (guideLimited && !(['projects','memory'].includes(group) && SpatialGuide.model.allows('projects')) && !(group === 'files' && SpatialGuide.model.allows('folders'))) { result.hidden = true; return; }
     const isWeb = group === "web";
     const searchable = `${result.dataset.universalSearch || ""} ${result.textContent}`;
-    const matchesQuery = isWeb || matchesSearch(searchable, query);
+    const matchesQuery = isWeb || Boolean(result.dataset.memoryResult) || matchesSearch(searchable, query);
     result.hidden = !matchesQuery;
     if (!result.hidden && !isWeb) localVisible += 1;
   });
@@ -5921,6 +5923,7 @@ function contextMenuEntries(context) {
     const frame = frameFor(context.name);
     const maximized = frame?.dataset.maximized === "true";
     return [
+      globalThis.SpatialMemoryDesktop ? {action:"memory-remember",icon:"i-note",label:"Keep selection in working memory",shortcut:"Ctrl+Shift+M"} : null,
       { action: "app-new-instance", icon: "i-add", label: "New window", shortcut: "Shift+click" },
       state !== "closed" && desktopPages.pageOf(activeWorkspace, context.name) > 0 ? { action: "move-desktop:-1", icon: "i-monitor", label: "Move to desktop above" } : null,
       state !== "closed" ? { action: "move-desktop:1", icon: "i-monitor", label: "Move to desktop below" } : null,
@@ -6062,6 +6065,7 @@ function executeContextAction(action) {
   if (action === "detach-project") moveWindowToColumn(context.name, "workspace");
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
+  if (action === "memory-remember") globalThis.SpatialMemoryDesktop?.remember();
   if (action === "app-maximize") toggleMaximize(context.name);
   if (action === "app-fullscreen") toggleAppFullscreen(context.name);
   if (action === "app-float") {
@@ -6926,6 +6930,7 @@ function captureDesktopSyncState() {
 
   return {
     schema: 4,
+    workingMemory: globalThis.SpatialMemoryDesktop?.snapshot(),
     desktopPages: desktopPages.snapshot(),
     downloads: workspaceDownloads.snapshot(),
     desktopHasWindowFocus,
@@ -6962,6 +6967,7 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.workingMemory) globalThis.SpatialMemoryDesktop?.merge(state.workingMemory);
   if (state.downloads) { workspaceDownloads.load(state.downloads); persistDownloads(); }
   if (state.openProjects) {
     Object.keys(workspaceOpenProjects).forEach(name => delete workspaceOpenProjects[name]);

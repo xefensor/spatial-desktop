@@ -128,6 +128,12 @@ The detailed reasoning, experiments and workflow models are in [`dist/philosophy
 - [Filterable workflow matrix (CSV)](docs/workflow-matrix-2026-10-07.csv).
 - [Broad desktop testing report](docs/testing-2026-10-07.md).
 
+## Working memory
+
+The Project Area now keeps explicit excerpts, notes and HTTP(S)/file sources with each project. Work outside projects has its own workspace memory. Items can be pinned, edited, dragged into another app, removed and restored. Ctrl+Shift+M keeps a selection with its originating app and address; nothing captures the clipboard or screen in the background. A next-step note and bounded recent-activity history help users resume the saved desktop and reopen its windows without reverting document contents. The Memory rail action expands the existing Area temporarily and releases it when focus leaves.
+
+Overview searches memory in the current workspace, including `today` / `yesterday` (also `dnes` / `vcera`). This is local word matching, not semantic AI retrieval. Selected items can be assembled into a sourced note, compared by lines, or scanned for explicit questions/task phrases. Results are editable previews and are only kept when requested. These tools are clearly labelled as local: no AI provider is connected and no data is sent to one. Memory persists through reloads and merges per item across displays, including deletion markers. Clean/demo resets and isolated Guide practice include this storage. Built-in demo projects receive two starter notes once.
+
 ## Checks
 
 With Node.js installed:
@@ -138,6 +144,7 @@ node scripts/check-spatial-tiling.cjs
 node scripts/check-demo-examples.cjs
 node scripts/check-spatial-guide.cjs
 node scripts/check-workspace-setup.cjs
+node scripts/check-working-memory.cjs
 node scripts/check-ui-refinements.cjs
 node scripts/check-desktop-workflows.cjs
 ```

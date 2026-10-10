@@ -2,7 +2,7 @@
 (function(root) {
   'use strict';
   const presetKey = 'spatial-desktop-preset-v1', profilesKey = 'spatial-custom-workspaces-v1';
-  const sessionKeys = ['spatial-active-project-v1','spatial-active-workspace','spatial-desktop-layout-v3','spatial-desktop-pages-v1','spatial-dock-layout-v2','spatial-downloads-v1','spatial-layout-mode-v1','spatial-note-draft-v1','spatial-open-projects-v1','spatial-project-content-v1','spatial-project-spaces-v2','spatial-project-window-sessions-v1','spatial-split-layouts-v1','spatial-workspace-app-states-v1','spatial-workspace-area-contents-v1','spatial-workspace-area-layouts-v1','spatial-workspace-display-assignments-v1','spatial-workspace-project-states-v1','spatial-workspace-window-layouts-v1','spatial-zone-layout-v1','spatial-independent-sessions-v1','spatial-app-windows-v1','spatial-demo-scenes-v1',profilesKey];
+  const sessionKeys = ['spatial-active-project-v1','spatial-active-workspace','spatial-desktop-layout-v3','spatial-desktop-pages-v1','spatial-dock-layout-v2','spatial-downloads-v1','spatial-layout-mode-v1','spatial-note-draft-v1','spatial-open-projects-v1','spatial-project-content-v1','spatial-project-spaces-v2','spatial-project-window-sessions-v1','spatial-split-layouts-v1','spatial-workspace-app-states-v1','spatial-workspace-area-contents-v1','spatial-workspace-area-layouts-v1','spatial-workspace-display-assignments-v1','spatial-workspace-project-states-v1','spatial-workspace-window-layouts-v1','spatial-zone-layout-v1','spatial-independent-sessions-v1','spatial-app-windows-v1','spatial-demo-scenes-v1','spatial-working-memory-v1',profilesKey];
   function createProfile(name, profiles) {
     const label = String(name || '').trim().slice(0,48);
     if (!label) return null;
