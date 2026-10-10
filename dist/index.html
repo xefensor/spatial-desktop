@@ -24,8 +24,8 @@
   <link rel="stylesheet" href="workspace-setup.css?v=1">
   <link rel="stylesheet" href="working-memory.css?v=7">
   <link rel="stylesheet" href="ai-area.css?v=3">
-  <link rel="stylesheet" href="overview-carousel.css?v=6">
-  <script src="workspace-setup.js?v=4"></script>
+  <link rel="stylesheet" href="overview-carousel.css?v=7">
+  <script src="workspace-setup.js?v=5"></script>
   <script src="spatial-guide.js?v=12"></script>
 </head>
 <body data-theme="oled">
@@ -179,7 +179,7 @@
         <section class="system-widget timer-widget dynamic-widget" id="timerWidget" hidden><header class="widget-heading"><div><svg><use href="#i-timer"/></svg><h2>Focus timer</h2></div><span id="timerState">Ready</span></header><div class="timer-face"><strong id="timerValue">25:00</strong><div class="timer-progress"><i id="timerProgress"></i></div></div><div class="timer-actions"><button class="surface-key" id="timerToggle">Pause</button><button class="surface-key" id="timerReset">Dismiss</button></div></section>
       </div>
       <div class="static-widget-stack" aria-label="Pinned system widgets">
-      <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-toast="Calendar opened">Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b id="systemAgendaTitle">Team check-in</b><small id="systemAgendaMeta">14:30 · 45 min</small></div></div></section>
+      <section class="system-widget calendar-widget"><header class="widget-heading"><div><svg><use href="#i-calendar"/></svg><h2 id="monthLabel">September</h2></div><button class="surface-key tiny-key" data-timeline-planned>Open</button></header><div class="calendar-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="calendar-grid" id="calendarGrid"></div><div class="next-event"><i></i><div><b id="systemAgendaTitle">Team check-in</b><small id="systemAgendaMeta">14:30 · 45 min</small></div></div></section>
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>KDE Connect</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Phone</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-phone-ping>Ping</button></div></section>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-label="Wi-Fi" aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-label="Bluetooth" aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-label="Sound" aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle" aria-label="Change color theme" title="Change color theme"><span class="theme-dot"></span><span>Surface</span></button></section>
       </div>
@@ -289,9 +289,17 @@
         <main class="overview-main overview-section-track" id="overviewSectionTrack" aria-label="Overview section carousel" tabindex="0">
           <section class="overview-panel overview-timeline-section" data-overview-panel="timeline" aria-labelledby="overviewTimelineTitle">
             <header class="overview-zone-heading"><span class="overview-zone-mark"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><span><span class="eyebrow">WORKSPACE ACTIVITY</span><h3 id="overviewTimelineTitle">Timeline</h3></span><span id="overviewTimelineWorkspace"></span></header>
-            <div class="timeline-toolbar"><label>Activity<select id="timelineType" aria-label="Timeline activity type"><option value="all">All activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity…" aria-label="Search Timeline"></label></div>
+            <div class="timeline-toolbar"><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
+            <form id="timelinePlanForm" class="timeline-plan-form" hidden>
+              <label>Kind<select id="timelinePlanKind"><option value="task.due">Task</option><option value="calendar.event">Calendar event</option><option value="reminder.due">Reminder</option></select></label>
+              <label>Title<input id="timelinePlanTitle" maxlength="160" required placeholder="What’s coming up?"></label>
+              <label>When<input id="timelinePlanTime" type="datetime-local" required></label>
+              <label>Project<select id="timelinePlanProject"><option value="">Workspace</option></select></label>
+              <label class="timeline-plan-notes">Notes<input id="timelinePlanDetail" maxlength="1000" placeholder="Location, preparation or details"></label>
+              <div class="timeline-plan-actions"><button class="surface-key" type="button" id="timelinePlanCancel">Cancel</button><button class="surface-key" type="submit">Add to Timeline</button></div>
+            </form>
             <div class="timeline-scroll" id="timelineScroll"><div id="timelineEntries" role="list" aria-label="Workspace activity"></div></div>
-            <footer class="timeline-caption">Activity from this workspace · saved on this device</footer>
+            <footer class="timeline-caption">Calendar, tasks, reminders and activity · this workspace</footer>
           </section>
           <section class="overview-section overview-apps-section overview-panel" data-overview-panel="apps" aria-labelledby="allAppsTitle">
             <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
@@ -409,7 +417,7 @@
               <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="systems" aria-label="Hide System">Hide</button></div>
             </div>
           </section>
-          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
+          <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-timeline-planned><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Phone</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
           </div>
         </aside>
@@ -557,11 +565,11 @@
 <script src="working-memory.js?v=2"></script>
 <script src="stash-files.js?v=1"></script>
 <script src="ai-context.js?v=1"></script>
-<script src="timeline.js?v=2"></script>
+<script src="timeline.js?v=3"></script>
 <script src="desktop-shell.js?v=243"></script>
 <script src="working-memory-desktop.js?v=11"></script>
 <script src="ai-desktop.js?v=5"></script>
-<script src="overview-desktop.js?v=4"></script>
+<script src="overview-desktop.js?v=5"></script>
   <script src="guide-desktop.js?v=26"></script>
 </body>
 </html>

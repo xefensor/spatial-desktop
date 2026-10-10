@@ -1,17 +1,22 @@
-/* Explicit desktop actions only. Each workspace owns its own bounded history. */
+/* Workspace-owned activity history and independent calendar, task and reminder records. */
 (function(root,factory){
   if(typeof module==='object'&&module.exports)module.exports=factory();
   else root.SpatialTimeline=factory();
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.folder','browser.visit']);
+  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.folder','browser.visit','calendar.event','task.due','task.complete','task.reopen','reminder.due']);
   const limit=300;
   const text=value=>typeof value==='string'?value.slice(0,1000):'';
   function normalize(event){
     if(!event||!types.has(event.type)||!text(event.workspace)||!text(event.id)||!Number.isFinite(event.time)||event.time<0)return null;
     return {id:text(event.id),workspace:text(event.workspace),type:event.type,time:event.time,
       title:text(event.title),app:text(event.app),base:text(event.base),project:text(event.project),projectName:text(event.projectName),
-      page:Math.max(0,Math.min(999,Math.floor(Number(event.page)||0))),path:text(event.path),address:text(event.address),example:event.example===true};
+      page:Math.max(0,Math.min(999,Math.floor(Number(event.page)||0))),path:text(event.path),address:text(event.address),example:event.example===true,
+      planned:event.planned===true,done:event.done===true,detail:text(event.detail),endTime:Number.isFinite(event.endTime)&&event.endTime>event.time?event.endTime:0};
+  }
+  function matches(event,{type='all',query=''}={}){
+    const needle=text(query).toLocaleLowerCase();
+    return (type==='all'||type==='planned'&&event.planned||type==='activity'&&!event.planned||event.type.startsWith(type+'.'))&&(!needle||[event.title,event.projectName,event.path,event.address,event.detail,event.type].join(' ').toLocaleLowerCase().includes(needle));
   }
   function create(snapshot={}){
     const sessions=Object.create(null);
@@ -34,8 +39,7 @@
         merge({[event.workspace]:[event]});return {...event};
       },
       list(workspace,{type='all',query=''}={}){
-        const needle=text(query).toLocaleLowerCase();
-        return (sessions[workspace]||[]).filter(event=>(type==='all'||event.type.startsWith(type+'.'))&&(!needle||[event.title,event.projectName,event.path,event.address,event.type].join(' ').toLocaleLowerCase().includes(needle))).slice().reverse().map(event=>({...event}));
+        return (sessions[workspace]||[]).filter(event=>matches(event,{type,query})).slice().reverse().map(event=>({...event}));
       },
       snapshot(){return JSON.parse(JSON.stringify(sessions));}
     };
@@ -91,5 +95,55 @@
     add('gaming',15,'app.park','Game-night mix',{app:'elisa',base:'elisa'});
     return events;
   }
-  return {create,normalize,limit,sections,neighbour,demoExamples};
+  function createPlanner(snapshot={}){
+    const items=new Map();
+    function merge(incoming){
+      for(const raw of Object.values(incoming||{})){
+        const event=normalize(raw);
+        if(!event||!event.planned||!['calendar.event','task.due','reminder.due'].includes(event.type))continue;
+        const updated=Number.isFinite(raw.updated)?raw.updated:0,current=items.get(event.id);
+        if(!current||updated>=current.updated)items.set(event.id,{...event,updated});
+      }
+    }
+    merge(snapshot);
+    return {
+      merge,
+      put(raw){const event=normalize({...raw,planned:true});if(!event)return null;merge({[event.id]:{...event,updated:raw.updated??Date.now()}});return items.get(event.id)||null;},
+      get(id){const event=items.get(id);return event?{...event}:null;},
+      complete(workspace,id,done,updated=Date.now()){const event=items.get(id);if(!event||event.workspace!==workspace||event.type==='calendar.event')return null;return this.put({...event,done:!!done,updated:Math.max(updated,event.updated+1)});},
+      list(workspace,filter={}){return [...items.values()].filter(event=>event.workspace===workspace&&matches(event,filter)).sort((a,b)=>a.time-b.time||a.id.localeCompare(b.id)).map(event=>({...event}));},
+      snapshot(){return Object.fromEntries([...items].map(([id,event])=>[id,{...event}]));}
+    };
+  }
+  function view(activity,planned,{now=Date.now(),...filter}={}){
+    const rows=[...activity,...planned].filter(event=>matches(event,filter));
+    const next=event=>event.planned&&!event.done&&(event.time>=now||event.endTime>now);
+    return {upcoming:rows.filter(next).sort((a,b)=>a.time-b.time),earlier:rows.filter(event=>!next(event)).sort((a,b)=>b.time-a.time)};
+  }
+  function demoPlans({preset,profiles={},projects={},now=Date.now()}={}){
+    if(preset!=='demo')return [];
+    const events=[],at=(day,hour,minute=0)=>{const date=new Date(now);date.setDate(date.getDate()+day);date.setHours(hour,minute,0,0);return date.getTime();};
+    function add(workspace,id,type,title,day,hour,minute=0,data={}){
+      if(!profiles[workspace]||profiles[workspace].custom||data.project&&!projects[data.project])return;
+      events.push({id:'demo-plan-v1:'+workspace+':'+id,workspace,type,title,time:at(day,hour,minute),planned:true,example:true,...data,projectName:projects[data.project]?.name||''});
+    }
+    for(const [workspace,profile] of Object.entries(profiles)){
+      const meta=profile.agenda?.[2]||'',match=meta.match(/(\d{1,2}):(\d{2})/);
+      if(!match)continue;
+      const project=workspace==='work'&&projects.plasma?.name==='Website Launch'?'plasma':workspace==='school'&&projects.research?.name==='Urban Ecology'?'research':'';
+      add(workspace,'agenda',/due/i.test(meta)?'task.due':'calendar.event',profile.agenda[1],/tomorrow/i.test(meta)?1:0,Number(match[1]),Number(match[2]),{project,detail:meta,...(!/due/i.test(meta)?{endTime:at(/tomorrow/i.test(meta)?1:0,Number(match[1]),Number(match[2]))+45*60000}:{})});
+    }
+    add('general','photo-backup','task.due','Back up holiday photographs',1,10,0,{detail:'Pictures → external backup drive'});
+    add('general','tickets','reminder.due','Book the train tickets',1,9,0,{detail:'Check the dates before booking.'});
+    if(projects.plasma?.name==='Website Launch')add('work','contact-form','task.due','Check the website contact form',1,12,0,{project:'plasma',detail:'Verify the confirmation message and keyboard navigation.'});
+    if(projects.retold?.name==='Short Film'){
+      add('work','film-review','calendar.event','Short Film feedback',1,16,0,{project:'retold',endTime:at(1,16,45),detail:'Review the rough cut and station transition.'});
+      add('work','preview','reminder.due','Export a film preview for feedback',1,15,30,{project:'retold',detail:'Check the dialogue mix before exporting.'});
+    }
+    if(projects.research?.name==='Urban Ecology')add('school','seminar','calendar.event','Biology seminar',1,10,0,{project:'research',endTime:at(1,11),detail:'Bring the field observations and report outline.'});
+    add('gaming','game-check','task.due','Agree on a co-op game',0,19,0,{detail:'Pick something everyone has installed.'});
+    add('gaming','headset','reminder.due','Charge the headset',0,19,45);
+    return events;
+  }
+  return {create,normalize,matches,limit,sections,neighbour,demoExamples,createPlanner,view,demoPlans};
 });

@@ -7,7 +7,8 @@
   const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v1';
   const read=key=>{try{return JSON.parse(desktopStorage.getItem(key)||'{}');}catch{return {};}};
   const model=SpatialTimeline.create(read(historyKey));
-  let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0;
+  const plannerKey='spatial-workspace-planner-v1',planner=SpatialTimeline.createPlanner(read(plannerKey));
+  let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
   function allowed(){return SpatialTimeline.sections.filter(id=>!limited()||id==='apps'||id==='projects'&&SpatialGuide.model.allows('projects'));}
@@ -36,33 +37,42 @@
     if(!allowed().includes(id))id='apps';
     const panel=panels.get(id);if(!panel)return;
     clearTimeout(scrollTimer);
+    const token=++selection;
     scrolling=true;
-    // Native re-snapping after DOM rotation otherwise restores the old panel.
-    track.style.scrollSnapType='none';
+    // Stop an interrupted smooth scroll before rotating the physical panels.
+    track.scrollTo({left:track.scrollLeft,behavior:'instant'});
     keepNeighbours(panel);setCurrent(id);
     track.scrollTo({left:centre(panel),behavior:animate&&!reduced()?'smooth':'instant'});
-    scrollTimer=setTimeout(()=>{
-      track.scrollTo({left:centre(panel),behavior:'instant'});
-      track.style.scrollSnapType='';scrolling=false;
-    },animate&&!reduced()?420:40);
+    scrollTimer=setTimeout(()=>finishSelection(token),animate&&!reduced()?700:40);
+  }
+  function finishSelection(token=selection){
+    if(token!==selection||!scrolling)return;
+    clearTimeout(scrollTimer);
+    const left=centre(panels.get(active));
+    // Subpixel rounding must not start another scroll / snap cycle.
+    if(Math.abs(track.scrollLeft-left)>1)track.scrollTo({left,behavior:'instant'});
+    scrolling=false;
   }
   function settle(){
     if(scrolling||!track.clientWidth||home.hidden)return;
     const panel=[...panels.values()].filter(panel=>allowed().includes(panel.dataset.overviewPanel)).reduce((nearest,panel)=>Math.abs(centre(panel)-track.scrollLeft)<Math.abs(centre(nearest)-track.scrollLeft)?panel:nearest,panels.get(active));
-    select(panel.dataset.overviewPanel,false);
+    if(Math.abs(centre(panel)-track.scrollLeft)>1||panel.dataset.overviewPanel!==active)select(panel.dataset.overviewPanel,true);
   }
   function refresh(){
+    if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
     let id=preferred[activeWorkspace]||'apps';
     if(limited())id=['folders','return'].includes(SpatialGuide.model.lesson.id)?'projects':'apps';
-    requestAnimationFrame(()=>select(id,false));
+    requestAnimationFrame(()=>{if(!scrolling||id!==active)select(id,false);});
   }
   function step(direction){const id=SpatialTimeline.neighbour(active,direction,allowed());if(id&&id!==active)select(id);}
   home.addEventListener('click',event=>{
     const tab=event.target.closest('[data-overview-section]'),edge=event.target.closest('[data-overview-step]');
     if(tab)select(tab.dataset.overviewSection);if(edge)step(Number(edge.dataset.overviewStep));
   });
-  track.addEventListener('scroll',()=>{if(scrolling)return;clearTimeout(scrollTimer);scrollTimer=setTimeout(settle,150);},{passive:true});
+  track.addEventListener('scroll',()=>{clearTimeout(scrollTimer);const token=selection;scrollTimer=setTimeout(()=>scrolling?finishSelection(token):settle(),180);},{passive:true});
+  track.addEventListener('scrollend',()=>{if(scrolling){if(Math.abs(track.scrollLeft-centre(panels.get(active)))<=1)finishSelection();}else settle();},{passive:true});
+  track.addEventListener('pointerdown',()=>{if(scrolling){++selection;scrolling=false;clearTimeout(scrollTimer);track.scrollTo({left:track.scrollLeft,behavior:'instant'});}},{passive:true});
   track.addEventListener('wheel',event=>{
     if(event.ctrlKey||event.metaKey)return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
@@ -83,7 +93,7 @@
     if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();step(event.key==='ArrowLeft'?-1:1);$('[data-overview-section="'+active+'"]',home)?.focus({preventScroll:true});}
   });
   // Tab focus reaches only the current panel; touch / scrollbar navigation still snaps.
-  new ResizeObserver(()=>{if(!scrolling&&track.clientWidth&&!home.hidden)select(active,false);}).observe(track);
+  new ResizeObserver(()=>{const width=track.clientWidth;if(width&&Math.abs(width-trackWidth)>1){trackWidth=width;if(!home.hidden)select(active,false);}}).observe(track);
   function save(){
     model.merge(read(historyKey));
     try{desktopStorage.setItem(historyKey,JSON.stringify(model.snapshot()));}catch{}
@@ -97,7 +107,7 @@
       page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||''});
     if(event){save();if($('#universalSearch').classList.contains('is-open'))renderTimeline();}
   }
-  const descriptions={'session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited'};
+  const descriptions={'session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
   function actionFor(event){
     if(event.type==='session'||event.type==='workspace')return '';
     if(event.project&&!projectSpaces[event.project])return '';
@@ -109,22 +119,46 @@
   }
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
-    const events=model.list(activeWorkspace,{type:$('#timelineType').value,query:$('#timelineQuery').value});
+    const now=Date.now(),view=SpatialTimeline.view(model.list(activeWorkspace),planner.list(activeWorkspace),{type:$('#timelineType').value,query:$('#timelineQuery').value,now});
     let previousDay='',html='';
+    for(const [section,events] of [['Now & next',view.upcoming],['Earlier',view.earlier]]){
+    if(!events.length)continue;
+    html+='<h3 class="timeline-group-heading">'+section+'</h3>';previousDay='';
     for(const event of events){
       const date=new Date(event.time),day=date.toDateString();
-      if(day!==previousDay){const today=new Date().toDateString()===day;html+='<h4 class="timeline-day">'+escapeHtml(today?'Today':date.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}))+'</h4>';previousDay=day;}
-      const info=appInfo[event.app]||appInfo[event.base],symbol=event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
+      if(day!==previousDay){const today=new Date(now).toDateString()===day,tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);html+='<h4 class="timeline-day">'+escapeHtml(today?'Today':tomorrow.toDateString()===day?'Tomorrow':date.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}))+'</h4>';previousDay=day;}
+      const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
       const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol);
       const project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
-      const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+'Desktop '+(event.page+1);
-      const detail=event.path||event.address||'';
+      const overdue=event.planned&&!event.done&&event.type!=='calendar.event'&&event.time<now;
+      const source=event.planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):'Desktop '+(event.page+1);
+      const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+source;
+      const detail=event.path||event.address||event.detail||'';
       const name=event.title||(event.type==='desktop.switch'?'Desktop '+(event.page+1):event.type==='workspace'?workspaceProfiles[event.workspace]?.label:'');
-      const action=actionFor(event);
-      html+='<article class="timeline-entry" role="listitem"><time datetime="'+date.toISOString()+'" title="'+escapeHtml(date.toLocaleString())+'">'+escapeHtml(date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</time><span class="timeline-entry-icon">'+image+'</span><div><h4>'+escapeHtml(descriptions[event.type]||'')+(name?' · '+escapeHtml(name):'')+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p>'+context+'</p>'+(detail?'<p>'+escapeHtml(detail)+'</p>':'')+'</div>'+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'')+'</article>';
+      const action=event.planned?'':actionFor(event);
+      const completion=event.planned&&event.type!=='calendar.event'?'<label class="timeline-completion"><input type="checkbox" data-timeline-complete="'+escapeHtml(event.id)+'"'+(event.done?' checked':'')+' aria-label="'+escapeHtml((event.type==='task.due'?'Complete ':'Dismiss reminder ')+name)+'"><span>'+(event.type==='task.due'?'Done':'Dismissed')+'</span></label>':'';
+      html+='<article class="timeline-entry'+(event.planned?' is-planned':'')+(event.done?' is-done':'')+'" role="listitem"><time datetime="'+date.toISOString()+'" title="'+escapeHtml(date.toLocaleString())+'">'+escapeHtml(date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</time><span class="timeline-entry-icon">'+image+'</span><div><h4>'+escapeHtml(descriptions[event.type]||'')+(name?' · '+escapeHtml(name):'')+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p>'+context+'</p>'+(detail?'<p>'+escapeHtml(detail)+'</p>':'')+(event.endTime?'<p>Until '+escapeHtml(new Date(event.endTime).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</div>'+completion+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'')+'</article>';
     }
-    $('#timelineEntries').innerHTML=html||'<p class="timeline-empty"><b>'+(model.list(activeWorkspace).length?'No matching activity':'Your activity starts here')+'</b>'+(model.list(activeWorkspace).length?'Try another activity type or search.':'Open an app, visit a folder or switch projects. Your actions will appear here.')+'</p>';
+    }
+    const populated=model.list(activeWorkspace).length||planner.list(activeWorkspace).length;
+    $('#timelineEntries').innerHTML=html||'<p class="timeline-empty"><b>'+(populated?'No matching items':'Your timeline starts here')+'</b>'+(populated?'Try another type or search.':'Add an event, task or reminder. Your desktop activity will appear here too.')+'</p>';
     prepareControlSemantics($('#timelineEntries'));
+    syncAgenda(now);
+  }
+  function savePlanner(){planner.merge(read(plannerKey));try{desktopStorage.setItem(plannerKey,JSON.stringify(planner.snapshot()));}catch{}}
+  function syncAgenda(now=Date.now()){
+    const next=planner.list(activeWorkspace).find(event=>!event.done&&(event.time>=now||event.endTime>now));
+    for(const id of ['#systemAgendaTitle','#workspaceAgendaTitle'])$(id).textContent=next?.title||'No upcoming events or tasks';
+    for(const id of ['#systemAgendaMeta','#workspaceAgendaMeta'])$(id).textContent=next?new Date(next.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+(next.projectName?' · '+next.projectName:''): 'Add one in Timeline';
+  }
+  function showPlanForm(open){
+    const form=$('#timelinePlanForm'),toggle=$('#timelineAddToggle');form.hidden=!open;toggle.setAttribute('aria-pressed',String(open));toggle.setAttribute('aria-expanded',String(open));
+    if(open){
+      $('#timelinePlanProject').innerHTML='<option value="">Workspace</option>'+Object.entries(projectSpaces).map(([id,project])=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(project.name)+'</option>').join('');
+      const column=desktopPages.column(activeWorkspace);$('#timelinePlanProject').value=column==='workspace'?'':column;
+      const date=new Date();date.setHours(date.getHours()+1,0,0,0);const local=new Date(date-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      $('#timelinePlanTime').value=local;$('#timelinePlanTitle').focus();
+    }else toggle.focus?.({preventScroll:true});
   }
   function reopen(id){
     const event=model.list(activeWorkspace).find(event=>event.id===id);if(!event||!actionFor(event))return;
@@ -158,8 +192,27 @@
     finish();
   }
   $('#timelineEntries').addEventListener('click',event=>{const action=event.target.closest('[data-timeline-open]');if(action)reopen(action.dataset.timelineOpen);});
+  $('#timelineEntries').addEventListener('change',event=>{
+    const input=event.target.closest('[data-timeline-complete]');if(!input)return;
+    planner.merge(read(plannerKey));const item=planner.complete(activeWorkspace,input.dataset.timelineComplete,input.checked);if(!item)return;
+    savePlanner();
+    if(item.type==='task.due')record(item.done?'task.complete':'task.reopen',{title:item.title,project:item.project,projectName:item.projectName});
+    renderTimeline();
+  });
+  $('#timelineAddToggle').addEventListener('click',()=>showPlanForm($('#timelinePlanForm').hidden));
+  $('#timelinePlanCancel').addEventListener('click',()=>showPlanForm(false));
+  $('#timelinePlanForm').addEventListener('submit',event=>{
+    event.preventDefault();
+    const title=$('#timelinePlanTitle').value.trim(),time=new Date($('#timelinePlanTime').value).getTime(),type=$('#timelinePlanKind').value,project=$('#timelinePlanProject').value;
+    if(!title||!Number.isFinite(time)||!['calendar.event','task.due','reminder.due'].includes(type)||project&&!projectSpaces[project])return;
+    const item=planner.put({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-plan-'+Math.random().toString(36).slice(2),workspace:activeWorkspace,type,time,title,detail:$('#timelinePlanDetail').value,project,projectName:projectSpaces[project]?.name||''});
+    if(!item)return;
+    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);renderTimeline();$('#timelineScroll').scrollTop=0;
+  });
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
-  window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}});
+  window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='planned';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
+  window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
+  window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
   globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
   globalThis.SpatialTimelineDesktop={record,render:renderTimeline,suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
   // Existing browser history contains actual visits; preserve its original timestamps.
@@ -172,6 +225,11 @@
     SpatialTimeline.demoExamples({preset:desktopPreset,profiles:workspaceProfiles,projects:projectSpaces}).forEach(event=>model.add(event));
     save();
     try{desktopStorage.setItem(demoKey,'1');}catch{}
+  }
+  const planDemoKey='spatial-timeline-planner-demo-v1';
+  if(typeof desktopPreset!=='undefined'&&desktopPreset==='demo'&&!globalThis.SpatialGuide?.model.active()&&!desktopStorage.getItem(planDemoKey)){
+    SpatialTimeline.demoPlans({preset:desktopPreset,profiles:workspaceProfiles,projects:projectSpaces}).forEach(event=>planner.put(event));
+    savePlanner();try{desktopStorage.setItem(planDemoKey,'1');}catch{}
   }
   save();refresh();
 })();

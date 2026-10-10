@@ -28,6 +28,23 @@ assert(examples.some(event=>event.path===D.projects.plasma.root+'/index.html'));
 assert(!T.demoExamples({preset:'demo',profiles:exampleProfiles,projects:{}}).some(event=>event.project),'Deleted projects are never reintroduced');
 const exampleModel=T.create();examples.forEach(event=>exampleModel.add(event));
 assert.equal(T.create(exampleModel.snapshot()).list('work')[0].example,true,'Example labels persist across reloads');
+const plans=T.demoPlans({preset:'demo',profiles:{...exampleProfiles,general:{home:'/home/demo',agenda:['Personal','Walk by the river','18:00 · personal calendar']}},projects:D.projects,now:1800000000000});
+assert(plans.some(event=>event.type==='calendar.event'&&event.title==='Walk by the river'),'The existing calendar is present without a click');
+assert(plans.some(event=>event.type==='task.due')&&plans.some(event=>event.type==='reminder.due'));
+assert.deepEqual(T.demoPlans({preset:'clean',profiles:exampleProfiles,projects:D.projects}),[]);
+const planner=T.createPlanner();plans.forEach(event=>planner.put({...event,updated:1}));
+const task=planner.list('general',{type:'task'})[0];
+assert.equal(planner.complete('work',task.id,true,2),null,'Tasks cannot be completed from another workspace');
+planner.complete('general',task.id,true,2);
+planner.merge({[task.id]:{...task,done:false,updated:1}});
+assert.equal(planner.get(task.id).done,true,'Stale display snapshots cannot undo task completion');
+assert.equal(T.createPlanner(planner.snapshot()).get(task.id).done,true,'Completion persists');
+const future=planner.put({...task,id:'future',done:false,time:10000,updated:3}),ongoing=planner.put({...task,id:'ongoing',type:'calendar.event',time:3000,endTime:9000,done:false,updated:3});
+const mixed=T.view([event('activity',7000)], [future,ongoing,{...task,time:2000,done:true}],{now:8000});
+assert.deepEqual(mixed.upcoming.map(row=>row.id),['ongoing','future'],'Ongoing and future plans sort chronologically');
+assert(mixed.earlier.some(row=>row.id==='activity')&&mixed.earlier.some(row=>row.done));
+assert.equal(T.view([],planner.list('general'),{type:'activity'}).upcoming.length,0);
+assert(T.view([],planner.list('general'),{type:'planned',query:'holiday'}).earlier.some(row=>row.id===task.id),'Planned content is searchable');
 
 // Execute the actual carousel and timeline adapter, with a small DOM geometry model.
 const nodes=new Map(),make=(key)=>{
@@ -37,9 +54,10 @@ const nodes=new Map(),make=(key)=>{
   nodes.set(key,n);return n;
 };
 const panelNodes=T.sections.map(id=>{const n=make(id);n.dataset.overviewPanel=id;n.offsetWidth=800;return n;});
+let scrollWrites=0,resizeCallback;
 const track=make('#overviewSectionTrack');Object.assign(track,{clientWidth:1000,scrollLeft:0,children:[...panelNodes],
   prepend(n){this.children=this.children.filter(x=>x!==n);this.children.unshift(n);},
-  append(n){this.children=this.children.filter(x=>x!==n);this.children.push(n);},scrollTo({left}){this.scrollLeft=left;}});
+  append(n){this.children=this.children.filter(x=>x!==n);this.children.push(n);},scrollTo({left}){scrollWrites++;this.scrollLeft=left;}});
 panelNodes.forEach(n=>Object.defineProperty(n,'offsetLeft',{get:()=>100+track.children.indexOf(n)*824}));
 const tabs=T.sections.map(id=>{const n=make('tab:'+id);n.dataset.overviewSection=id;return n;});
 const edges=[-1,1].map(direction=>{const n=make('edge:'+direction);n.dataset.overviewStep=String(direction);return n;});
@@ -54,7 +72,7 @@ const context={SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:f
   $$:key=>key==='[data-overview-panel]'?panelNodes:key==='[data-overview-section]'?tabs:key==='[data-overview-step]'?edges:[],
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
-  requestAnimationFrame:fn=>fn(),ResizeObserver:class{observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
+  requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
   window:{matchMedia:()=>({matches:true}),addEventListener(){}},
   setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],
   activateProject:name=>{context.column=name;calls.push(['activate',name]);},changeDesktopColumn:name=>{context.column=name;calls.push(['column',name]);},
@@ -77,6 +95,9 @@ const selectedTimeline=panelNodes[0],finishSnap=pending.at(-1);
 track.scrollLeft=track.children.indexOf(panelNodes[1])*824;track.listeners.scroll();
 assert.equal(overview.active(),'timeline','Native scroll events cannot replace the requested panel during its transition');
 finishSnap();assert.equal(track.scrollLeft,selectedTimeline.offsetLeft+selectedTimeline.offsetWidth/2-track.clientWidth/2,'The requested snap target is restored after native DOM anchoring');
+overview.select('system',true);const staleFinish=pending.at(-1);overview.select('timeline',true);const desired=track.scrollLeft;staleFinish();assert.equal(track.scrollLeft,desired,'An interrupted animation cannot recenter a later selection');
+pending.at(-1)();track.scrollLeft+=.25;const beforeRounding=scrollWrites;track.listeners.scrollend();assert.equal(scrollWrites,beforeRounding,'Subpixel rounding does not trigger another snap');
+resizeCallback();pending.at(-1)();const beforeResize=scrollWrites;resizeCallback();assert.equal(scrollWrites,beforeResize,'An unchanged ResizeObserver notification does not restart scrolling');
 overview.select('apps',false);
 let prevented=0;
 track.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){prevented++;},stopPropagation(){}});
@@ -123,4 +144,13 @@ assert(make('#timelineEntries').innerHTML.includes('timeline-example-label'),'De
 vm.runInContext(source,context);
 assert.deepEqual(JSON.parse(data.get('spatial-workspace-timeline-v1')),firstSeed,'Reload neither duplicates nor re-dates example events');
 assert(require('../dist/workspace-setup.js').sessionKeys.includes('spatial-timeline-demo-v1'),'Clean/demo resets allow fresh example seeding');
-console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating and labelled demo examples.');
+assert(JSON.parse(data.get('spatial-workspace-planner-v1')),'Plans are persisted independently of interaction history');
+make('#timelinePlanKind').value='task.due';make('#timelinePlanTitle').value='Send review notes';make('#timelinePlanTime').value='2099-01-01T12:00';make('#timelinePlanProject').value='site';make('#timelinePlanDetail').value='Include keyboard feedback';
+make('#timelinePlanForm').listeners.submit({preventDefault(){}});
+const created=Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).find(item=>item.title==='Send review notes');assert(created&&created.workspace==='general'&&created.project==='site');
+assert(make('#timelineEntries').innerHTML.includes('Now & next'));
+make('#timelineEntries').listeners.change({target:{closest:()=>({dataset:{timelineComplete:created.id},checked:true})}});
+assert.equal(JSON.parse(data.get('spatial-workspace-planner-v1'))[created.id].done,true);
+assert(make('#timelineEntries').innerHTML.includes('Completed task'),'Task completion also records the explicit action');
+context.activeWorkspace='work';context.SpatialOverviewDesktop.refresh();assert.equal(make('#timelinePlanForm').hidden,true,'A workspace switch closes the old workspace form');
+console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating, labelled examples, interruption-safe snaps and independent calendar/tasks/reminders.');
