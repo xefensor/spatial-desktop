@@ -13,10 +13,6 @@
   $('.area-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('.area-window-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('#appRack').before(launcher);
-  const returnButton = document.createElement('button');
-  returnButton.id = 'guideReturn'; returnButton.className = 'surface-key material-surface-glass'; returnButton.hidden = true;
-  returnButton.innerHTML = icon('i-help') + '<span>Spatial Guide</span>'; returnButton.addEventListener('click', () => guide.open());
-  document.body.append(returnButton);
   let highlighted = [], interval = 0, lastSignature = '', pointer = null;
 
   function resetPractice() {
@@ -73,6 +69,7 @@
   function render() {
     const content = $('.guide-content', window);
     clearHighlight(); lastSignature = '';
+    window.classList.toggle('is-reference', !model.active());
     if (!model.active()) { content.innerHTML = referenceMarkup(); prepareControlSemantics(window); return; }
     const lesson = model.lesson, index = model.state.index, welcome = index === 0, complete = lesson.id === 'complete';
     window.classList.toggle('is-lesson', !welcome);
@@ -131,7 +128,7 @@
     location.reload();
   }
   guide.open = () => {
-    window.hidden = false; returnButton.hidden = true; render();
+    window.hidden = false; render();
     $('.guide-content h1', window)?.focus({preventScroll:true});
   };
   window.addEventListener('click', event => {
@@ -145,7 +142,7 @@
     if (action === 'leave') leave('skipped');
     if (action === 'close') {
       if (model.active()) window.classList.add('is-compact');
-      else { window.hidden = true; clearHighlight(); returnButton.hidden = false; }
+      else { window.hidden = true; clearHighlight(); }
     }
     if (action === 'compact') {
       window.classList.toggle('is-compact');
