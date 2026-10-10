@@ -188,6 +188,8 @@
     if (model.lesson.id === 'overview' && event.target.closest('[data-search-open-app="dolphin"]') && model.state.done.includes('app-search') && appState.dolphin === 'open') mark('search-launch');
     check();
   });
+  document.addEventListener('pointerup', check);
+  document.addEventListener('keyup', check);
   document.addEventListener('input', event => {
     if (model.active() && model.lesson.id === 'overview' && event.target.id === 'universalSearchInput' && normalizeSearchText(event.target.value).includes('dolphin')) mark('app-search');
   });
