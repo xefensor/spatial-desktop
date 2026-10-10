@@ -28,7 +28,7 @@ html[data-guide-level] .desktop-context-menu {z-index:11000!important}
 #spatialGuide {z-index:10000}
 .guide-practice-launcher {display:none;gap:10px;padding:12px 0;flex-direction:column}.guide-practice-launcher>span{font-size:10px;color:var(--muted)}.guide-practice-launcher button{display:flex;align-items:center;gap:10px;padding:9px;text-align:left;font-size:12px}.guide-practice-launcher .app-art{width:27px;height:27px}
 html[data-guide-level="2"] .guide-practice-launcher{display:flex}
-html[data-guide-level]:not([data-guide-level="9"]) :is(.workspace-switcher-actions,.overview-widgets,.workspace-context-card,.other-workspaces,[data-universal-group]:not([data-universal-group="apps"])) {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) :is(.workspace-switcher-actions,.overview-widgets,.workspace-context-card,.other-workspaces,[data-universal-group="settings"],[data-universal-group="web"]) {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) :is([data-area-window="projects"],.desktop-context-header,.overview-projects-section) {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"]) :is([data-area-window="apps"],[data-app-frame]) {display:none!important}
 html[data-guide-level="0"] [data-area-window="systems"] {display:none!important}

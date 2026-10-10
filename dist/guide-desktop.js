@@ -58,7 +58,7 @@
     guide.applyGate();
     areaPriority.forEach(name => { areaFor(name).inert = model.active() && !model.allows(name); });
     $('#allAppsToggle').disabled = model.active() && !model.allows('overview');
-    $('#universalSearchInput').placeholder = model.active() && !model.allows('projects') ? 'Search applications' : 'Search apps, files, settings, actions or the web';
+    $('#universalSearchInput').placeholder = model.active() && !model.allows('all') ? (model.allows('folders') ? 'Search applications, projects and files' : model.allows('projects') ? 'Search applications and projects' : 'Search applications') : 'Search apps, files, settings, actions or the web';
     $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects and Home';
     filterLauncher();
     layoutDockAreas(false, false); refreshIntentAreas(); scheduleWindowTiling();

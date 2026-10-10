@@ -4795,7 +4795,7 @@ function filterLauncher() {
     const matchesCategory = activeLauncherCategory === "all" ||
       (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
       button.dataset.category === activeLauncherCategory;
-    const taughtApp = !globalThis.SpatialGuide?.model.active() || SpatialGuide.model.allows('projects') || button.dataset.openApp || button.dataset.launchApp === 'Spatial Guide';
+    const taughtApp = !globalThis.SpatialGuide?.model.active() || SpatialGuide.model.allows('all') || button.dataset.openApp || button.dataset.launchApp === 'Spatial Guide';
     button.hidden = !matchesCategory || !taughtApp;
     if (!button.hidden) visible += 1;
   });
@@ -4832,7 +4832,7 @@ function matchesSearch(value, query) {
 function buildUniversalAppResults(query) {
   const target = $("#universalAppResults");
   const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
-    if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('projects') && !button.dataset.openApp && button.dataset.launchApp !== 'Spatial Guide') return false;
+    if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('all') && !button.dataset.openApp && button.dataset.launchApp !== 'Spatial Guide') return false;
     const searchable = `${button.textContent} ${button.dataset.category || ""}`.toLowerCase();
     return matchesSearch(searchable, query);
   });
@@ -4886,13 +4886,14 @@ function filterUniversalSearch() {
   }
 
   let localVisible = buildUniversalAppResults(query);
-  const guideAppsOnly = globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('projects');
+  const guideLimited = globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('all');
+  const guideAppsOnly = guideLimited && !SpatialGuide.model.allows('projects');
   if (!guideAppsOnly) buildUniversalProjectResults(query);
   else $("#universalProjectResults").innerHTML = '';
 
   $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
-    if (guideAppsOnly) { result.hidden = true; return; }
+    if (guideLimited && !(group === 'projects' && SpatialGuide.model.allows('projects')) && !(group === 'files' && SpatialGuide.model.allows('folders'))) { result.hidden = true; return; }
     const isWeb = group === "web";
     const searchable = `${result.dataset.universalSearch || ""} ${result.textContent}`;
     const matchesQuery = isWeb || matchesSearch(searchable, query);
@@ -4907,7 +4908,7 @@ function filterUniversalSearch() {
   $("#universalWebLabel").textContent = `Search the web for “${rawQuery}”`;
   $("#universalEmpty").hidden = localVisible !== 0;
   $("#universalSearchStatus").hidden = false;
-  $("#universalSearchStatus").textContent = localVisible + (guideAppsOnly ? (localVisible === 1 ? ' application result' : ' application results') : (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available");
+  $("#universalSearchStatus").textContent = localVisible + (guideLimited ? (guideAppsOnly ? (localVisible === 1 ? ' application result' : ' application results') : (localVisible === 1 ? ' local result' : ' local results')) : (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available");
 }
 
 function setUniversalSearchOpen(open) {
