@@ -102,6 +102,19 @@ assert(utilitySurfaces.at(-1).classes.has('material-glass-button'),'A notificati
 const appButton=materialNode('button',absApp);
 materialCtx.applyControlMaterial(appButton);
 assert(appButton.classes.has('material-abs-button'),'Application controls retain ABS');
+// A slider in an opaque app must inherit ABS; the same control parked on
+// an Area glass sheet must inherit glass instead of following app identity.
+const appRange=materialNode('.app-frame input[type=range]',absApp);
+appRange.classes.add('material-surface-glass');
+materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>[absApp,appRange].filter(node=>node.matches(selector))});
+materialCtx.applyFieldMaterial(appRange);
+assert(appRange.classes.has('material-abs-field'),'Open app slider inherits ABS');
+assert(!appRange.classes.has('material-glass-field'),'Old glass slider override is removed');
+const parkedCard=materialNode('.mini-card');
+materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>[parkedCard].filter(node=>node.matches(selector))});
+const parkedRange=materialNode('input[type=range]',parkedCard);
+materialCtx.applyFieldMaterial(parkedRange);
+assert(parkedRange.classes.has('material-glass-field'),'Parked slider inherits its glass card');
 console.log('Material inheritance passed: Pack/Import, project editor, Overview, context menus, toast, notification preview, stale ABS removal and application distinction.');
 
 // Persistent choices need toggle semantics even without a surface-key class.

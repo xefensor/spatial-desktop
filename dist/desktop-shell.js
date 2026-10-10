@@ -65,8 +65,7 @@ const glassMaterialSurfaceSelector = [
   ".notification-peek",
   ".toast",
   ".desktop-context-header",
-  ".app-frame .recessed-field",
-  ".app-frame input[type=range]"
+  ".app-frame .recessed-field"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
@@ -118,9 +117,14 @@ function prepareMaterialSurfaces(root = document) {
   });
   /* App windows are primarily ABS. Only small display-like inserts are glass,
      so a whole toolbar never changes material just because it contains one. */
-  matchingNodes(root, ".app-frame .recessed-field,.app-frame input[type=range]").forEach(surface => {
+  matchingNodes(root, ".app-frame .recessed-field").forEach(surface => {
     surface.classList.add("material-surface-glass");
     surface.classList.remove("material-surface-abs");
+  });
+  /* Sliders are physical controls, not glass display inserts. Clear the old
+     range-only override and inherit ABS from the app or glass from its host. */
+  matchingNodes(root, ".app-frame input[type=range]").forEach(range => {
+    range.classList.remove("material-surface-glass");
   });
 }
 
