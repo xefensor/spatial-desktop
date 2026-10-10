@@ -29,25 +29,27 @@
     const nodes=[...track.children],index=nodes.indexOf(panel);
     if(nodes.length<3||index>0&&index<nodes.length-1)return;
     const current=panels.get(active),before=current.offsetLeft,position=track.scrollLeft;
-    track.style.scrollSnapType='none';
     if(index===0)track.prepend(nodes.at(-1));else track.append(nodes[0]);
-    track.scrollLeft=position+current.offsetLeft-before;
-    track.style.scrollSnapType='';
+    track.scrollTo({left:position+current.offsetLeft-before,behavior:'instant'});
   }
   function select(id,animate=true){
     if(!allowed().includes(id))id='apps';
     const panel=panels.get(id);if(!panel)return;
-    keepNeighbours(panel);setCurrent(id);
+    clearTimeout(scrollTimer);
     scrolling=true;
+    // Native re-snapping after DOM rotation otherwise restores the old panel.
+    track.style.scrollSnapType='none';
+    keepNeighbours(panel);setCurrent(id);
     track.scrollTo({left:centre(panel),behavior:animate&&!reduced()?'smooth':'instant'});
-    clearTimeout(scrollTimer);scrollTimer=setTimeout(settle,animate&&!reduced()?380:40);
+    scrollTimer=setTimeout(()=>{
+      track.scrollTo({left:centre(panel),behavior:'instant'});
+      track.style.scrollSnapType='';scrolling=false;
+    },animate&&!reduced()?420:40);
   }
   function settle(){
-    if(!track.clientWidth||home.hidden)return;
-    scrolling=false;
+    if(scrolling||!track.clientWidth||home.hidden)return;
     const panel=[...panels.values()].filter(panel=>allowed().includes(panel.dataset.overviewPanel)).reduce((nearest,panel)=>Math.abs(centre(panel)-track.scrollLeft)<Math.abs(centre(nearest)-track.scrollLeft)?panel:nearest,panels.get(active));
-    setCurrent(panel.dataset.overviewPanel);keepNeighbours(panel);
-    if(Math.abs(track.scrollLeft-centre(panel))>1)track.scrollTo({left:centre(panel),behavior:'instant'});
+    select(panel.dataset.overviewPanel,false);
   }
   function refresh(){
     renderTimeline();
@@ -60,7 +62,7 @@
     const tab=event.target.closest('[data-overview-section]'),edge=event.target.closest('[data-overview-step]');
     if(tab)select(tab.dataset.overviewSection);if(edge)step(Number(edge.dataset.overviewStep));
   });
-  track.addEventListener('scroll',()=>{clearTimeout(scrollTimer);scrollTimer=setTimeout(settle,150);},{passive:true});
+  track.addEventListener('scroll',()=>{if(scrolling)return;clearTimeout(scrollTimer);scrollTimer=setTimeout(settle,150);},{passive:true});
   track.addEventListener('wheel',event=>{
     if(event.ctrlKey||event.metaKey)return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
@@ -78,7 +80,7 @@
   },{passive:false});
   home.addEventListener('keydown',event=>{
     if(event.altKey||event.ctrlKey||event.metaKey||event.target.matches('input,textarea,select,[contenteditable]'))return;
-    if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();step(event.key==='ArrowLeft'?-1:1);}
+    if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();step(event.key==='ArrowLeft'?-1:1);$('[data-overview-section="'+active+'"]',home)?.focus({preventScroll:true});}
   });
   // Tab focus reaches only the current panel; touch / scrollbar navigation still snaps.
   new ResizeObserver(()=>{if(!scrolling&&track.clientWidth&&!home.hidden)select(active,false);}).observe(track);
@@ -115,7 +117,7 @@
       const info=appInfo[event.app]||appInfo[event.base],symbol=event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
       const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol);
       const project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
-      const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span>':'')+'Desktop '+(event.page+1);
+      const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+'Desktop '+(event.page+1);
       const detail=event.path||event.address||'';
       const name=event.title||(event.type==='desktop.switch'?'Desktop '+(event.page+1):event.type==='workspace'?workspaceProfiles[event.workspace]?.label:'');
       const action=actionFor(event);
