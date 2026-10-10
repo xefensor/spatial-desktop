@@ -201,11 +201,22 @@ const hotbar = vm.createContext({
   desktopPages: {inColumn: () => true},
   activeWorkspace: 'work', workspaceProfiles: { work: { rack: ['browser', 'closed', 'parked'] } },
   appState: { browser: 'open', closed: 'closed', parked: 'minimized', other: 'open', instance: 'open' },
-  isLocalApp: name => ['browser', 'instance'].includes(name)
+  isLocalApp: name => ['browser', 'instance'].includes(name),
+  frameFor: () => ({style:{left:'0px',top:'0px'},getBoundingClientRect:()=>({left:0,top:0}),parentElement:{getBoundingClientRect:()=>({left:0,top:0})}})
 });
 vm.runInContext(slice('function workspaceHotbarNames(', 'function renderInstanceRack('), hotbar);
 assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['browser', 'instance', 'parked'], 'Top hotbar keeps minimized icons while excluding closed and off-page open windows');
 assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['browser', 'instance', 'parked'], 'Minimized cards share their icon’s unique keyboard slot');
+const positions={browser:{x:600,y:5},instance:{x:0,y:12},other:{x:0,y:400}};
+hotbar.isLocalApp=name=>Boolean(positions[name]);
+hotbar.frameFor=name=>({style:{left:positions[name].x+'px',top:positions[name].y+'px'},parentElement:{getBoundingClientRect:()=>({left:80,top:40})},getBoundingClientRect:()=>({left:999,top:999})});
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()),['instance','browser','other','parked'],'Reading order follows rows, left to right, with small alignment differences');
+positions.instance.x=700;
+assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()),['browser','instance','other','parked'],'Moving a window updates the same order used by keyboard slots');
+positions.browser.y=800;
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()),['instance','other','browser','parked'],'Lower rows follow the complete upper row');
+positions.browser={x:700,y:12};
+assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()),['browser','instance','other','parked'],'Exact ties retain stable window order');
 hotbar.isLocalApp = () => false;
 assert.deepEqual(Array.from(hotbar.workspaceHotbarNames()), ['parked'], 'Minimized icons remain in the hotbar when the desktop has no visible windows');
 assert.deepEqual(Array.from(hotbar.workspaceShortcutNames()), ['parked'], 'Minimized shortcuts appear exactly once on an empty desktop');

@@ -368,6 +368,7 @@ function saveLayout() {
     layouts[activeWorkspace] = Object.fromEntries(windowGeometry);
     localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(layouts));
   } catch {}
+  scheduleHotbarOrder();
 }
 
 function loadLayout(workspaceName = activeWorkspace) {
@@ -7070,8 +7071,24 @@ function createAppInstance(name) {
 }
 function workspaceHotbarNames() {
   const names = [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState)])];
+  // Read final CSS positions rather than intermediate tile animation rects.
+  const open = names.filter(name => appState[name] === 'open' && isLocalApp(name)).map((name,index) => {
+    const frame=frameFor(name), rect=frame?.getBoundingClientRect();
+    const parent=frame?.parentElement?.getBoundingClientRect();
+    const x=parseFloat(frame?.style.left),y=parseFloat(frame?.style.top);
+    return {name,index,x:Number.isFinite(x)&&parent?parent.left+x:rect?.left||0,
+      y:Number.isFinite(y)&&parent?parent.top+y:rect?.top||0};
+  }).sort((a,b)=>a.y-b.y||a.x-b.x||a.index-b.index);
+  const rows=[];
+  open.forEach(item=>{
+    // Anchor each row to its first window for stable, transitive ordering.
+    const row=rows.at(-1);
+    if(row&&item.y-row.top<=24)row.windows.push(item);
+    else rows.push({top:item.y,windows:[item]});
+  });
+  const ordered=rows.flatMap(row=>row.windows.sort((a,b)=>a.x-b.x||a.y-b.y||a.index-b.index).map(item=>item.name));
   // Minimized windows travel with the Apps Area, including its icon-only rail.
-  return [...names.filter(name => appState[name] === 'open' && isLocalApp(name)),
+  return [...ordered,
     ...names.filter(name => appState[name] === 'minimized' && desktopPages.inColumn(activeWorkspace, name))];
 }
 function workspaceShortcutNames() {
@@ -7081,6 +7098,9 @@ function workspaceShortcutNames() {
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
   $('#appRack').hidden = names.length === 0;
+  const order=JSON.stringify(names.map(name=>[name,appState[name]]));
+  if($('#appRack').dataset.layoutOrder===order){applyAppPrimaryColors($('#appRack'));return;}
+  $('#appRack').dataset.layoutOrder=order;
   const buttons = names.map((name, index) => {
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
@@ -7092,6 +7112,17 @@ function renderInstanceRack() {
   $('#appRack').innerHTML = (open ? '<div class="app-rack-group app-rack-open" role="group" aria-label="Open applications">' + open + '</div>' : '')
     + (parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '');
   applyAppPrimaryColors($('#appRack'));
+}
+let hotbarOrderFrame=0;
+function scheduleHotbarOrder() {
+  if(hotbarOrderFrame)return;
+  hotbarOrderFrame=requestAnimationFrame(()=>{
+    hotbarOrderFrame=0;
+    if(manualWindowInteraction||tileInteraction)return;
+    const before=$('#appRack').dataset.layoutOrder;
+    syncRack();
+    if(before!==$('#appRack').dataset.layoutOrder)renderMiniApps();
+  });
 }
 const originalSyncRack = syncRack;
 syncRack = function() { renderInstanceRack(); originalSyncRack(); };

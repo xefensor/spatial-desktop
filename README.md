@@ -75,6 +75,8 @@ Use **Download page notes** in a Web window and **Open download folder** to try 
 
 ## Application windows
 
+Open app icons follow the desktop’s reading order: left to right across each row, then top to bottom. Moving or retiling windows updates their hotbar numbers and keyboard shortcuts together. Parked icons keep their existing order at the end of the rail.
+
 The five sample apps now use consistent toolbars, readable content and controls backed by persistent per-window state. App accents and ABS window silhouettes remain; internal layout surfaces stay square.
 
 - **Dolphin:** one actual location instead of decorative tabs, clickable breadcrumbs, Back/Forward/Up, folder filtering, sorting, list/grid views, file selection and inline previews. Double-click or Enter opens an item. New folder creates a persistent simulated folder. Ctrl+L edits the path; Ctrl+F filters; Alt+arrows navigate.
