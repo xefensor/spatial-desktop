@@ -48,18 +48,19 @@ console.log('UI checks passed: filename/Unicode search, live workspace context, 
 for (const overviewOpen of [true, false]) {
   let focusReturned = false;
   const classes = new Set();
-  const dialog = { hidden: true, inert: true, classList: { add: v => classes.add(v), remove: v => classes.delete(v), contains: v => classes.has(v) }, setAttribute() {} };
+  const dialog = { hidden: true, inert: true, classList: { add: v => classes.add(v), remove: v => classes.delete(v), contains: v => classes.has(v), toggle: (v,on) => on ? classes.add(v) : classes.delete(v) }, setAttribute() {} };
   const desktop = { inert: overviewOpen };
   const overview = { inert: !overviewOpen, classList: { contains: () => overviewOpen } };
   const returnFocus = { focus: () => { focusReturned = true; } };
   const ctx = vm.createContext({
     $: selector => selector === '#projectEditorDialog' ? dialog : selector === '.desktop-shell' ? desktop : selector === '#universalSearch' ? overview : { focus() {} },
-    document: { activeElement: returnFocus, body: { classList: { add() {}, remove() {} } } },
+    areaFor:()=>({classList:{remove(){}}}),
+    document: { activeElement: returnFocus, body: { append(){}, classList: { add() {}, remove() {} } } },
     activeProjectName: 'custom', projectEditorState: null, renderProjectEditor() {},
     requestAnimationFrame: callback => callback(), setTimeout: callback => callback()
   });
   vm.runInContext(source.slice(source.indexOf('function openProjectEditor('), source.indexOf('function prepareProjectEditor(')), ctx);
-  ctx.openProjectEditor('create-project');
+  ctx.openProjectEditor('manage');
   assert.equal(desktop.inert, true);
   assert.equal(overview.inert, true);
   assert.equal(dialog.inert, false);

@@ -19,8 +19,8 @@
     {id:'projects', title:'Start your own project', text:'A project has its own vertical set of desktops, containing only its windows. The Project Area keeps its folder, quick note and resources together. Start with an empty project so you can see exactly what belongs to it.', task:'Choose New project in the Project Area, give it a name of your own, then create it. Leave the folder blank to use the workspace’s Projects folder.', level:6, goals:['project-created'], target:'[data-create-area-project]'},
     {id:'project-app', title:'An app belongs where you open it', text:'Your new project starts empty. An app opened here gets its own window in this project. Opening Notes here will not move or replace the note you wrote on your ordinary desktop.', task:'Use Overview to open Notes in your project.', level:6, goals:['project-notes-open'], target:'#allAppsToggle'},
     {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace and find your original note, return to your project, then switch to Workspace again.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
-    {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. General, School, Work and Gaming are separate environments. Workspace choices are now visible in Overview.', task:'Open Overview and switch to School. Your General windows stay in General.', level:7, goals:['school-switch'], target:'.workspace-tabs'},
-    {id:'folders', title:'Each workspace has its own Home', text:'School has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open School’s Downloads folder. Check its path in Dolphin.', level:8, goals:['school-downloads'], target:'.workspace-home-card'},
+    {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. Create one for a part of your life: study, work, music, or anything you choose. It starts empty while your General windows stay in General.', task:'Open Overview, choose New workspace, give it your own name, then create it.', level:7, goals:['workspace-created'], target:'#newWorkspaceButton'},
+    {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open your workspace’s Downloads folder. Check its own Home path in Dolphin.', level:8, goals:['workspace-downloads'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your note and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
     {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this final task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
@@ -50,7 +50,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -93,8 +93,8 @@
     'desktop-next':'Visit Desktop 2', 'desktop-return':'Return to Desktop 1',
     'project-created':'Create your own empty project', 'project-notes-open':'Open Notes inside your project',
     'project-workspace':'Find your original note in Workspace', 'project-return':'Return to your project',
-    'project-workspace-return':'Switch back to Workspace', 'school-switch':'Switch to School',
-    'school-downloads':'Open School’s Downloads folder', 'general-return':'Return to General',
+    'project-workspace-return':'Switch back to Workspace', 'workspace-created':'Create your own empty workspace',
+    'workspace-downloads':'Open your workspace’s Downloads folder', 'general-return':'Return to General',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
   // Only prerequisites are supplied. The selected chapter's actions remain undone.
@@ -105,7 +105,7 @@
       noteText:index >= 10, parked:['area-rail','unpark'].includes(id),
       project:index >= 14, projectApp:index >= 15,
       inProject:['project-app','project-navigation'].includes(id),
-      school:['folders','return'].includes(id), downloads:id === 'return'
+      ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'
     };
   }
   function recovery(model, scene) {
@@ -117,8 +117,8 @@
       if (model.state.practiceWindow && !scene.open.includes(model.state.practiceWindow)) return hint('The window used for this task was closed or parked. Reopen it and try the full-screen task again.','fullscreen-retry','Reopen and retry');
       if (!scene.open.length) return hint('Open an app before trying its full-screen controls.','open-app','Open Notes');
     }
-    const school = ['folders','return'].includes(id);
-    if (scene.workspace !== (school ? 'school' : 'general') && !['workspaces'].includes(id)) return hint('This task belongs in the ' + (school ? 'School' : 'General') + ' workspace. Your practice work is still there.','workspace', 'Return to ' + (school ? 'School' : 'General'));
+    const ownWorkspace = ['folders','return'].includes(id);
+    if (scene.workspace !== (ownWorkspace ? model.state.practiceWorkspace : 'general') && id !== 'workspaces') return hint('This task belongs in ' + (ownWorkspace ? 'your new workspace' : 'General') + '. Your practice work is still there.','workspace', ownWorkspace ? 'Return to your workspace' : 'Return to General');
     if (['project-app','project-navigation','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
     if (id === 'project-app' && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
     if (['tiling','float','park','unpark','project-navigation'].includes(id) && scene.notesState === 'closed') return hint('Your original Notes window was closed. Reopen it to continue; saved note content stays with the window.','notes','Reopen your note');
@@ -176,12 +176,14 @@
       api.clearPractice(); model.start('repeat',params.get('guide') === 'chapter' ? params.get('chapter') : null);
     }
   }
-  api.finish = status => {
+  api.finish = (status, choice = "keep") => {
     // A first-run learner keeps their work. Repeat lessons never touch their real session.
-    if (model.state.mode === 'first') {
+    if (['clean','demo'].includes(choice)) root.SpatialWorkspaceSetup.reset(real,choice);
+    else if (model.state.mode === 'first') {
       try { Object.keys(real).filter(name => name.startsWith(prefix)).forEach(name => real.setItem(name.slice(prefix.length), real.getItem(name))); } catch {}
     }
-    model.leave(status); api.save();
+    if (choice === 'keep' && model.state.mode === 'first') real.setItem('spatial-desktop-preset-v1','clean');
+    delete model.state.exitStatus; model.leave(status); api.save();
   };
   api.applyGate = () => {
     const element = document.documentElement;

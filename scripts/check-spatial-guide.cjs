@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const G = require('../dist/spatial-guide.js');
+const Setup = require('../dist/workspace-setup.js');
 const model = G.create();
 model.start('first');
 for (const feature of ['systems','apps','overview','parking','desktops','workspaces','folders','projects']) assert.equal(model.allows(feature), false, 'Welcome starts empty: ' + feature);
@@ -29,7 +30,7 @@ function boot(entries, query = '') {
     setItem:{value:(key,value)=>{storage[key]=String(value);}},
     removeItem:{value:key=>{delete storage[key];}}
   });
-  const context = vm.createContext({localStorage:storage, URLSearchParams, location:{search:query}, document:{documentElement:{dataset:{}}}});
+  const context = vm.createContext({localStorage:storage, SpatialWorkspaceSetup:Setup, URLSearchParams, location:{search:query}, document:{documentElement:{dataset:{}}}});
   vm.runInContext(fs.readFileSync(require.resolve('../dist/spatial-guide.js'), 'utf8'),context);
   return {storage, api:context.SpatialGuide, context};
 }
@@ -100,6 +101,14 @@ context.model=at('projects');context.check();
 context.column='example';context.activeProjectName='example';context.check();assert(!context.model.ready(), 'An existing seeded project cannot complete creation');
 context.projectSpaces.mine={};context.column='mine';context.activeProjectName='mine';context.check();assert(context.model.ready());
 assert.equal(context.model.state.practiceProject,'mine');
+context.model=at('workspaces');context.workspaceProfiles={general:{},existing:{custom:true}};context.activeWorkspace='general';context.check();
+context.activeWorkspace='existing';context.check();assert(!context.model.ready(),'Switching to an existing workspace does not count as creation');
+context.workspaceProfiles.personal={custom:true,home:'/home/demo/Workspaces/personal'};context.activeWorkspace='personal';context.check();assert(context.model.ready());
+assert.equal(context.model.state.practiceWorkspace,'personal');
+context.model=at('folders');context.model.state.practiceWorkspace='personal';context.appInfo.dolphin={};context.appState.dolphin='open';context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Downloads'}});context.check();assert(!context.model.ready());
+context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Workspaces/personal/Downloads'}});context.check();assert(context.model.ready(),'Only the new workspace Downloads satisfies the folder task');
+context.activeWorkspace='general';context.appState.dolphin='closed';
+
 context.model=at('project-app');context.model.state.practiceProject='mine';context.appState.notes='open';context.owners.notes='workspace';
 context.isLocalApp=name=>context.owners[name]===context.column;context.check();assert(!context.model.ready(), 'Workspace Notes does not count as a project window');
 context.appInfo['notes--2']={base:'notes'};context.appState['notes--2']='open';context.owners['notes--2']='mine';context.check();assert(context.model.ready());
@@ -190,7 +199,8 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
       desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{notes:'closed',dolphin:'closed'},appInfo:{notes:{},dolphin:{}},
       tileSession:()=>({}),setUniversalSearchOpen(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
-      appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{school:{home:'/home/demo/Workspaces/School'}},
+      appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
+      createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
       desktopPages:{column:()=>scene.column,current:()=>scene.page,columnOf:(_,name)=>name==='project-note'?'practice':'workspace'},
       changeDesktopPage(page,_,column=scene.column){scene.page=page;scene.column=column;},
       renderWorkspace(name){prepared.activeWorkspace=name;scene.workspace=name;},
@@ -212,7 +222,7 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
       assert.equal(scene.notes.notes[0].text,'Keep my own wording','Skipping preserves the learner’s existing note');
     }
     assert.equal(scene.column,needed.inProject?'practice':'workspace',lesson.id);
-    assert.equal(scene.workspace,needed.school?'school':'general',lesson.id);
+    assert.equal(scene.workspace,needed.ownWorkspace?'mine':'general',lesson.id);
     assert.equal(!!scene.path,needed.downloads,lesson.id);
   }
   // In-progress notes are never replaced when preparing the next task after a skip.
@@ -244,3 +254,21 @@ vm.runInContext(positionSource,positioning);positioning.positionGuide();
 assert(lookedUpNextControl,'Use the app grid control, not a hidden duplicate favourite');
 assert(parseInt(positioning.window.style.left)+390 <= notesButton.left,'Expanded Guide keeps the project Notes launcher clickable');
 console.log('Guide placement avoids Overview app launchers and the current chapter control.');
+
+// Preset exit resets session data only and keeps late practice callbacks isolated.
+for (const choice of ['clean','demo']) for (const status of ['skipped','completed']) {
+  const preset = boot({'spatial-active-workspace':'work','spatial-workspace-app-states-v1':'old-apps','spatial-custom-workspaces-v1':'old-profiles','spatial-project-spaces-v2':'old-projects','spatial-color-theme-v1':'light'},'?guide=start');
+  preset.api.storage.setItem('spatial-workspace-app-states-v1','practice-apps');
+  preset.api.finish(status,choice);
+  assert.equal(preset.storage[Setup.presetKey],choice);
+  assert.equal(preset.storage['spatial-active-workspace'],'general');
+  assert.equal(preset.storage['spatial-project-spaces-v2'],undefined);
+  assert.equal(preset.storage['spatial-custom-workspaces-v1'],undefined);
+  assert.equal(preset.storage['spatial-color-theme-v1'],'light');
+  preset.api.storage.setItem('spatial-workspace-app-states-v1','late-practice-layout');
+  assert.equal(preset.storage['spatial-workspace-app-states-v1'],undefined);
+  const normal=boot(preset.storage);assert(!normal.api.model.active());assert.equal(normal.api.storage.getItem(Setup.presetKey),choice);
+}
+const pending=boot({'spatial-active-workspace':'general'},'?guide=start');pending.api.model.state.exitStatus='skipped';pending.api.save();
+assert.equal(boot(pending.storage).api.model.state.exitStatus,'skipped','Reloading remembers an unanswered desktop choice');
+console.log('Desktop exit choices passed: skip/completion, clean/demo reset, preference preservation and late autosave isolation.');

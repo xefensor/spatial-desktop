@@ -1,0 +1,28 @@
+/* Creation belongs to the surface being created in. All Area glass stays square. */
+.project-area.is-creating-project > :is(#projectSpaceContent,#projectClosedState,.project-rail-tools){display:none!important}
+.project-area .project-editor-overlay.is-inline{position:static;inset:auto;z-index:auto!important;padding:0;display:block;flex:1;min-height:0;overflow:auto;background:transparent!important;backdrop-filter:none;opacity:1;visibility:visible}
+.project-area .project-editor-overlay.is-inline[hidden]{display:none}
+.project-area .is-inline .project-editor-window{width:100%;max-height:none;border:0;border-radius:0;background:transparent!important;box-shadow:none;backdrop-filter:none}
+.project-area .is-inline .project-editor-body{max-height:none;padding:14px}
+.project-area .is-inline .project-editor-mark{display:none}
+.project-area .is-inline .project-editor-titlebar{height:46px;background:transparent}
+.project-create-actions,.workspace-create-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding-top:10px}
+.workspace-create-toggle{align-self:center;white-space:nowrap}
+.workspace-switcher:has(.workspace-create-form:not([hidden])){flex-wrap:wrap}
+.workspace-create-form{flex-basis:100%;display:grid;grid-template-columns:minmax(100px,180px) minmax(160px,1fr);gap:10px;padding:12px 0;border-top:1px solid var(--sd-glass-groove);color:var(--sd-glass-text)}
+.workspace-create-form[hidden]{display:none}
+.workspace-create-form input{height:38px;padding:0 10px;border-radius:0;color:var(--sd-glass-text)}
+.workspace-create-form p{margin:0;color:var(--sd-glass-muted);font-size:12px;line-height:1.5}
+.workspace-create-actions .surface-key{padding:8px 12px}
+.workspace-tabs{overflow-x:auto;min-width:0}
+.guide-desktop-choices{display:grid;gap:12px;margin-top:20px}
+.guide-desktop-choice{display:flex;align-items:center;text-align:left;gap:14px;width:100%;padding:14px!important}
+.guide-desktop-choice svg{width:24px;height:24px;flex:none;color:var(--app-primary)}
+.guide-desktop-choice b,.guide-desktop-choice small{display:block}
+.guide-desktop-choice small{margin-top:5px;font-weight:400;line-height:1.5;color:var(--muted)}
+.workspace-switcher{grid-template-columns:112px minmax(0,1fr) auto auto}
+.workspace-tabs{display:flex}.workspace-tab{flex:1 0 128px}
+.workspace-create-toggle{grid-column:3;grid-row:1}
+.workspace-switcher-actions{grid-column:4;grid-row:1}
+.workspace-create-form{grid-column:1/-1;grid-row:2}
+@media(max-width:950px){.workspace-switcher{grid-template-columns:minmax(0,1fr) auto auto}.workspace-switcher-label{display:none}.workspace-create-toggle{grid-column:2}.workspace-switcher-actions{grid-column:3}}

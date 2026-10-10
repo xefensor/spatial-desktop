@@ -60,8 +60,11 @@
       if (needed.projectApp && !Object.keys(appState).some(name => (appInfo[name].base || name) === 'notes' && appState[name] !== 'closed' && desktopPages.columnOf(activeWorkspace,name) === model.state.practiceProject)) openApp('notes');
       if (!needed.inProject) changeDesktopPage(0,false,'workspace');
     }
-    if (needed.school) renderWorkspace('school',false);
-    if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles.school.home+'/Downloads'); }
+    if (needed.ownWorkspace) {
+      if (!workspaceProfiles[model.state.practiceWorkspace]) model.state.practiceWorkspace = createWorkspaceFromEditor('Practice workspace');
+      renderWorkspace(model.state.practiceWorkspace,false);
+    }
+    if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles[model.state.practiceWorkspace].home+'/Downloads'); }
     focusDesktop(false); captureCurrentWorkspaceSession(); saveAppWindows(false); saveIndependentSessions(); saveDesktopPages();
     model.state.initialized = true; guide.save(); guide.settingUp = false;
   }
@@ -69,7 +72,12 @@
     guide.settingUp = true;
     await waitForScene();
     if (action === 'escape' && tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
-    if (action === 'workspace') renderWorkspace(['folders','return'].includes(model.lesson.id) ? 'school' : 'general',false);
+    if (action === 'workspace') {
+      if (['folders','return'].includes(model.lesson.id)) {
+        if (!workspaceProfiles[model.state.practiceWorkspace]) model.state.practiceWorkspace = createWorkspaceFromEditor('Practice workspace');
+        renderWorkspace(model.state.practiceWorkspace,false);
+      } else renderWorkspace('general',false);
+    }
     if (action === 'project') { ordinaryDesktop(); await ensurePracticeProject(); }
     if (action === 'notes' || action === 'open-app' || action === 'fullscreen-retry') {
       const name = action === 'fullscreen-retry' && appInfo[model.state.practiceWindow] ? model.state.practiceWindow : 'notes';
@@ -154,10 +162,10 @@
     // Keep the Guide out of a live title bar, menus and modal form controls.
     const front = frontApp && appState[frontApp] === 'open' ? frameFor(frontApp) : null;
     if (front && !front.hidden) targets.push($('.app-titlebar',front).getBoundingClientRect());
-    for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid']) {
+    for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid','#workspaceCreateForm:not([hidden])']) {
       const element = $(selector); if (element) targets.push(element.getBoundingClientRect());
     }
-    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'.workspace-tabs',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
+    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'#newWorkspaceButton',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
     const rect = window.getBoundingClientRect();
@@ -185,6 +193,7 @@
   }
   function render() {
     const content = $('.guide-content', window);
+    if (model.active() && model.state.exitStatus) return renderExitChoices();
     clearHighlight(); lastSignature = '';
     window.classList.remove('is-compact','was-moved');
     $('.guide-key[data-guide-action="compact"]',window).setAttribute('aria-pressed','false'); window.style.left = ''; window.style.top = ''; window.style.bottom = '';
@@ -204,7 +213,7 @@
     if (model.mark(goal)) { guide.save(); lastSignature = ''; }
   }
   function check() {
-    if (!model.active() || guide.settingUp) return;
+    if (!model.active() || guide.settingUp || model.state.exitStatus) return;
     const id = model.lesson.id, done = model.state.done, session = tileSession();
     const isNotesOpen = appState.notes === 'open';
     if (id === 'apps' && isNotesOpen) mark('notes-open');
@@ -263,8 +272,13 @@
       if (desktopPages.current(activeWorkspace) > 0) mark('desktop-next');
       else if (done.includes('desktop-next')) mark('desktop-return');
     }
-    if (id === 'workspaces' && activeWorkspace === 'school') mark('school-switch');
-    if (id === 'folders' && activeWorkspace === 'school' && Object.keys(appState).some(name => appState[name] === 'open' && (appInfo[name].base || name) === 'dolphin' && frameFor(name).dataset.fileLocation === workspaceProfiles.school.home + '/Downloads')) mark('school-downloads');
+    if (id === 'workspaces') {
+      if (!model.state.workspaceBaseline) { model.state.workspaceBaseline = Object.keys(workspaceProfiles); guide.save(); }
+      if (!done.includes('workspace-created') && workspaceProfiles[activeWorkspace]?.custom && !model.state.workspaceBaseline.includes(activeWorkspace)) {
+        model.state.practiceWorkspace = activeWorkspace; guide.save(); mark('workspace-created');
+      }
+    }
+    if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && Object.keys(appState).some(name => appState[name] === 'open' && (appInfo[name].base || name) === 'dolphin' && frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/Downloads')) mark('workspace-downloads');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
     currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,notesState:appState.notes,notesVisible:desktopPages.visible(activeWorkspace,'notes')});
     const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery]);
@@ -288,11 +302,27 @@
     captureCurrentWorkspaceSession(); captureWorkspaceContent();
     guide.clearPractice(); model.start('repeat',chapter); guide.save(); location.reload();
   }
-  function leave(status) {
+  function renderExitChoices() {
+    clearHighlight(); window.classList.remove('is-compact','is-reference','was-moved');
+    $('.guide-key[data-guide-action="compact"]',window).setAttribute('aria-pressed','false');
+    const keepLabel = model.state.mode === 'first' ? 'Keep what I created' : 'Return to my desktop';
+    const keepText = model.state.mode === 'first' ? 'Continue with your own note, project and workspace.' : 'Restore the desktop you had before this introduction.';
+    $('.guide-content',window).innerHTML = '<div class="guide-step-meta"><span>CHOOSE YOUR DESKTOP</span></div><h1 tabindex="-1">How would you like to begin?</h1><p>Choose an empty desktop or explore the populated demo. Spatial Guide is always in Overview → Applications → Help.</p><div class="guide-desktop-choices"><button class="surface-key guide-desktop-choice" data-guide-preset="clean">' + icon('i-monitor') + '<span><b>Clean desktop</b><small>General only, with no open apps or projects. Create your own workspaces.</small></span></button><button class="surface-key guide-desktop-choice" data-guide-preset="demo">' + icon('i-grid') + '<span><b>Explore the demo</b><small>Open apps, projects and desktops in General, School, Work and Gaming.</small></span></button><button class="surface-key guide-desktop-choice" data-guide-preset="keep">' + icon('i-right') + '<span><b>' + keepLabel + '</b><small>' + keepText + '</small></span></button></div><p class="guide-footnote">Clean and demo replace the current desktop session. Your display preferences stay the same.</p><button class="guide-text-action" data-guide-action="exit-back">Back to Guide</button>';
+    prepareControlSemantics(window); positionGuide();
+    $('.guide-content h1',window)?.focus({preventScroll:true});
+  }
+  function requestExit(status) {
+    if (model.state.chapter) return leave(status);
+    setUniversalSearchOpen(false);
+    if (tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
+    closeProjectEditor();
+    model.state.exitStatus = status; guide.save(); renderExitChoices();
+  }
+  function leave(status, choice = 'keep') {
     setUniversalSearchOpen(false);
     captureCurrentWorkspaceSession(); captureWorkspaceContent();
     clearInterval(interval); clearHighlight();
-    guide.finish(status);
+    guide.finish(status,choice);
     const url = new URL(location.href); url.searchParams.delete('guide'); url.searchParams.delete('chapter'); history.replaceState(null, '', url);
     location.reload();
   }
@@ -303,15 +333,18 @@
   window.addEventListener('click', async event => {
     if (guide.settingUp) return;
     const action = event.target.closest('[data-guide-action]')?.dataset.guideAction;
+    const preset = event.target.closest('[data-guide-preset]')?.dataset.guidePreset;
+    if (preset && model.state.exitStatus) return leave(model.state.exitStatus,preset);
+    if (action === 'exit-back') { delete model.state.exitStatus; guide.save(); return render(); }
     if (action === 'start') start();
     if (action === 'next') {
       if (!model.ready()) return;
-      if (model.lesson.id === 'complete' || model.state.chapter) return leave('completed');
+      if (model.lesson.id === 'complete' || model.state.chapter) return requestExit('completed');
       if (model.next()) { guide.save(); updateGate(); render(); }
     }
     if (action === 'skip' && model.skip()) { guide.save(); updateGate(); await prepareLesson(); render(); }
     if (action === 'recover' && currentRecovery) await recover(currentRecovery.action);
-    if (action === 'leave') leave('skipped');
+    if (action === 'leave') requestExit('skipped');
     if (action === 'close') {
       if (model.active()) setCompact(true,true);
       else { window.hidden = true; clearHighlight(); }
@@ -341,7 +374,7 @@
     $$('[data-guide-topic]', window).forEach(topic => { topic.hidden = !words.every(word => normalizeSearchText(topic.textContent).includes(word)); });
   });
   document.addEventListener('click', event => {
-    if (!model.active()) return;
+    if (!model.active() || model.state.exitStatus) return;
     const focus = event.target.closest('[data-toggle]');
     if (model.lesson.id === 'system' && focus?.textContent.trim() === 'Sound') {
       if (focus.getAttribute('aria-pressed') === 'false') mark('sound-off');

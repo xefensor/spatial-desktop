@@ -1,7 +1,8 @@
 const desktopStorage = globalThis.SpatialGuide?.storage || globalThis.localStorage;
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-try { SpatialDemoExamples.seedWorkspaces(desktopStorage); } catch {}
+const desktopPreset = desktopStorage.getItem(SpatialWorkspaceSetup.presetKey) || (globalThis.SpatialGuide?.model.active() ? 'clean' : 'demo');
+if (desktopPreset === 'demo') { try { SpatialDemoExamples.seedWorkspaces(desktopStorage); } catch {} }
 
 const toggleControlSelector = [
   "[aria-pressed]",
@@ -211,7 +212,7 @@ const appInfo = {
   notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
 };
 
-const appState = { ...SpatialDemoExamples.scenarios.general.apps };
+const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
 const appMaximizedState = { dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
 const autoTiledWindows = new Set();
@@ -3275,7 +3276,7 @@ function prepareAreaWindows() {
   persistAreaSessions();
 }
 
-const projectSpaces = JSON.parse(JSON.stringify(SpatialDemoExamples.projects));
+const projectSpaces = desktopPreset === 'demo' ? JSON.parse(JSON.stringify(SpatialDemoExamples.projects)) : {};
 
 let activeProjectName = null;
 // Projects are shared resources; which one is open (and its Mode) belongs to a Workspace.
@@ -3933,7 +3934,7 @@ function renderProjectEditor() {
     kicker.textContent = "PROJECTS";
     title.textContent = "Create project";
     const defaultProjectPath = workspaceProfiles[activeWorkspace].home + "/Projects/my-project";
-    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><label class="project-download-option"><input type="checkbox" name="downloadToProject"><span>Download into this project<small>Create Downloads inside the project folder. Other Home folders still use the workspace.</small></span></label><footer><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></footer></form>';
+    body.innerHTML = '<form class="project-editor-form" data-project-editor-form="project"><label><span>Project name</span><input name="name" maxlength="48" required autocomplete="off" placeholder="My project"></label><label><span>Project folder <small>optional</small></span><input name="root" maxlength="160" autocomplete="off" placeholder="' + escapeHtml(defaultProjectPath) + '"></label><p>By default the folder is created inside <b>' + escapeHtml(workspaceProfiles[activeWorkspace].label) + ' Home/Projects</b>. Enter any other folder to keep the Project elsewhere. Its editable settings live inside <b>.spatial-project.toml</b>.</p><label class="project-download-option"><input type="checkbox" name="downloadToProject"><span>Download into this project<small>Create Downloads inside the project folder. Other Home folders still use the workspace.</small></span></label><div class="project-create-actions"><button class="surface-key project-editor-secondary" type="button" data-project-editor-action="close">Cancel</button><button class="surface-key project-editor-primary" type="submit"><svg><use href="#i-add"/></svg><span>Create project</span></button></div></form>';
   } else if (state.view === "delete-project" && project) {
     kicker.textContent = "REMOVE PROJECT";
     title.textContent = project.name;
@@ -3956,13 +3957,28 @@ function openProjectEditor(view, options = {}) {
     modeId: options.modeId || null,
     returnFocus: document.activeElement
   };
+  const inline = view === 'create-project';
+  dialog.classList.toggle('is-inline',inline);
+  dialog.setAttribute('role',inline ? 'region' : 'dialog');
+  dialog.setAttribute('aria-modal',String(!inline));
+  if (inline) {
+    setUniversalSearchOpen(false);
+    const area = areaFor('projects');
+    area.classList.add('is-creating-project'); area.append(dialog);
+    const edge = dockState.projects.edge;
+    dockSizes[edge] = Math.max(dockSizes[edge],320);
+    autoSpatialEdgeStates.set(edge,'expanded');
+    showArea('projects',false); layoutDockAreas(false,false);
+  } else { areaFor('projects').classList.remove('is-creating-project'); document.body.append(dialog); }
   renderProjectEditor();
   dialog.hidden = false;
   dialog.inert = false;
   dialog.setAttribute("aria-hidden", "false");
-  $(".desktop-shell").inert = true;
-  $("#universalSearch").inert = true;
-  document.body.classList.add("project-editor-open");
+  if (!inline) {
+    $('.desktop-shell').inert = true;
+    $('#universalSearch').inert = true;
+    document.body.classList.add('project-editor-open');
+  }
   requestAnimationFrame(() => {
     dialog.classList.add("is-open");
     const preferred = $("input", dialog) || $("button", $("#projectEditorBody"));
@@ -3974,6 +3990,8 @@ function closeProjectEditor() {
   const dialog = $("#projectEditorDialog");
   if (!dialog || dialog.hidden) return;
   const returnFocus = projectEditorState?.returnFocus;
+  const inline = dialog.classList.contains("is-inline");
+  areaFor("projects").classList.remove("is-creating-project");
   dialog.classList.remove("is-open");
   dialog.setAttribute("aria-hidden", "true");
   dialog.inert = true;
@@ -3982,7 +4000,8 @@ function closeProjectEditor() {
   $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("project-editor-open");
   projectEditorState = null;
-  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
+  if (inline) dialog.hidden = true;
+  else setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
   returnFocus?.focus?.({ preventScroll: true });
 }
 
@@ -3994,7 +4013,7 @@ function prepareProjectEditor() {
     if (activeProjectName) openProjectEditor("manage", { projectName: activeProjectName });
   });
   $("#closeProjectEditor").addEventListener("click", closeProjectEditor);
-  dialog.addEventListener("pointerdown", event => { if (event.target === dialog) closeProjectEditor(); });
+  dialog.addEventListener("pointerdown", event => { if (event.target === dialog && !dialog.classList.contains("is-inline")) closeProjectEditor(); });
   dialog.addEventListener("submit", event => {
     const form = event.target.closest("[data-project-editor-form]");
     if (!form) return;
@@ -4146,6 +4165,43 @@ const workspaceProfiles = {
   }
 };
 
+if (desktopPreset === 'clean') Object.keys(workspaceProfiles).filter(id => id !== 'general').forEach(id => delete workspaceProfiles[id]);
+try {
+  const saved = JSON.parse(desktopStorage.getItem(SpatialWorkspaceSetup.profilesKey) || '{}');
+  Object.entries(saved).forEach(([id, profile]) => {
+    if (!/^workspace-[a-z0-9-]+$/.test(id) || !profile?.custom || typeof profile.label !== 'string') return;
+    const created = SpatialWorkspaceSetup.createProfile(profile.label, {});
+    workspaceProfiles[id] = {...created.profile, accent:/^#[a-f0-9]{6}$/i.test(profile.accent) ? profile.accent : created.profile.accent, home:'/home/demo/Workspaces/'+id};
+  });
+} catch {}
+
+function renderWorkspaceTabs() {
+  $('.workspace-tabs').innerHTML = Object.entries(workspaceProfiles).map(([id,profile]) => '<button class="workspace-tab" role="tab" aria-selected="' + (id === activeWorkspace) + '" tabindex="' + (id === activeWorkspace ? '0' : '-1') + '" data-workspace="' + id + '" style="--workspace-accent:' + profile.accent + '"><span class="workspace-glyph">' + icon(profile.icon) + '</span><span><b>' + escapeHtml(profile.label) + '</b><small>' + escapeHtml(profile.subtitle) + '</small></span></button>').join('');
+}
+function createWorkspaceFromEditor(label) {
+  const created = SpatialWorkspaceSetup.createProfile(label,workspaceProfiles);
+  if (!created) return null;
+  const {id,profile} = created;
+  workspaceProfiles[id] = profile;
+  workspaceAppStates[id] = Object.fromEntries(Object.keys(appInfo).map(name => [name,'closed']));
+  workspaceProjectStates[id] = {project:null,mode:null}; workspaceOpenProjects[id] = [];
+  workspaceProjects[id] = null; windowMembership[id] = {};
+  workspaceAreaContents[id] = {...defaultAreaContent,noteDraft:'',notifications:[],notificationsHtml:''};
+  workspaceContent[id] = {note:'',apps:{}};
+  workspaceAreaSessions[id] = snapshotAreaLayout();
+  try { desktopStorage.setItem(SpatialWorkspaceSetup.profilesKey,JSON.stringify(Object.fromEntries(Object.entries(workspaceProfiles).filter(([,value])=>value.custom)))); } catch {}
+  renderWorkspaceTabs(); renderWorkspace(id,false);
+  persistWorkspaceAppStates(); persistProjectState(); saveIndependentSessions();
+  setWorkspaceCreateOpen(false); setUniversalSearchOpen(false);
+  showToast(profile.label + ' workspace created · its own Home folders');
+  return id;
+}
+function setWorkspaceCreateOpen(open) {
+  const form = $('#workspaceCreateForm'); form.hidden = !open;
+  $('#newWorkspaceButton').setAttribute('aria-expanded',String(open));
+  if (open) { form.reset(); requestAnimationFrame(()=>$('#workspaceName').focus()); }
+}
+
 // Every workspace exposes the same standard Home folders, alongside its extras.
 Object.values(workspaceProfiles).forEach(profile => {
   const extras = profile.folders.filter(([name]) => !SpatialHomeFolders.standard.includes(name));
@@ -4275,7 +4331,7 @@ let activeWorkspace = (() => {
   try { return desktopStorage.getItem("spatial-active-workspace") || "general"; }
   catch { return "general"; }
 })();
-const workspaceAppStates = Object.fromEntries(Object.entries(SpatialDemoExamples.scenarios).map(([name, example]) => [name, { ...example.apps }]));
+const workspaceAppStates = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, desktopPreset === 'demo' && SpatialDemoExamples.scenarios[name] ? {...SpatialDemoExamples.scenarios[name].apps} : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']))]));
 
 function persistWorkspaceAppStates() {
   if (!workspaceProfiles[activeWorkspace]) return;
@@ -4412,6 +4468,8 @@ function renderWorkspace(name, announce = true) {
     button.tabIndex = selected ? 0 : -1;
   });
   $("#activeWorkspaceLabel").textContent = profile.label;
+  const otherHomes = $('.other-workspaces small');
+  if (otherHomes) otherHomes.textContent = Object.entries(workspaceProfiles).filter(([id])=>id!==name).map(([,item])=>item.label).join(' · ') || 'Create another workspace in Overview';
   $("#openWindowsTitle").textContent = profile.label + " workspace";
   $("#workspaceHomeTitle").textContent = profile.label + " Home";
   $("#workspaceHomePath").textContent = profile.home;
@@ -4503,6 +4561,7 @@ function renderDemoAppExample(id, example) {
 }
 
 function renderWorkspaceExample(name) {
+  if (desktopPreset !== "demo") return;
   const example = SpatialDemoExamples.scenarios[name];
   if (!example) return;
   // Seeded identities keep their own content; switching columns never replaces
@@ -4536,7 +4595,11 @@ function prepareWorkspaces() {
       workspaceAppStates[name] = { ...workspaceAppStates[name], ...states };
     });
   } catch {}
-  $$("[data-workspace]").forEach(button => button.addEventListener("click", () => renderWorkspace(button.dataset.workspace)));
+  renderWorkspaceTabs();
+  $('.workspace-tabs').addEventListener('click',event => { const tab = event.target.closest('[data-workspace]'); if (tab) renderWorkspace(tab.dataset.workspace); });
+  $('#newWorkspaceButton').addEventListener('click',()=>setWorkspaceCreateOpen($('#workspaceCreateForm').hidden));
+  $('#cancelWorkspaceCreate').addEventListener('click',()=>setWorkspaceCreateOpen(false));
+  $('#workspaceCreateForm').addEventListener('submit',event=>{event.preventDefault();createWorkspaceFromEditor($('#workspaceName').value);});
   $(".workspace-tabs").addEventListener("keydown", event => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     const tabs = $$("[role=tab]", event.currentTarget);
@@ -5155,7 +5218,7 @@ document.addEventListener("keydown", event => {
   const projectEditorDialog = $("#projectEditorDialog");
   const universalSearch = $("#universalSearch");
   if (packageDialog.classList.contains("is-open") && trapDialogFocus(packageDialog, event)) return;
-  if (projectEditorDialog.classList.contains("is-open") && trapDialogFocus(projectEditorDialog, event)) return;
+  if (projectEditorDialog.classList.contains("is-open") && !projectEditorDialog.classList.contains("is-inline") && trapDialogFocus(projectEditorDialog, event)) return;
   if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
 
   if (projectEditorDialog.classList.contains("is-open") || packageDialog.classList.contains("is-open")) {
@@ -7057,6 +7120,7 @@ function prepareCrossDisplaySync() {
 
 // Window identities and workspace-owned content sessions.
 const baseAppNames = Object.keys(appInfo);
+if (desktopPreset === 'clean') { $('.notes-layout textarea',frameFor('notes')).value = ''; $('.notes-layout textarea',frameFor('notes')).textContent = ''; noteDraft = ''; }
 const pristineFrames = Object.fromEntries(baseAppNames.map(name => [name, frameFor(name).cloneNode(true)]));
 let independentSessions = {};
 try { independentSessions = JSON.parse(desktopStorage.getItem('spatial-independent-sessions-v1') || '{}'); } catch {}
@@ -7190,7 +7254,7 @@ function restoreWorkspaceContent(name) {
       if (field.type === 'checkbox') field.checked = saved?.frames?.[id]?.[index]?.checked ?? defaults[index]?.checked ?? false;
     });
   });
-  noteDraft = saved?.note ?? workspaceAreaContents[name]?.noteDraft ?? SpatialDemoExamples.workspaceWindows[name]?.find(window => window.base === 'notes')?.content.note ?? '';
+  noteDraft = saved?.note ?? workspaceAreaContents[name]?.noteDraft ?? (desktopPreset === 'demo' ? SpatialDemoExamples.workspaceWindows[name]?.find(window => window.base === 'notes')?.content.note : '') ?? '';
   noteDraft = SpatialDemoExamples.migrateNote(noteDraft);
   $('.notes-layout textarea').value = noteDraft;
   terminalPreview = saved?.terminal || 'Ready for a command';

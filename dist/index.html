@@ -20,8 +20,10 @@
   <link rel="stylesheet" href="area-rails.css?v=6">
   <link rel="stylesheet" href="app-windows.css?v=5">
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
-  <link rel="stylesheet" href="spatial-guide.css?v=8">
-  <script src="spatial-guide.js?v=7"></script>
+  <link rel="stylesheet" href="spatial-guide.css?v=9">
+  <link rel="stylesheet" href="workspace-setup.css?v=1">
+  <script src="workspace-setup.js?v=1"></script>
+  <script src="spatial-guide.js?v=8"></script>
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -252,6 +254,8 @@
           <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="work"><span class="workspace-glyph"><svg><use href="#i-office"/></svg></span><span><b>Work</b><small>Focused session</small></span></button>
           <button class="workspace-tab" role="tab" aria-selected="false" data-workspace="gaming"><span class="workspace-glyph"><svg><use href="#i-gamepad"/></svg></span><span><b>Gaming</b><small>Games and friends</small></span></button>
         </div>
+        <button class="workspace-action workspace-create-toggle" id="newWorkspaceButton" aria-expanded="false" aria-controls="workspaceCreateForm"><svg><use href="#i-add"/></svg><span>New workspace</span></button>
+        <form id="workspaceCreateForm" class="workspace-create-form" hidden><label for="workspaceName">Workspace name</label><input id="workspaceName" name="name" maxlength="48" required autocomplete="off" placeholder="My workspace"><p>Starts empty with its own windows and standard Home folders.</p><div class="workspace-create-actions"><button class="surface-key" type="button" id="cancelWorkspaceCreate">Cancel</button><button class="surface-key" type="submit">Create workspace</button></div></form>
         <div class="workspace-switcher-actions"><button class="workspace-action" data-import-package><svg><use href="#i-archive"/></svg><span>Import</span></button><button class="workspace-action primary" data-open-package="workspace"><svg><use href="#i-link"/></svg><span>Pack workspace</span></button></div>
       </section>
 
@@ -514,8 +518,8 @@
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=1"></script>
   <script src="app-windows.js?v=4"></script>
-<script src="desktop-shell.js?v=227"></script>
-  <script src="guide-desktop.js?v=17"></script>
+<script src="desktop-shell.js?v=228"></script>
+  <script src="guide-desktop.js?v=18"></script>
 </body>
 </html>
 
