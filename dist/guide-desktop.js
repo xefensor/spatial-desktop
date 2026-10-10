@@ -111,7 +111,9 @@
     const lesson = model.lesson, index = model.state.index, welcome = index === 0, complete = lesson.id === 'complete';
     window.classList.toggle('is-lesson', !welcome);
     content.innerHTML = '<div class="guide-step-meta"><span>' + (welcome ? 'WELCOME' : complete ? 'READY TO GO' : 'STEP ' + index + ' OF ' + (guide.lessons.length-2)) + '</span><button class="guide-text-action" data-guide-action="leave">' + (welcome ? 'Skip introduction' : 'Leave introduction') + '</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="' + (guide.lessons.length-1) + '" aria-valuenow="' + index + '"><i style="width:' + (index/(guide.lessons.length-1)*100) + '%"></i></div><h1 tabindex="-1">' + escapeHtml(lesson.title) + '</h1><p>' + escapeHtml(lesson.text) + '</p><div class="guide-task"><span class="eyebrow">' + (complete ? 'COME BACK ANYTIME' : welcome ? 'AT YOUR OWN PACE' : 'TRY IT') + '</span><p>' + escapeHtml(lesson.task) + '</p><ol class="guide-checklist">' + (lesson.goals || []).map(goal => '<li data-guide-goal="' + goal + '"><span class="guide-goal-state" aria-hidden="true">○</span><span>' + escapeHtml(guide.goalLabels[goal]) + '</span></li>').join('') + '</ol><span id="guideTaskStatus" role="status" aria-live="polite"></span></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">' + (welcome ? 'Start exploring' : complete ? 'Continue to desktop' : 'Continue') + icon('i-right') + '</button>' + (!welcome && !complete && !lesson.challenge ? '<button class="guide-text-action" data-guide-action="show">Show target</button>' : '') + '</div>' + (welcome ? '<p class="guide-footnote">Skip now or leave at any point. Find us again in Overview → Applications → Help, or search “Spatial Guide”.</p>' : '<p class="guide-footnote">These are real desktop actions. Progress is saved; refreshing resumes this step.' + (model.state.mode === 'repeat' ? ' Your original desktop returns when you leave.' : '') + '</p>');
-    prepareControlSemantics(window); highlight(); check(); positionGuide();
+    prepareControlSemantics(window); highlight(); check();
+    if (['fullscreen','true-fullscreen'].includes(lesson.id)) setCompact(true);
+    positionGuide();
   }
   function mark(goal) {
     if (model.mark(goal)) { guide.save(); lastSignature = ''; }
@@ -176,7 +178,7 @@
     if (id === 'folders' && activeWorkspace === 'school' && Object.keys(appState).some(name => appState[name] === 'open' && (appInfo[name].base || name) === 'dolphin' && frameFor(name).dataset.fileLocation === workspaceProfiles.school.home + '/Downloads')) mark('school-downloads');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
     const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded]);
-    if (signature === lastSignature) return;
+    if (signature === lastSignature) { positionGuide(); return; }
     lastSignature = signature;
     $$('[data-guide-action="next"]', window).forEach(button => { button.disabled = !ready; });
     updateChecklist();
