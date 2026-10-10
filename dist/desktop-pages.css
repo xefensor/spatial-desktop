@@ -83,5 +83,8 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 }
 .desktop-page-mark{display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;background:var(--sd-glass-muted);opacity:.5;border-radius:0}
 .desktop-page-mark.is-current{width:3px;height:34px;background:var(--desktop-marker-accent,var(--sd-glass-text));opacity:1}
+/* Light glass needs dark, opaque markings instead of translucent pale lines. */
+body[data-theme="light"] .desktop-page-mark{width:3px;background:#455c69;opacity:1}
+body[data-theme="light"] .desktop-page-mark.is-current{width:4px;height:38px;background:color-mix(in srgb,var(--desktop-marker-accent,var(--sd-glass-text)) 45%,#102633 55%)}
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}

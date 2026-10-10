@@ -145,3 +145,24 @@
 .desktop-context-menu .context-menu-title{flex:none}
 .desktop-context-menu .context-menu-items{min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .desktop-context-menu .context-menu-item>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Lists are part of the document surface, without raised button faces.
+   Keep native button interaction and the existing single toggle indicator. */
+body[data-theme] .app-frame button.content-row,
+body[data-theme] .mini-card .mini-file-list button{
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+  transition:background-color 60ms linear!important;
+}
+body[data-theme] .app-frame button.content-row:nth-child(even){background:color-mix(in srgb,var(--text) 3%,transparent)!important}
+body[data-theme] .app-frame button.content-row:hover,
+body[data-theme] .mini-card .mini-file-list button:hover{background:color-mix(in srgb,var(--app-primary,var(--text)) 8%,transparent)!important}
+body[data-theme] .app-frame button.content-row:is(.is-selected,[aria-selected="true"],[aria-pressed="true"]){background:color-mix(in srgb,var(--app-primary,var(--text)) 17%,transparent)!important}
+body[data-theme] .app-frame button.content-row:is(.is-selected,[aria-selected="true"],[aria-pressed="true"]):hover{background:color-mix(in srgb,var(--app-primary,var(--text)) 22%,transparent)!important}
+body[data-theme] .app-frame button.content-row:focus-visible,
+body[data-theme] .mini-card .mini-file-list button:focus-visible{outline:2px solid var(--app-primary,var(--text));outline-offset:-2px}
