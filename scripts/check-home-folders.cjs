@@ -30,7 +30,7 @@ desktopPages.select('work','film');
 const storage = new Map();
 const ctx = vm.createContext({SpatialHomeFolders:H,workspaceProfiles:profiles,projectSpaces:projects,desktopPages,
   workspaceDownloads:H.create(),activeWorkspace:'work',activeProjectName:'film',
-  localStorage:{setItem:(key,value)=>storage.set(key,value)}});
+  desktopStorage:{setItem:(key,value)=>storage.set(key,value)}});
 function slice(first,last) { return source.slice(source.indexOf(first),source.indexOf(last,source.indexOf(first))); }
 vm.runInContext(slice('function persistDownloads(', 'function downloadPageNotes('),ctx);
 assert.equal(ctx.downloadContext('browser-personal').directory,profiles.work.home+'/Downloads','An independent window ignores the selected project');

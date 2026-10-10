@@ -4,7 +4,7 @@ let appWindowsHydrating = false;
 let appWindowStore;
 function saveAppWindows(broadcast = true) {
   if (!appWindowsReady) return;
-  try { localStorage.setItem('spatial-app-windows-v1', JSON.stringify(appWindowStore.snapshot())); } catch {}
+  try { desktopStorage.setItem('spatial-app-windows-v1', JSON.stringify(appWindowStore.snapshot())); } catch {}
   if (broadcast) queueDesktopStateBroadcast(120);
 }
 function appWindowModel(id) {
@@ -386,7 +386,7 @@ function executeParkedAppAction(id, action) {
   renderMiniApps();saveAppWindows();
 }
 function prepareAppWindows() {
-  let saved={};try{saved=JSON.parse(localStorage.getItem('spatial-app-windows-v1')||'{}');}catch{}
+  let saved={};try{saved=JSON.parse(desktopStorage.getItem('spatial-app-windows-v1')||'{}');}catch{}
   appWindowStore=SpatialAppTools.create(saved);appWindowsReady=true;
   const originalFiles=renderFileLocation;
   renderFileLocation=function(id,path,options){if(!appWindowsReady)return originalFiles(id,path);renderAppFiles(id,SpatialAppTools.resolvePath(path,frameFor(id)?.dataset.fileLocation||workspaceProfiles[activeWorkspace].home,workspaceProfiles[activeWorkspace].home),options);};

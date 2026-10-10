@@ -50,7 +50,11 @@ GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/
 
 ## Demonstration examples
 
-The public demo starts with four distinct, resumable scenes:
+New visitors begin on an empty desktop with **Spatial Guide**. The optional hands-on introduction reveals the System Area, Apps Area, tiling and middle-drag floating, app search in Overview, bounded and true full screen, parking, vertical desktops, workspaces and their Home folders in that order. Tasks check actual desktop actions. Overview exposes only the sections already introduced. Skip and completion reveal the full desktop; the learner's windows remain available.
+
+Find **Spatial Guide** again in Overview → Applications → Help, or search for its name. Its searchable reference explains each topic and can highlight the corresponding desktop control. Repeating the introduction uses separate practice storage and restores the original session when leaving. Reloading during a lesson preserves both its progress and practice desktop. Existing saved sessions remain available without forcing the introduction. [Start the guide](https://xefensor.github.io/spatial-desktop/?guide=start).
+
+The demo also includes four distinct, resumable example scenes for existing sessions and illustrative project content:
 
 | Workspace | Activity | Initial layout |
 | --- | --- | --- |

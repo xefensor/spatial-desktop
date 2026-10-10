@@ -33,6 +33,7 @@ jobs:
           node scripts/check-spatial-intent.cjs
           node scripts/check-spatial-tiling.cjs
           node scripts/check-demo-examples.cjs
+          node scripts/check-spatial-guide.cjs
           node scripts/check-ui-refinements.cjs
           node scripts/check-system-rail.cjs
           node scripts/check-desktop-pages.cjs

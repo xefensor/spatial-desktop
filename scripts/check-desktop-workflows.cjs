@@ -78,7 +78,7 @@ const controls = [control(' Wi-Fi '), control('Wi-Fi'), control('Bluetooth'), co
 let saved = {}, storageBlocked = false;
 ctx.$$ = () => controls;
 ctx.readDesktopStorage = () => saved;
-ctx.localStorage = { setItem(key, value) { if (storageBlocked) throw new Error('Blocked'); saved = JSON.parse(value); } };
+ctx.desktopStorage = { setItem(key, value) { if (storageBlocked) throw new Error('Blocked'); saved = JSON.parse(value); } };
 vm.runInContext(slice('function setSystemToggle(', 'Object.entries(readDesktopStorage("spatial-system-toggles-v1"))'), ctx);
 for (const active of [true, false]) {
   ctx.setSystemToggle('Wi-Fi', active);

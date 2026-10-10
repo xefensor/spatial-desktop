@@ -1,6 +1,7 @@
+const desktopStorage = globalThis.SpatialGuide?.storage || globalThis.localStorage;
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-try { SpatialDemoExamples.seedWorkspaces(localStorage); } catch {}
+try { SpatialDemoExamples.seedWorkspaces(desktopStorage); } catch {}
 
 const toggleControlSelector = [
   "[aria-pressed]",
@@ -368,9 +369,9 @@ function applyGeometry(name, geometry, save = true) {
 
 function saveLayout() {
   try {
-    const layouts = JSON.parse(localStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
+    const layouts = JSON.parse(desktopStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
     layouts[activeWorkspace] = Object.fromEntries(windowGeometry);
-    localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(layouts));
+    desktopStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(layouts));
   } catch {}
   scheduleHotbarOrder();
 }
@@ -378,10 +379,10 @@ function saveLayout() {
 function loadLayout(workspaceName = activeWorkspace) {
   windowGeometry.clear();
   try {
-    const layouts = JSON.parse(localStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
+    const layouts = JSON.parse(desktopStorage.getItem("spatial-workspace-window-layouts-v1") || "{}");
     let layout = layouts[workspaceName];
     if (!layout && workspaceName === "general") {
-      layout = JSON.parse(localStorage.getItem("spatial-desktop-layout-v3") || "{}");
+      layout = JSON.parse(desktopStorage.getItem("spatial-desktop-layout-v3") || "{}");
     }
     layout ||= {};
     Object.entries(layout).forEach(([name, geometry]) => {
@@ -462,7 +463,7 @@ function fittedWindowLayout(names) {
    The existing ABS windows stay mounted; overflow becomes a live Apps card. */
 const tileEngine = window.SpatialTiling;
 let tileSessions = {};
-try { tileSessions = JSON.parse(localStorage.getItem("spatial-split-layouts-v1") || "{}"); } catch {}
+try { tileSessions = JSON.parse(desktopStorage.getItem("spatial-split-layouts-v1") || "{}"); } catch {}
 let tileRendering = false;
 let tileInteraction = false;
 let manualWindowInteraction = false;
@@ -492,7 +493,7 @@ function tileBounds() {
 }
 
 function saveTileSessions() {
-  try { localStorage.setItem("spatial-split-layouts-v1", JSON.stringify(tileSessions)); } catch {}
+  try { desktopStorage.setItem("spatial-split-layouts-v1", JSON.stringify(tileSessions)); } catch {}
 }
 
 function tilePriority(name) { return Number(frameFor(name)?.style.zIndex || 0); }
@@ -1251,6 +1252,7 @@ function syncApps() {
 }
 
 function openApp(name, dropPoint = null) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('apps')) return;
   if (!appInfo[name]) return;
   // Restoring a live card is an explicit request to leave exclusive fullscreen.
   if (tileSession().fullscreen && tileSession().fullscreen.name !== name) leaveAppFullscreen();
@@ -1289,6 +1291,7 @@ function removeOffPageWindowTiles(name) {
 }
 
 function minimizeApp(name, preserveGeometry = false) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('parking')) return;
   removeOffPageWindowTiles(name);
   const frame = frameFor(name);
   if (appState[name] !== "open") return;
@@ -1547,8 +1550,8 @@ function bindMiniWidgets() {
 function prepareNoteSync() {
   const mainNote = $(".notes-layout textarea");
   try {
-    noteDraft = SpatialDemoExamples.migrateNote(localStorage.getItem("spatial-note-draft-v1") ?? mainNote.value);
-    localStorage.setItem("spatial-note-draft-v1", noteDraft);
+    noteDraft = SpatialDemoExamples.migrateNote(desktopStorage.getItem("spatial-note-draft-v1") ?? mainNote.value);
+    desktopStorage.setItem("spatial-note-draft-v1", noteDraft);
   } catch {
     noteDraft = mainNote.value;
   }
@@ -2224,7 +2227,7 @@ function applyZoneLayout(save = false) {
   scheduleWindowFit();
   if (save) {
     try {
-      localStorage.setItem("spatial-zone-layout-v1", JSON.stringify(zoneLayout));
+      desktopStorage.setItem("spatial-zone-layout-v1", JSON.stringify(zoneLayout));
     } catch {}
   }
 }
@@ -2250,7 +2253,7 @@ function resetZoneLayout() {
 
 function prepareZoneResizers() {
   try {
-    const saved = JSON.parse(localStorage.getItem("spatial-zone-layout-v1") || "null");
+    const saved = JSON.parse(desktopStorage.getItem("spatial-zone-layout-v1") || "null");
     if (saved && Number.isFinite(saved.apps) && Number.isFinite(saved.systems)) {
       zoneLayout.apps = saved.apps;
       zoneLayout.systems = saved.systems;
@@ -2384,7 +2387,7 @@ function snapshotAreaLayout() {
 
 function persistAreaSessions() {
   try {
-    localStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(workspaceAreaSessions));
+    desktopStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(workspaceAreaSessions));
   } catch {}
 }
 
@@ -3194,10 +3197,10 @@ function prepareAreaWindows() {
   defaultAreaSession = JSON.parse(JSON.stringify(snapshotAreaLayout()));
   let saved = null;
   try {
-    const sessions = JSON.parse(localStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
+    const sessions = JSON.parse(desktopStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
     Object.entries(sessions).forEach(([name, session]) => { workspaceAreaSessions[name] = session; });
     saved = workspaceAreaSessions[activeWorkspace] || null;
-    if (!saved && activeWorkspace === "general") saved = JSON.parse(localStorage.getItem("spatial-dock-layout-v2") || "null");
+    if (!saved && activeWorkspace === "general") saved = JSON.parse(desktopStorage.getItem("spatial-dock-layout-v2") || "null");
   } catch {}
   if (saved?.state) areaPriority.forEach(name => {
     if (dockEdges.includes(saved.state[name]?.edge)) dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
@@ -3230,7 +3233,7 @@ function prepareAreaWindows() {
     layoutMode = layoutModes[0];
     autoSpatialEdgeStates.clear();
     clearAllAutoAvoidance();
-    try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
+    try { desktopStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(true);
     if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
     showToast(tileEngine ? "Desktop Areas restored · borders stay fixed" : "Desktop Areas restored to Auto");
@@ -3243,7 +3246,7 @@ function prepareAreaWindows() {
   }));
   dockEdges.forEach(normalizeDockOrder);
   try {
-    const savedMode = localStorage.getItem("spatial-layout-mode-v1");
+    const savedMode = desktopStorage.getItem("spatial-layout-mode-v1");
     if (!saved?.layoutMode && layoutModes.includes(savedMode)) layoutMode = savedMode;
   } catch {}
   layoutMode = layoutModes.includes(saved?.layoutMode) ? saved.layoutMode : layoutModes.includes(layoutMode) ? layoutMode : layoutModes[0];
@@ -3258,7 +3261,7 @@ function prepareAreaWindows() {
     } else {
       autoSpatialEdgeStates.clear();
     }
-    try { localStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
+    try { desktopStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
     layoutDockAreas(false);
     saveAreaLayout();
     if (layoutMode === "auto") {
@@ -3392,30 +3395,30 @@ function projectSessionKey(name, modeId = projectModeId(name)) {
 function persistProjectState() {
   rememberWorkspaceProject();
   try {
-    localStorage.setItem("spatial-open-projects-v1", JSON.stringify(Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, openProjectNames(name)]))));
-    localStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(workspaceProjectStates));
+    desktopStorage.setItem("spatial-open-projects-v1", JSON.stringify(Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, openProjectNames(name)]))));
+    desktopStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(workspaceProjectStates));
     const content = Object.fromEntries(Object.entries(projectSpaces).map(([name, project]) => [name, {
       note: project.note,
       resources: project.resources,
       activeMode: projectModeId(name)
     }]));
-    localStorage.setItem("spatial-project-content-v1", JSON.stringify(content));
-    localStorage.setItem("spatial-project-spaces-v2", JSON.stringify(projectSpaces));
-    localStorage.setItem("spatial-active-project-v1", activeProjectName || "");
-    localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(projectWindowSessions));
+    desktopStorage.setItem("spatial-project-content-v1", JSON.stringify(content));
+    desktopStorage.setItem("spatial-project-spaces-v2", JSON.stringify(projectSpaces));
+    desktopStorage.setItem("spatial-active-project-v1", activeProjectName || "");
+    desktopStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(projectWindowSessions));
   } catch {}
 }
 
 function loadProjectState() {
   try {
-    const savedSpacesRaw = localStorage.getItem("spatial-project-spaces-v2");
+    const savedSpacesRaw = desktopStorage.getItem("spatial-project-spaces-v2");
     if (savedSpacesRaw !== null) {
       const savedSpaces = JSON.parse(savedSpacesRaw || "{}");
       const normalized = Object.fromEntries(Object.entries(savedSpaces).map(([name, project]) => [name, normalizeProject(project, name)]).filter(([, project]) => project));
       Object.keys(projectSpaces).forEach(name => delete projectSpaces[name]);
       Object.assign(projectSpaces, normalized);
     }
-    const content = JSON.parse(localStorage.getItem("spatial-project-content-v1") || "{}");
+    const content = JSON.parse(desktopStorage.getItem("spatial-project-content-v1") || "{}");
     Object.entries(content).forEach(([name, saved]) => {
       if (!projectSpaces[name] || !saved) return;
       if (typeof saved.note === "string") projectSpaces[name].note = saved.note;
@@ -3425,9 +3428,9 @@ function loadProjectState() {
     Object.entries(projectSpaces).forEach(([id, project]) => {
       projectSpaces[id] = SpatialDemoExamples.migrateProject(id, project);
     });
-    Object.assign(projectWindowSessions, JSON.parse(localStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
-    const savedActiveProject = localStorage.getItem("spatial-active-project-v1");
-    const savedContexts = localStorage.getItem("spatial-workspace-project-states-v1");
+    Object.assign(projectWindowSessions, JSON.parse(desktopStorage.getItem("spatial-project-window-sessions-v1") || "{}"));
+    const savedActiveProject = desktopStorage.getItem("spatial-active-project-v1");
+    const savedContexts = desktopStorage.getItem("spatial-workspace-project-states-v1");
     Object.assign(workspaceProjectStates, normalizedWorkspaceProjects(savedContexts ? JSON.parse(savedContexts) : {}, savedContexts ? undefined : savedActiveProject === null ? undefined : savedActiveProject));
     restoreWorkspaceProject(activeWorkspace);
     persistProjectState();
@@ -4150,7 +4153,7 @@ Object.values(workspaceProfiles).forEach(profile => {
 });
 const workspaceDownloads = SpatialHomeFolders.create(readDesktopStorage("spatial-downloads-v1"));
 function persistDownloads() {
-  try { localStorage.setItem("spatial-downloads-v1", JSON.stringify(workspaceDownloads.snapshot())); } catch {}
+  try { desktopStorage.setItem("spatial-downloads-v1", JSON.stringify(workspaceDownloads.snapshot())); } catch {}
 }
 function ensureProjectDownloads(name) {
   const project = projectSpaces[name];
@@ -4269,7 +4272,7 @@ function prepareHomeFolders() {
 
 
 let activeWorkspace = (() => {
-  try { return localStorage.getItem("spatial-active-workspace") || "general"; }
+  try { return desktopStorage.getItem("spatial-active-workspace") || "general"; }
   catch { return "general"; }
 })();
 const workspaceAppStates = Object.fromEntries(Object.entries(SpatialDemoExamples.scenarios).map(([name, example]) => [name, { ...example.apps }]));
@@ -4277,7 +4280,7 @@ const workspaceAppStates = Object.fromEntries(Object.entries(SpatialDemoExamples
 function persistWorkspaceAppStates() {
   if (!workspaceProfiles[activeWorkspace]) return;
   workspaceAppStates[activeWorkspace] = { ...appState };
-  try { localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(workspaceAppStates)); } catch {}
+  try { desktopStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(workspaceAppStates)); } catch {}
 }
 
 function snapshotWorkspaceAreaContent() {
@@ -4327,7 +4330,7 @@ function captureCurrentWorkspaceSession() {
   rememberWorkspaceProject();
   persistProjectState();
   workspaceAreaContents[activeWorkspace] = snapshotWorkspaceAreaContent();
-  try { localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents)); } catch {}
+  try { desktopStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents)); } catch {}
   persistWorkspaceAppStates();
   saveLayout();
   saveAreaLayout();
@@ -4388,6 +4391,7 @@ function prepareOverviewViews() {
 }
 
 function renderWorkspace(name, announce = true) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.settingUp && name !== activeWorkspace && !SpatialGuide.model.allows('workspaces')) return;
   if (name !== activeWorkspace) endSystemRailExpansion(false);
   const profile = workspaceProfiles[name];
   if (!profile) return;
@@ -4440,7 +4444,7 @@ function renderWorkspace(name, announce = true) {
   const overview = $("#allAppsToggle");
   $("use", overview).setAttribute("href", "#" + profile.icon);
   updateDesktopPageUi();
-  try { localStorage.setItem("spatial-active-workspace", name); } catch {}
+  try { desktopStorage.setItem("spatial-active-workspace", name); } catch {}
   persistWorkspaceAppStates();
   persistProjectState();
   requestAnimationFrame(() => {
@@ -4516,17 +4520,17 @@ function renderWorkspaceExample(name) {
 function persistWorkspaceNote() {
   workspaceAreaContents[activeWorkspace] = { ...(workspaceAreaContents[activeWorkspace] || {}), noteDraft };
   try {
-    localStorage.setItem("spatial-note-draft-v1", noteDraft);
-    localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents));
+    desktopStorage.setItem("spatial-note-draft-v1", noteDraft);
+    desktopStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(workspaceAreaContents));
   } catch {}
 }
 
 function prepareWorkspaces() {
   if (!workspaceProfiles[activeWorkspace]) activeWorkspace = "general";
   defaultAreaContent = snapshotWorkspaceAreaContent();
-  try { Object.assign(workspaceAreaContents, JSON.parse(localStorage.getItem("spatial-workspace-area-contents-v1") || "{}")); } catch {}
+  try { Object.assign(workspaceAreaContents, JSON.parse(desktopStorage.getItem("spatial-workspace-area-contents-v1") || "{}")); } catch {}
   try {
-    const savedStates = JSON.parse(localStorage.getItem("spatial-workspace-app-states-v1") || "{}");
+    const savedStates = JSON.parse(desktopStorage.getItem("spatial-workspace-app-states-v1") || "{}");
     Object.entries(savedStates).forEach(([name, states]) => {
       if (!workspaceProfiles[name] || !states) return;
       workspaceAppStates[name] = { ...workspaceAppStates[name], ...states };
@@ -4758,6 +4762,7 @@ document.addEventListener("click", event => {
 });
 
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
+  if (button.dataset.launchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
   pulseBusyCursor();
   showToast(button.dataset.launchApp + " launched");
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
@@ -4790,7 +4795,8 @@ function filterLauncher() {
     const matchesCategory = activeLauncherCategory === "all" ||
       (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
       button.dataset.category === activeLauncherCategory;
-    button.hidden = !matchesCategory;
+    const taughtApp = !globalThis.SpatialGuide?.model.active() || SpatialGuide.model.allows('projects') || button.dataset.openApp || button.dataset.launchApp === 'Spatial Guide';
+    button.hidden = !matchesCategory || !taughtApp;
     if (!button.hidden) visible += 1;
   });
   $("#allAppsCount").textContent = visible + (visible === 1 ? " app" : " apps");
@@ -4826,6 +4832,7 @@ function matchesSearch(value, query) {
 function buildUniversalAppResults(query) {
   const target = $("#universalAppResults");
   const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
+    if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('projects') && !button.dataset.openApp && button.dataset.launchApp !== 'Spatial Guide') return false;
     const searchable = `${button.textContent} ${button.dataset.category || ""}`.toLowerCase();
     return matchesSearch(searchable, query);
   });
@@ -4879,10 +4886,13 @@ function filterUniversalSearch() {
   }
 
   let localVisible = buildUniversalAppResults(query);
-  buildUniversalProjectResults(query);
+  const guideAppsOnly = globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('projects');
+  if (!guideAppsOnly) buildUniversalProjectResults(query);
+  else $("#universalProjectResults").innerHTML = '';
 
   $$(".universal-result", $("#universalResults")).filter(result => !result.closest("#universalAppResults")).forEach(result => {
     const group = result.closest("[data-universal-group]").dataset.universalGroup;
+    if (guideAppsOnly) { result.hidden = true; return; }
     const isWeb = group === "web";
     const searchable = `${result.dataset.universalSearch || ""} ${result.textContent}`;
     const matchesQuery = isWeb || matchesSearch(searchable, query);
@@ -4897,10 +4907,11 @@ function filterUniversalSearch() {
   $("#universalWebLabel").textContent = `Search the web for “${rawQuery}”`;
   $("#universalEmpty").hidden = localVisible !== 0;
   $("#universalSearchStatus").hidden = false;
-  $("#universalSearchStatus").textContent = localVisible + (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available";
+  $("#universalSearchStatus").textContent = localVisible + (guideAppsOnly ? (localVisible === 1 ? ' application result' : ' application results') : (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available");
 }
 
 function setUniversalSearchOpen(open) {
+  if (open && globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('overview')) return;
   const overlay = $("#universalSearch");
   if (open === overlay.classList.contains("is-open")) return;
   if (open) universalLastFocus = document.activeElement;
@@ -4945,6 +4956,7 @@ $("#universalAppResults").addEventListener("click", event => {
   if (!result) return;
   if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
   if (result.dataset.searchLaunchApp) {
+    if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
     showToast(result.dataset.searchLaunchApp + " launched");
   }
@@ -5252,7 +5264,7 @@ function setSystemToggle(label, active, persist = true) {
   if (persist) {
     const saved = readDesktopStorage("spatial-system-toggles-v1");
     saved[label] = Boolean(active);
-    try { localStorage.setItem("spatial-system-toggles-v1", JSON.stringify(saved)); } catch {}
+    try { desktopStorage.setItem("spatial-system-toggles-v1", JSON.stringify(saved)); } catch {}
   }
 }
 
@@ -6028,7 +6040,7 @@ const desktopSyncStartedAt = (() => {
 const desktopSyncChannel = "BroadcastChannel" in window ? new BroadcastChannel(DESKTOP_SYNC_CHANNEL) : null;
 const desktopSyncPeers = new Map();
 const workspaceDisplayAssignments = (() => {
-  try { return JSON.parse(localStorage.getItem("spatial-workspace-display-assignments-v1") || "{}"); }
+  try { return JSON.parse(desktopStorage.getItem("spatial-workspace-display-assignments-v1") || "{}"); }
   catch { return {}; }
 })();
 let desktopSyncApplying = false;
@@ -6041,7 +6053,7 @@ function cloneDesktopState(value) {
 }
 
 function readDesktopStorage(key, fallback = {}) {
-  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  try { return JSON.parse(desktopStorage.getItem(key) || JSON.stringify(fallback)); }
   catch { return cloneDesktopState(fallback); }
 }
 
@@ -6095,7 +6107,7 @@ function displayAssignmentsFor(workspaceName = activeWorkspace) {
 }
 
 function saveDesktopPages() {
-  try { localStorage.setItem("spatial-desktop-pages-v1", JSON.stringify(desktopPages.snapshot())); } catch {}
+  try { desktopStorage.setItem("spatial-desktop-pages-v1", JSON.stringify(desktopPages.snapshot())); } catch {}
 }
 
 function projectColumnActive() {
@@ -6340,6 +6352,7 @@ function desktopNavigationBlocked() {
 }
 
 function changeDesktopPage(page, animate = true, column = desktopPages.column(activeWorkspace)) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(column === 'workspace' ? 'desktops' : 'projects')) return false;
   const previous = desktopPages.current(activeWorkspace);
   const previousColumn = desktopPages.column(activeWorkspace);
   const horizontal = column !== previousColumn;
@@ -6578,11 +6591,12 @@ function isLocalApp(name) {
 }
 
 function isLocalArea(name) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name)) return false;
   return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
 }
 
 function persistDisplayAssignments() {
-  try { localStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(workspaceDisplayAssignments)); }
+  try { desktopStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(workspaceDisplayAssignments)); }
   catch {}
 }
 
@@ -6792,7 +6806,7 @@ function persistIncomingDesktopState(state) {
   if (state.openProjects) {
     Object.keys(workspaceOpenProjects).forEach(name => delete workspaceOpenProjects[name]);
     Object.keys(workspaceProfiles).forEach(name => { workspaceOpenProjects[name] = Array.isArray(state.openProjects[name]) ? state.openProjects[name].filter(id => state.projects?.[id] || projectSpaces[id]) : []; });
-    try { localStorage.setItem("spatial-open-projects-v1", JSON.stringify(workspaceOpenProjects)); } catch {}
+    try { desktopStorage.setItem("spatial-open-projects-v1", JSON.stringify(workspaceOpenProjects)); } catch {}
   }
   if (state.desktopPages) { desktopPages.load(state.desktopPages); saveDesktopPages(); }
   if (typeof state.desktopHasWindowFocus === "boolean") desktopHasWindowFocus = state.desktopHasWindowFocus;
@@ -6805,19 +6819,19 @@ function persistIncomingDesktopState(state) {
     saveIndependentSessions();
   }
   try {
-    localStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(state.workspaceStates));
-    localStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
-    localStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(state.areaSessions));
-    localStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
-    localStorage.setItem("spatial-project-spaces-v2", JSON.stringify(state.projects || {}));
-    localStorage.setItem("spatial-active-project-v1", state.activeProjectName || "");
-    localStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(state.workspaceProjects || normalizedWorkspaceProjects({}, state.activeProjectName || null, state.activeWorkspace)));
-    localStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(state.areaContents || {}));
-    localStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
-    localStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
-    localStorage.setItem("spatial-active-workspace", state.activeWorkspace);
-    if (state.displayAssignments) localStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(state.displayAssignments));
-    if (state.tileSessions) localStorage.setItem("spatial-split-layouts-v1", JSON.stringify(state.tileSessions));
+    desktopStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(state.workspaceStates));
+    desktopStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
+    desktopStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(state.areaSessions));
+    desktopStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
+    desktopStorage.setItem("spatial-project-spaces-v2", JSON.stringify(state.projects || {}));
+    desktopStorage.setItem("spatial-active-project-v1", state.activeProjectName || "");
+    desktopStorage.setItem("spatial-workspace-project-states-v1", JSON.stringify(state.workspaceProjects || normalizedWorkspaceProjects({}, state.activeProjectName || null, state.activeWorkspace)));
+    desktopStorage.setItem("spatial-workspace-area-contents-v1", JSON.stringify(state.areaContents || {}));
+    desktopStorage.setItem("spatial-project-window-sessions-v1", JSON.stringify(state.projectWindowSessions || {}));
+    desktopStorage.setItem("spatial-note-draft-v1", state.noteDraft || "");
+    desktopStorage.setItem("spatial-active-workspace", state.activeWorkspace);
+    if (state.displayAssignments) desktopStorage.setItem("spatial-workspace-display-assignments-v1", JSON.stringify(state.displayAssignments));
+    if (state.tileSessions) desktopStorage.setItem("spatial-split-layouts-v1", JSON.stringify(state.tileSessions));
   } catch {}
 }
 
@@ -6931,6 +6945,7 @@ function applyDesktopSyncState(state) {
 }
 
 function postDesktopSyncMessage(message) {
+  if (globalThis.SpatialGuide?.model.active()) return;
   const packet = {
     ...message,
     id: desktopSyncSource + ":" + Date.now() + ":" + Math.random().toString(36).slice(2),
@@ -6940,7 +6955,7 @@ function postDesktopSyncMessage(message) {
   };
   if (desktopSyncChannel) desktopSyncChannel.postMessage(packet);
   else {
-    try { localStorage.setItem(DESKTOP_SYNC_STORAGE_KEY, JSON.stringify(packet)); } catch {}
+    try { desktopStorage.setItem(DESKTOP_SYNC_STORAGE_KEY, JSON.stringify(packet)); } catch {}
   }
 }
 
@@ -6986,6 +7001,7 @@ function updateDesktopSyncPresence() {
 }
 
 function receiveDesktopSyncMessage(packet) {
+  if (globalThis.SpatialGuide?.model.active()) return;
   if (!packet || packet.source === desktopSyncSource) return;
   if (packet.type === "goodbye") {
     desktopSyncPeers.delete(packet.source);
@@ -7033,14 +7049,14 @@ function prepareCrossDisplaySync() {
 const baseAppNames = Object.keys(appInfo);
 const pristineFrames = Object.fromEntries(baseAppNames.map(name => [name, frameFor(name).cloneNode(true)]));
 let independentSessions = {};
-try { independentSessions = JSON.parse(localStorage.getItem('spatial-independent-sessions-v1') || '{}'); } catch {}
+try { independentSessions = JSON.parse(desktopStorage.getItem('spatial-independent-sessions-v1') || '{}'); } catch {}
 const instanceDefinitions = independentSessions.instances || {};
 const workspaceContent = independentSessions.content || {};
 const workspaceProjects = independentSessions.projects || {general: activeProjectName, school: null, work: null, gaming: null};
 const windowMembership = independentSessions.membership || {general: {dolphin: activeProjectName, elisa: null}};
 let instanceSequence = Number(independentSessions.sequence) || 0;
 function saveIndependentSessions() {
-  try { localStorage.setItem('spatial-independent-sessions-v1', JSON.stringify({instances: instanceDefinitions, content: workspaceContent, projects: workspaceProjects, membership: windowMembership, sequence: instanceSequence})); } catch {}
+  try { desktopStorage.setItem('spatial-independent-sessions-v1', JSON.stringify({instances: instanceDefinitions, content: workspaceContent, projects: workspaceProjects, membership: windowMembership, sequence: instanceSequence})); } catch {}
 }
 function installInstance(id, base, bind = true) {
   if (appInfo[id] || !pristineFrames[base]) return;

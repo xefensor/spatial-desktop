@@ -112,7 +112,7 @@ const frames = Object.fromEntries(Object.keys(minimums).map(name => {
 }));
 const store = new Map();
 const sandbox = {
-  window: { SpatialTiling: T, innerWidth: 1616, innerHeight: 1016 }, localStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
+  window: { SpatialTiling: T, innerWidth: 1616, innerHeight: 1016 }, desktopStorage: { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) },
   desktopPages: require("../dist/desktop-pages.js").create(),
   SpatialDesktopPages: require("../dist/desktop-pages.js"),
   activeWorkspace: "general", activeProjectName: "project", projectModeId: () => "modeling", localDisplaySlot: () => 1,
@@ -179,7 +179,7 @@ const docks = {
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
-  localStorage: sandbox.localStorage, isLocalArea: () => true, projectColumnActive: () => true,
+  desktopStorage: sandbox.desktopStorage, isLocalArea: () => true, projectColumnActive: () => true,
   $: (selector, scope) => selector === ".desktop-shell" ? shell : scope?.handle,
   extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
