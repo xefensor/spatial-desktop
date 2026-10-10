@@ -183,8 +183,8 @@
   const leaf = name => ({ kind: "window", name });
   const scene = (project, mode, apps, docks, sizes, tree, extras = {}) => ({
     project, mode, apps: { ...closedApps, ...apps }, tree,
-    areas: { state: docks, sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
-      hidden: { projects: false, apps: false, systems: false },
+    areas: { state: { ...docks, ai: {edge:"bottom",order:0} }, sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
+      hidden: { projects: false, apps: false, systems: false, ai: false },
       manual: { left: true, right: true, top: true, bottom: true }, layoutMode: "manual" }, ...extras
   });
   const scenarios = {

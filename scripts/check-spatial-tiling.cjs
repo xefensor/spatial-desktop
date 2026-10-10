@@ -165,7 +165,7 @@ console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app
 
 // Run the real dock layout/session/resize paths, including legacy Auto data.
 // Window activity must never steal dock space or move Areas to another display.
-const areaFrames = Object.fromEntries(["projects", "apps", "systems"].map(name => [name, {
+const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(name => [name, {
   hidden: false, dataset: {}, style: { removeProperty() {} },
   classList: { add() {}, remove() {}, toggle() {} },
   handle: { listeners: new Map(), setPointerCapture() {},
@@ -204,6 +204,8 @@ vm.runInContext(`workspaceAreaSessions.general = {
   hidden: {projects: false, apps: false, systems: false}
 }; applyAreaSession("general");`, docks);
 assert.equal(vm.runInContext("layoutMode", docks), "manual", "Legacy Auto sessions migrate to fixed Area bounds");
+assert.equal(areaFrames.ai.rect.height, 64, "The fourth AI Area starts as a bottom rail");
+assert.equal(docks.insets.bottom, 64, "AI reserves only its rail height");
 const beforeDocks = JSON.stringify(Object.values(areaFrames).map(area => area.rect));
 const beforeInsets = JSON.stringify(docks.insets);
 // Even stale state from another tab/version cannot re-enable window avoidance.

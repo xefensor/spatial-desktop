@@ -2038,7 +2038,7 @@ function bindWindowDrag(frame) {
       beginManualWindowInteraction(event, frame, titlebar);
       return;
     }
-    if (event.button !== 0 || event.target.closest("button,input,a")) return;
+    if (event.button !== 0 || event.target.closest("button,input,select,textarea,a")) return;
     cancelWindowPointerInteraction?.();
     event.preventDefault();
     const name = frame.dataset.appFrame;
@@ -2392,13 +2392,14 @@ function prepareZoneResizers() {
   });
 }
 
-const areaPriority = ["projects", "apps", "systems"];
+const areaPriority = ["projects", "apps", "systems", "ai"];
 const persistentAreas = new Set(["projects", "apps", "systems"]);
 const dockEdges = ["left", "right", "top", "bottom"];
 const dockState = {
   projects: { edge: "left", order: 0 },
   apps: { edge: "right", order: 0 },
-  systems: { edge: "right", order: 1 }
+  systems: { edge: "right", order: 1 },
+  ai: { edge: "bottom", order: 0 }
 };
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 const dockSizeManual = { left: false, right: false, top: false, bottom: false };
@@ -2442,7 +2443,7 @@ function keepPersistentAreasVisible() {
 }
 
 function areaLabel(name) {
-  return name === "projects" ? "Project Space" : name === "apps" ? "Apps" : "System";
+  return name === "projects" ? "Project Space" : name === "apps" ? "Apps" : name === "ai" ? "AI" : "System";
 }
 
 function dockGroup(edge, includeHidden = false) {
@@ -2589,7 +2590,7 @@ function initialAreaStates(profile) {
     states = { projects: "expanded", apps: "expanded", systems: "expanded" };
     areaPriority.forEach(name => {
       const edge = dockState[name].edge;
-      states[name] = areaStateForSize(edge, dockSizes[edge]);
+      states[name] = name === "ai" ? (globalThis.SpatialAIDesktop?.mode() || "rail") : areaStateForSize(edge, dockSizes[edge]);
       if (intentAreaPlan.rails[name]) states[name] = "rail";
     });
     return states;
@@ -2604,6 +2605,7 @@ function initialAreaStates(profile) {
   autoSpatialEdgeStates.forEach((state, edge) => {
     dockGroup(edge, true).forEach(name => { states[name] = state; });
   });
+  states.ai = globalThis.SpatialAIDesktop?.mode() || "rail";
   return states;
 }
 
@@ -2611,7 +2613,8 @@ function stateSideMinimum(name, state) {
   const values = {
     projects: { rail: 68, expanded: 270 },
     apps: { rail: 68, expanded: 256 },
-    systems: { rail: 70, expanded: 280 }
+    systems: { rail: 70, expanded: 280 },
+    ai: { rail: 68, expanded: 300 }
   };
   return values[name][state];
 }
@@ -2674,7 +2677,7 @@ function resolvedAreaLayout(width, height) {
   const occupiedSides = () => ["left", "right"].filter(edge => dockGroup(edge).length);
   const required = () => occupiedSides().reduce((sum, edge) => sum + sideWidth(edge), 0) + (occupiedSides().length + 1) * gap + minimumWorkspace;
 
-  ["systems", "apps", "projects"].forEach(name => {
+  ["ai", "systems", "apps", "projects"].forEach(name => {
     while (required() > width && downgradeArea(states, name)) {}
   });
 
@@ -2997,7 +3000,13 @@ function applySecondaryAreaCanvas(names, width, height) {
     });
   };
 
-  if (names.length === 1) {
+  if (names.length >= 4) {
+    const columns = width >= height ? 2 : 1;
+    const rows = Math.ceil(names.length / columns);
+    const cellWidth = (usableWidth - gap * (columns - 1)) / columns;
+    const cellHeight = (usableHeight - gap * (rows - 1)) / rows;
+    names.forEach((name, index) => place(name, padding + (index % columns) * (cellWidth + gap), padding + Math.floor(index / columns) * (cellHeight + gap), cellWidth, cellHeight));
+  } else if (names.length === 1) {
     place(names[0], padding, padding, usableWidth, usableHeight);
   } else if (names.length === 2) {
     if (width >= height * 1.15) {
@@ -3123,6 +3132,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   applyAutoAvoidance();
   applySystemRailExpansion(width, height);
   globalThis.SpatialMemoryDesktop?.applyRailExpansion(width, height);
+  globalThis.SpatialAIDesktop?.render();
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
   if (areasFollowWindows() && fitWindows && !windowViewportLockReady) scheduleWindowFit();
@@ -3198,7 +3208,7 @@ function bindAreaDockDrag(name, area) {
   const handle = $("[data-area-drag-handle]", area);
   if (!handle) return;
   handle.addEventListener("pointerdown", event => {
-    if (event.button !== 0 || event.target.closest("button,input,a")) return;
+    if (event.button !== 0 || event.target.closest("button,input,select,textarea,a")) return;
     event.preventDefault();
     const preview = ensureDockPreview();
     let candidate = dockState[name].edge;
@@ -3252,6 +3262,7 @@ function bindDockResize(name, area) {
       /* In legacy Auto this is only the immediate drag state. The next spatial pass
          may expand it again, keep it on the rail, or move it when even the
          rail does not fit. Bounded tiling always keeps the user's chosen size. */
+      if (name === "ai") globalThis.SpatialAIDesktop?.setMode(areaStateForSize(edge, dockSizes[edge]));
       if (areasFollowWindows()) autoSpatialEdgeStates.set(edge, areaStateForSize(edge, dockSizes[edge]));
       layoutDockAreas(false);
     };
@@ -3521,7 +3532,7 @@ function loadProjectState() {
 }
 
 function resourceMarkup([label, detail, type = "web", itemIcon = "i-link"]) {
-  return '<button data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + escapeHtml(type) + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>';
+  return '<button draggable="true" data-project-item="' + escapeHtml(label) + '"><span class="linked-type ' + escapeHtml(type) + '">' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><i class="link-badge">' + icon("i-link") + '</i></button>';
 }
 
 function projectSession(name, modeId = projectModeId(name)) {
@@ -3625,7 +3636,7 @@ function renderProjectSpace(name) {
   $("#projectLocationNote").textContent = location.detail + " · " + location.label;
   $("#projectLocationNote").classList.toggle("is-custom", location.custom);
   const projectFiles = [[".spatial-project.toml", "Editable project settings", "config"], ...project.files.filter(([label]) => label !== ".spatial-project.toml")];
-  $("#projectRootItems").innerHTML = projectFiles.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : type === "config" ? '<span class="linked-type config">' + icon("i-code") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
+  $("#projectRootItems").innerHTML = projectFiles.map(([label, detail, type]) => '<button draggable="true" data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : type === "config" ? '<span class="linked-type config">' + icon("i-code") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
   if (document.activeElement !== $("#projectQuickNote")) $("#projectQuickNote").value = project.note || "";
   $("#projectNoteState").textContent = "Saved";
   $("#projectLinkedItems").innerHTML = project.resources.map(resourceMarkup).join("");
@@ -6935,6 +6946,7 @@ function captureDesktopSyncState() {
   return {
     schema: 4,
     workingMemory: globalThis.SpatialMemoryDesktop?.snapshot(),
+    aiContext: globalThis.SpatialAIDesktop?.snapshot(),
     desktopPages: desktopPages.snapshot(),
     downloads: workspaceDownloads.snapshot(),
     desktopHasWindowFocus,
@@ -6972,6 +6984,7 @@ function captureDesktopSyncState() {
 
 function persistIncomingDesktopState(state) {
   if (state.workingMemory) globalThis.SpatialMemoryDesktop?.merge(state.workingMemory);
+  if (state.aiContext) globalThis.SpatialAIDesktop?.merge(state.aiContext);
   if (state.downloads) { workspaceDownloads.load(state.downloads); persistDownloads(); }
   if (state.openProjects) {
     Object.keys(workspaceOpenProjects).forEach(name => delete workspaceOpenProjects[name]);

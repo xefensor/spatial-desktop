@@ -22,7 +22,8 @@
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=12">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
-  <link rel="stylesheet" href="working-memory.css?v=6">
+  <link rel="stylesheet" href="working-memory.css?v=7">
+  <link rel="stylesheet" href="ai-area.css?v=1">
   <script src="workspace-setup.js?v=2"></script>
   <script src="spatial-guide.js?v=12"></script>
 </head>
@@ -154,7 +155,7 @@
 
     <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="System area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon cyan" data-toast="System settings" aria-label="System Settings" title="System Settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
+        <div class="area-window-identity"><button class="surface-key area-window-icon cyan" data-toast="System settings" aria-label="System Settings" title="System Settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div><button class="surface-key area-window-key" id="openAIButton" aria-label="Open AI area" title="AI · Super+A"><svg aria-hidden="true"><use href="#i-ai"/></svg></button>
       </header>
       <div class="system-scroll-region" tabindex="0" aria-label="System widgets">
       <section class="rail-group system-rail-start" aria-label="Time and notifications">
@@ -184,6 +185,18 @@
       <button class="resize-handle area-resize-handle" data-area-resize="systems" aria-label="Resize System area" title="Drag this border to resize"></button>
     </aside>
 
+    <aside class="zone ai-area area-window" data-area-window="ai" aria-label="AI area">
+      <header class="area-window-bar" data-area-drag-handle>
+        <div class="area-window-identity"><button class="surface-key area-window-icon" id="aiAreaToggle" aria-label="Expand AI area" aria-expanded="false" title="AI · Super+A"><svg aria-hidden="true"><use href="#i-ai"/></svg></button><span><b>AI</b><small id="aiAreaContext">General workspace</small></span></div>
+        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-hide="ai" aria-label="Hide AI area" title="Hide AI area"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      </header>
+      <div class="ai-content">
+        <div class="ai-folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><label for="aiWorkingFolder">Working folder</label><select id="aiWorkingFolder" aria-label="AI working folder"></select></div>
+        <div class="ai-chat" aria-label="AI conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></div>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message AI</label><textarea id="aiPrompt" aria-label="Message AI" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask AI…" autocomplete="off"></textarea><small id="aiStatus" role="status">AI not connected · your input stays here</small></form>
+      </div>
+      <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize AI area" title="Drag this border to resize"></button>
+    </aside>
     <aside class="zone project-area area-window" data-area-window="projects" aria-label="Project Space">
       <header class="area-window-bar" data-area-drag-handle>
         <div class="area-window-identity"><button class="surface-key area-window-icon violet" id="manageProjectButton" aria-label="Manage current project" title="Manage project"><svg aria-hidden="true"><use href="#i-folder"/></svg></button><span><b id="projectAreaName">Website Launch</b><small id="projectAreaContext">Project resources</small></span></div>
@@ -376,6 +389,7 @@
             <div class="overview-area-list">
               <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Project</b><small>Expanded</small></span></div>
               <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span></div>
+              <div class="overview-area-row" data-overview-area="ai"><span class="area-list-icon"><svg><use href="#i-ai"/></svg></span><span><b>AI</b><small>On rail</small></span><button class="surface-key" data-overview-area-visibility="ai" aria-label="Hide AI">Hide</button></div>
               <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span></div>
             </div>
           </section>
@@ -515,15 +529,17 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="spatial-tiling.js?v=153"></script>
   <script src="spatial-intent.js?v=159"></script>
-  <script src="demo-examples.js?v=170"></script>
+  <script src="demo-examples.js?v=171"></script>
   <script src="desktop-pages.js?v=3"></script>
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=1"></script>
-  <script src="app-windows.js?v=5"></script>
+  <script src="app-windows.js?v=6"></script>
 <script src="working-memory.js?v=2"></script>
 <script src="stash-files.js?v=1"></script>
-<script src="desktop-shell.js?v=237"></script>
-<script src="working-memory-desktop.js?v=10"></script>
+<script src="ai-context.js?v=1"></script>
+<script src="desktop-shell.js?v=238"></script>
+<script src="working-memory-desktop.js?v=11"></script>
+<script src="ai-desktop.js?v=1"></script>
   <script src="guide-desktop.js?v=24"></script>
 </body>
 </html>
