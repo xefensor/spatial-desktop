@@ -95,6 +95,24 @@ assert.equal(sceneAreas.work.state.projects.edge, 'left');
 assert.equal(sceneProjects.work.mode, 'default');
 assert.equal(sceneApps.gaming.elisa, 'minimized');
 assert.equal(sceneAreas.gaming.sizes.right, 70);
+for (const [workspace, layout] of Object.entries(sceneAreas)) {
+  assert.deepEqual(layout.state, D.defaultAreaDocks, workspace + ' starts with four vertical side docks');
+}
+const oldAreaLayout = {
+  state: {apps:{edge:'left',order:0},projects:{edge:'left',order:1},systems:{edge:'right',order:0},ai:{edge:'bottom',order:0}},
+  sizes: {left:68,right:280,bottom:310}, hidden:{ai:false}, manual:{left:true,right:true,bottom:true}
+};
+const migratedAreas = D.migrateAreaLayout(oldAreaLayout);
+assert.deepEqual(migratedAreas.state, D.defaultAreaDocks);
+assert.deepEqual(migratedAreas.sizes, oldAreaLayout.sizes, 'Orientation migration keeps resized borders');
+assert.deepEqual(migratedAreas.hidden, oldAreaLayout.hidden);
+assert.equal(oldAreaLayout.state.ai.edge, 'bottom', 'Incoming layout is not mutated');
+assert.deepEqual(D.migrateAreaLayout(migratedAreas), migratedAreas, 'Orientation migration is idempotent');
+const editedAreas = copy(oldAreaLayout); editedAreas.state.projects.edge = 'top';
+assert.deepEqual(D.migrateAreaLayout(editedAreas).state, editedAreas.state, 'Custom docking survives');
+const laterEdit = copy(migratedAreas); laterEdit.state.ai = {edge:'bottom',order:0};
+assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later horizontal move survives reload');
+
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
 assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'y');

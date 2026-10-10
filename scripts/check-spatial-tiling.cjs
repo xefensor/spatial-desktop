@@ -176,7 +176,7 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
 const shell = { clientWidth: 1600, clientHeight: 900,
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
-  tileEngine: T, activeWorkspace: "general", window: { innerWidth: 1600 },
+  tileEngine: T, activeWorkspace: "general", window: { innerWidth: 1600, innerHeight: 900 },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
@@ -204,8 +204,9 @@ vm.runInContext(`workspaceAreaSessions.general = {
   hidden: {projects: false, apps: false, systems: false}
 }; applyAreaSession("general");`, docks);
 assert.equal(vm.runInContext("layoutMode", docks), "manual", "Legacy Auto sessions migrate to fixed Area bounds");
-assert.equal(areaFrames.ai.rect.height, 64, "The fourth AI Area starts as a bottom rail");
-assert.equal(docks.insets.bottom, 64, "AI reserves only its rail height");
+assert.equal(areaFrames.ai.rect.x, 1300, "The fourth AI Area defaults to the right edge");
+assert.equal(areaFrames.ai.rect.height, 450, "System and AI share the vertical right dock");
+assert.equal(docks.insets.bottom, 0, "Default Areas leave no horizontal dock inset");
 const beforeDocks = JSON.stringify(Object.values(areaFrames).map(area => area.rect));
 const beforeInsets = JSON.stringify(docks.insets);
 // Even stale state from another tab/version cannot re-enable window avoidance.

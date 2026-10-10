@@ -2396,10 +2396,10 @@ const areaPriority = ["projects", "apps", "systems", "ai"];
 const persistentAreas = new Set(["projects", "apps", "systems"]);
 const dockEdges = ["left", "right", "top", "bottom"];
 const dockState = {
-  projects: { edge: "left", order: 0 },
-  apps: { edge: "right", order: 0 },
-  systems: { edge: "right", order: 1 },
-  ai: { edge: "bottom", order: 0 }
+  projects: { edge: "left", order: 1 },
+  apps: { edge: "left", order: 0 },
+  systems: { edge: "right", order: 0 },
+  ai: { edge: "right", order: 1 }
 };
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 const dockSizeManual = { left: false, right: false, top: false, bottom: false };
@@ -2459,6 +2459,7 @@ function normalizeDockOrder(edge) {
 function snapshotAreaLayout() {
   const hidden = Object.fromEntries(areaPriority.map(name => [name, areaCanBeHidden(name) && Boolean(areaFor(name)?.hidden)]));
   return {
+    orientationVersion: 1,
     state: Object.fromEntries(areaPriority.map(name => [name, { ...dockState[name] }])),
     sizes: { ...dockSizes },
     hidden,
@@ -2480,7 +2481,9 @@ function saveAreaLayout() {
 
 function applyAreaSession(workspaceName) {
   const source = workspaceAreaSessions[workspaceName] || defaultAreaSession || snapshotAreaLayout();
-  const saved = JSON.parse(JSON.stringify(source));
+  const saved = JSON.parse(JSON.stringify(window.innerWidth >= window.innerHeight ? globalThis.SpatialDemoExamples?.migrateAreaLayout(source) || source : source));
+  saved.state ||= {};
+  areaPriority.forEach(name => { saved.state[name] ||= {...(defaultAreaSession?.state[name] || dockState[name])}; });
   saved.hidden ||= {};
   persistentAreas.forEach(name => { saved.hidden[name] = false; });
   workspaceAreaSessions[workspaceName] = saved;
@@ -3001,7 +3004,7 @@ function applySecondaryAreaCanvas(names, width, height) {
   };
 
   if (names.length >= 4) {
-    const columns = width >= height ? 2 : 1;
+    const columns = width >= height ? names.length : 1;
     const rows = Math.ceil(names.length / columns);
     const cellWidth = (usableWidth - gap * (columns - 1)) / columns;
     const cellHeight = (usableHeight - gap * (rows - 1)) / rows;
@@ -3295,6 +3298,8 @@ function prepareAreaWindows() {
     saved = workspaceAreaSessions[activeWorkspace] || null;
     if (!saved && activeWorkspace === "general") saved = JSON.parse(desktopStorage.getItem("spatial-dock-layout-v2") || "null");
   } catch {}
+  if (saved && window.innerWidth >= window.innerHeight) saved = globalThis.SpatialDemoExamples?.migrateAreaLayout(saved) || saved;
+  if (saved) workspaceAreaSessions[activeWorkspace] = saved;
   if (saved?.state) areaPriority.forEach(name => {
     if (dockEdges.includes(saved.state[name]?.edge)) dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
   });

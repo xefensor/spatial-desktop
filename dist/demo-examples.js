@@ -181,15 +181,36 @@
   projects.retold.files = [["Footage", "Source clips", "folder"], ["rough-cut.mp4", "Review copy · 02:48", "document"], ["edit-notes.md", "Cut feedback", "document"]];
   const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed" };
   const leaf = name => ({ kind: "window", name });
-  const scene = (project, mode, apps, docks, sizes, tree, extras = {}) => ({
+  const defaultAreaDocks = {
+    apps: {edge:"left",order:0}, projects: {edge:"left",order:1},
+    systems: {edge:"right",order:0}, ai: {edge:"right",order:1}
+  };
+  // Upgrade only recognisable shipped defaults, retaining edited layouts and sizes.
+  function migrateAreaLayout(session) {
+    if (!session || session.orientationVersion === 1) return session;
+    const next = JSON.parse(JSON.stringify(session));
+    const oldDefaults = [
+      {apps:["left",0],projects:["left",1],systems:["right",0]},
+      {apps:["left",1],projects:["left",0],systems:["right",0]},
+      {apps:["left",0],projects:["right",1],systems:["right",0]},
+      {apps:["right",0],projects:["left",0],systems:["right",1]}
+    ];
+    const state = next.state;
+    const oldAI = !state?.ai || (state.ai.edge === "bottom" && state.ai.order === 0);
+    if (state && oldAI && oldDefaults.some(layout => Object.entries(layout).every(([name,[edge,order]]) => state[name]?.edge === edge && state[name]?.order === order))) {
+      next.state = JSON.parse(JSON.stringify(defaultAreaDocks));
+    }
+    next.orientationVersion = 1;
+    return next;
+  }
+  const scene = (project, mode, apps, sizes, tree, extras = {}) => ({
     project, mode, apps: { ...closedApps, ...apps }, tree,
-    areas: { state: { ...docks, ai: {edge:"bottom",order:0} }, sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
+    areas: { orientationVersion: 1, state: JSON.parse(JSON.stringify(defaultAreaDocks)), sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
       hidden: { projects: false, apps: false, systems: false, ai: false },
       manual: { left: true, right: true, top: true, bottom: true }, layoutMode: "manual" }, ...extras
   });
   const scenarios = {
     general: scene(null, null, { dolphin: "open" },
-      { projects: { edge: "left", order: 1 }, apps: { edge: "left", order: 0 }, systems: { edge: "right", order: 0 } },
       { left: 68, right: 280 }, leaf("dolphin"), {
         note: "Personal notes\n\nBook the train tickets.\nBack up the holiday photographs.",
         folder: "Home", files: [["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Pictures", "231 items", "folder"], ["Music", "18 albums", "folder"], ["Projects", "7 items", "folder"]],
@@ -197,7 +218,6 @@
         notifications: [], hiddenWidgets: [false, false]
       }),
     school: scene("research", "study", { browser: "open" },
-      { projects: { edge: "left", order: 0 }, apps: { edge: "bottom", order: 0 }, systems: { edge: "right", order: 0 } },
       { left: 280, right: 280, bottom: 96 }, leaf("browser"), {
         note: "Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.",
         folder: "Documents/Biology", files: [["Field guide.pdf", "4.2 MiB", "document"], ["Course notes", "12 files", "folder"], ["Reading list.md", "3 KiB", "document"]],
@@ -205,7 +225,6 @@
         notifications: [["Feedback available", "Biology · your field survey outline", "amber", "i-graduation"]], focus: { running: false, seconds: 1500, visible: true }, hiddenWidgets: [false, true]
       }),
     work: scene("plasma", "prototype", { browser: "open", terminal: "open", dolphin: "minimized" },
-      { projects: { edge: "right", order: 0 }, apps: { edge: "left", order: 0 }, systems: { edge: "bottom", order: 0 } },
       { left: 68, right: 300, bottom: 96 }, { kind: "split", axis: "y", ratio: .58, a: leaf("browser"), b: leaf("terminal") }, {
         note: "Launch checklist\n\nConfirm the contact form.\nCheck keyboard navigation.\nSend the staging link for review.",
         folder: "Projects/website-launch", files: [["src", "24 files", "folder"], ["public", "18 files", "folder"], ["package.json", "2 KiB", "document"], ["README.md", "4 KiB", "document"]],
@@ -213,7 +232,6 @@
         notifications: [["Review in 15 minutes", "Website Launch · bring the staging preview", "violet", "i-calendar"]], hiddenWidgets: [false, true]
       }),
     gaming: scene(null, null, { browser: "open", elisa: "minimized" },
-      { projects: { edge: "right", order: 1 }, apps: { edge: "left", order: 0 }, systems: { edge: "right", order: 0 } },
       { left: 300, right: 70 }, leaf("browser"), {
         note: "Game night\n\nMeet in voice chat at 20:00.\nPick a co-op game everyone has installed.",
         folder: "Captures", files: [["Friday co-op.webm", "812 MiB", "document"], ["Screenshots", "28 images", "folder"], ["Highlights", "6 clips", "folder"]],
@@ -259,9 +277,7 @@
     example.apps = {...closedApps};
     example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
   }
-  scenarios.school.areas.state.apps = {edge:"left",order:1};
   scenarios.school.areas.sizes = {left:280,right:280,top:250,bottom:250};
-  scenarios.work.areas.state = {apps:{edge:"left",order:0},projects:{edge:"left",order:1},systems:{edge:"right",order:0}};
   scenarios.work.areas.sizes = {left:280,right:280,top:250,bottom:250};
   scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
 
@@ -530,6 +546,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, note, migrateProject, migrateNote };
+  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, note, migrateProject, migrateNote };
 });
 

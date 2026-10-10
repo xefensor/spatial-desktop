@@ -145,7 +145,7 @@
     Object.keys(projectWindowSessions).forEach(id => delete projectWindowSessions[id]);
     Object.assign(appState, workspaceAppStates.general);
     activeWorkspace = 'general'; activeProjectName = null; frontApp = null; desktopHasWindowFocus = false;
-    dockState.apps = {edge:'left', order:0}; dockState.systems = {edge:'right', order:0}; dockState.projects = {edge:'left', order:1};
+    dockState.apps = {edge:'left', order:0}; dockState.systems = {edge:'right', order:0}; dockState.projects = {edge:'left', order:1}; dockState.ai = {edge:'right', order:1};
     Object.assign(dockSizes, {left:280, right:300, top:250, bottom:250});
     defaultAreaSession = snapshotAreaLayout();
     renderWorkspace('general', false); renderOverviewProjects(); setProjectClosedState(true);
