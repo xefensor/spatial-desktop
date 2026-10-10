@@ -83,13 +83,14 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 }
 .desktop-page-mark{display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;background:var(--sd-glass-muted);opacity:.5;border-radius:0}
 .desktop-page-mark.is-current{width:3px;height:34px;background:var(--desktop-marker-accent,var(--sd-glass-text));opacity:1}
-/* Muted blue-gray marks stay legible in the light theme's wallpaper gutter.
-   Size carries the current state without bright outlines or a white fill. */
+/* Keep the dark theme's geometry and colour language. Light needs a lighter
+   neutral mark in the wallpaper gutter while the current mark keeps its accent. */
 body[data-theme="light"] .desktop-page-mark{
-  width:3px;height:24px;background:#6f8a99;opacity:1;box-shadow:none;
+  background:#91a6b1;opacity:.7;box-shadow:none;
 }
 body[data-theme="light"] .desktop-page-mark.is-current{
-  width:4px;height:38px;background:#8faab8;box-shadow:none;
+  background:color-mix(in srgb,var(--desktop-marker-accent,var(--sd-glass-text)) 85%,#738f9d 15%);
+  opacity:1;box-shadow:none;
 }
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
