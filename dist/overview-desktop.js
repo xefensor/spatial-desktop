@@ -61,9 +61,12 @@
   function refresh(){
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
-    let id=preferred[activeWorkspace]||'apps';
-    if(limited())id=['folders','return'].includes(SpatialGuide.model.lesson.id)?'projects':'apps';
-    requestAnimationFrame(()=>{if(!scrolling||id!==active)select(id,false);});
+    // Read the preference in the frame: a later explicit navigation wins.
+    requestAnimationFrame(()=>{
+      let id=preferred[activeWorkspace]||'apps';
+      if(limited())id=['folders','return'].includes(SpatialGuide.model.lesson.id)?'projects':'apps';
+      if(!scrolling||id!==active)select(id,false);
+    });
   }
   function step(direction){const id=SpatialTimeline.neighbour(active,direction,allowed());if(id&&id!==active)select(id);}
   home.addEventListener('click',event=>{

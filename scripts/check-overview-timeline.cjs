@@ -99,6 +99,7 @@ finishSnap();assert.equal(track.scrollLeft,selectedTimeline.offsetLeft+selectedT
 overview.select('system',true);const staleFinish=pending.at(-1);overview.select('timeline',true);const desired=track.scrollLeft;staleFinish();assert.equal(track.scrollLeft,desired,'An interrupted animation cannot recenter a later selection');
 pending.at(-1)();track.scrollLeft+=.25;const beforeRounding=scrollWrites;track.listeners.scrollend();assert.equal(scrollWrites,beforeRounding,'Subpixel rounding does not trigger another snap');
 resizeCallback();pending.at(-1)();const beforeResize=scrollWrites;resizeCallback();assert.equal(scrollWrites,beforeResize,'An unchanged ResizeObserver notification does not restart scrolling');
+const deferred=[];context.requestAnimationFrame=fn=>deferred.push(fn);overview.select('apps',false);overview.refresh();overview.select('timeline',false);deferred.pop()();assert.equal(overview.active(),'timeline','A delayed refresh cannot override a later calendar or section navigation');context.requestAnimationFrame=fn=>fn();
 overview.select('apps',false);
 let prevented=0;
 track.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){prevented++;},stopPropagation(){}});
