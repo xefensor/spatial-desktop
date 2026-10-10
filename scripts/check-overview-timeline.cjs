@@ -47,6 +47,23 @@ assert(mixed.earlier.some(row=>row.id==='activity')&&mixed.earlier.some(row=>row
 assert.equal(T.view([],planner.list('general'),{type:'activity'}).upcoming.length,0);
 assert(T.view([],planner.list('general'),{type:'planned',query:'holiday'}).earlier.some(row=>row.id===task.id),'Planned content is searchable');
 
+// Calendar duration and concurrency use the same scale as the activity lane.
+const laneDay='2026-10-10',at=(h,m=0)=>new Date(laneDay+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00').getTime();
+const meeting={...event('meeting',at(10)),type:'calendar.event',planned:true,endTime:at(11),title:'Review'},overlap={...meeting,id:'overlap',time:at(10,30),endTime:at(11,30)};
+const dayView=T.lanes([event('during',at(10,30))],[meeting,overlap],{day:laneDay});
+assert.equal(dayView.plans[0].height,60*dayView.scale,'A meeting spans its full duration');
+assert.equal(dayView.activity[0].top,dayView.plans[0].top+30*dayView.scale,'Activity during a meeting aligns with the same time on the left');
+assert.equal(dayView.plans[0].columns,2);assert.notEqual(dayView.plans[0].column,dayView.plans[1].column,'Overlapping events retain their times in separate columns');
+const backToBack=T.lanes([], [meeting,{...meeting,id:'later',time:at(11),endTime:at(12)}],{day:laneDay});
+assert(backToBack.plans.every(e=>e.columns===1),'Touching intervals do not overlap');
+const tomorrow=new Date(laneDay+'T00:00:00');tomorrow.setDate(tomorrow.getDate()+1);
+const overnight={...meeting,time:at(23),endTime:tomorrow.getTime()+3600000};
+const nextDay=T.lanes([], [overnight],{day:T.dayKey(tomorrow.getTime())});
+assert.equal(nextDay.plans.length,1);assert.equal(nextDay.plans[0].height,60*nextDay.scale,'An overnight event clips to the selected day');
+assert.equal(T.lanes([], [meeting],{day:'2026-10-12'}).plans.length,0,'Other days never leak into the selected day');
+assert.equal(T.lanes([event('during',at(10,30))],[meeting],{day:laneDay,type:'activity'}).plans.length,0);
+assert.equal(T.lanes([], [{...meeting,example:true}],{day:laneDay}).plans[0].example,true);
+
 // Execute the actual carousel and timeline adapter, with a small DOM geometry model.
 const nodes=new Map(),make=(key)=>{
   if(nodes.has(key))return nodes.get(key);
@@ -150,9 +167,16 @@ assert(JSON.parse(data.get('spatial-workspace-planner-v1')),'Plans are persisted
 make('#timelinePlanKind').value='task.due';make('#timelinePlanTitle').value='Send review notes';make('#timelinePlanTime').value='2099-01-01T12:00';make('#timelinePlanProject').value='site';make('#timelinePlanDetail').value='Include keyboard feedback';
 make('#timelinePlanForm').listeners.submit({preventDefault(){}});
 const created=Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).find(item=>item.title==='Send review notes');assert(created&&created.workspace==='general'&&created.project==='site');
-assert(make('#timelineEntries').innerHTML.includes('Now & next'));
+assert(make('#timelineEntries').innerHTML.includes('Calendar & tasks'));
+assert(make('#timelineDay').value==='2099-01-01','Adding a plan reveals its day');
 make('#timelineEntries').listeners.change({target:{closest:()=>({dataset:{timelineComplete:created.id},checked:true})}});
 assert.equal(JSON.parse(data.get('spatial-workspace-planner-v1'))[created.id].done,true);
-assert(make('#timelineEntries').innerHTML.includes('Completed task'),'Task completion also records the explicit action');
+make('#timelineDay').value=T.dayKey(Date.now());make('#timelineDay').listeners.change();
+assert(make('#timelineEntries').innerHTML.includes('Send review notes'),'Task completion records the explicit action on its actual day');
+make('#timelinePlanKind').value='calendar.event';make('#timelinePlanTitle').value='Design review';make('#timelinePlanTime').value='2099-01-02T10:00';make('#timelinePlanEnd').value='2099-01-02T09:00';
+make('#timelinePlanForm').listeners.submit({preventDefault(){}});
+assert(!Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).some(e=>e.title==='Design review'),'An invalid calendar interval cannot be saved');
+make('#timelinePlanEnd').value='2099-01-02T11:30';make('#timelinePlanForm').listeners.submit({preventDefault(){}});
+const review=Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).find(e=>e.title==='Design review');assert.equal(review.endTime-review.time,90*60000,'The form persists the chosen duration');
 context.activeWorkspace='work';context.SpatialOverviewDesktop.refresh();assert.equal(make('#timelinePlanForm').hidden,true,'A workspace switch closes the old workspace form');
 console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating, labelled examples, interruption-safe snaps and independent calendar/tasks/reminders.');

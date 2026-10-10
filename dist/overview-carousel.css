@@ -95,3 +95,24 @@ html[data-guide-level]:not([data-guide-level="9"]) .overview-timeline-section{vi
 .universal-search .overview-carousel .overview-window-titlebar{display:grid!important;grid-template-columns:34px minmax(0,1fr) 8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;border:0!important;padding:7px 10px!important}
 .overview-carousel .overview-window-titlebar .overview-window-title{display:none}
 .overview-carousel .overview-window-content{padding:7px!important;font-size:11px!important}
+
+/* Parallel lanes share the same quarter-hour grid and linear day scale. */
+.timeline-scroll{padding:0 16px 20px}
+.timeline-lane-headings{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);position:sticky;top:0;z-index:4;background:var(--content-surface-raised);padding:12px 0;border-bottom:1px solid var(--sd-glass-groove);gap:8px}
+.timeline-lane-headings h4,.timeline-lane-headings>span{margin:0;font-size:11px;font-weight:500;color:var(--muted)}
+.timeline-day-grid{position:relative;margin-top:12px;min-height:360px}
+.timeline-time-rule{position:absolute;left:0;right:0;height:1px;background:color-mix(in srgb,var(--text) 9%,transparent);margin-left:52px;pointer-events:none}
+.timeline-time-rule>time{position:absolute;right:calc(100% + 8px);top:-6px;font-size:10px;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.timeline-activity-lane,.timeline-planned-lane{position:absolute;top:0;bottom:0;width:calc((100% - 52px)/2)}
+.timeline-activity-lane{left:52px}.timeline-planned-lane{right:0;border-left:1px solid var(--sd-glass-groove)}
+.timeline-activity-burst{position:absolute;left:8px;right:8px}
+.timeline-entry{grid-template-columns:24px minmax(0,1fr) auto;gap:7px;padding:6px 0;min-height:58px;height:58px;box-sizing:border-box;background:var(--content-surface-raised);border-bottom:1px solid var(--sd-glass-groove)}
+.timeline-entry-body{min-width:0}.timeline-entry h4{font-size:12px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.timeline-entry p{font-size:10px;line-height:1.5;margin:2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timeline-entry time{font-size:10px;color:var(--muted);padding:0}.timeline-entry-icon{width:24px;height:24px}.timeline-entry-icon svg{width:20px;height:20px}.timeline-example-label{margin-left:5px;font-size:9px}.timeline-project-tag{padding-left:4px;margin-right:0}
+.timeline-entry-action{padding:3px;font-size:10px;align-self:center}.timeline-entry-action svg{width:12px;height:12px}
+.timeline-plan-block{position:absolute;display:grid;grid-template-columns:24px minmax(0,1fr);align-content:start;padding:8px;background:color-mix(in srgb,var(--content-surface-raised) 92%,var(--text) 8%);border:1px solid var(--sd-glass-groove);overflow:hidden;min-height:0}
+.timeline-plan-block.is-duration{border-left:3px solid var(--workspace-accent,var(--blue));background:color-mix(in srgb,var(--workspace-accent,var(--blue)) 9%,var(--content-surface-raised))}
+.timeline-plan-block .timeline-plan-detail{white-space:normal;overflow-wrap:anywhere}.timeline-plan-block .timeline-completion{padding-top:5px;font-size:10px}.timeline-plan-block h4{white-space:normal}
+.timeline-now{position:absolute;left:52px;right:0;height:1px;background:var(--workspace-accent,var(--blue));pointer-events:none;z-index:2}.timeline-now>span{position:absolute;right:calc(100% + 8px);top:-7px;color:var(--workspace-accent,var(--blue));font-size:10px;background:var(--content-surface-raised)}
+.timeline-plan-form label[hidden]{display:none!important}.timeline-plan-form{grid-template-columns:repeat(3,minmax(0,1fr))}.timeline-plan-notes{grid-column:1/3}
+@media(max-width:800px){.timeline-entry-action{grid-column:auto;justify-self:auto}.timeline-completion{grid-column:auto}.timeline-toolbar>label:first-child{max-width:150px}.timeline-lane-headings{grid-template-columns:42px minmax(0,1fr) minmax(0,1fr)}.timeline-activity-lane,.timeline-planned-lane{width:calc((100% - 42px)/2)}.timeline-activity-lane,.timeline-now{left:42px}.timeline-time-rule{margin-left:42px}.timeline-entry{grid-template-columns:18px minmax(0,1fr);gap:4px}.timeline-entry-icon,.timeline-entry-icon svg{width:18px;height:18px}.timeline-entry-action{grid-column:2;padding:0}.timeline-entry h4{font-size:11px}.timeline-entry-action svg{display:none}.timeline-example-label{display:none}.timeline-plan-form{grid-template-columns:1fr 1fr}}

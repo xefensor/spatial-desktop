@@ -120,33 +120,31 @@
     if(event.base&&['dolphin','browser','notes','elisa','terminal'].includes(event.base))return 'Open';
     return '';
   }
+  let timelineDayWorkspace='',timelineDay='';
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
-    const now=Date.now(),view=SpatialTimeline.view(model.list(activeWorkspace),planner.list(activeWorkspace),{type:$('#timelineType').value,query:$('#timelineQuery').value,now});
-    let previousDay='',html='';
-    for(const [section,events] of [['Now & next',view.upcoming],['Earlier',view.earlier]]){
-    if(!events.length)continue;
-    html+='<h3 class="timeline-group-heading">'+section+'</h3>';previousDay='';
-    for(const event of events){
-      const date=new Date(event.time),day=date.toDateString();
-      if(day!==previousDay){const today=new Date(now).toDateString()===day,tomorrow=new Date(now);tomorrow.setDate(tomorrow.getDate()+1);html+='<h4 class="timeline-day">'+escapeHtml(today?'Today':tomorrow.toDateString()===day?'Tomorrow':date.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}))+'</h4>';previousDay=day;}
+    const now=Date.now(),today=SpatialTimeline.dayKey(now);
+    if(timelineDayWorkspace!==activeWorkspace){timelineDayWorkspace=activeWorkspace;timelineDay=today;}
+    const view=SpatialTimeline.lanes(model.list(activeWorkspace),planner.list(activeWorkspace),{day:timelineDay,type:$('#timelineType').value,query:$('#timelineQuery').value});
+    $('#timelineDay').innerHTML=view.days.map(day=>'<option value="'+day+'"'+(day===timelineDay?' selected':'')+'>'+escapeHtml(day===today?'Today':new Date(day+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</option>').join('');
+    $('#timelineDay').value=timelineDay;
+    const clock=time=>new Date(time).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    function card(event,planned=false){
       const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
-      const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol);
-      const project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
-      const overdue=event.planned&&!event.done&&event.type!=='calendar.event'&&event.time<now;
-      const source=event.planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):'Desktop '+(event.page+1);
+      const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol),project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
+      const overdue=planned&&!event.done&&event.type!=='calendar.event'&&event.time<now;
+      const source=planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):'Desktop '+(event.page+1);
+      const name=event.title||descriptions[event.type]||'',detail=event.path||event.address||event.detail||'',action=planned?'':actionFor(event);
+      const completion=planned&&event.type!=='calendar.event'?'<label class="timeline-completion"><input type="checkbox" data-timeline-complete="'+escapeHtml(event.id)+'"'+(event.done?' checked':'')+' aria-label="'+escapeHtml((event.type==='task.due'?'Complete ':'Dismiss reminder ')+name)+'"><span>'+(event.type==='task.due'?'Done':'Dismissed')+'</span></label>':'';
       const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+source;
-      const detail=event.path||event.address||event.detail||'';
-      const name=event.title||(event.type==='desktop.switch'?'Desktop '+(event.page+1):event.type==='workspace'?workspaceProfiles[event.workspace]?.label:'');
-      const action=event.planned?'':actionFor(event);
-      const completion=event.planned&&event.type!=='calendar.event'?'<label class="timeline-completion"><input type="checkbox" data-timeline-complete="'+escapeHtml(event.id)+'"'+(event.done?' checked':'')+' aria-label="'+escapeHtml((event.type==='task.due'?'Complete ':'Dismiss reminder ')+name)+'"><span>'+(event.type==='task.due'?'Done':'Dismissed')+'</span></label>':'';
-      html+='<article class="timeline-entry'+(event.planned?' is-planned':'')+(event.done?' is-done':'')+'" role="listitem"><time datetime="'+date.toISOString()+'" title="'+escapeHtml(date.toLocaleString())+'">'+escapeHtml(date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</time><span class="timeline-entry-icon">'+image+'</span><div><h4>'+escapeHtml(descriptions[event.type]||'')+(name?' · '+escapeHtml(name):'')+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p>'+context+'</p>'+(detail?'<p>'+escapeHtml(detail)+'</p>':'')+(event.dueTime?'<p>Originally due '+escapeHtml(new Date(event.dueTime).toLocaleString())+'</p>':'')+(event.endTime?'<p>Until '+escapeHtml(new Date(event.endTime).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</p>':'')+'</div>'+completion+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'')+'</article>';
+      return '<span class="timeline-entry-icon">'+image+'</span><div class="timeline-entry-body"><h4>'+escapeHtml(name)+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p><time datetime="'+new Date(event.time).toISOString()+'">'+escapeHtml(clock(event.time))+(event.endTime?'–'+escapeHtml(clock(event.endTime)):'')+'</time> · '+context+'</p>'+(planned&&detail?'<p class="timeline-plan-detail">'+escapeHtml(detail)+'</p>':'')+(event.dueTime?'<p class="timeline-plan-detail">Originally due '+escapeHtml(new Date(event.dueTime).toLocaleString())+'</p>':'')+completion+'</div>'+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'');
     }
-    }
-    const populated=model.list(activeWorkspace).length||planner.list(activeWorkspace).length;
-    $('#timelineEntries').innerHTML=html||'<p class="timeline-empty"><b>'+(populated?'No matching items':'Your timeline starts here')+'</b>'+(populated?'Try another type or search.':'Add an event, task or reminder. Your desktop activity will appear here too.')+'</p>';
-    prepareControlSemantics($('#timelineEntries'));
-    syncAgenda(now);
+    const ticks=view.ticks.map(t=>'<div class="timeline-time-rule" style="top:'+t.top+'px"><time>'+escapeHtml(clock(t.time))+'</time></div>').join('');
+    const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+group.events.map(e=>'<article class="timeline-entry" role="listitem" title="'+escapeHtml([descriptions[e.type],e.path||e.address].filter(Boolean).join(' · '))+'">'+card(e)+'</article>').join('')+'</div>').join('');
+    const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
+    const nowLine=timelineDay===today&&view.nowTop>=0&&view.nowTop<=view.height?'<div class="timeline-now" style="top:'+view.nowTop+'px"><span>Now</span></div>':'';
+    $('#timelineEntries').innerHTML='<div class="timeline-lane-headings"><span>Time</span><h4>Desktop activity</h4><h4>Calendar & tasks</h4></div><div class="timeline-day-grid" style="height:'+(view.height+30)+'px">'+ticks+'<div class="timeline-activity-lane" role="list" aria-label="Desktop activity">'+activity+'</div><div class="timeline-planned-lane" role="list" aria-label="Calendar, tasks and reminders">'+plans+'</div>'+nowLine+(!activity&&!plans?'<p class="timeline-empty"><b>No items on this day</b>Choose another day, change the filter or add an event.</p>':'')+'</div>';
+    prepareControlSemantics($('#timelineEntries'));syncAgenda(now);
   }
   function savePlanner(){planner.merge(read(plannerKey));try{desktopStorage.setItem(plannerKey,JSON.stringify(planner.snapshot()));}catch{}}
   function syncAgenda(now=Date.now()){
@@ -160,9 +158,13 @@
       $('#timelinePlanProject').innerHTML='<option value="">Workspace</option>'+Object.entries(projectSpaces).map(([id,project])=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(project.name)+'</option>').join('');
       const column=desktopPages.column(activeWorkspace);$('#timelinePlanProject').value=column==='workspace'?'':column;
       const date=new Date();date.setHours(date.getHours()+1,0,0,0);const local=new Date(date-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
-      $('#timelinePlanTime').value=local;$('#timelinePlanTitle').focus();
+      $('#timelinePlanTime').value=local;$('#timelinePlanEnd').value=new Date(date.getTime()+3600000-date.getTimezoneOffset()*60000).toISOString().slice(0,16);syncPlanEnd();$('#timelinePlanTitle').focus();
     }else toggle.focus?.({preventScroll:true});
   }
+  function syncPlanEnd(){const calendar=$('#timelinePlanKind').value==='calendar.event';$('#timelinePlanEndLabel').hidden=!calendar;$('#timelinePlanEnd').required=calendar;$('#timelinePlanEnd').min=$('#timelinePlanTime').value;}
+  $('#timelinePlanKind').addEventListener('change',syncPlanEnd);
+  $('#timelinePlanTime').addEventListener('change',()=>{const time=new Date($('#timelinePlanTime').value);if(new Date($('#timelinePlanEnd').value)<=time)$('#timelinePlanEnd').value=new Date(time.getTime()+3600000-time.getTimezoneOffset()*60000).toISOString().slice(0,16);syncPlanEnd();});
+  $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();$('#timelineScroll').scrollTop=0;});
   function reopen(id){
     const event=model.list(activeWorkspace).find(event=>event.id===id);if(!event||!actionFor(event))return;
     setUniversalSearchOpen(false);
@@ -208,12 +210,14 @@
     event.preventDefault();
     const title=$('#timelinePlanTitle').value.trim(),time=new Date($('#timelinePlanTime').value).getTime(),type=$('#timelinePlanKind').value,project=$('#timelinePlanProject').value;
     if(!title||!Number.isFinite(time)||!['calendar.event','task.due','reminder.due'].includes(type)||project&&!projectSpaces[project])return;
-    const item=planner.put({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-plan-'+Math.random().toString(36).slice(2),workspace:activeWorkspace,type,time,title,detail:$('#timelinePlanDetail').value,project,projectName:projectSpaces[project]?.name||''});
+    const endTime=type==='calendar.event'?new Date($('#timelinePlanEnd').value).getTime():0;
+    if(type==='calendar.event'&&(!Number.isFinite(endTime)||endTime<=time))return;
+    const item=planner.put({endTime,id:globalThis.crypto?.randomUUID?.()||Date.now()+'-plan-'+Math.random().toString(36).slice(2),workspace:activeWorkspace,type,time,title,detail:$('#timelinePlanDetail').value,project,projectName:projectSpaces[project]?.name||''});
     if(!item)return;
-    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);renderTimeline();$('#timelineScroll').scrollTop=0;
+    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);timelineDay=SpatialTimeline.dayKey(time);renderTimeline();$('#timelineScroll').scrollTop=0;
   });
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
-  window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='planned';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
+  window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
   window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
   globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
