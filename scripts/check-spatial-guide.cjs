@@ -22,14 +22,14 @@ while (model.lesson.id !== 'complete') {
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
 assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,complete');
-function boot(entries) {
+function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
     getItem:{value:key=>storage[key] ?? null},
     setItem:{value:(key,value)=>{storage[key]=String(value);}},
     removeItem:{value:key=>{delete storage[key];}}
   });
-  const context = vm.createContext({localStorage:storage, document:{documentElement:{dataset:{}}}});
+  const context = vm.createContext({localStorage:storage, URLSearchParams, location:{search:query}, document:{documentElement:{dataset:{}}}});
   vm.runInContext(fs.readFileSync(require.resolve('../dist/spatial-guide.js'), 'utf8'),context);
   return {storage, api:context.SpatialGuide, context};
 }
@@ -79,14 +79,14 @@ assert(projects.allows('projects')); assert(projects.allows('desktops')); assert
 
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
-const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start()'));
-const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,save(){}},
+const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
+const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
   dockState:{systems:{edge:'right'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
-  dragging:false, window:{}, lastSignature:'', $:()=>({}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  dragging:false, window:{}, currentRecovery:null, lastSignature:'', $:()=>({}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
-  desktopPages:{column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
+  openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
 context.mark = goal=>context.model.mark(goal);
 vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
@@ -142,3 +142,72 @@ capturedClick();assert(!context.model.state.done.includes('bounded-enter'));
 clickSession.focus={name:'dolphin'};scheduled.shift()();assert(context.model.state.done.includes('bounded-enter'));
 capturedClick();clickSession.focus=null;scheduled.shift()();assert(context.model.ready());
 console.log('Stopped window clicks are observed after their action, including a rapid restore.');
+
+// A skipped task stays distinct from a performed action, including after refresh.
+const skipping=at('park'); skipping.state.practiceWindow='notes';
+assert(skipping.skip()); assert.equal(skipping.lesson.id,'area-rail');
+assert.deepEqual(skipping.state.done,[]); assert.deepEqual(skipping.state.skipped,['park']);
+assert.equal(skipping.state.practiceWindow,undefined);
+assert.deepEqual(G.create(skipping.snapshot()).state.skipped,['park']);
+assert(!at('welcome').skip()); assert(!at('complete').skip());
+const chapter=G.create();chapter.start('repeat','park');
+assert.equal(chapter.lesson.id,'park');assert.equal(chapter.state.chapter,'park');assert(!chapter.ready());
+chapter.mark('note-written');chapter.mark('notes-park');assert(chapter.ready());
+assert(!chapter.next(),'A single chapter never advances into unrelated topics');
+assert(!chapter.skip());assert.equal(G.create(chapter.snapshot()).state.chapter,'park');
+chapter.start('repeat','not-a-chapter');assert.equal(chapter.lesson.id,'welcome');assert(!chapter.state.chapter);
+const chapterBoot=boot({'spatial-active-workspace':'work','spatial-workspace-app-states-v1':'real-windows'},'?guide=chapter&chapter=park');
+assert.equal(chapterBoot.api.model.lesson.id,'park');assert.equal(chapterBoot.api.model.state.mode,'repeat');
+chapterBoot.api.storage.setItem('spatial-workspace-app-states-v1','chapter-windows');chapterBoot.api.finish('completed');
+assert.equal(chapterBoot.storage['spatial-workspace-app-states-v1'],'real-windows');
+chapterBoot.api.setView('compact');assert.equal(boot(chapterBoot.storage).api.view,'compact');
+chapterBoot.api.model.start();assert.equal(chapterBoot.api.view,'compact');
+chapterBoot.api.setView('expanded');assert.equal(boot(chapterBoot.storage).api.view,'expanded');
+assert(G.shouldCompact('compact',{left:0,top:0,right:100,bottom:100},null));
+assert(!G.shouldCompact('expanded',{left:0,top:0,right:100,bottom:100},{left:200,top:0,right:300,bottom:100}));
+assert(G.shouldCompact('expanded',{left:0,top:0,right:100,bottom:100},{left:50,top:50,right:150,bottom:150}));
+
+const normalScene={workspace:'general',column:'workspace',projectExists:true,open:['notes'],notesState:'open',notesVisible:true};
+assert.equal(G.recovery(at('fullscreen'),{...normalScene,full:'notes'}).action,'escape');
+const lost=at('fullscreen');lost.state.practiceWindow='notes';lost.mark('bounded-enter');
+assert.equal(G.recovery(lost,{...normalScene,open:[]}).action,'fullscreen-retry');
+assert.equal(G.recovery(at('true-fullscreen'),{...normalScene,bounded:'notes'}).action,'true-fullscreen');
+assert.equal(G.recovery(at('float'),{...normalScene,notesState:'closed'}).action,'notes');
+assert.equal(G.recovery(at('park'),{...normalScene,notesState:'minimized'}).action,'notes');
+assert.equal(G.recovery(at('unpark'),{...normalScene,notesState:'minimized'}),null,'Parking is expected in the unpark task');
+assert.equal(G.recovery(at('folders'),normalScene).action,'workspace');
+assert.equal(G.recovery(at('project-app'),{...normalScene,projectExists:false}).action,'project');
+assert.equal(G.recovery(at('park'),{...normalScene,notesVisible:false}).action,'notes');
+assert.equal(G.recovery(at('park'),normalScene),null);
+
+// Execute the actual asynchronous prerequisite adapter for every replayable chapter.
+const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene()'),adapter.indexOf('  async function recover('));
+(async()=>{
+  for(const lesson of G.lessons.filter(lesson=>lesson.goals)) {
+    const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectNotes:false};
+    const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
+      desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{notes:'closed',dolphin:'closed'},appInfo:{notes:{},dolphin:{}},
+      tileSession:()=>({}),setUniversalSearchOpen(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
+      appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{school:{home:'/home/demo/Workspaces/School'}},
+      desktopPages:{column:()=>scene.column,current:()=>scene.page,columnOf:(_,name)=>name==='project-note'?'practice':'workspace'},
+      changeDesktopPage(page,_,column=scene.column){scene.page=page;scene.column=column;},
+      renderWorkspace(name){prepared.activeWorkspace=name;scene.workspace=name;},
+      openProjectNames:()=>Object.keys(prepared.projectSpaces),
+      createProjectFromEditor(){prepared.projectSpaces.practice={};prepared.activeProjectName='practice';scene.column='practice';},
+      openApp(name){if(name==='notes'&&scene.column==='practice'){prepared.appInfo['project-note']={base:'notes'};prepared.appState['project-note']='open';scene.projectNotes=true;}else prepared.appState[name]='open';},
+      minimizeApp(name){prepared.appState[name]='minimized';}});
+    vm.runInContext(prepareSource,prepared);await prepared.prepareLesson();
+    assert(prepared.model.state.initialized,lesson.id);assert.equal(prepared.guide.settingUp,false);
+    assert(!prepared.model.ready(), 'Prerequisites must not claim the selected chapter was performed: '+lesson.id);
+    const needed=G.prerequisites(lesson.id);
+    assert.equal(prepared.appState.notes,needed.notes?(needed.parked?'minimized':'open'):'closed',lesson.id);
+    assert.equal(!!scene.notes.notes[0].text,needed.noteText,lesson.id);
+    assert.equal(!!prepared.projectSpaces.practice,needed.project,lesson.id);
+    assert.equal(scene.projectNotes,needed.projectApp,lesson.id);
+    assert.equal(scene.column,needed.inProject?'practice':'workspace',lesson.id);
+    assert.equal(scene.workspace,needed.school?'school':'general',lesson.id);
+    assert.equal(!!scene.path,needed.downloads,lesson.id);
+  }
+  // In-progress notes are never replaced when preparing the next task after a skip.
+  console.log('Guide additions passed: individual skipping, isolated chapter replay, every chapter prerequisite, persistent view and contextual recovery.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -26,7 +26,7 @@
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
-    let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], ...saved};
+    let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], skipped:[], ...saved};
     const oldIds = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','desktops','workspaces','folders','return','complete'];
     const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
     const legacyIds = saved.version === 2 ? version2Ids : oldIds;
@@ -49,8 +49,18 @@
         if (state.status !== 'active' || !(lessons[state.index].goals || []).includes(goal) || state.done.includes(goal)) return false;
         state.done.push(goal); return true;
       },
-      next() { if (!this.ready() || state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
-      start(mode = 'repeat') { state = {status:'active', index:0, mode, initialized:false, done:[], version:3}; },
+      next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
+      skip() {
+        if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
+        state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
+        return this.advance();
+      },
+      start(mode = 'repeat', chapter = null) {
+        const index = lessons.findIndex(lesson => lesson.id === chapter && lesson.goals);
+        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:3};
+        if (index > 0) state.chapter = chapter;
+      },
       leave(status = 'skipped') { state.status = status; },
       snapshot: () => JSON.parse(JSON.stringify({...state, lessonId:lessons[state.index].id}))
     };
@@ -87,6 +97,40 @@
     'school-downloads':'Open School’s Downloads folder', 'general-return':'Return to General',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
+  // Only prerequisites are supplied. The selected chapter's actions remain undone.
+  function prerequisites(id) {
+    const index = lessons.findIndex(lesson => lesson.id === id);
+    return {
+      notes:index >= 4, dolphin:index >= 5 && index <= 8,
+      noteText:index >= 10, parked:['area-rail','unpark'].includes(id),
+      project:index >= 14, projectApp:index >= 15,
+      inProject:['project-app','project-navigation'].includes(id),
+      school:['folders','return'].includes(id), downloads:id === 'return'
+    };
+  }
+  function recovery(model, scene) {
+    if (!model.active() || model.ready()) return null;
+    const id = model.lesson.id, done = model.state.done;
+    const hint = (text,action,label) => ({text,action,label});
+    if (id === 'fullscreen' && scene.full) return hint('This is true full screen. Press Escape, then left-click maximize for the space between Areas.','escape','Exit true full screen');
+    if (['fullscreen','true-fullscreen'].includes(id)) {
+      if (model.state.practiceWindow && !scene.open.includes(model.state.practiceWindow)) return hint('The window used for this task was closed or parked. Reopen it and try the full-screen task again.','fullscreen-retry','Reopen and retry');
+      if (!scene.open.length) return hint('Open an app before trying its full-screen controls.','open-app','Open Notes');
+    }
+    const school = ['folders','return'].includes(id);
+    if (scene.workspace !== (school ? 'school' : 'general') && !['workspaces'].includes(id)) return hint('This task belongs in the ' + (school ? 'School' : 'General') + ' workspace. Your practice work is still there.','workspace', 'Return to ' + (school ? 'School' : 'General'));
+    if (['project-app','project-navigation','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
+    if (id === 'project-app' && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
+    if (['tiling','float','park','unpark','project-navigation'].includes(id) && scene.notesState === 'closed') return hint('Your original Notes window was closed. Reopen it to continue; saved note content stays with the window.','notes','Reopen your note');
+    if (['tiling','float','park','unpark'].includes(id) && (!scene.notesVisible || scene.column !== 'workspace')) return hint('Your note is on another desktop. Return to it before continuing this task.','notes','Go to your note');
+    if (['tiling','float','park'].includes(id) && scene.notesState === 'minimized') return hint('Your note is parked. Bring it back onto the desktop for this task.','notes','Unpark your note');
+    if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize or use Alt + Enter for true full screen.','true-fullscreen','Enter true full screen');
+    return null;
+  }
+  function shouldCompact(preference, guideRect, targetRect) {
+    if (preference === 'compact') return true;
+    return !!(targetRect && guideRect.left < targetRect.right && guideRect.right > targetRect.left && guideRect.top < targetRect.bottom && guideRect.bottom > targetRect.top);
+  }
   function placeGuide(viewport, size, targets = []) {
     const margin = 12, width = Math.min(size.width, viewport.width - margin * 2), height = Math.min(size.height, viewport.height - margin * 2);
     const right = Math.max(margin, viewport.width - width - margin), bottom = Math.max(margin, viewport.height - height - margin);
@@ -94,7 +138,7 @@
     const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
     return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
   }
-  const api = {lessons, create, observeFullscreen, goalLabels, placeGuide, key, prefix};
+  const api = {lessons, create, observeFullscreen, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}
@@ -110,6 +154,9 @@
   const model = create(saved);
   if (fresh) model.start('first');
   api.model = model;
+  api.view = 'expanded';
+  try { if (real.getItem('spatial-guide-view-v1') === 'compact') api.view = 'compact'; } catch {}
+  api.setView = value => { api.view = value === 'compact' ? 'compact' : 'expanded'; try { real.setItem('spatial-guide-view-v1',api.view); } catch {} };
   api.save = () => { try { real.setItem(key, JSON.stringify(model.snapshot())); } catch {} };
   api.storage = {
     getItem(name) { try { return real.getItem((model.active() ? prefix : '') + name); } catch { return null; } },
@@ -119,8 +166,11 @@
   api.clearPractice = () => {
     try { Object.keys(real).filter(name => name.startsWith(prefix)).forEach(name => real.removeItem(name)); } catch {}
   };
-  if (!fresh && !model.active() && root.location && new URLSearchParams(root.location.search).get('guide') === 'start') {
-    api.clearPractice(); model.start('repeat');
+  if (!fresh && !model.active() && root.location) {
+    const params = new URLSearchParams(root.location.search);
+    if (params.get('guide') === 'start' || params.get('guide') === 'chapter') {
+      api.clearPractice(); model.start('repeat',params.get('guide') === 'chapter' ? params.get('chapter') : null);
+    }
   }
   api.finish = status => {
     // A first-run learner keeps their work. Repeat lessons never touch their real session.

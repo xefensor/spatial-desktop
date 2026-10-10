@@ -70,3 +70,9 @@ html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[da
 .guide-strip-next[hidden] {display:none!important}
 .guide-window.is-lesson {max-height:calc(100dvh - 24px)}
 html[data-guide-level] #projectEditorDialog {z-index:11000!important}
+.guide-replay {margin:0 0 14px 14px}
+.guide-skip {margin-top:15px;text-align:left;line-height:1.5}
+.guide-recovery {border-top:1px solid var(--line);padding:12px 0 4px;margin-bottom:12px}
+.guide-recovery[hidden],.guide-strip-recover[hidden] {display:none!important}
+.guide-task .guide-recovery p {font-size:12px;color:var(--text);margin:0 0 6px}
+.guide-strip-recover {flex:none}
