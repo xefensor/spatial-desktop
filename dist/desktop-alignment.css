@@ -1,0 +1,90 @@
+/* Keep compact controls centered despite general material-button padding. */
+button:is(.surface-key,.project-app):has(>svg:only-child){
+  display:grid;
+  place-items:center;
+  padding:0!important;
+}
+button:is(.surface-key,.project-app):has(>svg:only-child)>svg{
+  display:block;
+  margin:0;
+  max-width:100%;
+  max-height:100%;
+}
+
+/* Text gets the remaining space; icons and actions keep their own space. */
+.area-window:not([data-area-state="rail"]) .area-window-identity,
+.app-frame .app-identity{
+  flex:1 1 0;
+  min-width:0;
+}
+.area-window-bar,.app-titlebar,.mini-card header{gap:8px}
+.area-window-identity>span:last-child,
+.app-identity>div,
+.mini-card header>div:first-child>span:last-child{
+  flex:1 1 0;
+  min-width:0;
+}
+.area-window-actions,.window-actions,.mini-card .mini-actions{flex:0 0 auto}
+.area-window-icon,.workspace-overview,.app-badge{flex-shrink:0}
+.app-identity b,.app-identity small,
+.mini-card header b,.mini-card header small{
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  line-height:1.3;
+}
+.mini-card header>div:first-child{flex:1 1 0;min-width:0}
+.mini-card header .app-badge{flex:0 0 auto}
+.mini-card .mini-actions{align-items:center}
+.mini-card .mini-control{padding:0!important;display:grid;place-items:center}
+
+/* Current cards have a location and optional metadata, without a status slit. */
+.mini-card .mini-location{
+  grid-template-columns:minmax(0,1fr) auto;
+  min-height:31px;
+  height:auto;
+  margin-top:0;
+  padding:5px 9px;
+}
+.mini-card .mini-location:has(>.live-slit){grid-template-columns:3px minmax(0,1fr) auto}
+.mini-card .mini-location>b,.mini-card .mini-location>small{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  line-height:1.3;
+}
+.mini-card .mini-location>b:only-child{grid-column:1 / -1}
+.mini-card .mini-music{grid-template-columns:44px minmax(0,1fr);align-items:center}
+.mini-card .mini-track,.mini-card .mini-transport,.mini-card .mini-terminal-output{min-width:0}
+.mini-card .mini-transport{grid-template-columns:31px 38px 31px minmax(0,1fr)}
+.mini-card .mini-transport input{min-width:0;max-width:100%}
+.mini-card .mini-terminal-output b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-card :is(.mini-command,.mini-browser-search){min-width:0;padding-right:2px}
+.mini-card :is(.mini-command,.mini-browser-search) input{
+  min-width:0;
+  width:100%;
+  height:100%;
+  padding:0;
+}
+.mini-card .mini-quick-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mini-card .mini-tool{min-width:0;gap:6px}
+.mini-card .mini-tool svg{flex:none}
+.mini-card .mini-tool>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Wrapping content expands its row rather than spilling into adjacent rows. */
+.project-area:not([data-area-state="rail"]) .project-library-entry{height:auto;flex-shrink:0}
+.project-area:not([data-area-state="rail"]) .project-library-copy{flex:1;min-width:0}
+.section-heading{gap:8px;align-items:center}
+.section-heading h2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.section-heading>span{flex:none}
+.app-frame :is(.app-status,.note-status,.terminal-context,.music-library-status){min-width:0}
+.app-frame :is(.app-status,.note-status,.terminal-context,.music-library-status)>span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.app-frame :is(.app-status,.note-status,.terminal-context,.music-library-status)>span:last-child{flex-shrink:0}
