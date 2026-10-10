@@ -89,6 +89,13 @@ context.desktopPageAnimating=false;finish();
 assert.equal(calls.filter(call=>call[0]==='file').length,count+1,'Returning waits for project animation before opening a file');
 context.activeWorkspace='work';timeline.record('app.open',{app:'dolphin',title:'Work files'});
 timeline.render();assert(!make('#timelineEntries').innerHTML.includes('unsafe'),'Timeline switches with workspace');
+const beforeRestore=data.get('spatial-workspace-timeline-v1');
+timeline.suspend(()=>{timeline.record('file.folder',{app:'dolphin',path:'/workspace-restored'});timeline.suspend(()=>timeline.record('app.open',{app:'dolphin'}));});
+assert.equal(data.get('spatial-workspace-timeline-v1'),beforeRestore,'Restoring a workspace is not reported as user opening all its folders');
+assert.throws(()=>timeline.suspend(()=>{throw Error('interrupted restore');}));
+timeline.record('workspace',{title:'Work'});
+assert(JSON.parse(data.get('spatial-workspace-timeline-v1')).work.some(event=>event.type==='workspace'),'Logging resumes after an interrupted restore');
+
 context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};
 const beforeGuide=data.get('spatial-workspace-timeline-v1');timeline.record('app.park',{app:'dolphin'});assert.equal(data.get('spatial-workspace-timeline-v1'),beforeGuide,'Guide actions do not enter saved history');
 overview.refresh();assert.equal(overview.active(),'apps');assert.equal(tabs[0].hidden,true);assert.equal(tabs[2].hidden,true);assert(edges.every(edge=>edge.hidden),'Only introduced sections are navigable');

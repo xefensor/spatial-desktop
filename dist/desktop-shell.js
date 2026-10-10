@@ -4547,7 +4547,6 @@ function renderWorkspace(name, announce = true) {
   const profile = workspaceProfiles[name];
   if (!profile) return;
   if (name !== activeWorkspace && !desktopSyncApplying) captureCurrentWorkspaceSession();
-  const previousWorkspace = activeWorkspace;
   activeWorkspace = name;
   restoreWorkspaceProject(name);
   Object.assign(appState, workspaceAppStates[name]);
@@ -4607,7 +4606,6 @@ function renderWorkspace(name, announce = true) {
     if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
   });
-  if (previousWorkspace !== name) globalThis.SpatialTimelineDesktop?.record("workspace", {title:profile.label});
   globalThis.SpatialOverviewDesktop?.refresh();
   if (announce) showToast(profile.label + " workspace loaded");
 }
@@ -7395,6 +7393,8 @@ captureCurrentWorkspaceSession = function() { captureWorkspaceContent(); origina
 const originalRenderWorkspace = renderWorkspace;
 renderWorkspace = function(name, announce = true) {
   if (!workspaceProfiles[name]) return;
+  const previousWorkspace = activeWorkspace;
+  const restore = () => {
   if (name !== activeWorkspace) captureCurrentWorkspaceSession();
   Object.keys(appState).forEach(id => { appState[id] = 'closed'; });
   activeProjectName = workspaceProjects[name] || null;
@@ -7405,6 +7405,11 @@ renderWorkspace = function(name, announce = true) {
   else setProjectClosedState(true);
   windowMembership[name] ||= {};
   saveIndependentSessions();
+  };
+  if (globalThis.SpatialTimelineDesktop) SpatialTimelineDesktop.suspend(restore);
+  else restore();
+  if (previousWorkspace !== activeWorkspace) globalThis.SpatialTimelineDesktop?.record("workspace", {title:workspaceProfiles[activeWorkspace].label});
+  globalThis.SpatialOverviewDesktop?.refresh();
 };
 const originalOpenApp = openApp;
 openApp = function(name, point = null) {

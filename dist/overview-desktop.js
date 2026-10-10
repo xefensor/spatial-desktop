@@ -7,7 +7,7 @@
   const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v1';
   const read=key=>{try{return JSON.parse(desktopStorage.getItem(key)||'{}');}catch{return {};}};
   const model=SpatialTimeline.create(read(historyKey));
-  let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false;
+  let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
   function allowed(){return SpatialTimeline.sections.filter(id=>!limited()||id==='apps'||id==='projects'&&SpatialGuide.model.allows('projects'));}
@@ -89,7 +89,7 @@
     try{desktopStorage.setItem(historyKey,JSON.stringify(model.snapshot()));}catch{}
   }
   function record(type,data={}){
-    if(globalThis.SpatialGuide?.model.active()||desktopSyncApplying)return;
+    if(recordingSuspended||globalThis.SpatialGuide?.model.active()||desktopSyncApplying)return;
     const app=data.app||'',owner=app&&appInfo[app]?desktopPages.columnOf(activeWorkspace,app):desktopPages.column(activeWorkspace);
     const project=data.project===undefined?(owner==='workspace'?'':owner):(data.project||'');
     const event=model.add({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),time:Date.now(),workspace:activeWorkspace,type,
@@ -161,7 +161,7 @@
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}});
   globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
-  globalThis.SpatialTimelineDesktop={record,render:renderTimeline};
+  globalThis.SpatialTimelineDesktop={record,render:renderTimeline,suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
   // Existing browser history contains actual visits; preserve its original timestamps.
   for(const [workspace,content] of Object.entries(workspaceContent)){
     for(const visit of (content?.history||[]).slice(-100))model.add({id:'legacy-web:'+workspace+':'+visit.time+':'+visit.address,workspace,type:'browser.visit',time:visit.time,title:visit.address,address:visit.address,base:'browser'});
