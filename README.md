@@ -45,7 +45,7 @@ GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/
 - **System Area:** keep relevant system widgets and notifications visible.
 - **Overview:** access workspaces, projects, apps and system tools together. The Super/Windows key works when the browser receives it; the operating system may intercept it.
 - **Windows:** ordinary dragging uses the tiled layout. Middle-button dragging or Alt + left-button dragging enables manual floating movement. New tiled windows try to avoid floating windows.
-- **Areas:** all four Areas default to vertical side docks (Apps and Project left, System and AI right). Resize and reposition them using their handles. Actual app fullscreen can temporarily move Areas to a second display when space permits.
+- **Areas:** all four Areas default to vertical side docks (Apps and Project left, System and AI right). Resize and reposition them using their handles. All four can be hidden from their context menus or Overview. Press Super to reopen Overview even when every Area is hidden; Show restores each Area at its saved edge and size. Visibility is saved separately for each workspace. Actual app fullscreen can temporarily move Areas to a second display when space permits.
 - **Two displays:** open the same local URL in two browser windows and use the prototype's display assignment controls. Synchronisation requires the same browser profile and origin; it is a simulation rather than access to native monitor/window management.
 
 ## Demonstration examples

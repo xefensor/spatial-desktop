@@ -385,12 +385,12 @@
             <div class="overview-quick-grid"><button class="quick-toggle is-active" data-toggle aria-label="Wi-Fi" aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-label="Bluetooth" aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-label="Sound" aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" data-toggle aria-label="Focus" aria-pressed="false"><svg><use href="#i-bell"/></svg><span>Focus</span></button></div>
           </section>
           <section class="overview-widget overview-areas-widget" aria-labelledby="overviewAreasTitle">
-            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Project → Apps → System</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
+            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Apps · Project · System · AI</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
             <div class="overview-area-list">
-              <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Project</b><small>Expanded</small></span></div>
-              <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span></div>
+              <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Project</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="projects" aria-label="Hide Project">Hide</button></div>
+              <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="apps" aria-label="Hide Apps">Hide</button></div>
               <div class="overview-area-row" data-overview-area="ai"><span class="area-list-icon"><svg><use href="#i-ai"/></svg></span><span><b>AI</b><small>On rail</small></span><button class="surface-key" data-overview-area-visibility="ai" aria-label="Hide AI">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span></div>
+              <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="systems" aria-label="Hide System">Hide</button></div>
             </div>
           </section>
           <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-toast="Calendar opened"><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
@@ -537,7 +537,7 @@
 <script src="working-memory.js?v=2"></script>
 <script src="stash-files.js?v=1"></script>
 <script src="ai-context.js?v=1"></script>
-<script src="desktop-shell.js?v=239"></script>
+<script src="desktop-shell.js?v=240"></script>
 <script src="working-memory-desktop.js?v=11"></script>
 <script src="ai-desktop.js?v=5"></script>
   <script src="guide-desktop.js?v=25"></script>

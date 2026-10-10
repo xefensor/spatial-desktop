@@ -2393,7 +2393,6 @@ function prepareZoneResizers() {
 }
 
 const areaPriority = ["projects", "apps", "systems", "ai"];
-const persistentAreas = new Set(["projects", "apps", "systems"]);
 const dockEdges = ["left", "right", "top", "bottom"];
 const dockState = {
   projects: { edge: "left", order: 1 },
@@ -2432,14 +2431,7 @@ function areaFor(name) {
 }
 
 function areaCanBeHidden(name) {
-  return !persistentAreas.has(name);
-}
-
-function keepPersistentAreasVisible() {
-  persistentAreas.forEach(name => {
-    const area = areaFor(name);
-    if (area) area.hidden = false;
-  });
+  return areaPriority.includes(name);
 }
 
 function areaLabel(name) {
@@ -2485,7 +2477,6 @@ function applyAreaSession(workspaceName) {
   saved.state ||= {};
   areaPriority.forEach(name => { saved.state[name] ||= {...(defaultAreaSession?.state[name] || dockState[name])}; });
   saved.hidden ||= {};
-  persistentAreas.forEach(name => { saved.hidden[name] = false; });
   workspaceAreaSessions[workspaceName] = saved;
   if (saved.state) areaPriority.forEach(name => {
     if (dockEdges.includes(saved.state[name]?.edge)) {
@@ -2719,7 +2710,7 @@ function syncAreaControls(states) {
       if (name === "projects") row.hidden = false;
       row.classList.toggle("is-hidden", hidden);
       const detail = $("small", row);
-      if (detail) detail.textContent = hidden ? "Closed" : layoutStateLabel(states[name]);
+      if (detail) detail.textContent = hidden ? "Hidden" : layoutStateLabel(states[name]);
     }
   });
 }
@@ -3049,7 +3040,6 @@ function applySecondaryAreaCanvas(names, width, height) {
 }
 
 function layoutDockAreas(save = false, fitWindows = true) {
-  keepPersistentAreasVisible();
   const shell = $(".desktop-shell");
   const width = shell.clientWidth;
   const height = shell.clientHeight;
@@ -3146,10 +3136,11 @@ function hideArea(name) {
   if (!areaCanBeHidden(name)) return;
   const area = areaFor(name);
   if (!area) return;
+  if (name === "systems") endSystemRailExpansion(false);
   area.hidden = true;
   layoutDockAreas(true);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
-  showToast(areaLabel(name) + " closed — reopen it from Overview");
+  showToast(areaLabel(name) + " hidden — reopen it from Overview · Super");
 }
 
 function showArea(name, announce = true) {
@@ -3305,7 +3296,6 @@ function prepareAreaWindows() {
   });
   if (saved?.sizes) dockEdges.forEach(edge => { if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge]; });
   if (saved?.hidden) areaPriority.forEach(name => { if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]); });
-  keepPersistentAreasVisible();
   if (saved?.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
 
   areaPriority.forEach(name => {
@@ -6007,7 +5997,7 @@ function contextMenuEntries(context) {
     extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
     { action: "area-reset", icon: "i-max", label: "Reset Area size" },
     areaCanBeHidden(context.name) ? separator : null,
-    areaCanBeHidden(context.name) ? { action: "area-hide", icon: "i-min", label: "Hide Area", danger: true } : null
+    areaCanBeHidden(context.name) ? { action: "area-hide", icon: "i-min", label: "Hide Area" } : null
   ].filter(Boolean);
   return [];
 }

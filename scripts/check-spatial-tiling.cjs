@@ -235,27 +235,33 @@ vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', doc
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
 
-vm.runInContext(slice("function hideArea(", "function showArea("), docks);
+vm.runInContext(slice("function hideArea(", "function setDockPosition("), docks);
 vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);
-vm.runInContext(`workspaceAreaSessions.general.hidden = {apps: true, systems: true, projects: false};
-  applyAreaSession("general"); hideArea("apps"); hideArea("systems");`, docks);
-assert.equal(areaFrames.apps.hidden, false, "Apps cannot be hidden by old saved state or a hide action");
-assert.equal(areaFrames.systems.hidden, false, "System cannot be hidden by old saved state or a hide action");
-for (const name of ["apps", "systems"]) {
-  assert.equal(vm.runInContext(`contextMenuEntries({kind: "area", name: "${name}"}).some(item => item.action === "area-hide")`, docks), false, name + " context menu has no hide command");
+vm.runInContext(`workspaceAreaSessions.general.hidden = {apps:true, systems:true, projects:true, ai:true};
+  applyAreaSession("general");`, docks);
+for (const name of ["apps", "systems", "projects", "ai"]) {
+  assert.equal(areaFrames[name].hidden, true, name + " restores saved hidden state");
+  assert.equal(vm.runInContext(`contextMenuEntries({kind:"area",name:"${name}"}).some(item => item.action === "area-hide")`, docks), true, name + " has a hide context command");
 }
-vm.runInContext('hideArea("projects")', docks);
-assert.equal(areaFrames.projects.hidden, false, "The project column keeps its Project Area available");
-docks.projectColumnActive = () => false;
-vm.runInContext('layoutDockAreas(false, false)', docks);
-assert.equal(areaFrames.projects.hidden, false, "The workspace column keeps the Project Area available");
-docks.projectColumnActive = () => true;
-vm.runInContext('layoutDockAreas(false, false)', docks);
-assert.equal(areaFrames.projects.hidden, false, "Returning to the project column restores its Project Area");
+assert.deepEqual(docks.insets, {left:0,right:0,bottom:0,top:0}, "Hiding every Area frees the entire canvas");
+vm.runInContext('activeWorkspace = "school"; applyAreaSession("school");', docks);
+assert.equal(areaFrames.apps.hidden, false, "Another workspace keeps its own visible Areas");
+vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', docks);
+for (const name of ["apps", "systems", "projects", "ai"]) {
+  assert.equal(areaFrames[name].hidden, true, "Workspace switching preserves " + name + " visibility");
+  vm.runInContext(`showArea("${name}",false);`, docks);
+  assert.equal(areaFrames[name].hidden, false, name + " can be restored");
+  vm.runInContext(`hideArea("${name}"); applyAreaSession("general");`, docks);
+  assert.equal(areaFrames[name].hidden, true, name + " can be hidden again and restored as hidden");
+}
+vm.runInContext('["apps","systems","projects","ai"].forEach(name => showArea(name,false));', docks);
+assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Showing Areas restores their original dock sizes and positions");
 const html = fs.readFileSync(require("node:path").join(__dirname, "../dist/index.html"), "utf8");
 assert(!html.includes("data-area-auto"), "Move dock buttons are removed");
-assert(!/data-(?:area-hide|overview-area-visibility)="(?:apps|systems)"/.test(html), "No Apps/System hide buttons remain");
-console.log("Persistent Areas: hidden-state migration, blocked hide actions, context-menu policy and removed controls passed.");
+for (const name of ["apps", "systems", "projects", "ai"]) {
+  assert(html.includes('data-overview-area-visibility="' + name + '"'), name + " has a Show/Hide recovery control in Overview");
+}
+console.log("Hideable Areas: all four context commands, saved visibility, full canvas, workspace isolation and Show recovery passed.");
 
 // Mixed tile/float/fullscreen state is preserved through normal re-layouts.
 sandbox.projectModeId = () => "modeling";
