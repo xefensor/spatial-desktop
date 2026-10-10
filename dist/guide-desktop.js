@@ -176,6 +176,7 @@
     $('#universalSearchInput').placeholder = model.active() && !model.allows('all') ? (model.allows('folders') ? 'Search applications, projects and files' : model.allows('projects') ? 'Search applications and projects' : 'Search applications') : 'Search apps, files, settings, actions or the web';
     $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects and Home';
     filterLauncher();
+    globalThis.SpatialOverviewDesktop?.refresh();
     layoutDockAreas(false, false); refreshIntentAreas(); scheduleWindowTiling();
   }
   function referenceMarkup() {

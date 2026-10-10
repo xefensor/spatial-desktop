@@ -96,6 +96,7 @@ function renderAppFiles(id, path, {history = true} = {}) {
   const previousPath=frame.dataset.fileLocation,previousQuery=frame.dataset.fileQuery;
   if (history && path !== SpatialAppTools.current(model.navigation)) {
     SpatialAppTools.visit(model.navigation, path); model.query = ''; model.selected = null;
+    globalThis.SpatialTimelineDesktop?.record('file.folder',{app:id,title:path.split('/').at(-1)||'Filesystem',path});
   }
   frame.dataset.fileLocation = path; frame.dataset.fileWorkspace = activeWorkspace;
   $('.address-bar input', frame).value = path;
@@ -140,6 +141,7 @@ function openAppFile(id, name) {
   const row = appFileRows(id,path).find(row => row[0] === name);
   if (!row) return;
   if (row[2] === 'folder') { renderFileLocation(id,row[3] || path.replace(/\/$/,'') + '/' + row[0]); saveAppWindows(); return; }
+  globalThis.SpatialTimelineDesktop?.record('file.open',{app:id,title:name,path:path.replace(/\/$/,'')+'/'+name});
   if(globalThis.SpatialMemoryDesktop?.openFile(id,path,name))return;
   const file = workspaceDownloads.list(path).find(file => file.name === name);
   const project = Object.values(projectSpaces).find(project => project.root === path);
@@ -203,6 +205,7 @@ function navigateBrowser(id, address) {
     detail:external?'The prototype cannot display external websites here. Use the link below to open this address.':source.detail,
     links:[],external};
   SpatialAppTools.visit(model.navigation,page);
+  globalThis.SpatialTimelineDesktop?.record('browser.visit',{app:id,title:page.title,address:page.address});
   workspaceContent[activeWorkspace] ||= {frames:{},history:[]};
   (workspaceContent[activeWorkspace].history ||= []).push({address:page.address,time:Date.now()});
   saveIndependentSessions();renderBrowserPage(id);saveAppWindows();

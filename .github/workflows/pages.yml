@@ -36,6 +36,7 @@ jobs:
           node scripts/check-spatial-guide.cjs
           node scripts/check-working-memory.cjs
           node scripts/check-ai-context.cjs
+          node scripts/check-overview-timeline.cjs
           node scripts/check-workspace-setup.cjs
           node scripts/check-ui-refinements.cjs
           node scripts/check-system-rail.cjs

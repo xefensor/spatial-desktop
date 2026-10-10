@@ -1352,6 +1352,7 @@ function openApp(name, dropPoint = null) {
     scheduleSpatialAutoLayout();
     scheduleWindowTiling(name);
   }
+  if (previousState !== "open") globalThis.SpatialTimelineDesktop?.record(previousState === "minimized" ? "app.restore" : "app.open", {app:name});
   queueDesktopStateBroadcast();
 }
 
@@ -1380,6 +1381,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   syncMaximizeButton(frame);
   appState[name] = "minimized";
+  globalThis.SpatialTimelineDesktop?.record("app.park", {app:name});
   if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
@@ -1398,6 +1400,7 @@ function minimizeApp(name, preserveGeometry = false) {
 }
 
 function closeApp(name) {
+  const wasOpen = appState[name] !== "closed";
   releaseBorrowedApp(name);
   removeOffPageWindowTiles(name);
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
@@ -1405,6 +1408,7 @@ function closeApp(name) {
   frame?.classList.remove("is-maximized");
   if (frame) delete frame.dataset.maximized;
   appState[name] = "closed";
+  if (wasOpen) globalThis.SpatialTimelineDesktop?.record("app.close", {app:name});
   delete tileSession().floating[name];
   if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
@@ -3733,6 +3737,7 @@ function activateProject(name, announce = true) {
   workspaceProjects[activeWorkspace] = name;
   saveIndependentSessions();
   const restored = restoreProjectWindows(name, false, true);
+  globalThis.SpatialTimelineDesktop?.record("project.open", {project:name,title:project.name});
   if (announce) showToast(project.name + " opened · " + restored + " window" + (restored === 1 ? "" : "s"));
 }
 
@@ -3825,6 +3830,7 @@ function closeActiveProject() {
   if (!activeProjectName) return;
   const name = activeProjectName;
   const project = projectSpaces[name];
+  globalThis.SpatialTimelineDesktop?.record("project.close", {project:name,title:project.name});
   captureWorkspaceContent();
   if (tileSession().fullscreen) leaveAppFullscreen();
   const parked = parkProjectWindows(name, false);
@@ -4516,10 +4522,7 @@ function refreshWorkspaceContext() {
 let activeOverviewView = "all";
 
 function setOverviewView(view, focus = false) {
-  /* Overview is intentionally one glanceable surface. Project context,
-     favourite apps, open windows and live system state remain visible at the
-     same time instead of being split into tabs. Keep this function as a
-     compatibility entry point for older callers and saved sessions. */
+  // Keep existing callers while the live sections use the snapping track.
   activeOverviewView = "all";
   const home = $("#overviewHome");
   home.dataset.overviewState = "all";
@@ -4530,6 +4533,7 @@ function setOverviewView(view, focus = false) {
   $(".overview-main").hidden = false;
   $(".overview-widgets").hidden = false;
   renderOverviewWindows();
+  globalThis.SpatialOverviewDesktop?.refresh();
   if (focus) $("#overviewHome")?.focus?.({preventScroll:true});
 }
 
@@ -4543,6 +4547,7 @@ function renderWorkspace(name, announce = true) {
   const profile = workspaceProfiles[name];
   if (!profile) return;
   if (name !== activeWorkspace && !desktopSyncApplying) captureCurrentWorkspaceSession();
+  const previousWorkspace = activeWorkspace;
   activeWorkspace = name;
   restoreWorkspaceProject(name);
   Object.assign(appState, workspaceAppStates[name]);
@@ -4602,6 +4607,8 @@ function renderWorkspace(name, announce = true) {
     if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
   });
+  if (previousWorkspace !== name) globalThis.SpatialTimelineDesktop?.record("workspace", {title:profile.label});
+  globalThis.SpatialOverviewDesktop?.refresh();
   if (announce) showToast(profile.label + " workspace loaded");
 }
 
@@ -5036,6 +5043,7 @@ function filterUniversalSearch() {
   if (!searching) {
     $("#universalSearchStatus").hidden = true;
     $("#universalWebLabel").textContent = "Search the web";
+    globalThis.SpatialOverviewDesktop?.refresh();
     return;
   }
 
@@ -6586,6 +6594,7 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
       scheduleWindowVisibility();
     });
   }
+  globalThis.SpatialTimelineDesktop?.record(horizontal ? "project.switch" : "desktop.switch", {project:column === "workspace" ? "" : column,page,title:horizontal ? desktopColumnLabel(column) : "Desktop " + (page + 1)});
   queueDesktopStateBroadcast(0);
   return true;
 }
