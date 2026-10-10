@@ -1,5 +1,5 @@
 /* One square glass section in focus, with real neighbouring sections at both edges. */
-.universal-search .overview-carousel{--overview-peek:clamp(58px,11vw,156px);display:flex!important;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow:hidden!important;grid-template-columns:none!important}
+.universal-search .overview-carousel{--overview-peek:clamp(58px,11vw,156px);container-type:inline-size;display:flex!important;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow:visible!important;grid-template-columns:none!important}
 .overview-carousel[hidden]{display:none!important}
 .overview-section-nav{display:flex;align-items:center;justify-content:center;position:relative;gap:5px;flex:none;min-width:0}
 .overview-section-tab{display:flex;align-items:center;gap:7px;min-height:38px;padding:7px 13px;position:relative;color:var(--muted);background:transparent;border:1px solid transparent;border-radius:0!important;font:inherit;font-size:13px;white-space:nowrap}
@@ -7,8 +7,10 @@
 .overview-section-tab[aria-pressed="true"]{color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent);border-color:var(--sd-glass-groove)}
 .overview-section-tab[aria-pressed="true"]:after{content:"";position:absolute;inset:auto 12px 3px;height:2px;background:var(--workspace-accent,var(--blue));box-shadow:0 0 5px color-mix(in srgb,var(--workspace-accent,var(--blue)) 35%,transparent)}
 .overview-scroll-hint{position:absolute;right:0;font-size:11px;color:var(--muted);white-space:nowrap}
-.overview-carousel-stage{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
-.universal-search .overview-carousel .overview-section-track{display:flex!important;flex-direction:row!important;align-items:stretch;gap:24px!important;height:100%;width:100%;min-height:0;padding:0 var(--overview-peek) 2px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;scroll-padding-inline:var(--overview-peek);overscroll-behavior-x:contain;scrollbar-width:none;position:relative;grid-template-columns:none!important;grid-template-rows:none!important;box-sizing:border-box;touch-action:pan-x pan-y}
+/* Let neighbouring panels pass the shell's inset; only the screen clips them.
+   Container width keeps the centred panel and navigation in their original places. */
+.overview-carousel-stage{--overview-bleed:calc((100vw - 100cqw)/2);position:relative;flex:1;min-height:0;min-width:0;width:100vw;margin-inline:calc(-1*var(--overview-bleed));overflow:visible}
+.universal-search .overview-carousel .overview-section-track{display:flex!important;flex-direction:row!important;align-items:stretch;gap:24px!important;height:100%;width:100%;min-height:0;padding:0 calc(var(--overview-peek) + var(--overview-bleed)) 2px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;scroll-padding-inline:calc(var(--overview-peek) + var(--overview-bleed));overscroll-behavior-x:contain;scrollbar-width:none;position:relative;grid-template-columns:none!important;grid-template-rows:none!important;box-sizing:border-box;touch-action:pan-x pan-y}
 .overview-section-track::-webkit-scrollbar{display:none}
 .universal-search .overview-carousel .overview-panel{flex:0 0 100%;width:auto!important;min-width:0!important;max-width:none!important;min-height:0!important;height:100%!important;max-height:none!important;scroll-snap-align:center;scroll-snap-stop:always;margin:0!important;padding:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;gap:0!important;border:1px solid var(--sd-glass-groove)!important;border-radius:0!important;background:color-mix(in srgb,var(--content-surface-raised) 52%,transparent)!important;box-sizing:border-box;opacity:.62;transition:opacity 140ms linear;grid-row:auto;grid-column:auto;position:relative}
 .universal-search .overview-carousel .overview-panel.is-current{opacity:1}
@@ -17,7 +19,7 @@
 .overview-panel .eyebrow{color:var(--muted)!important}
 .overview-neighbour{position:absolute;top:50%;translate:0 -50%;z-index:3;display:flex;align-items:center;gap:7px;max-width:calc(var(--overview-peek) - 18px);padding:12px 8px;border:1px solid var(--sd-glass-groove);border-radius:0!important;background:color-mix(in srgb,var(--content-surface-raised) 86%,transparent);color:var(--text);box-shadow:0 5px 18px rgba(0,0,0,.14);backdrop-filter:blur(14px);font-size:12px;cursor:pointer}
 .overview-neighbour svg{width:17px;height:17px;flex:none}.overview-neighbour span{overflow:hidden;text-overflow:ellipsis}
-.overview-neighbour-prev{left:6px}.overview-neighbour-next{right:6px}
+.overview-neighbour-prev{left:calc(var(--overview-bleed) + 6px)}.overview-neighbour-next{right:calc(var(--overview-bleed) + 6px)}
 .overview-neighbour:hover{background:color-mix(in srgb,var(--text) 10%,var(--content-surface-raised))}
 .overview-section-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0}
 .universal-search .overview-carousel .overview-apps-section .open-windows-section{flex:0 1 43%;display:flex!important;flex-direction:column!important;min-height:100px!important;border:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;border-radius:0!important;overflow-y:auto!important;margin:0;padding:8px 14px!important}
