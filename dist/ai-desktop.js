@@ -67,8 +67,37 @@
   function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into AI to attach this app with its context';});}
   prepareSources();
   const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
-  // Leave the ordinary title bar drag intact; only its app badge transfers content.
-  document.addEventListener('pointerdown',event=>{if(event.button===0&&event.target.closest('.app-identity .app-badge'))event.stopPropagation();},true);
+  // Track desktop content through pointer gestures too. HTML drag remains available
+  // for dropping into other applications; pointercancel hands control to that drag.
+  function bindContentTransfers(){
+    let gesture=null,suppressClick=false;
+    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&area.contains(target)&&!area.hidden;};
+    const clear=()=>{gesture=null;area.classList.remove('is-ai-drop-target');};
+    document.addEventListener('pointerdown',event=>{
+      suppressClick=false;
+      if(event.button!==0||globalThis.SpatialGuide?.model.active()||area.contains(event.target))return;
+      const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id]');
+      if(!source||event.target.closest('input,textarea,a,audio,summary,iframe')||event.target.closest('[data-memory-item-action]'))return;
+      const item=describe(event.target);if(!item?.title)return;
+      event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
+    },true);
+    window.addEventListener('pointermove',event=>{
+      if(!gesture||event.pointerId!==gesture.pointer)return;
+      if(!(event.buttons&1)){clear();return;}
+      if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8)gesture.moved=true;
+      if(gesture.moved)area.classList.toggle('is-ai-drop-target',Boolean(targetAt(event)));
+    },true);
+    window.addEventListener('pointerup',event=>{
+      if(!gesture||event.pointerId!==gesture.pointer)return;
+      const item=gesture.item,moved=gesture.moved,over=targetAt(event);clear();
+      if(!moved)return;suppressClick=true;
+      if(over){event.preventDefault();event.stopPropagation();add(item);}
+    },true);
+    document.addEventListener('click',event=>{if(!suppressClick)return;suppressClick=false;event.preventDefault();event.stopImmediatePropagation();},true);
+    window.addEventListener('pointercancel',clear,true);window.addEventListener('blur',clear);
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')clear();},true);
+  }
+  bindContentTransfers();
   document.addEventListener('dragstart',event=>{
     if(area.contains(event.target))return;
     sourceDrag=describe(event.target);

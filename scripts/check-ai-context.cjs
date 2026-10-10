@@ -29,3 +29,19 @@ model.folder('general','film');delete projects.film;assert.equal(model.workingFo
 for(let index=0;index<30;index++)model.add('work',{id:'item-'+index,title:'Item'});
 assert.equal(model.session('work').items.length,24);model.remove('work','item-0');assert(model.add('work',{id:'replacement'}));
 console.log('AI context passed: workspace isolation, project provenance, working folders, mixed projects, reload, display sync, safe sources and attachment bounds.');
+// Run the production pointer fallback: CUA/touch gestures and native HTML drag
+// must not compete, normal clicks survive, and canceled gestures attach nothing.
+const fs=require('node:fs'),vm=require('node:vm');
+const adapter=fs.readFileSync(require.resolve('../dist/ai-desktop.js'),'utf8');
+const handlers={document:{},window:{}};let over=false,highlighted=false;const added=[];
+const source={closest(selector){return selector.startsWith('.app-identity')?this:null;}};
+const context={document:{elementFromPoint:()=>over?'chat':'outside',addEventListener(type,fn){(handlers.document[type]||=[]).push(fn);}},window:{addEventListener(type,fn){(handlers.window[type]||=[]).push(fn);}},area:{hidden:false,contains:target=>target==='chat',classList:{remove(){highlighted=false;},toggle(name,value){highlighted=value;}}},describe:()=>({title:'Storyboard',project:'website'}),add:item=>added.push(item)};
+vm.createContext(context);vm.runInContext(adapter.slice(adapter.indexOf('  function bindContentTransfers(){'),adapter.indexOf("  document.addEventListener('dragstart'")),context);
+function send(surface,type,extra={}){const event={target:source,button:0,buttons:1,pointerId:1,clientX:10,clientY:10,preventDefault(){this.prevented=true;},stopPropagation(){this.stopped=true;},stopImmediatePropagation(){this.stopped=true;},...extra};for(const fn of handlers[surface][type]||[])fn(event);return event;}
+send('document','pointerdown');send('window','pointerup');assert.equal(added.length,0,'Clicking a source is not an attachment');
+send('document','pointerdown');over=true;send('window','pointermove',{clientX:40});assert(highlighted);send('window','pointerup',{clientX:40});assert.equal(added.length,1);assert(!highlighted);
+assert(send('document','click').prevented,'The click following a transfer does not activate the source');
+send('document','pointerdown');assert(!send('document','click').prevented,'The next deliberate click works');
+send('document','pointerdown');send('window','pointermove',{clientX:50});send('window','pointercancel');send('window','pointerup',{clientX:50});assert.equal(added.length,1,'Native drag/cancellation hands off without duplicate attachments');
+send('document','pointerdown');send('window','pointermove',{clientX:50});send('document','keydown',{key:'Escape'});send('window','pointerup',{clientX:50});assert.equal(added.length,1,'Escape cancels');
+console.log('AI content transfer passed: real production gesture path, normal clicks, threshold, drop highlight, source-click suppression, native handoff and cancellation.');
