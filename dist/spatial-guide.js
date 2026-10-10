@@ -5,6 +5,7 @@
   const lessons = [
     {id:'welcome', title:'Your desktop, one step at a time', text:'Start with an empty desktop, just like your first sign-in. We will reveal one part at a time and let you try it yourself.', task:'Ready to explore?', level:0},
     {id:'system', title:'The System Area', text:'This glass Area holds your clock, notifications, device controls and quick settings. A toggle has a light inside its bottom edge: lit means on.', task:'Switch Sound off, then on again in the System Area.', level:1, goals:['sound-off','sound-on'], target:'[data-area-window="systems"]'},
+    {id:'resize-areas', title:'Give Areas the space you need', text:'Glass Areas have a resize handle on their inner border. Drag it a little toward the desktop to widen the Area, or toward the screen edge to narrow it. This is your choice; the desktop uses the remaining space.', task:'Drag the inner border of the System Area to change its width.', level:1, goals:['area-resized'], target:'[data-area-resize="systems"]'},
     {id:'apps', title:'The Apps Area', text:'The Apps Area keeps your visible windows within reach. Its numbered icons follow the windows on your desktop. Later, this Area will also hold parked apps.', task:'Open Notes using the practice launcher in the Apps Area.', level:2, goals:['notes-open'], target:'#guidePracticeLauncher'},
     {id:'tiling', title:'Windows arrange themselves', text:'New windows automatically tile into the available desktop space. Left-drag a title bar to change their arrangement; you do not need to place every window by hand.', task:'Open Dolphin from the practice launcher. Both windows should share the available space.', level:2, goals:['two-tiled'], target:'#guidePracticeLauncher'},
     {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag the Notes title bar to make its window float.', level:2, goals:['notes-float'], target:'[data-app-frame="notes"] .app-titlebar'},
@@ -12,24 +13,28 @@
     {id:'fullscreen', title:'Full screen between Areas', text:'Left-click the maximize button to fill the desktop space between Areas. Your Areas stay accessible. Repeat the click to restore the window.', task:'Maximize an app between Areas, then left-click the same button to restore it.', level:3, goals:['bounded-enter','bounded-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
     {id:'true-fullscreen', title:'True full screen', text:'Middle-click the same button, or press Alt + Enter while an app is focused. The app uses the whole display and Areas yield. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter true full screen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
     {id:'park', title:'Park instead of minimize', text:'There is no minimization here. Park puts an app into the Apps Area as a useful live card. Its note, controls and content remain available; the app is still running.', task:'Type a short note in Notes, then use its Park button.', level:4, goals:['note-written','notes-park'], target:'[data-app-frame="notes"]'},
+    {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked note stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
     {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Find your note in its parked card and click Unpark.', level:4, goals:['notes-unpark'], target:'#miniStack'},
-    {id:'resize-areas', title:'Make room by resizing Areas', text:'Drag the inner border of a glass Area to change its width. Pull it toward the screen edge to turn it into a narrow rail; pull it back into the desktop to expand it. Apps retile to use the remaining space.', task:'Drag the highlighted inner border of the System Area to change its width.', level:4, goals:['area-resized'], target:'[data-area-resize="systems"]'},
     {id:'desktops', title:'More room, vertically', text:'Each workspace has multiple desktops. Click empty desktop space or any Area to unfocus a window, then scroll to the next desktop. Areas stay in place. Win + scroll also works while a window is focused.', task:'Go to Desktop 2, then return to Desktop 1. The left-side markers show your position.', level:5, goals:['desktop-next','desktop-return'], target:'.desktop-page-rail'},
-    {id:'projects', title:'A project has its own desktops', text:'Projects live beside the ordinary desktops in a workspace. Each open project has its own vertical set of desktops, containing only its windows. The Project Area holds the folder and resources; when no project is selected, it lists projects you can open.', task:'Open Website Launch from the Project Area. Notice its own windows and the project name at the top.', level:6, goals:['project-open'], target:'[data-area-window="projects"]'},
-    {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace, return to Website Launch, then switch to Workspace again. Your original note stays outside the project.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
+    {id:'projects', title:'Start your own project', text:'A project has its own vertical set of desktops, containing only its windows. The Project Area keeps its folder, quick note and resources together. Start with an empty project so you can see exactly what belongs to it.', task:'Choose New project in the Project Area, give it a name of your own, then create it. Leave the folder blank to use the workspace’s Projects folder.', level:6, goals:['project-created'], target:'[data-create-area-project]'},
+    {id:'project-app', title:'An app belongs where you open it', text:'Your new project starts empty. An app opened here gets its own window in this project. Opening Notes here will not move or replace the note you wrote on your ordinary desktop.', task:'Use Overview to open Notes in your project.', level:6, goals:['project-notes-open'], target:'#allAppsToggle'},
+    {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace and find your original note, return to your project, then switch to Workspace again.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
     {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. General, School, Work and Gaming are separate environments. Workspace choices are now visible in Overview.', task:'Open Overview and switch to School. Your General windows stay in General.', level:7, goals:['school-switch'], target:'.workspace-tabs'},
     {id:'folders', title:'Each workspace has its own Home', text:'School has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open School’s Downloads folder. Check its path in Dolphin.', level:8, goals:['school-downloads'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your note and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
+    {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this final task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
     let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], ...saved};
     const oldIds = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','desktops','workspaces','folders','return','complete'];
+    const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
+    const legacyIds = saved.version === 2 ? version2Ids : oldIds;
     if (saved.lessonId) state.index = lessons.findIndex(lesson => lesson.id === saved.lessonId);
-    else if (saved.status && saved.version !== 2 && Number.isInteger(saved.index) && oldIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === oldIds[saved.index]);
-    state.version = 2;
+    else if (saved.status && saved.version !== 3 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
+    state.version = 3;
     state.index = Math.max(0, Math.min(lessons.length - 1, Number(state.index) || 0));
-    state.done = Array.isArray(state.done) ? state.done.filter(value => typeof value === 'string') : [];
+    state.done = Array.isArray(state.done) ? state.done.filter(value => (lessons[state.index].goals || []).includes(value)) : [];
     return {
       get state() { return state; },
       get lesson() { return lessons[state.index]; },
@@ -44,8 +49,8 @@
         if (state.status !== 'active' || !(lessons[state.index].goals || []).includes(goal) || state.done.includes(goal)) return false;
         state.done.push(goal); return true;
       },
-      next() { if (!this.ready() || state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; return true; },
-      start(mode = 'repeat') { state = {status:'active', index:0, mode, initialized:false, done:[], version:2}; },
+      next() { if (!this.ready() || state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
+      start(mode = 'repeat') { state = {status:'active', index:0, mode, initialized:false, done:[], version:3}; },
       leave(status = 'skipped') { state.status = status; },
       snapshot: () => JSON.parse(JSON.stringify({...state, lessonId:lessons[state.index].id}))
     };
@@ -67,7 +72,29 @@
     }
     return changed;
   }
-  const api = {lessons, create, observeFullscreen, key, prefix};
+  const goalLabels = {
+    'sound-off':'Switch Sound off', 'sound-on':'Switch Sound on again',
+    'area-resized':'Change the System Area width', 'notes-open':'Open Notes', 'two-tiled':'Open Dolphin beside Notes',
+    'notes-float':'Float the Notes window', 'app-search':'Search for Dolphin', 'search-launch':'Open its search result',
+    'bounded-enter':'Maximize an app between Areas', 'bounded-exit':'Restore that window',
+    'full-enter':'Enter true full screen', 'full-exit':'Press Escape to return',
+    'note-written':'Write a short note', 'notes-park':'Park Notes', 'apps-rail':'Narrow Apps to a rail',
+    'apps-expanded':'Expand Apps again', 'notes-unpark':'Unpark your note',
+    'desktop-next':'Visit Desktop 2', 'desktop-return':'Return to Desktop 1',
+    'project-created':'Create your own empty project', 'project-notes-open':'Open Notes inside your project',
+    'project-workspace':'Find your original note in Workspace', 'project-return':'Return to your project',
+    'project-workspace-return':'Switch back to Workspace', 'school-switch':'Switch to School',
+    'school-downloads':'Open School’s Downloads folder', 'general-return':'Return to General',
+    'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
+  };
+  function placeGuide(viewport, size, targets = []) {
+    const margin = 12, width = Math.min(size.width, viewport.width - margin * 2), height = Math.min(size.height, viewport.height - margin * 2);
+    const right = Math.max(margin, viewport.width - width - margin), bottom = Math.max(margin, viewport.height - height - margin);
+    const candidates = [{left:right,top:bottom},{left:margin,top:bottom},{left:right,top:margin},{left:margin,top:margin}];
+    const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
+    return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
+  }
+  const api = {lessons, create, observeFullscreen, goalLabels, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}
