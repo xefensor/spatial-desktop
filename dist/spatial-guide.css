@@ -7,7 +7,7 @@
 .guide-identity>svg {width:23px;height:23px;color:var(--app-primary)}
 .guide-window-actions {display:flex;gap:6px}.guide-key{width:29px;height:29px;display:grid;place-items:center;padding:6px}.guide-key svg{width:16px;height:16px}
 .guide-content {overflow:auto;min-height:0;padding:23px 24px;scrollbar-width:thin}
-.guide-content h1 {font-size:25px;line-height:1.15;letter-spacing:-.035em;margin:18px 0 12px;font-weight:600;outline:none}
+.guide-content h1 {font-size:25px;line-height:1.15;letter-spacing:-.035em;margin:18px 0 12px;font-weight:600;outline:none!important;box-shadow:none!important}
 .guide-content p {font-size:13px;line-height:1.65;color:var(--muted);margin:0 0 16px}
 .guide-step-meta {display:flex;align-items:center;justify-content:space-between;gap:8px;font:10px ui-monospace,monospace;color:var(--muted)}
 .guide-text-action {border:0;padding:4px 0;background:transparent;color:var(--muted);font:inherit;font-size:11px;text-decoration:underline;text-underline-offset:3px}
@@ -23,6 +23,7 @@
 .guide-search {display:flex;align-items:center;gap:10px;padding:9px 10px;margin:20px 0 8px}.guide-search svg{width:17px;flex:none}.guide-search input{width:100%;min-width:0;background:transparent;border:0;color:var(--text);outline:none;font:inherit;font-size:12px}
 .guide-topic-list details {border-bottom:1px solid var(--line);padding:0}.guide-topic-list summary{padding:13px 0;display:flex;align-items:center;justify-content:space-between;font-size:12px;cursor:pointer;list-style:none}.guide-topic-list summary svg{width:14px;height:14px}.guide-topic-list details[open] summary svg{transform:rotate(90deg)}.guide-topic-list details p{font-size:12px}.guide-show{padding:7px 10px;font-size:11px;margin-bottom:14px}
 .guide-target {outline:2px solid color-mix(in srgb,#64d782 70%,transparent)!important;outline-offset:-3px!important}
+html[data-guide-level] .desktop-context-menu {z-index:7000!important}
 .guide-practice-launcher {display:none;gap:10px;padding:12px 0;flex-direction:column}.guide-practice-launcher>span{font-size:10px;color:var(--muted)}.guide-practice-launcher button{display:flex;align-items:center;gap:10px;padding:9px;text-align:left;font-size:12px}.guide-practice-launcher .app-art{width:27px;height:27px}
 #guideReturn{position:fixed;z-index:500;bottom:12px;left:12px;display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:11px}#guideReturn svg{width:17px;height:17px}
 html[data-guide-level="2"] .guide-practice-launcher{display:flex}

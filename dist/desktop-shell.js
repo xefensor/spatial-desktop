@@ -5856,7 +5856,16 @@ function closeDesktopContextMenu(restoreFocus = false) {
 
 function openDesktopContextMenu(context, clientX, clientY, keyboard = false) {
   const menu = $("#desktopContextMenu");
-  const entries = contextMenuEntries(context);
+  const entries = contextMenuEntries(context).filter(entry => {
+    if (!globalThis.SpatialGuide?.model.active() || !entry.action) return true;
+    const action = entry.action, model = SpatialGuide.model;
+    if (action.startsWith('move-workspace:')) return model.allows('workspaces');
+    if (action.startsWith('move-project:') || action === 'detach-project' || action.includes('project')) return model.allows('projects');
+    if (action.startsWith('move-desktop:') || action.startsWith('desktop-page:')) return model.allows('desktops');
+    if (action === 'app-minimize') return model.allows('parking');
+    if (['app-maximize','app-fullscreen'].includes(action)) return model.allows('overview');
+    return true;
+  });
   if (!menu || !entries.length) return;
   contextMenuState = { ...context, origin: document.activeElement };
   $("#contextMenuTitle").textContent = context.title;
