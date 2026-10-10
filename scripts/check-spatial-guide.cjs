@@ -129,3 +129,16 @@ assert.equal(createContext.activated,'my-project');assert.equal(createContext.pr
 assert.equal(createContext.projectSpaces['my-project'].root,'/home/demo/Projects/my-project');
 assert.equal(G.create({status:'active',version:2,index:12}).lesson.id,'projects', 'Version 2 index also migrates without a lesson ID');
 console.log('Guide task observers passed: modes, empty project creation, window ownership, rail resize, final challenge, progress migration and placement.');
+
+// Capture observes stopped click events, but must run after the control mutates state.
+const scheduled=[];let capturedClick;
+context.document={addEventListener(type,listener,capture){assert.equal(type,'click');assert.equal(capture,true);capturedClick=listener;}};
+context.setTimeout=(callback)=>scheduled.push(callback);
+const clickObserver=adapter.split('\n').find(line=>line.includes("document.addEventListener('click', () =>"));
+vm.runInContext(clickObserver,context);
+context.model=at('fullscreen');context.appState={dolphin:'open'};context.appInfo.dolphin={};context.owners.dolphin='workspace';context.column='workspace';
+const clickSession={};context.tileSession=()=>clickSession;
+capturedClick();assert(!context.model.state.done.includes('bounded-enter'));
+clickSession.focus={name:'dolphin'};scheduled.shift()();assert(context.model.state.done.includes('bounded-enter'));
+capturedClick();clickSession.focus=null;scheduled.shift()();assert(context.model.ready());
+console.log('Stopped window clicks are observed after their action, including a rapid restore.');

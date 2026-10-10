@@ -259,7 +259,7 @@
     if (event.target.closest('[data-app-frame],[data-area-resize],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog')) setCompact(true);
   }, true);
   // Window controls stop bubbling; inspect them after their own click action.
-  document.addEventListener('click', () => queueMicrotask(check), true);
+  document.addEventListener('click', () => setTimeout(check, 0), true);
   document.addEventListener('pointerup', check);
   document.addEventListener('keyup', check);
   document.addEventListener('input', event => {
