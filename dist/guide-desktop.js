@@ -2,6 +2,12 @@
 (function () {
   'use strict';
   const guide = SpatialGuide, model = guide.model;
+  if (model.active() && pristineFrames.notes) {
+    // New practice Notes windows begin empty, without the public demo note.
+    $('.notes-layout textarea',pristineFrames.notes).value = '';
+    $('.notes-layout textarea',pristineFrames.notes).textContent = '';
+    $('.app-identity small',pristineFrames.notes).textContent = 'New note';
+  }
   const window = document.createElement('section');
   window.id = 'spatialGuide'; window.className = 'guide-window material-surface-abs';
   window.setAttribute('role', 'region'); window.setAttribute('aria-label', 'Spatial Guide'); window.hidden = true;
