@@ -23,18 +23,20 @@
     {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. Create one for a part of your life: study, work, music, or anything you choose. It starts empty while your General windows stay in General.', task:'Open Overview, choose New workspace, give it your own name, then create it.', level:7, goals:['workspace-created'], target:'#newWorkspaceButton'},
     {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open any standard Home folder in your new workspace. Check that its path belongs to this workspace.', level:8, goals:['workspace-folder'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your apps and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
-    {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this final task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
+    {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this independent task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
+    {id:'two-displays', title:'One workspace, two displays', text:'Optional: extend the same workspace across two browser windows. Move the second window to another monitor if you have one, or place both side by side. An app keeps its project or Workspace ownership when it moves. Right-click a window’s title bar or an Area’s header and choose Move to Display 2; the same menu brings it back. True full screen uses one display while Areas move to the other when there is room.', task:'Open the second practice display. Move any app there and back, move an Area there, then middle-click an app’s maximize button on this display. Look at the Areas on Display 2 and press Escape to restore the app.', level:9, optional:true, goals:['display-linked','display-app-moved','display-app-returned','display-area-moved','display-full-enter','display-full-exit'], target:'[data-guide-action="open-display"]'},
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing and moving Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
     let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], skipped:[], ...saved};
     const oldIds = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','desktops','workspaces','folders','return','complete'];
     const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
-    const version4Ids = lessons.filter(lesson => lesson.id !== 'move-areas').map(lesson => lesson.id);
-    const legacyIds = [3,4].includes(saved.version) ? version4Ids : saved.version === 2 ? version2Ids : oldIds;
+    const version4Ids = lessons.filter(lesson => !['move-areas','two-displays'].includes(lesson.id)).map(lesson => lesson.id);
+    const version5Ids = lessons.filter(lesson => lesson.id !== 'two-displays').map(lesson => lesson.id);
+    const legacyIds = saved.version === 5 ? version5Ids : [3,4].includes(saved.version) ? version4Ids : saved.version === 2 ? version2Ids : oldIds;
     if (saved.lessonId) state.index = lessons.findIndex(lesson => lesson.id === saved.lessonId);
-    else if (saved.status && saved.version !== 5 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
-    state.version = 5;
+    else if (saved.status && saved.version !== 6 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
+    state.version = 6;
     state.index = Math.max(0, Math.min(lessons.length - 1, Number(state.index) || 0));
     const legacyGoals = {'sound-off':'toggle-off','sound-on':'toggle-on','notes-open':'app-open','notes-float':'app-float','notes-park':'app-park','notes-unpark':'app-unpark','project-notes-open':'project-app-open','workspace-downloads':'workspace-folder'};
     if (Array.isArray(saved.done) && saved.done.includes('notes-park')) state.parkedWindow ||= 'notes';
@@ -55,7 +57,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; delete state.displayBaseline; delete state.displayWindow; delete state.displayFullscreen; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -63,7 +65,7 @@
       },
       start(mode = 'repeat', chapter = null) {
         const index = lessons.findIndex(lesson => lesson.id === chapter && lesson.goals);
-        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:5};
+        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:6};
         if (index > 0) state.chapter = chapter;
       },
       leave(status = 'skipped') { state.status = status; },
@@ -100,13 +102,14 @@
     'project-workspace':'Find your apps in Workspace', 'project-return':'Return to your project',
     'project-workspace-return':'Switch back to Workspace', 'workspace-created':'Create your own empty workspace',
     'workspace-folder':'Open any of your workspace’s Home folders', 'general-return':'Return to General',
+    'display-linked':'Connect the second practice display', 'display-app-moved':'Move any app to Display 2', 'display-app-returned':'Bring that app back to this display', 'display-area-moved':'Move any Area to Display 2', 'display-full-enter':'Try true full screen with Areas on Display 2', 'display-full-exit':'Press Escape to restore the app',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
   // Supply missing windows for skip/replay, retaining the learner’s own app choices.
   function prerequisites(id) {
     const index = lessons.findIndex(lesson => lesson.id === id);
     return {window:index >= lessons.findIndex(lesson => lesson.id === 'tiling'), parked:['area-rail','unpark'].includes(id),
-      project:index >= lessons.findIndex(lesson => lesson.id === 'project-app'), projectApp:index >= lessons.findIndex(lesson => lesson.id === 'project-navigation'),
+      project:id !== 'two-displays' && index >= lessons.findIndex(lesson => lesson.id === 'project-app'), projectApp:id !== 'two-displays' && index >= lessons.findIndex(lesson => lesson.id === 'project-navigation'),
       inProject:['project-app','project-navigation'].includes(id),
       ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'};
   }
@@ -157,6 +160,23 @@
     if (launch && results.includes(launch) && opened.includes(launch)) changed = model.mark('search-launch') || changed;
     return changed;
   }
+  function observeDisplays(model, {count = 1, slot = 1, assignments = {}, states = {}, areas = [], full, open = []}) {
+    if (!model.active() || model.lesson.id !== 'two-displays' || count < 2) return false;
+    const before = JSON.stringify(model.state), done = model.state.done;
+    model.mark('display-linked');
+    model.state.displayBaseline ||= {slot, apps:{...assignments.apps}, areas:{...assignments.areas}};
+    const baseline = model.state.displayBaseline;
+    const moved = Object.keys(states).find(name => states[name] === 'open' && Number(assignments.apps?.[name] || 1) !== Number(baseline.apps[name] || baseline.slot));
+    if (!model.state.displayWindow && moved) {model.state.displayWindow = moved; model.mark('display-app-moved');}
+    const name = model.state.displayWindow;
+    if (name && states[name] === 'open' && Number(assignments.apps?.[name] || 1) === baseline.slot && open.includes(name)) model.mark('display-app-returned');
+    if (areas.some(area => Number(assignments.areas?.[area.name] || 1) !== Number(baseline.areas[area.name] || baseline.slot))) model.mark('display-area-moved');
+    if (done.includes('display-app-returned') && done.includes('display-area-moved') && full && areas.some(area => area.saved === slot && area.actual !== slot && !area.hidden)) {
+      model.state.displayFullscreen = full; model.mark('display-full-enter');
+    }
+    if (done.includes('display-full-enter') && !full && open.includes(model.state.displayFullscreen)) model.mark('display-full-exit');
+    return before !== JSON.stringify(model.state);
+  }
   function recovery(model, scene) {
     if (!model.active() || model.ready()) return null;
     const id = model.lesson.id, done = model.state.done;
@@ -187,7 +207,7 @@
     const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
     return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
   }
-  const api = {lessons, create, observeFullscreen, observeWindows, observeToggle, observeSearch, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
+  const api = {lessons, create, observeFullscreen, observeWindows, observeToggle, observeSearch, observeDisplays, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}
@@ -195,21 +215,23 @@
     real = {};
     Object.defineProperties(real, {getItem:{value:name=>real[name] ?? null}, setItem:{value:(name,value)=>{real[name]=String(value);}}, removeItem:{value:name=>{delete real[name];}}});
   }
+  const params = new URLSearchParams(root.location?.search || '');
+  api.displayCompanion = params.get('guide') === 'display';
   let saved = {}, fresh = false;
   try {
     saved = JSON.parse(real.getItem(key) || '{}');
     fresh = !saved.status && !real.getItem('spatial-workspace-app-states-v1') && !real.getItem('spatial-active-workspace');
   } catch {}
   const model = create(saved);
-  if (fresh) model.start('first');
+  if (fresh && !api.displayCompanion) model.start('first');
   api.model = model;
   api.view = 'expanded';
   try { if (real.getItem('spatial-guide-view-v1') === 'compact') api.view = 'compact'; } catch {}
   api.setView = value => { api.view = value === 'compact' ? 'compact' : 'expanded'; try { real.setItem('spatial-guide-view-v1',api.view); } catch {} };
-  api.save = () => { try { real.setItem(key, JSON.stringify(model.snapshot())); } catch {} };
+  api.save = () => { if (api.displayCompanion) return; try { real.setItem(key, JSON.stringify(model.snapshot())); } catch {} };
   // Keep late layout/autosave callbacks in practice storage while leaving.
   // The normal desktop gets its own facade after the page reloads.
-  let practiceSession = model.active();
+  let practiceSession = model.active() || api.displayCompanion;
   const storageKey = name => { if (model.active()) practiceSession = true; return (practiceSession ? prefix : '') + name; };
   api.storage = {
     getItem(name) { try { return real.getItem(storageKey(name)); } catch { return null; } },
@@ -220,11 +242,13 @@
     try { Object.keys(real).filter(name => name.startsWith(prefix)).forEach(name => real.removeItem(name)); } catch {}
   };
   if (!fresh && !model.active() && root.location) {
-    const params = new URLSearchParams(root.location.search);
     if (params.get('guide') === 'start' || params.get('guide') === 'chapter') {
       api.clearPractice(); model.start('repeat',params.get('guide') === 'chapter' ? params.get('chapter') : null);
     }
   }
+  if (model.active() && !model.state.sessionId && !api.displayCompanion) model.state.sessionId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+  api.syncScope = api.displayCompanion ? 'guide:' + params.get('practice') : model.active() ? 'guide:' + model.state.sessionId : 'desktop';
+  api.displayValid = !api.displayCompanion || (model.active() && model.lesson.id === 'two-displays' && params.get('practice') === model.state.sessionId);
   api.finish = (status, choice = "keep") => {
     // A first-run learner keeps their work. Repeat lessons never touch their real session.
     if (['clean','demo'].includes(choice)) root.SpatialWorkspaceSetup.reset(real,choice);

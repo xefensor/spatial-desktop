@@ -2,6 +2,14 @@
 (function () {
   'use strict';
   const guide = SpatialGuide, model = guide.model;
+  if (guide.displayCompanion) {
+    const banner = document.createElement('aside'); banner.className = 'guide-display-banner material-surface-glass';
+    banner.setAttribute('aria-label','Second practice display');
+    banner.innerHTML = '<span><b>Display 2 · Guide practice</b><small>' + (guide.displayValid ? 'The same workspace. Continue the tasks in the first window.' : 'This practice session has ended. Return to the first window.') + '</small></span><button class="surface-key" data-guide-close-display>Close practice display</button>';
+    document.body.append(banner); $('button',banner).addEventListener('click',()=>globalThis.close());
+    guide.open = () => {};
+    return;
+  }
   if (model.active() && pristineFrames.notes) {
     // New practice Notes windows begin empty, without the public demo note.
     $('.notes-layout textarea',pristineFrames.notes).value = '';
@@ -19,6 +27,18 @@
   $('.area-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('.area-window-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('#appRack').before(launcher);
+  let practiceDisplay = null;
+  function closePracticeDisplay() {
+    if (model.lesson.id !== 'two-displays' && !practiceDisplay) return;
+    postDesktopSyncMessage({type:'guide-display-end'});
+    practiceDisplay?.close(); practiceDisplay = null;
+  }
+  async function openPracticeDisplay() {
+    const url = new URL(location.href); url.searchParams.set('guide','display'); url.searchParams.delete('chapter'); url.searchParams.set('practice',model.state.sessionId);
+    practiceDisplay = globalThis.open(url.href,'spatial-guide-display-' + model.state.sessionId);
+    if (!practiceDisplay) { $('#guideTaskStatus').textContent = 'Allow this demo to open its second practice window, then try again.'; return; }
+    await prepareLesson(); queueDesktopStateBroadcast(0); lastSignature = ''; check();
+  }
   let highlighted = [], interval = 0, lastSignature = '', pointer = null, currentRecovery = null, lastFullscreen = null;
 
   async function waitForScene() {
@@ -213,7 +233,7 @@
     const lesson = model.lesson, index = model.state.index, welcome = index === 0, complete = lesson.id === 'complete';
     const introduction = complete && model.state.skipped?.length ? 'Your introduction is finished. You can revisit any skipped topic or practice an individual chapter in Spatial Guide anytime.' : lesson.text;
     window.classList.toggle('is-lesson', !welcome);
-    content.innerHTML = '<div class="guide-step-meta"><span>' + (welcome ? 'WELCOME' : complete ? 'READY TO GO' : model.state.chapter ? 'CHAPTER PRACTICE' : 'STEP ' + index + ' OF ' + (guide.lessons.length-2)) + '</span><button class="guide-text-action" data-guide-action="leave">' + (welcome ? 'Skip introduction' : model.state.chapter ? 'Leave chapter' : 'Leave introduction') + '</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="' + (guide.lessons.length-1) + '" aria-valuenow="' + index + '"><i style="width:' + (index/(guide.lessons.length-1)*100) + '%"></i></div><h1 tabindex="-1">' + escapeHtml(lesson.title) + '</h1><p>' + escapeHtml(introduction) + '</p><div class="guide-task"><span class="eyebrow">' + (complete ? 'COME BACK ANYTIME' : welcome ? 'AT YOUR OWN PACE' : 'TRY IT') + '</span><p>' + escapeHtml(lesson.task) + '</p><ol class="guide-checklist">' + (lesson.goals || []).map(goal => '<li data-guide-goal="' + goal + '"><span class="guide-goal-state" aria-hidden="true">○</span><span>' + escapeHtml(guide.goalLabels[goal]) + '</span></li>').join('') + '</ol><span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">' + (welcome ? 'Start exploring' : complete ? 'Continue to desktop' : model.state.chapter ? 'Finish chapter' : 'Continue') + icon('i-right') + '</button>' + (!welcome && !complete && !lesson.challenge ? '<button class="guide-text-action" data-guide-action="show">Show target</button>' : '') + '</div>' + (!welcome && !complete && !model.state.chapter ? '<button class="guide-text-action guide-skip" data-guide-action="skip">I already know this — skip task</button>' : '') + (welcome ? '<p class="guide-footnote">Skip now or leave at any point. Find us again in Overview → Applications → Help, or search “Spatial Guide”.</p>' : '<p class="guide-footnote">These are real desktop actions. Progress is saved; refreshing resumes this step.' + (model.state.mode === 'repeat' ? ' Your original desktop returns when you leave.' : '') + '</p>');
+    content.innerHTML = '<div class="guide-step-meta"><span>' + (welcome ? 'WELCOME' : complete ? 'READY TO GO' : model.state.chapter ? 'CHAPTER PRACTICE' : 'STEP ' + index + ' OF ' + (guide.lessons.length-2)) + '</span><button class="guide-text-action" data-guide-action="leave">' + (welcome ? 'Skip introduction' : model.state.chapter ? 'Leave chapter' : 'Leave introduction') + '</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="' + (guide.lessons.length-1) + '" aria-valuenow="' + index + '"><i style="width:' + (index/(guide.lessons.length-1)*100) + '%"></i></div><h1 tabindex="-1">' + escapeHtml(lesson.title) + '</h1><p>' + escapeHtml(introduction) + '</p><div class="guide-task"><span class="eyebrow">' + (complete ? 'COME BACK ANYTIME' : welcome ? 'AT YOUR OWN PACE' : 'TRY IT') + '</span><p>' + escapeHtml(lesson.task) + '</p>' + (lesson.id === 'two-displays' ? '<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button><p class="guide-display-help">Two browser windows simulate two displays. Keep them in the same browser profile. You can skip this chapter with one monitor.</p>' : '') + '<ol class="guide-checklist">' + (lesson.goals || []).map(goal => '<li data-guide-goal="' + goal + '"><span class="guide-goal-state" aria-hidden="true">○</span><span>' + escapeHtml(guide.goalLabels[goal]) + '</span></li>').join('') + '</ol><span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">' + (welcome ? 'Start exploring' : complete ? 'Continue to desktop' : model.state.chapter ? 'Finish chapter' : 'Continue') + icon('i-right') + '</button>' + (!welcome && !complete && !lesson.challenge ? '<button class="guide-text-action" data-guide-action="show">Show target</button>' : '') + '</div>' + (!welcome && !complete && !model.state.chapter ? '<button class="guide-text-action guide-skip" data-guide-action="skip">' + (lesson.optional ? 'Skip two-display practice' : 'I already know this — skip task') + '</button>' : '') + (welcome ? '<p class="guide-footnote">Skip now or leave at any point. Find us again in Overview → Applications → Help, or search “Spatial Guide”.</p>' : '<p class="guide-footnote">These are real desktop actions. Progress is saved; refreshing resumes this step.' + (model.state.mode === 'repeat' ? ' Your original desktop returns when you leave.' : '') + '</p>');
     prepareControlSemantics(window); highlight();
     if (!welcome) setCompact(guide.view === 'compact');
     if (tileSession().fullscreen && guide.shouldCompact(guide.view,window.getBoundingClientRect(),frameFor(tileSession().fullscreen.name).getBoundingClientRect())) setCompact(true);
@@ -241,6 +261,13 @@
     if (session.fullscreen?.name !== lastFullscreen) {
       lastFullscreen = session.fullscreen?.name;
       if (session.fullscreen && guide.shouldCompact(guide.view,window.getBoundingClientRect(),frameFor(session.fullscreen.name).getBoundingClientRect())) setCompact(true);
+    }
+    if (id === 'two-displays') {
+      const assignments = displayAssignmentsFor();
+      const areas = areaPriority.filter(name=>!areaFor(name).hidden).map(name=>({name,saved:Number(assignments.areas[name] || 1),actual:Number(intentAreaPlan.moves[name] || assignments.areas[name] || 1),hidden:!!intentAreaPlan.hidden[name]}));
+      if (guide.observeDisplays(model,{count:activeDisplayRoster().length,slot:localDisplaySlot(),assignments,states:appState,areas,full:session.fullscreen?.name,open})) {guide.save();lastSignature = '';}
+      const displayButton = $('[data-guide-action="open-display"]',window);
+      if (displayButton) {displayButton.disabled = extendedDesktopActive();displayButton.textContent = extendedDesktopActive() ? 'Second practice display connected' : done.includes('display-linked') ? 'Reconnect second practice display' : 'Open second practice display';}
     }
     if (id === 'resize-areas') {
       const edge = dockState.systems.edge;
@@ -284,7 +311,7 @@
     if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && open.some(name => (appInfo[name].base || name) === 'dolphin' && SpatialHomeFolders.standard.some(folder => frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/' + folder))) mark('workspace-folder');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
     currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,parked:Object.keys(states).filter(name=>states[name] === 'minimized')});
-    const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery]);
+    const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery,id === 'two-displays' && extendedDesktopActive()]);
     if (signature === lastSignature) { positionGuide(); return; }
     lastSignature = signature;
     $$('[data-guide-action="next"]', window).forEach(button => { button.disabled = !ready; });
@@ -298,6 +325,11 @@
     if (currentRecovery) $('.guide-strip-task',window).textContent = currentRecovery.text;
     const status = $('#guideTaskStatus');
     if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is true full screen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Full screen detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'True full screen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
+    if (id === 'two-displays' && !ready) {
+      const tips = {'display-linked':'Open the second practice display. Both windows share this practice desktop.', 'display-app-moved':'Right-click any app title bar → Move to Display 2.', 'display-app-returned':'In Display 2, right-click that app title bar → Move to Display 1.', 'display-area-moved':'Right-click any Area header → Move to Display 2.', 'display-full-enter':'On this display, middle-click an app’s maximize button. Look for Areas on Display 2.', 'display-full-exit':'Press Escape on the full-screen app to restore it.'};
+      const tip = extendedDesktopActive() ? tips[model.lesson.goals.find(goal=>!done.includes(goal))] : 'The second display is disconnected. Reopen it to continue, or skip this optional chapter.';
+      if (status) status.textContent = tip; $('.guide-strip-task',window).textContent = tip;
+    }
     if (id === 'fullscreen' && session.fullscreen) $('.guide-strip-task',window).textContent = 'True full screen — press Escape, then left-click maximize.';
     highlight(); positionGuide();
   }
@@ -316,7 +348,7 @@
   }
   function requestExit(status) {
     if (model.state.chapter) return leave(status);
-    setUniversalSearchOpen(false);
+    closePracticeDisplay(); setUniversalSearchOpen(false);
     if (tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
     closeProjectEditor();
     model.state.exitStatus = status; guide.save(); renderExitChoices();
@@ -324,7 +356,7 @@
   function leave(status, choice = 'keep') {
     setUniversalSearchOpen(false);
     captureCurrentWorkspaceSession(); captureWorkspaceContent();
-    clearInterval(interval); clearHighlight();
+    closePracticeDisplay(); clearInterval(interval); clearHighlight();
     guide.finish(status,choice);
     const url = new URL(location.href); url.searchParams.delete('guide'); url.searchParams.delete('chapter'); history.replaceState(null, '', url);
     location.reload();
@@ -338,14 +370,19 @@
     const action = event.target.closest('[data-guide-action]')?.dataset.guideAction;
     const preset = event.target.closest('[data-guide-preset]')?.dataset.guidePreset;
     if (preset && model.state.exitStatus) return leave(model.state.exitStatus,preset);
+    if (action === 'open-display') return openPracticeDisplay();
     if (action === 'exit-back') { delete model.state.exitStatus; guide.save(); return render(); }
     if (action === 'start') start();
     if (action === 'next') {
       if (!model.ready()) return;
       if (model.lesson.id === 'complete' || model.state.chapter) return requestExit('completed');
+      if (model.lesson.id === 'two-displays') closePracticeDisplay();
       if (model.next()) { guide.save(); updateGate(); render(); }
     }
-    if (action === 'skip' && model.skip()) { guide.save(); updateGate(); await prepareLesson(); render(); }
+    if (action === 'skip' && !model.state.chapter) {
+      if (model.lesson.id === 'two-displays') closePracticeDisplay();
+      if (model.skip()) { guide.save(); updateGate(); if (model.lesson.id !== 'complete') await prepareLesson(); render(); }
+    }
     if (action === 'recover' && currentRecovery) await recover(currentRecovery.action);
     if (action === 'leave') requestExit('skipped');
     if (action === 'close') {

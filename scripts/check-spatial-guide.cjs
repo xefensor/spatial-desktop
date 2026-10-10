@@ -24,7 +24,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,two-displays,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -82,6 +82,7 @@ assert(projects.allows('projects')); assert(projects.allows('desktops')); assert
 
 for (const version of [3,4]) {const resumed=G.create({status:'active',version,index:3,done:['notes-open']});assert.equal(resumed.lesson.id,'apps');assert(resumed.ready(),'Progress before the new docking chapter keeps its original task');}
 assert.equal(G.create({status:'active',version:5,index:3}).lesson.id,'move-areas');
+assert.equal(G.create({status:'active',version:5,index:21}).lesson.id,'complete','The old final screen stays final');
 // Free choice still requires the right action, sequence and window ownership.
 for (const name of ['browser','terminal','elisa','dolphin','notes','terminal--2']) {
   const app=at('apps');G.observeWindows(app,{open:[name],bases:{[name]:name.split('--')[0]}});assert(app.ready());
@@ -112,6 +113,29 @@ const oldToggle=G.create({status:'active',version:3,lessonId:'system',done:['sou
 assert(G.create({status:'active',version:3,lessonId:'park',done:['note-written','notes-park']}).ready());
 assert(!G.create({status:'active',version:3,lessonId:'park',done:['note-written']}).ready());
 console.log('General Guide tasks passed: all apps, instances, settings, search results, parking, projects, arbitrary desktops and legacy progress.');
+
+// The optional final chapter follows the challenge and can be skipped on one monitor.
+const displayLesson=at('two-displays');assert.equal(G.lessons.at(-2).id,'two-displays');assert(displayLesson.lesson.optional);
+G.observeDisplays(displayLesson,{count:1});assert(!displayLesson.state.done.length);
+const displayScene={count:2,slot:1,assignments:{apps:{terminal:1,browser:1},areas:{systems:1,apps:1}},states:{terminal:'open',browser:'open'},open:['terminal','browser'],areas:[{name:'systems',saved:1,actual:1},{name:'apps',saved:1,actual:1}]};
+G.observeDisplays(displayLesson,displayScene);assert.deepEqual(displayLesson.state.done,['display-linked']);
+displayScene.assignments.apps.terminal=2;displayScene.open=['browser'];G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-app-moved'));assert(!displayLesson.state.done.includes('display-app-returned'));
+displayScene.assignments.apps.browser=1;G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-app-returned'),'A different app cannot restore the moved window');
+displayScene.assignments.apps.terminal=1;displayScene.open.push('terminal');G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-app-returned'));
+displayScene.assignments.areas.systems=2;displayScene.areas[0]={name:'systems',saved:2,actual:2};G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-area-moved'));
+displayScene.full='terminal';G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-full-enter'),'A manually transferred Area alone does not demonstrate automatic fullscreen yielding');
+displayScene.areas[1].actual=2;displayScene.areas[1].hidden=true;G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-full-enter'),'Hidden Areas do not count as visible on the other display');
+displayScene.areas[1].hidden=false;G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-full-enter'));
+delete displayScene.full;displayScene.open=['browser'];G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.ready(),'Closing the fullscreen app does not count as restoring it');
+displayScene.open.push('terminal');G.observeDisplays(displayLesson,displayScene);assert(displayLesson.ready());assert(G.create(displayLesson.snapshot()).ready());
+const optional=at('two-displays');assert(optional.skip());assert.equal(optional.lesson.id,'complete');assert(optional.state.skipped.includes('two-displays'));
+const ownerBoot=boot({'spatial-active-workspace':'general','spatial-workspace-app-states-v1':'real-desktop'},'?guide=chapter&chapter=two-displays');
+const companionBoot=boot(ownerBoot.storage,'?guide=display&practice='+ownerBoot.api.model.state.sessionId);
+assert(companionBoot.api.displayValid);assert(companionBoot.api.displayCompanion);assert.equal(companionBoot.api.syncScope,ownerBoot.api.syncScope);
+const progress=companionBoot.storage['spatial-guide-v1'];companionBoot.api.model.mark('display-linked');companionBoot.api.save();assert.equal(companionBoot.storage['spatial-guide-v1'],progress,'Only the Guide owner saves task progress');
+companionBoot.api.storage.setItem('spatial-workspace-app-states-v1','practice-display');assert.equal(companionBoot.storage['spatial-workspace-app-states-v1'],'real-desktop');
+assert(!boot(ownerBoot.storage,'?guide=display&practice=unrelated').api.displayValid);
+console.log('Two-display chapter passed: optional ending, real transfers, same-window return, visible fullscreen Areas, reload and companion storage isolation.');
 
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
@@ -316,3 +340,19 @@ for (const choice of ['clean','demo']) for (const status of ['skipped','complete
 const pending=boot({'spatial-active-workspace':'general'},'?guide=start');pending.api.model.state.exitStatus='skipped';pending.api.save();
 assert.equal(boot(pending.storage).api.model.state.exitStatus,'skipped','Reloading remembers an unanswered desktop choice');
 console.log('Desktop exit choices passed: skip/completion, clean/demo reset, preference preservation and late autosave isolation.');
+
+const syncBoundary=desktop.slice(desktop.indexOf('function postDesktopSyncMessage('),desktop.indexOf('function prepareCrossDisplaySync('));
+let sent=[],applied=[],closed=0;
+const syncContext=vm.createContext({SpatialGuide:{model:{active:()=>true},syncScope:'guide:test',displayValid:true},desktopSyncScope:'guide:test',desktopSyncSource:'main',desktopSyncLastStamp:0,desktopSyncReady:true,desktopSyncApplying:false,desktopSyncTimer:0,desktopSyncAnnounced:false,
+ desktopSyncChannel:{postMessage(packet){sent.push(packet);}},localDisplayDescriptor:()=>({guideCompanion:false}),captureDesktopSyncState:()=>({schema:4}),desktopStorage:{setItem(){}},desktopSyncPeers:new Map(),refreshIntentAreas(){},localDisplaySlot:()=>1,localDisplayRoleLabel:()=> 'Main display',
+ document:{body:{classList:{toggle(){}}}},$(){return null;},areaFor(){return null;},rebalanceAreaDisplays:()=>false,applyExtendedDesktopPartition(){},showToast(){},workspaceProfiles:{general:{label:'General'}},activeWorkspace:'general',setTimeout,clearTimeout,
+ applyDesktopSyncState(state){applied.push(state);},close(){closed++;}});
+vm.runInContext(syncBoundary,syncContext);
+syncContext.postDesktopSyncMessage({type:'presence'});assert.equal(sent[0].scope,'guide:test');
+syncContext.receiveDesktopSyncMessage({source:'normal',scope:'desktop',type:'state',stamp:1,state:{wrong:true}});assert(!applied.length);assert(!syncContext.desktopSyncPeers.size);
+syncContext.receiveDesktopSyncMessage({source:'old-practice',scope:'guide:another',type:'state',stamp:2,state:{wrong:true}});assert(!applied.length);
+syncContext.receiveDesktopSyncMessage({source:'second',scope:'guide:test',type:'state',stamp:3,state:{correct:true}});assert(applied[0].correct);
+syncContext.SpatialGuide.displayCompanion=true;syncContext.receiveDesktopSyncMessage({source:'main',scope:'guide:test',type:'guide-display-end'});assert.equal(closed,0,'A display ignores its own source');
+syncContext.desktopSyncSource='second';syncContext.receiveDesktopSyncMessage({source:'main',scope:'guide:test',type:'guide-display-end'});assert.equal(closed,1);
+sent=[];syncContext.desktopSyncReady=false;syncContext.broadcastDesktopState();assert(!sent.length,'A new companion cannot overwrite the main scene before initial synchronization');
+console.log('Production display synchronization passed: isolated practice channels, stale-session rejection, initial owner authority and companion cleanup.');

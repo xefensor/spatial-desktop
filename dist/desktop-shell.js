@@ -6098,7 +6098,8 @@ document.addEventListener("keydown", event => {
 /* Two browser windows on the same profile can act as one live desktop test
    session. BroadcastChannel is immediate; the storage message is a fallback
    for browsers that do not expose it. State remains entirely on this device. */
-const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1";
+const desktopSyncScope = globalThis.SpatialGuide?.syncScope || "desktop";
+const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1" + (desktopSyncScope === "desktop" ? "" : ":" + desktopSyncScope);
 const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v1";
 const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 const desktopSyncStartedAt = (() => {
@@ -6116,6 +6117,7 @@ const workspaceDisplayAssignments = (() => {
   try { return JSON.parse(desktopStorage.getItem("spatial-workspace-display-assignments-v1") || "{}"); }
   catch { return {}; }
 })();
+let desktopSyncReady = !globalThis.SpatialGuide?.displayCompanion;
 let desktopSyncApplying = false;
 let desktopSyncTimer = 0;
 let desktopSyncLastStamp = 0;
@@ -6132,6 +6134,7 @@ function readDesktopStorage(key, fallback = {}) {
 
 function localDisplayDescriptor() {
   return {
+    guideCompanion: Boolean(globalThis.SpatialGuide?.displayCompanion),
     openedAt: desktopSyncStartedAt,
     screenX: Number(window.screenX ?? window.screenLeft ?? 0),
     screenY: Number(window.screenY ?? window.screenTop ?? 0),
@@ -6148,7 +6151,8 @@ function activeDisplayRoster() {
   });
   /* The first window opened is the main monitor. Physical X coordinates are
      deliberately not used: a main monitor may sit to the right in KDE. */
-  return roster.sort((first, second) => (first.openedAt || 0) - (second.openedAt || 0)
+  return roster.sort((first, second) => Number(Boolean(first.guideCompanion)) - Number(Boolean(second.guideCompanion))
+    || (first.openedAt || 0) - (second.openedAt || 0)
     || first.source.localeCompare(second.source));
 }
 
@@ -7018,8 +7022,9 @@ function applyDesktopSyncState(state) {
 }
 
 function postDesktopSyncMessage(message) {
-  if (globalThis.SpatialGuide?.model.active()) return;
+  if ((desktopSyncScope === "desktop" && globalThis.SpatialGuide?.model.active()) || globalThis.SpatialGuide?.settingUp || globalThis.SpatialGuide?.displayValid === false) return;
   const packet = {
+    scope: desktopSyncScope,
     ...message,
     id: desktopSyncSource + ":" + Date.now() + ":" + Math.random().toString(36).slice(2),
     source: desktopSyncSource,
@@ -7033,7 +7038,7 @@ function postDesktopSyncMessage(message) {
 }
 
 function broadcastDesktopState() {
-  if (desktopSyncApplying) return;
+  if (desktopSyncApplying || !desktopSyncReady) return;
   const stamp = Math.max(Date.now(), desktopSyncLastStamp + 1);
   desktopSyncLastStamp = stamp;
   postDesktopSyncMessage({ type: "state", stamp, state: captureDesktopSyncState() });
@@ -7074,8 +7079,9 @@ function updateDesktopSyncPresence() {
 }
 
 function receiveDesktopSyncMessage(packet) {
-  if (globalThis.SpatialGuide?.model.active()) return;
-  if (!packet || packet.source === desktopSyncSource) return;
+  if (desktopSyncScope === "desktop" && globalThis.SpatialGuide?.model.active()) return;
+  if (!packet || (packet.scope || "desktop") !== desktopSyncScope || packet.source === desktopSyncSource || globalThis.SpatialGuide?.displayValid === false) return;
+  if (packet.type === "guide-display-end") { if (globalThis.SpatialGuide?.displayCompanion) globalThis.close(); return; }
   if (packet.type === "goodbye") {
     desktopSyncPeers.delete(packet.source);
     updateDesktopSyncPresence();
@@ -7089,13 +7095,14 @@ function receiveDesktopSyncMessage(packet) {
   }
   if (packet.type !== "state" || !Number.isFinite(packet.stamp) || packet.stamp <= desktopSyncLastStamp) return;
   desktopSyncLastStamp = packet.stamp;
+  desktopSyncReady = true;
   applyDesktopSyncState(packet.state);
 }
 
 function prepareCrossDisplaySync() {
   if (desktopSyncChannel) desktopSyncChannel.addEventListener("message", event => receiveDesktopSyncMessage(event.data));
   else window.addEventListener("storage", event => {
-    if (event.key !== DESKTOP_SYNC_STORAGE_KEY || !event.newValue) return;
+    if (event.key !== (desktopSyncScope === "desktop" ? "" : SpatialGuide.prefix) + DESKTOP_SYNC_STORAGE_KEY || !event.newValue) return;
     try { receiveDesktopSyncMessage(JSON.parse(event.newValue)); } catch {}
   });
 
