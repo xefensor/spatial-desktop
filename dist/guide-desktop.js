@@ -22,7 +22,7 @@
   function resetPractice() {
     guide.settingUp = true;
     setUniversalSearchOpen(false);
-    setMusicPlaying(false); setFocusRunning(false);
+    setMusicPlaying(false); setFocusRunning(false); setSystemToggle('Sound', true);
     Object.keys(tileSessions).forEach(key => delete tileSessions[key]);
     desktopPages.load({}); windowGeometry.clear(); autoTiledWindows.clear(); maximizeRestore.clear();
     appWindowStore.load({});
@@ -170,9 +170,9 @@
   document.addEventListener('click', event => {
     if (!model.active()) return;
     const focus = event.target.closest('[data-toggle]');
-    if (model.lesson.id === 'system' && focus?.textContent.trim() === 'Focus') {
-      if (focus.getAttribute('aria-pressed') === 'true') mark('focus-on');
-      else if (model.state.done.includes('focus-on')) mark('focus-off');
+    if (model.lesson.id === 'system' && focus?.textContent.trim() === 'Sound') {
+      if (focus.getAttribute('aria-pressed') === 'false') mark('sound-off');
+      else if (model.state.done.includes('sound-off')) mark('sound-on');
     }
     if (model.lesson.id === 'overview' && event.target.closest('[data-search-open-app="dolphin"]') && model.state.done.includes('app-search') && appState.dolphin === 'open') mark('search-launch');
     check();

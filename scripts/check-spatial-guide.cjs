@@ -9,9 +9,9 @@ assert(model.next());
 assert(model.allows('systems')); assert(!model.allows('apps'));
 assert(!model.next(), 'Reading alone cannot complete a hands-on step');
 assert(!model.mark('notes-open'), 'Unrelated activity cannot complete the task');
-assert(model.mark('focus-on')); assert(!model.ready());
-assert(!model.mark('focus-on'), 'Repeated events do not advance a lesson');
-assert(model.mark('focus-off')); assert(model.next());
+assert(model.mark('sound-off')); assert(!model.ready());
+assert(!model.mark('sound-off'), 'Repeated events do not advance a lesson');
+assert(model.mark('sound-on')); assert(model.next());
 assert(model.allows('apps')); assert(!model.allows('overview'));
 while (model.lesson.id !== 'complete') {
   for (const goal of model.lesson.goals || []) model.mark(goal);
@@ -41,9 +41,9 @@ assert.equal(fresh.storage['spatial-workspace-app-states-v1'],'learner-windows',
 const existing = boot({'spatial-workspace-app-states-v1':'original-windows', 'spatial-active-workspace':'work'});
 assert(!existing.api.model.active(), 'Existing users are not forced through first login');
 existing.api.model.start(); existing.api.storage.setItem('spatial-workspace-app-states-v1','practice-windows');
-existing.api.model.next(); existing.api.model.mark('focus-on'); existing.api.save();
+existing.api.model.next(); existing.api.model.mark('sound-off'); existing.api.save();
 const resumed = boot(existing.storage);
-assert(resumed.api.model.active()); assert.equal(resumed.api.model.lesson.id,'system'); assert(resumed.api.model.state.done.includes('focus-on'));
+assert(resumed.api.model.active()); assert.equal(resumed.api.model.lesson.id,'system'); assert(resumed.api.model.state.done.includes('sound-off'));
 resumed.api.finish('completed');
 assert.equal(resumed.storage['spatial-workspace-app-states-v1'],'original-windows', 'Repeating lessons preserves the original desktop');
 const corrupt = G.create({index:999, done:'invalid'});
