@@ -66,6 +66,30 @@ assert(ctx.appFileRows('files','/home/demo/Workspaces').some(row=>row[0]==='Work
 const crumbs=ctx.appFileBreadcrumbs(home+'/Documents');
 assert.match(crumbs,/Work Home/);assert.match(crumbs,/aria-current="page"/);assert(!crumbs.includes('×'),'Breadcrumbs are locations, without fake tab close controls');
 const html=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');
+const trayModels={player:{kind:'elisa',tracks:[{title:'One',duration:20},{title:'Two',duration:30}],index:0,position:5,playing:false,muted:false},other:{kind:'elisa',tracks:[{title:'Other',duration:30}],index:0,position:0,playing:false,muted:false},notes:{notes:[{id:'main',title:'Checklist',text:'Keep this'}]},web:{navigation:A.navigation({title:'First'})},files:{navigation:A.navigation(home+'/Documents')},console:{cwd:home+'/Documents'}};
+let trayRestored=[],commands=[],folders=[],saves=0;
+const tray=vm.createContext({appInfo:{player:{base:'elisa'},other:{base:'elisa'},notes:{},web:{base:'browser'},files:{base:'dolphin'},console:{base:'terminal'}},
+  appState:{player:'minimized',other:'minimized',notes:'minimized',web:'minimized',files:'minimized',console:'minimized'},
+  appWindowModel:id=>trayModels[id],SpatialAppTools:A,SpatialHomeFolders:H,workspaceProfiles:profiles,activeWorkspace:'work',
+  renderAllAppMusic(){},renderMiniApps(){},saveAppWindows(){saves++;},showToast(){},renderFileLocation:(id,path)=>folders.push([id,path]),openApp:id=>trayRestored.push(id),runAppCommand:(id,command)=>commands.push([id,command])});
+vm.runInContext(slice(ui,'function parkedAppMenuEntries(', 'function prepareAppWindows('),tray);
+assert(tray.parkedAppMenuEntries('player').some(entry=>entry.label==='Play'));
+tray.executeParkedAppAction('player','music-play');
+tray.executeParkedAppAction('player','music-next');
+tray.executeParkedAppAction('player','music-mute');
+assert(trayModels.player.playing&&trayModels.player.muted);assert.equal(trayModels.player.index,1);
+assert(!trayModels.other.playing&&!trayModels.other.muted);assert.equal(trayModels.other.index,0,'Tray commands operate on the owning player');
+assert.equal(trayRestored.length,0,'Background transport never unparks a window');
+assert(tray.parkedAppMenuEntries('player').some(entry=>entry.label==='Pause'));
+assert(tray.parkedAppMenuEntries('notes').some(entry=>entry.label==='Open note: Checklist'));
+assert(!tray.parkedAppMenuEntries('web').some(entry=>entry.label==='Back'),'No dead Back command at the start of history');
+A.visit(trayModels.web.navigation,{title:'Second'});
+assert(tray.parkedAppMenuEntries('web').some(entry=>entry.label==='Back'));
+tray.executeParkedAppAction('files','file-downloads');
+assert.deepEqual(folders,[['files',home+'/Downloads']]);assert.deepEqual(trayRestored,['files'],'Open Downloads restores the same file window');
+tray.executeParkedAppAction('console','terminal-help');assert.deepEqual(commands,[['console','help']]);
+tray.appState.player='closed';tray.executeParkedAppAction('player','music-play');assert(trayModels.player.playing,'A stale tray command cannot restart a closed window');
+assert(saves>0);
 assert(!html.includes('class="folder-tabs"'),'Unbacked static file tabs have been removed');
 assert(html.indexOf('app-tools.js')<html.indexOf('app-windows.js')&&html.indexOf('app-windows.js')<html.indexOf('desktop-shell.js'));
 assert(shell.includes('prepareAppWindows();'),'Apps are hydrated after the desktop session');

@@ -85,6 +85,8 @@ The five sample apps now use consistent toolbars, readable content and controls 
 
 Parked cards use the owning window’s current location, note, terminal output, page or player. App sessions survive reload, transfer with windows between workspaces and synchronize between demo displays. The prototype does not execute native shell commands or load external websites inside its mock browser.
 
+On the Apps rail, open windows sit at the start and parked windows at the end. Right-click a parked icon for its app’s background controls: Elisa transport and mute, Dolphin folders, Notes documents, Web navigation, or Konsole demo commands. Background commands keep the window parked; actions that open a folder or note restore it. **Window options…** opens the full menu for moving the same window between desktops, projects, workspaces and displays.
+
 ## Material philosophy
 
 Windows primarily use opaque ABS plastic surfaces, with short mechanical press feedback. Secondary surfaces use transparent glass/acrylic. Their lighting communicates state instead of adding decoration everywhere.

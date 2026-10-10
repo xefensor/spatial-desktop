@@ -276,7 +276,14 @@ function renderAllAppMusic() {
   if (!appWindowsReady) return;
   Object.keys(appInfo).filter(id=>(appInfo[id].base||id)==='elisa'&&(appState[id]!=='closed'||frameFor(id).dataset.appReadyWorkspace===activeWorkspace)).forEach(renderAppMusic);
   const id=currentAppMusicId();
-  if(!id)return;
+  if(!id){
+    musicPlaying=false;document.body.classList.remove('music-playing');
+    $('.overview-now-playing header b').textContent='No active player';
+    $('.overview-now-playing header span small').textContent='Open Elisa to choose music';
+    $('.overview-track i').style.width='0%';
+    $$('[data-music="play"]',$('.overview-now-playing')).forEach(button=>{button.innerHTML=icon('i-play');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Play');});
+    return;
+  }
   const model=appWindowModel(id),track=model.tracks[model.index];
   if(!track)return;
   musicPlaying=model.playing;musicPosition=model.position;document.body.classList.toggle('music-playing',model.playing);
@@ -316,6 +323,68 @@ function performAppAction(id, action) {
   }
   saveAppWindows();
 }
+function parkedAppMenuEntries(id) {
+  const kind=appInfo[id]?.base||id;
+  if(!['elisa','notes','dolphin','browser','terminal'].includes(kind))return [];
+  const model=appWindowModel(id);
+  if(kind==='elisa')return [
+    {action:'parked:music-play',icon:model.playing?'i-pause':'i-play',label:model.playing?'Pause':'Play'},
+    {action:'parked:music-prev',icon:'i-prev',label:'Previous track'},
+    {action:'parked:music-next',icon:'i-next',label:'Next track'},
+    {action:'parked:music-restart',icon:'i-refresh',label:'Restart track'},
+    {action:'parked:music-mute',icon:'i-volume',label:model.muted?'Unmute':'Mute'}
+  ];
+  if(kind==='dolphin')return [
+    {action:'parked:file-home',icon:'i-home',label:'Open workspace Home'},
+    {action:'parked:file-downloads',icon:'i-download',label:'Open Downloads'},
+    {action:'parked:file-new-folder',icon:'i-add',label:'New folder here'}
+  ];
+  if(kind==='notes')return [
+    {action:'parked:note-new',icon:'i-add',label:'New note'},
+    ...model.notes.map(note=>({action:'parked:note:'+note.id,icon:'i-note',label:'Open note: '+(note.title||'Untitled')}))
+  ];
+  if(kind==='browser')return [
+    ...(model.navigation.index>0?[{action:'parked:browser-back',icon:'i-left',label:'Back'}]:[]),
+    ...(model.navigation.index<model.navigation.items.length-1?[{action:'parked:browser-forward',icon:'i-right',label:'Forward'}]:[]),
+    {action:'parked:browser-reload',icon:'i-refresh',label:'Reload page'},
+    {action:'parked:browser-home',icon:'i-home',label:'Start page'}
+  ];
+  return [
+    {action:'parked:terminal-pwd',icon:'i-code',label:'Print working directory'},
+    {action:'parked:terminal-help',icon:'i-note',label:'List demo commands'},
+    {action:'parked:terminal-folder',icon:'i-folder',label:'Open working folder in Dolphin'},
+    {action:'parked:terminal-clear',icon:'i-close',label:'Clear output'}
+  ];
+}
+function executeParkedAppAction(id, action) {
+  if(appState[id]!=='minimized')return;
+  const model=appWindowModel(id);
+  if(action.startsWith('music-')){
+    model.lastUsed=Date.now();
+    if(action==='music-play')model.playing=!model.playing;
+    if(action==='music-mute')model.muted=!model.muted;
+    if(action==='music-restart')model.position=0;
+    if(action==='music-prev'||action==='music-next')SpatialAppTools.musicStep(model,action==='music-prev'?-1:1);
+    renderAllAppMusic();
+  } else if(action==='file-home'||action==='file-downloads'){
+    renderFileLocation(id,SpatialHomeFolders.folder(workspaceProfiles,activeWorkspace,action==='file-home'?'Home':'Downloads'));
+    openApp(id);
+  } else if(action==='file-new-folder'){
+    newAppFolder(id);showToast('Folder created in '+SpatialAppTools.current(model.navigation));
+  } else if(action==='note-new'){
+    SpatialAppTools.addNote(model);renderNotes(id);openApp(id);
+    const title=$('[data-note-title]',frameFor(id));title.focus();title.select();
+  } else if(action.startsWith('note:')){
+    const note=model.notes.find(note=>note.id===action.slice(5));
+    if(note){model.active=note.id;renderNotes(id);openApp(id);}
+  } else if(action.startsWith('browser-'))performAppAction(id,action);
+  else if(action==='terminal-folder'){
+    const files=createAppInstance('dolphin');if(files)renderFileLocation(files,model.cwd);
+  } else if(action.startsWith('terminal-')){
+    runAppCommand(id,action.slice(9));showToast(action==='terminal-clear'?'Terminal output cleared':'Terminal output updated');
+  }
+  renderMiniApps();saveAppWindows();
+}
 function prepareAppWindows() {
   let saved={};try{saved=JSON.parse(localStorage.getItem('spatial-app-windows-v1')||'{}');}catch{}
   appWindowStore=SpatialAppTools.create(saved);appWindowsReady=true;
@@ -338,6 +407,7 @@ function prepareAppWindows() {
   const originalContext=contextMenuDescriptor;
   contextMenuDescriptor=function(target,...args){
     const context=originalContext(target,...args);
+    if(context?.kind==='app'&&appState[context.name]==='minimized'&&target.closest('.apps-zone[data-area-state="rail"] .app-rack-parked'))context.parkedRail=true;
     if(context?.kind==='file'){
       const frame=context.element.closest('[data-app-frame]');
       context.appId=frame.dataset.appFrame;
@@ -347,13 +417,35 @@ function prepareAppWindows() {
     return context;
   };
   const originalEntries=contextMenuEntries;
-  contextMenuEntries=function(context){return context.kind==='file' ? [
+  contextMenuEntries=function(context){
+    if(context.kind==='app'&&context.parkedRail){
+      const actions=parkedAppMenuEntries(context.name);
+      return [
+        {action:'app-open',icon:'i-right',label:'Show window'},
+        ...(actions.length?[{separator:true},...actions]:[]),
+        {separator:true},
+        {action:'app-new-instance',icon:'i-add',label:'New window'},
+        {action:'parked:window-options',icon:'i-settings',label:'Window options…'},
+        {action:'app-close',icon:'i-close',label:'Quit this window',danger:true}
+      ];
+    }
+    return context.kind==='file' ? [
     {action:'file-open',icon:'i-folder',label:'Open'},
     {action:'file-copy',icon:'i-clipboard',label:'Copy location'}
   ] : originalEntries(context);};
   const originalAction=executeContextAction;
   executeContextAction=function(action){
     const context=contextMenuState;
+    if(context?.parkedRail&&action==='app-close'&&(appInfo[context.name]?.base||context.name)==='elisa'){
+      appWindowModel(context.name).playing=false;saveAppWindows(false);
+    }
+    if(context?.kind==='app'&&context.parkedRail&&action.startsWith('parked:')){
+      if(action==='parked:window-options'){
+        const rect=$('#desktopContextMenu').getBoundingClientRect();
+        requestAnimationFrame(()=>openDesktopContextMenu({...context,parkedRail:false},rect.left,rect.top,true));
+      } else executeParkedAppAction(context.name,action.slice(7));
+      return;
+    }
     if(context?.kind==='file'&&action==='file-open'){openAppFile(context.appId,context.label);return;}
     if(context?.kind==='file'&&action==='file-copy'){
       const copy=navigator.clipboard?.writeText(context.path);

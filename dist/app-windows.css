@@ -138,3 +138,10 @@
 }
 
 .app-frame[data-app-kind="elisa"] .playlist .content-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Tray menus stay square glass and scroll within the screen for long note lists. */
+.desktop-context-menu{display:flex;flex-direction:column;max-height:calc(100dvh - 16px)}
+.desktop-context-menu[hidden]{display:none}
+.desktop-context-menu .context-menu-title{flex:none}
+.desktop-context-menu .context-menu-items{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.desktop-context-menu .context-menu-item>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
