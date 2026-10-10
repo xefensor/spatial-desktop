@@ -7457,6 +7457,6 @@ function renderAvailableProjectLibrary() {
   list.innerHTML = entries.map(([id, project]) => {
     const detail = projectLocationMeta(project).label + " · " + project.resources.length + " resources";
     return '<button type="button" class="surface-key project-library-entry" data-open-area-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';
-  }).join("") || '<div class="project-library-empty"><p>No projects yet.</p><button type="button" class="surface-key" data-create-area-project>Create project</button></div>';
+  }).join("") || '<div class="project-library-empty"><p>No projects yet.</p></div>';
   prepareControlSemantics(list);
 }
