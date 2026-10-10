@@ -79,27 +79,27 @@
       const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id]');
       if(!source||event.target.closest('input,textarea,a,audio,summary,iframe')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;
-      event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
+      area.dataset.aiTransfer='pending';event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
     },true);
     window.addEventListener('pointermove',event=>{
       if(!gesture||event.pointerId!==gesture.pointer)return;
       if(!(event.buttons&1)){clear();return;}
-      if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8)gesture.moved=true;
+      area.dataset.aiTransfer='move:'+event.buttons;if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8)gesture.moved=true;
       if(gesture.moved)area.classList.toggle('is-ai-drop-target',Boolean(targetAt(event)));
     },true);
     window.addEventListener('pointerup',event=>{
-      if(!gesture||event.pointerId!==gesture.pointer)return;
+      area.dataset.aiTransfer='up';if(!gesture||event.pointerId!==gesture.pointer)return;
       const item=gesture.item,moved=gesture.moved,over=targetAt(event);clear();
       if(!moved)return;suppressClick=true;
       if(over){event.preventDefault();event.stopPropagation();add(item);}
     },true);
     document.addEventListener('click',event=>{if(!suppressClick)return;suppressClick=false;event.preventDefault();event.stopImmediatePropagation();},true);
-    window.addEventListener('pointercancel',clear,true);window.addEventListener('blur',clear);
+    window.addEventListener('pointercancel',()=>{area.dataset.aiTransfer='cancel';clear();},true);window.addEventListener('blur',clear);
     document.addEventListener('keydown',event=>{if(event.key==='Escape')clear();},true);
   }
   bindContentTransfers();
   document.addEventListener('dragstart',event=>{
-    if(area.contains(event.target))return;
+    area.dataset.aiTransfer='html-start';if(area.contains(event.target))return;
     sourceDrag=describe(event.target);
     if(!sourceDrag)return;
     if(sourceDrag.title){event.dataTransfer.setData(C.MIME,JSON.stringify(sourceDrag));event.dataTransfer.setData('text/plain',sourceDrag.text||sourceDrag.address||sourceDrag.title);event.dataTransfer.effectAllowed='copy';}
@@ -109,7 +109,7 @@
   area.addEventListener('dragleave',event=>{if(!area.contains(event.relatedTarget))area.classList.remove('is-ai-drop-target');});
   document.addEventListener('dragend',()=>{sourceDrag=null;area.classList.remove('is-ai-drop-target');});
   area.addEventListener('drop',async event=>{
-    if(!accepts(event))return;event.preventDefault();event.stopPropagation();area.classList.remove('is-ai-drop-target');
+    area.dataset.aiTransfer='drop';if(!accepts(event))return;event.preventDefault();event.stopPropagation();area.classList.remove('is-ai-drop-target');
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
