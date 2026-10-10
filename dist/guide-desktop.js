@@ -19,7 +19,7 @@
   $('.area-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('.area-window-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('#appRack').before(launcher);
-  let highlighted = [], interval = 0, lastSignature = '', pointer = null, currentRecovery = null;
+  let highlighted = [], interval = 0, lastSignature = '', pointer = null, currentRecovery = null, lastFullscreen = null;
 
   async function waitForScene() {
     while (desktopPageAnimating) await new Promise(resolve => setTimeout(resolve,30));
@@ -68,7 +68,7 @@
   async function recover(action) {
     guide.settingUp = true;
     await waitForScene();
-    if (action === 'escape') leaveAppFullscreen();
+    if (action === 'escape' && tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
     if (action === 'workspace') renderWorkspace(['folders','return'].includes(model.lesson.id) ? 'school' : 'general',false);
     if (action === 'project') { ordinaryDesktop(); await ensurePracticeProject(); }
     if (action === 'notes' || action === 'open-app' || action === 'fullscreen-retry') {
@@ -208,8 +208,9 @@
     if (id === 'float' && session.floating.notes && !manualWindowInteraction) mark('notes-float');
     const open = Object.keys(appState).filter(name => appState[name] === 'open' && isLocalApp(name));
     const bounded = session.focus?.name || open.find(name => appMaximizedState[name] && !frameFor(name).classList.contains('is-fullscreen'));
-    if (guide.observeFullscreen(model, {bounded, full:session.fullscreen?.name, open})) {
-      guide.save(); lastSignature = '';
+    if (guide.observeFullscreen(model, {bounded, full:session.fullscreen?.name, open})) { guide.save(); lastSignature = ''; }
+    if (session.fullscreen?.name !== lastFullscreen) {
+      lastFullscreen = session.fullscreen?.name;
       if (session.fullscreen && guide.shouldCompact(guide.view,window.getBoundingClientRect(),frameFor(session.fullscreen.name).getBoundingClientRect())) setCompact(true);
     }
     if (id === 'resize-areas') {

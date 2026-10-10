@@ -83,7 +83,7 @@ const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.
 const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
   dockState:{systems:{edge:'right'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
-  dragging:false, window:{}, currentRecovery:null, lastSignature:'', $:()=>({}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', $:()=>({}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
   openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
@@ -204,10 +204,27 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
     assert.equal(!!scene.notes.notes[0].text,needed.noteText,lesson.id);
     assert.equal(!!prepared.projectSpaces.practice,needed.project,lesson.id);
     assert.equal(scene.projectNotes,needed.projectApp,lesson.id);
+    if (lesson.id === 'area-rail') {
+      scene.notes.notes[0].text = 'Keep my own wording';
+      await prepared.prepareLesson();
+      assert.equal(scene.notes.notes[0].text,'Keep my own wording','Skipping preserves the learner’s existing note');
+    }
     assert.equal(scene.column,needed.inProject?'practice':'workspace',lesson.id);
     assert.equal(scene.workspace,needed.school?'school':'general',lesson.id);
     assert.equal(!!scene.path,needed.downloads,lesson.id);
   }
   // In-progress notes are never replaced when preparing the next task after a skip.
   console.log('Guide additions passed: individual skipping, isolated chapter replay, every chapter prerequisite, persistent view and contextual recovery.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
+
+// The actual recovery action uses the same complete fullscreen toggle as Escape.
+(async()=>{
+  const session={fullscreen:{name:'notes'}};let toggles=0,checks=0;
+  const recovering=vm.createContext({guide:{save(){}},model:at('fullscreen'),tileSession:()=>session,
+    waitForScene:async()=>{},toggleAppFullscreen(name){assert.equal(name,'notes');toggles++;session.fullscreen=null;},
+    appInfo:{notes:{}},lastSignature:'before',check(){checks++;}});
+  const source=adapter.slice(adapter.indexOf('  async function recover('),adapter.indexOf('  function resetPractice('));
+  vm.runInContext(source,recovering);await recovering.recover('escape');
+  assert.equal(toggles,1);assert.equal(checks,1);assert.equal(recovering.guide.settingUp,false);
+  console.log('Recovery exits fullscreen through the production toggle and immediately validates the resulting scene.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
