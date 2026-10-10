@@ -157,7 +157,7 @@
     for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid']) {
       const element = $(selector); if (element) targets.push(element.getBoundingClientRect());
     }
-    const overviewTarget = ({'project-app':'[data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'.workspace-tabs',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
+    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'.workspace-tabs',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
     const rect = window.getBoundingClientRect();
