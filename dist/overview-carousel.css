@@ -1,12 +1,12 @@
 /* One square glass section in focus, with real neighbouring sections at both edges. */
 .universal-search .overview-carousel{--overview-peek:clamp(58px,11vw,156px);display:flex!important;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow:hidden!important;grid-template-columns:none!important}
 .overview-carousel[hidden]{display:none!important}
-.overview-section-nav{display:flex;align-items:center;gap:5px;flex:none;min-width:0}
+.overview-section-nav{display:flex;align-items:center;justify-content:center;position:relative;gap:5px;flex:none;min-width:0}
 .overview-section-tab{display:flex;align-items:center;gap:7px;min-height:38px;padding:7px 13px;position:relative;color:var(--muted);background:transparent;border:1px solid transparent;border-radius:0!important;font:inherit;font-size:13px;white-space:nowrap}
 .overview-section-tab svg{width:17px;height:17px}
 .overview-section-tab[aria-pressed="true"]{color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent);border-color:var(--sd-glass-groove)}
 .overview-section-tab[aria-pressed="true"]:after{content:"";position:absolute;inset:auto 12px 3px;height:2px;background:var(--workspace-accent,var(--blue));box-shadow:0 0 5px color-mix(in srgb,var(--workspace-accent,var(--blue)) 35%,transparent)}
-.overview-scroll-hint{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap}
+.overview-scroll-hint{position:absolute;right:0;font-size:11px;color:var(--muted);white-space:nowrap}
 .overview-carousel-stage{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
 .universal-search .overview-carousel .overview-section-track{display:flex!important;flex-direction:row!important;align-items:stretch;gap:24px!important;height:100%;width:100%;min-height:0;padding:0 var(--overview-peek) 2px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;scroll-padding-inline:var(--overview-peek);overscroll-behavior-x:contain;scrollbar-width:none;position:relative;grid-template-columns:none!important;grid-template-rows:none!important;box-sizing:border-box;touch-action:pan-x pan-y}
 .overview-section-track::-webkit-scrollbar{display:none}
@@ -60,6 +60,7 @@
 .timeline-entry time{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);padding-top:5px}
 .timeline-entry-icon{display:grid;place-items:center;width:28px;height:28px}.timeline-entry-icon svg{width:23px;height:23px}
 .timeline-entry h4{font-size:14px;font-weight:500;margin:0;line-height:1.5}.timeline-entry p{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.timeline-example-label{display:inline-block;margin-left:10px;font-size:10px;font-weight:400;color:var(--muted);vertical-align:middle}
 .timeline-project-tag{color:var(--timeline-project,var(--muted));border-left:2px solid currentColor;padding-left:7px;margin-right:8px}
 .timeline-entry-action{display:flex;align-items:center;gap:6px;padding:5px 8px;margin:0;background:transparent;color:var(--text);border:0;border-radius:0;font-size:12px;white-space:nowrap}.timeline-entry-action svg{width:15px;height:15px}.timeline-entry-action:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
 .timeline-empty{padding:48px 24px;text-align:center;color:var(--muted);line-height:1.7;font-size:13px}.timeline-empty b{display:block;color:var(--text);font-size:16px;font-weight:500}
@@ -68,6 +69,7 @@
 html[data-guide-level]:not([data-guide-level="9"]) .overview-timeline-section{visibility:hidden!important;pointer-events:none}
 @media(max-width:800px){.overview-carousel{--overview-peek:60px!important}.overview-scroll-hint{display:none}.overview-section-tab{padding:6px 8px;font-size:12px}.overview-neighbour{padding:10px 6px}.overview-neighbour span{display:none}.overview-carousel .overview-project-body{grid-template-columns:1fr!important;overflow-y:auto!important}.overview-carousel .workspace-home-card,.overview-carousel .overview-projects-section{height:auto!important;min-height:260px}.overview-carousel .overview-system-body{grid-template-columns:1fr!important}.overview-carousel .overview-areas-widget{grid-column:1;grid-row:auto}.timeline-toolbar{flex-wrap:wrap;gap:8px}.timeline-search{flex-basis:100%}.timeline-entry{grid-template-columns:42px 23px minmax(0,1fr);gap:7px}.timeline-entry-action{grid-column:3;justify-self:start;padding-left:0}.universal-search .overview-carousel .all-apps-grid{grid-template-columns:repeat(auto-fill,minmax(125px,1fr))!important}}
 @media(prefers-reduced-motion:reduce){.overview-panel{transition:none!important}}
+@media(max-width:1100px){.overview-scroll-hint{display:none}}
 
 /* Leave a readable strip for real window previews below the desktop map. */
 .universal-search .overview-carousel .overview-apps-section .open-windows-section{flex:0 0 auto!important;height:288px!important;max-height:48%!important;min-height:190px!important;display:grid!important;grid-template-rows:auto 112px auto minmax(58px,1fr)!important;gap:3px!important;overflow:hidden!important}

@@ -17,6 +17,17 @@ assert.equal(model.list('work').length,T.limit,'History stays bounded');
 assert.equal(model.list('work')[0].id,'bounded-399','Newest events survive trimming');
 assert.equal(T.neighbour('timeline',-1),'system');assert.equal(T.neighbour('system',1),'timeline');
 assert.equal(T.neighbour('apps',1,['apps','projects']),'projects');
+const D=require('../dist/demo-examples.js'),exampleProfiles={general:{home:'/home/demo'},school:{},work:{},gaming:{},custom:{custom:true}};
+const examples=T.demoExamples({preset:'demo',profiles:exampleProfiles,projects:D.projects,now:1800000000000});
+assert.deepEqual(T.demoExamples({preset:'clean',profiles:exampleProfiles,projects:D.projects}),[],'A clean desktop has no invented history');
+assert.deepEqual([...new Set(examples.map(event=>event.workspace))].sort(),['gaming','general','school','work']);
+assert(examples.every(event=>event.example&&T.normalize(event)),'Every fixture is explicitly labelled and valid');
+assert(new Set(examples.map(event=>event.type)).size>=7,'Examples cover varied desktop activities');
+assert(examples.some(event=>event.path===D.projects.research.root+'/field-observations.csv'));
+assert(examples.some(event=>event.path===D.projects.plasma.root+'/index.html'));
+assert(!T.demoExamples({preset:'demo',profiles:exampleProfiles,projects:{}}).some(event=>event.project),'Deleted projects are never reintroduced');
+const exampleModel=T.create();examples.forEach(event=>exampleModel.add(event));
+assert.equal(T.create(exampleModel.snapshot()).list('work')[0].example,true,'Example labels persist across reloads');
 
 // Execute the actual carousel and timeline adapter, with a small DOM geometry model.
 const nodes=new Map(),make=(key)=>{
@@ -99,4 +110,17 @@ assert(JSON.parse(data.get('spatial-workspace-timeline-v1')).work.some(event=>ev
 context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};
 const beforeGuide=data.get('spatial-workspace-timeline-v1');timeline.record('app.park',{app:'dolphin'});assert.equal(data.get('spatial-workspace-timeline-v1'),beforeGuide,'Guide actions do not enter saved history');
 overview.refresh();assert.equal(overview.active(),'apps');assert.equal(tabs[0].hidden,true);assert.equal(tabs[2].hidden,true);assert(edges.every(edge=>edge.hidden),'Only introduced sections are navigable');
-console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions and Guide gating.');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/overview-desktop.js'),'utf8');
+context.desktopPreset='demo';vm.runInContext(source,context);
+assert(!data.has('spatial-timeline-demo-v1'),'Guide practice never seeds demo history');
+context.SpatialGuide=null;context.desktopPreset='clean';vm.runInContext(source,context);
+assert(!data.has('spatial-timeline-demo-v1'),'Clean sessions never seed demo history');
+context.desktopPreset='demo';context.activeWorkspace='general';context.workspaceProfiles.general.home='/home/demo';vm.runInContext(source,context);
+const firstSeed=JSON.parse(data.get('spatial-workspace-timeline-v1'));
+assert(firstSeed.general.some(event=>event.id===stored.general[0].id),'Seeding preserves existing real activity');
+assert.equal(firstSeed.general.filter(event=>event.example).length,7);
+assert(make('#timelineEntries').innerHTML.includes('timeline-example-label'),'Demo rows visibly distinguish examples');
+vm.runInContext(source,context);
+assert.deepEqual(JSON.parse(data.get('spatial-workspace-timeline-v1')),firstSeed,'Reload neither duplicates nor re-dates example events');
+assert(require('../dist/workspace-setup.js').sessionKeys.includes('spatial-timeline-demo-v1'),'Clean/demo resets allow fresh example seeding');
+console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating and labelled demo examples.');

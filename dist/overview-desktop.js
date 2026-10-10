@@ -121,7 +121,7 @@
       const detail=event.path||event.address||'';
       const name=event.title||(event.type==='desktop.switch'?'Desktop '+(event.page+1):event.type==='workspace'?workspaceProfiles[event.workspace]?.label:'');
       const action=actionFor(event);
-      html+='<article class="timeline-entry" role="listitem"><time datetime="'+date.toISOString()+'" title="'+escapeHtml(date.toLocaleString())+'">'+escapeHtml(date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</time><span class="timeline-entry-icon">'+image+'</span><div><h4>'+escapeHtml(descriptions[event.type]||'')+(name?' · '+escapeHtml(name):'')+'</h4><p>'+context+'</p>'+(detail?'<p>'+escapeHtml(detail)+'</p>':'')+'</div>'+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'')+'</article>';
+      html+='<article class="timeline-entry" role="listitem"><time datetime="'+date.toISOString()+'" title="'+escapeHtml(date.toLocaleString())+'">'+escapeHtml(date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}))+'</time><span class="timeline-entry-icon">'+image+'</span><div><h4>'+escapeHtml(descriptions[event.type]||'')+(name?' · '+escapeHtml(name):'')+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p>'+context+'</p>'+(detail?'<p>'+escapeHtml(detail)+'</p>':'')+'</div>'+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'')+'</article>';
     }
     $('#timelineEntries').innerHTML=html||'<p class="timeline-empty"><b>'+(model.list(activeWorkspace).length?'No matching activity':'Your activity starts here')+'</b>'+(model.list(activeWorkspace).length?'Try another activity type or search.':'Open an app, visit a folder or switch projects. Your actions will appear here.')+'</p>';
     prepareControlSemantics($('#timelineEntries'));
@@ -165,6 +165,13 @@
   // Existing browser history contains actual visits; preserve its original timestamps.
   for(const [workspace,content] of Object.entries(workspaceContent)){
     for(const visit of (content?.history||[]).slice(-100))model.add({id:'legacy-web:'+workspace+':'+visit.time+':'+visit.address,workspace,type:'browser.visit',time:visit.time,title:visit.address,address:visit.address,base:'browser'});
+  }
+  // Populate only the demo, once. Keep real activity and original example timestamps.
+  const demoKey='spatial-timeline-demo-v1';
+  if(typeof desktopPreset!=='undefined'&&desktopPreset==='demo'&&!globalThis.SpatialGuide?.model.active()&&!desktopStorage.getItem(demoKey)){
+    SpatialTimeline.demoExamples({preset:desktopPreset,profiles:workspaceProfiles,projects:projectSpaces}).forEach(event=>model.add(event));
+    save();
+    try{desktopStorage.setItem(demoKey,'1');}catch{}
   }
   save();refresh();
 })();
