@@ -23,7 +23,8 @@
 .guide-search {display:flex;align-items:center;gap:10px;padding:9px 10px;margin:20px 0 8px}.guide-search svg{width:17px;flex:none}.guide-search input{width:100%;min-width:0;background:transparent;border:0;color:var(--text);outline:none;font:inherit;font-size:12px}
 .guide-topic-list details {border-bottom:1px solid var(--line);padding:0}.guide-topic-list summary{padding:13px 0;display:flex;align-items:center;justify-content:space-between;font-size:12px;cursor:pointer;list-style:none}.guide-topic-list summary svg{width:14px;height:14px}.guide-topic-list details[open] summary svg{transform:rotate(90deg)}.guide-topic-list details p{font-size:12px}.guide-show{padding:7px 10px;font-size:11px;margin-bottom:14px}
 .guide-target {outline:2px solid color-mix(in srgb,#64d782 70%,transparent)!important;outline-offset:-3px!important}
-html[data-guide-level] .desktop-context-menu {z-index:7000!important}
+html[data-guide-level] .desktop-context-menu {z-index:11000!important}
+#spatialGuide {z-index:10000}
 .guide-practice-launcher {display:none;gap:10px;padding:12px 0;flex-direction:column}.guide-practice-launcher>span{font-size:10px;color:var(--muted)}.guide-practice-launcher button{display:flex;align-items:center;gap:10px;padding:9px;text-align:left;font-size:12px}.guide-practice-launcher .app-art{width:27px;height:27px}
 #guideReturn{position:fixed;z-index:500;bottom:12px;left:12px;display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:11px}#guideReturn svg{width:17px;height:17px}
 html[data-guide-level="2"] .guide-practice-launcher{display:flex}
@@ -42,6 +43,10 @@ html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[da
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"]) .overview-project-zone {display:none!important}
 html[data-guide-level]:not([data-guide-level="8"]) :is(.overview-home,.overview-main) {grid-template-columns:minmax(0,1fr)!important}
 html[data-guide-level="7"] .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
+html[data-guide-level]:not([data-guide-level="8"]) body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr)!important}
+html[data-guide-level]:not([data-guide-level="8"]) body #universalSearch #overviewHome .overview-apps-section {grid-column:1!important;grid-row:auto!important}
+html[data-guide-level="7"] body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
+html[data-guide-level="7"] body #universalSearch #overviewHome .overview-apps-section {grid-column:2!important}
 html[data-guide-level]:not([data-guide-level="8"]) .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]) {display:none!important}
 html[data-guide-level]:not([data-guide-level="8"]) .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]) {display:none!important}
 html[data-guide-level]:not([data-guide-level="8"]) .launcher-categories {display:none!important}
