@@ -3431,6 +3431,7 @@ function normalizeProject(project, id) {
     downloadToProject: project.downloadToProject === true,
     originWorkspace: project.originWorkspace && workspaceProfiles[project.originWorkspace] ? project.originWorkspace : detectedWorkspace,
     files: Array.isArray(project.files) ? project.files : [],
+    stash: project.stash?.version === 1 && project.stash.files ? cloneDesktopState(project.stash) : undefined,
     note: typeof project.note === "string" ? project.note : "",
     resources: Array.isArray(project.resources) ? project.resources : [],
     activeMode,
@@ -4342,6 +4343,7 @@ function refreshDownloadUi() {
   });
 }
 function fileLocationRows(frame, path) {
+  const stashRows=globalThis.SpatialMemoryDesktop?.fileRows(path);if(stashRows)return stashRows;
   const profile = workspaceProfiles[activeWorkspace];
   let rows = [];
   if (path === profile.home) rows = profile.folders;

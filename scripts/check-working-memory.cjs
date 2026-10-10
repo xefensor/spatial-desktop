@@ -53,7 +53,27 @@ mergedProject.resources.push(['Closing theme','Caption','audio','i-music',{attac
 const audioItem=vm.runInContext('resourceItems(key).at(-1)',unified);assert.deepEqual(audioItem.attachment,attachment);
 unified.audioId=audioItem.id;vm.runInContext("editItem(audioId,{title:'My title',text:'My caption'})",unified);
 assert.deepEqual(mergedProject.resources.at(-1)[4].attachment,attachment);
-const mediaSandbox={};vm.createContext(mediaSandbox);vm.runInContext(section('function attachmentFor(','  function itemMarkup('),mediaSandbox);
+const mediaSandbox={F:require('../dist/stash-files.js'),mediaUrls:new Map()};vm.createContext(mediaSandbox);vm.runInContext(section('function attachmentFor(','  function itemMarkup('),mediaSandbox);
 for(const value of [attachment,{kind:'image',src:'images/philosophy/keychron-profile.jpg'},{kind:'document',src:'media/stash/brand-brief.html'}]){mediaSandbox.item={attachment:value};assert.ok(vm.runInContext('attachmentFor(item)',mediaSandbox));}
 for(const value of [{kind:'image',src:'javascript:alert(1)'},{kind:'image',src:'media/stash/../../private.svg'},{kind:'document',src:'https://example.org/document.html'},{kind:'audio',src:'media/stash/not-audio.html'}]){mediaSandbox.item={attachment:value};assert.equal(vm.runInContext('attachmentFor(item)',mediaSandbox),null);}
 console.log('Stash media passed: typed projection, caption edits preserve assets, safe preview sources.');
+// Stash owns real virtual files in the project, including note bodies and link-file contents.
+const F=require('../dist/stash-files.js');
+const stashProject={root:'/home/demo/Projects/My project/',files:[]};
+const noteFile={id:'saved-note',scope:project,kind:'item',title:'Review',text:'Keep the original body.',source:{},updated:1};
+const linkFile={id:'saved-link',title:'Reference',resourceType:'web',text:'Navigation reference',source:{address:'https://example.org/page?x=1#intro'}};
+const audioFile={id:'saved-audio',title:'Theme',text:'Music study',source:{},attachment};
+assert.equal(F.materialize(stashProject,[noteFile,linkFile,audioFile]),true);
+assert.equal(F.folder(stashProject),'/home/demo/Projects/My project/Stash');
+assert.deepEqual(stashProject.files,[['Stash','Saved notes, files and media','folder']]);
+assert.equal(F.list(stashProject).find(file=>file.id==='saved-note').content,noteFile.text);
+assert.match(F.list(stashProject).find(file=>file.id==='saved-link').content,/\[InternetShortcut\]\nURL=https:\/\/example.org\/page\?x=1#intro/);
+const projectRoundtrip=JSON.parse(JSON.stringify(stashProject));assert.deepEqual(projectRoundtrip,stashProject);
+const recovered=M.create({version:1,records:{'saved-note':projectRoundtrip.stash.files['saved-note'].record}});assert.equal(recovered.get('saved-note').text,noteFile.text,'A note body is recoverable from the project itself');
+assert.equal(F.materialize(projectRoundtrip,[noteFile,linkFile,audioFile]),false,'Reload does not recreate files');
+F.materialize(stashProject,[{...noteFile,id:'new-note'},noteFile,linkFile,audioFile]);assert.equal(stashProject.stash.files['saved-note'].name,'Review.md','A new collision does not rename the existing file');assert.equal(stashProject.stash.files['new-note'].name,'Review (2).md');
+F.materialize(stashProject,[linkFile,audioFile]);assert(!stashProject.stash.files['saved-note'],'Removal also removes the file from the folder');
+F.materialize(stashProject,[noteFile,linkFile,audioFile]);assert.equal(stashProject.stash.files['saved-note'].content,noteFile.text,'Undo restores contents');
+F.materialize(stashProject,[{...noteFile,title:'../Bad/path\u0000',text:'Changed body'},linkFile,audioFile]);assert(!stashProject.stash.files['saved-note'].name.includes('/'));assert.equal(stashProject.stash.files['saved-note'].content,'Changed body');
+assert.deepEqual(F.safeAttachment({kind:'image',key:'stash-upload-123',src:'https://untrusted.example/track.png'}),{kind:'image',key:'stash-upload-123',src:undefined},'Uploaded previews can only use their stored file');
+console.log('Project Stash folder passed: owned contents, project reload recovery, link files, safe names, stable collisions, edits, removal and undo.');
