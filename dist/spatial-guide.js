@@ -6,6 +6,7 @@
     {id:'welcome', title:'Your desktop, one step at a time', text:'Start with an empty desktop, just like your first sign-in. We will reveal one part at a time and let you try it yourself.', task:'Ready to explore?', level:0},
     {id:'system', title:'The System Area', text:'This glass Area holds your clock, notifications, device controls and quick settings. A toggle has a light inside its bottom edge: lit means on.', task:'Choose any quick setting in the System Area. Switch it off, then switch the same setting on again.', level:1, goals:['toggle-off','toggle-on'], target:'[data-area-window="systems"]'},
     {id:'resize-areas', title:'Give Areas the space you need', text:'Glass Areas have a resize handle on their inner border. Drag it a little toward the desktop to widen the Area, or toward the screen edge to narrow it. This is your choice; the desktop uses the remaining space.', task:'Drag the inner border of the System Area to change its width.', level:1, goals:['area-resized'], target:'[data-area-resize="systems"]'},
+    {id:'move-areas', title:'Put Areas where they work for you', text:'Areas can dock on the left, right, top or bottom of the screen. Drag an Area’s header toward the edge you want; the glass preview shows where it will land. Release to dock it there. This works for the Apps and Project Areas too once they are introduced. Windows use the space that remains.', task:'Drag the System Area’s header to a different screen edge, then release it. Choose whichever edge feels comfortable.', level:1, goals:['area-moved'], target:'[data-area-window="systems"] [data-area-drag-handle]'},
     {id:'apps', title:'The Apps Area', text:'The Apps Area keeps your visible windows within reach. Its numbered icons follow the windows on your desktop. Later, this Area will also hold parked apps.', task:'Choose any app from the practice launcher in the Apps Area and open it.', level:2, goals:['app-open'], target:'#guidePracticeLauncher'},
     {id:'tiling', title:'Windows arrange themselves', text:'New windows automatically tile into the available desktop space. Left-drag a title bar to change their arrangement; you do not need to place every window by hand.', task:'Open another app window of your choice. Both windows should share the available space.', level:2, goals:['two-tiled'], target:'#guidePracticeLauncher'},
     {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag any app’s title bar to make its window float.', level:2, goals:['app-float'], target:'[data-app-frame] .app-titlebar'},
@@ -23,16 +24,17 @@
     {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open any standard Home folder in your new workspace. Check that its path belongs to this workspace.', level:8, goals:['workspace-folder'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your apps and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
     {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this final task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
-    {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
+    {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing and moving Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
     let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], skipped:[], ...saved};
     const oldIds = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','desktops','workspaces','folders','return','complete'];
     const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
-    const legacyIds = saved.version === 2 ? version2Ids : oldIds;
+    const version4Ids = lessons.filter(lesson => lesson.id !== 'move-areas').map(lesson => lesson.id);
+    const legacyIds = [3,4].includes(saved.version) ? version4Ids : saved.version === 2 ? version2Ids : oldIds;
     if (saved.lessonId) state.index = lessons.findIndex(lesson => lesson.id === saved.lessonId);
-    else if (saved.status && ![3,4].includes(saved.version) && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
-    state.version = 4;
+    else if (saved.status && saved.version !== 5 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
+    state.version = 5;
     state.index = Math.max(0, Math.min(lessons.length - 1, Number(state.index) || 0));
     const legacyGoals = {'sound-off':'toggle-off','sound-on':'toggle-on','notes-open':'app-open','notes-float':'app-float','notes-park':'app-park','notes-unpark':'app-unpark','project-notes-open':'project-app-open','workspace-downloads':'workspace-folder'};
     if (Array.isArray(saved.done) && saved.done.includes('notes-park')) state.parkedWindow ||= 'notes';
@@ -53,7 +55,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -61,7 +63,7 @@
       },
       start(mode = 'repeat', chapter = null) {
         const index = lessons.findIndex(lesson => lesson.id === chapter && lesson.goals);
-        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:4};
+        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:5};
         if (index > 0) state.chapter = chapter;
       },
       leave(status = 'skipped') { state.status = status; },
@@ -87,7 +89,7 @@
   }
   const goalLabels = {
     'toggle-off':'Switch any setting off', 'toggle-on':'Switch the same setting on again',
-    'area-resized':'Change the System Area width', 'app-open':'Open any app', 'two-tiled':'Tile two app windows together',
+    'area-resized':'Change the System Area width', 'area-moved':'Move an Area to another screen edge', 'app-open':'Open any app', 'two-tiled':'Tile two app windows together',
     'app-float':'Float any app window', 'app-search':'Search for an app of your choice', 'search-launch':'Open its search result',
     'bounded-enter':'Maximize an app between Areas', 'bounded-exit':'Restore that window',
     'full-enter':'Enter true full screen', 'full-exit':'Press Escape to return',
@@ -103,8 +105,8 @@
   // Supply missing windows for skip/replay, retaining the learner’s own app choices.
   function prerequisites(id) {
     const index = lessons.findIndex(lesson => lesson.id === id);
-    return {window:index >= 4, parked:['area-rail','unpark'].includes(id),
-      project:index >= 14, projectApp:index >= 15,
+    return {window:index >= lessons.findIndex(lesson => lesson.id === 'tiling'), parked:['area-rail','unpark'].includes(id),
+      project:index >= lessons.findIndex(lesson => lesson.id === 'project-app'), projectApp:index >= lessons.findIndex(lesson => lesson.id === 'project-navigation'),
       inProject:['project-app','project-navigation'].includes(id),
       ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'};
   }

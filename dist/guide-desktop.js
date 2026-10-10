@@ -248,6 +248,11 @@
       const baseline = model.state.areaResizeBaseline;
       if (baseline.edge === edge && Math.abs(dockSizes[edge] - baseline.size) >= 24 && !areaFor('systems').classList.contains('is-area-resizing')) mark('area-resized');
     }
+    if (id === 'move-areas') {
+      const names = areaPriority.filter(name => model.allows(name) && !areaFor(name).hidden);
+      if (!model.state.areaMoveBaseline) { model.state.areaMoveBaseline = Object.fromEntries(names.map(name => [name,dockState[name].edge])); guide.save(); }
+      if (names.some(name => model.state.areaMoveBaseline[name] && dockState[name].edge !== model.state.areaMoveBaseline[name] && !areaFor(name).classList.contains('is-dock-dragging'))) mark('area-moved');
+    }
     if (id === 'area-rail' && !areaFor('apps').classList.contains('is-area-resizing')) {
       if (areaFor('apps').dataset.areaState === 'rail') mark('apps-rail');
       else if (done.includes('apps-rail') && areaFor('apps').dataset.areaState === 'expanded') mark('apps-expanded');
@@ -379,7 +384,7 @@
   });
   document.addEventListener('pointerdown', event => {
     if (!model.active() || model.state.index === 0 || event.target.closest('#spatialGuide')) return;
-    if (event.target.closest('[data-app-frame],[data-area-resize],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),event.target.getBoundingClientRect())) setCompact(true);
+    if (event.target.closest('[data-app-frame],[data-area-resize],[data-area-drag-handle],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),event.target.getBoundingClientRect())) setCompact(true);
   }, true);
   // Capture the selected search result, then validate after the app's own action.
   document.addEventListener('click', event => {

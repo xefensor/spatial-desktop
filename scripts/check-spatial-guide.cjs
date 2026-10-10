@@ -15,6 +15,8 @@ assert(!model.mark('toggle-off'), 'Repeated events do not advance a lesson');
 assert(model.mark('toggle-on')); assert(model.next());
 assert.equal(model.lesson.id,'resize-areas'); assert(!model.allows('apps'));
 model.mark('area-resized'); assert(model.next());
+assert.equal(model.lesson.id,'move-areas');assert(!model.allows('apps'));
+model.mark('area-moved');assert(model.next());
 assert(model.allows('apps')); assert(!model.allows('overview'));
 while (model.lesson.id !== 'complete') {
   for (const goal of model.lesson.goals || []) model.mark(goal);
@@ -22,7 +24,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -78,6 +80,8 @@ assert.equal(G.create(at('projects').snapshot()).lesson.id,'projects');
 const projects = at('projects');
 assert(projects.allows('projects')); assert(projects.allows('desktops')); assert(!projects.allows('workspaces')); assert(!projects.allows('folders'));
 
+for (const version of [3,4]) {const resumed=G.create({status:'active',version,index:3,done:['notes-open']});assert.equal(resumed.lesson.id,'apps');assert(resumed.ready(),'Progress before the new docking chapter keeps its original task');}
+assert.equal(G.create({status:'active',version:5,index:3}).lesson.id,'move-areas');
 // Free choice still requires the right action, sequence and window ownership.
 for (const name of ['browser','terminal','elisa','dolphin','notes','terminal--2']) {
   const app=at('apps');G.observeWindows(app,{open:[name],bases:{[name]:name.split('--')[0]}});assert(app.ready());
@@ -114,7 +118,7 @@ const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
 const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
-  dockState:{systems:{edge:'right'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
+  areaPriority:['systems','apps','projects'],dockState:{systems:{edge:'right'},apps:{edge:'left'},projects:{edge:'left'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
   dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
@@ -124,6 +128,14 @@ vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
 assert(!context.model.ready(), 'Resize completes only after releasing the border');
 context.dragging=false; context.check(); assert(context.model.ready());
+context.model=at('move-areas');context.check();assert(!context.model.ready());
+context.dockState.apps.edge='bottom';context.check();assert(!context.model.ready(),'Hidden, untaught Areas cannot complete docking practice');
+context.dockState.systems.edge='left';context.dragging=true;context.check();assert(!context.model.ready(),'Dock preview does not complete a move before release');
+context.dragging=false;context.check();assert(context.model.ready());
+const moveSnapshot=context.model.snapshot();assert(G.create(moveSnapshot).ready(),'Completed docking survives refresh');
+context.model.next();assert.equal(context.model.state.areaMoveBaseline,undefined,'The next task gets a fresh baseline');
+for(const edge of ['left','top','bottom']) {context.dockState.systems.edge='right';context.model=at('move-areas');context.check();context.dockState.systems.edge=edge;context.check();assert(context.model.ready(),edge);}
+context.dockState.systems.edge='right';
 context.model=at('area-rail'); context.areaFor=()=>({dataset:{areaState:context.railState},classList:{contains:()=>false}});
 context.railState='expanded';context.check();assert(!context.model.ready());
 context.railState='rail';context.check();assert(!context.model.ready());
