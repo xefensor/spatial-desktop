@@ -46,7 +46,7 @@ existing.api.model.start(); existing.api.storage.setItem('spatial-workspace-app-
 existing.api.model.next(); existing.api.model.mark('sound-off'); existing.api.save();
 const resumed = boot(existing.storage);
 assert(resumed.api.model.active()); assert.equal(resumed.api.model.lesson.id,'system'); assert(resumed.api.model.state.done.includes('sound-off'));
-resumed.api.finish('completed');
+resumed.api.finish('completed'); resumed.api.storage.setItem('spatial-workspace-app-states-v1','late-practice-autosave');
 assert.equal(resumed.storage['spatial-workspace-app-states-v1'],'original-windows', 'Repeating lessons preserves the original desktop');
 const corrupt = G.create({index:999, done:'invalid'});
 assert.equal(corrupt.lesson.id,'complete'); assert.deepEqual(corrupt.state.done,[]);
@@ -158,8 +158,10 @@ assert(!chapter.skip());assert.equal(G.create(chapter.snapshot()).state.chapter,
 chapter.start('repeat','not-a-chapter');assert.equal(chapter.lesson.id,'welcome');assert(!chapter.state.chapter);
 const chapterBoot=boot({'spatial-active-workspace':'work','spatial-workspace-app-states-v1':'real-windows'},'?guide=chapter&chapter=park');
 assert.equal(chapterBoot.api.model.lesson.id,'park');assert.equal(chapterBoot.api.model.state.mode,'repeat');
-chapterBoot.api.storage.setItem('spatial-workspace-app-states-v1','chapter-windows');chapterBoot.api.finish('completed');
+chapterBoot.api.storage.setItem('spatial-workspace-app-states-v1','chapter-windows');chapterBoot.api.finish('completed');chapterBoot.api.storage.setItem('spatial-workspace-app-states-v1','late-chapter-layout');
 assert.equal(chapterBoot.storage['spatial-workspace-app-states-v1'],'real-windows');
+assert.equal(boot(chapterBoot.storage).api.storage.getItem('spatial-workspace-app-states-v1'),'real-windows','A new normal desktop reads its own original session');
+chapterBoot.api.storage.removeItem('spatial-workspace-app-states-v1');assert.equal(chapterBoot.storage['spatial-workspace-app-states-v1'],'real-windows','Late removal also stays in practice');
 chapterBoot.api.setView('compact');assert.equal(boot(chapterBoot.storage).api.view,'compact');
 chapterBoot.api.model.start();assert.equal(chapterBoot.api.view,'compact');
 chapterBoot.api.setView('expanded');assert.equal(boot(chapterBoot.storage).api.view,'expanded');

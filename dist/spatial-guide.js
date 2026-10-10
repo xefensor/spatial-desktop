@@ -11,7 +11,7 @@
     {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag the Notes title bar to make its window float.', level:2, goals:['notes-float'], target:'[data-app-frame="notes"] .app-titlebar'},
     {id:'overview', title:'Find apps in Overview', text:'Overview is now available through the workspace icon in the Apps header, Super, or Ctrl + Space. For now it shows only applications. More parts will appear when you learn about them.', task:'Open Overview, search for “Dolphin”, then open its search result.', level:3, goals:['app-search','search-launch'], target:'#allAppsToggle'},
     {id:'fullscreen', title:'Full screen between Areas', text:'Left-click the maximize button to fill the desktop space between Areas. Your Areas stay accessible. Repeat the click to restore the window.', task:'Maximize an app between Areas, then left-click the same button to restore it.', level:3, goals:['bounded-enter','bounded-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
-    {id:'true-fullscreen', title:'True full screen', text:'Middle-click the same button, or press Alt + Enter while an app is focused. The app uses the whole display and Areas yield. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter true full screen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
+    {id:'true-fullscreen', title:'True full screen', text:'Middle-click the same maximize button. The app uses the whole display and Areas yield. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter true full screen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
     {id:'park', title:'Park instead of minimize', text:'There is no minimization here. Park puts an app into the Apps Area as a useful live card. Its note, controls and content remain available; the app is still running.', task:'Type a short note in Notes, then use its Park button.', level:4, goals:['note-written','notes-park'], target:'[data-app-frame="notes"]'},
     {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked note stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
     {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Find your note in its parked card and click Unpark.', level:4, goals:['notes-unpark'], target:'#miniStack'},
@@ -124,7 +124,7 @@
     if (['tiling','float','park','unpark','project-navigation'].includes(id) && scene.notesState === 'closed') return hint('Your original Notes window was closed. Reopen it to continue; saved note content stays with the window.','notes','Reopen your note');
     if (['tiling','float','park','unpark'].includes(id) && (!scene.notesVisible || scene.column !== 'workspace')) return hint('Your note is on another desktop. Return to it before continuing this task.','notes','Go to your note');
     if (['tiling','float','park'].includes(id) && scene.notesState === 'minimized') return hint('Your note is parked. Bring it back onto the desktop for this task.','notes','Unpark your note');
-    if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize or use Alt + Enter for true full screen.','true-fullscreen','Enter true full screen');
+    if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize for true full screen.','true-fullscreen','Enter true full screen');
     return null;
   }
   function shouldCompact(preference, guideRect, targetRect) {
@@ -158,10 +158,14 @@
   try { if (real.getItem('spatial-guide-view-v1') === 'compact') api.view = 'compact'; } catch {}
   api.setView = value => { api.view = value === 'compact' ? 'compact' : 'expanded'; try { real.setItem('spatial-guide-view-v1',api.view); } catch {} };
   api.save = () => { try { real.setItem(key, JSON.stringify(model.snapshot())); } catch {} };
+  // Keep late layout/autosave callbacks in practice storage while leaving.
+  // The normal desktop gets its own facade after the page reloads.
+  let practiceSession = model.active();
+  const storageKey = name => { if (model.active()) practiceSession = true; return (practiceSession ? prefix : '') + name; };
   api.storage = {
-    getItem(name) { try { return real.getItem((model.active() ? prefix : '') + name); } catch { return null; } },
-    setItem(name, value) { try { real.setItem((model.active() ? prefix : '') + name, value); } catch {} },
-    removeItem(name) { try { real.removeItem((model.active() ? prefix : '') + name); } catch {} }
+    getItem(name) { try { return real.getItem(storageKey(name)); } catch { return null; } },
+    setItem(name, value) { try { real.setItem(storageKey(name), value); } catch {} },
+    removeItem(name) { try { real.removeItem(storageKey(name)); } catch {} }
   };
   api.clearPractice = () => {
     try { Object.keys(real).filter(name => name.startsWith(prefix)).forEach(name => real.removeItem(name)); } catch {}
