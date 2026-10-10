@@ -12,7 +12,7 @@
     return {id:text(event.id),workspace:text(event.workspace),type:event.type,time:event.time,
       title:text(event.title),app:text(event.app),base:text(event.base),project:text(event.project),projectName:text(event.projectName),
       page:Math.max(0,Math.min(999,Math.floor(Number(event.page)||0))),path:text(event.path),address:text(event.address),example:event.example===true,
-      planned:event.planned===true,done:event.done===true,detail:text(event.detail),endTime:Number.isFinite(event.endTime)&&event.endTime>event.time?event.endTime:0};
+      planned:event.planned===true,done:event.done===true,doneTime:Number.isFinite(event.doneTime)&&event.doneTime>0?event.doneTime:0,detail:text(event.detail),endTime:Number.isFinite(event.endTime)&&event.endTime>event.time?event.endTime:0};
   }
   function matches(event,{type='all',query=''}={}){
     const needle=text(query).toLocaleLowerCase();
@@ -110,13 +110,13 @@
       merge,
       put(raw){const event=normalize({...raw,planned:true});if(!event)return null;merge({[event.id]:{...event,updated:raw.updated??Date.now()}});return items.get(event.id)||null;},
       get(id){const event=items.get(id);return event?{...event}:null;},
-      complete(workspace,id,done,updated=Date.now()){const event=items.get(id);if(!event||event.workspace!==workspace||event.type==='calendar.event')return null;return this.put({...event,done:!!done,updated:Math.max(updated,event.updated+1)});},
+      complete(workspace,id,done,updated=Date.now()){const event=items.get(id);if(!event||event.workspace!==workspace||event.type==='calendar.event')return null;return this.put({...event,done:!!done,doneTime:done?updated:0,updated:Math.max(updated,event.updated+1)});},
       list(workspace,filter={}){return [...items.values()].filter(event=>event.workspace===workspace&&matches(event,filter)).sort((a,b)=>a.time-b.time||a.id.localeCompare(b.id)).map(event=>({...event}));},
       snapshot(){return Object.fromEntries([...items].map(([id,event])=>[id,{...event}]));}
     };
   }
   function view(activity,planned,{now=Date.now(),...filter}={}){
-    const rows=[...activity,...planned].filter(event=>matches(event,filter));
+    const rows=[...activity,...planned].filter(event=>matches(event,filter)).map(event=>event.planned&&event.done&&event.doneTime?{...event,dueTime:event.time,time:event.doneTime}:event);
     const next=event=>event.planned&&!event.done&&(event.time>=now||event.endTime>now);
     return {upcoming:rows.filter(next).sort((a,b)=>a.time-b.time),earlier:rows.filter(event=>!next(event)).sort((a,b)=>b.time-a.time)};
   }

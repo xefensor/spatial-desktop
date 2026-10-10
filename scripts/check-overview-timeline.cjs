@@ -36,6 +36,7 @@ const planner=T.createPlanner();plans.forEach(event=>planner.put({...event,updat
 const task=planner.list('general',{type:'task'})[0];
 assert.equal(planner.complete('work',task.id,true,2),null,'Tasks cannot be completed from another workspace');
 planner.complete('general',task.id,true,2);
+assert.equal(T.view([],planner.list('general'),{now:8000}).earlier.find(row=>row.id===task.id).time,2,'A completed future task is placed at its completion time, retaining its original deadline');
 planner.merge({[task.id]:{...task,done:false,updated:1}});
 assert.equal(planner.get(task.id).done,true,'Stale display snapshots cannot undo task completion');
 assert.equal(T.createPlanner(planner.snapshot()).get(task.id).done,true,'Completion persists');
