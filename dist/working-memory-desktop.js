@@ -65,7 +65,7 @@
     const token=projectId+':'+file.id;if(copying.has(token))return;copying.add(token);
     F.copyAsset(projectSpaces[projectId],file).then(blob=>{
       const project=projectSpaces[projectId],live=project?.stash?.files?.[file.id];if(!live)return;
-      if(live.blobKey!==file.blobKey){live.blobKey=file.blobKey;persistProjectState();}
+      live.blobKey=file.blobKey;persistProjectState();
       const media=live.attachment,key=media.key||media.src;if(!mediaUrls.has(key))mediaUrls.set(key,URL.createObjectURL(blob));
       // Updating the source does not rebuild controls or interrupt playing audio.
       host.querySelectorAll('[data-memory-id]').forEach(row=>{const item=itemFor(row.dataset.memoryId);if(!item?.attachment||item.attachment.key!==media.key||item.attachment.src!==media.src)return;const src=mediaUrls.get(key);row.querySelectorAll('img,iframe').forEach(el=>{if(el.getAttribute('src')!==src)el.src=src;});const audio=row.querySelector('audio');if(audio?.paused&&audio.currentTime===0&&audio.getAttribute('src')!==src)audio.src=src;row.querySelectorAll('a[href]').forEach(el=>el.href=src);});
@@ -178,5 +178,5 @@
   document.addEventListener('click',event=>{const button=event.target.closest('[data-stash-edit]');if(!button)return;const id=button.dataset.stashProject;activateProject(id,false);render(true);const item=itemsFor(current).find(item=>(item.fileId||item.id)===button.dataset.stashEdit);if(item)editor(item);});
   globalThis.SpatialMemoryDesktop={fileRows:path=>{const pair=projectAtFolder(path);return pair?F.rows(pair[1]):null;},openFile:openSavedFile,render,search,remember,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
   Object.values(model.snapshot().records).filter(item=>item.kind==='next'&&!item.deleted).forEach(item=>model.promoteNext(item.scope,projectFor(item.scope)?.note));
-  seed();save();render(true);prepareControlSemantics(rail.parentElement);
+  seed();save();render(true);refreshStashBrowsers();prepareControlSemantics(rail.parentElement);
 })();
