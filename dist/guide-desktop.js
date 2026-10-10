@@ -190,7 +190,7 @@
   }
   function positionGuide() {
     if (!model.active() || model.state.index === 0 || window.hidden || pointer || window.classList.contains('was-moved')) return;
-    const targets = highlighted.map(element => element.getBoundingClientRect());
+    const targets = highlighted.filter(element => !window.contains(element)).map(element => element.getBoundingClientRect());
     // Keep the Guide out of a live title bar, menus and modal form controls.
     const front = frontApp && appState[frontApp] === 'open' ? frameFor(frontApp) : null;
     if (front && !front.hidden) targets.push($('.app-titlebar',front).getBoundingClientRect());

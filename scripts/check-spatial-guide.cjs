@@ -314,8 +314,8 @@ const titleRect={left:0,top:0,right:1363,bottom:130};
 const gridRect={left:730,top:400,right:1320,bottom:820};
 const notesButton={left:1104,top:667,right:1309,bottom:720};let lookedUpNextControl=false;
 const positioning=vm.createContext({model:at('project-app'),guide:{placeGuide:G.placeGuide,shouldCompact:G.shouldCompact,view:'expanded'},
-  window:{hidden:false,classList:{contains:()=>false},getBoundingClientRect(){const left=parseInt(this.style.left)||961,top=parseInt(this.style.top)||362;return{width:390,height:562,left,top,right:left+390,bottom:top+562};},style:{}},
-  pointer:null,highlighted:[],frontApp:null,innerWidth:1363,innerHeight:936,
+  window:{hidden:false,contains:element=>!!element.own,classList:{contains:()=>false},getBoundingClientRect(){const left=parseInt(this.style.left)||961,top=parseInt(this.style.top)||362;return{width:390,height:562,left,top,right:left+390,bottom:top+562};},style:{}},
+  pointer:null,highlighted:[{own:true,getBoundingClientRect:()=>({left:0,top:0,right:1363,bottom:936})}],frontApp:null,innerWidth:1363,innerHeight:936,
   $(selector){const rect=selector.endsWith('.universal-search-header')?titleRect:selector.endsWith('#allAppsGrid')?gridRect:selector === '#universalSearch.is-open #allAppsGrid [data-open-app]'?(lookedUpNextControl=true,notesButton):null;return rect?{getBoundingClientRect:()=>rect}:null;},
   setCompact(){throw new Error('A clear corner exists; keep the expanded preference');}});
 vm.runInContext(positionSource,positioning);positioning.positionGuide();
