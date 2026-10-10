@@ -154,12 +154,16 @@
     // Keep the Guide out of a live title bar, menus and modal form controls.
     const front = frontApp && appState[frontApp] === 'open' ? frameFor(frontApp) : null;
     if (front && !front.hidden) targets.push($('.app-titlebar',front).getBoundingClientRect());
-    for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header']) {
+    for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid']) {
       const element = $(selector); if (element) targets.push(element.getBoundingClientRect());
     }
+    const overviewTarget = ({'project-app':'[data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'.workspace-tabs',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
+    const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
+    if (nextControl) targets.push(nextControl.getBoundingClientRect());
     const rect = window.getBoundingClientRect();
     const point = guide.placeGuide({width:innerWidth,height:innerHeight},{width:rect.width,height:rect.height},targets);
     window.style.left = point.left+'px'; window.style.top = point.top+'px'; window.style.bottom = 'auto';
+    if (nextControl && !window.classList.contains('is-compact') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),nextControl.getBoundingClientRect())) setCompact(true);
   }
   function updateChecklist() {
     const goals = model.lesson.goals || [], current = goals.find(goal => !model.state.done.includes(goal));
