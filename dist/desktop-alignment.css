@@ -41,6 +41,10 @@ button:is(.surface-key[aria-label],.project-app,.workspace-favorite):has(>svg:on
 .mini-card .mini-control{padding:0!important;display:grid;place-items:center}
 
 /* Current cards have a location and optional metadata, without a status slit. */
+.apps-zone :is(.mini-section,.mini-stack,.mini-card){min-width:0}
+.apps-zone .mini-stack{grid-template-columns:minmax(0,1fr)}
+.mini-card .mini-note-field{min-width:0;max-width:100%}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]):not(:has(.app-rack-open)) .mini-section{grid-column:1 / -1}
 .mini-card .mini-location{
   grid-template-columns:minmax(0,1fr) auto;
   min-height:31px;
