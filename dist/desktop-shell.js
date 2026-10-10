@@ -999,6 +999,7 @@ function growTileWindow(name, direction) {
 }
 
 function focusTileWindow(name) {
+  releaseBorrowedApp(name);
   const session = reconcileTileTree(name);
   if (session.focus?.name === name) {
     const focus = session.focus;
@@ -1130,6 +1131,7 @@ function renderFullscreenWindow(name) {
 }
 
 function toggleAppFullscreen(name) {
+  releaseBorrowedApp(name);
   if (appState[name] !== "open" || !isLocalApp(name)) return;
   const session = tileSession();
   if (session.fullscreen?.name === name) {
@@ -2040,7 +2042,6 @@ function bindWindowDrag(frame) {
     cancelWindowPointerInteraction?.();
     event.preventDefault();
     const name = frame.dataset.appFrame;
-    releaseBorrowedApp(name);
     if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
     autoTiledWindows.delete(name);
     bringToFront(name);
@@ -2072,6 +2073,7 @@ function bindWindowDrag(frame) {
       if (!hasMoved) {
         if (!force && Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) < 6) return;
         hasMoved = true;
+        releaseBorrowedApp(name);
         if (frame.dataset.maximized === "true") focusTileWindow(name);
       }
       const position = resistAreaBoundaries({
@@ -4854,7 +4856,7 @@ function prepareWindows(root = document) {
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
       if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
     });
-    $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow Area space · double-click: maximize between Areas";
+    $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow Area space · double-click: Maximize";
     frame.addEventListener("auxclick", event => {
       if (event.button === 1 && event.target.closest(".app-titlebar,.resize-handle")) event.preventDefault();
     });
@@ -5927,7 +5929,7 @@ function contextMenuEntries(context) {
       state !== "closed" && windowMembership[activeWorkspace]?.[context.name] ? {action: "detach-project", icon: "i-folder", label: "Take out of project · keep open"} : null,
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Unpark" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps Area" } : null,
-      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / maximize between Areas" : "Maximize between Areas", shortcut: "Alt+Enter" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / Maximize" : "Maximize", shortcut: "Alt+Enter" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave Full fullscreen" : "Full fullscreen", shortcut: "Middle click" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-grow", icon: "i-max", label: "Give more space", shortcut: "Alt+wheel up" } : null,
@@ -6861,6 +6863,8 @@ function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = nul
   releaseBorrowedApp(name);
   if (!appInfo[name] || !extendedDesktopActive()) return;
   const sourceSession = tileSession();
+  if (sourceSession.fullscreen?.name === name) leaveAppFullscreen(sourceSession);
+  if (sourceSession.focus?.name === name) leaveTileFocus(sourceSession, true);
   if (sourceSession.floating[name]) {
     const display = activeDisplayRoster()[targetSlot - 1];
     const rect = sourceSession.floating[name];

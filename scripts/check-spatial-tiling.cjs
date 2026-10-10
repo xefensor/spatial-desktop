@@ -859,3 +859,17 @@ resetMonitors();
 vm.runInContext('tileSessions[intentContextPrefix()+2]={root:tileEngine.leaf("browser"),floating:{},parked:{},focus:{name:"browser"}};openApp("dolphin");openApp("notes");focusTileWindow("dolphin")',sandbox);
 assert.equal(monitorAssignments.apps.notes,1,"A maximized peer display cannot accept borrowed apps");
 console.log("Two-display maximize/full fullscreen: capacity, existing peers, floats, automatic return, user overrides, parking/closing and crowded-display fallback passed.");
+
+resetMonitors();
+sandbox.activeDisplayRoster=()=>[{width:1616,height:1016},{width:1400,height:1000}];
+vm.runInContext('openApp("dolphin");openApp("notes");focusTileWindow("dolphin")',sandbox);
+sandbox.saveLayout=()=>{};sandbox.refreshIntentAreas=()=>{};
+vm.runInContext(slice('function transferAppToDisplay(', 'function transferAreaToDisplay('),sandbox);
+vm.runInContext('transferAppToDisplay("dolphin",2)',sandbox);
+assert.equal(monitorAssignments.apps.dolphin,2,"Moving the maximized owner goes to the requested display");
+assert.equal(monitorAssignments.apps.notes,1,"Moving the owner releases automatic peer transfer");
+assert.equal(vm.runInContext('tileSession().focus',sandbox),null);
+resetMonitors();
+vm.runInContext('openApp("dolphin");openApp("notes");toggleAppFullscreen("dolphin");transferAppToDisplay("dolphin",2)',sandbox);
+assert.equal(monitorAssignments.apps.notes,1);assert.equal(vm.runInContext('tileSession().fullscreen',sandbox),null);
+console.log("Moving a maximized/full-fullscreen owner releases its automatic transfers and temporary mode.");
