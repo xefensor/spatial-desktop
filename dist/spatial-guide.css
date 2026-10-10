@@ -28,27 +28,28 @@ html[data-guide-level] .desktop-context-menu {z-index:11000!important}
 #spatialGuide {z-index:10000}
 .guide-practice-launcher {display:none;gap:10px;padding:12px 0;flex-direction:column}.guide-practice-launcher>span{font-size:10px;color:var(--muted)}.guide-practice-launcher button{display:flex;align-items:center;gap:10px;padding:9px;text-align:left;font-size:12px}.guide-practice-launcher .app-art{width:27px;height:27px}
 html[data-guide-level="2"] .guide-practice-launcher{display:flex}
-html[data-guide-level]:not([data-guide-level="8"]) :is(.overview-projects-section,.workspace-switcher-actions,.overview-widgets,.workspace-context-card,.other-workspaces,[data-universal-group]:not([data-universal-group="apps"])) {display:none!important}
-html[data-guide-level]:not([data-guide-level="8"]) :is([data-area-window="projects"],.desktop-context-header,.zone-resizer) {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) :is(.workspace-switcher-actions,.overview-widgets,.workspace-context-card,.other-workspaces,[data-universal-group]:not([data-universal-group="apps"])) {display:none!important}
+html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) :is([data-area-window="projects"],.desktop-context-header,.overview-projects-section) {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"]) :is([data-area-window="apps"],[data-app-frame]) {display:none!important}
 html[data-guide-level="0"] [data-area-window="systems"] {display:none!important}
 html[data-guide-level] #emptyWorkspace {display:none!important}
-html[data-guide-level]:not([data-guide-level="8"]) .desktop-folder {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) .desktop-folder {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"]) #allAppsToggle {visibility:hidden;pointer-events:none}
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"]) :is(.mini-section,[data-window-action="minimize"]) {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"]) [data-window-action="maximize"] {display:none!important}
 html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"]) :is(.desktop-page-rail,.desktop-column-map,.desktop-column-hint,.open-windows-section) {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) .workspace-switcher {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"]) .overview-project-zone {display:none!important}
-html[data-guide-level]:not([data-guide-level="8"]) :is(.overview-home,.overview-main) {grid-template-columns:minmax(0,1fr)!important}
-html[data-guide-level="7"] .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
-html[data-guide-level]:not([data-guide-level="8"]) body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr)!important}
-html[data-guide-level]:not([data-guide-level="8"]) body #universalSearch #overviewHome .overview-apps-section {grid-column:1!important;grid-row:auto!important}
-html[data-guide-level="7"] body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
-html[data-guide-level="7"] body #universalSearch #overviewHome .overview-apps-section {grid-column:2!important}
-html[data-guide-level]:not([data-guide-level="8"]) .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]) {display:none!important}
-html[data-guide-level]:not([data-guide-level="8"]) .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]) {display:none!important}
-html[data-guide-level]:not([data-guide-level="8"]) .launcher-categories {display:none!important}
+html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"]) .workspace-switcher {display:none!important}
+html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) .overview-project-zone {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) :is(.overview-home,.overview-main) {grid-template-columns:minmax(0,1fr)!important}
+html:is([data-guide-level="6"],[data-guide-level="7"],[data-guide-level="8"]) .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
+html[data-guide-level]:not([data-guide-level="9"]) body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr)!important}
+html[data-guide-level]:not([data-guide-level="9"]) body #universalSearch #overviewHome .overview-apps-section {grid-column:1!important;grid-row:auto!important}
+html:is([data-guide-level="6"],[data-guide-level="7"],[data-guide-level="8"]) body #universalSearch #overviewHome .overview-main {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important}
+html:is([data-guide-level="6"],[data-guide-level="7"],[data-guide-level="8"]) body #universalSearch #overviewHome .overview-apps-section {grid-column:2!important}
+html[data-guide-level]:not([data-guide-level="9"]) .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]) {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]) {display:none!important}
+html[data-guide-level]:not([data-guide-level="9"]) .launcher-categories {display:none!important}
+html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"],[data-guide-level="7"]) .workspace-home-card {display:none!important}
 @keyframes guide-arrive {from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
 @media(max-width:800px){.guide-window{left:12px;top:auto;bottom:12px;width:350px;max-height:55dvh}.guide-content{padding:16px}.guide-content h1{font-size:21px}.guide-content p{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.guide-window{animation:none}.guide-progress i{transition:none}}

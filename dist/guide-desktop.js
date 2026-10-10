@@ -59,7 +59,7 @@
     areaPriority.forEach(name => { areaFor(name).inert = model.active() && !model.allows(name); });
     $('#allAppsToggle').disabled = model.active() && !model.allows('overview');
     $('#universalSearchInput').placeholder = model.active() && !model.allows('projects') ? 'Search applications' : 'Search apps, files, settings, actions or the web';
-    $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('projects') ? 'Workspace Home' : 'Projects and Home';
+    $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects and Home';
     filterLauncher();
     layoutDockAreas(false, false); refreshIntentAreas(); scheduleWindowTiling();
   }
@@ -86,13 +86,22 @@
     if (id === 'apps' && isNotesOpen) mark('notes-open');
     if (id === 'tiling' && ['notes','dolphin'].every(name => appState[name] === 'open' && frameFor(name).classList.contains('is-tiled'))) mark('two-tiled');
     if (id === 'float' && session.floating.notes && !manualWindowInteraction) mark('notes-float');
-    if (id === 'fullscreen') {
-      if (session.focus?.name === 'notes' || (isNotesOpen && appMaximizedState.notes && !session.fullscreen)) mark('bounded-enter');
-      else if (done.includes('bounded-enter') && !session.fullscreen) mark('bounded-exit');
+    const open = Object.keys(appState).filter(name => appState[name] === 'open' && isLocalApp(name));
+    const bounded = session.focus?.name || open.find(name => appMaximizedState[name] && !frameFor(name).classList.contains('is-fullscreen'));
+    if (guide.observeFullscreen(model, {bounded, full:session.fullscreen?.name, open})) { guide.save(); lastSignature = ''; }
+    if (id === 'resize-areas') {
+      const edge = dockState.systems.edge;
+      if (!model.state.areaResizeBaseline) { model.state.areaResizeBaseline = {edge, size:dockSizes[edge]}; guide.save(); }
+      const baseline = model.state.areaResizeBaseline;
+      if (baseline.edge === edge && Math.abs(dockSizes[edge] - baseline.size) >= 24 && !areaFor('systems').classList.contains('is-area-resizing')) mark('area-resized');
     }
-    if (id === 'true-fullscreen') {
-      if (session.fullscreen?.name === 'notes') mark('full-enter');
-      else if (done.includes('full-enter')) mark('full-exit');
+    if (id === 'projects' && projectColumnActive() && activeProjectName === 'plasma') mark('project-open');
+    if (id === 'project-navigation') {
+      const column = desktopPages.column(activeWorkspace);
+      if (column === 'workspace') {
+        if (done.includes('project-return')) mark('project-workspace-return');
+        else mark('project-workspace');
+      } else if (column === 'plasma' && done.includes('project-workspace')) mark('project-return');
     }
     if (id === 'park') {
       const notes = appWindowModel('notes');
@@ -107,12 +116,12 @@
     if (id === 'workspaces' && activeWorkspace === 'school') mark('school-switch');
     if (id === 'folders' && activeWorkspace === 'school' && Object.keys(appState).some(name => appState[name] === 'open' && (appInfo[name].base || name) === 'dolphin' && frameFor(name).dataset.fileLocation === workspaceProfiles.school.home + '/Downloads')) mark('school-downloads');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
-    const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready]);
+    const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded]);
     if (signature === lastSignature) return;
     lastSignature = signature;
     $('[data-guide-action="next"]', window).disabled = !ready;
     const status = $('#guideTaskStatus');
-    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
+    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is true full screen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Full screen detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'True full screen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
     highlight();
   }
   function start() {

@@ -19,7 +19,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,tiling,float,overview,fullscreen,true-fullscreen,park,unpark,desktops,workspaces,folders,return,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,tiling,float,overview,fullscreen,true-fullscreen,park,unpark,resize-areas,desktops,projects,project-navigation,workspaces,folders,return,complete');
 function boot(entries) {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -49,3 +49,48 @@ assert.equal(resumed.storage['spatial-workspace-app-states-v1'],'original-window
 const corrupt = G.create({index:999, done:'invalid'});
 assert.equal(corrupt.lesson.id,'complete'); assert.deepEqual(corrupt.state.done,[]);
 console.log('Spatial Guide passed: progressive access, task validation, first login, skip, persistence, reload and isolated repeat lessons.');
+
+// Exercise the production observer with different apps and overlapping modes.
+function at(id) { return G.create({status:'active',version:2,lessonId:id}); }
+const bounded = at('fullscreen');
+G.observeFullscreen(bounded,{bounded:'dolphin',open:['dolphin','notes']});
+assert(bounded.state.done.includes('bounded-enter'), 'Dolphin can complete the same fullscreen task as Notes');
+assert(!bounded.ready(), 'Entering is followed by a restore task');
+G.observeFullscreen(bounded,{bounded:'dolphin',full:'dolphin',open:['dolphin']});
+assert(!bounded.ready(), 'True fullscreen over bounded mode is not restoration');
+G.observeFullscreen(bounded,{bounded:'dolphin',open:['dolphin','notes']});
+assert(!bounded.ready(), 'Leaving true fullscreen alone leaves bounded maximize active');
+G.observeFullscreen(bounded,{open:['dolphin','notes']});
+assert(bounded.ready());
+const wrongMode = at('fullscreen');
+G.observeFullscreen(wrongMode,{full:'notes',open:['notes']});
+G.observeFullscreen(wrongMode,{open:['notes']});
+assert(!wrongMode.ready(), 'The two fullscreen lessons stay distinct');
+const full = at('true-fullscreen');
+G.observeFullscreen(full,{bounded:'notes',full:'notes',open:['notes']});
+G.observeFullscreen(full,{bounded:'notes',open:['notes']});
+assert(full.ready(), 'Escape into a previously bounded window completes true fullscreen');
+assert.equal(G.create({status:'active',index:11}).lesson.id,'workspaces', 'Existing progress survives inserted lessons');
+assert.equal(G.create(at('projects').snapshot()).lesson.id,'projects');
+const projects = at('projects');
+assert(projects.allows('projects')); assert(projects.allows('desktops')); assert(!projects.allows('workspaces')); assert(!projects.allows('folders'));
+
+// Run the adapter's actual polling function for the new desktop tasks.
+const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
+const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start()'));
+const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,save(){}},
+  appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
+  dockState:{systems:{edge:'right'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
+  dragging:false, window:{}, lastSignature:'', $:()=>({}), highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  desktopPages:{column:()=>context.column},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
+context.mark = goal=>context.model.mark(goal);
+vm.runInContext(checkSource,context); context.check();
+context.dockSizes.right=340; context.dragging=true; context.check();
+assert(!context.model.ready(), 'Resize completes only after releasing the border');
+context.dragging=false; context.check(); assert(context.model.ready());
+context.model=at('projects'); context.activeProjectName='plasma'; context.check(); assert(!context.model.ready());
+context.column='plasma'; context.check(); assert(context.model.ready(), 'Opening the actual project completes introduction');
+context.model=at('project-navigation'); context.check(); assert(!context.model.ready());
+context.column='workspace'; context.check(); context.column='plasma'; context.check(); assert(!context.model.ready());
+context.column='workspace'; context.check(); assert(context.model.ready(), 'Project navigation checks both directions and a final return');
+console.log('Guide fullscreen recovery, progress migration, Area resize and project navigation passed.');
