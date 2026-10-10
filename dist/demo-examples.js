@@ -154,6 +154,21 @@
     activeMode: "study", modes: { study: { label: "Research", icon: "i-graduation", apps: ["browser"], layout: "canvas" } }
   };
   const previousPublicProjects = JSON.parse(JSON.stringify(projects));
+
+  // Real, bundled media. Captions stay editable; the source content stays intact.
+  projects.plasma.resources = [
+    ["Brand brief", "Launch direction and review checklist", "document", "i-note", {text:"A concise brief for the homepage review.", attachment:{kind:"document",src:"media/stash/brand-brief.html",format:"Document"}}],
+    ["Product photo", "Hero image reference", "image", "i-image", {text:"Test a wide crop with enough space for the headline.", attachment:{kind:"image",src:"images/philosophy/keychron-profile.jpg",format:"Photo",credit:"Photo: Mulad · public domain"}}]
+  ];
+  projects.retold.resources = [
+    ["Closing theme", "Original synth sketch", "audio", "i-music", {text:"An eight-second musical sketch for the closing shot. Compare its pacing with the cut.",attachment:{kind:"audio",src:"media/stash/closing-theme.wav",format:"Audio · 0:08",credit:"Original synthesised demo audio"}}],
+    ["Station transition", "Three-shot storyboard", "image", "i-image", {text:"Wide platform → approaching train → departure. Keep the cut on movement.",attachment:{kind:"image",src:"media/stash/storyboard.svg",format:"Storyboard"}}]
+  ];
+  projects.research.resources = [
+    ["Field observations", "Two sites, one sampling method", "document", "i-note", {text:"Illustrative survey data: compare shade cover and plant counts before writing the report.",attachment:{kind:"document",src:"media/stash/field-observations.html",format:"Data sheet"}}],
+    ["Survey route", "Riverside and courtyard", "image", "i-image", {text:"A schematic route linking the two sample sites; not a navigational map.",attachment:{kind:"image",src:"media/stash/survey-route.svg",format:"Map"}}]
+  ];
+
   for (const project of Object.values(projects)) {
     project.activeMode = "default";
     project.modes = {default: {label: "Project", icon: project.icon, apps: [], layout: "canvas"}};
@@ -468,7 +483,7 @@
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
   function migrateProject(id, project) {
-    const before = legacy[id];
+    const before = legacy[id] || previousPublicProjects[id];
     const after = projects[id];
     if (!before || !after || !project) return project;
     const legacyRoots = [before.root];
@@ -490,7 +505,8 @@
     for (const field of ["files", "resources"]) {
       if (!Array.isArray(next[field])) continue;
       next[field] = next[field].map(row => {
-        const index = before[field].findIndex(original => same(row, original));
+        let index = before[field].findIndex(original => same(row, original));
+        if (index < 0) index = previousPublicProjects[id]?.[field]?.findIndex(original => same(row, original)) ?? -1;
         return index < 0 ? row : JSON.parse(JSON.stringify(after[field][index]));
       });
     }

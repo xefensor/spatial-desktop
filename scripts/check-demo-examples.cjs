@@ -49,7 +49,7 @@ const preserved = D.migrateProject('plasma', edited);
 assert.equal(preserved.note, edited.note);
 assert.deepEqual(preserved.resources[0], edited.resources[0]);
 assert.deepEqual(preserved.resources[2], edited.resources[2]);
-assert.equal(preserved.resources[1][0], 'Reference images');
+assert.equal(preserved.resources[1][0], D.projects.plasma.resources[1][0]);
 assert.equal(preserved.files.length, 1);
 assert.equal(preserved.modes.visual.label, 'My design mode');
 assert.deepEqual(preserved.modes.testing.apps, ['notes']);
@@ -351,3 +351,14 @@ assert.equal(demoFrames['notes--demo-film-cut'].fields[0].value,'My edited film 
 assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/contact form/,'Unsaved example fields retain their specific initial content');
 assert.equal(demoFrames.notes.fields[0].value,'My studio planning');
 console.log('Column examples passed: multiple open projects, distinct identities/content, two desktops, minimized soundtrack, native ownership, backups and edited note restoration.');
+// Upgrade only untouched public resource rows, including School's research project.
+for(const [id,rows] of Object.entries({plasma:[['brand-guidelines.pdf','Linked · ~/Documents/Brand','document','i-note'],['Reference images','Linked · ~/Pictures/References','folder','i-folder']],retold:[['soundtrack.wav','Linked · ~/Music/Production','audio','i-music'],['storyboard.pdf','Linked · ~/Documents/Film','document','i-note']],research:[['Field guide.pdf','Linked · School/Documents/Biology','document','i-note'],['Survey map','Linked · School/Pictures','document','i-web']]})){
+ const prior={...copy(D.projects[id]),resources:copy(rows)};
+ assert.deepEqual(D.migrateProject(id,prior).resources,D.projects[id].resources);
+ prior.resources[0][1]='My own caption';prior.resources.splice(1,1);
+ assert.deepEqual(D.migrateProject(id,prior).resources,prior.resources);
+}
+const fsMedia=require('node:fs'),pathMedia=require('node:path');
+for(const project of Object.values(D.projects))for(const row of project.resources){const media=row[4]?.attachment;if(media?.src.startsWith('media/stash/'))assert.ok(fsMedia.statSync(pathMedia.join(__dirname,'../dist',media.src)).size>100);}
+const wav=fsMedia.readFileSync(pathMedia.join(__dirname,'../dist/media/stash/closing-theme.wav'));assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.readUInt32LE(40)/(wav.readUInt32LE(24)*wav.readUInt16LE(22)*wav.readUInt16LE(34)/8),8);
+console.log('Typed examples passed: public migration, edited/deleted rows preserved, real assets and eight-second audio.');

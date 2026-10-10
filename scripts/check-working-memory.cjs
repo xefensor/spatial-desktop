@@ -47,3 +47,13 @@ assert.equal(mergedProject.resources.length,2);assert.equal(mergedProject.resour
 let joined=vm.runInContext('itemsFor(key)',unified);assert.equal(joined[0].source.address,'https://example.org/page?q=1#section');assert.equal(joined[0].source.app,'browser--2');assert.equal(joined[1].source.address,'/home/demo/reference.pdf');
 unified.resourceId=joined[0].id;vm.runInContext("editItem(resourceId,{title:'Edited reference',pinned:true})",unified);assert.equal(mergedProject.resources[0][0],'Edited reference');assert.equal(vm.runInContext('itemFor(resourceId).pinned',unified),true);assert.equal(mergedProject.note,'Autosaved thought');
 console.log('Working memory passed: scope isolation, provenance, dated search, concurrent displays, deletion/undo, reload, limits, history, selected-content tools, reset and safe source reopening.');
+// Typed resource metadata survives edits and display projection; untrusted previews are rejected.
+const attachment={kind:'audio',src:'media/stash/closing-theme.wav',format:'Audio'};
+mergedProject.resources.push(['Closing theme','Caption','audio','i-music',{attachment,text:'Caption'}]);
+const audioItem=vm.runInContext('resourceItems(key).at(-1)',unified);assert.deepEqual(audioItem.attachment,attachment);
+unified.audioId=audioItem.id;vm.runInContext("editItem(audioId,{title:'My title',text:'My caption'})",unified);
+assert.deepEqual(mergedProject.resources.at(-1)[4].attachment,attachment);
+const mediaSandbox={};vm.createContext(mediaSandbox);vm.runInContext(section('function attachmentFor(','  function itemMarkup('),mediaSandbox);
+for(const value of [attachment,{kind:'image',src:'images/philosophy/keychron-profile.jpg'},{kind:'document',src:'media/stash/brand-brief.html'}]){mediaSandbox.item={attachment:value};assert.ok(vm.runInContext('attachmentFor(item)',mediaSandbox));}
+for(const value of [{kind:'image',src:'javascript:alert(1)'},{kind:'image',src:'media/stash/../../private.svg'},{kind:'document',src:'https://example.org/document.html'},{kind:'audio',src:'media/stash/not-audio.html'}]){mediaSandbox.item={attachment:value};assert.equal(vm.runInContext('attachmentFor(item)',mediaSandbox),null);}
+console.log('Stash media passed: typed projection, caption edits preserve assets, safe preview sources.');
