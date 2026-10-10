@@ -5925,7 +5925,7 @@ function contextMenuEntries(context) {
     const frame = frameFor(context.name);
     const maximized = frame?.dataset.maximized === "true";
     return [
-      globalThis.SpatialMemoryDesktop ? {action:"memory-remember",icon:"i-note",label:"Keep selection in working memory",shortcut:"Ctrl+Shift+M"} : null,
+      globalThis.SpatialMemoryDesktop ? {action:"memory-remember",icon:"i-note",label:"Save selection to Stash",shortcut:"Ctrl+Shift+M"} : null,
       { action: "app-new-instance", icon: "i-add", label: "New window", shortcut: "Shift+click" },
       state !== "closed" && desktopPages.pageOf(activeWorkspace, context.name) > 0 ? { action: "move-desktop:-1", icon: "i-monitor", label: "Move to desktop above" } : null,
       state !== "closed" ? { action: "move-desktop:1", icon: "i-monitor", label: "Move to desktop below" } : null,
