@@ -1,6 +1,8 @@
 /* Open windows occupy the start of the Apps rail; parked windows its end.
-   Expanded Areas keep the same continuous grid and keyboard slot order. */
+   Expanded Areas show parked windows as cards only, with the same shortcut slots. */
 .app-rack-group{display:contents}
+.apps-zone:not([data-area-state="rail"]) .app-rack-parked{display:none}
+.apps-zone:not([data-area-state="rail"]) .app-rack:not(:has(.app-rack-open)){display:none}
 .apps-zone[data-area-state="rail"] .app-rack{
   display:flex;
   flex-direction:column;
