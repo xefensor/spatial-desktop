@@ -73,20 +73,19 @@ const ctx=vm.createContext({
   refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},endSystemRailExpansion(){},showToast(){},removeWindowFromSavedProjects(){},cloneDesktopState:copy,
   leaveAppFullscreen(){},renderAvailableProjectLibrary(){},refreshProjectSessionUi(){},
   tileSession(){return ctx.tileSessions[ctx.desktopPages.context('work')+'1'] ||= {root:null,parked:{},floating:{}}},
-  layoutDockAreas(){ctx.keepPersistentAreasVisible()}
+  layoutDockAreas(){}
 });
 vm.runInContext(slice('function openProjectNames(', 'const workspaceAreaContents'),ctx);
 vm.runInContext(slice('function projectColumnActive(', 'function renderDesktopColumnMap('),ctx);
 vm.runInContext(slice('function setProjectClosedState(', 'function renderProjectSpace('),ctx);
-vm.runInContext(source.match(/const persistentAreas = new Set\([^;]+;/)[0],ctx);
-vm.runInContext(slice('function keepPersistentAreasVisible(', 'function areaLabel('),ctx);
 vm.runInContext(slice('function isLocalApp(', 'function persistDisplayAssignments('),ctx);
 vm.runInContext(slice('function topOpenApp(', 'function openApp('),ctx);
 vm.runInContext(slice('function updateDesktopPageUi(', 'function moveWindowToDesktop('),ctx);
 vm.runInContext(slice('function detachDraggedDesktopWindow(', '// A floating window is reparented'),ctx);
 ctx.desktopPages.assign('work','personal',0,'workspace');
 ctx.desktopPages.assign('work','draft',0,'site');
-ctx.syncApps();ctx.keepPersistentAreasVisible();
+node('area:projects').hidden=false;
+ctx.syncApps();
 assert.equal(node('.desktop-context-header').hidden,false);
 assert.match(node('#desktopContextColumns').innerHTML,/Workspace/);
 assert.match(node('#desktopContextColumns').innerHTML,/Website Launch/);
@@ -122,6 +121,11 @@ ctx.cancelDraggedDesktopPages(drag);
 assert.equal(ctx.windowMembership.work.personal,null);assert.equal(ctx.desktopPages.column('work'),'workspace');
 assert.deepEqual(copy(ctx.tileSessions),drag.sessions);assert.equal(node('area:projects').hidden,false);assert.equal(node('area:projects').dataset.projectLibraryOpen,'true');
 console.log('Project columns passed: ownership, per-column pages, reload/sync, mixed-tree migration, visibility, persistent Project Area context, transfers and gesture rollback.');
+
+node('area:projects').hidden=true;
+ctx.changeDesktopColumn('site');ctx.changeDesktopColumn('workspace');
+assert.equal(node('area:projects').hidden,true,'Switching project columns retains the workspace choice to hide Project Area');
+node('area:projects').hidden=false;
 
 // Closing shelves only this column; reopening preserves its last (even empty) desktop.
 Object.assign(ctx, {
