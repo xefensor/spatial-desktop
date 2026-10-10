@@ -119,6 +119,7 @@ const sandbox = {
   appState: Object.fromEntries(Object.keys(frames).map(name => [name, "closed"])),
   appInfo: Object.fromEntries(Object.keys(frames).map(name => [name, { label: name }])), appMaximizedState: {},
   desktopPageAnimating: false, frontApp: null, layoutMode: "manual", windowGeometry: new Map(), autoTiledWindows: new Set(), autoWindowAvoidance: new Map(),
+  extendedDesktopActive: () => false, otherDisplaySlot: () => 2, stateSideMinimum: () => 310, stateHorizontalMinimum: () => 250, persistDisplayAssignments() {},
   isLocalApp: () => true, minimumUsableWindowSize: min, frameFor: name => frames[name],
   workspaceBounds: () => ({ width: 1616, height: 1016, rect: { left: 0, top: 0 } }),
   syncMaximizeButton() {}, saveLayout() {}, showToast() {}, queueDesktopStateBroadcast() {}, scheduleSpatialAutoLayout() {},
@@ -575,6 +576,7 @@ const intentAssignments = {apps:Object.fromEntries(Object.keys(frames).map(name 
 Object.assign(sandbox, {
   areaPriority:["projects","apps","systems"], dockState:{projects:{edge:"left"},apps:{edge:"right"},systems:{edge:"right"}},
   areaFor:name => areaFrames[name], displayAssignmentsFor:() => intentAssignments,
+  isLocalApp:name => intentAssignments.apps[name] === 1,
   activeDisplayRoster:() => [{width:1616,height:1016},{width:1616,height:1016}], extendedDesktopActive:() => true,
   layoutDockAreas() {}, persistDisplayAssignments() {}, projectColumnActive: () => true
 });
@@ -632,6 +634,7 @@ vm.runInContext('closeApp("elisa"); renderTileLayout("notes")',sandbox);
 assert.equal(vm.runInContext('Boolean(fitDesktopTiles().avoiding)',sandbox),false,"Closing a float releases its space");
 console.log("Float-aware desktop: new app opening, coordinate offsets, pinned float, rendered placement, minimize/restore and close passed.");
 
+sandbox.extendedDesktopActive=()=>false;
 // Visibility is per monitor/workspace and based on complete geometric coverage,
 // including the union of several foreground windows, not just the front app.
 sandbox.desktopPages.assign("general", "fixture-page", 5);
@@ -806,3 +809,53 @@ assertCleanGesture();
 assert.equal(sandbox.windowMembership.general.notes,'project');
 assert.equal(vm.runInContext('tileEngine.contains(tileSession().root,"notes")',sandbox),true,'Release inserts the window into its project desktop');
 console.log('Held-window columns passed: real Shift+wheel ownership transfer, source removal, momentum, reverse, Escape rollback and release commit.');
+
+// Exercise the production adapter with two displays and real capacity fitting.
+resetVisibility();
+const monitorAssignments = {apps:{dolphin:1,elisa:1,notes:1,browser:2,terminal:1},areas:{}};
+sandbox.displayAssignmentsFor=()=>monitorAssignments;
+sandbox.extendedDesktopActive=()=>true;
+sandbox.otherDisplaySlot=()=>2;
+sandbox.activeDisplayRoster=()=>[{width:1616,height:1016},{width:1400,height:1000}];
+sandbox.isLocalApp=name=>sandbox.desktopPages.visible("general",name) && monitorAssignments.apps[name]===1;
+sandbox.areaFor=()=>null;
+sandbox.persistDisplayAssignments=()=>{};
+const resetMonitors=()=>{
+  resetVisibility();Object.keys(frames).forEach(name=>sandbox.desktopPages.assign("general",name,sandbox.desktopPages.current("general"),sandbox.desktopPages.column("general")));Object.assign(monitorAssignments.apps,{dolphin:1,elisa:1,notes:1,browser:2,terminal:1});
+  vm.runInContext('delete tileSessions[intentContextPrefix()+2]',sandbox);
+};
+resetMonitors();
+vm.runInContext('openApp("dolphin");openApp("elisa");openApp("notes");floatWindow("notes",{left:480,top:90,width:440,height:350})',sandbox);
+sandbox.appState.browser="open";sandbox.desktopPages.assign("general","browser",sandbox.desktopPages.current("general"),sandbox.desktopPages.column("general"));
+const floatBeforeTransfer=vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox);
+vm.runInContext('focusTileWindow("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.elisa,2,"Maximize moves a fitting tile to display 2");
+assert.equal(monitorAssignments.apps.notes,2,"Maximize moves a fitting float to display 2 as a usable tile");
+assert.equal(sandbox.appState.browser,"open","The existing second-display app remains open");
+assert.equal(sandbox.appState.elisa,"open");assert.equal(sandbox.appState.notes,"open");
+vm.runInContext('focusTileWindow("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.elisa,1);assert.equal(monitorAssignments.apps.notes,1);
+assert.equal(monitorAssignments.apps.browser,2);
+assert.equal(vm.runInContext('JSON.stringify(tileSession().floating.notes)',sandbox),floatBeforeTransfer,"Restore returns floats to their exact original rectangle");
+vm.runInContext('toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.elisa,2);assert.equal(sandbox.appState.elisa,"open");
+vm.runInContext('releaseBorrowedApp("elisa");closeApp("notes");toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.elisa,2,"An explicit user decision cancels automatic return");
+assert.equal(sandbox.appState.notes,"closed","Restore cannot reopen a peer closed on the second display");
+resetMonitors();
+sandbox.activeDisplayRoster=()=>[{width:1616,height:1016},{width:450,height:360}];
+vm.runInContext('openApp("dolphin");openApp("elisa");openApp("notes");focusTileWindow("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.elisa,1,"An oversized peer stays on its original display");assert.equal(sandbox.appState.elisa,"minimized");
+assert.equal(monitorAssignments.apps.notes,2,"A smaller peer may still fit after rejecting a larger one");
+vm.runInContext('minimizeApp("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.notes,1,"Parking the maximized owner releases its automatic transfers");
+resetMonitors();
+sandbox.activeDisplayRoster=()=>[{width:1616,height:1016},{width:900,height:650}];
+sandbox.appState.browser="open";
+vm.runInContext('tileSessions[intentContextPrefix()+2]={root:tileEngine.leaf("browser"),floating:{browser:{left:8,top:8,width:884,height:634}},parked:{}};openApp("dolphin");openApp("notes");toggleAppFullscreen("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.notes,1,"A pinned float on the peer display reserves its space");assert.equal(sandbox.appState.notes,"minimized");assert.equal(sandbox.appState.browser,"open");
+vm.runInContext('toggleAppFullscreen("dolphin")',sandbox);assert.equal(sandbox.appState.notes,"open");
+resetMonitors();
+vm.runInContext('tileSessions[intentContextPrefix()+2]={root:tileEngine.leaf("browser"),floating:{},parked:{},focus:{name:"browser"}};openApp("dolphin");openApp("notes");focusTileWindow("dolphin")',sandbox);
+assert.equal(monitorAssignments.apps.notes,1,"A maximized peer display cannot accept borrowed apps");
+console.log("Two-display maximize/full fullscreen: capacity, existing peers, floats, automatic return, user overrides, parking/closing and crowded-display fallback passed.");

@@ -165,7 +165,7 @@
     if (!model.active() || window.hidden) return;
     if (model.lesson.challenge) return;
     const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
-    const target = model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target;
+    const target = model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-max-enter':'[data-app-frame] [data-window-action="maximize"]','display-max-exit':'[data-app-frame] [data-window-action="maximize"]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target;
     if (target) highlighted = $$(target).filter(element => !element.closest('[hidden],.is-on-other-display') && element.getClientRects().length);
     highlighted.forEach(element => element.classList.add('guide-target'));
   }
@@ -267,7 +267,7 @@
     if (id === 'two-displays') {
       const assignments = displayAssignmentsFor();
       const areas = areaPriority.filter(name=>!areaFor(name).hidden).map(name=>({name,saved:Number(assignments.areas[name] || 1),actual:Number(intentAreaPlan.moves[name] || assignments.areas[name] || 1),hidden:!!intentAreaPlan.hidden[name]}));
-      if (guide.observeDisplays(model,{count:activeDisplayRoster().length,slot:localDisplaySlot(),assignments,states:appState,areas,full:session.fullscreen?.name,open})) {guide.save();lastSignature = '';}
+      if (guide.observeDisplays(model,{count:activeDisplayRoster().length,slot:localDisplaySlot(),assignments,states:appState,areas,bounded,transferred:(session.fullscreen || session.focus)?.transferred || {},full:session.fullscreen?.name,open})) {guide.save();lastSignature = '';}
       const displayButton = $('[data-guide-action="open-display"]',window);
       if (displayButton) {displayButton.disabled = extendedDesktopActive();displayButton.textContent = extendedDesktopActive() ? 'Second practice display connected' : done.includes('display-linked') ? 'Reconnect second practice display' : 'Open second practice display';}
     }
@@ -326,13 +326,13 @@
     $('.guide-strip-recover',window).hidden = !currentRecovery;
     if (currentRecovery) $('.guide-strip-task',window).textContent = currentRecovery.text;
     const status = $('#guideTaskStatus');
-    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is true full screen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Full screen detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'True full screen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
+    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is Full fullscreen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Maximize detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'Full fullscreen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
     if (id === 'two-displays' && !ready) {
-      const tips = {'display-linked':'Open the second practice display. Both windows share this practice desktop.', 'display-app-moved':'Right-click any app title bar → Move to Display 2.', 'display-app-returned':'In Display 2, right-click that app title bar → Move to Display 1.', 'display-area-moved':'Right-click any Area header → Move to Display 2.', 'display-full-enter':'On this display, middle-click an app’s maximize button. Look for Areas on Display 2.', 'display-full-exit':'Press Escape on the full-screen app to restore it.'};
+      const tips = {'display-linked':'Open the second practice display. Both windows share this practice desktop.', 'display-app-moved':'Right-click any app title bar → Move to Display 2.', 'display-app-returned':'In Display 2, right-click that app title bar → Move to Display 1.', 'display-area-moved':'Right-click any Area header → Move to Display 2.', 'display-max-enter':'Open another app here, then left-click Maximize. Watch its peer move to Display 2.', 'display-max-exit':'Left-click Maximize again to restore the app and bring its peers back.', 'display-full-enter':'On this display, middle-click an app’s maximize button. Look for apps and Areas on Display 2.', 'display-full-exit':'Press Escape on the full-screen app to restore it.'};
       const tip = extendedDesktopActive() ? tips[model.lesson.goals.find(goal=>!done.includes(goal))] : 'The second display is disconnected. Reopen it to continue, or skip this optional chapter.';
       if (status) status.textContent = tip; $('.guide-strip-task',window).textContent = tip;
     }
-    if (id === 'fullscreen' && session.fullscreen) $('.guide-strip-task',window).textContent = 'True full screen — press Escape, then left-click maximize.';
+    if (id === 'fullscreen' && session.fullscreen) $('.guide-strip-task',window).textContent = 'Full fullscreen — press Escape, then left-click maximize.';
     highlight(); positionGuide();
   }
   function start(chapter = null) {

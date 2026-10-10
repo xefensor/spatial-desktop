@@ -58,7 +58,7 @@
 <p>Make an Area narrow enough and it becomes an <strong>on-rail</strong> version with its important controls. There is no extra Compact state to learn. Apps and System stay available as rails; Project can be hidden when you do not need it.</p>
 <p>Use the Area’s identity as its main entry point: the workspace icon opens Overview and shows the desktop number, the Project folder icon opens project management, and the System gear is the settings shortcut. Keep these controls in the header, available in expanded and on-rail layouts, rather than repeating the same action beside a decorative icon.</p>
 <figure class="story-figure "><span class="image-label">OUR PROTOTYPE</span><a class="image-link" href="images/philosophy/spatial-desktop.jpg" aria-label="View larger image: Dark Spatial Desktop with Apps on the left rail, a tiled browser and terminal, Project on the right and System below"><img src="images/philosophy/spatial-desktop.jpg" alt="Dark Spatial Desktop with Apps on the left rail, a tiled browser and terminal, Project on the right and System below" width="1363" height="936" loading="lazy" decoding="async"></a><figcaption>The Areas form a frame around the tools. In this Work setup, Project gets a full-height panel while Apps and System use rails.<span class="image-credit">Spatial Desktop · prototype screenshot · October 2026</span></figcaption></figure>
-<p>Normal tiling respects the frame you chose. Areas can yield when you explicitly float a window into their space or use true full screen. A resistant boundary makes that deliberate: touching the edge should not immediately rearrange the desktop.</p>
+<p>Normal tiling respects the frame you chose. Areas can yield when you explicitly float a window into their space or use Full fullscreen. A resistant boundary makes that deliberate: touching the edge should not immediately rearrange the desktop.</p>
 <p>If space has to be shared, the design prioritises Project, then Apps, then System. That is a useful default, not permission to ignore your manual placement.</p>
 </section>
 <section id="models" class="chapter"><p class="chapter-number">04 / WORKSPACES</p><h2>Work and personal life become separate Workspaces.</h2>
@@ -93,7 +93,7 @@
 <p>Floating windows still count as occupied space. New apps and existing tiles try to fit around them. If there is no usable clear rectangle, a tile parks rather than opening underneath the float. A normal left drag puts the float back into tiling.</p>
 <h3>Maximise becomes two clear choices.</h3>
 <p>Left-click maximise to fill the space <strong>between Areas</strong>. Middle-click it to use the <strong>whole screen</strong>. Repeat the action to return to the previous arrangement.</p>
-<p>In true full screen, Areas move to another monitor if there is room. Otherwise they temporarily hide completely. Other windows that become completely invisible park in Apps; ending full screen restores the previous arrangement.</p>
+<p>In Full fullscreen, Areas move to another monitor if there is room. Otherwise they temporarily hide completely. With Maximize or Full fullscreen, other open apps move to a second display when they fit without displacing its existing apps; otherwise they park in Apps. Restoring the window returns automatically moved apps. Deliberate moves, closing and parking are respected.</p>
 </section>
 <section id="overview" class="chapter"><p class="chapter-number">08 / OVERVIEW</p><h2>The Start menu becomes an Overview.</h2>
 <p>Press Super and you should see the important things immediately: Workspaces, Projects, apps, open windows and useful system information. You should not have to type a search or click through tabs just to find out what is happening.</p>
@@ -135,7 +135,7 @@
 <section id="attention" class="chapter"><p class="chapter-number">12 / NOTIFICATIONS</p><h2>Notifications become attention in the place you already look.</h2>
 <p>If the System Area is expanded, a new notification already has a place on screen. Showing another popup repeats the message and covers the work.</p>
 <p>Instead, a small light travels around the new notification’s boundary for long enough to notice. It points to the message where it lives. It should not flash the entire desktop or turn every old notification into a glowing card.</p>
-<p>If System is on a rail, show a discreet preview near it. If true full screen has hidden it, a popup can provide access. Reduced motion should retain a clear static new-message cue.</p>
+<p>If System is on a rail, show a discreet preview near it. If Full fullscreen has hidden it, a popup can provide access. Reduced motion should retain a clear static new-message cue.</p>
 <p>Dynamic information belongs near the top: a new notification or active timer appears when relevant. The clock, calendar and persistent controls stay nearer the bottom. You should not have to reserve a large empty timer card when no timer is running.</p>
 <p>Shortcuts can be taught in the same quiet way: show the number beside an app and the shortcut beside the command you are using. The interface becomes a reference you learn through use.</p>
 </section>
@@ -143,7 +143,7 @@
 <p>On a laptop, the Areas can use rails while the current tools share the centre. On an ultrawide, the same Areas can expand into full-height panels without stretching a document into a very long line.</p>
 <p>With two monitors, keep Areas on the main one while there is room. If a full-screen tool needs that monitor, move Areas to the other one only when it has enough free space. Do not treat a second screen as empty merely because it exists.</p>
 <figure class="monitor-model"><div><b>Display 1 · the tool</b><span class="monitor-app">Full-screen application</span></div><div><b>Display 2 · the context</b><span class="monitor-areas"><i>Project</i><i>Apps</i><i>System</i></span></div><figcaption>Illustration: if the second monitor has no windows, the three Areas can use its width as useful panels. If it is occupied, keep that work and temporarily hide the local Areas instead.</figcaption></figure>
-<p>When full screen ends, release the temporary move. The desktop remembers your chosen layout in each Workspace, and recomputes free space from that Workspace’s windows.</p>
+<p>When Full fullscreen ends, release the temporary move. The desktop remembers your chosen layout in each Workspace, and recomputes free space from that Workspace’s windows.</p>
 <p>The demo can simulate an extended desktop with two pages in the same browser profile, one on each monitor. They share state but show different placements. This does not connect different browsers or replace native monitor management.</p>
 </section>
 <section id="files" class="chapter"><p class="chapter-number">14 / FILES & SHARING</p><h2>Folders carry their setup.</h2>
@@ -175,15 +175,15 @@
           <tr><td>Return a float to tiling</td><td>Normal left title-bar drag; or its context menu</td><td>Reinsert it into the tiled arrangement.</td></tr>
           <tr><td>Resize a tile</td><td>Drag a divider or the window resize handle</td><td>Redistribute bounded space; squeezed neighbours can park in Apps.</td></tr>
           <tr><td>Grow/shrink a tile</td><td><kbd>Alt</kbd> + wheel over its title bar</td><td>Adjust its share of the tiled layout.</td></tr>
-          <tr><td>Maximise between Areas</td><td>Left-click maximise or double-click title bar</td><td>Focus the app while retaining the Area frame; repeat to restore.</td></tr>
-          <tr><td>True full screen</td><td>Middle-click maximise</td><td>Fill the demo viewport and allow temporary Area relocation; repeat to restore.</td></tr>
+          <tr><td>Maximize</td><td>Left-click maximise or double-click title bar</td><td>Focus the app while retaining the Area frame; repeat to restore.</td></tr>
+          <tr><td>Full fullscreen</td><td>Middle-click maximise</td><td>Fill the demo viewport and allow temporary Area relocation; repeat to restore.</td></tr>
           <tr><td>Resize an Area to a rail</td><td>Drag its border handle inward</td><td>Expanded content becomes a useful narrow rail.</td></tr>
           <tr><td>Move an Area</td><td>Drag its Area header</td><td>Change docked placement, not a floating panel layer.</td></tr>
           <tr><td>Find contextual actions</td><td>Right-click an app, Area, resource or desktop</td><td>A square translucent context menu.</td></tr>
           <tr><td>Change desktop</td><td><kbd>Win + scroll</kbd> from any window or Area; or release window focus and scroll up/down or press Page Up/Down</td><td>Moves one desktop vertically; plain app scrolling stays inside a focused window.</td></tr>
           <tr><td>Change Project</td><td><kbd>Win + Shift + scroll</kbd> from any window or Area; or release window focus and use Shift + scroll</td><td>Moves the whole scene horizontally to another open Project or Workspace.</td></tr>
           <tr><td>Open/manage Projects</td><td>Project entries in the Overview</td><td>Create, manage or remove a Project. Removing it does not delete its folder.</td></tr>
-          <tr><td>Leave an overlay</td><td><kbd>Escape</kbd></td><td>Dismiss the relevant overview/dialog; full screen also has an Escape path.</td></tr>
+          <tr><td>Leave an overlay</td><td><kbd>Escape</kbd></td><td>Dismiss the relevant overview/dialog; Full fullscreen also has an Escape path.</td></tr>
         </tbody></table></div>
         <p>Operating-system and browser shortcuts can take precedence over the page. The visible controls and fallback shortcuts exist so the model remains testable. If a gesture is interrupted or the browser loses focus, the drag state and custom cursor should be released rather than leaving the window unusable.</p>
       </section>

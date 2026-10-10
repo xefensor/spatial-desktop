@@ -544,13 +544,86 @@ function parkTileWindows(names, reason, announce = true) {
   return parked;
 }
 
+// A maximized window borrows the other display without displacing its apps.
+// Capacity uses the actual split fitter, dock lanes and pinned float obstacles.
+function moveCoveredApps(session, mode, names) {
+  if (!extendedDesktopActive()) return;
+  const target = otherDisplaySlot(), prefix = intentContextPrefix();
+  const peer = tileSessions[prefix + target] ||= { root:null, parked:{}, floating:{}, focus:null };
+  if (peer.focus || peer.fullscreen) return;
+  const assignments = displayAssignmentsFor(), display = activeDisplayRoster()[target - 1];
+  if (!display) return;
+  const lanes = {left:0,right:0,top:0,bottom:0};
+  areaPriority.forEach(name => {
+    const area = areaFor(name);
+    if (!area || area.hidden) return;
+    const saved = Number(assignments.areas[name] || 1), actual = Number(intentAreaPlan.moves[name] || saved);
+    if (saved !== target && actual !== target) return;
+    const edge = dockState[name].edge;
+    const rail = area.dataset.areaState === "rail" || intentAreaPlan.rails[name];
+    const size = rail ? 70 : Math.max(dockSizes[edge], edge === "left" || edge === "right" ? stateSideMinimum(name,"expanded") : stateHorizontalMinimum(name,"expanded"));
+    lanes[edge] = Math.max(lanes[edge], size);
+  });
+  const origin = {left:8+(lanes.left ? lanes.left+8 : 0),top:8+(lanes.top ? lanes.top+8 : 0)};
+  const bounds = {x:8,y:8,width:Math.max(1,display.width-origin.left-8-(lanes.right ? lanes.right+8 : 0)-16),height:Math.max(1,display.height-origin.top-8-(lanes.bottom ? lanes.bottom+8 : 0)-16)};
+  const open = Object.keys(appState).filter(name => appState[name] === "open" && desktopPages.visible(activeWorkspace,name) && Number(assignments.apps[name] || 1) === target);
+  const floats = peer.floating || {};
+  const obstacles = open.filter(name=>floats[name]).map(name=>({x:floats[name].left-origin.left,y:floats[name].top-origin.top,width:floats[name].width,height:floats[name].height}));
+  let root = tileEngine.normalize(peer.root,open.filter(name=>!floats[name]));
+  open.filter(name=>!floats[name] && !tileEngine.contains(root,name)).forEach(name=>{root=tileEngine.insert(root,name,tileEngine.names(root).at(-1),null,bounds,minimumUsableWindowSize);});
+  mode.transferred ||= {};
+  names.forEach(name => {
+    const candidate = tileEngine.insert(root,name,tileEngine.names(root).at(-1),null,bounds,minimumUsableWindowSize);
+    const fitted = tileEngine.fitAvoiding(candidate,bounds,minimumUsableWindowSize,name,tilePriority,obstacles);
+    if (fitted.parked.length || !fitted.windows.has(name) || [...fitted.windows].some(([id,rect])=>rect.width < minimumUsableWindowSize(id).width-1 || rect.height < minimumUsableWindowSize(id).height-1)) return;
+    mode.transferred[name] = {source:localDisplaySlot(),target,floating:session.floating[name] ? {...session.floating[name]} : null};
+    delete session.floating[name];
+    session.root = tileEngine.remove(session.root,name);
+    assignments.apps[name] = target;
+    appMaximizedState[name] = false;
+    root = fitted.node;
+  });
+  peer.root = root;
+  persistDisplayAssignments();
+}
+
+function releaseBorrowedApp(name) {
+  // A deliberate app action takes ownership from any automatic transfer.
+  Object.values(tileSessions).forEach(session=>[session.focus,session.fullscreen].forEach(mode=>{if(mode?.transferred) delete mode.transferred[name];}));
+}
+
+function returnCoveredApps(session, mode) {
+  if (!mode) return;
+  const assignments = displayAssignmentsFor(), prefix = intentContextPrefix();
+  Object.entries(mode.transferred || {}).forEach(([name,record])=>{
+    if (appState[name] !== "open" || !desktopPages.visible(activeWorkspace,name) || Number(assignments.apps[name]) !== record.target) return;
+    const peer = tileSessions[prefix+record.target];
+    if (peer) {peer.root=tileEngine.remove(peer.root,name);delete peer.floating?.[name];}
+    assignments.apps[name]=record.source;
+    if(record.floating) session.floating[name]=record.floating;
+  });
+  if (Object.keys(mode.transferred || {}).length) persistDisplayAssignments();
+}
+
+function leaveTileFocus(session, restoreParked = false) {
+  const focus = session.focus;
+  if (!focus) return;
+  session.focus = null;
+  returnCoveredApps(session,focus);
+  if (restoreParked) focus.parked.forEach(name=>{
+    if(appState[name] !== "minimized" || !isLocalApp(name)) return;
+    appState[name]="open";delete session.parked[name];
+  });
+}
+
 function parkFullscreenPeers(session) {
   const fullscreen = session.fullscreen;
   if (!fullscreen || appState[fullscreen.name] !== "open") return;
   fullscreen.root ??= tileEngine.copy(session.root);
   fullscreen.parked ||= [];
   const peers = Object.keys(appState).filter(name => name !== fullscreen.name && appState[name] === "open" && isLocalApp(name));
-  const parked = parkTileWindows(peers, "Full screen · " + appInfo[fullscreen.name].label, false);
+  moveCoveredApps(session, fullscreen, peers);
+  const parked = parkTileWindows(peers, "Full fullscreen · " + appInfo[fullscreen.name].label, false);
   parked.forEach(name => {
     session.parked[name].fullscreen = fullscreen.name;
     session.root = tileEngine.remove(session.root, name);
@@ -562,6 +635,7 @@ function leaveAppFullscreen(session = tileSession()) {
   const fullscreen = session.fullscreen;
   if (!fullscreen) return;
   session.fullscreen = null;
+  returnCoveredApps(session, fullscreen);
   (fullscreen.parked || []).forEach(name => {
     // Only revive windows parked by this fullscreen, never closed apps or
     // cards the user subsequently moved to another monitor/session.
@@ -695,7 +769,7 @@ function tileOpenWindows(newName) {
   if (newName) {
     /* Opening a card is an explicit request to bring it back, not to revive
        every card that was pushed out by an earlier focus action. */
-    session.focus = null;
+    leaveTileFocus(session);
     $$('[data-app-frame]').forEach(frame => {
       if (!frame.classList.contains("is-tiled")) return;
       delete frame.dataset.maximized;
@@ -727,7 +801,7 @@ function splitWindowIntoTile(name, point = null, preferredTarget = frontApp) {
   frameFor(name)?.classList.remove("is-floating");
   if (session.fullscreen?.name === name) session.fullscreen = null;
   const target = tileDropTarget(name, point);
-  session.focus = null;
+  leaveTileFocus(session);
   const clearRects = fitDesktopTiles(tileEngine.remove(session.root,name),preferredTarget).windows;
   session.root = tileEngine.insert(session.root, name, target?.name || preferredTarget, target?.side, tileBounds(), minimumUsableWindowSize, clearRects);
   delete session.parked[name];
@@ -928,12 +1002,7 @@ function focusTileWindow(name) {
   const session = reconcileTileTree(name);
   if (session.focus?.name === name) {
     const focus = session.focus;
-    session.focus = null;
-    focus.parked.forEach(other => {
-      if (appState[other] !== "minimized" || !isLocalApp(other)) return;
-      appState[other] = "open";
-      delete session.parked[other];
-    });
+    leaveTileFocus(session, true);
     session.root = tileEngine.normalize(focus.root, Object.keys(appState).filter(other => appState[other] === "open" && isLocalApp(other)));
     delete frameFor(name).dataset.maximized;
     frameFor(name).classList.remove("is-maximized");
@@ -945,10 +1014,13 @@ function focusTileWindow(name) {
     syncApps();
     renderTileLayout(name, true, true);
   } else {
-    const parked = tileEngine.names(session.root).filter(other => other !== name);
-    session.focus = { name, root: tileEngine.copy(session.root), parked };
+    if (session.focus) leaveTileFocus(session);
+    const peers = Object.keys(appState).filter(other => other !== name && appState[other] === "open" && isLocalApp(other));
+    session.focus = { name, root: tileEngine.copy(session.root), parked: [] };
+    moveCoveredApps(session, session.focus, peers);
+    session.focus.parked = peers.filter(other=>isLocalApp(other));
     session.root = tileEngine.leaf(name);
-    parkTileWindows(parked, "Focused " + appInfo[name].label, true);
+    parkTileWindows(session.focus.parked, "Focused " + appInfo[name].label, true);
     frameFor(name).dataset.maximized = "true";
     frameFor(name).classList.add("is-maximized");
     appMaximizedState[name] = true;
@@ -1023,6 +1095,7 @@ function renderFloatingWindows(session) {
 }
 
 function floatWindow(name, rect = null) {
+  releaseBorrowedApp(name);
   const frame = frameFor(name);
   if (!rect) {
     rect = screenWindowRect(frame);
@@ -1257,6 +1330,7 @@ function openApp(name, dropPoint = null) {
   if (!appInfo[name]) return;
   // Restoring a live card is an explicit request to leave exclusive fullscreen.
   if (tileSession().fullscreen && tileSession().fullscreen.name !== name) leaveAppFullscreen();
+  releaseBorrowedApp(name);
   const previousState = appState[name];
   const splitTarget = frontApp;
   displayAssignmentsFor().apps[name] = localDisplaySlot();
@@ -1286,12 +1360,13 @@ function removeOffPageWindowTiles(name) {
     session.root = tileEngine.remove(session.root, name);
     delete session.floating?.[name];
     delete session.parked?.[name];
-    if (session.focus?.name === name) session.focus = null;
+    if (session.focus?.name === name) leaveTileFocus(session);
     if (session.fullscreen?.name === name) session.fullscreen = null;
   });
 }
 
 function minimizeApp(name, preserveGeometry = false) {
+  releaseBorrowedApp(name);
   if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('parking')) return;
   removeOffPageWindowTiles(name);
   const frame = frameFor(name);
@@ -1306,7 +1381,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
-  if (tileSession().focus?.name === name) tileSession().focus = null;
+  if (tileSession().focus?.name === name) leaveTileFocus(tileSession());
   autoTiledWindows.delete(name);
   frame.classList.remove("is-tiled");
   saveTileSessions();
@@ -1321,6 +1396,7 @@ function minimizeApp(name, preserveGeometry = false) {
 }
 
 function closeApp(name) {
+  releaseBorrowedApp(name);
   removeOffPageWindowTiles(name);
   if (typeof clearWindowAutoAvoidance === "function") clearWindowAutoAvoidance(name);
   const frame = frameFor(name);
@@ -1331,7 +1407,7 @@ function closeApp(name) {
   if (tileSession().fullscreen?.name === name) leaveAppFullscreen();
   tileSession().root = tileEngine.remove(tileSession().root, name);
   delete tileSession().parked[name];
-  if (tileSession().focus?.name === name) tileSession().focus = null;
+  if (tileSession().focus?.name === name) leaveTileFocus(tileSession());
   saveTileSessions();
   autoTiledWindows.delete(name);
   appMaximizedState[name] = false;
@@ -1351,8 +1427,8 @@ function syncMaximizeButton(frame) {
   const button = $('[data-window-action="maximize"]', frame);
   if (button) {
     button.setAttribute("aria-pressed", String(frame.dataset.maximized === "true"));
-    button.title = "Left click: maximize between Areas · middle click: full screen · repeat to restore";
-    button.setAttribute("aria-label", "Maximize between Areas; middle click for full screen");
+    button.title = "Left click: Maximize · middle click: Full fullscreen · repeat to restore";
+    button.setAttribute("aria-label", "Maximize; middle click for Full fullscreen");
   }
 }
 
@@ -1719,7 +1795,7 @@ function detachDraggedDesktopWindow(name, page, column = desktopPages.column(act
   const prefix = desktopPages.context(activeWorkspace, page, column);
   Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
     session.root = tileEngine.remove(session.root, name);
-    if (session.focus?.name === name) session.focus = null;
+    if (session.focus?.name === name) leaveTileFocus(session);
     if (session.focus?.root) session.focus.root = tileEngine.remove(session.focus.root, name);
     delete session.floating?.[name];
     delete session.parked?.[name];
@@ -1877,6 +1953,7 @@ function trackWindowPointer(event, handle, move, finish, desktopDrag = null) {
 }
 
 function beginManualWindowInteraction(event, frame, handle, resizing = false) {
+  releaseBorrowedApp(frame.dataset.appFrame);
   cancelWindowPointerInteraction?.();
   event.preventDefault();
   event.stopPropagation();
@@ -1963,6 +2040,7 @@ function bindWindowDrag(frame) {
     cancelWindowPointerInteraction?.();
     event.preventDefault();
     const name = frame.dataset.appFrame;
+    releaseBorrowedApp(name);
     if (tileSession().fullscreen?.name === name) toggleAppFullscreen(name);
     autoTiledWindows.delete(name);
     bringToFront(name);
@@ -2650,7 +2728,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
     control.classList.toggle("is-active", areasFollowWindows());
     if (control.matches("button")) control.setAttribute("aria-pressed", String(areasFollowWindows()));
     control.title = tileEngine
-      ? "Left drag keeps Areas fixed · middle drag and full screen may borrow Area space · " + profileLabel
+      ? "Left drag keeps Areas fixed · middle drag and Full fullscreen may borrow Area space · " + profileLabel
       : layoutMode === "auto"
       ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
@@ -5850,7 +5928,7 @@ function contextMenuEntries(context) {
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Unpark" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps Area" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / maximize between Areas" : "Maximize between Areas", shortcut: "Alt+Enter" } : null,
-      state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave full screen" : "Full screen · borrow Area space", shortcut: "Middle click" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave Full fullscreen" : "Full fullscreen", shortcut: "Middle click" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-grow", icon: "i-max", label: "Give more space", shortcut: "Alt+wheel up" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-shrink", icon: "i-min", label: "Give less space", shortcut: "Alt+wheel down" } : null,
@@ -6505,7 +6583,7 @@ function moveWindowToDesktop(name, direction) {
   Object.entries(tileSessions).filter(([key]) => key.startsWith(desktopPages.context(activeWorkspace, previous, desktopPages.columnOf(activeWorkspace, name)))).forEach(([, session]) => {
     if (session.fullscreen?.name === name) leaveAppFullscreen(session);
     session.root = tileEngine.remove(session.root, name);
-    if (session.focus?.name === name) session.focus = null;
+    if (session.focus?.name === name) leaveTileFocus(session);
     if (session.focus?.root) session.focus.root = tileEngine.remove(session.focus.root, name);
     delete session.floating?.[name];
     delete session.parked?.[name];
@@ -6780,6 +6858,7 @@ function displayTransferTarget(clientX) {
 }
 
 function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = null) {
+  releaseBorrowedApp(name);
   if (!appInfo[name] || !extendedDesktopActive()) return;
   const sourceSession = tileSession();
   if (sourceSession.floating[name]) {

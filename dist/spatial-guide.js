@@ -11,8 +11,8 @@
     {id:'tiling', title:'Windows arrange themselves', text:'New windows automatically tile into the available desktop space. Left-drag a title bar to change their arrangement; you do not need to place every window by hand.', task:'Open another app window of your choice. Both windows should share the available space.', level:2, goals:['two-tiled'], target:'#guidePracticeLauncher'},
     {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag any app’s title bar to make its window float.', level:2, goals:['app-float'], target:'[data-app-frame] .app-titlebar'},
     {id:'overview', title:'Find apps in Overview', text:'Overview is now available through the workspace icon in the Apps header, Super, or Ctrl + Space. For now it shows only applications. More parts will appear when you learn about them.', task:'Open Overview, search for any available app, then open it from the search results.', level:3, goals:['app-search','search-launch'], target:'#allAppsToggle'},
-    {id:'fullscreen', title:'Full screen between Areas', text:'Left-click the maximize button to fill the desktop space between Areas. Your Areas stay accessible. Repeat the click to restore the window.', task:'Maximize an app between Areas, then left-click the same button to restore it.', level:3, goals:['bounded-enter','bounded-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
-    {id:'true-fullscreen', title:'True full screen', text:'Middle-click the same maximize button. The app uses the whole display and Areas yield. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter true full screen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
+    {id:'fullscreen', title:'Maximize', text:'Left-click Maximize to fill the desktop space between Areas. Your Areas stay accessible. With two displays, other open apps move to the second display when they fit; otherwise they park. Restore the window to bring automatically moved apps back.', task:'Maximize an app between Areas, then left-click the same button to restore it.', level:3, goals:['bounded-enter','bounded-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
+    {id:'true-fullscreen', title:'Full fullscreen', text:'Middle-click the same maximize button. The app uses the whole display and Areas yield. With two displays, other apps move there when they fit. Apps and Areas return when you restore; deliberate moves, closing and parking are respected. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter Full fullscreen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
     {id:'park', title:'Park instead of minimize', text:'There is no minimization here. Park puts an app into the Apps Area as a useful live card. Its note, controls and content remain available; the app is still running.', task:'Choose any open app and use its Park button. Find its live card in the Apps Area.', level:4, goals:['app-park'], target:'[data-app-frame] [data-window-action="minimize"]'},
     {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked app stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
     {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Unpark any parked app using its live card or rail icon. Its content and controls return with it.', level:4, goals:['app-unpark'], target:'#miniStack'},
@@ -24,7 +24,7 @@
     {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open any standard Home folder in your new workspace. Check that its path belongs to this workspace.', level:8, goals:['workspace-folder'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your apps and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
     {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this independent task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
-    {id:'two-displays', title:'One workspace, two displays', text:'Optional: extend the same workspace across two browser windows. Move the second window to another monitor if you have one, or place both side by side. An app keeps its project or Workspace ownership when it moves. Right-click a window’s title bar or an Area’s header and choose Move to Display 2; the same menu brings it back. True full screen uses one display while Areas move to the other when there is room.', task:'Open the second practice display. Move any app there and back, move an Area there, then middle-click an app’s maximize button on this display. Look at the Areas on Display 2 and press Escape to restore the app.', level:9, optional:true, goals:['display-linked','display-app-moved','display-app-returned','display-area-moved','display-full-enter','display-full-exit'], target:'[data-guide-action="open-display"]'},
+    {id:'two-displays', title:'One workspace, two displays', text:'Optional: extend the same workspace across two browser windows. Move the second window to another monitor if you have one, or place both side by side. An app keeps its project or Workspace ownership when it moves. Right-click a window’s title bar or an Area’s header and choose Move to Display 2; the same menu brings it back. Maximize keeps Areas accessible; Full fullscreen uses the whole display. Both move other open apps to Display 2 when they fit without displacing its existing apps. Full fullscreen also moves Areas there when there is room. Restore to bring automatically moved apps back; apps you deliberately move, park or close stay as you chose.', task:'Open the second practice display. Move any app there and back, move an Area there, open another app on this display, then left-click Maximize and watch the other app move to Display 2. Restore it, then middle-click for Full fullscreen: look at the apps and Areas on Display 2 and press Escape.', level:9, optional:true, goals:['display-linked','display-app-moved','display-app-returned','display-area-moved','display-max-enter','display-max-exit','display-full-enter','display-full-exit'], target:'[data-guide-action="open-display"]'},
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing and moving Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
@@ -57,7 +57,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; delete state.displayBaseline; delete state.displayWindow; delete state.displayFullscreen; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; delete state.displayBaseline; delete state.displayWindow; delete state.displayFullscreen; delete state.displayMaximized; delete state.displayPeer; delete state.displayFullPeer; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -94,7 +94,7 @@
     'area-resized':'Change the System Area width', 'area-moved':'Move an Area to another screen edge', 'app-open':'Open any app', 'two-tiled':'Tile two app windows together',
     'app-float':'Float any app window', 'app-search':'Search for an app of your choice', 'search-launch':'Open its search result',
     'bounded-enter':'Maximize an app between Areas', 'bounded-exit':'Restore that window',
-    'full-enter':'Enter true full screen', 'full-exit':'Press Escape to return',
+    'full-enter':'Enter Full fullscreen', 'full-exit':'Press Escape to return',
     'app-park':'Park any app window', 'apps-rail':'Narrow Apps to a rail',
     'apps-expanded':'Expand Apps again', 'app-unpark':'Unpark a parked app',
     'desktop-next':'Visit another desktop', 'desktop-return':'Return to your starting desktop',
@@ -102,7 +102,7 @@
     'project-workspace':'Find your apps in Workspace', 'project-return':'Return to your project',
     'project-workspace-return':'Switch back to Workspace', 'workspace-created':'Create your own empty workspace',
     'workspace-folder':'Open any of your workspace’s Home folders', 'general-return':'Return to General',
-    'display-linked':'Connect the second practice display', 'display-app-moved':'Move any app to Display 2', 'display-app-returned':'Bring that app back to this display', 'display-area-moved':'Move any Area to Display 2', 'display-full-enter':'Try true full screen with Areas on Display 2', 'display-full-exit':'Press Escape to restore the app',
+    'display-linked':'Connect the second practice display', 'display-app-moved':'Move any app to Display 2', 'display-app-returned':'Bring that app back to this display', 'display-area-moved':'Move any Area to Display 2', 'display-max-enter':'Maximize and see another app on Display 2', 'display-max-exit':'Restore and bring that app back automatically', 'display-full-enter':'Try Full fullscreen with apps and Areas on Display 2', 'display-full-exit':'Press Escape to restore the app',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
   // Supply missing windows for skip/replay, retaining the learner’s own app choices.
@@ -160,7 +160,7 @@
     if (launch && results.includes(launch) && opened.includes(launch)) changed = model.mark('search-launch') || changed;
     return changed;
   }
-  function observeDisplays(model, {count = 1, slot = 1, assignments = {}, states = {}, areas = [], full, open = []}) {
+  function observeDisplays(model, {count = 1, slot = 1, assignments = {}, states = {}, areas = [], bounded, transferred = {}, full, open = []}) {
     if (!model.active() || model.lesson.id !== 'two-displays' || count < 2) return false;
     const before = JSON.stringify(model.state), done = model.state.done;
     model.mark('display-linked');
@@ -171,17 +171,22 @@
     const name = model.state.displayWindow;
     if (name && states[name] === 'open' && Number(assignments.apps?.[name] || 1) === baseline.slot && open.includes(name)) model.mark('display-app-returned');
     if (areas.some(area => Number(assignments.areas?.[area.name] || 1) !== Number(baseline.areas[area.name] || baseline.slot))) model.mark('display-area-moved');
-    if (done.includes('display-app-returned') && done.includes('display-area-moved') && full && areas.some(area => area.saved === slot && area.actual !== slot && !area.hidden)) {
-      model.state.displayFullscreen = full; model.mark('display-full-enter');
+    const peer = Object.keys(transferred).find(name=>states[name] === 'open' && Number(assignments.apps?.[name]) === transferred[name].target);
+    if (done.includes('display-app-returned') && done.includes('display-area-moved') && bounded && !full && peer) {
+      model.state.displayMaximized = bounded; model.state.displayPeer = peer; model.mark('display-max-enter');
     }
-    if (done.includes('display-full-enter') && !full && open.includes(model.state.displayFullscreen)) model.mark('display-full-exit');
+    if (done.includes('display-max-enter') && !bounded && !full && open.includes(model.state.displayMaximized) && open.includes(model.state.displayPeer)) model.mark('display-max-exit');
+    if (done.includes('display-max-exit') && full && peer && areas.some(area => area.saved === slot && area.actual !== slot && !area.hidden)) {
+      model.state.displayFullscreen = full; model.state.displayFullPeer = peer; model.mark('display-full-enter');
+    }
+    if (done.includes('display-full-enter') && !full && !bounded && open.includes(model.state.displayFullscreen) && open.includes(model.state.displayFullPeer)) model.mark('display-full-exit');
     return before !== JSON.stringify(model.state);
   }
   function recovery(model, scene) {
     if (!model.active() || model.ready()) return null;
     const id = model.lesson.id, done = model.state.done;
     const hint = (text,action,label) => ({text,action,label});
-    if (id === 'fullscreen' && scene.full) return hint('This is true full screen. Press Escape, then left-click maximize for the space between Areas.','escape','Exit true full screen');
+    if (id === 'fullscreen' && scene.full) return hint('This is Full fullscreen. Press Escape, then left-click maximize for the space between Areas.','escape','Exit Full fullscreen');
     if (['fullscreen','true-fullscreen'].includes(id)) {
       if (model.state.practiceWindow && !scene.open.includes(model.state.practiceWindow)) return hint('The window used for this task was closed or parked. Reopen it and try the full-screen task again.','fullscreen-retry','Reopen and retry');
       if (!scene.open.length) return hint('Open any app before trying its full-screen controls.','window','Open an app');
@@ -193,7 +198,7 @@
     if (['tiling','float','park'].includes(id) && (scene.column !== 'workspace' || !scene.open.length)) return hint('Bring any app onto the Workspace desktop for this task. Your existing windows and saved content are still available.','window','Bring an app here');
     if (id === 'unpark' && !scene.parked?.length && !(model.state.unparkCandidates || []).some(name=>scene.open.includes(name))) return hint('There is no parked app available. Park any window, then bring it back using its card or rail icon.','park-app','Prepare a parked app');
     if (id === 'project-navigation' && scene.column === 'workspace' && !scene.open.length) return hint('Open or unpark any app in Workspace before comparing it with your project.','window','Open a Workspace app');
-    if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize for true full screen.','true-fullscreen','Enter true full screen');
+    if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize for Full fullscreen.','true-fullscreen','Enter Full fullscreen');
     return null;
   }
   function shouldCompact(preference, guideRect, targetRect) {

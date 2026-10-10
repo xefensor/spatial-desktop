@@ -123,11 +123,16 @@ displayScene.assignments.apps.terminal=2;displayScene.open=['browser'];G.observe
 displayScene.assignments.apps.browser=1;G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-app-returned'),'A different app cannot restore the moved window');
 displayScene.assignments.apps.terminal=1;displayScene.open.push('terminal');G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-app-returned'));
 displayScene.assignments.areas.systems=2;displayScene.areas[0]={name:'systems',saved:2,actual:2};G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-area-moved'));
+displayScene.bounded='terminal';G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-max-enter'),'A maximized window alone cannot satisfy app transfer');
+displayScene.transferred={browser:{source:1,target:2}};displayScene.assignments.apps.browser=2;displayScene.open=['terminal'];G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-max-enter'));
+delete displayScene.bounded;G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-max-exit'),'The peer must return as well as the owner restoring');
+displayScene.assignments.apps.browser=1;displayScene.open.push('browser');G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-max-exit'));
+displayScene.assignments.apps.browser=2;displayScene.open=['terminal'];
 displayScene.full='terminal';G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-full-enter'),'A manually transferred Area alone does not demonstrate automatic fullscreen yielding');
 displayScene.areas[1].actual=2;displayScene.areas[1].hidden=true;G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.state.done.includes('display-full-enter'),'Hidden Areas do not count as visible on the other display');
 displayScene.areas[1].hidden=false;G.observeDisplays(displayLesson,displayScene);assert(displayLesson.state.done.includes('display-full-enter'));
 delete displayScene.full;displayScene.open=['browser'];G.observeDisplays(displayLesson,displayScene);assert(!displayLesson.ready(),'Closing the fullscreen app does not count as restoring it');
-displayScene.open.push('terminal');G.observeDisplays(displayLesson,displayScene);assert(displayLesson.ready());assert(G.create(displayLesson.snapshot()).ready());
+displayScene.open.push('terminal');displayScene.assignments.apps.browser=1;G.observeDisplays(displayLesson,displayScene);assert(displayLesson.ready());assert(G.create(displayLesson.snapshot()).ready());
 const optional=at('two-displays');assert(optional.skip());assert.equal(optional.lesson.id,'complete');assert(optional.state.skipped.includes('two-displays'));
 const ownerBoot=boot({'spatial-active-workspace':'general','spatial-workspace-app-states-v1':'real-desktop'},'?guide=chapter&chapter=two-displays');
 const companionBoot=boot(ownerBoot.storage,'?guide=display&practice='+ownerBoot.api.model.state.sessionId);
