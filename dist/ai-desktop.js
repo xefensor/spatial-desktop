@@ -10,7 +10,7 @@
   function itemMarkup(item){
     const project=item.project&&projectSpaces[item.project];
     const kind=item.kind==='image'?'i-image':item.kind==='audio'?'i-music':item.kind==='folder'?'i-folder':item.kind==='browser'||/^https?:/.test(item.address)?'i-web':'i-note';
-    const tags=(item.project?'<span class="ai-tag ai-tag-project">Project: '+escapeHtml(project?.name||'Unavailable project')+'</span>':'')+'<span class="ai-tag">Workspace: '+escapeHtml(workspaceLabel(item.workspace))+'</span>'+(item.app?'<span class="ai-tag">'+escapeHtml(item.app==='browser'?'Browser':appInfo[item.app]?.label||item.app)+'</span>':'')+'<span class="ai-tag">'+escapeHtml(item.kind)+'</span>';
+    const tags=(item.project?'<span class="ai-tag ai-tag-project" style="--project-accent:'+(/^#[0-9a-f]{3,8}$/i.test(project?.accent||'')?project.accent:'var(--text)')+'">Project: '+escapeHtml(project?.name||'Unavailable project')+'</span>':'')+'<span class="ai-tag">Workspace: '+escapeHtml(workspaceLabel(item.workspace))+'</span>'+(item.app?'<span class="ai-tag">'+escapeHtml(item.app==='browser'?'Browser':appInfo[item.app]?.label||item.app)+'</span>':'')+'<span class="ai-tag">'+escapeHtml(item.kind)+'</span>';
     return '<article class="ai-attachment" data-ai-attachment="'+escapeHtml(item.id)+'">'+icon(kind)+'<div class="ai-attachment-main"><b>'+escapeHtml(item.title)+'</b><p title="'+escapeHtml(item.address||item.text)+'">'+escapeHtml(item.address||item.text.slice(0,100)||item.filename||'Attached source')+'</p><div class="ai-tags">'+tags+'</div></div><button class="ai-remove" data-ai-remove="'+escapeHtml(item.id)+'" aria-label="Remove '+escapeHtml(item.title)+'">'+icon('i-close')+'</button></article>';
   }
   function render(){
@@ -67,8 +67,8 @@
   function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into AI to attach this app with its context';});}
   prepareSources();
   const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
-  // Track desktop content through pointer gestures too. HTML drag remains available
-  // for dropping into other applications; pointercancel hands control to that drag.
+  // Desktop content uses the same pointer gestures as the rest of the scene.
+  // Native HTML drops remain available for external files, links and selections.
   function bindContentTransfers(){
     let gesture=null,suppressClick=false;
     const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&area.contains(target)&&!area.hidden;};
@@ -79,27 +79,28 @@
       const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id]');
       if(!source||event.target.closest('input,textarea,a,audio,summary,iframe')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;
-      area.dataset.aiTransfer='pending';event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
+      event.preventDefault();event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
     },true);
     window.addEventListener('pointermove',event=>{
       if(!gesture||event.pointerId!==gesture.pointer)return;
       if(!(event.buttons&1)){clear();return;}
-      area.dataset.aiTransfer='move:'+event.buttons;if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8)gesture.moved=true;
+      if(Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8)gesture.moved=true;
       if(gesture.moved)area.classList.toggle('is-ai-drop-target',Boolean(targetAt(event)));
     },true);
     window.addEventListener('pointerup',event=>{
-      area.dataset.aiTransfer='up';if(!gesture||event.pointerId!==gesture.pointer)return;
+      if(!gesture||event.pointerId!==gesture.pointer)return;
       const item=gesture.item,moved=gesture.moved,over=targetAt(event);clear();
       if(!moved)return;suppressClick=true;
       if(over){event.preventDefault();event.stopPropagation();add(item);}
+      else {const field=document.elementFromPoint(event.clientX,event.clientY);if(field?.matches('textarea,input[type=text],input:not([type]),input[type=search],input[type=url]')&&!field.disabled&&!field.readOnly){field.focus();field.setRangeText(item.text||item.address||item.title,field.selectionStart||0,field.selectionEnd||0,'end');field.dispatchEvent(new Event('input',{bubbles:true}));field.dispatchEvent(new Event('change',{bubbles:true}));}}
     },true);
     document.addEventListener('click',event=>{if(!suppressClick)return;suppressClick=false;event.preventDefault();event.stopImmediatePropagation();},true);
-    window.addEventListener('pointercancel',()=>{area.dataset.aiTransfer='cancel';clear();},true);window.addEventListener('blur',clear);
+    window.addEventListener('pointercancel',clear,true);window.addEventListener('blur',clear);
     document.addEventListener('keydown',event=>{if(event.key==='Escape')clear();},true);
   }
   bindContentTransfers();
   document.addEventListener('dragstart',event=>{
-    area.dataset.aiTransfer='html-start';if(area.contains(event.target))return;
+    if(area.contains(event.target))return;
     sourceDrag=describe(event.target);
     if(!sourceDrag)return;
     if(sourceDrag.title){event.dataTransfer.setData(C.MIME,JSON.stringify(sourceDrag));event.dataTransfer.setData('text/plain',sourceDrag.text||sourceDrag.address||sourceDrag.title);event.dataTransfer.effectAllowed='copy';}
@@ -109,7 +110,7 @@
   area.addEventListener('dragleave',event=>{if(!area.contains(event.relatedTarget))area.classList.remove('is-ai-drop-target');});
   document.addEventListener('dragend',()=>{sourceDrag=null;area.classList.remove('is-ai-drop-target');});
   area.addEventListener('drop',async event=>{
-    area.dataset.aiTransfer='drop';if(!accepts(event))return;event.preventDefault();event.stopPropagation();area.classList.remove('is-ai-drop-target');
+    if(!accepts(event))return;event.preventDefault();event.stopPropagation();area.classList.remove('is-ai-drop-target');
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
