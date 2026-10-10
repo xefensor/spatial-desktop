@@ -20,7 +20,10 @@
   function projectFor(key){return projectSpaces[JSON.parse(key)[1]];}
   function resourceItems(key){const project=projectFor(key);if(!project)return [];return project.resources.map((entry,index)=>{
     const [title,detail,type,,meta={}]=entry;let address=meta.address;
-    if(address===undefined){const raw=String(detail||'').replace(/^Linked · /,'');address=/^(https?:\/\/|\/)/i.test(raw)?raw:type==='web'&&/^[\w.-]+\.[a-z]{2,}(?:[/?#]|$)/i.test(title)?'https://'+title:'';}
+    if(address===undefined){const raw=String(detail||'').replace(/^Linked · /,'');address=/^(https?:\/\/|\/)/i.test(raw)?raw:type==='web'&&/^[\w.-]+\.[a-z]{2,}(?:[/?#]|$)/i.test(title)?'https://'+title:'';
+      if(raw.startsWith('~/'))address=(workspaceProfiles[project.originWorkspace||JSON.parse(key)[0]]?.home||'/home/demo')+raw.slice(1);
+      if(address.startsWith('/')&&/\.[a-z0-9]{1,10}$/i.test(title)&&!address.endsWith('/'+title)&&!address.split('/').at(-1).includes('.'))address=address.replace(/\/$/,'')+'/'+title;
+    }
     return {id:'resource:'+JSON.stringify([...JSON.parse(key),index]),scope:key,kind:'item',title,text:meta.text??detail??'',source:M.source({...meta.source,label:meta.source?.label||'Project resource',address}),updated:meta.updated||0,pinned:!!meta.pinned,resourceIndex:index};
   });}
   function itemsFor(key){const project=projectFor(key);return [...model.items(key).filter(item=>!(project&&item.title==='Project starting point'&&item.text===project.note&&item.source.label===project.name+' · Quick note')), ...resourceItems(key)].sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updated-a.updated);}
