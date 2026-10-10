@@ -53,9 +53,8 @@ body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-b
   box-shadow:none!important;
 }
 /* Reuse the shared inset engraving for tabs and choices; remove their old
-   bottom-edge shadow so there is never a second state line. */
+   state shadow, while retaining all four edges of the button frame. */
 body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.workspace-tab,[data-package-mode]) {
-  border-bottom-color:transparent!important;
   box-shadow:none!important;
 }
 /* Overview tasks used a separate child light before receiving the shared rail. */
