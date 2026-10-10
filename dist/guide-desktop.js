@@ -6,7 +6,7 @@
     const banner = document.createElement('aside'); banner.className = 'guide-display-banner material-surface-glass';
     banner.setAttribute('aria-label','Second practice display');
     banner.innerHTML = '<span><b>Display 2 · Guide practice</b><small>' + (guide.displayValid ? 'The same workspace. Continue the tasks in the first window.' : 'This practice session has ended. Return to the first window.') + '</small></span><button class="surface-key" data-guide-close-display>Close practice display</button>';
-    document.body.append(banner); $('button',banner).addEventListener('click',()=>globalThis.close());
+    document.body.append(banner); prepareControlSemantics(banner); $('button',banner).addEventListener('click',()=>globalThis.close());
     guide.open = () => {};
     return;
   }
@@ -164,8 +164,9 @@
     clearHighlight();
     if (!model.active() || window.hidden) return;
     if (model.lesson.challenge) return;
-    const target = model.lesson.target;
-    if (target) highlighted = $$(target).filter(element => !element.closest('[hidden]'));
+    const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
+    const target = model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target;
+    if (target) highlighted = $$(target).filter(element => !element.closest('[hidden],.is-on-other-display') && element.getClientRects().length);
     highlighted.forEach(element => element.classList.add('guide-target'));
   }
   function updateGate() {
@@ -233,6 +234,7 @@
     const lesson = model.lesson, index = model.state.index, welcome = index === 0, complete = lesson.id === 'complete';
     const introduction = complete && model.state.skipped?.length ? 'Your introduction is finished. You can revisit any skipped topic or practice an individual chapter in Spatial Guide anytime.' : lesson.text;
     window.classList.toggle('is-lesson', !welcome);
+    window.classList.toggle('is-display-lesson', lesson.id === 'two-displays');
     content.innerHTML = '<div class="guide-step-meta"><span>' + (welcome ? 'WELCOME' : complete ? 'READY TO GO' : model.state.chapter ? 'CHAPTER PRACTICE' : 'STEP ' + index + ' OF ' + (guide.lessons.length-2)) + '</span><button class="guide-text-action" data-guide-action="leave">' + (welcome ? 'Skip introduction' : model.state.chapter ? 'Leave chapter' : 'Leave introduction') + '</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="' + (guide.lessons.length-1) + '" aria-valuenow="' + index + '"><i style="width:' + (index/(guide.lessons.length-1)*100) + '%"></i></div><h1 tabindex="-1">' + escapeHtml(lesson.title) + '</h1><p>' + escapeHtml(introduction) + '</p><div class="guide-task"><span class="eyebrow">' + (complete ? 'COME BACK ANYTIME' : welcome ? 'AT YOUR OWN PACE' : 'TRY IT') + '</span><p>' + escapeHtml(lesson.task) + '</p>' + (lesson.id === 'two-displays' ? '<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button><p class="guide-display-help">Two browser windows simulate two displays. Keep them in the same browser profile. You can skip this chapter with one monitor.</p>' : '') + '<ol class="guide-checklist">' + (lesson.goals || []).map(goal => '<li data-guide-goal="' + goal + '"><span class="guide-goal-state" aria-hidden="true">○</span><span>' + escapeHtml(guide.goalLabels[goal]) + '</span></li>').join('') + '</ol><span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">' + (welcome ? 'Start exploring' : complete ? 'Continue to desktop' : model.state.chapter ? 'Finish chapter' : 'Continue') + icon('i-right') + '</button>' + (!welcome && !complete && !lesson.challenge ? '<button class="guide-text-action" data-guide-action="show">Show target</button>' : '') + '</div>' + (!welcome && !complete && !model.state.chapter ? '<button class="guide-text-action guide-skip" data-guide-action="skip">' + (lesson.optional ? 'Skip two-display practice' : 'I already know this — skip task') + '</button>' : '') + (welcome ? '<p class="guide-footnote">Skip now or leave at any point. Find us again in Overview → Applications → Help, or search “Spatial Guide”.</p>' : '<p class="guide-footnote">These are real desktop actions. Progress is saved; refreshing resumes this step.' + (model.state.mode === 'repeat' ? ' Your original desktop returns when you leave.' : '') + '</p>');
     prepareControlSemantics(window); highlight();
     if (!welcome) setCompact(guide.view === 'compact');

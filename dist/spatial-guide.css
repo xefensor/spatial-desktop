@@ -80,3 +80,5 @@ html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[da
 .guide-task .guide-display-help {font-size:11px;color:var(--muted)}
 .guide-display-banner {position:fixed;z-index:9500;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border:1px solid var(--line);border-radius:0!important;background:var(--glass-field);color:var(--text);backdrop-filter:blur(16px)}
 .guide-display-banner span {display:grid;gap:4px}.guide-display-banner b {font-size:12px}.guide-display-banner small {font-size:11px;color:var(--muted)}.guide-display-banner button {padding:7px 10px;font-size:11px;flex:none}
+
+#spatialGuide.is-display-lesson {max-height:72dvh}
