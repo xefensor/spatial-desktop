@@ -73,7 +73,7 @@ html[data-guide-level]:not([data-guide-level="9"]) .overview-timeline-section{vi
 .universal-search .overview-carousel .overview-apps-section .open-windows-section{flex:0 0 auto!important;height:288px!important;max-height:48%!important;min-height:190px!important;display:grid!important;grid-template-rows:auto 112px auto minmax(58px,1fr)!important;gap:3px!important;overflow:hidden!important}
 .overview-carousel .desktop-column-map{height:112px!important;min-height:0!important;max-height:112px!important}
 .universal-search .overview-carousel .overview-open-windows{display:flex!important;min-height:58px!important;height:100%!important;flex:none!important;overflow-x:auto!important;overflow-y:hidden!important}
-.universal-search .overview-carousel .overview-open-windows .overview-window{height:62px!important;min-height:62px!important;flex:0 0 190px!important;grid-template-columns:46px minmax(0,1fr)!important;grid-template-rows:1fr!important}
-.universal-search .overview-carousel .overview-window-titlebar{grid-template-columns:30px!important;border-right:1px solid var(--control-edge)!important;border-bottom:0!important;padding:6px!important}
+.universal-search .overview-carousel .overview-open-windows .overview-window{height:62px!important;min-height:62px!important;flex:0 0 215px!important;display:block!important;grid-template-columns:none!important;grid-template-rows:none!important}
+.universal-search .overview-carousel .overview-window-titlebar{grid-template-columns:34px minmax(0,1fr) 8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;border:0!important;padding:7px 10px!important}
 .overview-carousel .overview-window-titlebar .overview-window-title{display:none}
 .overview-carousel .overview-window-content{padding:7px!important;font-size:11px!important}

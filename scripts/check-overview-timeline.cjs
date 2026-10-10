@@ -61,6 +61,12 @@ for(const id of ['timeline','system','projects','apps','timeline','apps']){
   assert.equal(track.scrollLeft,current.offsetLeft+current.offsetWidth/2-track.clientWidth/2,'Selected panel is centred');
   assert.equal(current.inert,false);assert(panelNodes.filter(n=>n!==current).every(n=>n.inert),'Preview controls stay out of keyboard focus');
 }
+overview.select('timeline',true);
+const selectedTimeline=panelNodes[0],finishSnap=pending.at(-1);
+track.scrollLeft=track.children.indexOf(panelNodes[1])*824;track.listeners.scroll();
+assert.equal(overview.active(),'timeline','Native scroll events cannot replace the requested panel during its transition');
+finishSnap();assert.equal(track.scrollLeft,selectedTimeline.offsetLeft+selectedTimeline.offsetWidth/2-track.clientWidth/2,'The requested snap target is restored after native DOM anchoring');
+overview.select('apps',false);
 let prevented=0;
 track.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){prevented++;},stopPropagation(){}});
 assert.equal(prevented,0,'Ordinary list wheels keep vertical scrolling');
