@@ -99,4 +99,21 @@
   :is(.material-abs-field,.abs-range)::-moz-range-thumb {
     border-radius:var(--window-control-corner,10px)!important;corner-shape:squircle!important;
   }
+
+  /* App sliders use a solid round ABS grip, also in their parked card.
+     The surrounding glass groove keeps its own material geometry. */
+  :is(.app-frame,.mini-card,.dolphin-window,.music-window) input[type="range"]::-webkit-slider-thumb {
+    width:16px!important;height:16px!important;box-sizing:border-box!important;
+    border-radius:50%!important;corner-shape:round!important;
+    border:1px solid var(--line,#64727c)!important;
+    background:linear-gradient(var(--shell-hi,#65717a),var(--shell-lo,#30383e))!important;
+    box-shadow:var(--key-shadow,0 1px 3px rgba(0,0,0,.35))!important;
+  }
+  :is(.app-frame,.mini-card,.dolphin-window,.music-window) input[type="range"]::-moz-range-thumb {
+    width:16px!important;height:16px!important;box-sizing:border-box!important;
+    border-radius:50%!important;corner-shape:round!important;
+    border:1px solid var(--line,#64727c)!important;
+    background:linear-gradient(var(--shell-hi,#65717a),var(--shell-lo,#30383e))!important;
+    box-shadow:var(--key-shadow,0 1px 3px rgba(0,0,0,.35))!important;
+  }
 }
