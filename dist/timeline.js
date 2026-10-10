@@ -120,8 +120,8 @@
     const next=event=>event.planned&&!event.done&&(event.time>=now||event.endTime>now);
     return {upcoming:rows.filter(next).sort((a,b)=>a.time-b.time),earlier:rows.filter(event=>!next(event)).sort((a,b)=>b.time-a.time)};
   }
-  // A single day and one shared, linear time scale for both lanes. Activity
-  // bursts share a quarter-hour slot; their precise times remain on each row.
+  // A shared time map anchors both lanes precisely. Busy moments expand to
+  // keep actions readable; calendar blocks span the same start/end positions.
   function dayKey(time){const d=new Date(time);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   function lanes(activity,planned,{day=dayKey(Date.now()),...filter}={}){
     const midnight=new Date(day+'T00:00:00').getTime(),next=new Date(day+'T00:00:00');next.setDate(next.getDate()+1);const finish=next.getTime(),quarter=15*60000;
@@ -129,20 +129,23 @@
     const days=[...new Set([day,...rows.flatMap(e=>[dayKey(e.time),...(e.endTime?[dayKey(e.endTime-1)]:[])])])].sort();
     const visible=rows.filter(e=>e.time<finish&&(e.endTime||e.time+1)>midnight).sort((a,b)=>a.time-b.time||a.id.localeCompare(b.id));
     const groups=new Map();
-    for(const e of visible.filter(e=>!e.planned)){const bucket=Math.floor((e.time-midnight)/quarter);if(!groups.has(bucket))groups.set(bucket,[]);groups.get(bucket).push(e);}
-    const scale=Math.max(4,...[...groups.values()].map(events=>(events.length*58+8)/15));
+    for(const e of visible.filter(e=>!e.planned)){if(!groups.has(e.time))groups.set(e.time,[]);groups.get(e.time).push(e);}
+    const scale=4;
     const pointSpan=Math.max(quarter,90/scale*60000);
     const first=visible.length?Math.max(midnight,Math.min(...visible.map(e=>e.time))):midnight+9*3600000;
     const last=visible.length?Math.min(finish,Math.max(...visible.map(e=>e.endTime||e.time+(e.planned?pointSpan:quarter)))):midnight+17*3600000;
     const start=midnight+Math.floor((first-midnight)/3600000)*3600000;
     const end=Math.min(finish,Math.max(start+3600000,midnight+Math.ceil((last-midnight)/3600000)*3600000));
-    const y=time=>(time-start)/60000*scale;
+    const tickTimes=Array.from({length:Math.round((end-start)/quarter)+1},(_,i)=>start+i*quarter);
+    const knots=[...new Set([start,end,...tickTimes,...groups.keys(),...visible.filter(e=>e.planned).flatMap(e=>[Math.max(start,e.time),Math.min(end,e.endTime||e.time+pointSpan)])])].sort((a,b)=>a-b);
+    const positions=[0];for(let i=1;i<knots.length;i++)positions.push(positions[i-1]+Math.max((knots[i]-knots[i-1])/60000*scale,(groups.get(knots[i-1])?.length||0)*58+(groups.has(knots[i-1])?8:0)));
+    const y=time=>{if(time<=start)return(time-start)/60000*scale;if(time>=end)return positions.at(-1)+(time-end)/60000*scale;let i=1;while(knots[i]<time)i++;return positions[i-1]+(time-knots[i-1])/(knots[i]-knots[i-1])*(positions[i]-positions[i-1]);};
     const calendar=visible.filter(e=>e.planned).map(e=>({...e,start:Math.max(midnight,e.time),finish:Math.min(finish,e.endTime||e.time+(e.planned?pointSpan:quarter))}));
     // Pack overlapping plans into parallel columns without moving their times.
     let cluster=[],clusterEnd=0;const pack=()=>{const ends=[];for(const e of cluster){let col=ends.findIndex(end=>end<=e.start);if(col<0)col=ends.length;ends[col]=e.finish;e.column=col;}cluster.forEach(e=>e.columns=ends.length);};
     for(const e of calendar){if(cluster.length&&e.start>=clusterEnd){pack();cluster=[];clusterEnd=0;}cluster.push(e);clusterEnd=Math.max(clusterEnd,e.finish);}pack();
-    return {day,days,start,end,scale,height:y(end),ticks:Array.from({length:Math.round((end-start)/quarter)+1},(_,i)=>({time:start+i*quarter,top:y(start+i*quarter)})),
-      activity:[...groups].map(([bucket,events])=>({events,top:y(midnight+bucket*quarter)})),
+    return {day,days,start,end,scale,height:y(end),ticks:tickTimes.map(time=>({time,top:y(time)})),
+      activity:[...groups].map(([time,events])=>({events,top:y(time)})),
       plans:calendar.map(e=>({...e,top:y(e.start),height:y(e.finish)-y(e.start)})),nowTop:y(Date.now())};
   }
   function demoPlans({preset,profiles={},projects={},now=Date.now()}={}){

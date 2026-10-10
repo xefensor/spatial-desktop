@@ -96,7 +96,7 @@ html[data-guide-level]:not([data-guide-level="9"]) .overview-timeline-section{vi
 .overview-carousel .overview-window-titlebar .overview-window-title{display:none}
 .overview-carousel .overview-window-content{padding:7px!important;font-size:11px!important}
 
-/* Parallel lanes share the same quarter-hour grid and linear day scale. */
+/* Parallel lanes share exact time anchors; busy moments expand together. */
 .timeline-scroll{padding:0 16px 20px}
 .timeline-lane-headings{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);position:sticky;top:0;z-index:4;background:var(--content-surface-raised);padding:12px 0;border-bottom:1px solid var(--sd-glass-groove);gap:8px}
 .timeline-lane-headings h4,.timeline-lane-headings>span{margin:0;font-size:11px;font-weight:500;color:var(--muted)}

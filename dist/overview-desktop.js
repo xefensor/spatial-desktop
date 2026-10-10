@@ -120,7 +120,7 @@
     if(event.base&&['dolphin','browser','notes','elisa','terminal'].includes(event.base))return 'Open';
     return '';
   }
-  let timelineDayWorkspace='',timelineDay='';
+  let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='';
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const now=Date.now(),today=SpatialTimeline.dayKey(now);
@@ -145,6 +145,7 @@
     const nowLine=timelineDay===today&&view.nowTop>=0&&view.nowTop<=view.height?'<div class="timeline-now" style="top:'+view.nowTop+'px"><span>Now</span></div>':'';
     $('#timelineEntries').innerHTML='<div class="timeline-lane-headings"><span>Time</span><h4>Desktop activity</h4><h4>Calendar & tasks</h4></div><div class="timeline-day-grid" style="height:'+(view.height+30)+'px">'+ticks+'<div class="timeline-activity-lane" role="list" aria-label="Desktop activity">'+activity+'</div><div class="timeline-planned-lane" role="list" aria-label="Calendar, tasks and reminders">'+plans+'</div>'+nowLine+(!activity&&!plans?'<p class="timeline-empty"><b>No items on this day</b>Choose another day, change the filter or add an event.</p>':'')+'</div>';
     prepareControlSemantics($('#timelineEntries'));syncAgenda(now);
+    const renderedDay=activeWorkspace+':'+timelineDay;if(timelineRenderedDay!==renderedDay){timelineRenderedDay=renderedDay;$('#timelineScroll').scrollTop=Math.max(0,Math.min(...view.activity.map(e=>e.top),...view.plans.map(e=>e.top),view.height)-24);}
   }
   function savePlanner(){planner.merge(read(plannerKey));try{desktopStorage.setItem(plannerKey,JSON.stringify(planner.snapshot()));}catch{}}
   function syncAgenda(now=Date.now()){
@@ -164,7 +165,7 @@
   function syncPlanEnd(){const calendar=$('#timelinePlanKind').value==='calendar.event';$('#timelinePlanEndLabel').hidden=!calendar;$('#timelinePlanEnd').required=calendar;$('#timelinePlanEnd').min=$('#timelinePlanTime').value;}
   $('#timelinePlanKind').addEventListener('change',syncPlanEnd);
   $('#timelinePlanTime').addEventListener('change',()=>{const time=new Date($('#timelinePlanTime').value);if(new Date($('#timelinePlanEnd').value)<=time)$('#timelinePlanEnd').value=new Date(time.getTime()+3600000-time.getTimezoneOffset()*60000).toISOString().slice(0,16);syncPlanEnd();});
-  $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();$('#timelineScroll').scrollTop=0;});
+  $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();});
   function reopen(id){
     const event=model.list(activeWorkspace).find(event=>event.id===id);if(!event||!actionFor(event))return;
     setUniversalSearchOpen(false);
@@ -214,7 +215,7 @@
     if(type==='calendar.event'&&(!Number.isFinite(endTime)||endTime<=time))return;
     const item=planner.put({endTime,id:globalThis.crypto?.randomUUID?.()||Date.now()+'-plan-'+Math.random().toString(36).slice(2),workspace:activeWorkspace,type,time,title,detail:$('#timelinePlanDetail').value,project,projectName:projectSpaces[project]?.name||''});
     if(!item)return;
-    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);timelineDay=SpatialTimeline.dayKey(time);renderTimeline();$('#timelineScroll').scrollTop=0;
+    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);timelineDay=SpatialTimeline.dayKey(time);timelineRenderedDay='';renderTimeline();
   });
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
   window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});

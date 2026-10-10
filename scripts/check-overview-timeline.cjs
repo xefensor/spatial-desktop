@@ -51,7 +51,8 @@ assert(T.view([],planner.list('general'),{type:'planned',query:'holiday'}).earli
 const laneDay='2026-10-10',at=(h,m=0)=>new Date(laneDay+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00').getTime();
 const meeting={...event('meeting',at(10)),type:'calendar.event',planned:true,endTime:at(11),title:'Review'},overlap={...meeting,id:'overlap',time:at(10,30),endTime:at(11,30)};
 const dayView=T.lanes([event('during',at(10,30))],[meeting,overlap],{day:laneDay});
-assert.equal(dayView.plans[0].height,60*dayView.scale,'A meeting spans its full duration');
+assert.equal(dayView.plans[0].top,dayView.ticks.find(t=>t.time===at(10)).top);
+assert.equal(dayView.plans[0].top+dayView.plans[0].height,dayView.ticks.find(t=>t.time===at(11)).top,'A meeting spans its full duration on the shared time map');
 assert.equal(dayView.activity[0].top,dayView.plans[0].top+30*dayView.scale,'Activity during a meeting aligns with the same time on the left');
 assert.equal(dayView.plans[0].columns,2);assert.notEqual(dayView.plans[0].column,dayView.plans[1].column,'Overlapping events retain their times in separate columns');
 const backToBack=T.lanes([], [meeting,{...meeting,id:'later',time:at(11),endTime:at(12)}],{day:laneDay});
@@ -63,6 +64,10 @@ assert.equal(nextDay.plans.length,1);assert.equal(nextDay.plans[0].height,60*nex
 assert.equal(T.lanes([], [meeting],{day:'2026-10-12'}).plans.length,0,'Other days never leak into the selected day');
 assert.equal(T.lanes([event('during',at(10,30))],[meeting],{day:laneDay,type:'activity'}).plans.length,0);
 assert.equal(T.lanes([], [{...meeting,example:true}],{day:laneDay}).plans[0].example,true);
+const dense=T.lanes([event('one',at(10,5)),event('two',at(10,5)+1000)],[{...meeting,time:at(10,5),endTime:at(10,5)+1000}],{day:laneDay});
+assert.equal(dense.activity[0].top,dense.plans[0].top,'Activity anchors exactly to a meeting starting at the same minute');
+assert.equal(dense.activity[1].top,dense.plans[0].top+dense.plans[0].height,'Even one-second activity bursts align with the event end');
+assert(dense.activity[1].top-dense.activity[0].top>=58,'Dense actions stay readable while both lanes expand together');
 
 // Execute the actual carousel and timeline adapter, with a small DOM geometry model.
 const nodes=new Map(),make=(key)=>{
