@@ -318,7 +318,7 @@ const positionSource=adapter.slice(adapter.indexOf('  function positionGuide()')
 const titleRect={left:0,top:0,right:1363,bottom:130};
 const gridRect={left:730,top:400,right:1320,bottom:820};
 const notesButton={left:1104,top:667,right:1309,bottom:720};let lookedUpNextControl=false;
-const positioning=vm.createContext({model:at('project-app'),guide:{placeGuide:G.placeGuide,shouldCompact:G.shouldCompact,view:'expanded'},
+const positioning=vm.createContext({manuallyExpanded:false,model:at('project-app'),guide:{placeGuide:G.placeGuide,shouldCompact:G.shouldCompact,view:'expanded'},
   window:{hidden:false,contains:element=>!!element.own,classList:{contains:()=>false},getBoundingClientRect(){const left=parseInt(this.style.left)||961,top=parseInt(this.style.top)||362;return{width:390,height:562,left,top,right:left+390,bottom:top+562};},style:{}},
   pointer:null,highlighted:[{own:true,getBoundingClientRect:()=>({left:0,top:0,right:1363,bottom:936})}],frontApp:null,innerWidth:1363,innerHeight:936,
   $(selector){const rect=selector.endsWith('.universal-search-header')?titleRect:selector.endsWith('#allAppsGrid')?gridRect:selector === '#universalSearch.is-open #allAppsGrid [data-open-app]'?(lookedUpNextControl=true,notesButton):null;return rect?{getBoundingClientRect:()=>rect}:null;},
@@ -326,6 +326,9 @@ const positioning=vm.createContext({model:at('project-app'),guide:{placeGuide:G.
 vm.runInContext(positionSource,positioning);positioning.positionGuide();
 assert(lookedUpNextControl,'Use the app grid control, not a hidden duplicate favourite');
 assert(parseInt(positioning.window.style.left)+390 <= notesButton.left,'Expanded Guide keeps the project app launcher clickable');
+positioning.manuallyExpanded=true;positioning.$=()=>({getBoundingClientRect:()=>({left:0,top:0,right:1363,bottom:936})});
+positioning.positionGuide();
+let automaticCompactions=0;positioning.manuallyExpanded=false;positioning.setCompact=()=>automaticCompactions++;positioning.positionGuide();assert.equal(automaticCompactions,1,'Manual expansion stays readable; automatic compaction resumes at the next interaction');
 console.log('Guide placement avoids Overview app launchers and the current chapter control.');
 
 // Preset exit resets session data only and keeps late practice callbacks isolated.

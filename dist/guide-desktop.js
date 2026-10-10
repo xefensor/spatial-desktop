@@ -39,6 +39,7 @@
     if (!practiceDisplay) { $('#guideTaskStatus').textContent = 'Allow this demo to open its second practice window, then try again.'; return; }
     await prepareLesson(); queueDesktopStateBroadcast(0); lastSignature = ''; check();
   }
+  let manuallyExpanded = false;
   let highlighted = [], interval = 0, lastSignature = '', pointer = null, currentRecovery = null, lastFullscreen = null;
 
   async function waitForScene() {
@@ -188,7 +189,7 @@
     return '<div class="guide-heading"><span class="eyebrow">DESKTOP COMPANION</span><h1>Find your way around.</h1><p>Open a topic whenever you need a reminder, or learn by using the actual desktop.</p></div><button class="surface-key guide-primary" data-guide-action="start">Start the hands-on guide</button><label class="guide-search recessed-field">' + icon('i-search') + '<input type="search" aria-label="Search Guide topics" placeholder="Search topics or shortcuts"></label><div class="guide-topic-list">' + guide.lessons.slice(1, -1).map((lesson,index) => '<details data-guide-topic><summary><span>' + escapeHtml(lesson.title) + '</span>' + icon('i-right') + '</summary><p>' + escapeHtml(lesson.text) + '</p><button class="surface-key guide-show" data-guide-show="' + (index + 1) + '">Show on desktop</button><button class="guide-text-action guide-replay" data-guide-chapter="' + lesson.id + '">Practice this chapter</button></details>').join('') + '</div><p class="guide-footnote">You can always find Spatial Guide in Overview → Apps → Help, or search for its name.</p>';
   }
   function setCompact(compact, manual = false) {
-    if (manual) guide.setView(compact ? 'compact' : 'expanded');
+    if (manual) {manuallyExpanded=!compact;guide.setView(compact ? 'compact' : 'expanded');}
     window.classList.toggle('is-compact', compact);
     $('.guide-key[data-guide-action="compact"]', window).setAttribute('aria-pressed', String(compact));
     if (!model.active()) { $('.guide-strip-recover',window).hidden = true; $('.guide-strip-meta',window).textContent = 'SPATIAL GUIDE'; $('.guide-strip-task',window).textContent = 'Expand to browse topics or restart the introduction.'; $('.guide-strip-next',window).hidden = true; }
@@ -209,7 +210,7 @@
     const rect = window.getBoundingClientRect();
     const point = guide.placeGuide({width:innerWidth,height:innerHeight},{width:rect.width,height:rect.height},targets);
     window.style.left = point.left+'px'; window.style.top = point.top+'px'; window.style.bottom = 'auto';
-    if (nextControl && !window.classList.contains('is-compact') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),nextControl.getBoundingClientRect())) setCompact(true);
+    if (nextControl && !manuallyExpanded && !window.classList.contains('is-compact') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),nextControl.getBoundingClientRect())) setCompact(true);
   }
   function updateChecklist() {
     const goals = model.lesson.goals || [], current = goals.find(goal => !model.state.done.includes(goal));
@@ -232,7 +233,7 @@
   function render() {
     const content = $('.guide-content', window);
     if (model.active() && model.state.exitStatus) return renderExitChoices();
-    clearHighlight(); lastSignature = '';
+    clearHighlight(); lastSignature = ''; manuallyExpanded=false;
     window.classList.remove('is-compact','was-moved');
     $('.guide-key[data-guide-action="compact"]',window).setAttribute('aria-pressed','false'); window.style.left = ''; window.style.top = ''; window.style.bottom = '';
     window.classList.toggle('is-reference', !model.active());
@@ -438,6 +439,7 @@
   });
   document.addEventListener('pointerdown', event => {
     if (!model.active() || model.state.index === 0 || event.target.closest('#spatialGuide')) return;
+    manuallyExpanded=false;
     if (event.target.closest('[data-app-frame],[data-area-resize],[data-area-drag-handle],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog,#workingMemory,#aiPrompt') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),event.target.getBoundingClientRect())) setCompact(true);
   }, true);
   // Capture the selected search result, then validate after the app's own action.
