@@ -9,10 +9,10 @@ for (const feature of ['systems','apps','overview','parking','desktops','workspa
 assert(model.next());
 assert(model.allows('systems')); assert(!model.allows('apps'));
 assert(!model.next(), 'Reading alone cannot complete a hands-on step');
-assert(!model.mark('notes-open'), 'Unrelated activity cannot complete the task');
-assert(model.mark('sound-off')); assert(!model.ready());
-assert(!model.mark('sound-off'), 'Repeated events do not advance a lesson');
-assert(model.mark('sound-on')); assert(model.next());
+assert(!model.mark('app-open'), 'Unrelated activity cannot complete the task');
+assert(model.mark('toggle-off')); assert(!model.ready());
+assert(!model.mark('toggle-off'), 'Repeated events do not advance a lesson');
+assert(model.mark('toggle-on')); assert(model.next());
 assert.equal(model.lesson.id,'resize-areas'); assert(!model.allows('apps'));
 model.mark('area-resized'); assert(model.next());
 assert(model.allows('apps')); assert(!model.allows('overview'));
@@ -44,9 +44,9 @@ assert.equal(fresh.storage['spatial-workspace-app-states-v1'],'learner-windows',
 const existing = boot({'spatial-workspace-app-states-v1':'original-windows', 'spatial-active-workspace':'work'});
 assert(!existing.api.model.active(), 'Existing users are not forced through first login');
 existing.api.model.start(); existing.api.storage.setItem('spatial-workspace-app-states-v1','practice-windows');
-existing.api.model.next(); existing.api.model.mark('sound-off'); existing.api.save();
+existing.api.model.next(); existing.api.model.mark('toggle-off'); existing.api.save();
 const resumed = boot(existing.storage);
-assert(resumed.api.model.active()); assert.equal(resumed.api.model.lesson.id,'system'); assert(resumed.api.model.state.done.includes('sound-off'));
+assert(resumed.api.model.active()); assert.equal(resumed.api.model.lesson.id,'system'); assert(resumed.api.model.state.done.includes('toggle-off'));
 resumed.api.finish('completed'); resumed.api.storage.setItem('spatial-workspace-app-states-v1','late-practice-autosave');
 assert.equal(resumed.storage['spatial-workspace-app-states-v1'],'original-windows', 'Repeating lessons preserves the original desktop');
 const corrupt = G.create({index:999, done:'invalid'});
@@ -78,16 +78,47 @@ assert.equal(G.create(at('projects').snapshot()).lesson.id,'projects');
 const projects = at('projects');
 assert(projects.allows('projects')); assert(projects.allows('desktops')); assert(!projects.allows('workspaces')); assert(!projects.allows('folders'));
 
+// Free choice still requires the right action, sequence and window ownership.
+for (const name of ['browser','terminal','elisa','dolphin','notes','terminal--2']) {
+  const app=at('apps');G.observeWindows(app,{open:[name],bases:{[name]:name.split('--')[0]}});assert(app.ready());
+  const floating=at('float');G.observeWindows(floating,{floating:[name],interacting:true});assert(!floating.ready());
+  G.observeWindows(floating,{floating:[name]});assert(floating.ready());
+  const parked=at('park');G.observeWindows(parked,{open:[name],states:{[name]:'open',older:'minimized'}});
+  assert(!parked.ready(),'An already parked window is not a new action');
+  G.observeWindows(parked,{states:{[name]:'minimized',older:'minimized'}});assert(parked.ready());assert.equal(parked.state.parkedWindow,name);
+  const unparked=at('unpark');G.observeWindows(unparked,{states:{[name]:'minimized'}});
+  G.observeWindows(unparked,{open:['unrelated'],states:{[name]:'minimized'}});assert(!unparked.ready());
+  G.observeWindows(unparked,{open:[name],states:{[name]:'open'}});assert(unparked.ready());
+  const project=at('project-app');project.state.practiceProject='mine';
+  G.observeWindows(project,{column:'workspace',open:[name]});assert(!project.ready());
+  G.observeWindows(project,{column:'mine',open:[name]});assert(project.ready());
+}
+const tiled=at('tiling');G.observeWindows(tiled,{tiled:['terminal','terminal--2']});assert(tiled.ready(),'Two instances of the same app qualify');
+const laterPark=at('unpark');G.observeWindows(laterPark,{states:{}});G.observeWindows(laterPark,{states:{elisa:'minimized'}});G.observeWindows(laterPark,{open:['elisa']});assert(laterPark.ready());
+const setting=at('system');G.observeToggle(setting,'Wi-Fi',false);G.observeToggle(setting,'Bluetooth',true);assert(!setting.ready());G.observeToggle(setting,'Wi-Fi',true);assert(setting.ready());
+for (const name of ['browser','terminal','elisa','Spatial Guide']) {
+  const search=at('overview');G.observeSearch(search,{query:'',results:[name],launch:name,opened:[name]});assert(!search.ready());
+  G.observeSearch(search,{query:'choice',results:[name]});assert(search.state.done.includes('app-search'));
+  G.observeSearch(search,{query:'choice',results:[name],launch:'unrelated',opened:['unrelated']});assert(!search.ready());
+  G.observeSearch(search,{query:'choice',results:[name],launch:name,opened:[name]});assert(search.ready());
+}
+const pages=at('desktops');G.observeWindows(pages,{page:2});G.observeWindows(pages,{page:5,column:'another-project'});assert(!pages.state.done.length);
+G.observeWindows(pages,{page:5});assert(!pages.ready());G.observeWindows(pages,{page:0});assert(!pages.ready());G.observeWindows(pages,{page:2});assert(pages.ready());
+const oldToggle=G.create({status:'active',version:3,lessonId:'system',done:['sound-off']});G.observeToggle(oldToggle,'Sound',true);assert(oldToggle.ready(),'Old in-progress toggle tasks retain their chosen setting');
+assert(G.create({status:'active',version:3,lessonId:'park',done:['note-written','notes-park']}).ready());
+assert(!G.create({status:'active',version:3,lessonId:'park',done:['note-written']}).ready());
+console.log('General Guide tasks passed: all apps, instances, settings, search results, parking, projects, arbitrary desktops and legacy progress.');
+
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
-const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
+const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
   dockState:{systems:{edge:'right'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
-  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', $:()=>({}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
-  openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
+  openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{current:()=>0,visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
 context.mark = goal=>context.model.mark(goal);
 vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
@@ -105,8 +136,8 @@ context.model=at('workspaces');context.workspaceProfiles={general:{},existing:{c
 context.activeWorkspace='existing';context.check();assert(!context.model.ready(),'Switching to an existing workspace does not count as creation');
 context.workspaceProfiles.personal={custom:true,home:'/home/demo/Workspaces/personal'};context.activeWorkspace='personal';context.check();assert(context.model.ready());
 assert.equal(context.model.state.practiceWorkspace,'personal');
-context.model=at('folders');context.model.state.practiceWorkspace='personal';context.appInfo.dolphin={};context.appState.dolphin='open';context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Downloads'}});context.check();assert(!context.model.ready());
-context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Workspaces/personal/Downloads'}});context.check();assert(context.model.ready(),'Only the new workspace Downloads satisfies the folder task');
+context.model=at('folders');context.model.state.practiceWorkspace='personal';context.appInfo.dolphin={};context.appState.dolphin='open';context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Downloads'},classList:{contains:()=>false}});context.check();assert(!context.model.ready());
+context.frameFor=()=>({dataset:{fileLocation:'/home/demo/Workspaces/personal/Pictures'},classList:{contains:()=>false}});context.check();assert(context.model.ready(),'Any standard folder in the new workspace satisfies the folder task');
 context.activeWorkspace='general';context.appState.dolphin='closed';
 
 context.model=at('project-app');context.model.state.practiceProject='mine';context.appState.notes='open';context.owners.notes='workspace';
@@ -143,13 +174,13 @@ console.log('Guide task observers passed: modes, empty project creation, window 
 const scheduled=[];let capturedClick;
 context.document={addEventListener(type,listener,capture){assert.equal(type,'click');assert.equal(capture,true);capturedClick=listener;}};
 context.setTimeout=(callback)=>scheduled.push(callback);
-const clickObserver=adapter.split('\n').find(line=>line.includes("document.addEventListener('click', () =>"));
+const clickObserver=adapter.slice(adapter.indexOf('  // Capture the selected search result'),adapter.indexOf("  document.addEventListener('pointerup'"));
 vm.runInContext(clickObserver,context);
 context.model=at('fullscreen');context.appState={dolphin:'open'};context.appInfo.dolphin={};context.owners.dolphin='workspace';context.column='workspace';
 const clickSession={};context.tileSession=()=>clickSession;
-capturedClick();assert(!context.model.state.done.includes('bounded-enter'));
+capturedClick({target:{closest:()=>null}});assert(!context.model.state.done.includes('bounded-enter'));
 clickSession.focus={name:'dolphin'};scheduled.shift()();assert(context.model.state.done.includes('bounded-enter'));
-capturedClick();clickSession.focus=null;scheduled.shift()();assert(context.model.ready());
+capturedClick({target:{closest:()=>null}});clickSession.focus=null;scheduled.shift()();assert(context.model.ready());
 console.log('Stopped window clicks are observed after their action, including a rapid restore.');
 
 // A skipped task stays distinct from a performed action, including after refresh.
@@ -161,7 +192,7 @@ assert.deepEqual(G.create(skipping.snapshot()).state.skipped,['park']);
 assert(!at('welcome').skip()); assert(!at('complete').skip());
 const chapter=G.create();chapter.start('repeat','park');
 assert.equal(chapter.lesson.id,'park');assert.equal(chapter.state.chapter,'park');assert(!chapter.ready());
-chapter.mark('note-written');chapter.mark('notes-park');assert(chapter.ready());
+chapter.mark('app-park');assert(chapter.ready());
 assert(!chapter.next(),'A single chapter never advances into unrelated topics');
 assert(!chapter.skip());assert.equal(G.create(chapter.snapshot()).state.chapter,'park');
 chapter.start('repeat','not-a-chapter');assert.equal(chapter.lesson.id,'welcome');assert(!chapter.state.chapter);
@@ -178,44 +209,45 @@ assert(G.shouldCompact('compact',{left:0,top:0,right:100,bottom:100},null));
 assert(!G.shouldCompact('expanded',{left:0,top:0,right:100,bottom:100},{left:200,top:0,right:300,bottom:100}));
 assert(G.shouldCompact('expanded',{left:0,top:0,right:100,bottom:100},{left:50,top:50,right:150,bottom:150}));
 
-const normalScene={workspace:'general',column:'workspace',projectExists:true,open:['notes'],notesState:'open',notesVisible:true};
-assert.equal(G.recovery(at('fullscreen'),{...normalScene,full:'notes'}).action,'escape');
-const lost=at('fullscreen');lost.state.practiceWindow='notes';lost.mark('bounded-enter');
+const normalScene={workspace:'general',column:'workspace',projectExists:true,open:['terminal'],parked:[]};
+assert.equal(G.recovery(at('fullscreen'),{...normalScene,full:'terminal'}).action,'escape');
+const lost=at('fullscreen');lost.state.practiceWindow='terminal';lost.mark('bounded-enter');
 assert.equal(G.recovery(lost,{...normalScene,open:[]}).action,'fullscreen-retry');
-assert.equal(G.recovery(at('true-fullscreen'),{...normalScene,bounded:'notes'}).action,'true-fullscreen');
-assert.equal(G.recovery(at('float'),{...normalScene,notesState:'closed'}).action,'notes');
-assert.equal(G.recovery(at('park'),{...normalScene,notesState:'minimized'}).action,'notes');
-assert.equal(G.recovery(at('unpark'),{...normalScene,notesState:'minimized'}),null,'Parking is expected in the unpark task');
+assert.equal(G.recovery(at('true-fullscreen'),{...normalScene,bounded:'terminal'}).action,'true-fullscreen');
+assert.equal(G.recovery(at('float'),{...normalScene,open:[]}).action,'window');
+assert.equal(G.recovery(at('park'),{...normalScene,open:[],parked:['terminal']}).action,'window');
+assert.equal(G.recovery(at('unpark'),{...normalScene,open:[],parked:['terminal']}),null);
+assert.equal(G.recovery(at('unpark'),{...normalScene,open:[]}).action,'park-app');
 assert.equal(G.recovery(at('folders'),normalScene).action,'workspace');
 assert.equal(G.recovery(at('project-app'),{...normalScene,projectExists:false}).action,'project');
-assert.equal(G.recovery(at('park'),{...normalScene,notesVisible:false}).action,'notes');
-assert.equal(G.recovery(at('park'),normalScene),null);
+assert.equal(G.recovery(at('park'),normalScene),null,'Any open app provides the task prerequisite');
 
 // Execute the actual asynchronous prerequisite adapter for every replayable chapter.
 const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene()'),adapter.indexOf('  async function recover('));
 (async()=>{
   for(const lesson of G.lessons.filter(lesson=>lesson.goals)) {
-    const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectNotes:false};
+    const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
-      desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{notes:'closed',dolphin:'closed'},appInfo:{notes:{},dolphin:{}},
+      desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{}},
       tileSession:()=>({}),setUniversalSearchOpen(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
-      desktopPages:{column:()=>scene.column,current:()=>scene.page,columnOf:(_,name)=>name==='project-note'?'practice':'workspace'},
+      desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace'},
       changeDesktopPage(page,_,column=scene.column){scene.page=page;scene.column=column;},
       renderWorkspace(name){prepared.activeWorkspace=name;scene.workspace=name;},
       openProjectNames:()=>Object.keys(prepared.projectSpaces),
       createProjectFromEditor(){prepared.projectSpaces.practice={};prepared.activeProjectName='practice';scene.column='practice';},
-      openApp(name){if(name==='notes'&&scene.column==='practice'){prepared.appInfo['project-note']={base:'notes'};prepared.appState['project-note']='open';scene.projectNotes=true;}else prepared.appState[name]='open';},
+      openApp(name){if(scene.column==='practice'){prepared.appInfo[name+'--project']={base:name};prepared.appState[name+'--project']='open';scene.projectApp=true;}else prepared.appState[name]='open';},
       minimizeApp(name){prepared.appState[name]='minimized';}});
-    vm.runInContext(prepareSource,prepared);await prepared.prepareLesson();
+    prepared.model.state.preferredApp='terminal';vm.runInContext(prepareSource,prepared);await prepared.prepareLesson();
     assert(prepared.model.state.initialized,lesson.id);assert.equal(prepared.guide.settingUp,false);
     assert(!prepared.model.ready(), 'Prerequisites must not claim the selected chapter was performed: '+lesson.id);
     const needed=G.prerequisites(lesson.id);
-    assert.equal(prepared.appState.notes,needed.notes?(needed.parked?'minimized':'open'):'closed',lesson.id);
-    assert.equal(!!scene.notes.notes[0].text,needed.noteText,lesson.id);
+    assert.equal(prepared.appState.terminal,needed.window?(needed.parked?'minimized':'open'):'closed',lesson.id);
+    assert.equal(prepared.appState.notes,'closed', 'Preparing '+lesson.id+' never forces Notes');
+    assert.equal(scene.notes.notes[0].text,'',lesson.id);
     assert.equal(!!prepared.projectSpaces.practice,needed.project,lesson.id);
-    assert.equal(scene.projectNotes,needed.projectApp,lesson.id);
+    assert.equal(scene.projectApp,needed.projectApp,lesson.id);
     if (lesson.id === 'area-rail') {
       scene.notes.notes[0].text = 'Keep my own wording';
       await prepared.prepareLesson();
@@ -248,11 +280,11 @@ const notesButton={left:1104,top:667,right:1309,bottom:720};let lookedUpNextCont
 const positioning=vm.createContext({model:at('project-app'),guide:{placeGuide:G.placeGuide,shouldCompact:G.shouldCompact,view:'expanded'},
   window:{hidden:false,classList:{contains:()=>false},getBoundingClientRect(){const left=parseInt(this.style.left)||961,top=parseInt(this.style.top)||362;return{width:390,height:562,left,top,right:left+390,bottom:top+562};},style:{}},
   pointer:null,highlighted:[],frontApp:null,innerWidth:1363,innerHeight:936,
-  $(selector){const rect=selector.endsWith('.universal-search-header')?titleRect:selector.endsWith('#allAppsGrid')?gridRect:selector === '#universalSearch.is-open #allAppsGrid [data-open-app="notes"]'?(lookedUpNextControl=true,notesButton):null;return rect?{getBoundingClientRect:()=>rect}:null;},
+  $(selector){const rect=selector.endsWith('.universal-search-header')?titleRect:selector.endsWith('#allAppsGrid')?gridRect:selector === '#universalSearch.is-open #allAppsGrid [data-open-app]'?(lookedUpNextControl=true,notesButton):null;return rect?{getBoundingClientRect:()=>rect}:null;},
   setCompact(){throw new Error('A clear corner exists; keep the expanded preference');}});
 vm.runInContext(positionSource,positioning);positioning.positionGuide();
 assert(lookedUpNextControl,'Use the app grid control, not a hidden duplicate favourite');
-assert(parseInt(positioning.window.style.left)+390 <= notesButton.left,'Expanded Guide keeps the project Notes launcher clickable');
+assert(parseInt(positioning.window.style.left)+390 <= notesButton.left,'Expanded Guide keeps the project app launcher clickable');
 console.log('Guide placement avoids Overview app launchers and the current chapter control.');
 
 // Preset exit resets session data only and keeps late practice callbacks isolated.

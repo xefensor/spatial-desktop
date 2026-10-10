@@ -15,7 +15,7 @@
   document.body.append(window);
   const launcher = document.createElement('div');
   launcher.id = 'guidePracticeLauncher'; launcher.className = 'guide-practice-launcher';
-  launcher.innerHTML = '<span>Practice apps</span><button class="surface-key" data-open-app="notes">' + appArt('notes') + '<span>Open Notes</span></button><button class="surface-key" data-open-app="dolphin">' + appArt('dolphin') + '<span>Open Dolphin</span></button>';
+  launcher.innerHTML = '<span>Choose an app to try</span>' + Object.entries(appInfo).filter(([,info])=>!info.base).map(([name,info])=>'<button class="surface-key" data-open-app="' + name + '">' + appArt(name) + '<span>Open ' + escapeHtml(info.label) + '</span></button>').join('');
   $('.area-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('.area-window-body', areaFor('apps'))?.prepend(launcher);
   if (!launcher.isConnected) $('#appRack').before(launcher);
@@ -40,24 +40,36 @@
     }
     return name;
   }
+  function ensureWorkspaceWindow() {
+    ordinaryDesktop();
+    const candidates = Object.keys(appState).filter(name=>appState[name] !== 'closed' && desktopPages.columnOf(activeWorkspace,name) === 'workspace');
+    let name = candidates.includes(model.state.workspaceWindow) ? model.state.workspaceWindow : candidates[0];
+    name ||= appInfo[model.state.preferredApp] ? model.state.preferredApp : 'browser';
+    openApp(name);
+    if (appState[name] !== 'open' || desktopPages.columnOf(activeWorkspace,name) !== 'workspace') name = Object.keys(appState).find(id=>appState[id] === 'open' && desktopPages.columnOf(activeWorkspace,id) === 'workspace') || name;
+    changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false,'workspace');
+    model.state.workspaceWindow = name; model.state.preferredApp = appInfo[name].base || name;
+    return name;
+  }
   async function prepareLesson() {
     guide.settingUp = true;
     await waitForScene();
-    if (tileSession().fullscreen) leaveAppFullscreen();
+    if (tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
     if (tileSession().focus) toggleMaximize(tileSession().focus.name);
     setUniversalSearchOpen(false);
     const needed = guide.prerequisites(model.lesson.id);
-    if (needed.notes) {
-      ordinaryDesktop(); openApp('notes');
-      if (needed.noteText && !appWindowModel('notes').notes.some(note => note.text.trim())) {
-        const note = appWindowModel('notes'); note.notes[0].text = 'My practice note — this stays in Workspace.'; renderNotes('notes');
+    if (needed.window) {
+      ordinaryDesktop();
+      const parked = needed.parked && Object.keys(appState).find(id=>appState[id] === 'minimized' && desktopPages.columnOf(activeWorkspace,id) === 'workspace');
+      if (parked) model.state.parkedWindow = parked;
+      else {
+        const name = ensureWorkspaceWindow();
+        if (needed.parked) { minimizeApp(name); model.state.parkedWindow = name; }
       }
-      if (needed.dolphin) openApp('dolphin');
-      if (needed.parked) minimizeApp('notes');
     }
     if (needed.project) {
       await ensurePracticeProject();
-      if (needed.projectApp && !Object.keys(appState).some(name => (appInfo[name].base || name) === 'notes' && appState[name] !== 'closed' && desktopPages.columnOf(activeWorkspace,name) === model.state.practiceProject)) openApp('notes');
+      if (needed.projectApp && !Object.keys(appState).some(name=>appState[name] !== 'closed' && desktopPages.columnOf(activeWorkspace,name) === model.state.practiceProject)) openApp(model.state.preferredApp || 'browser');
       if (!needed.inProject) changeDesktopPage(0,false,'workspace');
     }
     if (needed.ownWorkspace) {
@@ -79,14 +91,13 @@
       } else renderWorkspace('general',false);
     }
     if (action === 'project') { ordinaryDesktop(); await ensurePracticeProject(); }
-    if (action === 'notes' || action === 'open-app' || action === 'fullscreen-retry') {
-      const name = action === 'fullscreen-retry' && appInfo[model.state.practiceWindow] ? model.state.practiceWindow : 'notes';
-      if (action === 'fullscreen-retry') { model.state.done = []; delete model.state.practiceWindow; }
-      ordinaryDesktop();
-      const owner = desktopPages.columnOf(activeWorkspace,name);
-      if (owner !== 'workspace' && projectSpaces[owner]) { model.state.practiceProject = owner; await ensurePracticeProject(); }
-      changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false);
-      openApp(name);
+    if (action === 'window') ensureWorkspaceWindow();
+    if (action === 'park-app') { const name = ensureWorkspaceWindow(); minimizeApp(name); model.state.parkedWindow = name; delete model.state.unparkCandidates; }
+    if (action === 'fullscreen-retry') {
+      const name = model.state.practiceWindow;
+      model.state.done = []; delete model.state.practiceWindow;
+      if (appInfo[name]) { ordinaryDesktop(); changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false); openApp(name); }
+      else ensureWorkspaceWindow();
     }
     if (action === 'true-fullscreen') {
       const name = tileSession().focus?.name || topOpenApp();
@@ -165,7 +176,7 @@
     for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid','#workspaceCreateForm:not([hidden])']) {
       const element = $(selector); if (element) targets.push(element.getBoundingClientRect());
     }
-    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app="notes"]',overview:'[data-search-open-app="dolphin"]',workspaces:'#newWorkspaceButton',folders:'[data-workspace-folder="Downloads"]',return:'.workspace-tabs'})[model.lesson.id];
+    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app]',overview:'[data-search-open-app],[data-search-launch-app="Spatial Guide"]',workspaces:'#newWorkspaceButton',folders:'.workspace-home-card',return:'.workspace-tabs'})[model.lesson.id];
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
     const rect = window.getBoundingClientRect();
@@ -215,11 +226,16 @@
   function check() {
     if (!model.active() || guide.settingUp || model.state.exitStatus) return;
     const id = model.lesson.id, done = model.state.done, session = tileSession();
-    const isNotesOpen = appState.notes === 'open';
-    if (id === 'apps' && isNotesOpen) mark('notes-open');
-    if (id === 'tiling' && ['notes','dolphin'].every(name => appState[name] === 'open' && frameFor(name).classList.contains('is-tiled'))) mark('two-tiled');
-    if (id === 'float' && session.floating.notes && !manualWindowInteraction) mark('notes-float');
     const open = Object.keys(appState).filter(name => appState[name] === 'open' && isLocalApp(name));
+    const column = desktopPages.column(activeWorkspace);
+    const states = Object.fromEntries(Object.entries(appState).filter(([name])=>desktopPages.columnOf(activeWorkspace,name) === column));
+    if (guide.observeWindows(model,{open,states,column,page:desktopPages.current(activeWorkspace),
+      bases:Object.fromEntries(Object.keys(appInfo).map(name=>[name,appInfo[name].base || name])),
+      tiled:open.filter(name=>frameFor(name).classList.contains('is-tiled')),
+      floating:open.filter(name=>session.floating?.[name]),interacting:!!manualWindowInteraction})) {guide.save();lastSignature = '';}
+    if (id === 'overview' && $('#universalSearch').classList.contains('is-open')) {
+      if (guide.observeSearch(model,{query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp))})) {guide.save();lastSignature = '';}
+    }
     const bounded = session.focus?.name || open.find(name => appMaximizedState[name] && !frameFor(name).classList.contains('is-fullscreen'));
     if (guide.observeFullscreen(model, {bounded, full:session.fullscreen?.name, open})) { guide.save(); lastSignature = ''; }
     if (session.fullscreen?.name !== lastFullscreen) {
@@ -244,14 +260,6 @@
     }
     if (['project-app','project-navigation','challenge'].includes(id) && !model.state.practiceProject && activeProjectName) { model.state.practiceProject = activeProjectName; guide.save(); }
     const practiceProject = model.state.practiceProject;
-    if (id === 'project-app' && desktopPages.column(activeWorkspace) === practiceProject && open.some(name => (appInfo[name].base || name) === 'notes')) mark('project-notes-open');
-    if (id === 'project-navigation') {
-      const column = desktopPages.column(activeWorkspace);
-      if (column === 'workspace') {
-        if (done.includes('project-return')) mark('project-workspace-return');
-        else if (appState.notes === 'open' && appWindowModel('notes').notes.some(note => note.text.trim())) mark('project-workspace');
-      } else if (column === practiceProject && done.includes('project-workspace')) mark('project-return');
-    }
     if (id === 'challenge') {
       if (!model.state.challengeBaseline) { model.state.challengeBaseline = Object.keys(appState).filter(name => appState[name] !== 'closed'); guide.save(); }
       if (model.state.challengeWindow && appState[model.state.challengeWindow] === 'closed' && !done.includes('challenge-park')) {
@@ -262,25 +270,15 @@
       if (model.state.challengeWindow && appState[model.state.challengeWindow] === 'minimized') mark('challenge-park');
       if (done.includes('challenge-park') && desktopPages.column(activeWorkspace) === 'workspace') mark('challenge-return');
     }
-    if (id === 'park') {
-      const notes = appWindowModel('notes');
-      if (notes.notes.some(note => note.text.trim())) mark('note-written');
-      if (done.includes('note-written') && appState.notes === 'minimized') mark('notes-park');
-    }
-    if (id === 'unpark' && isNotesOpen) mark('notes-unpark');
-    if (id === 'desktops') {
-      if (desktopPages.current(activeWorkspace) > 0) mark('desktop-next');
-      else if (done.includes('desktop-next')) mark('desktop-return');
-    }
     if (id === 'workspaces') {
       if (!model.state.workspaceBaseline) { model.state.workspaceBaseline = Object.keys(workspaceProfiles); guide.save(); }
       if (!done.includes('workspace-created') && workspaceProfiles[activeWorkspace]?.custom && !model.state.workspaceBaseline.includes(activeWorkspace)) {
         model.state.practiceWorkspace = activeWorkspace; guide.save(); mark('workspace-created');
       }
     }
-    if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && Object.keys(appState).some(name => appState[name] === 'open' && (appInfo[name].base || name) === 'dolphin' && frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/Downloads')) mark('workspace-downloads');
+    if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && open.some(name => (appInfo[name].base || name) === 'dolphin' && SpatialHomeFolders.standard.some(folder => frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/' + folder))) mark('workspace-folder');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
-    currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,notesState:appState.notes,notesVisible:desktopPages.visible(activeWorkspace,'notes')});
+    currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,parked:Object.keys(states).filter(name=>states[name] === 'minimized')});
     const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery]);
     if (signature === lastSignature) { positionGuide(); return; }
     lastSignature = signature;
@@ -306,7 +304,7 @@
     clearHighlight(); window.classList.remove('is-compact','is-reference','was-moved');
     $('.guide-key[data-guide-action="compact"]',window).setAttribute('aria-pressed','false');
     const keepLabel = model.state.mode === 'first' ? 'Keep what I created' : 'Return to my desktop';
-    const keepText = model.state.mode === 'first' ? 'Continue with your own note, project and workspace.' : 'Restore the desktop you had before this introduction.';
+    const keepText = model.state.mode === 'first' ? 'Continue with your own apps, project and workspace.' : 'Restore the desktop you had before this introduction.';
     $('.guide-content',window).innerHTML = '<div class="guide-step-meta"><span>CHOOSE YOUR DESKTOP</span></div><h1 tabindex="-1">How would you like to begin?</h1><p>Choose an empty desktop or explore the populated demo. Spatial Guide is always in Overview → Applications → Help.</p><div class="guide-desktop-choices"><button class="surface-key guide-desktop-choice" data-guide-preset="clean">' + icon('i-monitor') + '<span><b>Clean desktop</b><small>General only, with no open apps or projects. Create your own workspaces.</small></span></button><button class="surface-key guide-desktop-choice" data-guide-preset="demo">' + icon('i-grid') + '<span><b>Explore the demo</b><small>Open apps, projects and desktops in General, School, Work and Gaming.</small></span></button><button class="surface-key guide-desktop-choice" data-guide-preset="keep">' + icon('i-right') + '<span><b>' + keepLabel + '</b><small>' + keepText + '</small></span></button></div><p class="guide-footnote">Clean and demo replace the current desktop session. Your display preferences stay the same.</p><button class="guide-text-action" data-guide-action="exit-back">Back to Guide</button>';
     prepareControlSemantics(window); positionGuide();
     $('.guide-content h1',window)?.focus({preventScroll:true});
@@ -375,25 +373,26 @@
   });
   document.addEventListener('click', event => {
     if (!model.active() || model.state.exitStatus) return;
-    const focus = event.target.closest('[data-toggle]');
-    if (model.lesson.id === 'system' && focus?.textContent.trim() === 'Sound') {
-      if (focus.getAttribute('aria-pressed') === 'false') mark('sound-off');
-      else if (model.state.done.includes('sound-off')) mark('sound-on');
-    }
-    if (model.lesson.id === 'overview' && event.target.closest('[data-search-open-app="dolphin"]') && model.state.done.includes('app-search') && appState.dolphin === 'open') mark('search-launch');
+    const setting = event.target.closest('[data-area-window="systems"] [data-toggle]');
+    if (setting && guide.observeToggle(model,setting.textContent.trim(),setting.getAttribute('aria-pressed') === 'true')) {guide.save();lastSignature = '';}
     check();
   });
   document.addEventListener('pointerdown', event => {
     if (!model.active() || model.state.index === 0 || event.target.closest('#spatialGuide')) return;
     if (event.target.closest('[data-app-frame],[data-area-resize],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),event.target.getBoundingClientRect())) setCompact(true);
   }, true);
-  // Window controls stop bubbling; inspect them after their own click action.
-  document.addEventListener('click', () => setTimeout(check, 0), true);
+  // Capture the selected search result, then validate after the app's own action.
+  document.addEventListener('click', event => {
+    const result = event.target.closest('[data-search-open-app],[data-search-launch-app="Spatial Guide"]');
+    const search = result && {query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp)),launch:result.dataset.searchOpenApp || result.dataset.searchLaunchApp};
+    setTimeout(() => {
+      if (model.active() && search && guide.observeSearch(model,{...search,opened:Object.keys(appState).filter(name=>appState[name] === 'open' && isLocalApp(name)).map(name=>appInfo[name].base || name).concat(window.hidden ? [] : ['Spatial Guide'])})) {guide.save();lastSignature = '';}
+      check();
+    },0);
+  }, true);
   document.addEventListener('pointerup', check);
   document.addEventListener('keyup', check);
-  document.addEventListener('input', event => {
-    if (model.active() && model.lesson.id === 'overview' && event.target.id === 'universalSearchInput' && normalizeSearchText(event.target.value).includes('dolphin')) mark('app-search');
-  });
+  document.addEventListener('input',()=>setTimeout(check,0));
   globalThis.addEventListener('resize', positionGuide);
   $('.guide-titlebar', window).addEventListener('pointerdown', event => {
     if (event.button !== 0 || event.target.closest('button')) return;

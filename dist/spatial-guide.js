@@ -4,24 +4,24 @@
   const key = 'spatial-guide-v1', prefix = 'spatial-guide-practice:';
   const lessons = [
     {id:'welcome', title:'Your desktop, one step at a time', text:'Start with an empty desktop, just like your first sign-in. We will reveal one part at a time and let you try it yourself.', task:'Ready to explore?', level:0},
-    {id:'system', title:'The System Area', text:'This glass Area holds your clock, notifications, device controls and quick settings. A toggle has a light inside its bottom edge: lit means on.', task:'Switch Sound off, then on again in the System Area.', level:1, goals:['sound-off','sound-on'], target:'[data-area-window="systems"]'},
+    {id:'system', title:'The System Area', text:'This glass Area holds your clock, notifications, device controls and quick settings. A toggle has a light inside its bottom edge: lit means on.', task:'Choose any quick setting in the System Area. Switch it off, then switch the same setting on again.', level:1, goals:['toggle-off','toggle-on'], target:'[data-area-window="systems"]'},
     {id:'resize-areas', title:'Give Areas the space you need', text:'Glass Areas have a resize handle on their inner border. Drag it a little toward the desktop to widen the Area, or toward the screen edge to narrow it. This is your choice; the desktop uses the remaining space.', task:'Drag the inner border of the System Area to change its width.', level:1, goals:['area-resized'], target:'[data-area-resize="systems"]'},
-    {id:'apps', title:'The Apps Area', text:'The Apps Area keeps your visible windows within reach. Its numbered icons follow the windows on your desktop. Later, this Area will also hold parked apps.', task:'Open Notes using the practice launcher in the Apps Area.', level:2, goals:['notes-open'], target:'#guidePracticeLauncher'},
-    {id:'tiling', title:'Windows arrange themselves', text:'New windows automatically tile into the available desktop space. Left-drag a title bar to change their arrangement; you do not need to place every window by hand.', task:'Open Dolphin from the practice launcher. Both windows should share the available space.', level:2, goals:['two-tiled'], target:'#guidePracticeLauncher'},
-    {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag the Notes title bar to make its window float.', level:2, goals:['notes-float'], target:'[data-app-frame="notes"] .app-titlebar'},
-    {id:'overview', title:'Find apps in Overview', text:'Overview is now available through the workspace icon in the Apps header, Super, or Ctrl + Space. For now it shows only applications. More parts will appear when you learn about them.', task:'Open Overview, search for “Dolphin”, then open its search result.', level:3, goals:['app-search','search-launch'], target:'#allAppsToggle'},
+    {id:'apps', title:'The Apps Area', text:'The Apps Area keeps your visible windows within reach. Its numbered icons follow the windows on your desktop. Later, this Area will also hold parked apps.', task:'Choose any app from the practice launcher in the Apps Area and open it.', level:2, goals:['app-open'], target:'#guidePracticeLauncher'},
+    {id:'tiling', title:'Windows arrange themselves', text:'New windows automatically tile into the available desktop space. Left-drag a title bar to change their arrangement; you do not need to place every window by hand.', task:'Open another app window of your choice. Both windows should share the available space.', level:2, goals:['two-tiled'], target:'#guidePracticeLauncher'},
+    {id:'float', title:'Middle-drag to float', text:'Hold the middle mouse button on a window title bar and drag. The window can float freely and borrow space from Areas. Alt + left-drag does the same thing. You can also choose Float window from the title bar’s right-click menu.', task:'Middle-drag any app’s title bar to make its window float.', level:2, goals:['app-float'], target:'[data-app-frame] .app-titlebar'},
+    {id:'overview', title:'Find apps in Overview', text:'Overview is now available through the workspace icon in the Apps header, Super, or Ctrl + Space. For now it shows only applications. More parts will appear when you learn about them.', task:'Open Overview, search for any available app, then open it from the search results.', level:3, goals:['app-search','search-launch'], target:'#allAppsToggle'},
     {id:'fullscreen', title:'Full screen between Areas', text:'Left-click the maximize button to fill the desktop space between Areas. Your Areas stay accessible. Repeat the click to restore the window.', task:'Maximize an app between Areas, then left-click the same button to restore it.', level:3, goals:['bounded-enter','bounded-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
     {id:'true-fullscreen', title:'True full screen', text:'Middle-click the same maximize button. The app uses the whole display and Areas yield. This is different from filling the space between Areas. Escape restores the desktop.', task:'Enter true full screen in an app, then press Escape to return.', level:3, goals:['full-enter','full-exit'], target:'[data-app-frame] [data-window-action="maximize"]'},
-    {id:'park', title:'Park instead of minimize', text:'There is no minimization here. Park puts an app into the Apps Area as a useful live card. Its note, controls and content remain available; the app is still running.', task:'Type a short note in Notes, then use its Park button.', level:4, goals:['note-written','notes-park'], target:'[data-app-frame="notes"]'},
-    {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked note stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
-    {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Find your note in its parked card and click Unpark.', level:4, goals:['notes-unpark'], target:'#miniStack'},
-    {id:'desktops', title:'More room, vertically', text:'Each workspace has multiple desktops. Click empty desktop space or any Area to unfocus a window, then scroll to the next desktop. Areas stay in place. Win + scroll also works while a window is focused.', task:'Go to Desktop 2, then return to Desktop 1. The left-side markers show your position.', level:5, goals:['desktop-next','desktop-return'], target:'.desktop-page-rail'},
+    {id:'park', title:'Park instead of minimize', text:'There is no minimization here. Park puts an app into the Apps Area as a useful live card. Its note, controls and content remain available; the app is still running.', task:'Choose any open app and use its Park button. Find its live card in the Apps Area.', level:4, goals:['app-park'], target:'[data-app-frame] [data-window-action="minimize"]'},
+    {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked app stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
+    {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Unpark any parked app using its live card or rail icon. Its content and controls return with it.', level:4, goals:['app-unpark'], target:'#miniStack'},
+    {id:'desktops', title:'More room, vertically', text:'Each workspace has multiple desktops. Click empty desktop space or any Area to unfocus a window, then scroll to the next desktop. Areas stay in place. Win + scroll also works while a window is focused.', task:'Move to another desktop, then return to the desktop where you started. The left-side markers show your position.', level:5, goals:['desktop-next','desktop-return'], target:'.desktop-page-rail'},
     {id:'projects', title:'Start your own project', text:'A project has its own vertical set of desktops, containing only its windows. The Project Area keeps its folder, quick note and resources together. Start with an empty project so you can see exactly what belongs to it.', task:'Choose New project in the Project Area, give it a name of your own, then create it. Leave the folder blank to use the workspace’s Projects folder.', level:6, goals:['project-created'], target:'[data-create-area-project]'},
-    {id:'project-app', title:'An app belongs where you open it', text:'Your new project starts empty. An app opened here gets its own window in this project. Opening Notes here will not move or replace the note you wrote on your ordinary desktop.', task:'Use Overview to open Notes in your project.', level:6, goals:['project-notes-open'], target:'#allAppsToggle'},
-    {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace and find your original note, return to your project, then switch to Workspace again.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
+    {id:'project-app', title:'An app belongs where you open it', text:'Your new project starts empty. An app opened here gets its own window in this project. Opening an app here will not move or replace its window on your ordinary desktop.', task:'Use Overview to open any app in your project.', level:6, goals:['project-app-open'], target:'#allAppsToggle'},
+    {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace and find your apps, return to your project, then switch to Workspace again.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
     {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. Create one for a part of your life: study, work, music, or anything you choose. It starts empty while your General windows stay in General.', task:'Open Overview, choose New workspace, give it your own name, then create it.', level:7, goals:['workspace-created'], target:'#newWorkspaceButton'},
-    {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open your workspace’s Downloads folder. Check its own Home path in Dolphin.', level:8, goals:['workspace-downloads'], target:'.workspace-home-card'},
-    {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your note and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
+    {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open any standard Home folder in your new workspace. Check that its path belongs to this workspace.', level:8, goals:['workspace-folder'], target:'.workspace-home-card'},
+    {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your apps and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
     {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this final task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
     {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
   ];
@@ -31,10 +31,13 @@
     const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
     const legacyIds = saved.version === 2 ? version2Ids : oldIds;
     if (saved.lessonId) state.index = lessons.findIndex(lesson => lesson.id === saved.lessonId);
-    else if (saved.status && saved.version !== 3 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
-    state.version = 3;
+    else if (saved.status && ![3,4].includes(saved.version) && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
+    state.version = 4;
     state.index = Math.max(0, Math.min(lessons.length - 1, Number(state.index) || 0));
-    state.done = Array.isArray(state.done) ? state.done.filter(value => (lessons[state.index].goals || []).includes(value)) : [];
+    const legacyGoals = {'sound-off':'toggle-off','sound-on':'toggle-on','notes-open':'app-open','notes-float':'app-float','notes-park':'app-park','notes-unpark':'app-unpark','project-notes-open':'project-app-open','workspace-downloads':'workspace-folder'};
+    if (Array.isArray(saved.done) && saved.done.includes('notes-park')) state.parkedWindow ||= 'notes';
+    if (Array.isArray(saved.done) && saved.done.includes('sound-off')) state.practiceToggle ||= 'Sound';
+    state.done = Array.isArray(state.done) ? state.done.map(value=>legacyGoals[value] || value).filter(value => (lessons[state.index].goals || []).includes(value)) : [];
     return {
       get state() { return state; },
       get lesson() { return lessons[state.index]; },
@@ -50,7 +53,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -58,7 +61,7 @@
       },
       start(mode = 'repeat', chapter = null) {
         const index = lessons.findIndex(lesson => lesson.id === chapter && lesson.goals);
-        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:3};
+        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:4};
         if (index > 0) state.chapter = chapter;
       },
       leave(status = 'skipped') { state.status = status; },
@@ -77,36 +80,80 @@
       model.state.practiceWindow = current;
       changed = model.mark(enter);
     } else if (model.state.done.includes(enter)) {
-      const name = model.state.practiceWindow || 'notes'; // legacy in-progress lesson
+      const name = model.state.practiceWindow || open[0]; // legacy in-progress lesson
       if (open.includes(name) && !full && (trueMode || bounded !== name)) changed = model.mark(exit);
     }
     return changed;
   }
   const goalLabels = {
-    'sound-off':'Switch Sound off', 'sound-on':'Switch Sound on again',
-    'area-resized':'Change the System Area width', 'notes-open':'Open Notes', 'two-tiled':'Open Dolphin beside Notes',
-    'notes-float':'Float the Notes window', 'app-search':'Search for Dolphin', 'search-launch':'Open its search result',
+    'toggle-off':'Switch any setting off', 'toggle-on':'Switch the same setting on again',
+    'area-resized':'Change the System Area width', 'app-open':'Open any app', 'two-tiled':'Tile two app windows together',
+    'app-float':'Float any app window', 'app-search':'Search for an app of your choice', 'search-launch':'Open its search result',
     'bounded-enter':'Maximize an app between Areas', 'bounded-exit':'Restore that window',
     'full-enter':'Enter true full screen', 'full-exit':'Press Escape to return',
-    'note-written':'Write a short note', 'notes-park':'Park Notes', 'apps-rail':'Narrow Apps to a rail',
-    'apps-expanded':'Expand Apps again', 'notes-unpark':'Unpark your note',
-    'desktop-next':'Visit Desktop 2', 'desktop-return':'Return to Desktop 1',
-    'project-created':'Create your own empty project', 'project-notes-open':'Open Notes inside your project',
-    'project-workspace':'Find your original note in Workspace', 'project-return':'Return to your project',
+    'app-park':'Park any app window', 'apps-rail':'Narrow Apps to a rail',
+    'apps-expanded':'Expand Apps again', 'app-unpark':'Unpark a parked app',
+    'desktop-next':'Visit another desktop', 'desktop-return':'Return to your starting desktop',
+    'project-created':'Create your own empty project', 'project-app-open':'Open any app inside your project',
+    'project-workspace':'Find your apps in Workspace', 'project-return':'Return to your project',
     'project-workspace-return':'Switch back to Workspace', 'workspace-created':'Create your own empty workspace',
-    'workspace-downloads':'Open your workspace’s Downloads folder', 'general-return':'Return to General',
+    'workspace-folder':'Open any of your workspace’s Home folders', 'general-return':'Return to General',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
-  // Only prerequisites are supplied. The selected chapter's actions remain undone.
+  // Supply missing windows for skip/replay, retaining the learner’s own app choices.
   function prerequisites(id) {
     const index = lessons.findIndex(lesson => lesson.id === id);
-    return {
-      notes:index >= 4, dolphin:index >= 5 && index <= 8,
-      noteText:index >= 10, parked:['area-rail','unpark'].includes(id),
+    return {window:index >= 4, parked:['area-rail','unpark'].includes(id),
       project:index >= 14, projectApp:index >= 15,
       inProject:['project-app','project-navigation'].includes(id),
-      ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'
-    };
+      ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'};
+  }
+  function observeWindows(model, scene) {
+    if (!model.active()) return false;
+    const before = JSON.stringify(model.state), id = model.lesson.id, done = model.state.done;
+    const {open = [], states = {}, tiled = [], floating = [], column = 'workspace', page = 0} = scene;
+    const remember = name => {model.state.workspaceWindow = name; if(scene.bases?.[name]) model.state.preferredApp = scene.bases[name];};
+    if (id === 'apps' && open.length) {remember(open[0]);model.mark('app-open');}
+    if (id === 'tiling' && tiled.length >= 2) model.mark('two-tiled');
+    if (id === 'float' && floating.length && !scene.interacting) {remember(floating[0]);model.mark('app-float');}
+    if (id === 'park') {
+      model.state.parkingBaseline ||= Object.keys(states).filter(name=>states[name] === 'minimized');
+      model.state.parkingBaseline = model.state.parkingBaseline.filter(name=>states[name] === 'minimized');
+      const name = Object.keys(states).find(name=>states[name] === 'minimized' && !model.state.parkingBaseline.includes(name));
+      if (name) {remember(name);model.state.parkedWindow = name;model.mark('app-park');}
+    }
+    if (id === 'unpark') {
+      model.state.unparkCandidates = [...new Set([...(model.state.unparkCandidates || []), ...Object.keys(states).filter(name=>states[name] === 'minimized')])];
+      const name = model.state.unparkCandidates.find(name=>open.includes(name));
+      if (name) {remember(name);model.state.parkedWindow = name;model.mark('app-unpark');}
+    }
+    if (id === 'project-app' && column === model.state.practiceProject && open.length) model.mark('project-app-open');
+    if (id === 'project-navigation') {
+      if (column === 'workspace') {
+        if (done.includes('project-return')) model.mark('project-workspace-return');
+        else if (open.length) model.mark('project-workspace');
+      } else if (column === model.state.practiceProject && done.includes('project-workspace')) model.mark('project-return');
+    }
+    if (id === 'desktops') {
+      model.state.desktopOrigin ||= {page,column};
+      const origin = model.state.desktopOrigin;
+      if (column === origin.column && page !== origin.page) model.mark('desktop-next');
+      else if (column === origin.column && page === origin.page && done.includes('desktop-next')) model.mark('desktop-return');
+    }
+    return before !== JSON.stringify(model.state);
+  }
+  function observeToggle(model, name, active) {
+    if (model.lesson.id !== 'system' || !name) return false;
+    if (!active && !model.state.done.includes('toggle-off')) {model.state.practiceToggle = name; return model.mark('toggle-off');}
+    if (active && model.state.practiceToggle === name && model.state.done.includes('toggle-off')) return model.mark('toggle-on');
+    return false;
+  }
+  function observeSearch(model, {query = '', results = [], launch, opened = []}) {
+    if (model.lesson.id !== 'overview' || !query.trim() || !results.length) return false;
+    let changed = model.mark('app-search');
+    model.state.searchQuery = query; model.state.searchResults = results;
+    if (launch && results.includes(launch) && opened.includes(launch)) changed = model.mark('search-launch') || changed;
+    return changed;
   }
   function recovery(model, scene) {
     if (!model.active() || model.ready()) return null;
@@ -115,15 +162,15 @@
     if (id === 'fullscreen' && scene.full) return hint('This is true full screen. Press Escape, then left-click maximize for the space between Areas.','escape','Exit true full screen');
     if (['fullscreen','true-fullscreen'].includes(id)) {
       if (model.state.practiceWindow && !scene.open.includes(model.state.practiceWindow)) return hint('The window used for this task was closed or parked. Reopen it and try the full-screen task again.','fullscreen-retry','Reopen and retry');
-      if (!scene.open.length) return hint('Open an app before trying its full-screen controls.','open-app','Open Notes');
+      if (!scene.open.length) return hint('Open any app before trying its full-screen controls.','window','Open an app');
     }
     const ownWorkspace = ['folders','return'].includes(id);
     if (scene.workspace !== (ownWorkspace ? model.state.practiceWorkspace : 'general') && id !== 'workspaces') return hint('This task belongs in ' + (ownWorkspace ? 'your new workspace' : 'General') + '. Your practice work is still there.','workspace', ownWorkspace ? 'Return to your workspace' : 'Return to General');
     if (['project-app','project-navigation','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
     if (id === 'project-app' && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
-    if (['tiling','float','park','unpark','project-navigation'].includes(id) && scene.notesState === 'closed') return hint('Your original Notes window was closed. Reopen it to continue; saved note content stays with the window.','notes','Reopen your note');
-    if (['tiling','float','park','unpark'].includes(id) && (!scene.notesVisible || scene.column !== 'workspace')) return hint('Your note is on another desktop. Return to it before continuing this task.','notes','Go to your note');
-    if (['tiling','float','park'].includes(id) && scene.notesState === 'minimized') return hint('Your note is parked. Bring it back onto the desktop for this task.','notes','Unpark your note');
+    if (['tiling','float','park'].includes(id) && (scene.column !== 'workspace' || !scene.open.length)) return hint('Bring any app onto the Workspace desktop for this task. Your existing windows and saved content are still available.','window','Bring an app here');
+    if (id === 'unpark' && !scene.parked?.length && !(model.state.unparkCandidates || []).some(name=>scene.open.includes(name))) return hint('There is no parked app available. Park any window, then bring it back using its card or rail icon.','park-app','Prepare a parked app');
+    if (id === 'project-navigation' && scene.column === 'workspace' && !scene.open.length) return hint('Open or unpark any app in Workspace before comparing it with your project.','window','Open a Workspace app');
     if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize for true full screen.','true-fullscreen','Enter true full screen');
     return null;
   }
@@ -138,7 +185,7 @@
     const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
     return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
   }
-  const api = {lessons, create, observeFullscreen, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
+  const api = {lessons, create, observeFullscreen, observeWindows, observeToggle, observeSearch, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}
