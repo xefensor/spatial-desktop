@@ -135,7 +135,7 @@ function storageAdapter(seed) {
   const storage = new Map(Object.entries(seed));
   const noteField = { value: D.note, addEventListener() {} };
   const context = vm.createContext({
-    SpatialDemoExamples: D,
+    SpatialDemoExamples: D, desktopPreset:"demo",
     workspaceProfiles: { general: { home: '/home/demo' }, school: { home: '/home/demo/Workspaces/School' }, work: { home: '/home/demo/Workspaces/Work' }, gaming: { home: '/home/demo/Workspaces/Gaming' } },
     appInfo: { browser: {}, dolphin: {}, notes: {}, terminal: {}, elisa: {} },
     activeWorkspace: 'general',
