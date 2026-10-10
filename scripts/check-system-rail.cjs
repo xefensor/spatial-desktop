@@ -63,5 +63,13 @@ for (const edge of ['left', 'right', 'top', 'bottom']) {
   reveal(); frames.shift()();
   listeners.pointerdown({ target: {} });
   assert.equal(area.dataset.areaState, 'expanded', 'An intentionally expanded panel stays expanded');
+  let shown = 0;
+  ctx.showArea = (name, announce) => { assert.equal(name,'systems'); assert.equal(announce,false); shown++; area.hidden=false; ctx.layoutDockAreas(); };
+  area.hidden=true; area.dataset.areaState='rail';
+  reveal(); frames.shift()();
+  assert.equal(shown,1,'Opening a widget explicitly restores its hidden System Area');
+  assert.equal(area.hidden,false);
+  assert.equal(area.dataset.areaState,'expanded','A previously hidden rail expands before focusing its widget');
+
 }
 console.log('System rail passed: four dock edges, temporary dimensions, internal focus, outside click/keyboard focus, Escape, interrupted reveals, window blur and manual expansion.');

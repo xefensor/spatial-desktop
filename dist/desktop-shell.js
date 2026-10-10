@@ -5767,10 +5767,11 @@ function applySystemRailExpansion(width, height) {
 
 function revealSystemRailWidget(selector) {
   const area = areaFor("systems");
+  if (area.hidden) showArea("systems", false);
   if (area.dataset.areaState === "rail") {
     systemRailExpansion = { workspace: activeWorkspace, edge: dockState.systems.edge, trigger: document.activeElement };
     layoutDockAreas(false, false);
-  } else if (area.hidden) showArea("systems", false);
+  }
   const expansion = systemRailExpansion;
   requestAnimationFrame(() => {
     if (expansion && expansion !== systemRailExpansion) return;
