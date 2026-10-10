@@ -3625,7 +3625,7 @@ function renderProjectSpace(name) {
   $("#projectLocationNote").classList.toggle("is-custom", location.custom);
   const projectFiles = [[".spatial-project.toml", "Editable project settings", "config"], ...project.files.filter(([label]) => label !== ".spatial-project.toml")];
   $("#projectRootItems").innerHTML = projectFiles.map(([label, detail, type]) => '<button data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : type === "config" ? '<span class="linked-type config">' + icon("i-code") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
-  $("#projectQuickNote").value = project.note || "";
+  if (document.activeElement !== $("#projectQuickNote")) $("#projectQuickNote").value = project.note || "";
   $("#projectNoteState").textContent = "Saved";
   $("#projectLinkedItems").innerHTML = project.resources.map(resourceMarkup).join("");
   $("#projectResourceCount").textContent = project.resources.length + (project.resources.length === 1 ? " linked" : " linked");
@@ -4168,6 +4168,7 @@ function prepareProjectSpaces() {
     clearTimeout(projectNoteSaveTimer);
     projectNoteSaveTimer = setTimeout(() => {
       persistProjectState();
+      queueDesktopStateBroadcast(0);
       $("#projectNoteState").textContent = "Saved";
     }, 320);
   });
@@ -4999,11 +5000,11 @@ function projectSearchResults(query) {
   Object.entries(projectSpaces).forEach(([id, project]) => {
     const searchable = [project.name, project.root, project.summary, ...Object.values(project.modes).map(mode => mode.label)].join(" ");
     if (matchesSearch(searchable, query)) results.push({ id, label: project.name, detail: project.root, search: searchable });
-    (project.resources || []).forEach(([label, detail]) => {
+    if (!globalThis.SpatialMemoryDesktop) (project.resources || []).forEach(([label, detail]) => {
       const search = label + " " + detail;
       if (matchesSearch(search, query)) results.push({ id, label, detail: project.name + " · " + detail, search, resource: label });
     });
-    if (matchesSearch(project.note || "", query)) results.push({ id, label: project.name + " · Quick note", detail: "Open this project's note", search: project.note, note: true });
+    if (!globalThis.SpatialMemoryDesktop && matchesSearch(project.note || "", query)) results.push({ id, label: project.name + " · Quick note", detail: "Open this project's note", search: project.note, note: true });
   });
   return results;
 }
