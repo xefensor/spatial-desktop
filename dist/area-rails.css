@@ -1,3 +1,44 @@
+/* Open windows occupy the start of the Apps rail; parked windows its end.
+   Expanded Areas keep the same continuous grid and keyboard slot order. */
+.app-rack-group{display:contents}
+.apps-zone[data-area-state="rail"] .app-rack{
+  display:flex;
+  flex-direction:column;
+  flex:1 1 0;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  gap:12px;
+}
+.apps-zone[data-area-state="rail"] .app-rack-group{
+  display:flex;
+  flex-direction:column;
+  flex:0 1 auto;
+  min-width:0;
+  min-height:0;
+  gap:3px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+}
+.apps-zone[data-area-state="rail"] .app-rack-group::-webkit-scrollbar{display:none}
+.apps-zone[data-area-state="rail"] .app-rack-group .app-key{flex:0 0 48px}
+.apps-zone[data-area-state="rail"] .app-rack-parked{margin-top:auto}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{
+  display:flex;
+  flex-direction:row;
+  flex:1 1 0;
+  width:100%;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack-group{
+  flex-direction:row;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack-group .app-key{width:48px}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack-parked{margin-top:0;margin-left:auto}
+
 /* Rails keep a start, a working middle and an end along their dock edge. */
 .system-rail-start,.system-rail-middle{display:none}
 .area-window[data-area-state="rail"] .rail-group{

@@ -7081,12 +7081,16 @@ function workspaceShortcutNames() {
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
   $('#appRack').hidden = names.length === 0;
-  $('#appRack').innerHTML = names.map((name, index) => {
+  const buttons = names.map((name, index) => {
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
     return '<button class="app-key" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + ' · ' + shortcut + ' · Shift+click: new window') + '" aria-label="' + escapeHtml(info.label + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
-  }).join('');
+  });
+  const open = buttons.filter((_, index) => appState[names[index]] === 'open').join('');
+  const parked = buttons.filter((_, index) => appState[names[index]] === 'minimized').join('');
+  $('#appRack').innerHTML = (open ? '<div class="app-rack-group app-rack-open" role="group" aria-label="Open applications">' + open + '</div>' : '')
+    + (parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '');
   applyAppPrimaryColors($('#appRack'));
 }
 const originalSyncRack = syncRack;
