@@ -83,15 +83,13 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 }
 .desktop-page-mark{display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;background:var(--sd-glass-muted);opacity:.5;border-radius:0}
 .desktop-page-mark.is-current{width:3px;height:34px;background:var(--desktop-marker-accent,var(--sd-glass-text));opacity:1}
-/* Light windows still leave a dark wallpaper gutter. Two-tone markings
-   remain readable against both that gutter and a pale empty desktop. */
+/* Muted blue-gray marks stay legible in the light theme's wallpaper gutter.
+   Size carries the current state without bright outlines or a white fill. */
 body[data-theme="light"] .desktop-page-mark{
-  width:3px;height:24px;background:#203845;opacity:1;
-  box-shadow:0 0 0 1px #f7fbff;
+  width:3px;height:24px;background:#6f8a99;opacity:1;box-shadow:none;
 }
 body[data-theme="light"] .desktop-page-mark.is-current{
-  width:4px;height:40px;background:#f7fbff;
-  box-shadow:0 0 0 1px #173240;
+  width:4px;height:38px;background:#8faab8;box-shadow:none;
 }
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
