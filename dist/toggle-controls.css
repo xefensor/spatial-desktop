@@ -1,16 +1,11 @@
-/* One bottom line per persistent control. Light follows the current state
-   and sits on the existing bottom edge, never on a second inset rail. */
+/* One inset state line per persistent control. The engraving belongs inside
+   its button, with room between the light and the outer bottom edge. */
 body[data-theme] button.control-toggle {
   position:relative;
   --toggle-line-color:var(--sd-glass-groove,var(--control-rail));
   --toggle-line-glow:none;
   --toggle-line-opacity:.7;
-  --toggle-line-inset:auto 0 -1px;
-}
-/* These controls have no visible border to reuse. Their single engraving
-   stays inside the bottom edge rather than extending past the icon/row. */
-body[data-theme] button.control-toggle:is(.app-key,.nav-choice,.overview-task) {
-  --toggle-line-inset:auto 7px 0;
+  --toggle-line-inset:auto 7px 3px;
 }
 body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):not(.control-push)::after {
   content:""!important;
@@ -53,18 +48,18 @@ body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-b
    Legacy selection shadows on the left otherwise add a second state marker
    in Places, Notes, application categories and Overview project/results. */
 body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.nav-choice,.launcher-category,.overview-project,.universal-result) {
-  --toggle-line-inset:auto 7px 0;
+  --toggle-line-inset:auto 7px 3px;
   border:0!important;
   box-shadow:none!important;
 }
-/* Workspace tabs and package choices already have an inset bottom line.
-   Drive that existing line with the shared state; do not draw a pseudo rail. */
+/* Reuse the shared inset engraving for tabs and choices; remove their old
+   bottom-edge shadow so there is never a second state line. */
 body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.workspace-tab,[data-package-mode]) {
   border-bottom-color:transparent!important;
-  box-shadow:inset 0 -2px var(--toggle-line-color)!important;
+  box-shadow:none!important;
 }
-body[data-theme] button.control-toggle:is(.material-glass-button,.material-abs-button):is(.workspace-tab,[data-package-mode])::after {
-  content:none!important;
+/* Overview tasks used a separate child light before receiving the shared rail. */
+body[data-theme] button.overview-task.control-toggle>i {
   display:none!important;
 }
 body[data-theme] button.control-push::after {
