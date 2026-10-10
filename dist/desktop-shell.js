@@ -3122,6 +3122,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   captureBaseDockLaneRects();
   applyAutoAvoidance();
   applySystemRailExpansion(width, height);
+  globalThis.SpatialMemoryDesktop?.applyRailExpansion(width, height);
   document.body.classList.add("areas-docked");
   document.body.classList.remove("areas-freeform", "areas-auto");
   if (areasFollowWindows() && fitWindows && !windowViewportLockReady) scheduleWindowFit();
