@@ -165,7 +165,7 @@
     else F.copyAsset(pair[1],file).then(renderFile).catch(()=>{section.textContent='This saved file is unavailable in this browser.';});return true;
   }
   document.addEventListener('click',event=>{const button=event.target.closest('[data-stash-edit]');if(!button)return;const id=button.dataset.stashProject;activateProject(id,false);render(true);const item=itemsFor(current).find(item=>(item.fileId||item.id)===button.dataset.stashEdit);if(item)editor(item);});
-  globalThis.SpatialMemoryDesktop={itemFor,fileRows:path=>{const pair=projectAtFolder(path);return pair?F.rows(pair[1]):null;},openFile:openSavedFile,render,search,remember,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
+  globalThis.SpatialMemoryDesktop={itemFor,items:()=>itemsFor(scope()),fileRows:path=>{const pair=projectAtFolder(path);return pair?F.rows(pair[1]):null;},openFile:openSavedFile,render,search,remember,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
   Object.values(model.snapshot().records).filter(item=>item.kind==='next'&&!item.deleted).forEach(item=>model.promoteNext(item.scope,projectFor(item.scope)?.note));
   seed();save();render(true);refreshStashBrowsers();prepareControlSemantics(rail.parentElement);
 })();

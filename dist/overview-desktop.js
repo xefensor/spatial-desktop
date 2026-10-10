@@ -11,7 +11,7 @@
   let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
-  function allowed(){return SpatialTimeline.sections.filter(id=>!limited()||id==='apps'||id==='projects'&&SpatialGuide.model.allows('projects'));}
+  function allowed(){return SpatialTimeline.sections.filter(id=>!globalThis.SpatialGuide?.model.active()||id==='apps'||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]));}
   function centre(panel){return panel.offsetLeft+panel.offsetWidth/2-track.clientWidth/2;}
   function setCurrent(id){
     active=id;
@@ -64,7 +64,7 @@
     // Read the preference in the frame: a later explicit navigation wins.
     requestAnimationFrame(()=>{
       let id=preferred[activeWorkspace]||'apps';
-      if(limited())id=['folders','return'].includes(SpatialGuide.model.lesson.id)?'projects':'apps';
+      if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='apps';}
       if(!scrolling||id!==active)select(id,false);
     });
   }
@@ -102,7 +102,7 @@
     try{desktopStorage.setItem(historyKey,JSON.stringify(model.snapshot()));}catch{}
   }
   function record(type,data={}){
-    if(recordingSuspended||globalThis.SpatialGuide?.model.active()||desktopSyncApplying)return;
+    if(recordingSuspended||globalThis.SpatialGuide?.settingUp||globalThis.SpatialGuide?.displayCompanion||desktopSyncApplying)return;
     const app=data.app||'',owner=app&&appInfo[app]?desktopPages.columnOf(activeWorkspace,app):desktopPages.column(activeWorkspace);
     const project=data.project===undefined?(owner==='workspace'?'':owner):(data.project||'');
     const event=model.add({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),time:Date.now(),workspace:activeWorkspace,type,
@@ -141,7 +141,7 @@
     }
     const ticks=view.ticks.map(t=>'<div class="timeline-time-rule" style="top:'+t.top+'px"><time>'+escapeHtml(clock(t.time))+'</time></div>').join('');
     const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+group.events.map(e=>'<article class="timeline-entry" role="listitem" title="'+escapeHtml([descriptions[e.type],e.path||e.address].filter(Boolean).join(' · '))+'">'+card(e)+'</article>').join('')+'</div>').join('');
-    const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
+    const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" data-timeline-plan="'+escapeHtml(e.id)+'" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
     const nowLine=timelineDay===today&&view.nowTop>=0&&view.nowTop<=view.height?'<div class="timeline-now" style="top:'+view.nowTop+'px"><span>Now</span></div>':'';
     $('#timelineEntries').innerHTML='<div class="timeline-lane-headings"><span>Time</span><h4>Desktop activity</h4><h4>Calendar & tasks</h4></div><div class="timeline-day-grid" style="height:'+(view.height+30)+'px">'+ticks+'<div class="timeline-activity-lane" role="list" aria-label="Desktop activity">'+activity+'</div><div class="timeline-planned-lane" role="list" aria-label="Calendar, tasks and reminders">'+plans+'</div>'+nowLine+(!activity&&!plans?'<p class="timeline-empty"><b>No items on this day</b>Choose another day, change the filter or add an event.</p>':'')+'</div>';
     prepareControlSemantics($('#timelineEntries'));syncAgenda(now);
@@ -158,7 +158,7 @@
     if(open){
       $('#timelinePlanProject').innerHTML='<option value="">Workspace</option>'+Object.entries(projectSpaces).map(([id,project])=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(project.name)+'</option>').join('');
       const column=desktopPages.column(activeWorkspace);$('#timelinePlanProject').value=column==='workspace'?'':column;
-      const date=new Date();date.setHours(date.getHours()+1,0,0,0);const local=new Date(date-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      const date=new Date();if(globalThis.SpatialGuide?.model.active()&&SpatialGuide.model.lesson.id==='timeline'){date.setTime(SpatialGuide.model.state.timelineActivity?.time||Date.now());date.setMinutes(Math.floor(date.getMinutes()/15)*15,0,0);$('#timelinePlanKind').value='calendar.event';}else date.setHours(date.getHours()+1,0,0,0);const local=new Date(date-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
       $('#timelinePlanTime').value=local;$('#timelinePlanEnd').value=new Date(date.getTime()+3600000-date.getTimezoneOffset()*60000).toISOString().slice(0,16);syncPlanEnd();$('#timelinePlanTitle').focus();
     }else toggle.focus?.({preventScroll:true});
   }
@@ -215,14 +215,14 @@
     if(type==='calendar.event'&&(!Number.isFinite(endTime)||endTime<=time))return;
     const item=planner.put({endTime,id:globalThis.crypto?.randomUUID?.()||Date.now()+'-plan-'+Math.random().toString(36).slice(2),workspace:activeWorkspace,type,time,title,detail:$('#timelinePlanDetail').value,project,projectName:projectSpaces[project]?.name||''});
     if(!item)return;
-    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);timelineDay=SpatialTimeline.dayKey(time);timelineRenderedDay='';renderTimeline();
+    savePlanner();$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';$('#timelineType').value='all';$('#timelineQuery').value='';showPlanForm(false);timelineDay=SpatialTimeline.dayKey(time);timelineRenderedDay='';renderTimeline();const entry=$$('.timeline-plan-block',$('#timelineEntries')).find(e=>e.dataset.timelinePlan===item.id);if(entry)$('#timelineScroll').scrollTop=Math.max(0,entry.offsetTop-24);
   });
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
   window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
   window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
   globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
-  globalThis.SpatialTimelineDesktop={record,render:renderTimeline,suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
+  globalThis.SpatialTimelineDesktop={record,render:renderTimeline,snapshot:()=>({activity:model.list(activeWorkspace),plans:planner.list(activeWorkspace)}),suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
   // Existing browser history contains actual visits; preserve its original timestamps.
   for(const [workspace,content] of Object.entries(workspaceContent)){
     for(const visit of (content?.history||[]).slice(-100))model.add({id:'legacy-web:'+workspace+':'+visit.time+':'+visit.address,workspace,type:'browser.visit',time:visit.time,title:visit.address,address:visit.address,base:'browser'});

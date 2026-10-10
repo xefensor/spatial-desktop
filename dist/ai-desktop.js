@@ -28,7 +28,7 @@
   }
   function setMode(mode,save=true){model.mode(activeWorkspace,mode);if(save)persist();}
   function expand(focus=true){
-    if(globalThis.SpatialGuide?.model.active())return;
+    if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
     if(extendedDesktopActive()&&!isLocalArea('ai')){displayAssignmentsFor().areas.ai=localDisplaySlot();persistDisplayAssignments();}
     area.hidden=false;setMode('expanded');layoutDockAreas(true);scheduleWindowTiling();if(focus)prompt.focus();
   }
@@ -45,7 +45,7 @@
   $('#aiComposer').addEventListener('submit',event=>event.preventDefault());
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
-  document.addEventListener('keydown',event=>{if((event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&!globalThis.SpatialGuide?.model.active()){event.preventDefault();event.stopPropagation();superKeyAlone=false;toggle();}},true);
+  document.addEventListener('keydown',event=>{if((event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;toggle();}},true);
 
   function baseSource(target){
     const frame=target.closest('[data-app-frame]'),app=frame?.dataset.appFrame,owner=app&&desktopPages.columnOf(activeWorkspace,app);
@@ -75,7 +75,7 @@
     const clear=()=>{gesture=null;area.classList.remove('is-ai-drop-target');};
     document.addEventListener('pointerdown',event=>{
       suppressClick=false;
-      if(event.button!==0||globalThis.SpatialGuide?.model.active()||area.contains(event.target))return;
+      if(event.button!==0||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))||area.contains(event.target))return;
       const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id]');
       if(!source||event.target.closest('input,textarea,a,audio,summary,iframe')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;

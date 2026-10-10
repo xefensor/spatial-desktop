@@ -153,7 +153,7 @@ timeline.record('workspace',{title:'Work'});
 assert(JSON.parse(data.get('spatial-workspace-timeline-v1')).work.some(event=>event.type==='workspace'),'Logging resumes after an interrupted restore');
 
 context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};
-const beforeGuide=data.get('spatial-workspace-timeline-v1');timeline.record('app.park',{app:'dolphin'});assert.equal(data.get('spatial-workspace-timeline-v1'),beforeGuide,'Guide actions do not enter saved history');
+context.SpatialGuide.settingUp=true;const beforeGuide=data.get('spatial-workspace-timeline-v1');timeline.record('app.park',{app:'dolphin'});assert.equal(data.get('spatial-workspace-timeline-v1'),beforeGuide,'Guide prerequisite setup is not recorded as learner activity');context.SpatialGuide.settingUp=false;
 overview.refresh();assert.equal(overview.active(),'apps');assert.equal(tabs[0].hidden,true);assert.equal(tabs[2].hidden,true);assert(edges.every(edge=>edge.hidden),'Only introduced sections are navigable');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/overview-desktop.js'),'utf8');
 context.desktopPreset='demo';vm.runInContext(source,context);

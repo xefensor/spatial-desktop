@@ -17,26 +17,33 @@
     {id:'area-rail', title:'A rail keeps your apps within reach', text:'Narrow the Apps Area to a rail by dragging its inner border toward the screen edge. Open apps stay at the top and parked apps appear as icons at the bottom. Right-click a parked icon for app actions. Widen the Area again to see its live cards.', task:'Turn the Apps Area into a rail, then expand it again. Your parked app stays available.', level:4, goals:['apps-rail','apps-expanded'], target:'[data-area-resize="apps"]'},
     {id:'unpark', title:'Your parked app stays useful', text:'In an expanded Area, parked apps have live cards. On a rail, their icons sit at the bottom; right-click offers app actions. Unpark brings the full window onto your current desktop.', task:'Unpark any parked app using its live card or rail icon. Its content and controls return with it.', level:4, goals:['app-unpark'], target:'#miniStack'},
     {id:'desktops', title:'More room, vertically', text:'Each workspace has multiple desktops. Click empty desktop space or any Area to unfocus a window, then scroll to the next desktop. Areas stay in place. Win + scroll also works while a window is focused.', task:'Move to another desktop, then return to the desktop where you started. The left-side markers show your position.', level:5, goals:['desktop-next','desktop-return'], target:'.desktop-page-rail'},
-    {id:'projects', title:'Start your own project', text:'A project has its own vertical set of desktops, containing only its windows. The Project Area keeps its folder, quick note and resources together. Start with an empty project so you can see exactly what belongs to it.', task:'Choose New project in the Project Area, give it a name of your own, then create it. Leave the folder blank to use the workspace’s Projects folder.', level:6, goals:['project-created'], target:'[data-create-area-project]'},
+    {id:'projects', title:'Start your own project', text:'A project has its own vertical set of desktops, containing only its windows. The Project Area keeps its folder, separate quick note and Stash together. The header names every open project; Workspace means your ordinary desktops. Projects save their windows automatically and reopen where you left off. Start with an empty project so you can see exactly what belongs to it.', task:'Choose New project in the Project Area, give it a name of your own, then create it. Leave the folder blank to use the workspace’s Projects folder.', level:6, goals:['project-created'], target:'[data-create-area-project]'},
     {id:'project-app', title:'An app belongs where you open it', text:'Your new project starts empty. An app opened here gets its own window in this project. Opening an app here will not move or replace its window on your ordinary desktop.', task:'Use Overview to open any app in your project.', level:6, goals:['project-app-open'], target:'#allAppsToggle'},
+    {id:'project-stash', title:'Keep useful things with your project', text:'Quick note is a separate, automatically saved scratchpad. Stash keeps notes, links, images, audio and other files in a Stash folder inside this project. Use Add, drop a file or keep selected text with its source. These belong to the project across its desktops.', task:'Write your own quick note, then add and save any useful note, link or file in Stash. Use Open Stash if the Project Area is on a rail.', level:6, goals:['quick-note-saved','stash-saved'], target:'#workingMemory'},
     {id:'project-navigation', title:'Switch projects horizontally', text:'The strip at the top lists Workspace and every open project. Click a name to switch, or unfocus a window and use Shift + scroll. Win + Shift + scroll also works with a focused window. Project switches move the whole scene, including Areas; desktop scrolling moves only the desktop.', task:'Switch to Workspace and find your apps, return to your project, then switch to Workspace again.', level:6, goals:['project-workspace','project-return','project-workspace-return'], target:'.desktop-context-header'},
     {id:'workspaces', title:'Separate parts of your life', text:'Workspaces keep their own windows, Areas, app sessions and media. Create one for a part of your life: study, work, music, or anything you choose. It starts empty while your General windows stay in General.', task:'Open Overview, choose New workspace, give it your own name, then create it.', level:7, goals:['workspace-created'], target:'#newWorkspaceButton'},
     {id:'folders', title:'Each workspace has its own Home', text:'Your new workspace has its own Desktop, Documents, Downloads, Pictures, Videos, Music, Templates and Public folders. Downloads go to this workspace. Projects do not replace Home; they can optionally route their own downloads into a project Downloads folder.', task:'In Overview, open any standard Home folder in your new workspace. Check that its path belongs to this workspace.', level:8, goals:['workspace-folder'], target:'.workspace-home-card'},
     {id:'return', title:'Pick up where you left off', text:'Changing workspaces does not close your work. Return to General and your apps and window arrangement will still be there.', task:'Switch back to General using Overview.', level:8, goals:['general-return'], target:'.workspace-tabs'},
-    {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this independent task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:8, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
+    {id:'ai-context', title:'A fourth Area for AI', text:'AI has its own Area and works with or without a project. Drag an app’s title-bar icon, a file, selected text or a Stash item into it. Origin tags show its workspace, project and app. A project source selects that project folder as the working folder; you can change it explicitly. Write your own request. This prototype has no AI service connected: drafts and attachments stay local, and no answer is generated.', task:'Drag any source from your project into AI. Check its origin tags and working folder, then write a request of your own.', level:9, goals:['ai-project-source','ai-request'], target:'[data-area-window="ai"]'},
+    {id:'hide-areas', title:'Hide an Area and bring it back', text:'Every Area can be hidden. Right-click its header and choose Hide Area. Your apps and project keep running. Open Overview with Super, go to System, and use Show under Desktop Areas to restore it. A rail remains visible; hiding removes the whole Area.', task:'Hide any visible Area, then restore that same Area from Overview → System → Desktop Areas.', level:9, goals:['area-hidden','area-shown'], target:'[data-area-drag-handle]'},
+    {id:'overview-navigation', title:'Overview moves sideways', text:'Overview contains Timeline, Apps, Projects & Home and System. The current section snaps to the centre, with neighbouring sections visible at the edges. Use tabs, edge arrows, horizontal scrolling or Shift + scroll. Scroll vertically inside a section to read its content. Workspaces and global search stay above the sections.', task:'Open Overview, visit any section beside Apps, then return to Apps. Try whichever navigation method feels natural.', level:9, goals:['overview-away','overview-back'], target:'.overview-section-nav'},
+    {id:'timeline', title:'What happened during that meeting?', text:'Timeline puts time on the left, desktop activity beside it, and calendar events, tasks and reminders in another lane. Events span their full start-to-end time, so you can see what you were doing during a meeting. Busy moments expand in both lanes together. Overlapping events appear side by side, and meeting names stay visible while you scroll. Choose a day or filter; Open and Go to return to earlier work. Activity stays in its workspace and excludes typing and clipboard contents. Calendar entries are local prototype data, not a connected calendar account.', task:'Open any app, then visit Timeline and Add a calendar event covering that moment. Give it your own title and end time. Compare your app activity with the event using Everything on that day.', level:9, goals:['timeline-activity','timeline-event','timeline-compared'], target:'#allAppsToggle'},
+    {id:'timeline-task', title:'Plans appear before you use them', text:'Tasks, reminders and calendar events appear at their scheduled times even if you have never opened them. Add creates one for the current workspace, optionally linked to a project. A task’s Done checkbox saves completion and places it at the completion time while retaining its original deadline. Reminders can be dismissed. System’s calendar shows the next plan and opens Timeline.', task:'Add a task of your own in Timeline, then tick its Done checkbox. Watch the completed task appear at the current time.', level:9, goals:['timeline-task-created','timeline-task-done'], target:'#timelineAddToggle'},
+    {id:'challenge', title:'Try it on your own', text:'Put what you have learned together. There are no target highlights for this independent task. Use whichever controls or shortcuts feel natural.', task:'Open another app in your project, park that window, then return to the ordinary Workspace desktops.', level:9, goals:['challenge-open','challenge-park','challenge-return'], challenge:true},
     {id:'two-displays', title:'One workspace, two displays', text:'Optional: extend the same workspace across two browser windows. Move the second window to another monitor if you have one, or place both side by side. An app keeps its project or Workspace ownership when it moves. Right-click a window’s title bar or an Area’s header and choose Move to Display 2; the same menu brings it back. Maximize keeps Areas accessible; Full fullscreen uses the whole display. Both move other open apps to Display 2 when they fit without displacing its existing apps. Full fullscreen also moves Areas there when there is room. Restore to bring automatically moved apps back; apps you deliberately move, park or close stay as you chose.', task:'Open the second practice display. Move any app there and back, move an Area there, open another app on this display, then left-click Maximize and watch the other app move to Display 2. Restore it, then middle-click for Full fullscreen: look at the apps and Areas on Display 2 and press Escape.', level:9, optional:true, goals:['display-linked','display-app-moved','display-app-returned','display-area-moved','display-max-enter','display-max-exit','display-full-enter','display-full-exit'], target:'[data-guide-action="open-display"]'},
-    {id:'complete', title:'The desktop is yours', text:'You have tried the System and Apps Areas, tiling, floating, Overview, both full-screen modes, parking, resizing and moving Areas, desktops, projects and workspace folders. The rest of Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Applications → Help, or search for “Spatial Guide”.', level:9}
+    {id:'complete', title:'The desktop is yours', text:'You have explored all four Areas, tiling and floating, Maximize and Full fullscreen, parking, rails, Area resizing, docking and hiding, vertical desktops, projects, Stash and quick notes, workspaces and Home folders, AI context and Timeline. Everything in Overview is now available.', task:'You can open Spatial Guide anytime from Overview → Apps → Help, or search for “Spatial Guide”.', level:9}
   ];
   function create(saved = {}) {
     let state = {status:'idle', index:0, mode:'repeat', initialized:false, done:[], skipped:[], ...saved};
     const oldIds = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','desktops','workspaces','folders','return','complete'];
     const version2Ids = ['welcome','system','apps','tiling','float','overview','fullscreen','true-fullscreen','park','unpark','resize-areas','desktops','projects','project-navigation','workspaces','folders','return','complete'];
-    const version4Ids = lessons.filter(lesson => !['move-areas','two-displays'].includes(lesson.id)).map(lesson => lesson.id);
-    const version5Ids = lessons.filter(lesson => lesson.id !== 'two-displays').map(lesson => lesson.id);
-    const legacyIds = saved.version === 5 ? version5Ids : [3,4].includes(saved.version) ? version4Ids : saved.version === 2 ? version2Ids : oldIds;
+    const version6Ids = ['welcome', 'system', 'resize-areas', 'move-areas', 'apps', 'tiling', 'float', 'overview', 'fullscreen', 'true-fullscreen', 'park', 'area-rail', 'unpark', 'desktops', 'projects', 'project-app', 'project-navigation', 'workspaces', 'folders', 'return', 'challenge', 'two-displays', 'complete'];
+    const version4Ids = version6Ids.filter(id => !['move-areas','two-displays'].includes(id));
+    const version5Ids = version6Ids.filter(id => id !== 'two-displays');
+    const legacyIds = saved.version === 6 ? version6Ids : saved.version === 5 ? version5Ids : [3,4].includes(saved.version) ? version4Ids : saved.version === 2 ? version2Ids : oldIds;
     if (saved.lessonId) state.index = lessons.findIndex(lesson => lesson.id === saved.lessonId);
-    else if (saved.status && saved.version !== 6 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
-    state.version = 6;
+    else if (saved.status && saved.version !== 7 && Number.isInteger(saved.index) && legacyIds[saved.index]) state.index = lessons.findIndex(lesson => lesson.id === legacyIds[saved.index]);
+    state.version = 7;
     state.index = Math.max(0, Math.min(lessons.length - 1, Number(state.index) || 0));
     const legacyGoals = {'sound-off':'toggle-off','sound-on':'toggle-on','notes-open':'app-open','notes-float':'app-float','notes-park':'app-park','notes-unpark':'app-unpark','project-notes-open':'project-app-open','workspace-downloads':'workspace-folder'};
     if (Array.isArray(saved.done) && saved.done.includes('notes-park')) state.parkedWindow ||= 'notes';
@@ -48,6 +55,8 @@
       active: () => state.status === 'active',
       allows(feature) {
         if (state.status !== 'active') return true;
+        const milestone={ai:'ai-context',timeline:'overview-navigation','overview-system':'hide-areas'}[feature];
+        if(milestone)return state.index>=lessons.findIndex(lesson=>lesson.id===milestone);
         const level = lessons[state.index].level;
         return level >= ({systems:1, apps:2, overview:3, parking:4, desktops:5, projects:6, workspaces:7, folders:8}[feature] ?? 9);
       },
@@ -57,7 +66,7 @@
         state.done.push(goal); return true;
       },
       next() { if (!this.ready() || state.chapter || state.index >= lessons.length-1) return false; return this.advance(); },
-      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; delete state.displayBaseline; delete state.displayWindow; delete state.displayFullscreen; delete state.displayMaximized; delete state.displayPeer; delete state.displayFullPeer; return true; },
+      advance() { if (state.index >= lessons.length-1) return false; state.index++; state.done=[]; delete state.practiceWindow; delete state.areaResizeBaseline; delete state.areaMoveBaseline; delete state.projectBaseline; delete state.workspaceBaseline; delete state.challengeBaseline; delete state.challengeWindow; delete state.parkingBaseline; delete state.unparkCandidates; delete state.desktopOrigin; delete state.searchQuery; delete state.searchResults; delete state.displayBaseline; delete state.displayWindow; delete state.displayFullscreen; delete state.displayMaximized; delete state.displayPeer; delete state.displayFullPeer; delete state.contextBaseline; delete state.hiddenArea; delete state.timelineActivity; delete state.timelinePlan; delete state.timelineTask; return true; },
       skip() {
         if (!this.active() || state.chapter || !this.lesson.goals || state.index >= lessons.length-1) return false;
         state.skipped = [...new Set([...(state.skipped || []), this.lesson.id])];
@@ -65,7 +74,7 @@
       },
       start(mode = 'repeat', chapter = null) {
         const index = lessons.findIndex(lesson => lesson.id === chapter && lesson.goals);
-        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:6};
+        state = {status:'active', index:index > 0 ? index : 0, mode, initialized:false, done:[], skipped:[], version:7};
         if (index > 0) state.chapter = chapter;
       },
       leave(status = 'skipped') { state.status = status; },
@@ -103,6 +112,12 @@
     'project-workspace-return':'Switch back to Workspace', 'workspace-created':'Create your own empty workspace',
     'workspace-folder':'Open any of your workspace’s Home folders', 'general-return':'Return to General',
     'display-linked':'Connect the second practice display', 'display-app-moved':'Move any app to Display 2', 'display-app-returned':'Bring that app back to this display', 'display-area-moved':'Move any Area to Display 2', 'display-max-enter':'Maximize and see another app on Display 2', 'display-max-exit':'Restore and bring that app back automatically', 'display-full-enter':'Try Full fullscreen with apps and Areas on Display 2', 'display-full-exit':'Press Escape to restore the app',
+    'quick-note-saved':'Write your own project quick note', 'stash-saved':'Save any note, link or file in Stash',
+    'ai-project-source':'Attach a project source with its working folder', 'ai-request':'Write your own AI request',
+    'area-hidden':'Hide any visible Area', 'area-shown':'Restore that Area from Overview → System',
+    'overview-away':'Visit another Overview section', 'overview-back':'Return to Apps',
+    'timeline-activity':'Open any app to create an activity', 'timeline-event':'Add a calendar event covering that moment', 'timeline-compared':'Compare both lanes on the same day',
+    'timeline-task-created':'Add your own scheduled task', 'timeline-task-done':'Complete that task',
     'challenge-open':'Open another app in your project', 'challenge-park':'Park that new window', 'challenge-return':'Return to Workspace'
   };
   // Supply missing windows for skip/replay, retaining the learner’s own app choices.
@@ -110,8 +125,42 @@
     const index = lessons.findIndex(lesson => lesson.id === id);
     return {window:index >= lessons.findIndex(lesson => lesson.id === 'tiling'), parked:['area-rail','unpark'].includes(id),
       project:id !== 'two-displays' && index >= lessons.findIndex(lesson => lesson.id === 'project-app'), projectApp:id !== 'two-displays' && index >= lessons.findIndex(lesson => lesson.id === 'project-navigation'),
-      inProject:['project-app','project-navigation'].includes(id),
+      inProject:['project-app','project-stash','project-navigation','ai-context'].includes(id),
       ownWorkspace:['folders','return'].includes(id), downloads:id === 'return'};
+  }
+  // Validate saved data and live view state, rather than crediting a click.
+  function observeContext(model,scene){
+    if(!model.active())return false;
+    const id=model.lesson.id,before=JSON.stringify(model.state),done=model.state.done;
+    const ids=items=>(items||[]).map(item=>item.id);
+    const baseline=model.state.contextBaseline ||= {workspace:scene.workspace,note:scene.note||'',items:ids(scene.items),attachments:ids(scene.ai?.items),draft:scene.ai?.draft||'',areas:{...scene.areas},activity:ids(scene.activity),plans:ids(scene.plans)};
+    if(scene.workspace!==baseline.workspace)return before!==JSON.stringify(model.state);
+    if(id==='project-stash'&&scene.column===model.state.practiceProject){
+      if(scene.note?.trim()&&scene.note!==baseline.note)model.mark('quick-note-saved');
+      if(scene.items?.some(item=>!baseline.items.includes(item.id)&&!item.deleted))model.mark('stash-saved');
+    }
+    if(id==='ai-context'){
+      if(scene.ai?.items?.some(item=>!baseline.attachments.includes(item.id)&&item.project===model.state.practiceProject)&&scene.ai.workingProject===model.state.practiceProject)model.mark('ai-project-source');
+      if(done.includes('ai-project-source')&&scene.ai?.draft?.trim()&&scene.ai.draft!==baseline.draft)model.mark('ai-request');
+    }
+    if(id==='hide-areas'){
+      if(!model.state.hiddenArea){const name=Object.keys(baseline.areas).find(name=>baseline.areas[name]&&scene.areas?.[name]===false);if(name){model.state.hiddenArea=name;model.mark('area-hidden');}}
+      if(model.state.hiddenArea&&scene.areas?.[model.state.hiddenArea]&&scene.overview&&scene.section==='system')model.mark('area-shown');
+    }
+    if(id==='overview-navigation'&&scene.overview){if(scene.section!=='apps')model.mark('overview-away');else if(done.includes('overview-away'))model.mark('overview-back');}
+    if(id==='timeline'){
+      const activity=scene.activity?.find(e=>!baseline.activity.includes(e.id)&&['app.open','app.restore'].includes(e.type));
+      if(activity){model.state.timelineActivity ||= activity;model.mark('timeline-activity');}
+      const at=model.state.timelineActivity;
+      const event=at&&scene.plans?.find(e=>!baseline.plans.includes(e.id)&&e.type==='calendar.event'&&e.time<=at.time&&e.endTime>at.time);
+      if(event){model.state.timelinePlan=event.id;model.mark('timeline-event');}
+      if(event&&scene.overview&&scene.section==='timeline'&&scene.filter==='all'&&!scene.query&&scene.day===scene.activityDay)model.mark('timeline-compared');
+    }
+    if(id==='timeline-task'){
+      const task=scene.plans?.find(e=>!baseline.plans.includes(e.id)&&e.type==='task.due');
+      if(task){model.state.timelineTask=task.id;model.mark('timeline-task-created');if(task.done)model.mark('timeline-task-done');}
+    }
+    return before!==JSON.stringify(model.state);
   }
   function observeWindows(model, scene) {
     if (!model.active()) return false;
@@ -193,8 +242,8 @@
     }
     const ownWorkspace = ['folders','return'].includes(id);
     if (scene.workspace !== (ownWorkspace ? model.state.practiceWorkspace : 'general') && id !== 'workspaces') return hint('This task belongs in ' + (ownWorkspace ? 'your new workspace' : 'General') + '. Your practice work is still there.','workspace', ownWorkspace ? 'Return to your workspace' : 'Return to General');
-    if (['project-app','project-navigation','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
-    if (id === 'project-app' && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
+    if (['project-app','project-stash','project-navigation','ai-context','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
+    if (['project-app','project-stash'].includes(id) && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
     if (['tiling','float','park'].includes(id) && (scene.column !== 'workspace' || !scene.open.length)) return hint('Bring any app onto the Workspace desktop for this task. Your existing windows and saved content are still available.','window','Bring an app here');
     if (id === 'unpark' && !scene.parked?.length && !(model.state.unparkCandidates || []).some(name=>scene.open.includes(name))) return hint('There is no parked app available. Park any window, then bring it back using its card or rail icon.','park-app','Prepare a parked app');
     if (id === 'project-navigation' && scene.column === 'workspace' && !scene.open.length) return hint('Open or unpark any app in Workspace before comparing it with your project.','window','Open a Workspace app');
@@ -212,7 +261,7 @@
     const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
     return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
   }
-  const api = {lessons, create, observeFullscreen, observeWindows, observeToggle, observeSearch, observeDisplays, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
+  const api = {lessons, create, observeContext, observeFullscreen, observeWindows, observeToggle, observeSearch, observeDisplays, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}
@@ -265,8 +314,8 @@
   };
   api.applyGate = () => {
     const element = document.documentElement;
-    if (model.active()) element.dataset.guideLevel = lessons[model.state.index].level;
-    else delete element.dataset.guideLevel;
+    if (model.active()) {element.dataset.guideLevel = lessons[model.state.index].level;for(const [attribute,feature] of [['guideAi','ai'],['guideTimeline','timeline'],['guideSystemOverview','overview-system']])element.dataset[attribute]=String(model.allows(feature));}
+    else for(const attribute of ['guideLevel','guideAi','guideTimeline','guideSystemOverview'])delete element.dataset[attribute];
   };
   api.save(); api.applyGate(); root.SpatialGuide = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -24,7 +24,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-navigation,workspaces,folders,return,challenge,two-displays,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-stash,project-navigation,workspaces,folders,return,ai-context,hide-areas,overview-navigation,timeline,timeline-task,challenge,two-displays,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -270,7 +270,7 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
     const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
       desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{}},
-      tileSession:()=>({}),setUniversalSearchOpen(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
+      tileSession:()=>({}),setUniversalSearchOpen(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
       desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace'},
@@ -361,3 +361,28 @@ syncContext.SpatialGuide.displayCompanion=true;syncContext.receiveDesktopSyncMes
 syncContext.desktopSyncSource='second';syncContext.receiveDesktopSyncMessage({source:'main',scope:'guide:test',type:'guide-display-end'});assert.equal(closed,1);
 sent=[];syncContext.desktopSyncReady=false;syncContext.broadcastDesktopState();assert(!sent.length,'A new companion cannot overwrite the main scene before initial synchronization');
 console.log('Production display synchronization passed: isolated practice channels, stale-session rejection, initial owner authority and companion cleanup.');
+
+// New chapters observe owned, persisted content and meaningful state transitions.
+const contextScene={workspace:'general',column:'practice',note:'',items:[],ai:{items:[],draft:'',workingProject:null},areas:{apps:true,systems:true,projects:true,ai:true},activity:[],plans:[],overview:false,section:'apps',filter:'all',query:'',day:'2026-10-10',activityDay:'2026-10-10'};
+const stash=at('project-stash');stash.state.practiceProject='practice';G.observeContext(stash,contextScene);
+G.observeContext(stash,{...contextScene,column:'workspace',note:'My note',items:[{id:'a'}]});assert(!stash.ready(),'Another project or Workspace cannot complete project Stash tasks');
+G.observeContext(stash,{...contextScene,note:'My note',items:[{id:'a'}]});assert(stash.ready());assert(G.create(stash.snapshot()).ready());
+const ai=at('ai-context');ai.state.practiceProject='practice';G.observeContext(ai,contextScene);
+G.observeContext(ai,{...contextScene,ai:{items:[{id:'other',project:'another'}],draft:'Help me',workingProject:'another'}});assert(!ai.ready());
+G.observeContext(ai,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],draft:'Help me',workingProject:'practice'}});assert(ai.ready(),'A project attachment, working folder and own draft complete AI practice');
+const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
+G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
+G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());
+const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(nav.ready());
+const timeline=at('timeline');G.observeContext(timeline,contextScene);
+const activity=[{id:'opened',type:'app.open',time:1000}],plans=[{id:'event',type:'calendar.event',time:500,endTime:1500}];
+G.observeContext(timeline,{...contextScene,activity,plans:[{...plans[0],endTime:900}]});assert(!timeline.state.done.includes('timeline-event'),'An event must cover the activity time');
+G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline',filter:'calendar'});assert(!timeline.ready(),'Compare requires both lanes');
+G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline',day:'2026-10-11'});assert(!timeline.ready(),'Compare requires the activity day');
+G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline'});assert(timeline.ready());
+const taskLesson=at('timeline-task');G.observeContext(taskLesson,contextScene);const newTask={id:'task',type:'task.due',time:5000,done:false};G.observeContext(taskLesson,{...contextScene,plans:[newTask]});assert(!taskLesson.ready());G.observeContext(taskLesson,{...contextScene,plans:[{...newTask,done:true}]});assert(taskLesson.ready());
+assert(!at('return').allows('ai'));assert(at('ai-context').allows('ai'));assert(!at('ai-context').allows('timeline'));assert(!at('ai-context').allows('overview-system'));assert(at('hide-areas').allows('overview-system'));assert(at('overview-navigation').allows('timeline'));
+assert.equal(G.create({status:'active',version:6,index:16}).lesson.id,'project-navigation','Version 6 indices retain their original topic');
+assert.equal(G.create({status:'active',version:6,index:22}).lesson.id,'complete','Completed older introductions stay complete');
+const isolated=boot({'spatial-active-workspace':'general','spatial-workspace-timeline-v1':'real-history'},'?guide=chapter&chapter=timeline');isolated.api.storage.setItem('spatial-workspace-timeline-v1','practice-history');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');isolated.api.finish('completed');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');
+console.log('New Guide chapters passed: project Stash, AI source/folder/draft, Area recovery, carousel navigation, overlapping Timeline comparison, task completion, progressive gates, legacy progress and isolated history.');
