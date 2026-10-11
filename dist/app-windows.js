@@ -284,7 +284,7 @@ function renderAllAppMusic() {
   if(!id){
     musicPlaying=false;document.body.classList.remove('music-playing');
     $('.overview-now-playing header b').textContent='No active player';
-    $('.overview-now-playing header span small').textContent='Open Elisa to choose music';
+    $('.overview-now-playing header span small').textContent='Open Music Player Elisa to choose music';
     $('.overview-track i').style.width='0%';
     $$('[data-music="play"]',$('.overview-now-playing')).forEach(button=>{button.innerHTML=icon('i-play');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Play');});
     return;
@@ -365,7 +365,7 @@ function parkedAppMenuEntries(id) {
   return [
     {action:'parked:terminal-pwd',icon:'i-code',label:'Print working directory'},
     {action:'parked:terminal-help',icon:'i-note',label:'List demo commands'},
-    {action:'parked:terminal-folder',icon:'i-folder',label:'Open working folder in Dolphin'},
+    {action:'parked:terminal-folder',icon:'i-folder',label:'Open working folder in File Browser Dolphin'},
     {action:'parked:terminal-clear',icon:'i-close',label:'Clear output'}
   ];
 }

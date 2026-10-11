@@ -207,11 +207,11 @@ function observeMaterialInheritance() {
 }
 
 const appInfo = {
-  dolphin: { label: "Dolphin", icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
-  elisa: { label: "Elisa", icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
-  browser: { label: "Web", icon: "i-web", tone: "cyan", primary: "#55d8e9", detail: "Start page" },
-  terminal: { label: "Konsole", icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
-  notes: { label: "Notes", icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
+  dolphin: { label: SpatialAppNames.label("Dolphin"), icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
+  elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
+  browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "cyan", primary: "#55d8e9", detail: "Start page" },
+  terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
+  notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
 };
 
 const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
@@ -4470,6 +4470,7 @@ function captureCurrentWorkspaceSession() {
 }
 
 function workspaceFavoriteMarkup([asset, label]) {
+  label = SpatialAppNames.label(label);
   if (appInfo[asset]) return '<button class="workspace-favorite" data-open-app="' + asset + '" title="' + escapeHtml(label) + '">' + appArt(asset) + '</button>';
   return '<button class="workspace-favorite generic" data-toast="' + escapeHtml(label) + ' launched" title="' + escapeHtml(label) + '">' + icon(asset) + '</button>';
 }
@@ -4908,7 +4909,7 @@ document.addEventListener("click", event => {
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
   if (button.dataset.launchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
   pulseBusyCursor();
-  showToast(button.dataset.launchApp + " launched");
+  showToast(SpatialAppNames.label(button.dataset.launchApp) + " launched");
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 }));
 
@@ -5105,7 +5106,7 @@ $("#universalAppResults").addEventListener("click", event => {
   if (result.dataset.searchLaunchApp) {
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
-    showToast(result.dataset.searchLaunchApp + " launched");
+    showToast(SpatialAppNames.label(result.dataset.searchLaunchApp) + " launched");
   }
   setUniversalSearchOpen(false);
 });

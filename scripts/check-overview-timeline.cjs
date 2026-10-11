@@ -91,7 +91,7 @@ const dayButtons=[-1,1].map(direction=>{const n=make('day:'+direction);n.dataset
 const edges=[-1,1].map(direction=>{const n=make('edge:'+direction);n.dataset.overviewStep=String(direction);return n;});
 make('#timelineType').value='all';
 const data=new Map(),pending=[],calls=[];
-const context={SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:false,desktopPageAnimating:false,
+const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:false,desktopPageAnimating:false,
   appInfo:{dolphin:{label:'Files',base:'dolphin'}},appState:{dolphin:'open'},windowMembership:{general:{dolphin:'site'}},
   workspaceProfiles:{general:{label:'General'},work:{label:'Work'}},projectSpaces:{site:{name:'Website',accent:'#22bb66'}},workspaceContent:{},
   desktopPages:{column:()=>context.column||'site',columnOf:()=>context.column||'site',current:()=>1,pageOf:()=>1,last:()=>2},

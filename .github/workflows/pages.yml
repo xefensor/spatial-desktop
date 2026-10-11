@@ -39,6 +39,7 @@ jobs:
           node scripts/check-overview-timeline.cjs
           node scripts/check-workspace-setup.cjs
           node scripts/check-ui-refinements.cjs
+          node scripts/check-material-identity.cjs
           node scripts/check-desktop-performance.cjs
           node scripts/check-system-rail.cjs
           node scripts/check-desktop-pages.cjs

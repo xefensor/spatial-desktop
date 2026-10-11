@@ -155,3 +155,42 @@
     border-radius:3px!important;corner-shape:squircle!important;
   }
 }
+
+/* Four SVG corner masks plus two straight spans form a true fourth-order
+   superellipse at a fixed pixel radius. CSS masks resize with the control,
+   so this fallback needs no per-element observer or resize work. */
+@layer material-shapes {
+  .material-shape-portable :is(
+      .material-surface-abs,.abs-example,.abs-surface,.abs-side,.shape-window,
+      .intro-copy,.rule-card,.abs-menu,.abs-banner,.dolphin-window,.music-window,.plasma-rail,
+      .material-abs-button,.material-abs-field,.material-abs-element,
+      .abs-button,.abs-field,.abs-choice,.abs-side .tab,.abs-menu .menu-item,
+      .abs-side .row-icon,.rule span,.monitor-app,.material-chip.abs,
+      .dolphin-window button,.music-window button,.dolphin-window .recess-field,
+      .music-window .recess-field,.rail-key,.shell-key,
+      .app-tile,.mini-art,.app-art:not(svg)):not(.material-surface-glass,.material-glass-button,.material-glass-field,
+           .material-glass-element,.content-row,.app-titlebar,.app-toolbar,
+           .app-body,.app-status,.notes-layout textarea,input[type=range],
+           input[type=radio],.guide-text-action) {
+    --abs-mask-radius:var(--window-control-corner,10px);
+    border-radius:0!important;
+    mask-image:url("assets/squircle-nw.svg"),url("assets/squircle-ne.svg"),
+      url("assets/squircle-se.svg"),url("assets/squircle-sw.svg"),
+      linear-gradient(black,black),linear-gradient(black,black);
+    mask-size:var(--abs-mask-radius) var(--abs-mask-radius),
+      var(--abs-mask-radius) var(--abs-mask-radius),
+      var(--abs-mask-radius) var(--abs-mask-radius),
+      var(--abs-mask-radius) var(--abs-mask-radius),
+      calc(100% - 2 * var(--abs-mask-radius)) 100%,
+      100% calc(100% - 2 * var(--abs-mask-radius));
+    mask-position:top left,top right,bottom right,bottom left,center,center;
+    mask-repeat:no-repeat;
+    mask-mode:alpha;
+    mask-composite:add;
+  }
+  .material-shape-portable :is(.material-surface-abs,.abs-example,.abs-surface,
+      .abs-side,.shape-window,.intro-copy,.rule-card,.abs-menu,.abs-banner,
+      .dolphin-window,.music-window,.plasma-rail) {--abs-mask-radius:var(--window-corner,22px)}
+  .material-shape-portable :is(.app-tile,.mini-art,.app-art:not(svg)) {--abs-mask-radius:var(--icon-corner,9px)}
+  .material-shape-portable input[type=checkbox].material-abs-field {--abs-mask-radius:7px}
+}
