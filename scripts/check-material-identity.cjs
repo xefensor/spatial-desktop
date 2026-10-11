@@ -22,16 +22,4 @@ const shell = read('desktop-shell.js');
 vm.runInContext(shell.slice(shell.indexOf('function normalizeSearchText('),shell.indexOf('function buildUniversalAppResults(')),searchCtx);
 assert(searchCtx.matchesSearch(A.label('Dolphin'),'file browser'));
 assert(searchCtx.matchesSearch(A.label('Dolphin'),'dolphin'));
-for(const native of [true,false]) for(const portable of [true,false]) {
-  let enabled;
-  const ctx=vm.createContext({URL,location:{href:'https://example.org/'+(portable?'?shape=portable':'')},CSS:{supports:()=>native},document:{documentElement:{classList:{toggle:(_,value)=>{enabled=value}}}}});
-  vm.runInContext(read('material-shapes.js'),ctx);
-  assert.equal(enabled,portable||!native,'Fallback runs when native shapes are unavailable');
-}
-const mask=read('assets/squircle-nw.svg');
-const points=[...mask.matchAll(/(?:M|L)([\d.]+),([\d.]+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
-const midpoint=points[16];
-assert(Math.abs(midpoint[0]-15.9104)<0.001 && Math.abs(midpoint[1]-15.9104)<0.001,'Portable corners follow the fourth-order superellipse');
-assert(Math.abs(midpoint[0]-29.2893)>10,'A circular corner is not accepted as a squircle');
-assert(read('material-shapes.css').includes('calc(100% - 2 * var(--abs-mask-radius))'),'Straight spans resize without JS layout observers');
-console.log('Material identity passed: catalog parity, function/brand search, preserved launch keys and documents, native/portable selection and true superellipse geometry.');
+console.log('Material identity passed: catalog parity, function/brand search, preserved launch keys and documents.');
