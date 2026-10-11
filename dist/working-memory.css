@@ -42,3 +42,16 @@
 .project-area .area-window-identity #projectAreaName{white-space:normal;font-size:12px;line-height:1.15}
 
 .project-area[data-project-library-open="true"][data-area-state="rail"] .memory-rail-entry:not([hidden]){margin-top:0}
+
+/* Stash items start as compact, draggable disclosures. */
+.working-memory .memory-item{padding:0;border-bottom:1px solid var(--soft-line)}
+.memory-item-summary{display:flex;align-items:center;gap:8px;min-height:38px;padding:5px 0;cursor:pointer;list-style:none;box-sizing:border-box}
+.memory-item-summary::-webkit-details-marker{display:none}
+.memory-item-summary::after{content:'›';flex:none;margin-left:auto;font-size:18px;line-height:1;transform:rotate(0deg)}
+.memory-item[open]>.memory-item-summary::after{transform:rotate(90deg)}
+.memory-item-summary .memory-select{flex:1;align-items:center;justify-content:space-between;gap:8px}
+.memory-item-summary .memory-select b{font-size:12px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.memory-item-summary .memory-kind{flex:none;white-space:nowrap;margin:0}
+.memory-item-summary .memory-pinned{flex:none;font-size:9px}
+.memory-item-body{padding:0 0 10px}
+.memory-item[open]{border-bottom-color:color-mix(in srgb,var(--text) 45%,var(--soft-line))}
