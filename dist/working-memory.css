@@ -65,3 +65,33 @@
 .memory-edit-details>summary{cursor:pointer;font-size:11px;padding:4px 0;color:var(--muted)}
 .memory-editor{padding:8px 0;margin:8px 0}.memory-editor textarea{font-size:12px;min-height:70px}
 .memory-source-address{white-space:normal;overflow-wrap:anywhere}
+
+/* Readable shelf rows: one seam per item, with room around each source. */
+.project-area .working-memory{padding:16px 6px 18px}
+.project-area .working-memory header{min-height:28px}
+.project-area .memory-folder-action b,.project-area .project-module>header b{font-size:14px;font-weight:650;line-height:1.35}
+.project-area .project-module>header{align-items:center;min-height:30px;height:auto;margin-bottom:10px}
+.project-area .memory-scope{margin:3px 0 0}
+.project-area .memory-toolbar{margin:12px 0 14px;gap:14px}
+.project-area .memory-items{gap:7px}
+.project-area .memory-item{border-bottom-color:color-mix(in srgb,var(--text) 22%,transparent);scroll-margin-block:12px}
+.project-area .memory-item-summary{min-height:48px;padding:9px 6px;gap:10px}
+.project-area .memory-item-summary .memory-select{display:block;min-width:0}
+.project-area .memory-item-summary .memory-select b{font-size:13px;font-weight:600;line-height:1.45}
+.memory-type-icon{display:grid;place-items:center;flex:0 0 20px;color:var(--muted)}
+.memory-type-icon svg{width:19px;height:19px}
+.project-area .memory-item-summary::after{font-size:20px;color:var(--muted)}
+.project-area .memory-item-summary:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+.project-area .memory-item[open]{background:color-mix(in srgb,var(--text) 4%,transparent);border-bottom-color:color-mix(in srgb,var(--text) 30%,transparent)}
+.project-area .memory-item[open]>.memory-item-summary{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.project-area .memory-item-body{padding:2px 12px 12px}
+.project-area .memory-item[open] .memory-excerpt{display:block;overflow:visible;white-space:pre-wrap;font-size:13px;line-height:1.55;margin:8px 0 12px}
+.project-area .memory-tags{gap:5px;margin:12px 0 7px}
+.project-area .memory-saved-time{margin:6px 0 12px}
+.project-area .memory-edit-details>summary,.project-area .memory-item-details>summary{font-size:12px;padding-block:6px}
+.project-area .memory-help{margin-top:14px;padding-top:4px;line-height:1.7}
+.project-area .project-root-module .project-items{gap:0;margin-top:10px}
+.project-area .project-root-module .project-items>button{height:auto;min-height:44px;padding:8px 4px;border-bottom:1px solid var(--soft-line);border-radius:0!important}
+.project-area .project-root-module .project-items>button:last-child{border-bottom:0}
+.project-area .project-root-module .project-items b{font-size:13px;line-height:1.4}
+.project-area .project-root-module .project-items small{font-size:11px;line-height:1.4;margin-top:2px}
