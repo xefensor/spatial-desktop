@@ -72,7 +72,7 @@ assert(dense.activity[1].top-dense.activity[0].top>=58,'Dense actions stay reada
 // Execute the actual carousel and timeline adapter, with a small DOM geometry model.
 const nodes=new Map(),make=(key)=>{
   if(nodes.has(key))return nodes.get(key);
-  const n={key,value:'',hidden:false,inert:false,dataset:{},attrs:{},style:{},textContent:'',innerHTML:'',listeners:{},
+  const n={key,closest:()=>null,value:'',hidden:false,inert:false,dataset:{},attrs:{},style:{},textContent:'',innerHTML:'',listeners:{},
     classList:{add(){},remove(){},toggle(){},contains:()=>false},setAttribute(k,v){this.attrs[k]=v;},addEventListener(k,fn){this.listeners[k]=fn;}};
   nodes.set(key,n);return n;
 };
@@ -96,7 +96,7 @@ const context={SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:f
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
   requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
-  window:{matchMedia:()=>({matches:true}),addEventListener(){}},
+  window:{matchMedia:()=>({matches:true}),addEventListener(){},getComputedStyle:node=>({overflowY:node.overflowY||'visible'})},
   setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],
   activateProject:name=>{context.column=name;calls.push(['activate',name]);},changeDesktopColumn:name=>{context.column=name;calls.push(['column',name]);},
   changeDesktopPage:page=>calls.push(['page',page]),createAppInstance:base=>{calls.push(['instance',base]);return base;},
@@ -124,13 +124,25 @@ resizeCallback();pending.at(-1)();const beforeResize=scrollWrites;resizeCallback
 const deferred=[];context.requestAnimationFrame=fn=>deferred.push(fn);overview.select('apps',false);overview.refresh();overview.select('timeline',false);deferred.pop()();assert.equal(overview.active(),'timeline','A delayed refresh cannot override a later calendar or section navigation');context.requestAnimationFrame=fn=>fn();
 overview.select('apps',false);
 let prevented=0;
-track.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){prevented++;},stopPropagation(){}});
-assert.equal(prevented,0,'Ordinary list wheels keep vertical scrolling');
-track.listeners.wheel({deltaX:80,deltaY:0,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){prevented++;},stopPropagation(){}});
-assert.equal(prevented,1);assert.equal(overview.active(),'projects','Horizontal wheel advances one section');
-track.listeners.wheel({deltaX:80,deltaY:0,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:{closest:()=>null},preventDefault(){},stopPropagation(){}});
-assert.equal(overview.active(),'projects','Momentum does not skip the next section');
-const before=overview.active();track.listeners.wheel({ctrlKey:true});assert.equal(overview.active(),before,'Browser zoom remains available');
+const wheelSurface=make('#universalSearch'),blank={closest:()=>null};
+const wheel=(extra={})=>wheelSurface.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:blank,preventDefault(){prevented++;},stopPropagation(){},...extra});
+const releaseWheel=()=>pending.splice(0).forEach(fn=>fn());
+wheel();assert.equal(prevented,1);assert.equal(overview.active(),'projects','Ordinary mouse wheels navigate over content, not only headings');
+releaseWheel();wheel({target:make('#universalSearchInput')});assert.equal(overview.active(),'system','The global Overview header also supports wheel navigation');
+releaseWheel();wheel({deltaY:-120});assert.equal(overview.active(),'projects','Reverse wheels select the previous section');
+releaseWheel();overview.select('apps',false);
+const list={closest:()=>null,overflowY:'auto',scrollHeight:800,clientHeight:200,scrollTop:100,parentElement:wheelSurface};
+const beforeList=prevented;wheel({target:list});assert.equal(prevented,beforeList);assert.equal(overview.active(),'apps','Scrollable lists retain vertical scrolling while there is room');
+wheel({target:list,deltaY:-120});assert.equal(overview.active(),'apps','Lists can scroll back up');
+list.scrollTop=600;wheel({target:list});assert.equal(overview.active(),'projects','At the lower list edge the wheel navigates sections');
+releaseWheel();list.scrollTop=0;wheel({target:list,deltaY:-120});assert.equal(overview.active(),'apps','At the upper list edge reverse navigation works');
+releaseWheel();wheel({target:list,shiftKey:true});assert.equal(overview.active(),'projects','Shift scroll navigates directly over lists');
+releaseWheel();overview.select('apps',false);
+wheel({deltaX:80,deltaY:0});assert.equal(overview.active(),'projects','Horizontal wheel advances one section');
+wheel({deltaX:80,deltaY:0});assert.equal(overview.active(),'projects','Momentum does not skip the next section');
+const before=overview.active();wheel({ctrlKey:true});wheel({metaKey:true});assert.equal(overview.active(),before,'Browser zoom remains available');
+releaseWheel();wheel({target:{closest:()=>({})}});assert.equal(overview.active(),before,'Native select and numeric controls retain their wheel behavior');
+make('#overviewHome').hidden=true;wheel();assert.equal(overview.active(),before,'Search results retain their own scrolling');make('#overviewHome').hidden=false;
 timeline.record('file.open',{app:'dolphin',title:'<unsafe>',path:'/projects/site/notes.md'});
 const stored=JSON.parse(data.get('spatial-workspace-timeline-v1'));assert.equal(stored.general.length,1);
 assert.equal(stored.general[0].project,'site');assert.equal(stored.general[0].page,1);

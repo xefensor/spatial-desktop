@@ -76,11 +76,20 @@
   track.addEventListener('scroll',()=>{clearTimeout(scrollTimer);const token=selection;scrollTimer=setTimeout(()=>scrolling?finishSelection(token):settle(),180);},{passive:true});
   track.addEventListener('scrollend',()=>{if(scrolling){if(Math.abs(track.scrollLeft-centre(panels.get(active)))<=1)finishSelection();}else settle();},{passive:true});
   track.addEventListener('pointerdown',()=>{if(scrolling){++selection;scrolling=false;clearTimeout(scrollTimer);track.scrollTo({left:track.scrollLeft,behavior:'instant'});}},{passive:true});
-  track.addEventListener('wheel',event=>{
-    if(event.ctrlKey||event.metaKey)return;
+  // Ordinary wheel navigation works throughout Overview. A nested list gets
+  // first use of vertical motion while it can still scroll in that direction.
+  function canScrollVertically(target,delta){
+    for(let node=target;node&&node!==$('#universalSearch');node=node.parentElement){
+      if(node.scrollHeight<=node.clientHeight+1)continue;
+      if(!/^(auto|scroll)$/.test(window.getComputedStyle(node).overflowY))continue;
+      if(delta<0?node.scrollTop>1:node.scrollTop+node.clientHeight<node.scrollHeight-1)return true;
+    }
+    return false;
+  }
+  $('#universalSearch').addEventListener('wheel',event=>{
+    if(home.hidden||event.ctrlKey||event.metaKey)return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
-    const onHeading=event.target.closest('.overview-zone-heading,.overview-apps-section>.overview-section-heading');
-    if(!across&&!onHeading)return; // Lists keep their own vertical scrolling.
+    if(!across&&(event.target.closest('select,input[type=number],input[type=range]')||canScrollVertically(event.target,event.deltaY)))return;
     event.preventDefault();event.stopPropagation();
     const delta=across&&!event.shiftKey?event.deltaX:event.deltaY||event.deltaX;
     const now=Date.now();
