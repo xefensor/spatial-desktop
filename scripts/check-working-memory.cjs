@@ -108,6 +108,12 @@ mediaReload.remove(image.id);F.materialize(workOwner,mediaReload.items(workspace
 assert.equal(F.list(workOwner).length,0);
 mediaReload.restore(image.id);F.materialize(workOwner,mediaReload.items(workspace));
 assert.equal(F.list(workOwner)[0].attachment.key,upload.key);
+const appFiles=fs.readFileSync(require('node:path').join(__dirname,'../dist/app-windows.js'),'utf8');
+const fileContext={workspaceProfiles:owners.workspaceProfiles,projectSpaces:owners.projectSpaces,frameFor:()=>({}),SpatialHomeFolders:require('../dist/home-folders.js'),SpatialMemoryDesktop:{fileRows:path=>owners.fileRows(path)},workspaceDownloads:{snapshot:()=>({directories:[]})},fileLocationRows:()=>[]};
+vm.createContext(fileContext);
+vm.runInContext(appFiles.slice(appFiles.indexOf('function appFileRows('),appFiles.indexOf('function ',appFiles.indexOf('function appFileRows(')+10)),fileContext);
+assert(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work').some(row=>row[0]==='Stash')",fileContext),'The enhanced Dolphin Home renderer includes workspace Stash');
+assert.equal(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work/Stash')[0][0]",fileContext),'My image.png');
 
 // A file upload can complete after the user switches workspace. The captured
 // destination must still receive it, and reloading must preserve that file.

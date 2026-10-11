@@ -109,7 +109,7 @@ body[data-theme] .area-window>.area-window-bar::after {content:none}
   font:650 10px/12px system-ui,sans-serif;
 }
 .apps-zone[data-area-state="rail"] .area-window-identity::after {content:"Apps"}
-.project-area[data-area-state="rail"] .area-window-identity::after {content:"Project"}
+.project-area[data-area-state="rail"] .area-window-identity::after {content:"Workspace\A& Projects";white-space:pre-line;text-align:center;font-size:9px}
 .systems-zone[data-area-state="rail"] .area-window-identity::after {content:"System"}
 .area-window[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar {
   flex-basis:60px;

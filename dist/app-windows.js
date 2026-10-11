@@ -69,10 +69,11 @@ function appFileRows(id, path) {
   const frame = frameFor(id);
   const otherHome = Object.entries(workspaceProfiles).find(([,profile])=>profile.home===path);
   const otherProjects = Object.entries(workspaceProfiles).find(([,profile])=>profile.home+'/Projects'===path);
-  const rows = otherHome ? [...otherHome[1].folders] : otherProjects ? Object.values(projectSpaces).filter(project=>project.originWorkspace===otherProjects[0]).map(project=>[project.name,'Project','folder',project.root]) : fileLocationRows(frame, path);
+  const stashRows = globalThis.SpatialMemoryDesktop?.fileRows(path);
+  const rows = stashRows || (otherHome ? [...otherHome[1].folders] : otherProjects ? Object.values(projectSpaces).filter(project=>project.originWorkspace===otherProjects[0]).map(project=>[project.name,'Project','folder',project.root]) : fileLocationRows(frame, path));
   const seen = new Set(rows.map(row => row[0]));
   const targets=new Set(rows.map(([name,,,target])=>target||path.replace(/\/$/,'')+'/'+name));
-  const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects']),...Object.values(projectSpaces).flatMap(project=>[project.root,...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
+  const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects',profile.home+'/Stash']),...Object.values(projectSpaces).flatMap(project=>[project.root,...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
   directories.forEach(directory => {
     const prefix=path==='/'?'/':path.replace(/\/$/,'')+'/';
     if(!directory.startsWith(prefix))return;
