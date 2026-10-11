@@ -114,15 +114,16 @@
     if(recordingSuspended||globalThis.SpatialGuide?.settingUp||globalThis.SpatialGuide?.displayCompanion||desktopSyncApplying)return;
     const app=data.app||'',owner=app&&appInfo[app]?desktopPages.columnOf(activeWorkspace,app):desktopPages.column(activeWorkspace);
     const project=data.project===undefined?(owner==='workspace'?'':owner):(data.project||'');
-    const event=model.add({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),time:Date.now(),workspace:activeWorkspace,type,
+    const event=model.add({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),time:Date.now(),workspace:data.workspace||activeWorkspace,type,
       title:data.title||appInfo[app]?.label||'',app,base:appInfo[app]?.base||app,project,projectName:projectSpaces[project]?.name||data.projectName||'',
-      page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||''});
+      page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||'',stashId:data.stashId||'',detail:data.detail||''});
     if(event){save();if($('#universalSearch').classList.contains('is-open'))renderTimeline();}
   }
-  const descriptions={'session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
+  const descriptions={'stash.save':'Saved to Stash','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
   function actionFor(event){
     if(event.type==='session'||event.type==='workspace')return '';
     if(event.project&&!projectSpaces[event.project])return '';
+    if(event.type==='stash.save')return 'Open Stash';
     if(event.type.startsWith('file.'))return 'Open';
     if(event.type==='browser.visit')return 'Open';
     if(event.type.startsWith('project.')||event.type==='desktop.switch')return 'Go to';
@@ -139,10 +140,10 @@
     $('#timelineDay').value=timelineDay;
     const clock=time=>new Date(time).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
     function card(event,planned=false){
-      const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
+      const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type==='stash.save'?'i-note':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
       const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol),project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
       const overdue=planned&&!event.done&&event.type!=='calendar.event'&&event.time<now;
-      const source=planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):'Desktop '+(event.page+1);
+      const source=planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):(event.type==='stash.save'?'Saved to Stash · ':'')+'Desktop '+(event.page+1);
       const name=event.title||descriptions[event.type]||'',detail=event.path||event.address||event.detail||'',action=planned?'':actionFor(event);
       const completion=planned&&event.type!=='calendar.event'?'<label class="timeline-completion"><input type="checkbox" data-timeline-complete="'+escapeHtml(event.id)+'"'+(event.done?' checked':'')+' aria-label="'+escapeHtml((event.type==='task.due'?'Complete ':'Dismiss reminder ')+name)+'"><span>'+(event.type==='task.due'?'Done':'Dismissed')+'</span></label>':'';
       const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+source;
@@ -189,6 +190,7 @@
       if(desktopPages.column(activeWorkspace)!==column)return;
       const page=Math.min(event.page,desktopPages.last(activeWorkspace,column));
       changeDesktopPage(page,false,column);
+      if(event.type==='stash.save'){globalThis.SpatialMemoryDesktop?.revealItem(event.stashId,JSON.stringify([workspace,event.project||null]));return;}
       if(event.type.startsWith('project.')||event.type==='desktop.switch')return;
       const base=event.type.startsWith('file.')?'dolphin':event.type==='browser.visit'?'browser':event.base;
       const member=Object.hasOwn(windowMembership[activeWorkspace]||{},event.app);

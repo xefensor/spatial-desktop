@@ -133,3 +133,34 @@ assert.equal(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work/St
   assert.equal(messages.length,0,'Completion does not announce the old workspace in the new one');
   console.log('Workspace Stash passed: owned folder, upload keys, caption edits, search, reload/display sync, isolation, file navigation, undo and in-flight workspace switching.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Origin is independent of the destination and survives inline edits, reload,
+// file materialization and later insertions in the same project.
+const provenance=M.create({},()=>now,'provenance');
+const captured=provenance.add(workspace,{text:'Use this for the navigation review.',why:'Reference for our menu',source:{workspace:'school',project:'research',app:'browser',address:'https://example.org/reference'}});
+assert.equal(captured.title,'Use this for the navigation review.','Text capture does not require a title');
+const bareLink=provenance.add(workspace,{source:{address:'https://example.org/references/navigation'}});
+assert.equal(bareLink.title,'navigation','A pasted link gets a readable automatic name');
+provenance.edit(captured.id,{why:'Compare with keyboard navigation',title:'Reference'});
+const originReload=M.create(provenance.snapshot()).get(captured.id);
+assert.equal(originReload.source.workspace,'school');assert.equal(originReload.source.project,'research');
+assert.equal(JSON.parse(originReload.scope)[0],'work','Copy destination never replaces origin');
+assert.equal(originReload.why,'Compare with keyboard navigation');
+assert.equal(provenance.search('keyboard','work')[0].id,captured.id,'Personal reminders are searchable');
+const originOwner={root:'/work',files:[]};F.materialize(originOwner,[originReload]);
+assert.equal(F.list(originOwner)[0].why,originReload.why);assert.equal(F.list(originOwner)[0].source.project,'research');
+const stableResource=vm.runInContext('resourceItems(key)[0]',unified);
+mergedProject.resources.unshift(['Later item','Text','file','i-note',{fileId:'stash-later'}]);
+unified.stableResourceId=stableResource.id;
+assert.equal(vm.runInContext('itemFor(stableResourceId).title',unified),'Edited reference','New insertions do not retarget an existing saved item');
+
+(async()=>{
+  const retained=[],destination=M.create({},()=>now,'capture'),context={M,F,scope:()=>workspace,allowed:()=>true,itemsFor:key=>destination.items(key),appInfo:{browser:{label:'Web'}},ownerFor:()=>originOwner,projectFor:()=>null,addItem:(key,value)=>destination.add(key,value),save:()=>true,recordSaved:item=>retained.push(item),render(){},feedback(){},current:workspace};
+  vm.createContext(context);vm.runInContext(section('async function keepContext(','  function dropIntoStash('),context);
+  context.value={title:'Study reference',text:'The original excerpt',why:'Use in our website',workspace:'school',project:'research',source:{workspace:'school',project:'research',app:'browser',address:'https://example.org/reference'}};
+  await vm.runInContext('keepContext(value)',context);
+  assert.equal(destination.items(workspace)[0].source.project,'research');assert.equal(destination.items(workspace)[0].why,'Use in our website');assert.equal(retained.length,1,'Immediate capture creates exactly one timeline event');
+  context.value={...context.value,id:destination.items(workspace)[0].id,storageScope:workspace};
+  await vm.runInContext('keepContext(value)',context);assert.equal(destination.items(workspace).length,1,'Dropping a saved row into its own Stash does not duplicate it');
+  console.log('Stash context passed: title-free capture, origin/destination separation, reminders, stable resource identity, reload, file metadata and immediate timeline capture.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

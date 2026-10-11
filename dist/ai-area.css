@@ -13,3 +13,6 @@ html[data-guide-ai="false"] :is(.ai-area,#openAIButton,[data-overview-area="ai"]
 .ai-area[data-area-window="ai"][data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-identity>span{display:block!important}
 .ai-area[data-area-window="ai"][data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-identity :is(b,small){display:block!important}
 .ai-area[data-area-window="ai"][data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-actions{display:flex!important;margin-left:auto}
+
+.ai-source-link{display:block;font-size:10px;color:var(--muted);overflow-wrap:anywhere;margin-top:6px}
+.ai-attachment .ai-why{white-space:normal;overflow:visible;font-size:11px;line-height:1.4;color:var(--text);margin-top:6px}

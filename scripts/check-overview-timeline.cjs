@@ -155,6 +155,13 @@ make('#timelineEntries').listeners.click({target:{closest:()=>({dataset:{timelin
 const finish=pending.at(-1),count=calls.filter(call=>call[0]==='file').length;
 context.desktopPageAnimating=false;finish();
 assert.equal(calls.filter(call=>call[0]==='file').length,count+1,'Returning waits for project animation before opening a file');
+context.SpatialMemoryDesktop={revealItem:(...args)=>calls.push(['stash',...args])};
+timeline.record('stash.save',{title:'Saved reference',stashId:'stash-reference',project:'site',page:1});
+const savedReference=timeline.snapshot().activity.find(event=>event.type==='stash.save');
+make('#timelineEntries').listeners.click({target:{closest:()=>({dataset:{timelineOpen:savedReference.id}})}});
+assert(calls.some(call=>call[0]==='stash'&&call[1]==='stash-reference'&&call[2]===JSON.stringify(['general','site'])),'Timeline returns to the specific saved item');
+timeline.record('stash.save',{workspace:'work',project:null,title:'Completed upload',stashId:'stash-upload',page:0});
+assert(JSON.parse(data.get('spatial-workspace-timeline-v1')).work.some(event=>event.stashId==='stash-upload'),'An asynchronous save records its captured workspace');
 context.activeWorkspace='work';timeline.record('app.open',{app:'dolphin',title:'Work files'});
 timeline.render();assert(!make('#timelineEntries').innerHTML.includes('unsafe'),'Timeline switches with workspace');
 const beforeRestore=data.get('spatial-workspace-timeline-v1');

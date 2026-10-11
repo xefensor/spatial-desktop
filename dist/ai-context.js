@@ -1,6 +1,7 @@
 /* Local context only. No provider calls or generated replies. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SpatialAIContext=api;})(globalThis,function(){
   'use strict';
+  const M=typeof module==='object'&&module.exports?require('./working-memory.js'):globalThis.SpatialWorkingMemory;
   const MIME='application/x-spatial-context';
   const clean=(value,max=2000)=>typeof value==='string'?value.slice(0,max):'';
   const address=value=>/^(https?:\/\/|\/)/i.test(clean(value))?clean(value):'';
@@ -13,8 +14,8 @@
       if(!item||typeof item!=='object')return null;
       const sourceWorkspace=Object.hasOwn(profiles(),item.workspace)?item.workspace:workspace;
       const path=address(item.address),project=Object.hasOwn(projects(),item.project)?item.project:projectAt(path)||null;
-      const fileKey=/^stash-upload-[a-z0-9-]+$/i.test(item.fileKey||'')?item.fileKey:'';
-      return {id:clean(item.id,160)||'context-'+Math.random().toString(36).slice(2),title:clean(item.title,120)||'Dropped content',kind:clean(item.kind,30)||'text',text:clean(item.text,12000),address:path,workspace:sourceWorkspace,project,app:clean(item.app,120),fileKey,filename:clean(item.filename,160)};
+      const fileKey=/^stash-[\w-]{1,160}$/.test(item.fileKey||'')?item.fileKey:'';
+      return {id:clean(item.id,160)||'context-'+Math.random().toString(36).slice(2),title:clean(item.title,120)||'Dropped content',kind:clean(item.kind,30)||'text',text:clean(item.text,12000),why:clean(item.why,1000),source:M.source(item.source),savedAt:Math.max(0,Number(item.savedAt)||0),attachment:M.attachment(item.attachment),address:path,workspace:sourceWorkspace,project,app:clean(item.app,120),fileKey,filename:clean(item.filename,160)};
     }
     function session(workspace){
       if(!Object.hasOwn(profiles(),workspace))throw new Error('Unknown workspace');

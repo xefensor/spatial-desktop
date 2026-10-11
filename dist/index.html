@@ -22,11 +22,11 @@
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=13">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
-  <link rel="stylesheet" href="working-memory.css?v=10">
-  <link rel="stylesheet" href="ai-area.css?v=4">
+  <link rel="stylesheet" href="working-memory.css?v=11">
+  <link rel="stylesheet" href="ai-area.css?v=5">
   <link rel="stylesheet" href="overview-carousel.css?v=11">
   <script src="workspace-setup.js?v=5"></script>
-  <script src="spatial-guide.js?v=16"></script>
+  <script src="spatial-guide.js?v=17"></script>
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -289,7 +289,7 @@
         <main class="overview-main overview-section-track" id="overviewSectionTrack" aria-label="Overview section carousel" tabindex="0">
           <section class="overview-panel overview-timeline-section" data-overview-panel="timeline" aria-labelledby="overviewTimelineTitle">
             <header class="overview-zone-heading"><span class="overview-zone-mark"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><span><span class="eyebrow">WORKSPACE ACTIVITY</span><h3 id="overviewTimelineTitle">Timeline</h3></span><span id="overviewTimelineWorkspace"></span></header>
-            <div class="timeline-toolbar"><label>Day<select id="timelineDay" aria-label="Timeline day"></select></label><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
+            <div class="timeline-toolbar"><label>Day<select id="timelineDay" aria-label="Timeline day"></select></label><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option><option value="stash">Stash</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
             <form id="timelinePlanForm" class="timeline-plan-form" hidden>
               <label>Kind<select id="timelinePlanKind"><option value="task.due">Task</option><option value="calendar.event">Calendar event</option><option value="reminder.due">Reminder</option></select></label>
               <label>Title<input id="timelinePlanTitle" maxlength="160" required placeholder="What’s coming up?"></label>
@@ -563,14 +563,14 @@
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=1"></script>
   <script src="app-windows.js?v=8"></script>
-<script src="working-memory.js?v=3"></script>
-<script src="stash-files.js?v=1"></script>
-<script src="ai-context.js?v=2"></script>
-<script src="timeline.js?v=6"></script>
+<script src="working-memory.js?v=4"></script>
+<script src="stash-files.js?v=2"></script>
+<script src="ai-context.js?v=3"></script>
+<script src="timeline.js?v=7"></script>
 <script src="desktop-shell.js?v=245"></script>
-<script src="working-memory-desktop.js?v=15"></script>
-<script src="ai-desktop.js?v=8"></script>
-<script src="overview-desktop.js?v=11"></script>
+<script src="working-memory-desktop.js?v=16"></script>
+<script src="ai-desktop.js?v=9"></script>
+<script src="overview-desktop.js?v=12"></script>
   <script src="guide-desktop.js?v=29"></script>
 </body>
 </html>

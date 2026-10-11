@@ -4,14 +4,14 @@
   else root.SpatialTimeline=factory();
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.folder','browser.visit','calendar.event','task.due','task.complete','task.reopen','reminder.due']);
+  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.folder','browser.visit','stash.save','calendar.event','task.due','task.complete','task.reopen','reminder.due']);
   const limit=300;
   const text=value=>typeof value==='string'?value.slice(0,1000):'';
   function normalize(event){
     if(!event||!types.has(event.type)||!text(event.workspace)||!text(event.id)||!Number.isFinite(event.time)||event.time<0)return null;
     return {id:text(event.id),workspace:text(event.workspace),type:event.type,time:event.time,
       title:text(event.title),app:text(event.app),base:text(event.base),project:text(event.project),projectName:text(event.projectName),
-      page:Math.max(0,Math.min(999,Math.floor(Number(event.page)||0))),path:text(event.path),address:text(event.address),example:event.example===true,
+      page:Math.max(0,Math.min(999,Math.floor(Number(event.page)||0))),path:text(event.path),address:text(event.address),stashId:text(event.stashId),example:event.example===true,
       planned:event.planned===true,done:event.done===true,doneTime:Number.isFinite(event.doneTime)&&event.doneTime>0?event.doneTime:0,detail:text(event.detail),endTime:Number.isFinite(event.endTime)&&event.endTime>event.time?event.endTime:0};
   }
   function matches(event,{type='all',query=''}={}){
@@ -35,7 +35,7 @@
         const event=normalize(raw);if(!event)return null;
         const events=sessions[event.workspace]||[];
         const last=events.at(-1);
-        if(last&&event.time>=last.time&&event.time-last.time<3000&&['type','app','project','page','path','address','title'].every(key=>event[key]===last[key]))return null;
+        if(last&&event.time>=last.time&&event.time-last.time<3000&&['type','app','project','page','path','address','title','stashId'].every(key=>event[key]===last[key]))return null;
         merge({[event.workspace]:[event]});return {...event};
       },
       list(workspace,{type='all',query=''}={}){

@@ -22,7 +22,7 @@
     const previous=project.stash?.files||{},files={},used=new Set(),retained=new Map();
     for(const item of items){const id=item.fileId||item.id,old=previous[id];if(old&&old.title===item.title&&old.name===safeName(old.name)&&!used.has(old.name.toLocaleLowerCase())){retained.set(id,old.name);used.add(old.name.toLocaleLowerCase());}}
     for(const item of items){const id=item.fileId||item.id;if(files[id])continue;const desc=describe(item);let name=retained.get(id)||desc.name,n=2;const dot=name.lastIndexOf('.'),stem=dot>0?name.slice(0,dot):name,ext=dot>0?name.slice(dot):'';if(!retained.has(id)){while(used.has(name.toLocaleLowerCase()))name=stem+' ('+(n++)+')'+ext;used.add(name.toLocaleLowerCase());}
-      files[id]={id,name,kind:desc.kind,content:desc.content,attachment:desc.attachment,caption:item.text||'',title:item.title,source:clone(item.source||{}),updated:item.updated||0,pinned:!!item.pinned,record:item.resourceIndex===undefined?clone(item):null};
+      files[id]={id,name,kind:desc.kind,content:desc.content,attachment:desc.attachment,caption:item.text||'',title:item.title,why:item.why||'',created:item.created||item.updated||0,source:clone(item.source||{}),updated:item.updated||0,pinned:!!item.pinned,record:item.resourceIndex===undefined?clone(item):null};
       if(previous[id]?.blobKey&&JSON.stringify(previous[id].attachment)===JSON.stringify(desc.attachment))files[id].blobKey=previous[id].blobKey;
     }
     const next={version:1,files};const changed=JSON.stringify(project.stash)!==JSON.stringify(next);project.stash=next;

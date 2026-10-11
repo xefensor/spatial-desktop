@@ -50,3 +50,10 @@ send('document','pointerdown');assert(!send('document','click').prevented,'The n
 send('document','pointerdown');send('window','pointermove',{clientX:50});send('window','pointercancel');send('window','pointerup',{clientX:50});assert.equal(added.length,1,'Native drag/cancellation hands off without duplicate attachments');
 send('document','pointerdown');send('window','pointermove',{clientX:50});send('document','keydown',{key:'Escape'});send('window','pointerup',{clientX:50});assert.equal(added.length,1,'Escape cancels');
 console.log('AI content transfer passed: real production gesture path, normal clicks, threshold, drop highlight, source-click suppression, native handoff and cancellation.');
+
+const contextual=restored.add('general',{id:'saved-context',title:'Reference',workspace:'work',project:'website',address:projects.website.root+'/Stash/Reference.md',source:{workspace:'general',project:null,app:'browser',address:'https://example.org/original'},why:'Compare with the new layout',savedAt:123});
+assert.equal(contextual.source.address,'https://example.org/original');assert.equal(contextual.source.workspace,'general');
+assert.equal(contextual.project,'website','AI working ownership comes from the saved destination');assert.equal(contextual.why,'Compare with the new layout');
+const contextReload=C.create(restored.snapshot(),env).session('general').items.find(item=>item.id==='saved-context');
+assert.deepEqual(contextReload.source,contextual.source);assert.equal(contextReload.why,contextual.why);assert.equal(contextReload.savedAt,123);
+console.log('AI Stash provenance passed: saved location and original source remain distinct, including reminder and timestamp across reload.');
