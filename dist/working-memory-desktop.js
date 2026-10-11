@@ -78,9 +78,9 @@
     F.copyAsset(ownerFor(key),file).then(blob=>{
       const owner=ownerFor(key),live=owner?.stash?.files?.[file.id];if(!live)return;
       live.blobKey=file.blobKey;if(projectFor(key))persistProjectState();
-      const media=live.attachment,key=media.key||media.src;if(!mediaUrls.has(key))mediaUrls.set(key,URL.createObjectURL(blob));
+      const media=live.attachment,mediaKey=media.key||media.src;if(!mediaUrls.has(mediaKey))mediaUrls.set(mediaKey,URL.createObjectURL(blob));
       // Updating the source does not rebuild controls or interrupt playing audio.
-      host.querySelectorAll('[data-memory-id]').forEach(row=>{const item=itemFor(row.dataset.memoryId);if(!item?.attachment||item.attachment.key!==media.key||item.attachment.src!==media.src)return;const src=mediaUrls.get(key);row.querySelectorAll('img,iframe').forEach(el=>{if(el.getAttribute('src')!==src)el.src=src;});const audio=row.querySelector('audio');if(audio?.paused&&audio.currentTime===0&&audio.getAttribute('src')!==src)audio.src=src;row.querySelectorAll('a[href]').forEach(el=>el.href=src);});
+      host.querySelectorAll('[data-memory-id]').forEach(row=>{const item=itemFor(row.dataset.memoryId);if(!item?.attachment||item.attachment.key!==media.key||item.attachment.src!==media.src)return;const src=mediaUrls.get(mediaKey);row.querySelectorAll('img,iframe').forEach(el=>{if(el.getAttribute('src')!==src)el.src=src;});const audio=row.querySelector('audio');if(audio?.paused&&audio.currentTime===0&&audio.getAttribute('src')!==src)audio.src=src;row.querySelectorAll('a[href]').forEach(el=>el.href=src);});
     }).catch(()=>{copying.delete(token);if(key===current)feedback('A file could not be copied into Stash. Reopen Stash to retry.');});
   }
   async function saveFiles(files){

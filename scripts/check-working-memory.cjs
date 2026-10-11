@@ -164,3 +164,15 @@ assert.equal(vm.runInContext('itemFor(stableResourceId).title',unified),'Edited 
   await vm.runInContext('keepContext(value)',context);assert.equal(destination.items(workspace).length,1,'Dropping a saved row into its own Stash does not duplicate it');
   console.log('Stash context passed: title-free capture, origin/destination separation, reminders, stable resource identity, reload, file metadata and immediate timeline capture.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Run the actual async preview callback: its media key must not shadow the
+// owning scope used to retrieve the saved file after IndexedDB loading.
+(async()=>{
+  const cachedOwner={stash:{files:{preview:{id:'preview',attachment:{kind:'image',key:'stash-preview'}}}}},errors=[],mediaCache=new Map();
+  const cacheContext={F:{copyAsset:async()=>new Blob(['preview'])},ownerFor:key=>{assert.equal(key,workspace);return cachedOwner;},projectFor:()=>null,copying:new Set(),mediaUrls:mediaCache,host:{querySelectorAll:()=>[]},URL:{createObjectURL:()=> 'blob:preview'},feedback:text=>errors.push(text),current:workspace};
+  vm.createContext(cacheContext);vm.runInContext(section('function cacheMedia(','  async function saveFiles('),cacheContext);
+  cacheContext.key=workspace;cacheContext.file=cachedOwner.stash.files.preview;
+  vm.runInContext('cacheMedia(key,file)',cacheContext);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(mediaCache.get('stash-preview'),'blob:preview');assert.equal(errors.length,0,'A loaded media preview must not report a copy error');
+  console.log('Stash preview passed: uploaded and copied media load from their owning scope without shadowing the media key.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
