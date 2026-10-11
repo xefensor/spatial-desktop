@@ -273,7 +273,7 @@ function hydrateAppArtwork() {
 
   $$('.notification', $('#notificationList')).forEach(notification => {
     const title = $('b', notification)?.textContent || "";
-    const name = title.includes("Elisa") ? "elisa" : title.includes("Download") ? "dolphin" : "";
+    const name = (title.includes(appInfo.elisa.label) || title.includes("Elisa")) ? "elisa" : title.includes("Download") ? "dolphin" : "";
     const badge = $('.app-badge', notification);
     if (badge && name) {
       notification.dataset.appOrigin = name;
