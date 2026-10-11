@@ -77,8 +77,9 @@
       suppressClick=false;
       if(event.button!==0||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))||area.contains(event.target))return;
       const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id]');
-      if(!source||event.target.closest('input,textarea,a,audio,summary,iframe')||event.target.closest('[data-memory-item-action]'))return;
+      if(!source||event.target.closest('input,textarea,a,audio,iframe')||event.target.closest('summary:not(.memory-item-summary)')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;
+      event.target.closest('.memory-item-summary')?.focus();
       event.preventDefault();event.stopPropagation();gesture={item,x:event.clientX,y:event.clientY,pointer:event.pointerId,moved:false};
     },true);
     window.addEventListener('pointermove',event=>{
