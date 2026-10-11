@@ -62,6 +62,17 @@ console.log('AI context passed: workspace isolation, project provenance, working
 // normal clicks survive, and canceled gestures attach nothing.
 const fs=require('node:fs'),vm=require('node:vm');
 const adapter=fs.readFileSync(require.resolve('../dist/ai-desktop.js'),'utf8');
+// Boot the whole production Area with a legacy session. Example seeding is
+// reached during startup, while clean desktops retain an empty conversation.
+for(const preset of ['demo','clean']){
+  const nodes=new Map();const node=selector=>{if(!nodes.has(selector))nodes.set(selector,{dataset:{areaState:'expanded'},value:'',classList:{contains:()=>false},querySelector:()=>node('summary'),addEventListener(){},setAttribute(){},focus(){}});return nodes.get(selector);};
+  const snapshot={version:2,sessions:{general:{items:[],workingProject:'website',draft:'Keep this draft',mode:'expanded',updated:3}}};
+  const boot={SpatialAIContext:C,SpatialAIDemo:require('../dist/ai-demo.js'),SpatialStashFiles:{},readDesktopStorage:(key,fallback)=>key==='spatial-ai-context-v1'?snapshot:fallback,workspaceProfiles:{general:{label:'General',home:'/home/demo'}},projectSpaces:{website:{name:'Website Launch',root:'/website',note:'Review the page'}},SpatialDemoExamples:{projects:{website:{name:'Website Launch'}}},activeWorkspace:'general',activeProjectName:'website',desktopPreset:preset,areaFor:()=>node('area'),$:node,$$:()=>[],desktopStorage:{getItem:()=>true,setItem(){}},queueDesktopStateBroadcast(){},escapeHtml:String,icon:()=>'',prepareControlSemantics(){},MutationObserver:class{observe(){}},document:{addEventListener(){}},window:{addEventListener(){}},layoutDockAreas(){}};
+  vm.createContext(boot);vm.runInContext(adapter,boot);
+  const session=boot.SpatialAIDesktop.snapshot().sessions.general;
+  assert.equal(session.turns.length,preset==='demo'?2:0);assert.equal(session.draft,'Keep this draft');
+  boot.SpatialAIDesktop.render();assert.equal(boot.SpatialAIDesktop.snapshot().sessions.general.turns.length,session.turns.length,'Rendering does not duplicate examples');
+}
 const handlers={document:{},window:{}};let over=false,highlighted=false;const added=[];
 const source={closest(selector){return selector.startsWith('.app-identity')?this:null;}};
 const context={document:{elementFromPoint:()=>over?'chat':{matches:()=>false},addEventListener(type,fn){(handlers.document[type]||=[]).push(fn);}},window:{addEventListener(type,fn){(handlers.window[type]||=[]).push(fn);}},area:{dataset:{},hidden:false,contains:target=>target==='chat',classList:{remove(){highlighted=false;},toggle(name,value){highlighted=value;}}},describe:()=>({title:'Storyboard',project:'website'}),add:item=>added.push(item)};

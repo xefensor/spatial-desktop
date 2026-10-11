@@ -24,7 +24,7 @@
     if(session.examplesSeen||session.turns.length||desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;
     const candidate=session.workingProject||activeProjectName,project=projectSpaces[candidate],isDemo=project&&SpatialDemoExamples.projects[candidate]?.name===project.name;
     const projectId=isDemo?candidate:null,workingFolder=isDemo?project.root:workspaceProfiles[activeWorkspace].home;
-    const items=isDemo?[C.normalize({id:'example-project-note:'+candidate,title:'Project note',text:project.note||project.summary,workspace:project.originWorkspace||activeWorkspace,project:candidate,source:{workspace:project.originWorkspace||activeWorkspace,project:candidate}},activeWorkspace)]:[];
+    const items=isDemo?[model.normalize({id:'example-project-note:'+candidate,title:'Project note',text:project.note||project.summary,workspace:project.originWorkspace||activeWorkspace,project:candidate,source:{workspace:project.originWorkspace||activeWorkspace,project:candidate}},activeWorkspace)]:[];
     const context={folder:workingFolder,project:projectId,sources:items,example:true},name=isDemo?project.name:'';
     const requests=isDemo?['Summarize the attached project note.','Turn it into a checklist for the next review.']:['Help me plan a focused work session.','Draft a note I can keep in this workspace.'];
     requests.forEach(request=>model.exchange(activeWorkspace,request,D.reply(request,{items,folder:workingFolder,project:name}),context));
