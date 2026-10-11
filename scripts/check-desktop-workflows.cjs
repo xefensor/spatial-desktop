@@ -56,7 +56,7 @@ ctx.projectSpaces = {
   custom: { name: 'České <notes>', root: '/mnt/custom', summary: '', modes: {}, resources: [], note: '' }
 };
 vm.runInContext(slice('function projectSearchResults(', 'function filterUniversalSearch('), ctx);
-for (const [query, id] of [['urban', 'research'], ['ecology urban', 'research'], ['mnt school', 'research'], ['reading', 'research'], ['video reference', 'research'], ['zlutoucky kun', 'research'], ['ceske notes', 'custom']]) assert(ctx.projectSearchResults(query).some(r => r.id === id), query);
+for (const [query, id] of [['urban', 'research'], ['ecology urban', 'research'], ['mnt school', 'research'], ['reading', 'research'], ['video reference', 'research'], ['ceske notes', 'custom']]) assert(ctx.projectSearchResults(query).some(r => r.id === id), query);
 assert.equal(ctx.projectSearchResults('not in any project').length, 0);
 assert.equal(ctx.projectSearchResults(' ').length, 0);
 delete ctx.projectSpaces.custom;
@@ -145,7 +145,7 @@ for (const filename of fs.readdirSync(dist).filter(name => name.endsWith('.html'
   }
 }
 console.log(`${localReferences} local HTML asset/navigation references passed.`);
-console.log('Desktop workflows passed: 19 resource cases, shared terminal commands, project/resource/note search, safe markup, duplicate system toggles, keyboard events and Escape priority.');
+console.log('Desktop workflows passed: 19 resource cases, shared terminal commands, project/resource search, safe markup, duplicate system toggles, keyboard events and Escape priority.');
 
 // Project rail actions must reveal the editor rather than focus hidden content.
 for (const edge of ['left', 'right', 'top', 'bottom']) {

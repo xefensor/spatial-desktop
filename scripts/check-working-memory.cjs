@@ -8,6 +8,7 @@ const M=require('../dist/working-memory.js');
   const note=memory.migrateQuickNote(key,'My original project wording.','Migration project');
   assert.equal(note.text,'My original project wording.');assert(note.pinned);
   assert.equal(note.source.project,'migration');assert.equal(memory.items(key).length,1);
+  assert.equal(memory.search('original project wording','work')[0].id,note.id,'Migrated notes remain searchable through Stash');
   memory.edit(note.id,{text:'My updated wording.'});
   const restored=M.create(memory.snapshot(),()=>200,'reload');
   restored.migrateQuickNote(key,'My original project wording.','Migration project');
