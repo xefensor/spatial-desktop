@@ -149,7 +149,7 @@
   function recordSaved(item){item=itemFor(item.id)||item;const [workspace,project]=JSON.parse(item.scope);globalThis.SpatialTimelineDesktop?.record('stash.save',{workspace,project,title:item.title,stashId:item.fileId||item.id,page:desktopPages.current(workspace),detail:'Saved to Stash'});}
   function contextFor(item){
     const [workspace,project]=JSON.parse(item.scope),saved=savedItem(item),attachment=F.safeAttachment(item.attachment);
-    return {id:item.fileId||item.id,title:item.title,kind:attachment?.kind||'note',text:item.text,why:item.why||'',address:saved?saved.path:item.source.address,workspace,project,app:item.source.app,source:item.source,savedAt:item.created||item.updated,storageScope:item.scope,filename:saved?.file.name||'',attachment:attachment&&saved?.file.blobKey?{...attachment,key:saved.file.blobKey,src:undefined}:attachment};
+    return {id:item.fileId||item.id,title:item.title,kind:attachment?.kind||'note',text:item.text,why:item.why||'',address:saved?saved.path:item.source.address,workspace,project,app:item.source.app,source:item.source,savedAt:item.created||item.updated,storageScope:item.scope,filename:saved?.file.name||'',attachment:attachment?{...attachment,filename:attachment.filename||saved?.file.name||item.title}:null};
   }
   function originTags(item){
     const [workspace,project]=JSON.parse(item.scope),src=item.source,originWorkspace=src.workspace||workspace,originProject=src.workspace?src.project:project;
@@ -202,6 +202,7 @@
     if(value.storageScope===key&&itemsFor(key).some(item=>(item.fileId||item.id)===value.id)){feedback('This item is already in this Stash.');return false;}
     const [workspace,project]=JSON.parse(key),source=M.source(value.source?.workspace?value.source:{workspace:value.workspace||workspace,project:value.project||null,app:value.app,label:value.app?appInfo[value.app]?.label||value.app:'Dropped content',address:value.address});
     let attachment=F.safeAttachment(value.attachment);if(attachment)attachment={...attachment,filename:attachment.filename||String(value.filename||value.title||'Saved file').slice(0,160)};
+    if(attachment?.key){try{if(!await F.get(attachment.key)){feedback('The saved file is unavailable. Open its source to recover it.');return false;}}catch{feedback('The saved file could not be read.');return false;}}
     if(attachment?.src){try{const blob=await F.copyAsset(ownerFor(key),{id:value.id,attachment}),blobKey='stash-upload-'+crypto.randomUUID();await F.put(blobKey,blob);attachment={...attachment,key:blobKey,src:undefined,filename:value.filename||value.title,mime:blob.type,size:blob.size};}catch{feedback('The file could not be copied.');return false;}}
     if(itemsFor(key).length>=80){feedback('This Stash holds up to 80 items.');return false;}
     const text=String(value.text||'').slice(0,12000),why=String(value.why||'').slice(0,1000),title=String(value.title||'').slice(0,120),address=source.address||M.source({address:value.address}).address;
