@@ -72,6 +72,10 @@ Use the top tabs or **Shift + scroll** to switch Projects or return to Workspace
 
 This scene update refreshes the built-in workspace arrangements once and retains a backup of their previous session data. Workspaces attached to custom Projects are left alone; edited Project definitions and existing workspace notes are preserved. Later visits and workspace switches restore the user's changes rather than reset the examples. Historical commits retain their original examples.
 
+## Area resize limits
+
+Border drags stop at the available space instead of extending off-screen or shrinking the opposite Area. Side docks can grow to 520 px and top/bottom docks to 360 px, with a further 40% display limit. The remaining canvas keeps up to a 440 px width and 320 px height reservation, scaled down on smaller viewports. Rails remain available. Old oversized layouts and viewport changes are fitted to the current display without losing the preferred size for a larger display. The dedicated Area layout on a spare monitor remains available.
+
 ## Workspace folders and project downloads
 
 Each Workspace owns its Home and all eight standard Linux user folders: Desktop, Documents, Downloads, Music, Pictures, Videos, Templates and Public. General uses `/home/demo`; other Workspaces use `/home/demo/Workspaces/<Name>`. Home and Places always resolve inside the current Workspace, even while a Project is open.

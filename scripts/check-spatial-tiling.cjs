@@ -235,6 +235,71 @@ vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', doc
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
 
+// Area growth is bounded before layout: dragging to an extreme must not
+// squeeze the opposing panel, overlap it, or save an off-screen preference.
+const areaBoundsBaseline = vm.runInContext('JSON.stringify(snapshotAreaLayout())', docks);
+const originalShellRect = shell.getBoundingClientRect;
+shell.getBoundingClientRect = () => ({left:25,top:30,right:25+shell.clientWidth,bottom:30+shell.clientHeight,width:shell.clientWidth,height:shell.clientHeight});
+for (const edge of ['left','right','top','bottom']) {
+  const opposite = {left:'right',right:'left',top:'bottom',bottom:'top'}[edge];
+  const vertical = ['left','right'].includes(edge);
+  docks.boundsEdge = edge; docks.boundsOpposite = opposite;
+  vm.runInContext(`
+    areaFor('apps').hidden = areaFor('ai').hidden = true;
+    areaFor('projects').hidden = areaFor('systems').hidden = false;
+    dockState.projects.edge = boundsEdge; dockState.systems.edge = boundsOpposite;
+    dockSizes[boundsEdge] = ${vertical ? 300 : 280}; dockSizes[boundsOpposite] = ${vertical ? 300 : 190};
+    layoutDockAreas();
+  `, docks);
+  const oppositeBefore = JSON.stringify(areaFrames.systems.rect);
+  projectHandle.listeners.get('pointerdown')({button:0,pointerId:2,preventDefault(){},stopPropagation(){}});
+  const maxPointer = {clientX:edge==='right'?-2000:3000,clientY:edge==='bottom'?-2000:3000};
+  projectHandle.listeners.get('pointermove')(maxPointer);
+  const dimension = vertical ? 'width' : 'height';
+  const expected = vertical ? 520 : 360;
+  assert.equal(areaFrames.projects.rect[dimension],expected,edge+' stops at the size cap');
+  assert.equal(JSON.stringify(areaFrames.systems.rect),oppositeBefore,edge+' never shrinks its opposite during a drag');
+  assert.equal(vm.runInContext('dockSizes[boundsEdge]',docks),expected,'Persists the bounded size, not the pointer distance');
+  projectHandle.listeners.get('pointermove')({clientX:edge==='right'?4000:-3000,clientY:edge==='bottom'?4000:-3000});
+  assert.equal(areaFrames.projects.dataset.areaState,'rail',edge+' can still shrink to rail beyond the screen');
+  assert(areaFrames.projects.rect[dimension]>0,'Rail thickness stays positive');
+  projectHandle.listeners.get('pointerup')();
+}
+shell.clientWidth = 1200;
+vm.runInContext(`dockState.projects.edge='left';dockState.systems.edge='right';dockSizes.left=300;dockSizes.right=400;layoutDockAreas();`,docks);
+projectHandle.listeners.get('pointerdown')({button:0,pointerId:3,preventDefault(){},stopPropagation(){}});
+projectHandle.listeners.get('pointermove')({clientX:3000,clientY:400});
+assert.equal(areaFrames.projects.rect.width,360,'The opposing panel and usable canvas can impose a tighter cap');
+assert.equal(areaFrames.systems.rect.width,400,'Tighter cap still preserves the other panel');
+assert.equal(shell.clientWidth-docks.insets.left-docks.insets.right,440,'Preserves the desktop width');
+projectHandle.listeners.get('pointerup')();
+
+// Reflow repairs old huge preferences and changing viewport sizes, without
+// replacing those preferences when no resize gesture is in progress.
+for (const [width,height] of [[1600,900],[900,650],[600,400],[300,200],[120,100]]) {
+  shell.clientWidth=width; shell.clientHeight=height;
+  for (const horizontal of [false,true]) {
+    docks.horizontalBounds=horizontal;
+    vm.runInContext(`
+      dockState.projects.edge=horizontalBounds?'top':'left';dockState.systems.edge=horizontalBounds?'bottom':'right';
+      dockSizes.left=dockSizes.right=dockSizes.top=dockSizes.bottom=100000;
+      layoutDockAreas();
+    `,docks);
+    for(const name of ['projects','systems']) {
+      const r=areaFrames[name].rect;
+      assert(r.x>=0&&r.y>=0&&r.x+r.width<=width&&r.y+r.height<=height,'Areas stay within the resized viewport');
+    }
+    const a=areaFrames.projects.rect,b=areaFrames.systems.rect;
+    assert(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'Opposing Areas never overlap');
+    assert.equal(vm.runInContext('dockSizes.left',docks),100000,'Viewport fitting preserves the preferred layout');
+  }
+}
+shell.clientWidth=1600; shell.clientHeight=900; shell.getBoundingClientRect=originalShellRect;
+docks.areaBoundsBaseline=JSON.parse(areaBoundsBaseline);
+vm.runInContext(`workspaceAreaSessions.general=areaBoundsBaseline;applyAreaSession('general');`,docks);
+assert.equal(JSON.stringify(areaFrames.projects.rect),railRect,'Restoring the baseline keeps its original rail');
+console.log('Area resize limits: all four edges, out-of-screen pointers, opposite preservation, canvas reservation, stored sizes and ten viewport/session repair scenarios passed.');
+
 vm.runInContext(slice("function hideArea(", "function setDockPosition("), docks);
 vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);
 vm.runInContext(`workspaceAreaSessions.general.hidden = {apps:true, systems:true, projects:true, ai:true};

@@ -2629,6 +2629,13 @@ function edgeStateMinimum(edge, states) {
   return Math.max(...names.map(name => vertical ? stateSideMinimum(name, states[name]) : stateHorizontalMinimum(name, states[name])));
 }
 
+function edgeMinimumForState(edge, state) {
+  const names = dockGroup(edge);
+  if (!names.length) return 0;
+  const states = Object.fromEntries(areaPriority.map(name => [name, state]));
+  return edgeStateMinimum(edge, states);
+}
+
 function preferredSideSize(edge, states, profile) {
   const names = dockGroup(edge);
   if (!names.length) return 0;
@@ -2663,11 +2670,70 @@ function minimumWorkspaceWidth(profile, width) {
   return Math.min(820, width * .54);
 }
 
+function dockAxisBounds(edge, width, height) {
+  const vertical = edge === "left" || edge === "right";
+  const extent = Math.max(0, vertical ? width : height);
+  const opposite = { left: "right", right: "left", top: "bottom", bottom: "top" }[edge];
+  const rails = edgeMinimumForState(edge, "rail") + edgeMinimumForState(opposite, "rail");
+  return {
+    opposite,
+    extent,
+    maximum: Math.min(vertical ? 520 : 360, Math.floor(extent * .4)),
+    // Keep a usable canvas on normal displays; on small viewports the rails
+    // themselves also need to fit. Width and height are constrained separately.
+    workspace: Math.min(vertical ? 440 : 320, Math.floor(extent * .5), Math.max(0, extent - rails))
+  };
+}
+
+function boundDockLayout(width, height, states, requestedSizes) {
+  const sizes = { ...requestedSizes };
+  const rail = edge => {
+    dockGroup(edge).forEach(name => { states[name] = "rail"; });
+    sizes[edge] = edgeMinimumForState(edge, "rail");
+  };
+  dockEdges.forEach(edge => {
+    if (!dockGroup(edge).length) { sizes[edge] = 0; return; }
+    const { maximum } = dockAxisBounds(edge, width, height);
+    const minimum = edgeStateMinimum(edge, states);
+    if (maximum < minimum) rail(edge);
+    else sizes[edge] = Math.min(maximum, Math.max(minimum, sizes[edge]));
+  });
+  for (const pair of [["left", "right"], ["top", "bottom"]]) {
+    const { extent, workspace } = dockAxisBounds(pair[0], width, height);
+    const budget = Math.max(0, extent - workspace);
+    let overflow = sizes[pair[0]] + sizes[pair[1]] - budget;
+    // This path repairs old oversized sessions and a shrinking viewport. A
+    // live resize is clamped before layout, so it never squeezes the other dock.
+    [...pair].sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
+      if (overflow <= 0 || !dockGroup(edge).length) return;
+      const before = sizes[edge];
+      const minimum = edgeStateMinimum(edge, states);
+      if (before - overflow < minimum) rail(edge);
+      else sizes[edge] = before - overflow;
+      overflow -= before - sizes[edge];
+    });
+    const total = sizes[pair[0]] + sizes[pair[1]];
+    if (total > budget) pair.forEach(edge => { sizes[edge] = Math.floor(sizes[edge] * budget / total); });
+  }
+  return sizes;
+}
+
+function boundedDockResize(edge, requested, width, height) {
+  const layout = resolvedAreaLayout(width, height);
+  const { opposite, maximum, workspace, extent } = dockAxisBounds(edge, width, height);
+  const rail = edgeMinimumForState(edge, "rail");
+  const expanded = edgeMinimumForState(edge, "expanded");
+  const limit = Math.max(0, Math.min(maximum, extent - workspace - layout.sizes[opposite]));
+  if (!Number.isFinite(requested)) return layout.sizes[edge];
+  if (areaStateForSize(edge, requested) === "rail" || limit < expanded) return Math.min(rail, limit);
+  return Math.min(limit, Math.max(expanded, requested));
+}
+
 function resolvedAreaLayout(width, height) {
   const profile = displayProfileFor(width, height);
   const states = initialAreaStates(profile);
   if (!areasFollowWindows()) {
-    return { profile, states, sizes: resolvedManualDockSizes(states), minimumWorkspace: 220 };
+    return { profile, states, sizes: boundDockLayout(width, height, states, resolvedManualDockSizes(states)), minimumWorkspace: 220 };
   }
   const gap = 0;
   const minimumWorkspace = minimumWorkspaceWidth(profile, width);
@@ -2693,7 +2759,7 @@ function resolvedAreaLayout(width, height) {
     sizes[edge] -= reduction;
     overflow -= reduction;
   });
-  return { profile, states, sizes, minimumWorkspace };
+  return { profile, states, sizes: boundDockLayout(width, height, states, sizes), minimumWorkspace };
 }
 
 function layoutStateLabel(state) {
@@ -2795,13 +2861,6 @@ function captureBaseDockLaneRects() {
 
 function rectanglesOverlap(first, second, inset = 0) {
   return first.left < second.right - inset && first.right > second.left + inset && first.top < second.bottom - inset && first.bottom > second.top + inset;
-}
-
-function edgeMinimumForState(edge, state) {
-  const names = dockGroup(edge);
-  if (!names.length) return 0;
-  const states = Object.fromEntries(areaPriority.map(name => [name, state]));
-  return edgeStateMinimum(edge, states);
 }
 
 function clearanceFromEdge(edge, rect, shellRect) {
@@ -3084,7 +3143,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   const bottomHeight = bottom.length ? effectiveSizes.bottom : 0;
   const centerLeft = gap + (left.length ? leftWidth + gap : 0);
   const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
-  const centerWidth = Math.max(220, centerRight - centerLeft);
+  const centerWidth = Math.max(0, centerRight - centerLeft);
 
   const layoutSide = (names, edge, x, sideWidth) => {
     if (!names.length) return;
@@ -3246,7 +3305,6 @@ function bindDockResize(name, area) {
     if (name === "systems") endSystemRailExpansion(false);
     event.preventDefault();
     event.stopPropagation();
-    const shellRect = $(".desktop-shell").getBoundingClientRect();
     const resizeEdge = dockState[name].edge;
     manualAreaOverride(name);
     dockSizeManual[resizeEdge] = !areasFollowWindows();
@@ -3254,10 +3312,11 @@ function bindDockResize(name, area) {
     area.classList.add("is-area-resizing");
     const move = moveEvent => {
       const edge = dockState[name].edge;
-      if (edge === "left") dockSizes.left = moveEvent.clientX - shellRect.left;
-      if (edge === "right") dockSizes.right = shellRect.right - moveEvent.clientX;
-      if (edge === "top") dockSizes.top = moveEvent.clientY - shellRect.top;
-      if (edge === "bottom") dockSizes.bottom = shellRect.bottom - moveEvent.clientY;
+      const rect = $(".desktop-shell").getBoundingClientRect();
+      const requested = edge === "left" ? moveEvent.clientX - rect.left
+        : edge === "right" ? rect.right - moveEvent.clientX
+        : edge === "top" ? moveEvent.clientY - rect.top : rect.bottom - moveEvent.clientY;
+      dockSizes[edge] = boundedDockResize(edge, requested, rect.width, rect.height);
       /* In legacy Auto this is only the immediate drag state. The next spatial pass
          may expand it again, keep it on the rail, or move it when even the
          rail does not fit. Bounded tiling always keeps the user's chosen size. */
