@@ -21,13 +21,12 @@
         .material-surface-abs,
         .app-art,.app-art *, .app-tile,.app-tile *, .mini-art,.mini-art *,
         .online-dot,.theme-dot,.link-badge,
-        .folder-glyph,.document-glyph,
         .overview-window-titlebar>i,.overview-mini-browser>i,
         svg,svg *)) {
     border-radius:var(--material-content-radius,0px)!important;
     corner-shape:var(--material-content-shape,square)!important;
   }
-  :is(.material-surface-abs,.abs-example,.abs-surface,.intro-copy,.rule-card,.abs-menu,.abs-banner,
+  :is(.material-surface-abs,.abs-example,.abs-surface,.abs-side,.shape-window,.intro-copy,.rule-card,.abs-menu,.abs-banner,
       .dolphin-window,.music-window,.plasma-rail) {
     border-radius:var(--window-corner,22px)!important;
     corner-shape:squircle!important;
@@ -54,7 +53,7 @@
   }
 
   :is(.material-surface-glass,.material-glass-button,.material-glass-field,.material-glass-element,
-      .desktop-glass-dialog,.glass-example,.glass-surface,.glass-button,.glass-field,.glass-choice,
+      .desktop-glass-dialog,.glass-example,.glass-surface,.shape-area,.glass-button,.glass-field,.glass-choice,
       .glass-tab,.glass-menu,.glass-banner,.glass-row,.glass-side .recessed-field,
       .glass-side .tab,.glass-side .row-icon,.glass-menu .menu-item,
       .guide-nav,.theme-switch,.theme-switch button,.top-link,.material-chip.glass,
@@ -68,6 +67,49 @@
   :is(.material-surface-glass,.material-glass-button,.glass-button,.glass-tab)::after {
     border-radius:0!important;
     corner-shape:square!important;
+  }
+
+  /* App icons are solid objects placed on glass, rather than pieces of the
+     glass sheet. Their silhouette still uses ABS geometry at icon scale. */
+  :is(.app-tile,.mini-art,.app-art:not(svg),.monitor-app,.abs-side .surface-tag)::before,
+  :is(.app-tile,.mini-art,.app-art:not(svg)) {
+    border-radius:var(--icon-corner,9px)!important;
+    corner-shape:squircle!important;
+  }
+  :is(.material-abs-button,.abs-button,.abs-side .tab)::after {
+    corner-shape:squircle!important;
+  }
+  :is(.abs-led,.state-level)::before,
+  .abs-side .field-demo::after {
+    corner-shape:squircle!important;
+  }
+  .abs-led {corner-shape:squircle!important}
+  :is(.material-glass-field,.material-glass-element,.glass-field,.glass-control,
+      .glass-chip,.glass-side .surface-tag,.glass-row)::before,
+  :is(.material-glass-field,.material-glass-element,.glass-field,.glass-control,
+      .glass-chip,.glass-side .surface-tag,.glass-row)::after {
+    border-radius:0!important;corner-shape:square!important;
+  }
+  /* Radio dials and status lamps are circular objects; square check keys on
+     ABS use a squircle. A radio engraved into glass remains rectangular. */
+  input[type=radio].material-abs-field,
+  :is(.online-dot,.theme-dot,.link-badge) {
+    border-radius:50%!important;corner-shape:round!important;
+  }
+  input:is([type=checkbox],[type=radio]):is(.material-glass-field,.material-abs-field) {
+    appearance:none;width:14px;height:14px;vertical-align:middle;
+    border:1px solid var(--sd-glass-groove,var(--line));
+    background:var(--glass-field,transparent);
+  }
+  input:is([type=checkbox],[type=radio]).material-abs-field {
+    background:var(--shell);border-color:var(--line);
+  }
+  input:is([type=checkbox],[type=radio]):is(.material-glass-field,.material-abs-field):checked {
+    background:var(--state-tone,var(--text));
+    box-shadow:inset 0 0 0 3px var(--glass-field,var(--shell));
+  }
+  input:is([type=checkbox],[type=radio]).material-abs-field:checked {
+    box-shadow:inset 0 0 0 3px var(--shell);
   }
   .material-guide-page .brand-mark i:first-child {
     corner-shape:squircle!important;
@@ -104,5 +146,12 @@
       .dolphin-window input[type="range"],.music-window input[type="range"]):not(.material-glass-field,.glass-range,.material-surface-glass)::-moz-range-thumb {
     width:16px!important;height:16px!important;box-sizing:border-box!important;
     border-radius:50%!important;corner-shape:round!important;
+  }
+  :is(.material-abs-field,.abs-range)::-webkit-slider-runnable-track {
+    border-radius:3px!important;corner-shape:squircle!important;
+  }
+  :is(.material-abs-field,.abs-range)::-moz-range-track,
+  :is(.material-abs-field,.abs-range)::-moz-range-progress {
+    border-radius:3px!important;corner-shape:squircle!important;
   }
 }

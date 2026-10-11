@@ -82,13 +82,15 @@ const materialNode = (selector,parent=null) => {
   const classes=new Set();
   const node={selector,parent,classes,
     matches: selectors => selectors.split(',').includes(selector),
-    closest: () => classes.has('material-surface-glass') || classes.has('material-surface-abs') ? node : parent?.closest(),
+    closest: () => classes.has('material-surface-glass') || classes.has('material-surface-abs') ? node : node.parent?.closest(),
     classList:{add: value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
   return node;
 };
 const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.notification-peek'].map(selector=>materialNode(selector));
 const absApp=materialNode('.app-frame');
-const allSurfaces=[...utilitySurfaces,absApp];
+const absGuide=materialNode('.guide-window');
+const guideSearch=materialNode('.guide-window .recessed-field',absGuide);
+const allSurfaces=[...utilitySurfaces,absApp,absGuide,guideSearch];
 utilitySurfaces[0].classes.add('material-surface-abs');
 materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>allSurfaces.filter(node=>node.matches(selector))});
 for(const surface of utilitySurfaces){
@@ -104,6 +106,19 @@ assert(utilitySurfaces.at(-1).classes.has('material-glass-button'),'A notificati
 const appButton=materialNode('button',absApp);
 materialCtx.applyControlMaterial(appButton);
 assert(appButton.classes.has('material-abs-button'),'Application controls retain ABS');
+const guideButton=materialNode('button',absGuide),guideSearchInput=materialNode('input',guideSearch);
+materialCtx.applyControlMaterial(guideButton);materialCtx.applyFieldMaterial(guideSearchInput);
+assert(guideButton.classes.has('material-abs-button'),'Guide controls retain ABS');
+assert(guideSearchInput.classes.has('material-glass-field'),'Guide search inherits its nested glass insert');
+// Moving a control from one material to another must remove its previous
+// geometry, including native checkbox/radio controls.
+const movedChoice=materialNode('input[type=checkbox]',absGuide);
+materialCtx.applyFieldMaterial(movedChoice);
+assert(movedChoice.classes.has('material-abs-field'));
+movedChoice.parent=utilitySurfaces[3];
+materialCtx.applyFieldMaterial(movedChoice);
+assert(movedChoice.classes.has('material-glass-field'));
+assert(!movedChoice.classes.has('material-abs-field'),'Reparenting removes stale ABS geometry');
 // A slider in an opaque app must inherit ABS; the same control parked on
 // an Area glass sheet must inherit glass instead of following app identity.
 const appRange=materialNode('.app-frame input[type=range]',absApp);

@@ -67,11 +67,13 @@ const glassMaterialSurfaceSelector = [
   ".notification-peek",
   ".toast",
   ".desktop-context-header",
-  ".app-frame .recessed-field"
+  ".app-frame .recessed-field",
+  ".guide-window .recessed-field"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
-  ".app-frame"
+  ".app-frame",
+  ".guide-window"
 ].join(",");
 
 const materialFieldSelector = [
@@ -82,7 +84,7 @@ const materialFieldSelector = [
   ".mini-command",
   ".mini-browser-search",
   "input[type=range]",
-  "input:not([type=range]):not([type=checkbox]):not([type=radio])",
+  "input:not([type=range])",
   "textarea",
   "select"
 ].join(",");
@@ -119,7 +121,7 @@ function prepareMaterialSurfaces(root = document) {
   });
   /* App windows are primarily ABS. Only small display-like inserts are glass,
      so a whole toolbar never changes material just because it contains one. */
-  matchingNodes(root, ".app-frame .recessed-field").forEach(surface => {
+  matchingNodes(root, ".app-frame .recessed-field,.guide-window .recessed-field").forEach(surface => {
     surface.classList.add("material-surface-glass");
     surface.classList.remove("material-surface-abs");
   });
