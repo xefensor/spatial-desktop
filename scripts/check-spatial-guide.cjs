@@ -427,3 +427,6 @@ assert(!captureModel.ready(),'Window practice waits for the window action');
 capture.appState['terminal--2']='open';capture.frontApp='terminal--2';captureScene.overview=false;capturePending.shift()();assert(captureModel.ready(),'The capture retains the Overview origin after the app closes the overlay');
 capture.guide.settingUp=true;captureHandlers.change({target:{id:'overviewWindowFilter',value:'open'}});assert.equal(capturePending.length,0,'Guide prerequisite setup cannot credit user actions');
 console.log('Guide Overview capture passed: filters validate after change, unpark validates after selection and setup never counts.');
+
+assert.doesNotThrow(()=>G.observeWindows(at('overview-navigation'),{open:[],states:{}}),'An empty Overview desktop remains observable');
+assert.equal(G.recovery(at('overview-navigation'),{...normalScene,open:[],parked:[]}).action,'window','Empty-window recovery offers a real app rather than crashing');

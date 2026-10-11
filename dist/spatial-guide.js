@@ -186,7 +186,6 @@
       const name = Object.keys(states).find(name=>states[name] === 'minimized' && !model.state.parkingBaseline.includes(name));
       if (name) {remember(name);model.state.parkedWindow = name;model.mark('app-park');}
     }
-    if(id==='overview-navigation'&&!scene.open.length&&!scene.parked?.length)return hint('There is no window on this desktop. Choose a populated desktop in Apps, or bring an app here. All windows includes the other desktops in the current project or Workspace.','window','Bring an app here');
     if (id === 'unpark') {
       model.state.unparkCandidates = [...new Set([...(model.state.unparkCandidates || []), ...Object.keys(states).filter(name=>states[name] === 'minimized')])];
       const name = model.state.unparkCandidates.find(name=>open.includes(name));
@@ -256,6 +255,7 @@
     if (['project-app','project-stash','project-navigation','ai-context','challenge'].includes(id) && !scene.projectExists) return hint('Your practice project was closed or removed. Reopen it, or prepare a replacement to continue.','project','Restore practice project');
     if (['project-app','project-stash'].includes(id) && scene.column !== model.state.practiceProject) return hint('Open the app inside your practice project, so it belongs to that project.','project','Go to your project');
     if (['tiling','float','park'].includes(id) && (scene.column !== 'workspace' || !scene.open.length)) return hint('Bring any app onto the Workspace desktop for this task. Your existing windows and saved content are still available.','window','Bring an app here');
+    if(id==='overview-navigation'&&!scene.open.length&&!scene.parked?.length)return hint('There is no window on this desktop. Choose a populated desktop in Apps, or bring an app here. All windows includes the other desktops in the current project or Workspace.','window','Bring an app here');
     if (id === 'unpark' && !scene.parked?.length && !(model.state.unparkCandidates || []).some(name=>scene.open.includes(name))) return hint('There is no parked app available. Park any window, then bring it back using its card or rail icon.','park-app','Prepare a parked app');
     if (id === 'project-navigation' && scene.column === 'workspace' && !scene.open.length) return hint('Open or unpark any app in Workspace before comparing it with your project.','window','Open a Workspace app');
     if (id === 'true-fullscreen' && scene.bounded && !done.includes('full-enter')) return hint('This fills the space between Areas. Middle-click maximize for Fullscreen.','true-fullscreen','Enter Fullscreen');
