@@ -59,6 +59,10 @@ const backToBack=T.lanes([], [meeting,{...meeting,id:'later',time:at(11),endTime
 assert(backToBack.plans.every(e=>e.columns===1),'Touching intervals do not overlap');
 const tomorrow=new Date(laneDay+'T00:00:00');tomorrow.setDate(tomorrow.getDate()+1);
 const overnight={...meeting,time:at(23),endTime:tomorrow.getTime()+3600000};
+const emptyNow=T.lanes([],[],{day:laneDay,now:at(3),includeNow:true});
+assert(emptyNow.nowTop>=0&&emptyNow.nowTop<=emptyNow.height,'Now is reachable even on an empty morning');
+const futureOnly=T.lanes([],[meeting],{day:laneDay,now:at(3),includeNow:true});
+assert(futureOnly.nowTop>=0&&futureOnly.nowTop<futureOnly.plans[0].top,'Today includes current time even when all plans are later');
 const nextDay=T.lanes([], [overnight],{day:T.dayKey(tomorrow.getTime())});
 assert.equal(nextDay.plans.length,1);assert.equal(nextDay.plans[0].height,60*nextDay.scale,'An overnight event clips to the selected day');
 assert.equal(T.lanes([], [meeting],{day:'2026-10-12'}).plans.length,0,'Other days never leak into the selected day');
@@ -83,6 +87,7 @@ const track=make('#overviewSectionTrack');Object.assign(track,{clientWidth:1000,
   append(n){this.children=this.children.filter(x=>x!==n);this.children.push(n);},scrollTo({left}){scrollWrites++;this.scrollLeft=left;}});
 panelNodes.forEach(n=>Object.defineProperty(n,'offsetLeft',{get:()=>100+track.children.indexOf(n)*824}));
 const tabs=T.sections.map(id=>{const n=make('tab:'+id);n.dataset.overviewSection=id;return n;});
+const dayButtons=[-1,1].map(direction=>{const n=make('day:'+direction);n.dataset.timelineDayStep=String(direction);return n;});
 const edges=[-1,1].map(direction=>{const n=make('edge:'+direction);n.dataset.overviewStep=String(direction);return n;});
 make('#timelineType').value='all';
 const data=new Map(),pending=[],calls=[];
@@ -92,7 +97,7 @@ const context={SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:f
   desktopPages:{column:()=>context.column||'site',columnOf:()=>context.column||'site',current:()=>1,pageOf:()=>1,last:()=>2},
   desktopStorage:{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)},
   $:(key,scope)=>key==='span'&&scope?make(scope.key+':span'):make(key),
-  $$:key=>key==='[data-overview-panel]'?panelNodes:key==='[data-overview-section]'?tabs:key==='[data-overview-step]'?edges:[],
+  $$:key=>key==='[data-overview-panel]'?panelNodes:key==='[data-overview-section]'?tabs:key==='[data-overview-step]'?edges:key==='[data-timeline-day-step]'?dayButtons:[],
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
   requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
@@ -205,5 +210,32 @@ make('#timelinePlanForm').listeners.submit({preventDefault(){}});
 assert(!Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).some(e=>e.title==='Design review'),'An invalid calendar interval cannot be saved');
 make('#timelinePlanEnd').value='2099-01-02T11:30';make('#timelinePlanForm').listeners.submit({preventDefault(){}});
 const review=Object.values(JSON.parse(data.get('spatial-workspace-planner-v1'))).find(e=>e.title==='Design review');assert.equal(review.endTime-review.time,90*60000,'The form persists the chosen duration');
+make('#timelineToday').listeners.click();
+assert.equal(make('#timelineDay').value,T.dayKey(Date.now()),'Now returns from a future day to today');
+assert(make('#timelineEntries').innerHTML.includes('timeline-now'),'Now has a visible anchor even outside scheduled hours');
+assert(make('#timelineScroll').scrollTop>=0);
+make('#timelineScroll').scrollTop=-100;make('#timelineLatest').listeners.click();
+assert(make('#timelineScroll').scrollTop>=0,'Latest activity jumps to an actual activity anchor');
+assert.equal(make('#timelineDay').value,T.dayKey(Date.now()),'Jumping to latest activity preserves the selected day');
+dayButtons[1].listeners.click();assert.notEqual(make('#timelineDay').value,T.dayKey(Date.now()),'Day arrows reach the next day containing items');
+dayButtons[0].listeners.click();assert.equal(make('#timelineDay').value,T.dayKey(Date.now()),'Reverse navigation returns to the prior available day');
+assert.equal(make('#overviewContext').textContent,'General / Website / Desktop 2','Overview states the actual workspace, project and desktop');
 context.activeWorkspace='work';context.SpatialOverviewDesktop.refresh();assert.equal(make('#timelinePlanForm').hidden,true,'A workspace switch closes the old workspace form');
 console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating, labelled examples, interruption-safe snaps and independent calendar/tasks/reminders.');
+
+// Production window filters keep travelling parked windows visible on every desktop.
+const shell=fs.readFileSync(require('node:path').join(__dirname,'../dist/desktop-shell.js'),'utf8');
+const windowNodes=new Map(),windowContext={
+  activeWorkspace:'general',desktopHasWindowFocus:false,frontApp:null,
+  appState:{left:'open',right:'open',other:'open',park:'minimized',closed:'closed',foreign:'open'},
+  appInfo:Object.fromEntries(['left','right','other','park','closed','foreign'].map(name=>[name,{label:name,primary:'#22bb66',detail:'Detail'}])),
+  desktopPages:{inColumn:(_,name)=>name!=='foreign',current:()=>0,pageOf:(_,name)=>name==='other'||name==='park'?1:0},
+  workspaceHotbarNames:()=>['right','left','park'],isLocalApp:()=>true,
+  $:id=>{if(!windowNodes.has(id))windowNodes.set(id,{innerHTML:'',textContent:'',value:'all'});return windowNodes.get(id);},
+  escapeHtml:String,appArt:()=>'<svg></svg>',icon:()=>'<svg></svg>',refreshWorkspaceContext(){},renderDesktopColumnMap(){},prepareControlSemantics(){}
+};
+vm.createContext(windowContext);vm.runInContext(shell.slice(shell.indexOf('function renderOverviewWindows()'),shell.indexOf('function refreshWorkspaceContext()')),windowContext);
+const checkWindows=(filter,expected)=>{windowContext.$('#overviewWindowFilter').value=filter;windowContext.renderOverviewWindows();assert.deepEqual([...windowContext.$('#overviewWindowGrid').innerHTML.matchAll(/data-overview-open-app="([^"]+)"/g)].map(match=>match[1]),expected);};
+checkWindows('all',['right','left','other','park']);checkWindows('desktop',['right','left','park']);checkWindows('parked',['park']);checkWindows('open',['right','left','other']);
+windowContext.appState.park='closed';checkWindows('parked',[]);assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state without hiding the app launcher');
+console.log('Overview improvements passed: current context, time jumps, available-day navigation, empty-day Now anchors, window filters and desktop/hotbar order.');

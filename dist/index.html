@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="workspace-setup.css?v=1">
   <link rel="stylesheet" href="working-memory.css?v=14">
   <link rel="stylesheet" href="ai-area.css?v=7">
-  <link rel="stylesheet" href="overview-carousel.css?v=11">
+  <link rel="stylesheet" href="overview-carousel.css?v=12">
   <script src="workspace-setup.js?v=5"></script>
   <script src="spatial-guide.js?v=19"></script>
 </head>
@@ -249,7 +249,7 @@
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true" inert>
     <div class="universal-search-shell">
       <header class="universal-search-header">
-        <div class="universal-search-title"><span class="eyebrow" title="Work in progress: the design and interactions are still evolving.">DESKTOP · WIP PROTOTYPE</span><h2 id="universalSearchTitle">Overview</h2><span class="overview-layout-status"><svg><use href="#i-monitor"/></svg><span id="overviewLayoutStatus">Fixed · Desktop</span></span></div>
+        <div class="universal-search-title"><span class="eyebrow" title="Work in progress: the design and interactions are still evolving.">DESKTOP · WIP PROTOTYPE</span><h2 id="universalSearchTitle">Overview</h2><span class="overview-context" id="overviewContext"></span><span class="overview-layout-status"><svg><use href="#i-monitor"/></svg><span id="overviewLayoutStatus">Fixed · Desktop</span></span></div>
         <label class="universal-search-field">
           <svg aria-hidden="true"><use href="#i-search"/></svg>
           <input id="universalSearchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Search apps, files, settings, actions or the web" aria-label="Search the desktop">
@@ -277,14 +277,14 @@
           <button class="overview-section-tab" data-overview-section="apps" aria-pressed="true"><svg aria-hidden="true"><use href="#i-grid"/></svg><span>Apps</span></button>
           <button class="overview-section-tab" data-overview-section="projects" aria-pressed="false"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Projects &amp; Home</span></button>
           <button class="overview-section-tab" data-overview-section="system" aria-pressed="false"><svg aria-hidden="true"><use href="#i-settings"/></svg><span>System</span></button>
-          <span class="overview-scroll-hint">Scroll anywhere · Shift + scroll</span>
+          <span class="overview-scroll-hint">Scroll to explore · ← →</span>
         </nav>
         <div class="overview-carousel-stage">
         <button class="overview-neighbour overview-neighbour-prev" data-overview-step="-1" aria-label="Previous Overview section"><svg aria-hidden="true"><use href="#i-left"/></svg><span></span></button>
         <main class="overview-main overview-section-track" id="overviewSectionTrack" aria-label="Overview section carousel" tabindex="0">
           <section class="overview-panel overview-timeline-section" data-overview-panel="timeline" aria-labelledby="overviewTimelineTitle">
             <header class="overview-zone-heading"><span class="overview-zone-mark"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><span><span class="eyebrow">WORKSPACE ACTIVITY</span><h3 id="overviewTimelineTitle">Timeline</h3></span><span id="overviewTimelineWorkspace"></span></header>
-            <div class="timeline-toolbar"><label>Day<select id="timelineDay" aria-label="Timeline day"></select></label><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option><option value="stash">Stash</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
+            <div class="timeline-toolbar"><div class="timeline-day-navigation"><button class="surface-key timeline-day-step" data-timeline-day-step="-1" aria-label="Previous day with items"><svg><use href="#i-left"/></svg></button><label><span class="sr-only">Day</span><select id="timelineDay" aria-label="Timeline day"></select></label><button class="surface-key timeline-day-step" data-timeline-day-step="1" aria-label="Next day with items"><svg><use href="#i-right"/></svg></button></div><button class="surface-key timeline-jump" id="timelineToday" title="Today · jump to the current time">Now</button><button class="surface-key timeline-jump" id="timelineLatest" title="Jump to the most recent desktop activity on this day">Latest activity</button><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option><option value="stash">Stash</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
             <form id="timelinePlanForm" class="timeline-plan-form" hidden>
               <label>Kind<select id="timelinePlanKind"><option value="task.due">Task</option><option value="calendar.event">Calendar event</option><option value="reminder.due">Reminder</option></select></label>
               <label>Title<input id="timelinePlanTitle" maxlength="160" required placeholder="What’s coming up?"></label>
@@ -295,15 +295,16 @@
               <div class="timeline-plan-actions"><button class="surface-key" type="button" id="timelinePlanCancel">Cancel</button><button class="surface-key" type="submit">Add to Timeline</button></div>
             </form>
             <div class="timeline-scroll" id="timelineScroll"><div id="timelineEntries" role="list" aria-label="Workspace activity"></div></div>
-            <footer class="timeline-caption">Shared time · busy moments expand to keep activity readable</footer>
+            <footer class="timeline-caption">Activity and plans share the same time · scroll vertically through the day</footer>
           </section>
           <section class="overview-section overview-apps-section overview-panel" data-overview-panel="apps" aria-labelledby="allAppsTitle">
             <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
-            <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">OPEN WINDOWS</span><h3 id="openWindowsTitle">General workspace</h3></span></div><span id="workspaceOpenCount">2 windows</span></header>
+            <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">OPEN WINDOWS</span><h3 id="openWindowsTitle">General workspace</h3></span></div><div class="overview-window-tools"><span id="workspaceOpenCount">2 windows</span><select id="overviewWindowFilter" aria-label="Filter running windows"><option value="all">All windows</option><option value="desktop">This desktop</option><option value="open">Open</option><option value="parked">Parked</option></select></div></header>
+            <div class="overview-running-layout">
             <div class="desktop-column-map" id="desktopColumnMap" aria-label="Projects and workspace desktops"></div>
-            <p class="desktop-column-hint">Scroll / Win + scroll: desktops · Shift + scroll / Win + Shift + scroll: projects · Hold a window to carry it</p>
-            <div class="overview-open-windows" id="overviewWindowGrid" aria-label="Open and parked windows"></div>
+            <div class="overview-open-windows" id="overviewWindowGrid" aria-label="Open and parked windows"></div></div>
+            <p class="desktop-column-hint">Choose a desktop to visit it · choose a window to focus or unpark it</p>
           </section>
 
             <label class="overview-category-field">Category<select id="overviewCategory" aria-label="Application category"><option value="all">All applications</option><option value="favorites">Favorites</option><option value="graphics">Graphics</option><option value="games">Games</option><option value="internet">Internet</option><option value="office">Office</option><option value="multimedia">Multimedia</option><option value="utilities">Utilities</option><option value="system">System</option><option value="education">Education</option><option value="development">Development</option><option value="help">Help</option><option value="lost">Lost &amp; Found</option></select></label>
@@ -562,11 +563,11 @@
 <script src="stash-files.js?v=2"></script>
 <script src="ai-context.js?v=4"></script>
 <script src="ai-demo.js?v=2"></script>
-<script src="timeline.js?v=7"></script>
-<script src="desktop-shell.js?v=246"></script>
+<script src="timeline.js?v=5"></script>
+<script src="desktop-shell.js?v=247"></script>
 <script src="working-memory-desktop.js?v=25"></script>
 <script src="ai-desktop.js?v=13"></script>
-<script src="overview-desktop.js?v=12"></script>
+<script src="overview-desktop.js?v=13"></script>
   <script src="guide-desktop.js?v=30"></script>
 </body>
 </html>

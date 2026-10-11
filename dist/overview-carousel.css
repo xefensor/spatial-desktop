@@ -87,14 +87,26 @@ html[data-guide-timeline="false"] .overview-timeline-section{visibility:hidden!i
 @media(prefers-reduced-motion:reduce){.overview-panel{transition:none!important}}
 @media(max-width:1100px){.overview-scroll-hint{display:none}}
 
-/* Leave a readable strip for real window previews below the desktop map. */
-.universal-search .overview-carousel .overview-apps-section .open-windows-section{flex:0 0 auto!important;height:288px!important;max-height:48%!important;min-height:190px!important;display:grid!important;grid-template-rows:auto 112px auto minmax(58px,1fr)!important;gap:3px!important;overflow:hidden!important}
-.overview-carousel .desktop-column-map{height:112px!important;min-height:0!important;max-height:112px!important}
-.universal-search .overview-carousel .overview-open-windows{display:flex!important;flex-direction:row!important;align-items:center!important;min-height:58px!important;height:100%!important;flex:none!important;overflow-x:auto!important;overflow-y:hidden!important}
-.universal-search .overview-carousel .overview-open-windows .overview-window{width:215px!important;max-height:62px!important;height:62px!important;min-height:62px!important;flex:0 0 215px!important;display:block!important;grid-template-columns:none!important;grid-template-rows:none!important}
-.universal-search .overview-carousel .overview-window-titlebar{display:grid!important;grid-template-columns:34px minmax(0,1fr) 8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;border:0!important;padding:7px 10px!important}
+/* Places and windows sit side by side; each has one scroll surface. */
+.universal-search .overview-carousel .overview-apps-section .open-windows-section{flex:0 0 auto!important;height:260px!important;max-height:45%!important;min-height:190px!important;display:flex!important;flex-direction:column!important;gap:8px!important;overflow:hidden!important;padding:12px 16px!important}
+.overview-running-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;flex:1;min-height:0}
+.overview-carousel .desktop-column-map{display:flex;flex-direction:column;gap:8px;height:auto!important;min-height:0!important;max-height:none!important;overflow-y:auto;margin:0;overscroll-behavior:contain}
+.overview-carousel .desktop-column-card{display:grid;grid-template-columns:105px minmax(0,1fr);flex:none;border:0;background:transparent}
+.overview-carousel .desktop-column-card>header{padding:4px 8px 4px 0;border:0;align-items:center;gap:6px}
+.overview-carousel .desktop-column-card>header b{white-space:normal;line-height:1.4;font-size:12px}
+.overview-carousel .desktop-column-card>header svg{width:16px;height:16px}
+.overview-carousel .desktop-column-pages{display:flex;overflow-x:auto;max-height:none;gap:4px;padding:2px 0 5px;overscroll-behavior:contain}
+.overview-carousel .desktop-column-page{flex:0 0 96px;min-height:62px;padding:9px 7px;border:0!important;background:color-mix(in srgb,var(--text) 4%,transparent)!important}
+.overview-carousel .desktop-column-page[aria-pressed="true"]{background:color-mix(in srgb,var(--column-accent) 12%,transparent)!important}
+.overview-carousel .desktop-column-apps{display:none}
+.universal-search .overview-carousel .overview-open-windows{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:8px;min-height:0!important;height:100%!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain}
+.universal-search .overview-carousel .overview-open-windows .overview-window{width:100%!important;max-height:none!important;height:72px!important;min-height:72px!important;display:block!important;grid-template-columns:none!important;grid-template-rows:none!important;border:0!important;border-left:2px solid var(--overview-app)!important}
+.universal-search .overview-carousel .overview-window-titlebar{display:grid!important;grid-template-columns:36px minmax(0,1fr) 8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;border:0!important;padding:10px!important}
 .overview-carousel .overview-window-titlebar .overview-window-title{display:none}
-.overview-carousel .overview-window-content{padding:7px!important;font-size:11px!important}
+.overview-window-tools{display:flex;align-items:center;gap:12px;flex:none}
+.overview-window-tools select{height:30px;max-width:130px;padding:3px 7px;font:inherit;font-size:12px;color:var(--text);background:transparent;border:1px solid var(--sd-glass-groove);border-radius:0}
+.overview-carousel .workspace-no-windows{grid-column:1/-1;padding:18px!important;min-height:100px!important}
+.overview-carousel .desktop-column-hint{flex:none;margin:0;font-size:11px}
 
 /* Parallel lanes share exact time anchors; busy moments expand together. */
 .timeline-scroll{padding:0 16px 20px}
@@ -120,3 +132,42 @@ html[data-guide-timeline="false"] .overview-timeline-section{visibility:hidden!i
 .timeline-plan-block.is-duration{display:block;overflow:clip}
 .timeline-plan-block.is-duration>.timeline-entry-body{position:sticky;top:48px;margin-left:31px}
 .timeline-plan-block.is-duration>.timeline-entry-icon{position:sticky;top:48px;float:left;margin-right:7px}
+
+/* A quieter header leaves the useful content closer to the search field. */
+.universal-search{padding:20px clamp(20px,3.3vw,54px)!important}
+.universal-search .universal-search-header{grid-template-columns:minmax(230px,.34fr) minmax(0,1fr)!important;align-items:center;gap:20px;padding-bottom:12px}
+.universal-search .universal-search-title{display:block!important;min-width:0}
+.universal-search .universal-search-title h2{font-size:27px!important;margin:3px 0 5px;line-height:1.1}
+.universal-search .universal-search-title .eyebrow{font-size:9px!important;letter-spacing:.1em}
+.overview-context{display:block;font-size:11px;line-height:1.5;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.universal-search .overview-layout-status{display:none}
+.universal-search .universal-search-field{height:48px!important;padding-inline:14px}
+.universal-search .universal-search-field input{font-size:16px!important}
+.universal-search .workspace-switcher{min-height:0!important;padding:0 0 8px!important;gap:8px}
+.universal-search .workspace-tab{min-height:42px!important;padding:5px 9px!important;flex-basis:110px}
+.universal-search .workspace-glyph{width:23px;height:23px}
+.universal-search .workspace-tab small{font-size:10px!important}
+.universal-search .workspace-action{min-height:32px!important;font-size:12px}
+.overview-section-nav{padding:0 0 2px;gap:6px}
+.overview-section-tab{min-height:36px;padding:7px 14px}
+.overview-panel>.overview-zone-heading .eyebrow,.overview-panel>.overview-section-heading .eyebrow{display:none}
+.overview-panel>.overview-zone-heading,.overview-panel>.overview-section-heading{min-height:48px!important}
+.overview-scroll-hint{font-size:10px}
+.overview-neighbour{max-width:calc(var(--overview-peek) - 10px);font-size:12px}
+.universal-search .overview-carousel .launcher-app{background:transparent!important;border:0!important;box-shadow:none!important;min-height:66px!important}
+.universal-search .overview-carousel .launcher-app:hover{background:color-mix(in srgb,var(--text) 6%,transparent)!important}
+.timeline-toolbar{gap:8px;padding:10px 14px;flex-wrap:wrap}
+.timeline-day-navigation{display:flex;align-items:center;gap:3px;flex:none}
+.timeline-day-navigation label{max-width:145px}.timeline-day-navigation select{max-width:145px}
+.timeline-day-step{display:grid;place-items:center;width:28px;height:34px;padding:0;border:0!important;background:transparent!important}
+.timeline-day-step svg{width:15px;height:15px}.timeline-day-step:disabled{opacity:.3}
+.timeline-jump{height:34px;padding:5px 8px;font:inherit;font-size:12px;white-space:nowrap}
+.timeline-jump:disabled{opacity:.4}
+.timeline-search{flex:1 1 180px}.timeline-toolbar>label:not(.timeline-search){margin-left:auto}
+.timeline-entry h4{font-size:13px}.timeline-entry p,.timeline-entry time{font-size:11px}.timeline-entry-action{font-size:11px;padding:4px}
+.timeline-lane-headings h4{font-size:12px;color:var(--text)}
+.timeline-plan-block.is-duration>.timeline-entry-body,.timeline-plan-block.is-duration>.timeline-entry-icon{top:43px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:1100px){.overview-window-tools>span{display:none}.overview-carousel .desktop-column-card{grid-template-columns:85px minmax(0,1fr)}.universal-search .overview-carousel .overview-open-windows{grid-template-columns:1fr}.timeline-search{flex-basis:100%;order:2}}
+@media(max-width:800px){.universal-search{padding:14px!important}.universal-search .universal-search-header{grid-template-columns:1fr!important;gap:8px}.universal-search .universal-search-title{display:flex!important;align-items:center;gap:12px}.universal-search .universal-search-title>.eyebrow{display:none}.universal-search .universal-search-title h2{font-size:20px!important;flex:none}.overview-context{max-width:calc(100% - 135px)}.universal-search .workspace-tab{flex:0 0 105px}.universal-search .workspace-tab small{display:none}.universal-search .workspace-switcher{grid-template-columns:minmax(0,1fr) auto auto!important}.universal-search .workspace-switcher-actions{grid-column:3}.universal-search .workspace-create-toggle{grid-column:2}.overview-running-layout{grid-template-columns:1fr;gap:8px;overflow-y:auto}.overview-carousel .desktop-column-map{overflow:visible}.universal-search .overview-carousel .overview-open-windows{grid-template-columns:repeat(2,minmax(0,1fr));height:auto!important;overflow:visible!important}.universal-search .overview-carousel .overview-apps-section .open-windows-section{max-height:48%!important}.overview-carousel .desktop-column-hint{display:none}.timeline-toolbar>label:not(.timeline-search){margin-left:0}.timeline-entry h4{font-size:11px}.timeline-entry p,.timeline-entry time{font-size:10px}}
+@media(max-height:650px) and (min-width:801px){.universal-search{padding-block:12px!important}.universal-search .overview-carousel .overview-apps-section .open-windows-section{height:190px!important;min-height:150px!important}.universal-search .workspace-tab small{display:none}.universal-search .workspace-tab{min-height:32px!important}.universal-search .universal-search-title>.eyebrow{display:none}.universal-search .universal-search-field{height:42px!important}}

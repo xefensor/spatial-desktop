@@ -4477,12 +4477,17 @@ function renderOverviewWindows() {
   if (!target) return;
   const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.inColumn(activeWorkspace, name));
   $("#workspaceOpenCount").textContent = windowNames.length + (windowNames.length === 1 ? " window" : " windows");
-  target.innerHTML = windowNames.map(name => {
+  const filter = $("#overviewWindowFilter")?.value || "all";
+  const currentPage = desktopPages.current(activeWorkspace);
+  const hotbarOrder = workspaceHotbarNames();
+  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "minimized" || desktopPages.pageOf(activeWorkspace,name) === currentPage : appState[name] === (filter === "parked" ? "minimized" : "open")));
+  visibleNames.sort((a,b) => Number(appState[a] === "minimized") - Number(appState[b] === "minimized") || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b) || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b));
+  target.innerHTML = visibleNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
     const stateLabel = (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
-    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel + " · " + info.detail) + '</small></span><i></i></span></button>';
-  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>No windows in this workspace</b><small>Open or unpark an application and it will appear here.</small></div>';
+    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(stateLabel) + '</small></span><i></i></span></button>';
+  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or open an app below." : "Open an app below to start on this desktop.") + '</small></div>';
 
   refreshWorkspaceContext();
   renderDesktopColumnMap();
@@ -4906,6 +4911,7 @@ $$("[data-launch-app]").forEach(button => button.addEventListener("click", () =>
 }));
 
 let activeLauncherCategory = "all";
+$("#overviewWindowFilter").addEventListener("change", renderOverviewWindows);
 $("#overviewCategory").addEventListener("change", event => {
   activeLauncherCategory = event.target.value;
   $$("[data-category-filter]").forEach(button => {

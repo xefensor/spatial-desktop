@@ -123,7 +123,7 @@
   // A shared time map anchors both lanes precisely. Busy moments expand to
   // keep actions readable; calendar blocks span the same start/end positions.
   function dayKey(time){const d=new Date(time);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
-  function lanes(activity,planned,{day=dayKey(Date.now()),...filter}={}){
+  function lanes(activity,planned,{now=Date.now(),day=dayKey(now),includeNow=false,...filter}={}){
     const midnight=new Date(day+'T00:00:00').getTime(),next=new Date(day+'T00:00:00');next.setDate(next.getDate()+1);const finish=next.getTime(),quarter=15*60000;
     const rows=[...activity,...planned].filter(e=>matches(e,filter)).map(e=>e.planned&&e.done&&e.doneTime?{...e,dueTime:e.time,time:e.doneTime}:e);
     const days=[...new Set([day,...rows.flatMap(e=>[dayKey(e.time),...(e.endTime?[dayKey(e.endTime-1)]:[])])])].sort();
@@ -134,8 +134,9 @@
     const pointSpan=Math.max(quarter,90/scale*60000);
     const first=visible.length?Math.max(midnight,Math.min(...visible.map(e=>e.time))):midnight+9*3600000;
     const last=visible.length?Math.min(finish,Math.max(...visible.map(e=>e.endTime||e.time+(e.planned?pointSpan:quarter)))):midnight+17*3600000;
-    const start=midnight+Math.floor((first-midnight)/3600000)*3600000;
-    const end=Math.min(finish,Math.max(start+3600000,midnight+Math.ceil((last-midnight)/3600000)*3600000));
+    const anchor=includeNow&&dayKey(now)===day;
+    const start=midnight+Math.floor(((anchor?Math.min(first,now):first)-midnight)/3600000)*3600000;
+    const end=Math.min(finish,Math.max(start+3600000,midnight+Math.ceil(((anchor?Math.max(last,now+quarter):last)-midnight)/3600000)*3600000));
     const tickTimes=Array.from({length:Math.round((end-start)/quarter)+1},(_,i)=>start+i*quarter);
     const knots=[...new Set([start,end,...tickTimes,...groups.keys(),...visible.filter(e=>e.planned).flatMap(e=>[Math.max(start,e.time),Math.min(end,e.endTime||e.time+pointSpan)])])].sort((a,b)=>a-b);
     const positions=[0];for(let i=1;i<knots.length;i++)positions.push(positions[i-1]+Math.max((knots[i]-knots[i-1])/60000*scale,(groups.get(knots[i-1])?.length||0)*58+(groups.has(knots[i-1])?8:0)));
@@ -146,7 +147,7 @@
     for(const e of calendar){if(cluster.length&&e.start>=clusterEnd){pack();cluster=[];clusterEnd=0;}cluster.push(e);clusterEnd=Math.max(clusterEnd,e.finish);}pack();
     return {day,days,start,end,scale,height:y(end),ticks:tickTimes.map(time=>({time,top:y(time)})),
       activity:[...groups].map(([time,events])=>({events,top:y(time)})),
-      plans:calendar.map(e=>({...e,top:y(e.start),height:y(e.finish)-y(e.start)})),nowTop:y(Date.now())};
+      plans:calendar.map(e=>({...e,top:y(e.start),height:y(e.finish)-y(e.start)})),nowTop:y(now)};
   }
   function demoPlans({preset,profiles={},projects={},now=Date.now()}={}){
     if(preset!=='demo')return [];

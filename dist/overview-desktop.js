@@ -59,6 +59,8 @@
     if(Math.abs(centre(panel)-track.scrollLeft)>1||panel.dataset.overviewPanel!==active)select(panel.dataset.overviewPanel,true);
   }
   function refresh(){
+    const column=desktopPages.column(activeWorkspace),project=projectSpaces[column];
+    $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name||'Workspace', 'Desktop '+(desktopPages.current(activeWorkspace)+1)].join(' / ');
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
     // Read the preference in the frame: a later explicit navigation wins.
@@ -130,14 +132,18 @@
     if(event.base&&['dolphin','browser','notes','elisa','terminal'].includes(event.base))return 'Open';
     return '';
   }
-  let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='';
+  let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='',timelineView=null;
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const now=Date.now(),today=SpatialTimeline.dayKey(now);
     if(timelineDayWorkspace!==activeWorkspace){timelineDayWorkspace=activeWorkspace;timelineDay=today;}
-    const view=SpatialTimeline.lanes(model.list(activeWorkspace),planner.list(activeWorkspace),{day:timelineDay,type:$('#timelineType').value,query:$('#timelineQuery').value});
+    const view=SpatialTimeline.lanes(model.list(activeWorkspace),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value});
     $('#timelineDay').innerHTML=view.days.map(day=>'<option value="'+day+'"'+(day===timelineDay?' selected':'')+'>'+escapeHtml(day===today?'Today':new Date(day+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</option>').join('');
     $('#timelineDay').value=timelineDay;
+    timelineView=view;
+    const dayIndex=view.days.indexOf(timelineDay);
+    $$('[data-timeline-day-step]',home).forEach(button=>{const day=view.days[dayIndex+Number(button.dataset.timelineDayStep)];button.disabled=!day;button.setAttribute('aria-label',(Number(button.dataset.timelineDayStep)<0?'Previous':'Next')+' day with items'+(day?': '+new Date(day+'T12:00:00').toLocaleDateString():''));});
+    $('#timelineLatest').disabled=!view.activity.length;
     const clock=time=>new Date(time).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
     function card(event,planned=false){
       const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type==='stash.save'?'i-note':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
@@ -155,7 +161,9 @@
     const nowLine=timelineDay===today&&view.nowTop>=0&&view.nowTop<=view.height?'<div class="timeline-now" style="top:'+view.nowTop+'px"><span>Now</span></div>':'';
     $('#timelineEntries').innerHTML='<div class="timeline-lane-headings"><span>Time</span><h4>Desktop activity</h4><h4>Calendar & tasks</h4></div><div class="timeline-day-grid" style="height:'+(view.height+30)+'px">'+ticks+'<div class="timeline-activity-lane" role="list" aria-label="Desktop activity">'+activity+'</div><div class="timeline-planned-lane" role="list" aria-label="Calendar, tasks and reminders">'+plans+'</div>'+nowLine+(!activity&&!plans?'<p class="timeline-empty"><b>No items on this day</b>Choose another day, change the filter or add an event.</p>':'')+'</div>';
     prepareControlSemantics($('#timelineEntries'));syncAgenda(now);
-    const renderedDay=activeWorkspace+':'+timelineDay;if(timelineRenderedDay!==renderedDay){timelineRenderedDay=renderedDay;$('#timelineScroll').scrollTop=Math.max(0,Math.min(...view.activity.map(e=>e.top),...view.plans.map(e=>e.top),view.height)-24);}
+    const renderedDay=activeWorkspace+':'+timelineDay;if(timelineRenderedDay!==renderedDay){timelineRenderedDay=renderedDay;const real=view.activity.filter(group=>group.events.some(event=>!event.example));
+      const top=real.length?real.at(-1).top:timelineDay===today?view.nowTop:Math.min(...view.activity.map(e=>e.top),...view.plans.map(e=>e.top),view.height);
+      $('#timelineScroll').scrollTop=Math.max(0,top-72);}
   }
   function savePlanner(){planner.merge(read(plannerKey));try{desktopStorage.setItem(plannerKey,JSON.stringify(planner.snapshot()));}catch{}}
   function syncAgenda(now=Date.now()){
@@ -175,6 +183,17 @@
   function syncPlanEnd(){const calendar=$('#timelinePlanKind').value==='calendar.event';$('#timelinePlanEndLabel').hidden=!calendar;$('#timelinePlanEnd').required=calendar;$('#timelinePlanEnd').min=$('#timelinePlanTime').value;}
   $('#timelinePlanKind').addEventListener('change',syncPlanEnd);
   $('#timelinePlanTime').addEventListener('change',()=>{const time=new Date($('#timelinePlanTime').value);if(new Date($('#timelinePlanEnd').value)<=time)$('#timelinePlanEnd').value=new Date(time.getTime()+3600000-time.getTimezoneOffset()*60000).toISOString().slice(0,16);syncPlanEnd();});
+  $('#timelineToday').addEventListener('click',()=>{
+    timelineDay=SpatialTimeline.dayKey(Date.now());renderTimeline();
+    $('#timelineScroll').scrollTop=Math.max(0,timelineView.nowTop-72);
+  });
+  $('#timelineLatest').addEventListener('click',()=>{
+    if(timelineView?.activity.length)$('#timelineScroll').scrollTop=Math.max(0,timelineView.activity.at(-1).top-72);
+  });
+  $$('[data-timeline-day-step]',home).forEach(button=>button.addEventListener('click',()=>{
+    const index=timelineView?.days.indexOf(timelineDay),day=timelineView?.days[index+Number(button.dataset.timelineDayStep)];
+    if(day){timelineDay=day;renderTimeline();}
+  }));
   $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();});
   function reopen(id){
     const event=model.list(activeWorkspace).find(event=>event.id===id);if(!event||!actionFor(event))return;
