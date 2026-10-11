@@ -66,9 +66,7 @@ const glassMaterialSurfaceSelector = [
   ".package-window",
   ".notification-peek",
   ".toast",
-  ".desktop-context-header",
-  ".app-frame .recessed-field",
-  ".guide-window .recessed-field"
+  ".desktop-context-header"
 ].join(",");
 
 const absMaterialSurfaceSelector = [
@@ -119,10 +117,10 @@ function prepareMaterialSurfaces(root = document) {
     surface.classList.add("material-surface-abs");
     surface.classList.remove("material-surface-glass");
   });
-  /* App windows are primarily ABS. Only small display-like inserts are glass,
-     so a whole toolbar never changes material just because it contains one. */
+  /* Standalone address/search fields are recessed ABS controls. Remove the
+     old automatic glass insert so the field inherits its app's material. */
   matchingNodes(root, ".app-frame .recessed-field,.guide-window .recessed-field").forEach(surface => {
-    surface.classList.add("material-surface-glass");
+    surface.classList.remove("material-surface-glass");
     surface.classList.remove("material-surface-abs");
   });
   /* Sliders are physical controls, not glass display inserts. Clear the old

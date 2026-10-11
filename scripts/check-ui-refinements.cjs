@@ -90,7 +90,11 @@ const utilitySurfaces=['.package-window','.project-editor-window','.desktop-cont
 const absApp=materialNode('.app-frame');
 const absGuide=materialNode('.guide-window');
 const guideSearch=materialNode('.guide-window .recessed-field',absGuide);
-const allSurfaces=[...utilitySurfaces,absApp,absGuide,guideSearch];
+const appAddress=materialNode('.app-frame .recessed-field',absApp);
+// Old sessions and cloned windows can still carry the former glass insert.
+guideSearch.classes.add('material-surface-glass');
+appAddress.classes.add('material-surface-glass');
+const allSurfaces=[...utilitySurfaces,absApp,absGuide,guideSearch,appAddress];
 utilitySurfaces[0].classes.add('material-surface-abs');
 materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>allSurfaces.filter(node=>node.matches(selector))});
 for(const surface of utilitySurfaces){
@@ -109,7 +113,13 @@ assert(appButton.classes.has('material-abs-button'),'Application controls retain
 const guideButton=materialNode('button',absGuide),guideSearchInput=materialNode('input',guideSearch);
 materialCtx.applyControlMaterial(guideButton);materialCtx.applyFieldMaterial(guideSearchInput);
 assert(guideButton.classes.has('material-abs-button'),'Guide controls retain ABS');
-assert(guideSearchInput.classes.has('material-glass-field'),'Guide search inherits its nested glass insert');
+assert(guideSearchInput.classes.has('material-abs-field'),'Guide search inherits ABS');
+const appAddressInput=materialNode('input',appAddress);
+materialCtx.applyFieldMaterial(appAddress);materialCtx.applyFieldMaterial(appAddressInput);
+assert(appAddress.classes.has('material-abs-field'),'Address field inherits the ABS app');
+assert(appAddressInput.classes.has('material-abs-field'),'Address input inherits ABS');
+assert(!appAddress.classes.has('material-surface-glass'),'Stale glass insert is removed');
+assert(!guideSearch.classes.has('material-surface-glass'),'Guide search clears stale glass too');
 // Moving a control from one material to another must remove its previous
 // geometry, including native checkbox/radio controls.
 const movedChoice=materialNode('input[type=checkbox]',absGuide);

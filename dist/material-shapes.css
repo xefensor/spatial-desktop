@@ -59,6 +59,18 @@
     corner-shape:squircle!important;
   }
 
+  /* Insets have space around them; joined app panes above keep straight seams. */
+  :is(.app-frame,.guide-window) .recessed-field.material-abs-field {
+    border-radius:var(--window-control-corner,10px)!important;
+    corner-shape:squircle!important;
+    overflow:hidden;
+  }
+  .app-frame[data-app-kind="elisa"] .album-block {
+    border-radius:var(--window-panel-corner,13px)!important;
+    corner-shape:squircle!important;
+    overflow:hidden;
+  }
+
   :is(.material-surface-glass,.material-glass-button,.material-glass-field,.material-glass-element,
       .desktop-glass-dialog,.glass-example,.glass-surface,.glass-side,.shape-area,.glass-button,.glass-field,.glass-choice,
       .glass-tab,.glass-menu,.glass-banner,.glass-row,.glass-side .recessed-field,
