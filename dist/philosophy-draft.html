@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="material-shapes.css?v=15">
   <script src="philosophy.js?v=153" defer></script>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
-  <style>.app-area-detail .image-link img{aspect-ratio:350/470;object-fit:cover;object-position:left top}.app-area-examples{align-items:start}.app-area-examples figcaption{font-size:.95rem}.comparison-gallery{align-items:start}.comparison-gallery .image-link img{aspect-ratio:1363/936;object-fit:contain}.desktop-marker-detail{grid-template-columns:140px minmax(0,1fr)}.desktop-marker-detail .image-link{max-width:90px}.desktop-marker-detail img{width:90px;height:184px;object-fit:fill}.desktop-marker-detail>div{padding-top:1rem}@media(max-width:800px){.comparison-gallery{grid-template-columns:1fr}.desktop-marker-detail{grid-template-columns:1fr}.desktop-marker-detail>div{padding-top:0}}</style>
+  <style>.app-area-detail .image-link{aspect-ratio:350/340;overflow:hidden}.app-area-detail .image-link img{aspect-ratio:350/470;object-fit:cover;object-position:left top;max-height:none}.app-area-examples{align-items:start}.app-area-examples figcaption{font-size:.95rem}.focused-hotbar .image-link{max-width:350px}.focused-game-hotbar .image-link img{aspect-ratio:1280/180;object-fit:cover;object-position:center bottom}.focused-rail{display:grid;grid-template-columns:68px minmax(0,1fr);gap:.6rem 1.5rem;align-items:center}.focused-rail .image-label{grid-column:1/-1}.focused-rail figcaption{margin:0;max-width:55ch}.focused-rail .image-link{width:68px}.focused-layout .image-link img{height:auto;object-fit:contain}@media(max-width:600px){.focused-rail{gap:.6rem 1rem}}</style>
   
 </head>
 <body class="philosophy-page">
@@ -45,16 +45,16 @@
 <p>On today’s desktops, quick app switching usually means Alt+Tab or an app overview. I find that clunky. That is why I borrow the numbered hotbar from games for quick switching between apps.</p>
 <p>To make this work without taking my hand off the mouse, I use a mouse button to activate the hotbar. Since many desktops already use Win/Super for app-switching shortcuts, I use the same key here. That lets me switch quickly between apps.</p>
 
-<figure class="story-figure">
+<figure class="story-figure focused-hotbar">
 <span class="image-label">DESKTOP EXAMPLE · NUMBERED APP SLOTS</span>
-<a class="image-link" href="images/philosophy/app-area-numbered-hotbar.jpg" aria-label="Open full screenshot: numbered app slots and their windows"><img src="images/philosophy/app-area-numbered-hotbar.jpg" alt="Desktop 2 with File Browser assigned hotbar number 1 and Note Editor number 2; their open windows are visible beside the App area" width="1056" height="936" loading="lazy" decoding="async"></a>
+<a class="image-link" href="images/philosophy/focused-app-hotbar.jpg" aria-label="Open detail: numbered app icons"><img src="images/philosophy/focused-app-hotbar.jpg" alt="Numbered hotbar detail: File Browser has number 1 and Note Editor has number 2" width="350" height="135" loading="lazy" decoding="async"></a>
 <figcaption>In this example, <kbd>Super + 1</kbd> selects File Browser and <kbd>Super + 2</kbd> selects Note Editor. The number is shown on each app icon.<span class="image-credit">Spatial Desktop prototype · captured 11 October 2026 · <a href="./">Open the desktop</a>.</span></figcaption>
 </figure>
 <p class="source-note">In the browser demo, <kbd>Alt + number</kbd> is also available when the operating system intercepts Super shortcuts. Activating the hotbar from a mouse button is the intended setup; the web prototype does not configure mouse-button mappings.</p>
-<figure class="story-figure">
+<figure class="story-figure focused-game-hotbar">
 <span class="image-label">GAME REFERENCE · DIRECT SLOT SELECTION</span>
 <a class="image-link" href="images/philosophy/game-hotbar.jpg" aria-label="Open larger image: historical Minetest hotbar"><img src="images/philosophy/game-hotbar.jpg" alt="Historical Minetest screenshot with a row of item slots along the bottom of the game" width="1280" height="720" loading="lazy" decoding="async"></a>
-<figcaption>The item row at the bottom shows the game hotbar idea. Luanti, formerly Minetest, documents number keys 0–9 for selecting hotbar items directly. This is a reference for direct slot selection; the historical screenshot itself does not show number labels.<span class="image-credit"><a href="https://docs.luanti.org/for-players/controls/">Luanti controls</a> · Screenshot by Kotolegokot · <a href="https://commons.wikimedia.org/wiki/File:Minetest_screenshot_2.png">Original source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a> · Resized and converted to JPEG.</span></figcaption>
+<figcaption>This detail of the bottom item row shows the game hotbar idea. Luanti, formerly Minetest, documents number keys 0–9 for selecting hotbar items directly. This is a reference for direct slot selection; the historical screenshot itself does not show number labels.<span class="image-credit"><a href="https://docs.luanti.org/for-players/controls/">Luanti controls</a> · Screenshot by Kotolegokot · <a href="https://commons.wikimedia.org/wiki/File:Minetest_screenshot_2.png">Original source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a> · Resized and converted to JPEG.</span></figcaption>
 </figure>
 <aside class="source-note"><strong>Related desktop reference.</strong> Windows already supports <kbd>Win + number</kbd> to launch or switch to the app at that taskbar position. <a href="https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows">Microsoft’s keyboard shortcut reference</a> documents this under Taskbar keyboard shortcuts.</aside>
 </section>
@@ -64,7 +64,7 @@
 <p>Open apps are shown in the App area only on the desktop they belong to. This avoids confusion and prevents accidentally switching desktops when selecting an app that is not on the active one.</p>
 <p>Parked apps always come after open apps, both in their position in the App area and in the hotbar numbering. This keeps the order consistent and easy to use.</p>
 
-<p class="source-note">In the <a href="#the-hotbar">numbered desktop example above</a>, File Browser is the upper window and gets number 1; Note Editor is below it and gets number 2. The <a href="#parking-apps">parking comparison</a> also shows that the open app list changes with the desktop, while the parked note remains available.</p>
+<p class="source-note">The <a href="#the-hotbar">hotbar detail</a> shows File Browser as 1 and Note Editor as 2. The <a href="#automatic-tiling">tiling illustration below</a> shows their upper and lower positions. The <a href="#parking-apps">parking comparison</a> shows that the open app list changes with the desktop while the parked note remains available.</p>
 </section>
 <section id="expanded-area-and-rail">
 <h3>Expanded area and rail</h3>
@@ -72,6 +72,8 @@
 <p>It also preserves the familiarity of Windows, KDE and similar desktop setups.</p>
 
 
+
+<figure class="story-figure focused-rail"><span class="image-label">PROTOTYPE DETAIL · APP RAIL</span><a class="image-link" href="images/philosophy/focused-app-rail.jpg" aria-label="Open rail detail: File Browser open at the top and Note Editor parked below"><img src="images/philosophy/focused-app-rail.jpg" alt="Only the App rail: open File Browser at the top, parked Note Editor lower down" width="68" height="370" loading="lazy" decoding="async"></a><figcaption>The rail keeps the app controls within reach. Open File Browser is at the top; parked Note Editor is separated below it.</figcaption></figure>
 </section>
 </section><section id="desktop-and-windows" class="chapter">
 <p class="chapter-number">02 / DESKTOP AND WINDOWS</p>
@@ -83,6 +85,8 @@
 <p>One important rule is that windows never overlap one another. Two floating windows are the only exception. This makes it easier to find the window I want.</p>
 
 <p class="source-note"><strong>Related reference:</strong> the <a href="https://i3wm.org/docs/userguide.html#_opening_terminals_and_moving_around">i3 User’s Guide</a> shows automatic placement of new windows beside existing ones and documents a separate floating mode. It provides context for the tiling approach; Spatial Desktop’s mouse interactions and overlap rule are its own design.</p>
+
+<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · TILING AND FLOATING</span><a class="image-link" href="images/philosophy/focused-tiling-layout.svg" aria-label="Open larger illustration: Two tiled windows compared with a tiled File Browser and one floating Note Editor"><img src="images/philosophy/focused-tiling-layout.svg" alt="Two tiled windows compared with a tiled File Browser and one floating Note Editor" width="740" height="276" loading="lazy" decoding="async"></a><figcaption>Left: the windows share the desktop as tiles. Right: Note Editor has a floating position, and File Browser uses the remaining space. The square side strips represent Areas.</figcaption></figure>
 </section>
 <section id="maximize-and-fullscreen">
 <h3>Maximize and Fullscreen</h3>
@@ -91,6 +95,9 @@
 <p>Middle-clicking the maximize button selects the other option: Fullscreen. This makes the app take the entire screen, including the space normally occupied by the Areas. If a second monitor is available, the Areas move there.</p>
 
 <p class="source-note">To compare the modes in the <a href="./">prototype</a>, left-click a window’s maximize button, restore it, then middle-click the same button for Fullscreen.</p>
+
+<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · MAXIMIZE AND FULLSCREEN</span><a class="image-link" href="images/philosophy/focused-window-modes.svg" aria-label="Open larger illustration: Maximize keeps Areas visible; Fullscreen takes the whole display"><img src="images/philosophy/focused-window-modes.svg" alt="Maximize keeps Areas visible; Fullscreen takes the whole display" width="740" height="300" loading="lazy" decoding="async"></a><figcaption>Maximize fills the space between Areas and temporarily parks the other window. Fullscreen includes the Area space.</figcaption></figure>
+<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · TWO DISPLAYS</span><a class="image-link" href="images/philosophy/focused-extended-layout.svg" aria-label="Open larger illustration: File Browser fullscreen on Display 1; Note Editor and Areas on Display 2"><img src="images/philosophy/focused-extended-layout.svg" alt="File Browser fullscreen on Display 1; Note Editor and Areas on Display 2" width="740" height="300" loading="lazy" decoding="async"></a><figcaption>File Browser occupies Display 1. Note Editor and the Areas remain available on Display 2. This diagram follows the behaviour observed in the linked browser prototype.</figcaption></figure>
 </section>
 <section id="multiple-desktops">
 <h3>Multiple desktops</h3>
@@ -100,6 +107,8 @@
 <p>Desktops are always stacked vertically. With vertical Areas, they slide in and out between them, keeping the flow. You do not have to remember which cell in a grid contains an app; you can simply scroll through the desktops.</p>
 
 <p class="source-note"><strong>Related reference:</strong> GNOME’s <a href="https://help.gnome.org/gnome-help/shell-workspaces-switch.html">workspace switching guide</a> documents both shortcuts and choosing an adjacent workspace from Overview. Its term “workspace” refers to virtual desktops; Spatial Desktop reserves “workspace” for its broader environment.</p>
+
+<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · VERTICAL DESKTOPS</span><a class="image-link" href="images/philosophy/focused-desktop-scroll.svg" aria-label="Open larger illustration: Two vertically ordered desktops with fixed Area positions and a longer line marking the current desktop"><img src="images/philosophy/focused-desktop-scroll.svg" alt="Two vertically ordered desktops with fixed Area positions and a longer line marking the current desktop" width="740" height="590" loading="lazy" decoding="async"></a><figcaption>Only the desktop content changes. The Areas keep their positions, and the longer position line identifies the current desktop.</figcaption></figure>
 </section>
 </section>
 <footer class="guide-footer"><span>Spatial Desktop · Author’s Draft · Xef</span><a href="#main">Back to top</a></footer></main></div></body></html>

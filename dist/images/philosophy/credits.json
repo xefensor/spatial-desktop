@@ -145,5 +145,49 @@
     "date": "2026-10-11",
     "modifications": "Viewport clipped during capture to focus on the App area and neighbouring windows. No content alterations.",
     "prototype": true
+  },
+  "focused-tiling-layout": {
+    "title": "Two tiled windows compared with a tiled File Browser and one floating Note Editor",
+    "asset": "images/philosophy/focused-tiling-layout.svg",
+    "source": "Code-drawn layout illustration based on the Spatial Desktop prototype and author text.",
+    "date": "2026-10-12",
+    "illustration": true
+  },
+  "focused-window-modes": {
+    "title": "Maximize keeps Areas visible; Fullscreen takes the whole display",
+    "asset": "images/philosophy/focused-window-modes.svg",
+    "source": "Code-drawn layout illustration based on the Spatial Desktop prototype and author text.",
+    "date": "2026-10-12",
+    "illustration": true
+  },
+  "focused-extended-layout": {
+    "title": "File Browser fullscreen on Display 1; Note Editor and Areas on Display 2",
+    "asset": "images/philosophy/focused-extended-layout.svg",
+    "source": "Code-drawn layout illustration based on the Spatial Desktop prototype and author text.",
+    "date": "2026-10-12",
+    "illustration": true
+  },
+  "focused-desktop-scroll": {
+    "title": "Two vertically ordered desktops with fixed Area positions and a longer line marking the current desktop",
+    "asset": "images/philosophy/focused-desktop-scroll.svg",
+    "source": "Code-drawn layout illustration based on the Spatial Desktop prototype and author text.",
+    "date": "2026-10-12",
+    "illustration": true
+  },
+  "focused-app-hotbar": {
+    "title": "Numbered app icons",
+    "asset": "images/philosophy/focused-app-hotbar.jpg",
+    "source": "Focused region captured directly from the Spatial Desktop browser prototype.",
+    "date": "2026-10-12",
+    "modifications": "Region captured by the browser; no content alterations.",
+    "prototype": true
+  },
+  "focused-app-rail": {
+    "title": "Open and parked app positions on rail",
+    "asset": "images/philosophy/focused-app-rail.jpg",
+    "source": "Focused region captured directly from the Spatial Desktop browser prototype.",
+    "date": "2026-10-12",
+    "modifications": "Region captured by the browser; no content alterations.",
+    "prototype": true
   }
 }
