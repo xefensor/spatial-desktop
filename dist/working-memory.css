@@ -95,3 +95,6 @@
 .project-area .project-root-module .project-items>button:last-child{border-bottom:0}
 .project-area .project-root-module .project-items b{font-size:13px;line-height:1.4}
 .project-area .project-root-module .project-items small{font-size:11px;line-height:1.4;margin-top:2px}
+
+/* Two sections remain after consolidating project notes into Stash. */
+.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-space-content{grid-template-columns:repeat(2,minmax(260px,1fr))}

@@ -372,7 +372,7 @@ G.observeContext(stash,{...contextScene,column:'workspace',note:'My note',items:
 G.observeContext(stash,{...contextScene,note:'My note',items:[{id:'a'}]});assert(stash.ready());assert(G.create(stash.snapshot()).ready());
 const ai=at('ai-context');ai.state.practiceProject='practice';G.observeContext(ai,contextScene);
 G.observeContext(ai,{...contextScene,ai:{items:[{id:'other',project:'another'}],draft:'Help me',workingProject:'another'}});assert(!ai.ready());
-G.observeContext(ai,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],draft:'Help me',workingProject:'practice'}});assert(ai.ready(),'A project attachment, working folder and own draft complete AI practice');
+G.observeContext(ai,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],draft:'',turns:[{id:'reply',request:'Help me',example:false}],workingProject:'practice'}});assert(ai.ready(),'A project attachment, working folder and submitted request complete AI practice');
 const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
 G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
 G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());

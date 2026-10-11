@@ -3,6 +3,30 @@ const C=require('../dist/ai-context.js');
 const workspaces={general:{home:'/home/demo'},work:{home:'/home/demo/Work'}};
 const projects={film:{name:'Short Film',root:'/home/demo/Projects/film'},website:{name:'Website',root:'/home/demo/Work/Projects/site'}};
 const env={workspaces:()=>workspaces,projects:()=>projects};
+// Scripted replies retain the actual context and stay local and workspace scoped.
+{
+  const D=require('../dist/ai-demo.js'),chat=C.create({},env);
+  chat.add('general',{id:'brief',title:'Brief',text:'Keep navigation clear.',project:'website',workspace:'work'});
+  chat.folder('general','website');
+  const response=D.reply('Summarize the sources',{items:chat.session('general').items,folder:chat.workingFolder('general'),project:'Website'});
+  assert(response.text.includes('Keep navigation clear.'));
+  const turn=chat.exchange('general','Summarize the sources',response);
+  assert.equal(turn.folder,projects.website.root);assert.equal(turn.sources[0].workspace,'work');
+  chat.remove('general','brief');chat.folder('general',null);
+  assert.equal(turn.sources[0].title,'Brief','Changing attachments cannot rewrite old reply provenance');
+  const reloaded=C.create(chat.snapshot(),env);assert.equal(reloaded.session('general').turns[0].folder,projects.website.root);
+  assert.equal(reloaded.session('work').turns.length,0,'Replies stay inside their workspace');
+  assert(D.reply('Compare these',{items:[]}).text.includes('Attach two sources'));
+  assert(D.reply('Transcribe this audio',{items:[{title:'Voice memo',kind:'audio'}]}).text.includes('does not inspect pixels or listen to audio'));
+  assert(D.reply('Delete every file',{folder:projects.website.root}).text.includes('does not send messages, change files or run commands'));
+  for(let i=0;i<15;i++)chat.exchange('general','Request '+i,{title:'Reply',text:'Sample'});
+  assert.equal(chat.session('general').turns.length,12);
+  const old=chat.snapshot();chat.exchange('general','Newest request',{text:'Newest'});chat.load(old);
+  assert.equal(chat.session('general').turns.at(-1).request,'Newest request');
+  const caption=D.reply('Describe this photo',{items:[{title:'Reference photo',kind:'image',text:'A saved caption'}]});
+  assert(caption.text.includes('A saved caption'));
+  console.log('AI demo passed: contextual excerpts, immutable provenance, workspace isolation, reload, bounds and explicit simulation limits.');
+}
 const model=C.create({},env);
 assert.equal(model.workingFolder('general'),workspaces.general.home,'AI works without a project');
 assert.equal(model.session('general').mode,'expanded','AI opens ready for input');

@@ -269,7 +269,7 @@
     }
     if(['project-stash','ai-context','hide-areas','overview-navigation','timeline','timeline-task'].includes(id)){
       const history=globalThis.SpatialTimelineDesktop?.snapshot()||{},ai=globalThis.SpatialAIDesktop?.snapshot().sessions?.[activeWorkspace];
-      if(guide.observeContext(model,{workspace:activeWorkspace,column,note:projectSpaces[practiceProjectForLesson()]?.note||'',items:globalThis.SpatialMemoryDesktop?.items()||[],ai,
+      if(guide.observeContext(model,{workspace:activeWorkspace,column,items:globalThis.SpatialMemoryDesktop?.items()||[],ai,
         areas:Object.fromEntries(areaPriority.filter(name=>model.allows(name)).map(name=>[name,!areaFor(name).hidden])),
         activity:history.activity||[],plans:history.plans||[],overview:$('#universalSearch').classList.contains('is-open'),section:globalThis.SpatialOverviewDesktop?.active(),
         filter:$('#timelineType').value,query:$('#timelineQuery').value,day:$('#timelineDay').value,activityDay:model.state.timelineActivity?SpatialTimeline.dayKey(model.state.timelineActivity.time):''})) {guide.save();lastSignature='';}

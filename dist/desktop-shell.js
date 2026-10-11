@@ -3410,7 +3410,6 @@ function restoreWorkspaceProject(workspaceName) {
   activeProjectName = context?.project && projectSpaces[context.project] ? context.project : null;
   if (activeProjectName && projectSpaces[activeProjectName].modes[context.mode]) projectSpaces[activeProjectName].activeMode = context.mode;
 }
-let projectNoteSaveTimer;
 const projectWindowSessions = {};
 let projectEditorState = null;
 
@@ -3637,8 +3636,6 @@ function renderProjectSpace(name) {
   $("#projectLocationNote").classList.toggle("is-custom", location.custom);
   const projectFiles = [[".spatial-project.toml", "Editable project settings", "config"], ...project.files.filter(([label]) => label !== ".spatial-project.toml")];
   $("#projectRootItems").innerHTML = projectFiles.map(([label, detail, type]) => '<button draggable="true" data-project-item="' + escapeHtml(label) + '">' + (type === "folder" ? '<span class="linked-type web">' + icon("i-folder") + '</span>' : type === "config" ? '<span class="linked-type config">' + icon("i-code") + '</span>' : '<i class="document-glyph"></i>') + '<span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span></button>').join("");
-  if (document.activeElement !== $("#projectQuickNote")) $("#projectQuickNote").value = project.note || "";
-  $("#projectNoteState").textContent = "Saved";
   $("#projectLinkedItems").innerHTML = project.resources.map(resourceMarkup).join("");
   $("#projectResourceCount").textContent = project.resources.length + (project.resources.length === 1 ? " linked" : " linked");
   setProjectClosedState(false);
@@ -4175,30 +4172,10 @@ function prepareProjectSpaces() {
   });
   $("#closeProjectButton").addEventListener("click", closeActiveProject);
   $("#projectRailClose").addEventListener("click", closeActiveProject);
-  $("#projectQuickNote").addEventListener("input", event => {
-    if (!activeProjectName) return;
-    projectSpaces[activeProjectName].note = event.target.value;
-    $("#projectNoteState").textContent = "Saving…";
-    clearTimeout(projectNoteSaveTimer);
-    projectNoteSaveTimer = setTimeout(() => {
-      persistProjectState();
-      queueDesktopStateBroadcast(0);
-      $("#projectNoteState").textContent = "Saved";
-    }, 320);
-  });
   $("#projectResourceForm").addEventListener("submit", event => {
     event.preventDefault();
     addProjectResource($("#projectResourceInput").value);
     $("#projectResourceInput").value = "";
-  });
-  $("#projectRailNote").addEventListener("click", () => {
-    showArea("projects");
-    if (!activeProjectName) {
-      const firstProject = Object.keys(projectSpaces)[0];
-      if (firstProject) activateProject(firstProject, false);
-      else return openProjectEditor("create-project");
-    }
-    focusProjectControl("#projectQuickNote");
   });
   $("#projectRailResource").addEventListener("click", () => {
     showArea("projects");
@@ -5018,7 +4995,6 @@ function projectSearchResults(query) {
       const search = label + " " + detail;
       if (matchesSearch(search, query)) results.push({ id, label, detail: project.name + " · " + detail, search, resource: label });
     });
-    if (!globalThis.SpatialMemoryDesktop && matchesSearch(project.note || "", query)) results.push({ id, label: project.name + " · Quick note", detail: "Open this project's note", search: project.note, note: true });
   });
   return results;
 }
@@ -5132,7 +5108,6 @@ $("#universalProjectResults").addEventListener("click", event => {
   activateProject(result.dataset.searchProject);
   showArea("projects", false);
   setUniversalSearchOpen(false);
-  if (result.dataset.searchProjectNote) focusProjectControl("#projectQuickNote");
   if (result.dataset.searchResource) showToast("Opening " + result.dataset.searchResource);
 });
 
@@ -5941,7 +5916,6 @@ function contextMenuEntries(context) {
     const frame = frameFor(context.name);
     const maximized = frame?.dataset.maximized === "true";
     return [
-      globalThis.SpatialMemoryDesktop ? {action:"memory-remember",icon:"i-note",label:"Save selection to Stash",shortcut:"Ctrl+Shift+M"} : null,
       { action: "app-new-instance", icon: "i-add", label: "New window", shortcut: "Shift+click" },
       state !== "closed" && desktopPages.pageOf(activeWorkspace, context.name) > 0 ? { action: "move-desktop:-1", icon: "i-monitor", label: "Move to desktop above" } : null,
       state !== "closed" ? { action: "move-desktop:1", icon: "i-monitor", label: "Move to desktop below" } : null,
@@ -6083,7 +6057,6 @@ function executeContextAction(action) {
   if (action === "detach-project") moveWindowToColumn(context.name, "workspace");
   if (action === "app-open") openApp(context.name);
   if (action === "app-minimize") minimizeApp(context.name);
-  if (action === "memory-remember") globalThis.SpatialMemoryDesktop?.remember();
   if (action === "app-maximize") toggleMaximize(context.name);
   if (action === "app-fullscreen") toggleAppFullscreen(context.name);
   if (action === "app-float") {

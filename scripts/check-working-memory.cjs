@@ -1,6 +1,25 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');
 const M=require('../dist/working-memory.js');
+// Legacy project notes become ordinary pinned items exactly once, including
+// full shelves and notes that the user later edits or removes.
+{
+  const key=M.scope('work','migration'),memory=M.create({},()=>100,'migration');
+  const note=memory.migrateQuickNote(key,'My original project wording.','Migration project');
+  assert.equal(note.text,'My original project wording.');assert(note.pinned);
+  assert.equal(note.source.project,'migration');assert.equal(memory.items(key).length,1);
+  memory.edit(note.id,{text:'My updated wording.'});
+  const restored=M.create(memory.snapshot(),()=>200,'reload');
+  restored.migrateQuickNote(key,'My original project wording.','Migration project');
+  assert.equal(restored.items(key).length,1);assert.equal(restored.get(note.id).text,'My updated wording.');
+  restored.remove(note.id);restored.migrateQuickNote(key,'My original project wording.','Migration project');
+  assert.equal(restored.items(key).length,0,'Removed migrated notes never reappear');
+  const duplicate=M.create();const existing=duplicate.add(key,{title:'Project starting point',text:'Already saved',source:{label:'Migration project · Quick note'}});
+  assert.equal(duplicate.migrateQuickNote(key,'Already saved','Migration project').id,existing.id);
+  assert.equal(duplicate.items(key).length,1);assert(duplicate.get(existing.id).pinned);
+  const full=M.create();for(let i=0;i<80;i++)full.add(key,{text:'Item '+i});
+  assert.equal(full.migrateQuickNote(key,'Never lose this note','Migration project').text,'Never lose this note');
+}
 let now=new Date(2026,9,10,15).getTime();
 const a=M.create({},()=>now,'display-a'), project=M.scope('work','launch'), workspace=M.scope('work'), privateScope=M.scope('personal','launch');
 const first=a.add(project,{title:'Layout reference',text:'Keep the navigation clear.\nCheck keyboard focus.',source:{label:'Browser · Reference',address:'https://example.org/reference',app:'browser--2',desktop:2}});

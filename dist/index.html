@@ -22,11 +22,11 @@
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=13">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
-  <link rel="stylesheet" href="working-memory.css?v=13">
-  <link rel="stylesheet" href="ai-area.css?v=6">
+  <link rel="stylesheet" href="working-memory.css?v=14">
+  <link rel="stylesheet" href="ai-area.css?v=7">
   <link rel="stylesheet" href="overview-carousel.css?v=11">
   <script src="workspace-setup.js?v=5"></script>
-  <script src="spatial-guide.js?v=18"></script>
+  <script src="spatial-guide.js?v=19"></script>
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -194,8 +194,8 @@
       </header>
       <div class="ai-content">
         <div class="ai-folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><label for="aiWorkingFolder">Working folder</label><select id="aiWorkingFolder" aria-label="AI working folder"></select></div>
-        <div class="ai-chat" aria-label="AI conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message AI</label><textarea id="aiPrompt" aria-label="Message AI" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask AI…" autocomplete="off"></textarea><small id="aiStatus" role="status">AI not connected · your input stays here</small></form>
+        <div class="ai-chat" aria-label="AI conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><details class="ai-context-sources" open><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message AI</label><textarea id="aiPrompt" aria-label="Message AI" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask about your sources…" autocomplete="off"></textarea><small id="aiStatus" role="status">AI demo · scripted replies · nothing is sent</small></form>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize AI area" title="Drag this border to resize"></button>
     </aside>
@@ -216,10 +216,6 @@
             <button data-toast="Opening launch-checklist.md"><i class="document-glyph"></i><span><b>launch-checklist.md</b><small>Modified today</small></span></button>
           </div>
         </section>
-        <section class="project-module project-note-module">
-          <header><span><svg><use href="#i-note"/></svg><b>Quick note</b></span><span class="project-save-state" id="projectNoteState">Saved</span></header>
-          <textarea id="projectQuickNote" class="project-quick-note" aria-label="Project quick note" placeholder="Write something to keep with this project…"></textarea>
-        </section>
         <section class="project-module project-resources-module">
           <header><span><svg><use href="#i-link"/></svg><b>Resources</b></span><span class="project-widget-count" id="projectResourceCount">2 linked</span></header>
           <form class="project-resource-form" id="projectResourceForm">
@@ -239,7 +235,6 @@
           <button class="surface-key project-rail-tool rail-action" data-toast="Project folder opened" aria-label="Open project folder" title="Open project folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Folder</span></button>
         </section>
         <section class="rail-group project-rail-middle" aria-label="Project content">
-          <button class="surface-key project-rail-tool rail-action" id="projectRailNote" aria-label="Edit project quick note" title="Edit quick note"><svg aria-hidden="true"><use href="#i-note"/></svg><span>Note</span></button>
           <button class="surface-key project-rail-tool rail-action" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg aria-hidden="true"><use href="#i-link"/></svg><span>Links</span><small id="projectRailResourceCount">2</small></button>
         </section>
         <section class="rail-group project-rail-end" aria-label="Project session">
@@ -563,15 +558,16 @@
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=1"></script>
   <script src="app-windows.js?v=8"></script>
-<script src="working-memory.js?v=5"></script>
+<script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
-<script src="ai-context.js?v=3"></script>
+<script src="ai-context.js?v=4"></script>
+<script src="ai-demo.js?v=1"></script>
 <script src="timeline.js?v=7"></script>
-<script src="desktop-shell.js?v=245"></script>
-<script src="working-memory-desktop.js?v=22"></script>
-<script src="ai-desktop.js?v=10"></script>
+<script src="desktop-shell.js?v=246"></script>
+<script src="working-memory-desktop.js?v=23"></script>
+<script src="ai-desktop.js?v=11"></script>
 <script src="overview-desktop.js?v=12"></script>
-  <script src="guide-desktop.js?v=29"></script>
+  <script src="guide-desktop.js?v=30"></script>
 </body>
 </html>
 

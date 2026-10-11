@@ -15,3 +15,21 @@ html[data-guide-ai="false"] :is(.ai-area,#openAIButton,[data-overview-area="ai"]
 .ai-area[data-area-window="ai"][data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-actions{display:flex!important;margin-left:auto}
 
 .ai-source-link{display:block;font-size:10px;color:var(--muted);overflow-wrap:anywhere;margin-top:6px}
+
+/* Scripted conversations share the glass plane; results can be kept in Stash. */
+.ai-context-sources>summary{cursor:pointer;font-size:11px;padding:6px 0;color:var(--muted)}
+.ai-transcript{display:grid;gap:20px;padding:8px 0 14px}
+.ai-turn{min-width:0;border-bottom:1px solid var(--soft-line);padding-bottom:14px}
+.ai-request{padding:8px 10px;background:color-mix(in srgb,var(--text) 6%,transparent)}
+.ai-request>small{font-size:10px;color:var(--muted)}
+.ai-request>p{font-size:12px;line-height:1.5;margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ai-demo-output{padding:12px 5px 8px;cursor:grab}
+.ai-demo-output:active{cursor:grabbing}.ai-demo-output:focus-visible{outline:1px solid var(--text);outline-offset:-1px}
+.ai-demo-output>header{display:flex;gap:6px;align-items:center;font-size:10px;color:var(--muted);margin-bottom:8px}
+.ai-demo-output>header svg{width:16px;height:16px;flex:none}
+.ai-demo-output>b{font-size:13px;font-weight:650}
+.ai-demo-output>p{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}
+.ai-output-hint{font-size:10px;color:var(--muted)}
+.ai-turn-sources{font-size:10px;color:var(--muted)}.ai-turn-sources>summary{cursor:pointer;padding:5px}
+.ai-turn-folder{display:block;overflow-wrap:anywhere;padding:4px 5px}.ai-turn-sources ul{list-style:none;padding:0 5px;margin:4px 0}
+.ai-turn-sources li{padding:5px 0;overflow-wrap:anywhere}.ai-turn-sources li small{display:block;margin-top:3px}
