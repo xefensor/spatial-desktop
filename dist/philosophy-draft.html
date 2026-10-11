@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="material-shapes.css?v=15">
   <script src="philosophy.js?v=153" defer></script>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
+  <style>.app-area-detail .image-link img{aspect-ratio:350/470;object-fit:cover;object-position:left top}.app-area-examples{align-items:start}.app-area-examples figcaption{font-size:.95rem}</style>
   
 </head>
 <body class="philosophy-page">
@@ -24,11 +25,38 @@
 <p>On a conventional panel, I find it difficult to tell which apps are minimized and which are open, because they are all next to each other.</p>
 <p>Here, open apps are always visible in front of you on the desktop, and appear at the top of the App area. Parked apps sit below them.</p>
 <p>One important thing about parked apps is that they stay in the App area when you switch desktops. That makes them ideal for use as widgets.</p>
+
+<div class="story-gallery app-area-examples">
+<figure class="story-figure app-area-detail">
+<span class="image-label">DESKTOP EXAMPLE · DESKTOP 2</span>
+<a class="image-link" href="images/philosophy/app-area-parked-desktop-2.jpg" aria-label="Open full screenshot: File Browser open, Note Editor parked on Desktop 2"><img src="images/philosophy/app-area-parked-desktop-2.jpg" alt="App area on Desktop 2: File Browser at the top, with an editable Meeting notes card in Parked below" width="1056" height="470" loading="lazy" decoding="async"></a>
+<figcaption>The File Browser is open at the top. Note Editor is parked below it, and the note can still be edited in its card.</figcaption>
+</figure>
+<figure class="story-figure app-area-detail">
+<span class="image-label">DESKTOP EXAMPLE · DESKTOP 1</span>
+<a class="image-link" href="images/philosophy/app-area-parked-desktop-1.jpg" aria-label="Open full screenshot: the same parked note on Desktop 1"><img src="images/philosophy/app-area-parked-desktop-1.jpg" alt="App area on Desktop 1: Web Browser and Terminal at the top, with the same editable Meeting notes card still in Parked below" width="1056" height="470" loading="lazy" decoding="async"></a>
+<figcaption>After switching desktops, Web Browser and Terminal appear at the top. The same parked note stays below them.</figcaption>
+</figure>
+</div>
+<p class="source-note">Captured from the working prototype on 11 October 2026. These are details of the App area; click either image to see its desktop context. <a href="./">Try the desktop</a>: park a window, then switch desktops.</p>
 </section>
 <section id="the-hotbar">
 <h3>The hotbar</h3>
 <p>On today’s desktops, quick app switching usually means Alt+Tab or an app overview. I find that clunky. That is why I borrow the numbered hotbar from games for quick switching between apps.</p>
 <p>To make this work without taking my hand off the mouse, I use a mouse button to activate the hotbar. Since many desktops already use Win/Super for app-switching shortcuts, I use the same key here. That lets me switch quickly between apps.</p>
+
+<figure class="story-figure">
+<span class="image-label">DESKTOP EXAMPLE · NUMBERED APP SLOTS</span>
+<a class="image-link" href="images/philosophy/app-area-numbered-hotbar.jpg" aria-label="Open full screenshot: numbered app slots and their windows"><img src="images/philosophy/app-area-numbered-hotbar.jpg" alt="Desktop 2 with File Browser assigned hotbar number 1 and Note Editor number 2; their open windows are visible beside the App area" width="1056" height="936" loading="lazy" decoding="async"></a>
+<figcaption>In this example, <kbd>Super + 1</kbd> selects File Browser and <kbd>Super + 2</kbd> selects Note Editor. The number is shown on each app icon.<span class="image-credit">Spatial Desktop prototype · captured 11 October 2026 · <a href="./">Open the desktop</a>.</span></figcaption>
+</figure>
+<p class="source-note">In the browser demo, <kbd>Alt + number</kbd> is also available when the operating system intercepts Super shortcuts. Activating the hotbar from a mouse button is the intended setup; the web prototype does not configure mouse-button mappings.</p>
+<figure class="story-figure">
+<span class="image-label">GAME REFERENCE · DIRECT SLOT SELECTION</span>
+<a class="image-link" href="images/philosophy/game-hotbar.jpg" aria-label="Open larger image: historical Minetest hotbar"><img src="images/philosophy/game-hotbar.jpg" alt="Historical Minetest screenshot with a row of item slots along the bottom of the game" width="1280" height="720" loading="lazy" decoding="async"></a>
+<figcaption>The item row at the bottom shows the game hotbar idea. Luanti, formerly Minetest, documents number keys 0–9 for selecting hotbar items directly. This is a reference for direct slot selection; the historical screenshot itself does not show number labels.<span class="image-credit"><a href="https://docs.luanti.org/for-players/controls/">Luanti controls</a> · Screenshot by Kotolegokot · <a href="https://commons.wikimedia.org/wiki/File:Minetest_screenshot_2.png">Original source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a> · Resized and converted to JPEG.</span></figcaption>
+</figure>
+<aside class="source-note"><strong>Related desktop reference.</strong> Windows already supports <kbd>Win + number</kbd> to launch or switch to the app at that taskbar position. <a href="https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows">Microsoft’s keyboard shortcut reference</a> documents this under Taskbar keyboard shortcuts.</aside>
 </section>
 <section id="order-and-visibility"><h3>Order and visibility</h3><p class="scope-note">Section text has not been added yet.</p></section>
 <section id="expanded-area-and-rail"><h3>Expanded area and rail</h3><p class="scope-note">Section text has not been added yet.</p></section>

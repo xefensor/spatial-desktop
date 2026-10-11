@@ -121,5 +121,29 @@
     "date": "2026-10-11",
     "modifications": "None. Original PNG bytes; display size may differ on the page.",
     "historical": true
+  },
+  "app-area-parked-desktop-2": {
+    "title": "File Browser open and Note Editor parked on Desktop 2",
+    "asset": "images/philosophy/app-area-parked-desktop-2.jpg",
+    "source": "Screenshot captured from the Spatial Desktop browser prototype.",
+    "date": "2026-10-11",
+    "modifications": "Viewport clipped during capture to focus on the App area and neighbouring windows. No content alterations.",
+    "prototype": true
+  },
+  "app-area-parked-desktop-1": {
+    "title": "The same parked note after switching to Desktop 1",
+    "asset": "images/philosophy/app-area-parked-desktop-1.jpg",
+    "source": "Screenshot captured from the Spatial Desktop browser prototype.",
+    "date": "2026-10-11",
+    "modifications": "Viewport clipped during capture to focus on the App area and neighbouring windows. No content alterations.",
+    "prototype": true
+  },
+  "app-area-numbered-hotbar": {
+    "title": "Numbered File Browser and Note Editor app slots",
+    "asset": "images/philosophy/app-area-numbered-hotbar.jpg",
+    "source": "Screenshot captured from the Spatial Desktop browser prototype.",
+    "date": "2026-10-11",
+    "modifications": "Viewport clipped during capture to focus on the App area and neighbouring windows. No content alterations.",
+    "prototype": true
   }
 }
