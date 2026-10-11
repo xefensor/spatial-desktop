@@ -11,7 +11,7 @@
 .guide-content h1 {font-size:25px;line-height:1.15;letter-spacing:-.035em;margin:18px 0 12px;font-weight:600;outline:none!important;box-shadow:none!important}
 .guide-content p {font-size:13px;line-height:1.65;color:var(--muted);margin:0 0 16px}
 .guide-content .guide-purpose {color:var(--text);font-weight:500}
-.guide-example {border-block:1px solid var(--line);padding:16px 0 14px;margin:20px 0}
+.guide-example {border-top:1px solid var(--line);padding:16px 0 14px;margin:20px 0}
 .guide-example .eyebrow {font-size:9px;color:var(--muted)}
 .guide-example h2 {font-size:15px;line-height:1.4;font-weight:600;margin:7px 0 14px}
 .guide-example ol {list-style:none;counter-reset:guide-example;display:grid;gap:13px;padding:0;margin:0}
