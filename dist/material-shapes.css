@@ -52,6 +52,13 @@
     corner-shape:square!important;
   }
 
+  /* Dolphin's recessed file well and Places panel have their own ABS edges.
+     Round the containers; their headers and document rows remain flush. */
+  .app-frame[data-app-kind="dolphin"] :is(.places-list,.file-well) {
+    border-radius:var(--window-control-corner,10px)!important;
+    corner-shape:squircle!important;
+  }
+
   :is(.material-surface-glass,.material-glass-button,.material-glass-field,.material-glass-element,
       .desktop-glass-dialog,.glass-example,.glass-surface,.glass-side,.shape-area,.glass-button,.glass-field,.glass-choice,
       .glass-tab,.glass-menu,.glass-banner,.glass-row,.glass-side .recessed-field,
