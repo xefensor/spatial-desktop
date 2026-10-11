@@ -43,7 +43,7 @@
   function addItem(key,value){const project=projectFor(key);if(project&&itemsFor(key).length>=80)return null;if(project&&value.source?.address){const resource=describeProjectResource(value.source.address);if(!resource)return null;selected.clear();project.resources.unshift([value.title?.trim()||resource[0],value.text||'',resource[2],resource[3],{fileId:'stash-'+(globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2)),address:value.source.address,source:M.source(value.source),text:value.text||'',why:value.why||'',created:Date.now(),updated:Date.now()}]);persistResources();return resourceItems(key)[0];}return model.add(key,value);}
 
   const scope=()=>{const column=desktopPages.column(activeWorkspace);return M.scope(activeWorkspace,projectSpaces[column]?column:null);};
-  const allowed=()=>!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('projects');
+  const allowed=()=>!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('stash');
   function label(key=current){const [workspace,project]=JSON.parse(key);return project?projectSpaces[project]?.name||'Unavailable project':workspaceProfiles[workspace]?.label+' workspace';}
   function feedback(text){field('.memory-feedback').textContent=text;}
   function save(){try{syncFolders();desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();queueDesktopStateBroadcast(0);return true;}catch{model=M.create(persisted);feedback('Stash is full in this browser. Remove an item or shorten its content before saving more.');return false;}}

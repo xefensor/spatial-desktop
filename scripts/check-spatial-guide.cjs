@@ -13,18 +13,14 @@ assert(!model.mark('app-open'), 'Unrelated activity cannot complete the task');
 assert(model.mark('toggle-off')); assert(!model.ready());
 assert(!model.mark('toggle-off'), 'Repeated events do not advance a lesson');
 assert(model.mark('toggle-on')); assert(model.next());
-assert.equal(model.lesson.id,'resize-areas'); assert(!model.allows('apps'));
-model.mark('area-resized'); assert(model.next());
-assert.equal(model.lesson.id,'move-areas');assert(!model.allows('apps'));
-model.mark('area-moved');assert(model.next());
-assert(model.allows('apps')); assert(!model.allows('overview'));
+assert.equal(model.lesson.id,'apps'); assert(model.allows('apps')); assert(model.allows('overview'));
 while (model.lesson.id !== 'complete') {
   for (const goal of model.lesson.goals || []) model.mark(goal);
   assert(model.ready()); assert(model.next());
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,resize-areas,move-areas,apps,tiling,float,overview,fullscreen,true-fullscreen,park,area-rail,unpark,desktops,projects,project-app,project-stash,project-navigation,workspaces,folders,return,ai-context,hide-areas,overview-navigation,timeline,timeline-task,challenge,two-displays,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,overview,tiling,float,fullscreen,true-fullscreen,park,unpark,desktops,project-stash,ai-context,projects,project-app,project-navigation,workspaces,folders,return,overview-navigation,timeline,timeline-task,resize-areas,area-rail,move-areas,hide-areas,challenge,two-displays,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -96,7 +92,7 @@ for (const name of ['browser','terminal','elisa','dolphin','notes','terminal--2'
   G.observeWindows(unparked,{open:[name],states:{[name]:'open'}});assert(unparked.ready());
   const project=at('project-app');project.state.practiceProject='mine';
   G.observeWindows(project,{column:'workspace',open:[name]});assert(!project.ready());
-  G.observeWindows(project,{column:'mine',open:[name]});assert(project.ready());
+  G.observeWindows(project,{column:'mine',open:[name]});assert(project.state.done.includes('project-app-open'));assert(!project.ready(),'Project AI context follows opening the app');
 }
 const tiled=at('tiling');G.observeWindows(tiled,{tiled:['terminal','terminal--2']});assert(tiled.ready(),'Two instances of the same app qualify');
 const laterPark=at('unpark');G.observeWindows(laterPark,{states:{}});G.observeWindows(laterPark,{states:{elisa:'minimized'}});G.observeWindows(laterPark,{open:['elisa']});assert(laterPark.ready());
@@ -145,7 +141,7 @@ console.log('Two-display chapter passed: optional ending, real transfers, same-w
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
-const context = vm.createContext({model:at('resize-areas'), guide:{observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
+const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
   areaPriority:['systems','apps','projects'],dockState:{systems:{edge:'right'},apps:{edge:'left'},projects:{edge:'left'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
   dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
@@ -157,6 +153,7 @@ vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
 assert(!context.model.ready(), 'Resize completes only after releasing the border');
 context.dragging=false; context.check(); assert(context.model.ready());
+context.areaFor=name=>({hidden:name==='apps',classList:{contains:()=>context.dragging}});
 context.model=at('move-areas');context.check();assert(!context.model.ready());
 context.dockState.apps.edge='bottom';context.check();assert(!context.model.ready(),'Hidden, untaught Areas cannot complete docking practice');
 context.dockState.systems.edge='left';context.dragging=true;context.check();assert(!context.model.ready(),'Dock preview does not complete a move before release');
@@ -183,10 +180,9 @@ context.activeWorkspace='general';context.appState.dolphin='closed';
 
 context.model=at('project-app');context.model.state.practiceProject='mine';context.appState.notes='open';context.owners.notes='workspace';
 context.isLocalApp=name=>context.owners[name]===context.column;context.check();assert(!context.model.ready(), 'Workspace Notes does not count as a project window');
-context.appInfo['notes--2']={base:'notes'};context.appState['notes--2']='open';context.owners['notes--2']='mine';context.check();assert(context.model.ready());
+context.appInfo['notes--2']={base:'notes'};context.appState['notes--2']='open';context.owners['notes--2']='mine';context.check();assert(context.model.state.done.includes('project-app-open'));assert(!context.model.ready());
 context.model=at('project-navigation');context.model.state.practiceProject='mine';context.check();assert(!context.model.ready());
-context.column='workspace';context.check();context.column='mine';context.check();assert(!context.model.ready());
-context.column='workspace';context.check();assert(context.model.ready());
+context.column='workspace';context.check();context.column='mine';context.check();assert(context.model.ready(),'A return to the project finishes switching practice without a redundant third switch');
 context.model=at('challenge');context.model.state.practiceProject='mine';context.check();
 context.column='mine';context.check();assert(!context.model.ready(), 'Existing project app does not complete the final challenge');
 context.appInfo.browser={};context.appState.browser='open';context.owners.browser='mine';context.check();assert(context.model.state.done.includes('challenge-open'));
@@ -226,7 +222,7 @@ console.log('Stopped window clicks are observed after their action, including a 
 
 // A skipped task stays distinct from a performed action, including after refresh.
 const skipping=at('park'); skipping.state.practiceWindow='notes';
-assert(skipping.skip()); assert.equal(skipping.lesson.id,'area-rail');
+assert(skipping.skip()); assert.equal(skipping.lesson.id,'unpark');
 assert.deepEqual(skipping.state.done,[]); assert.deepEqual(skipping.state.skipped,['park']);
 assert.equal(skipping.state.practiceWindow,undefined);
 assert.deepEqual(G.create(skipping.snapshot()).state.skipped,['park']);
@@ -368,12 +364,17 @@ console.log('Production display synchronization passed: isolated practice channe
 
 // New chapters observe owned, persisted content and meaningful state transitions.
 const contextScene={workspace:'general',column:'practice',note:'',items:[],ai:{items:[],draft:'',workingProject:null},areas:{apps:true,systems:true,projects:true,ai:true},activity:[],plans:[],overview:false,section:'apps',filter:'all',query:'',day:'2026-10-10',activityDay:'2026-10-10'};
-const stash=at('project-stash');stash.state.practiceProject='practice';G.observeContext(stash,contextScene);
-G.observeContext(stash,{...contextScene,column:'workspace',note:'My note',items:[{id:'a'}]});assert(!stash.ready(),'Another project or Workspace cannot complete project Stash tasks');
-G.observeContext(stash,{...contextScene,note:'My note',items:[{id:'a'}]});assert(stash.ready());assert(G.create(stash.snapshot()).ready());
-const ai=at('ai-context');ai.state.practiceProject='practice';G.observeContext(ai,contextScene);
-G.observeContext(ai,{...contextScene,ai:{items:[{id:'other',project:'another'}],draft:'Help me',workingProject:'another'}});assert(!ai.ready());
-G.observeContext(ai,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],draft:'',turns:[{id:'reply',request:'Help me',example:false}],workingProject:'practice'}});assert(ai.ready(),'A project attachment, working folder and submitted request complete AI practice');
+const stash=at('project-stash');G.observeContext(stash,{...contextScene,column:'workspace'});
+G.observeContext(stash,{...contextScene,column:'another',items:[{id:'a'}]});assert(!stash.ready(),'Another context does not complete workspace Stash practice');
+G.observeContext(stash,{...contextScene,column:'workspace',items:[{id:'a',title:'My idea'}]});assert(!stash.ready(),'Save and inspect are separate actions');
+G.observeContext(stash,{...contextScene,column:'workspace',items:[{id:'a',title:'My idea'}],expandedStash:['a']});assert(stash.ready());assert(G.create(stash.snapshot()).ready());
+const ai=at('ai-context');G.observeContext(ai,{...contextScene,column:'workspace'});
+G.observeContext(ai,{...contextScene,column:'workspace',ai:{items:[{id:'foreign',workspace:'other'}],turns:[],workingProject:null}});assert(!ai.state.done.includes('ai-source'));
+G.observeContext(ai,{...contextScene,column:'workspace',ai:{items:[{id:'mine',workspace:'general',title:'My idea'}],turns:[{id:'reply',request:'Help me',example:false}],workingProject:null}});assert(!ai.ready(),'Keeping the reply is a separate action');
+G.observeContext(ai,{...contextScene,column:'workspace',items:[{id:'kept-reply',source:{app:'ai-demo'}}],ai:{items:[{id:'mine',workspace:'general'}],turns:[{id:'reply',request:'Help me',example:false}],workingProject:null}});assert(ai.ready(),'AI works and its reply can be kept without a project');
+const projectContext=at('project-app');projectContext.state.practiceProject='practice';G.observeContext(projectContext,contextScene);projectContext.mark('project-app-open');
+G.observeContext(projectContext,{...contextScene,ai:{items:[{id:'other',project:'another'}],workingProject:'another'}});assert(!projectContext.ready());
+G.observeContext(projectContext,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],workingProject:'practice'}});assert(projectContext.ready(),'Project context selects the real working folder');
 const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
 G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
 G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());
@@ -397,7 +398,7 @@ assert(!G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,
 assert(!G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,overview:true,section:'timeline',day:'2026-10-11'}),'Latest on another day does not locate the practice activity');
 assert(G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,overview:true,section:'timeline'}));assert(timeline.ready());
 const taskLesson=at('timeline-task');G.observeContext(taskLesson,contextScene);const newTask={id:'task',type:'task.due',time:5000,done:false};G.observeContext(taskLesson,{...contextScene,plans:[newTask]});assert(!taskLesson.ready());G.observeContext(taskLesson,{...contextScene,plans:[{...newTask,done:true}]});assert(taskLesson.ready());
-assert(!at('return').allows('ai'));assert(at('ai-context').allows('ai'));assert(!at('ai-context').allows('timeline'));assert(!at('ai-context').allows('overview-system'));assert(at('hide-areas').allows('overview-system'));assert(at('overview-navigation').allows('timeline'));
+assert(at('return').allows('ai'));assert(at('project-stash').allows('stash'));assert(at('project-stash').allows('project-area'));assert(!at('project-stash').allows('projects'));assert(!at('project-stash').allows('ai'));assert(at('ai-context').allows('ai'));assert(!at('ai-context').allows('timeline'));assert(!at('ai-context').allows('overview-system'));assert(at('hide-areas').allows('overview-system'));assert(at('overview-navigation').allows('timeline'));
 assert.equal(G.create({status:'active',version:6,index:16}).lesson.id,'project-navigation','Version 6 indices retain their original topic');
 assert.equal(G.create({status:'active',version:6,index:22}).lesson.id,'complete','Completed older introductions stay complete');
 const isolated=boot({'spatial-active-workspace':'general','spatial-workspace-timeline-v1':'real-history'},'?guide=chapter&chapter=timeline');isolated.api.storage.setItem('spatial-workspace-timeline-v1','practice-history');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');isolated.api.finish('completed');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');
@@ -430,3 +431,30 @@ console.log('Guide Overview capture passed: filters validate after change, unpar
 
 assert.doesNotThrow(()=>G.observeWindows(at('overview-navigation'),{open:[],states:{}}),'An empty Overview desktop remains observable');
 assert.equal(G.recovery(at('overview-navigation'),{...normalScene,open:[],parked:[]}).action,'window','Empty-window recovery offers a real app rather than crashing');
+
+// Mission sequencing and stored progress remain meaningful after the reordering.
+assert.equal(G.chapters.length,13);
+assert(G.lessons.findIndex(l=>l.id==='project-stash') < G.lessons.findIndex(l=>l.id==='ai-context'));
+assert(G.lessons.findIndex(l=>l.id==='ai-context') < G.lessons.findIndex(l=>l.id==='projects'));
+assert(G.lessons.findIndex(l=>l.id==='resize-areas') > G.lessons.findIndex(l=>l.id==='timeline-task'));
+assert.equal(G.create({status:'active',version:7,index:16,done:['stash-saved']}).lesson.id,'project-stash','Version 7 positional progress retains its original lesson');
+const missionStash=at('project-stash');assert.equal(G.mission(missionStash).goal,'stash-saved');
+missionStash.mark('stash-saved');missionStash.state.keptItem={id:'x',title:'My own idea'};
+assert.equal(G.mission(missionStash).goal,'stash-inspected');assert(G.mission(missionStash).feedback.includes('My own idea'));
+assert(!missionStash.ready());missionStash.mark('stash-inspected');assert(missionStash.ready());
+for(const lesson of G.lessons.filter(l=>l.goals)){
+  assert(lesson.text.split(/\s+/).length<=35,'Short primary explanation: '+lesson.id);
+  assert(G.chapters.some(chapter=>chapter.id===lesson.chapter));
+}
+// Seed only a labeled meeting in active Timeline practice, aligned with the learner's action.
+const overviewSource=fs.readFileSync(require.resolve('../dist/overview-desktop.js'),'utf8');
+const planner=require('../dist/timeline.js').createPlanner();let meetingSaves=0;
+const meetingCtx=vm.createContext({SpatialGuide:{model:at('timeline')},activeWorkspace:'general',planner,savePlanner(){meetingSaves++;},renderTimeline(){}});
+meetingCtx.SpatialGuide.model.state.sessionId='test-session';
+vm.runInContext(overviewSource.slice(overviewSource.indexOf('  function addPracticeMeeting('),overviewSource.indexOf('  globalThis.SpatialTimelineDesktop=')),meetingCtx);
+const practiceMeeting=meetingCtx.addPracticeMeeting(1760000000000);
+assert(practiceMeeting.time<=1760000000000&&practiceMeeting.endTime>1760000000000);
+assert(practiceMeeting.title.includes('Guide example'));assert.equal(meetingSaves,1);
+assert.equal(meetingCtx.addPracticeMeeting(1760000000000).id,practiceMeeting.id);assert.equal(meetingSaves,1,'A reload does not duplicate the meeting');
+meetingCtx.SpatialGuide.model.leave('completed');assert.equal(meetingCtx.addPracticeMeeting(1760000000001),null,'Normal desktop calendars never receive a guide meeting');
+console.log('Mission Guide passed: short copy, chapter order, one current action, own-item feedback, legacy progress and practice-only Timeline example.');

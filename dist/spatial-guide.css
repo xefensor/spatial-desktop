@@ -36,34 +36,27 @@
 .guide-target {outline:2px solid color-mix(in srgb,#64d782 70%,transparent)!important;outline-offset:-3px!important}
 html[data-guide-level] .desktop-context-menu {z-index:11000!important}
 #spatialGuide {z-index:10000}
-.guide-practice-launcher {display:none;gap:10px;padding:12px 0;flex-direction:column}.guide-practice-launcher>span{font-size:10px;color:var(--muted)}.guide-practice-launcher button{display:flex;align-items:center;gap:10px;padding:9px;text-align:left;font-size:12px}.guide-practice-launcher .app-art{width:27px;height:27px}
-html[data-guide-level="2"] .guide-practice-launcher{display:flex}
-html[data-guide-level]:not([data-guide-level="9"]) :is([data-universal-group="settings"],[data-universal-group="web"]) {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) :is([data-area-window="projects"],.desktop-context-header) {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"]) :is([data-area-window="apps"],[data-app-frame]) {display:none!important}
-html[data-guide-level="0"] [data-area-window="systems"] {display:none!important}
-html[data-guide-level] #emptyWorkspace {display:none!important}
-html[data-guide-level]:not([data-guide-level="9"]) .desktop-folder {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"]) #allAppsToggle {visibility:hidden;pointer-events:none}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"]) :is(.mini-section,[data-window-action="minimize"]) {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"]) [data-window-action="maximize"] {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"]) :is(.desktop-page-rail,.desktop-column-map,.desktop-column-hint) {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"]) .workspace-switcher {visibility:hidden!important;pointer-events:none}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) .overview-project-zone {visibility:hidden!important;pointer-events:none}
-html[data-guide-level]:not([data-guide-level="9"]) .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]) {display:none!important}
-html[data-guide-level]:not([data-guide-level="9"]) .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]) {display:none!important}
-html[data-guide-level]:not([data-guide-level="9"]) .launcher-categories {display:none!important}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"],[data-guide-level="6"],[data-guide-level="7"]) .workspace-home-card {visibility:hidden!important;pointer-events:none}
+/* Feature gates follow taught concepts, so moving a mission cannot reveal unrelated tools. */
+html[data-guide-all="false"] :is([data-universal-group="settings"],[data-universal-group="web"],.desktop-folder,.launcher-categories){display:none!important}
+html[data-guide-all="false"] .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]),
+html[data-guide-all="false"] .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]){display:none!important}
+html[data-guide-stash="false"] [data-area-window="projects"],
+html[data-guide-projects="false"] .desktop-context-header,
+html[data-guide-apps="false"] :is([data-area-window="apps"],[data-app-frame]),
+html[data-guide-systems="false"] [data-area-window="systems"]{display:none!important}
+html[data-guide-level] #emptyWorkspace{display:none!important}
+html[data-guide-overview="false"] #allAppsToggle{visibility:hidden;pointer-events:none}
+html[data-guide-parking="false"] :is(.mini-section,[data-window-action="minimize"]){display:none!important}
+html[data-guide-desktops="false"] :is(.desktop-page-rail,.desktop-column-map,.desktop-column-hint){display:none!important}
+html[data-guide-workspaces="false"] :is(.workspace-switcher,.workspace-switcher-actions,.workspace-context-card,.other-workspaces){visibility:hidden!important;pointer-events:none}
+html[data-guide-projects="false"] :is(.overview-project-zone,.overview-projects-section){visibility:hidden!important;pointer-events:none}
+html[data-guide-projects="false"] :is(#projectLibraryList,[data-create-area-project],.project-pack-key,#manageProjectButton){display:none!important}
+html[data-guide-folders="false"] .workspace-home-card{visibility:hidden!important;pointer-events:none}
 @keyframes guide-arrive {from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
 @media(max-width:800px){.guide-window{left:12px;top:auto;bottom:12px;width:350px;max-height:55dvh}.guide-content{padding:16px}.guide-content h1{font-size:21px}.guide-content p{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.guide-window{animation:none}.guide-progress i{transition:none}}
 
 /* A compact task strip stays useful while the learner works. */
-.guide-checklist {list-style:none;padding:0;margin:12px 0 15px;display:grid;gap:9px}
-.guide-checklist li {display:flex;gap:9px;align-items:baseline;color:var(--muted);font-size:12px;line-height:1.45}
-.guide-checklist .is-current {color:var(--text)}
-.guide-goal-state {width:15px;flex:none;font-size:15px;line-height:1}
-.guide-checklist .is-done .guide-goal-state {color:var(--app-primary)}
 .guide-strip {display:none;align-items:center;gap:14px;padding:12px 16px}
 .guide-strip>div {min-width:0;flex:1}.guide-strip-meta {display:block;font:9px ui-monospace,monospace;color:var(--muted);margin-bottom:5px}
 .guide-strip-task {font-size:12px;line-height:1.45;margin:0;color:var(--text)}
@@ -81,10 +74,9 @@ html[data-guide-level] #projectEditorDialog {z-index:11000!important}
 .guide-task .guide-recovery p {font-size:12px;color:var(--text);margin:0 0 6px}
 .guide-strip-recover {flex:none}
 
-/* Teach the production Overview in place: hide untaught modules without rearranging its lanes. */
-html[data-guide-level]:not([data-guide-level="9"]) :is(.workspace-switcher-actions,.overview-widgets,.workspace-context-card,.other-workspaces){visibility:hidden!important;pointer-events:none}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"],[data-guide-level="5"]) .overview-projects-section{visibility:hidden!important;pointer-events:none}
-html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[data-guide-level="3"],[data-guide-level="4"]) .open-windows-section{visibility:hidden!important;pointer-events:none}
+/* Overview keeps the production arrangement; untaught content stays hidden. */
+html[data-guide-system-overview="false"] .overview-widgets{visibility:hidden!important;pointer-events:none}
+html[data-guide-desktops="false"] .open-windows-section{visibility:hidden!important;pointer-events:none}
 
 .guide-display-open {padding:9px 12px;font-size:12px;margin:5px 0 10px}
 .guide-task .guide-display-help {font-size:11px;color:var(--muted)}
@@ -94,3 +86,20 @@ html:is([data-guide-level="0"],[data-guide-level="1"],[data-guide-level="2"],[da
 #spatialGuide.is-display-lesson {max-height:72dvh}
 
 html[data-guide-system-overview="false"] [data-overview-panel="system"]{visibility:hidden!important;pointer-events:none}
+
+/* A mission is one current action, followed by its real result. */
+.guide-current-mission{font-size:14px!important;line-height:1.5!important;font-weight:550;color:var(--text)!important;margin:7px 0!important}
+.guide-current-hint{font-size:12px!important;margin:0 0 9px!important}
+.guide-mission-count{display:block;font-size:10px;color:var(--muted);margin-bottom:8px}
+.guide-task #guideTaskStatus{display:block;font-size:12px;line-height:1.5;color:var(--app-primary);margin-top:8px}
+.guide-more{border-top:1px solid var(--line);margin-top:13px;padding-top:10px}
+.guide-more summary{cursor:pointer;font-size:11px;color:var(--muted)}
+.guide-more p{font-size:12px!important;margin:10px 0 0!important}
+.guide-more>b{display:block;font-size:12px;margin-top:10px}
+.guide-chapter{border-bottom:1px solid var(--line)}
+.guide-chapter>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;cursor:pointer;font-size:13px;font-weight:550;list-style:none}
+.guide-chapter>summary svg{width:14px;height:14px}
+.guide-chapter[open]>summary svg{transform:rotate(90deg)}
+.guide-chapter>.guide-topic-list{padding-left:12px}
+.guide-chapter .guide-more summary{display:block;padding:6px 0;font-size:11px}
+.guide-current-hint[hidden]{display:none!important}

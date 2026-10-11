@@ -21,12 +21,6 @@
   window.setAttribute('role', 'region'); window.setAttribute('aria-label', SpatialAppNames.label('Spatial Guide')); window.hidden = true;
   window.innerHTML = '<header class="guide-titlebar"><span class="guide-identity">' + icon('i-help') + '<b>' + SpatialAppNames.label('Spatial Guide') + '</b></span><div class="guide-window-actions"><button class="surface-key guide-key" data-guide-action="compact" aria-label="Compact Guide" aria-pressed="false">' + icon('i-min') + '</button><button class="surface-key guide-key" data-guide-action="close" aria-label="Close Guide">' + icon('i-close') + '</button></div></header><div class="guide-strip"><div><span class="guide-strip-meta"></span><p class="guide-strip-task" aria-live="polite"></p></div><button class="guide-text-action" data-guide-action="compact" aria-label="Expand Guide">Expand</button><button class="guide-text-action guide-strip-recover" data-guide-action="recover" hidden>Help</button><button class="surface-key guide-strip-next" data-guide-action="next" hidden>Continue</button></div><div class="guide-content"></div>';
   document.body.append(window);
-  const launcher = document.createElement('div');
-  launcher.id = 'guidePracticeLauncher'; launcher.className = 'guide-practice-launcher';
-  launcher.innerHTML = '<span>Choose an app to try</span>' + Object.entries(appInfo).filter(([,info])=>!info.base).map(([name,info])=>'<button class="surface-key" data-open-app="' + name + '">' + appArt(name) + '<span>Open ' + escapeHtml(info.label) + '</span></button>').join('');
-  $('.area-body', areaFor('apps'))?.prepend(launcher);
-  if (!launcher.isConnected) $('.area-window-body', areaFor('apps'))?.prepend(launcher);
-  if (!launcher.isConnected) $('#appRack').before(launcher);
   let practiceDisplay = null;
   function closePracticeDisplay() {
     if (model.lesson.id !== 'two-displays' && !practiceDisplay) return;
@@ -98,7 +92,7 @@
       renderWorkspace(model.state.practiceWorkspace,false);
     }
     if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles[model.state.practiceWorkspace].home+'/Downloads'); }
-    if(model.lesson.id==='ai-context'){globalThis.SpatialAIDesktop?.expand(false);}
+    if(['ai-context','project-app'].includes(model.lesson.id)){globalThis.SpatialAIDesktop?.expand(false);}
     if(['project-stash','ai-context'].includes(model.lesson.id))showArea('projects',false);
     if(model.lesson.id==='overview-navigation'){ $('#overviewWindowFilter').value='all'; renderOverviewWindows(); globalThis.SpatialOverviewDesktop?.select('apps',false);}
     focusDesktop(false); captureCurrentWorkspaceSession(); saveAppWindows(false); saveIndependentSessions(); saveDesktopPages();
@@ -167,7 +161,7 @@
   function overviewPracticeTarget(){
     const done=model.state.done;
     if(model.lesson.id==='overview-navigation')return !done.includes('overview-back')?'.overview-section-nav':!done.includes('overview-filtered')?'#overviewWindowFilter':$('#overviewWindowGrid [data-overview-open-app]')?'#overviewWindowGrid':'#overviewWindowFilter';
-    if(model.lesson.id==='timeline')return !done.includes('timeline-activity')?'#allAppsToggle':!done.includes('timeline-event')?'#timelineAddToggle':!done.includes('timeline-compared')?'#timelineScroll':'#timelineLatest';
+    if(model.lesson.id==='timeline')return !done.includes('timeline-activity')?'#allAppsToggle':!done.includes('timeline-compared')?'#timelineScroll':'#timelineLatest';
     return null;
   }
   function highlight() {
@@ -175,14 +169,16 @@
     if (!model.active() || window.hidden) return;
     if (model.lesson.challenge) return;
     const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
-    const contextTarget = overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':model.state.hiddenArea?'.overview-areas-widget':'[data-area-drag-handle]'})[model.lesson.id];
+    const currentGoal=guide.mission(model).goal;
+    const missionTarget=({'stash-saved':'#workingMemory [data-memory-action="add"]','stash-inspected':'#workingMemory [data-memory-id] summary','ai-source':'#workingMemory [data-memory-id]','ai-request':'#aiPrompt','ai-kept':'[data-ai-demo-turn]','ai-project-source':'[data-app-frame] .app-badge','app-unpark':'#miniStack','search-launch':'[data-search-open-app]','project-workspace':'.desktop-context-header','project-return':'.desktop-context-header'})[currentGoal];
+    const contextTarget = missionTarget || overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':model.state.hiddenArea?'.overview-areas-widget':'[data-area-drag-handle]'})[model.lesson.id];
     const target = contextTarget || (model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-max-enter':'[data-app-frame] [data-window-action="maximize"]','display-max-exit':'[data-app-frame] [data-window-action="maximize"]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target);
     if (target) highlighted = $$(target).filter(element => !element.closest('[hidden],.is-on-other-display') && element.getClientRects().length);
     highlighted.forEach(element => element.classList.add('guide-target'));
   }
   function updateGate() {
     guide.applyGate();
-    areaPriority.forEach(name => { areaFor(name).inert = model.active() && !model.allows(name); });
+    areaPriority.forEach(name => { areaFor(name).inert = model.active() && !model.allows(name==='projects'?'project-area':name); });
     $('#allAppsToggle').disabled = model.active() && !model.allows('overview');
     $('#universalSearchInput').placeholder = model.active() && !model.allows('all') ? (model.allows('folders') ? 'Search applications, projects and files' : model.allows('projects') ? 'Search applications and projects' : 'Search applications') : 'Search apps, files, settings, actions or the web';
     $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects and Home';
@@ -192,13 +188,17 @@
     layoutDockAreas(false, false); refreshIntentAreas(); scheduleWindowTiling();
   }
   function lessonContentMarkup(lesson, explanation = lesson.text) {
-    const usage = lesson.usage;
-    const purpose = usage ? '<p class="guide-purpose">' + escapeHtml(usage.purpose) + '</p>' : '';
-    const example = usage ? '<section class="guide-example" aria-label="Example: ' + escapeHtml(usage.title) + '"><span class="eyebrow">IN PRACTICE · EXAMPLE</span><h2>' + escapeHtml(usage.title) + '</h2><ol>' + usage.steps.map(([label,text]) => '<li><b>' + escapeHtml(label) + '</b><span>' + escapeHtml(text) + '</span></li>').join('') + '</ol><p class="guide-example-choice">This is one example. Choose your own apps and subject when trying it yourself.</p></section>' : '';
-    return purpose + '<p>' + escapeHtml(explanation) + '</p>' + example;
+    const details=lesson.details?'<details class="guide-more"><summary>More details</summary><p>'+escapeHtml(lesson.details)+'</p></details>':'';
+    const example=lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'';
+    return '<p class="guide-explanation">'+escapeHtml(explanation)+'</p>'+details+example;
+  }
+  function chapterLabel(lesson=model.lesson) {
+    const chapter=guide.chapters.find(chapter=>chapter.id===lesson.chapter);
+    return chapter?chapter.title:lesson.title;
   }
   function referenceMarkup() {
-    return '<div class="guide-heading"><span class="eyebrow">DESKTOP COMPANION</span><h1>Find your way around.</h1><p>Find what a feature is for, see a practical example, or learn by using the actual desktop.</p></div><button class="surface-key guide-primary" data-guide-action="start">Start the hands-on guide</button><label class="guide-search recessed-field">' + icon('i-search') + '<input type="search" aria-label="Search Guide topics" placeholder="Search topics, examples or shortcuts"></label><div class="guide-topic-list">' + guide.lessons.slice(1, -1).map((lesson,index) => '<details data-guide-topic><summary><span>' + escapeHtml(lesson.title) + '</span>' + icon('i-right') + '</summary>' + lessonContentMarkup(lesson) + '<button class="surface-key guide-show" data-guide-show="' + (index + 1) + '">Show on desktop</button><button class="guide-text-action guide-replay" data-guide-chapter="' + lesson.id + '">Practice this chapter</button></details>').join('') + '</div><p class="guide-footnote">You can always find Spatial Guide in Overview → Apps → Help, or search for its name.</p>';
+    const groups=guide.chapters.map(chapter=>'<details class="guide-chapter" data-guide-group><summary><span>'+escapeHtml(chapter.title)+'</span>'+icon('i-right')+'</summary><div class="guide-topic-list">'+guide.lessons.filter(lesson=>lesson.chapter===chapter.id).map(lesson=>'<details data-guide-topic><summary><span>'+escapeHtml(lesson.title)+'</span>'+icon('i-right')+'</summary>'+lessonContentMarkup(lesson)+'<button class="surface-key guide-show" data-guide-show="'+guide.lessons.indexOf(lesson)+'">Show me</button><button class="guide-text-action guide-replay" data-guide-chapter="'+lesson.id+'">Try this mission</button></details>').join('')+'</div></details>').join('');
+    return '<div class="guide-heading"><span class="eyebrow">DESKTOP COMPANION</span><h1>What would you like to try?</h1><p>Follow connected missions or find a topic below. Use your own apps and ideas.</p></div><button class="surface-key guide-primary" data-guide-action="start">Start the hands-on guide</button><label class="guide-search recessed-field">'+icon('i-search')+'<input type="search" aria-label="Search Guide topics" placeholder="Find a topic or shortcut"></label><div class="guide-chapters">'+groups+'</div>';
   }
   function setCompact(compact, manual = false) {
     if (manual) {manuallyExpanded=!compact;guide.setView(compact ? 'compact' : 'expanded');}
@@ -225,22 +225,16 @@
     if (nextControl && !manuallyExpanded && !window.classList.contains('is-compact') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),nextControl.getBoundingClientRect())) setCompact(true);
   }
   function updateChecklist() {
-    const goals = model.lesson.goals || [], current = goals.find(goal => !model.state.done.includes(goal));
-    $$('[data-guide-goal]', window).forEach(row => {
-      const goal = row.dataset.guideGoal, done = model.state.done.includes(goal);
-      row.classList.toggle('is-done',done); row.classList.toggle('is-current',goal === current);
-      $('.guide-goal-state',row).textContent = done ? '✓' : '○';
-      row.setAttribute('aria-label',guide.goalLabels[goal] + (done ? ' — done' : ' — remaining'));
-      if (goal === current) row.setAttribute('aria-current','step'); else row.removeAttribute('aria-current');
-    });
-    $('.guide-strip-meta',window).textContent = (model.state.chapter ? 'PRACTICE' : 'STEP ' + model.state.index) + ' · ' + model.lesson.title;
-    $('.guide-strip-task',window).textContent = current ? guide.goalLabels[current] : 'Done — ready to continue.';
-    if (model.state.chapter) {
-      const progress = $('.guide-progress',window);
-      progress.setAttribute('aria-label','Chapter progress'); progress.setAttribute('aria-valuemax','1'); progress.setAttribute('aria-valuenow',model.ready() ? '1' : '0');
-      $('i',progress).style.width = model.ready() ? '100%' : '0%';
-    }
-    const next = $('.guide-strip-next',window); next.textContent = model.state.chapter ? 'Finish chapter' : 'Continue'; next.hidden = !model.ready(); next.disabled = !model.ready();
+    const current=guide.mission(model),ready=model.ready();
+    const task=$('.guide-current-mission',window),hint=$('.guide-current-hint',window),count=$('.guide-mission-count',window);
+    if(task)task.textContent=ready?'Mission complete.':current.task;
+    if(hint){hint.textContent=current.hint;hint.hidden=ready||!current.hint;}
+    if(count)count.textContent=current.total?'Action '+Math.min(current.done+1,current.total)+' of '+current.total:'';
+    $('.guide-strip-meta',window).textContent=chapterLabel();
+    $('.guide-strip-task',window).textContent=ready?(current.feedback||'Ready to continue.'):current.task;
+    if(model.state.chapter){const progress=$('.guide-progress',window);progress.setAttribute('aria-label','Mission progress');progress.setAttribute('aria-valuemax','1');progress.setAttribute('aria-valuenow',ready?'1':'0');$('i',progress).style.width=ready?'100%':'0%';}
+    const next=$('.guide-strip-next',window);next.textContent=model.state.chapter?'Finish mission':'Continue';next.hidden=!ready;next.disabled=!ready;
+    const show=$('[data-guide-action="show"]',window);if(show)show.hidden=ready;
   }
   function render() {
     const content = $('.guide-content', window);
@@ -254,7 +248,9 @@
     const introduction = complete && model.state.skipped?.length ? 'Your introduction is finished. You can revisit any skipped topic or practice an individual chapter in Spatial Guide anytime.' : lesson.text;
     window.classList.toggle('is-lesson', !welcome);
     window.classList.toggle('is-display-lesson', lesson.id === 'two-displays');
-    content.innerHTML = '<div class="guide-step-meta"><span>' + (welcome ? 'WELCOME' : complete ? 'READY TO GO' : model.state.chapter ? 'CHAPTER PRACTICE' : 'STEP ' + index + ' OF ' + (guide.lessons.length-2)) + '</span><button class="guide-text-action" data-guide-action="leave">' + (welcome ? 'Skip introduction' : model.state.chapter ? 'Leave chapter' : 'Leave introduction') + '</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="' + (guide.lessons.length-1) + '" aria-valuenow="' + index + '"><i style="width:' + (index/(guide.lessons.length-1)*100) + '%"></i></div><h1 tabindex="-1">' + escapeHtml(lesson.title) + '</h1>' + lessonContentMarkup(lesson,introduction) + '<div class="guide-task"><span class="eyebrow">' + (complete ? 'COME BACK ANYTIME' : welcome ? 'AT YOUR OWN PACE' : 'TRY IT') + '</span><p>' + escapeHtml(lesson.task) + '</p>' + (lesson.id === 'two-displays' ? '<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button><p class="guide-display-help">Two browser windows simulate two displays. Keep them in the same browser profile. You can skip this chapter with one monitor.</p>' : '') + '<ol class="guide-checklist">' + (lesson.goals || []).map(goal => '<li data-guide-goal="' + goal + '"><span class="guide-goal-state" aria-hidden="true">○</span><span>' + escapeHtml(guide.goalLabels[goal]) + '</span></li>').join('') + '</ol><span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">' + (welcome ? 'Start exploring' : complete ? 'Continue to desktop' : model.state.chapter ? 'Finish chapter' : 'Continue') + icon('i-right') + '</button>' + (!welcome && !complete && !lesson.challenge ? '<button class="guide-text-action" data-guide-action="show">Show target</button>' : '') + '</div>' + (!welcome && !complete && !model.state.chapter ? '<button class="guide-text-action guide-skip" data-guide-action="skip">' + (lesson.optional ? 'Skip two-display practice' : 'I already know this — skip task') + '</button>' : '') + (welcome ? '<p class="guide-footnote">Skip now or leave at any point. Find us again in Overview → Apps → Help, or search “Spatial Guide”.</p>' : '<p class="guide-footnote">These are real desktop actions. Progress is saved; refreshing resumes this step.' + (model.state.mode === 'repeat' ? ' Your original desktop returns when you leave.' : '') + '</p>');
+    const chapterIndex=guide.chapters.findIndex(chapter=>chapter.id===lesson.chapter);
+    const label=welcome?'WELCOME':complete?'READY TO GO':model.state.chapter?'MISSION PRACTICE':'CHAPTER '+(chapterIndex+1)+' OF '+guide.chapters.length+' · '+chapterLabel();
+    content.innerHTML='<div class="guide-step-meta"><span>'+escapeHtml(label)+'</span><button class="guide-text-action" data-guide-action="leave">'+(welcome?'Skip introduction':model.state.chapter?'Leave mission':'Leave introduction')+'</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="'+(guide.lessons.length-1)+'" aria-valuenow="'+index+'"><i style="width:'+(index/(guide.lessons.length-1)*100)+'%"></i></div><h1 tabindex="-1">'+escapeHtml(lesson.title)+'</h1><p class="guide-explanation">'+escapeHtml(introduction)+'</p><div class="guide-task"><span class="eyebrow">'+(complete?'COME BACK ANYTIME':welcome?'AT YOUR OWN PACE':'YOUR MISSION')+'</span><p class="guide-current-mission" aria-live="polite">'+escapeHtml(lesson.task)+'</p><p class="guide-current-hint"></p><small class="guide-mission-count"></small>'+(lesson.id==='two-displays'?'<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button>':'')+'<span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">'+(welcome?'Start exploring':complete?'Choose my desktop':model.state.chapter?'Finish mission':'Continue')+icon('i-right')+'</button>'+(!welcome&&!complete&&!lesson.challenge?'<button class="guide-text-action" data-guide-action="show">Show me</button>':'')+'</div>'+(!welcome&&!complete&&!model.state.chapter?'<button class="guide-text-action guide-skip" data-guide-action="skip">'+(lesson.optional?'Skip two-display practice':'Skip this mission')+'</button>':'')+(lesson.details?'<details class="guide-more"><summary>More details</summary><p>'+escapeHtml(lesson.details)+'</p></details>':'')+(lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'')+(welcome?'<p class="guide-footnote">Progress saves automatically. Find us again in Overview → Apps → Help.</p>':'');
     prepareControlSemantics(window); highlight();
     if (!welcome) setCompact(guide.view === 'compact');
     if (tileSession().fullscreen && guide.shouldCompact(guide.view,window.getBoundingClientRect(),frameFor(tileSession().fullscreen.name).getBoundingClientRect())) setCompact(true);
@@ -279,12 +275,16 @@
     if (id === 'overview' && $('#universalSearch').classList.contains('is-open')) {
       if (guide.observeSearch(model,{query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp))})) {guide.save();lastSignature = '';}
     }
-    if(['project-stash','ai-context','hide-areas','overview-navigation','timeline','timeline-task'].includes(id)){
+    if(['project-stash','ai-context','project-app','hide-areas','overview-navigation','timeline','timeline-task'].includes(id)){
       const history=globalThis.SpatialTimelineDesktop?.snapshot()||{},ai=globalThis.SpatialAIDesktop?.snapshot().sessions?.[activeWorkspace];
-      if(guide.observeContext(model,{workspace:activeWorkspace,column,items:globalThis.SpatialMemoryDesktop?.items()||[],ai,
+      if(guide.observeContext(model,{workspace:activeWorkspace,column,items:globalThis.SpatialMemoryDesktop?.items()||[],expandedStash:$$('#workingMemory details[open][data-memory-id]').map(row=>row.dataset.memoryId),ai,
         areas:Object.fromEntries(areaPriority.filter(name=>model.allows(name)).map(name=>[name,!areaFor(name).hidden])),
         activity:history.activity||[],plans:history.plans||[],overview:$('#universalSearch').classList.contains('is-open'),section:globalThis.SpatialOverviewDesktop?.active(),
         filter:$('#timelineType').value,query:$('#timelineQuery').value,day:$('#timelineDay').value,activityDay:model.state.timelineActivity?SpatialTimeline.dayKey(model.state.timelineActivity.time):''})) {guide.save();lastSignature='';}
+    }
+    if(id==='timeline'&&model.state.timelineActivity&&!model.state.timelinePlan){
+      const meeting=globalThis.SpatialTimelineDesktop?.addPracticeMeeting(model.state.timelineActivity.time);
+      if(meeting){model.state.timelinePlan=meeting.id;guide.save();}
     }
     const bounded = session.focus?.name || open.find(name => appMaximizedState[name] && !frameFor(name).classList.contains('is-fullscreen'));
     if (guide.observeFullscreen(model, {bounded, full:session.fullscreen?.name, open})) { guide.save(); lastSignature = ''; }
@@ -354,7 +354,7 @@
     $('.guide-strip-recover',window).hidden = !currentRecovery;
     if (currentRecovery) $('.guide-strip-task',window).textContent = currentRecovery.text;
     const status = $('#guideTaskStatus');
-    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is Fullscreen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Maximize detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'Fullscreen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
+    if(status)status.textContent=guide.mission(model).feedback;
     if (id === 'two-displays' && !ready) {
       const tips = {'display-linked':'Open the second practice display. Both windows share this practice desktop.', 'display-app-moved':'Right-click any app title bar → Move to Display 2.', 'display-app-returned':'In Display 2, right-click that app title bar → Move to Display 1.', 'display-area-moved':'Right-click any Area header → Move to Display 2.', 'display-max-enter':'Open another app here, then left-click Maximize. Watch its peer move to Display 2.', 'display-max-exit':'Left-click Maximize again to restore the app and bring its peers back.', 'display-full-enter':'On this display, middle-click an app’s maximize button. Look for apps and Areas on Display 2.', 'display-full-exit':'Press Escape on the full-screen app to restore it.'};
       const tip = extendedDesktopActive() ? tips[model.lesson.goals.find(goal=>!done.includes(goal))] : 'The second display is disconnected. Reopen it to continue, or skip this optional chapter.';
@@ -407,7 +407,7 @@
       if (!model.ready()) return;
       if (model.lesson.id === 'complete' || model.state.chapter) return requestExit('completed');
       if (model.lesson.id === 'two-displays') closePracticeDisplay();
-      if (model.next()) { guide.save(); updateGate(); render(); }
+      if (model.next()) { guide.save(); updateGate(); if(['ai-context','project-stash'].includes(model.lesson.id)){showArea('projects',false);if(model.lesson.id==='ai-context')globalThis.SpatialAIDesktop?.expand(false);} render(); }
     }
     if (action === 'skip' && !model.state.chapter) {
       if (model.lesson.id === 'two-displays') closePracticeDisplay();
@@ -423,13 +423,13 @@
     const chapter = event.target.closest('[data-guide-chapter]')?.dataset.guideChapter;
     if (chapter) start(chapter);
     if (action === 'show') {
-      if (['overview','project-app','workspaces','folders','return','hide-areas','overview-navigation','timeline','timeline-task'].includes(model.lesson.id)) { showLessonOverview(model.lesson.id); }
+      if (['apps','overview','tiling','project-app','workspaces','folders','return','hide-areas','overview-navigation','timeline','timeline-task'].includes(model.lesson.id)) { showLessonOverview(model.lesson.id); }
       highlight();
     }
     const show = event.target.closest('[data-guide-show]');
     if (show) {
       const lesson = guide.lessons[Number(show.dataset.guideShow)];
-      if (['overview','project-app','workspaces','folders','return','hide-areas','overview-navigation','timeline','timeline-task'].includes(lesson.id)) showLessonOverview(lesson.id);
+      if (['apps','overview','tiling','project-app','workspaces','folders','return','hide-areas','overview-navigation','timeline','timeline-task'].includes(lesson.id)) showLessonOverview(lesson.id);
       const name = frontApp && appState[frontApp] === 'open' ? frontApp : topOpenApp();
       const frame = name ? frameFor(name) : null;
       const target = lesson.id === 'apps' ? areaFor('apps') : lesson.id === 'tiling' ? $('.workspace-zone') : lesson.id === 'float' ? $('.app-titlebar', frame || $('.workspace-zone')) : ['fullscreen','true-fullscreen'].includes(lesson.id) ? frame?.querySelector('[data-window-action="maximize"]') : lesson.id === 'park' ? frame?.querySelector('[data-window-action="minimize"]') : null;
@@ -442,6 +442,7 @@
     if (!event.target.matches('[aria-label="Search Guide topics"]')) return;
     const words = normalizeSearchText(event.target.value).split(' ').filter(Boolean);
     $$('[data-guide-topic]', window).forEach(topic => { topic.hidden = !words.every(word => normalizeSearchText(topic.textContent).includes(word)); });
+    $$('[data-guide-group]',window).forEach(group=>{group.hidden=!$$('[data-guide-topic]',group).some(topic=>!topic.hidden);if(words.length)group.open=!group.hidden;});
   });
   document.addEventListener('click', event => {
     if (!model.active() || model.state.exitStatus) return;

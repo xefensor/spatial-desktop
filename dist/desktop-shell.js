@@ -6764,7 +6764,7 @@ function isLocalApp(name) {
 }
 
 function isLocalArea(name) {
-  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name)) return false;
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name==='projects'?'project-area':name)) return false;
   return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
 }
 

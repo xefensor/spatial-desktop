@@ -252,7 +252,15 @@
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
   window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
   globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
-  globalThis.SpatialTimelineDesktop={record,render:renderTimeline,snapshot:()=>({activity:model.list(activeWorkspace),plans:planner.list(activeWorkspace)}),suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
+  function addPracticeMeeting(time){
+    const guide=globalThis.SpatialGuide;
+    if(!guide?.model.active()||guide.model.lesson.id!=='timeline'||!Number.isFinite(time))return null;
+    const id='guide-review:'+guide.model.state.sessionId+':'+time;
+    const existing=planner.get(id);if(existing)return existing;
+    const event=planner.put({id,workspace:activeWorkspace,type:'calendar.event',time:time-5*60000,endTime:time+20*60000,title:'Practice review · Guide example',detail:'A practice meeting aligned with your activity. No calendar account is connected.'});
+    savePlanner();renderTimeline();return event;
+  }
+  globalThis.SpatialTimelineDesktop={addPracticeMeeting,record,render:renderTimeline,snapshot:()=>({activity:model.list(activeWorkspace),plans:planner.list(activeWorkspace)}),suspend(action){recordingSuspended++;try{return action();}finally{recordingSuspended--;}}};
   // Existing browser history contains actual visits; preserve its original timestamps.
   for(const [workspace,content] of Object.entries(workspaceContent)){
     for(const visit of (content?.history||[]).slice(-100))model.add({id:'legacy-web:'+workspace+':'+visit.time+':'+visit.address,workspace,type:'browser.visit',time:visit.time,title:visit.address,address:visit.address,base:'browser'});
