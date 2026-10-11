@@ -89,5 +89,37 @@
     "artist_text": "IM3847",
     "asset": "images/philosophy/touch-bar.jpg",
     "modifications": "Resized and converted to JPEG; no content changes."
+  },
+  "history-number-frame": {
+    "title": "Framed parked-app shortcut",
+    "asset": "images/philosophy/history-number-frame.png",
+    "source": "Original screenshot supplied during the Spatial Desktop design discussion.",
+    "date": "2026-10-07",
+    "modifications": "None. Original PNG bytes; display size may differ on the page.",
+    "historical": true
+  },
+  "history-stash-below-projects": {
+    "title": "Stash below project management",
+    "asset": "images/philosophy/history-stash-below-projects.png",
+    "source": "Original screenshot supplied during the Spatial Desktop design discussion.",
+    "date": "2026-10-11",
+    "modifications": "None. Original PNG bytes; display size may differ on the page.",
+    "historical": true
+  },
+  "history-ai-buttons": {
+    "title": "Separate Tools and AI buttons",
+    "asset": "images/philosophy/history-ai-buttons.png",
+    "source": "Original screenshot supplied during the Spatial Desktop design discussion.",
+    "date": "2026-10-10",
+    "modifications": "None. Original PNG bytes; display size may differ on the page.",
+    "historical": true
+  },
+  "history-abs-corner-detail": {
+    "title": "File Browser corner experiment",
+    "asset": "images/philosophy/history-abs-corner-detail.png",
+    "source": "Original screenshot supplied during the Spatial Desktop design discussion.",
+    "date": "2026-10-11",
+    "modifications": "None. Original PNG bytes; display size may differ on the page.",
+    "historical": true
   }
 }
