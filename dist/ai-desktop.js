@@ -50,7 +50,7 @@
     const next=JSON.stringify([activeWorkspace,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     if(next===signature)return;signature=next;
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home)+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root)+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
-    attachments.innerHTML=session.items.map(itemMarkup).join('');transcript.innerHTML=session.turns.map(turnMarkup).join('');$('.ai-empty',area).hidden=session.items.length>0||session.turns.length>0;const sources=$('.ai-context-sources',area);sources.hidden=!session.items.length;sources.querySelector('summary').textContent='Attached sources · '+session.items.length;prepareControlSemantics(area);
+    attachments.innerHTML=session.items.map(itemMarkup).join('');transcript.innerHTML=session.turns.map(turnMarkup).join('');$('.ai-empty',area).hidden=session.items.length>0||session.turns.length>0;const sources=$('.ai-context-sources',area);sources.hidden=!session.items.length;if(switched&&session.turns.length)sources.open=false;sources.querySelector('summary').textContent='Attached sources · '+session.items.length;prepareControlSemantics(area);
   }
   function setMode(mode,save=true){model.mode(activeWorkspace,mode);if(save)persist();}
   function expand(focus=true){
@@ -62,7 +62,7 @@
   function add(item){
     const previous=model.session(activeWorkspace).workingProject,added=model.add(activeWorkspace,item);
     if(!added){status.textContent='This conversation holds up to 24 attachments. Remove one to add another.';return false;}
-    persist();render();expand(false);
+    persist();render();expand(false);$('.ai-context-sources',area).open=true;
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · ready for a scripted demo';return true;
   }
   $('#aiAreaToggle').addEventListener('click',toggle);

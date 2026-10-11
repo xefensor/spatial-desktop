@@ -10,6 +10,7 @@ const env={workspaces:()=>workspaces,projects:()=>projects};
   chat.folder('general','website');
   const response=D.reply('Summarize the sources',{items:chat.session('general').items,folder:chat.workingFolder('general'),project:'Website'});
   assert(response.text.includes('Keep navigation clear.'));
+  assert.equal(D.reply('Summarize the attached project note',{items:chat.session('general').items}).title,'Source summary');
   const turn=chat.exchange('general','Summarize the sources',response);
   assert.equal(turn.folder,projects.website.root);assert.equal(turn.sources[0].workspace,'work');
   chat.remove('general','brief');chat.folder('general',null);
