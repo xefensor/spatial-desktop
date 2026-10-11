@@ -219,6 +219,9 @@
     const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app]',overview:'[data-search-open-app],[data-search-launch-app="Spatial Guide"]',workspaces:'#newWorkspaceButton',folders:'.workspace-home-card',return:'.workspace-tabs','overview-navigation':overviewPracticeTarget(),timeline:($('#timelinePlanForm')?.hidden??true)?overviewPracticeTarget():'#timelinePlanForm','timeline-task':($('#timelinePlanForm')?.hidden??true)?'#timelineScroll':'#timelinePlanForm','hide-areas':'.overview-areas-widget'})[model.lesson.id];
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
+    if (model.lesson.id === 'ai-context' || (model.lesson.id === 'project-app' && model.state.done.includes('project-app-open'))) {
+      const ai = areaFor('ai'); if (ai && !ai.hidden) targets.push(ai.getBoundingClientRect());
+    }
     const rect = window.getBoundingClientRect();
     const point = guide.placeGuide({width:innerWidth,height:innerHeight},{width:rect.width,height:rect.height},targets);
     window.style.left = point.left+'px'; window.style.top = point.top+'px'; window.style.bottom = 'auto';
@@ -227,7 +230,7 @@
   function updateChecklist() {
     const current=guide.mission(model),ready=model.ready();
     const task=$('.guide-current-mission',window),hint=$('.guide-current-hint',window),count=$('.guide-mission-count',window);
-    if(task)task.textContent=ready?'Mission complete.':current.task;
+    if(task)task.textContent=ready&&current.total?'Mission complete.':current.task;
     if(hint){hint.textContent=current.hint;hint.hidden=ready||!current.hint;}
     if(count)count.textContent=current.total?'Action '+Math.min(current.done+1,current.total)+' of '+current.total:'';
     $('.guide-strip-meta',window).textContent=chapterLabel();
