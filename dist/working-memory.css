@@ -61,8 +61,7 @@
 .memory-tag{font-size:10px;line-height:1.4;padding:2px 4px;border-radius:0;background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--muted);overflow-wrap:anywhere}
 .memory-tag[style]{border-inline-start:2px solid var(--memory-tag-accent);color:var(--text)}
 .memory-saved-time{display:block;color:var(--muted);font-size:10px;margin:4px 0 10px}
-.memory-why,.memory-edit-details label{display:grid;gap:4px;font-size:11px;margin:10px 0 7px}
-.memory-why>small{font-size:9px}.memory-why textarea{font-size:12px;min-height:46px}
+.memory-edit-details label{display:grid;gap:4px;font-size:11px;margin:10px 0 7px}
 .memory-edit-details>summary{cursor:pointer;font-size:11px;padding:4px 0;color:var(--muted)}
 .memory-editor{padding:8px 0;margin:8px 0}.memory-editor textarea{font-size:12px;min-height:70px}
 .memory-source-address{white-space:normal;overflow-wrap:anywhere}
