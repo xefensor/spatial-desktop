@@ -270,7 +270,7 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
     const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
       desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{}},
-      tileSession:()=>({}),setUniversalSearchOpen(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
+      tileSession:()=>({}),setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
       desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace'},
@@ -323,6 +323,7 @@ const positioning=vm.createContext({manuallyExpanded:false,model:at('project-app
   pointer:null,highlighted:[{own:true,getBoundingClientRect:()=>({left:0,top:0,right:1363,bottom:936})}],frontApp:null,innerWidth:1363,innerHeight:936,
   $(selector){const rect=selector.endsWith('.universal-search-header')?titleRect:selector.endsWith('#allAppsGrid')?gridRect:selector === '#universalSearch.is-open #allAppsGrid [data-open-app]'?(lookedUpNextControl=true,notesButton):null;return rect?{getBoundingClientRect:()=>rect}:null;},
   setCompact(){throw new Error('A clear corner exists; keep the expanded preference');}});
+vm.runInContext(adapter.slice(adapter.indexOf("  function overviewPracticeTarget()"),adapter.indexOf("  function highlight()")),positioning);
 vm.runInContext(positionSource,positioning);positioning.positionGuide();
 assert(lookedUpNextControl,'Use the app grid control, not a hidden duplicate favourite');
 assert(parseInt(positioning.window.style.left)+390 <= notesButton.left,'Expanded Guide keeps the project app launcher clickable');
@@ -376,16 +377,53 @@ G.observeContext(ai,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],
 const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
 G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
 G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());
-const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(nav.ready());
+const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(!nav.ready(),'Returning to Apps alone does not finish window practice');
+const filterAction={kind:'filter',value:'parked',workspace:'general',fromOverview:true,section:'apps'};
+assert(!G.observeOverviewAction(nav,filterAction,{...contextScene,overview:true,windowFilter:'all'}),'A stale filter action is not credited');
+assert(!G.observeOverviewAction(nav,{...filterAction,fromOverview:false},{...contextScene,overview:true,windowFilter:'parked'}),'A filter outside Overview is not credited');
+assert(G.observeOverviewAction(nav,filterAction,{...contextScene,overview:true,windowFilter:'parked'}));
+const windowAction={kind:'window',name:'terminal--2',workspace:'general',fromOverview:true,section:'apps'};
+assert(!G.observeOverviewAction(nav,windowAction,{...contextScene,open:['notes'],front:'notes'}),'Selecting a closed or different window cannot finish practice');
+assert(!G.observeOverviewAction(nav,windowAction,{...contextScene,workspace:'work',open:['terminal--2'],front:'terminal--2'}),'Another workspace cannot finish practice');
+assert(G.observeOverviewAction(nav,windowAction,{...contextScene,open:['terminal--2'],front:'terminal--2'}));assert(nav.ready());assert(G.create(nav.snapshot()).ready(),'Overview practice survives reload with the actual completed goals');
 const timeline=at('timeline');G.observeContext(timeline,contextScene);
 const activity=[{id:'opened',type:'app.open',time:1000}],plans=[{id:'event',type:'calendar.event',time:500,endTime:1500}];
 G.observeContext(timeline,{...contextScene,activity,plans:[{...plans[0],endTime:900}]});assert(!timeline.state.done.includes('timeline-event'),'An event must cover the activity time');
 G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline',filter:'calendar'});assert(!timeline.ready(),'Compare requires both lanes');
 G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline',day:'2026-10-11'});assert(!timeline.ready(),'Compare requires the activity day');
-G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline'});assert(timeline.ready());
+G.observeContext(timeline,{...contextScene,activity,plans,overview:true,section:'timeline'});assert(!timeline.ready(),'Comparing lanes is followed by trying Latest activity');
+const latestAction={kind:'latest',workspace:'general',fromOverview:true,section:'timeline'};
+assert(!G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,overview:true,section:'apps'}),'Latest activity must run in Timeline');
+assert(!G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,overview:true,section:'timeline',day:'2026-10-11'}),'Latest on another day does not locate the practice activity');
+assert(G.observeOverviewAction(timeline,latestAction,{...contextScene,activity,overview:true,section:'timeline'}));assert(timeline.ready());
 const taskLesson=at('timeline-task');G.observeContext(taskLesson,contextScene);const newTask={id:'task',type:'task.due',time:5000,done:false};G.observeContext(taskLesson,{...contextScene,plans:[newTask]});assert(!taskLesson.ready());G.observeContext(taskLesson,{...contextScene,plans:[{...newTask,done:true}]});assert(taskLesson.ready());
 assert(!at('return').allows('ai'));assert(at('ai-context').allows('ai'));assert(!at('ai-context').allows('timeline'));assert(!at('ai-context').allows('overview-system'));assert(at('hide-areas').allows('overview-system'));assert(at('overview-navigation').allows('timeline'));
 assert.equal(G.create({status:'active',version:6,index:16}).lesson.id,'project-navigation','Version 6 indices retain their original topic');
 assert.equal(G.create({status:'active',version:6,index:22}).lesson.id,'complete','Completed older introductions stay complete');
 const isolated=boot({'spatial-active-workspace':'general','spatial-workspace-timeline-v1':'real-history'},'?guide=chapter&chapter=timeline');isolated.api.storage.setItem('spatial-workspace-timeline-v1','practice-history');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');isolated.api.finish('completed');assert.equal(isolated.storage['spatial-workspace-timeline-v1'],'real-history');
 console.log('New Guide chapters passed: project Stash, AI source/folder/draft, Area recovery, carousel navigation, overlapping Timeline comparison, task completion, progressive gates, legacy progress and isolated history.');
+
+// New targets follow the learner's unfinished action, including an empty filter.
+const practiceTarget=vm.createContext({model:at('overview-navigation'),$:()=>null});
+vm.runInContext(adapter.slice(adapter.indexOf('  function overviewPracticeTarget()'),adapter.indexOf('  function highlight()')),practiceTarget);
+assert.equal(practiceTarget.overviewPracticeTarget(),'.overview-section-nav');
+practiceTarget.model.state.done=['overview-away','overview-back'];assert.equal(practiceTarget.overviewPracticeTarget(),'#overviewWindowFilter');
+practiceTarget.model.state.done.push('overview-filtered');assert.equal(practiceTarget.overviewPracticeTarget(),'#overviewWindowFilter','An empty filter points back to the filter instead of an empty window list');
+practiceTarget.$=()=>({});assert.equal(practiceTarget.overviewPracticeTarget(),'#overviewWindowGrid');
+practiceTarget.model=at('timeline');practiceTarget.model.state.done=['timeline-activity','timeline-event','timeline-compared'];assert.equal(practiceTarget.overviewPracticeTarget(),'#timelineLatest');
+const resumedOverview=G.create({status:'active',version:7,lessonId:'overview-navigation',done:['overview-away','overview-back']});assert(!resumedOverview.ready());assert.deepEqual(resumedOverview.state.done,['overview-away','overview-back'],'Updating the chapter preserves existing learner progress');
+console.log('Updated Guide passed: Overview filters, actual window return, latest-activity jumps, dynamic targets and existing progress.');
+
+// Run the real capture listeners: window selection closes Overview before validation.
+const captureModel=at('overview-navigation');G.observeContext(captureModel,contextScene);captureModel.mark('overview-away');captureModel.mark('overview-back');
+const captureNodes={'#universalSearch':{classList:{contains:()=>captureScene.overview}},'#overviewWindowFilter':{value:'parked'},'#timelineDay':{value:'2026-10-10'}},captureScene={overview:true,section:'apps'},captureHandlers={},capturePending=[];
+const capture=vm.createContext({model:captureModel,guide:{observeOverviewAction:G.observeOverviewAction,save(){}},activeWorkspace:'general',lastSignature:'',frontApp:null,appState:{'terminal--2':'minimized'},isLocalApp:()=>true,
+  $:id=>captureNodes[id],SpatialOverviewDesktop:{active:()=>captureScene.section},SpatialTimelineDesktop:{snapshot:()=>({activity:[]})},SpatialTimeline:require('../dist/timeline.js'),
+  document:{addEventListener(type,fn,phase){assert.equal(phase,true);captureHandlers[type]=fn;}},setTimeout:fn=>capturePending.push(fn),check(){}});
+vm.runInContext(adapter.slice(adapter.indexOf('  // Capture Overview actions'),adapter.indexOf('  // Capture the selected search result')),capture);
+captureHandlers.change({target:{id:'overviewWindowFilter',value:'parked'}});assert(!captureModel.state.done.includes('overview-filtered'));capturePending.shift()();assert(captureModel.state.done.includes('overview-filtered'));
+captureHandlers.click({target:{closest:selector=>selector==='[data-overview-open-app]'?{dataset:{overviewOpenApp:'terminal--2'}}:null}});
+assert(!captureModel.ready(),'Window practice waits for the window action');
+capture.appState['terminal--2']='open';capture.frontApp='terminal--2';captureScene.overview=false;capturePending.shift()();assert(captureModel.ready(),'The capture retains the Overview origin after the app closes the overlay');
+capture.guide.settingUp=true;captureHandlers.change({target:{id:'overviewWindowFilter',value:'open'}});assert.equal(capturePending.length,0,'Guide prerequisite setup cannot credit user actions');
+console.log('Guide Overview capture passed: filters validate after change, unpark validates after selection and setup never counts.');

@@ -100,7 +100,7 @@
     if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles[model.state.practiceWorkspace].home+'/Downloads'); }
     if(model.lesson.id==='ai-context'){globalThis.SpatialAIDesktop?.expand(false);}
     if(['project-stash','ai-context'].includes(model.lesson.id))showArea('projects',false);
-    if(model.lesson.id==='overview-navigation')globalThis.SpatialOverviewDesktop?.select('apps',false);
+    if(model.lesson.id==='overview-navigation'){ $('#overviewWindowFilter').value='all'; renderOverviewWindows(); globalThis.SpatialOverviewDesktop?.select('apps',false);}
     focusDesktop(false); captureCurrentWorkspaceSession(); saveAppWindows(false); saveIndependentSessions(); saveDesktopPages();
     model.state.initialized = true; guide.save(); guide.settingUp = false;
   }
@@ -164,12 +164,18 @@
   function clearHighlight() {
     highlighted.forEach(element => element.classList.remove('guide-target')); highlighted = [];
   }
+  function overviewPracticeTarget(){
+    const done=model.state.done;
+    if(model.lesson.id==='overview-navigation')return !done.includes('overview-back')?'.overview-section-nav':!done.includes('overview-filtered')?'#overviewWindowFilter':$('#overviewWindowGrid [data-overview-open-app]')?'#overviewWindowGrid':'#overviewWindowFilter';
+    if(model.lesson.id==='timeline')return !done.includes('timeline-activity')?'#allAppsToggle':!done.includes('timeline-event')?'#timelineAddToggle':!done.includes('timeline-compared')?'#timelineScroll':'#timelineLatest';
+    return null;
+  }
   function highlight() {
     clearHighlight();
     if (!model.active() || window.hidden) return;
     if (model.lesson.challenge) return;
     const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
-    const contextTarget = ({'timeline':!model.state.done.includes('timeline-activity')?'#allAppsToggle':!model.state.done.includes('timeline-event')?'#timelineAddToggle':'#timelineScroll','timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':model.state.hiddenArea?'.overview-areas-widget':'[data-area-drag-handle]'})[model.lesson.id];
+    const contextTarget = overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':model.state.hiddenArea?'.overview-areas-widget':'[data-area-drag-handle]'})[model.lesson.id];
     const target = contextTarget || (model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-max-enter':'[data-app-frame] [data-window-action="maximize"]','display-max-exit':'[data-app-frame] [data-window-action="maximize"]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target);
     if (target) highlighted = $$(target).filter(element => !element.closest('[hidden],.is-on-other-display') && element.getClientRects().length);
     highlighted.forEach(element => element.classList.add('guide-target'));
@@ -204,7 +210,7 @@
     for (const selector of ['#desktopContextMenu:not([hidden])','#projectEditorDialog.is-open #projectEditorBody','#universalSearch.is-open .universal-search-header','#universalSearch.is-open #allAppsGrid','#workspaceCreateForm:not([hidden])']) {
       const element = $(selector); if (element) targets.push(element.getBoundingClientRect());
     }
-    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app]',overview:'[data-search-open-app],[data-search-launch-app="Spatial Guide"]',workspaces:'#newWorkspaceButton',folders:'.workspace-home-card',return:'.workspace-tabs','overview-navigation':'.overview-section-nav',timeline:!model.state.done.includes('timeline-activity')?'#allAppsToggle':($('#timelinePlanForm')?.hidden??true)?'#timelineScroll':'#timelinePlanForm','timeline-task':($('#timelinePlanForm')?.hidden??true)?'#timelineScroll':'#timelinePlanForm','hide-areas':'.overview-areas-widget'})[model.lesson.id];
+    const overviewTarget = ({'project-app':'#allAppsGrid [data-open-app]',overview:'[data-search-open-app],[data-search-launch-app="Spatial Guide"]',workspaces:'#newWorkspaceButton',folders:'.workspace-home-card',return:'.workspace-tabs','overview-navigation':overviewPracticeTarget(),timeline:($('#timelinePlanForm')?.hidden??true)?overviewPracticeTarget():'#timelinePlanForm','timeline-task':($('#timelinePlanForm')?.hidden??true)?'#timelineScroll':'#timelinePlanForm','hide-areas':'.overview-areas-widget'})[model.lesson.id];
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
     const rect = window.getBoundingClientRect();
@@ -442,6 +448,25 @@
     manuallyExpanded=false;
     if (event.target.closest('[data-app-frame],[data-area-resize],[data-area-drag-handle],[data-open-app],#allAppsToggle,[data-create-area-project],#createProjectButton,#universalSearch,#projectEditorDialog,#workingMemory,#aiPrompt') && guide.shouldCompact(guide.view,window.getBoundingClientRect(),event.target.getBoundingClientRect())) setCompact(true);
   }, true);
+  // Capture Overview actions before a window selection closes the overlay.
+  function queueOverviewPracticeAction(kind,name='',value=''){
+    if(!model.active()||guide.settingUp||model.state.exitStatus)return;
+    const action={kind,name,value,workspace:activeWorkspace,fromOverview:$('#universalSearch').classList.contains('is-open'),section:globalThis.SpatialOverviewDesktop?.active()};
+    setTimeout(()=>{
+      if(guide.settingUp||model.state.exitStatus)return;
+      const scene={workspace:activeWorkspace,overview:$('#universalSearch').classList.contains('is-open'),section:globalThis.SpatialOverviewDesktop?.active(),windowFilter:$('#overviewWindowFilter').value,
+        open:Object.keys(appState).filter(name=>appState[name]==='open'&&isLocalApp(name)),front:frontApp,
+        day:$('#timelineDay').value,activityDay:model.state.timelineActivity?SpatialTimeline.dayKey(model.state.timelineActivity.time):'',activity:globalThis.SpatialTimelineDesktop?.snapshot().activity||[]};
+      if(guide.observeOverviewAction(model,action,scene)){guide.save();lastSignature='';}
+      check();
+    },0);
+  }
+  document.addEventListener('change',event=>{if(event.target.id==='overviewWindowFilter')queueOverviewPracticeAction('filter','',event.target.value);},true);
+  document.addEventListener('click',event=>{
+    const selected=event.target.closest('[data-overview-open-app]');
+    if(selected)queueOverviewPracticeAction('window',selected.dataset.overviewOpenApp);
+    else if(event.target.closest('#timelineLatest'))queueOverviewPracticeAction('latest');
+  },true);
   // Capture the selected search result, then validate after the app's own action.
   document.addEventListener('click', event => {
     const result = event.target.closest('[data-search-open-app],[data-search-launch-app="Spatial Guide"]');
