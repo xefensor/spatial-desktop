@@ -5531,6 +5531,19 @@ function updateClock() {
   $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
+function prepareClockUpdates() {
+  let timer;
+  const refresh = () => {
+    clearTimeout(timer);
+    if (document.hidden) return;
+    updateClock();
+    // The displayed clock has minute precision. Align with the next minute.
+    timer = setTimeout(refresh, 60000 - Date.now() % 60000);
+  };
+  document.addEventListener("visibilitychange", refresh);
+  refresh();
+}
+
 function renderCalendar() {
   const now = new Date();
   const year = now.getFullYear();
@@ -7486,8 +7499,7 @@ observeMaterialInheritance();
 prepareMaterialCursor();
 prepareContextMenus();
 prepareCrossDisplaySync();
-updateClock();
-setInterval(updateClock, 1000);
+prepareClockUpdates();
 renderCalendar();
 bindMusicControls();
 restoreWorkspaceContent(activeWorkspace);

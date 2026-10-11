@@ -297,6 +297,14 @@ function renderAllAppMusic() {
   $('.overview-track i').style.width=(model.position/track.duration*100)+'%';
   $$('[data-music="play"]',$('.overview-now-playing')).forEach(button=>{button.innerHTML=icon(model.playing?'i-pause':'i-play');button.setAttribute('aria-pressed',String(model.playing));button.setAttribute('aria-label',model.playing?'Pause':'Play');});
 }
+function tickAppMusic() {
+  const players = Object.keys(appInfo).filter(id => (appInfo[id].base || id) === 'elisa' && appState[id] !== 'closed');
+  const playing = players.map(appWindowModel).filter(model => model.playing && model.tracks.length);
+  if (!playing.length) return;
+  playing.forEach(model => SpatialAppTools.musicTick(model));
+  if (!document.hidden) renderAllAppMusic();
+  saveAppWindows(false);
+}
 function appMiniMarkup(id, original) {
   const end=original.indexOf('</header>'); if(end<0)return original;
   const header=original.slice(0,end+9), model=appWindowModel(id), frame=frameFor(id);
@@ -475,10 +483,8 @@ function prepareAppWindows() {
   document.addEventListener('change',event=>{const frame=event.target.closest('[data-app-frame]');if(frame&&event.target.matches('[data-file-sort]')){event.stopImmediatePropagation();const id=frame.dataset.appFrame;appWindowModel(id).sort=event.target.value;renderFileLocation(id,frame.dataset.fileLocation,{history:false});saveAppWindows();}},true);
   document.addEventListener('keydown',appWindowKey,true);
   document.addEventListener('submit',event=>{const form=event.target.closest('[data-app-mini-browser],[data-app-mini-terminal]');if(!form)return;event.preventDefault();event.stopImmediatePropagation();const id=form.closest('[data-mini-card]').dataset.miniCard;const value=form.querySelector('input').value.trim();if(value){if(form.matches('[data-app-mini-browser]'))navigateBrowser(id,value);else runAppCommand(id,value);form.querySelector('input').value='';}},true);
-  setInterval(()=>{
-    Object.keys(appInfo).filter(id=>(appInfo[id].base||id)==='elisa'&&appState[id]!=='closed').forEach(id=>SpatialAppTools.musicTick(appWindowModel(id)));
-    renderAllAppMusic();saveAppWindows(false);
-  },1000);
+  setInterval(tickAppMusic,1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAllAppMusic();});
   saveAppWindows(false);
 }
 function appWindowClick(event) {

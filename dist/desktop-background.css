@@ -1,0 +1,58 @@
+/* One viewport-wide wallpaper behind desktop windows, every Area and Overview.
+   Static specks share the base paint. A single slow opacity pulse updates in
+   small steps, avoiding display-rate backdrop blur and gradient resampling. */
+body{
+  --wallpaper-tone:var(--workspace-accent,#56baff);
+  --wallpaper-base-high:color-mix(in srgb,var(--wallpaper-tone) 32%,black);
+  --wallpaper-base-mid:color-mix(in srgb,var(--wallpaper-tone) 18%,black);
+  --wallpaper-base-low:color-mix(in srgb,var(--wallpaper-tone) 9%,black);
+  --wallpaper-base-deep:color-mix(in srgb,var(--wallpaper-tone) 2%,black);
+  --wallpaper-pool:color-mix(in srgb,var(--wallpaper-tone) 60%,black);
+  --wallpaper-halo:color-mix(in srgb,var(--wallpaper-tone) 75%,white);
+  --ambient-low:.26;
+  --ambient-high:.52;
+  isolation:isolate;
+}
+body[data-theme="light"]{
+  --wallpaper-base-high:color-mix(in srgb,var(--wallpaper-tone) 64%,black);
+  --wallpaper-base-mid:color-mix(in srgb,var(--wallpaper-tone) 38%,black);
+  --wallpaper-base-low:color-mix(in srgb,var(--wallpaper-tone) 22%,black);
+  --wallpaper-base-deep:color-mix(in srgb,var(--wallpaper-tone) 9%,black);
+  --wallpaper-pool:color-mix(in srgb,var(--wallpaper-tone) 85%,white);
+  --ambient-low:.18;
+  --ambient-high:.39;
+}
+
+body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;contain:paint}
+body::before{z-index:-2;background:url("assets/wallpaper-specks.svg"),
+    radial-gradient(ellipse 74% 82% at 52% 59%,color-mix(in srgb,var(--wallpaper-pool) 72%,transparent) 0%,color-mix(in srgb,var(--wallpaper-pool) 48%,transparent) 38%,transparent 72%),
+    radial-gradient(ellipse 47% 50% at 14% 8%,color-mix(in srgb,var(--wallpaper-pool) 34%,transparent),transparent 68%),
+    radial-gradient(ellipse 54% 62% at 88% 92%,color-mix(in srgb,var(--wallpaper-pool) 44%,transparent),transparent 72%),
+    linear-gradient(155deg,var(--wallpaper-base-low) 0%,var(--wallpaper-base-high) 42%,var(--wallpaper-base-mid) 72%,var(--wallpaper-base-deep) 100%);background-size:100% 100%;background-repeat:no-repeat}
+body[data-theme="light"]::before{background-image:url("assets/wallpaper-specks.svg"),
+    radial-gradient(ellipse 78% 86% at 51% 58%,color-mix(in srgb,var(--wallpaper-pool) 80%,transparent) 0%,color-mix(in srgb,var(--wallpaper-pool) 53%,transparent) 39%,transparent 73%),
+    radial-gradient(ellipse 49% 52% at 12% 9%,color-mix(in srgb,var(--wallpaper-pool) 46%,transparent),transparent 68%),
+    radial-gradient(ellipse 56% 64% at 89% 91%,color-mix(in srgb,var(--wallpaper-pool) 38%,transparent),transparent 72%),
+    linear-gradient(155deg,var(--wallpaper-base-low) 0%,var(--wallpaper-base-high) 43%,var(--wallpaper-base-mid) 72%,var(--wallpaper-base-deep) 100%)}
+body::after{
+  z-index:-1;
+  background:
+    radial-gradient(ellipse 38% 49% at 19% 27%,color-mix(in srgb,var(--wallpaper-halo) 50%,transparent),transparent 70%),
+    radial-gradient(ellipse 44% 38% at 77% 70%,color-mix(in srgb,var(--wallpaper-halo) 42%,transparent),transparent 73%),
+    radial-gradient(ellipse 28% 34% at 55% 17%,color-mix(in srgb,var(--wallpaper-halo) 31%,transparent),transparent 75%);
+  opacity:var(--ambient-low);
+  animation:wallpaper-breathe 20s steps(120,end) infinite alternate;
+  will-change:opacity;
+}
+.desktop-shell,body[data-theme] .desktop-shell{background:transparent}
+.desktop-shell::before,.desktop-shell::after{content:none}
+.desktop-shell>.workspace-zone{background:transparent}
+@keyframes wallpaper-breathe{
+  from{opacity:var(--ambient-low)}
+  to{opacity:var(--ambient-high)}
+}
+html[data-page-hidden] body::after,
+html[data-background-busy] body::after,
+body.universal-search-open::after,
+body:has(.app-frame.is-fullscreen:not([hidden]):not(.is-on-other-display))::after{animation-play-state:paused;will-change:auto}
+@media(prefers-reduced-motion:reduce){body::after{animation:none;will-change:auto}}
