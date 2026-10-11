@@ -190,7 +190,7 @@
   }
   .material-shape-portable :is(.material-surface-abs,.abs-example,.abs-surface,
       .abs-side,.shape-window,.intro-copy,.rule-card,.abs-menu,.abs-banner,
-      .dolphin-window,.music-window,.plasma-rail) {--abs-mask-radius:var(--window-corner,22px)}
-  .material-shape-portable :is(.app-tile,.mini-art,.app-art:not(svg)) {--abs-mask-radius:var(--icon-corner,9px)}
-  .material-shape-portable input[type=checkbox].material-abs-field {--abs-mask-radius:7px}
+      .dolphin-window,.music-window,.plasma-rail) {--abs-mask-radius:var(--window-corner,22px)!important}
+  .material-shape-portable :is(.app-tile,.mini-art,.app-art:not(svg)) {--abs-mask-radius:var(--icon-corner,9px)!important}
+  .material-shape-portable input[type=checkbox].material-abs-field {--abs-mask-radius:7px!important}
 }
