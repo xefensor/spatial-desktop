@@ -116,7 +116,7 @@
       if(draft)field('[data-memory-text]').value=draft.text;
       field('.memory-feedback').textContent='';lastRemoved=null;field('[data-memory-action="undo"]').hidden=true;
     }
-    const target=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState');if(host.parentElement!==target){if(projectColumnActive()){target.prepend(quickNote);quickNote.after(host);}else target.prepend(host);}
+    const target=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState');if(host.parentElement!==target)target.prepend(host);
     if(projectColumnActive()){if(railEntry!==area.lastElementChild)area.append(railEntry);}else if(railEntry.nextElementSibling!==target)area.insertBefore(railEntry,target);
     syncFolders();const project=projectFor(key),owner=ownerFor(key),items=itemsFor(key);field('[data-memory-action="folder"]').disabled=!owner;field('[data-memory-action="folder"]').title=owner?F.folder(owner):'Stash';field('[data-memory-action="files"]').hidden=!owner;
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature&&itemsSignature===nextSignature)return;signature=nextSignature;

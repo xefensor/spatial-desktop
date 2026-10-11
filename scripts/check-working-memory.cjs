@@ -1,6 +1,25 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');
 const M=require('../dist/working-memory.js');
+// Exercise the production render in both ownership modes without a Quick note
+// element, then edit a row whose type is conveyed by its icon.
+{
+  const adapter=fs.readFileSync(require.resolve('../dist/working-memory-desktop.js'),'utf8');
+  const fields=new Map(),field=name=>{if(!fields.has(name))fields.set(name,{});return fields.get(name);};
+  const host={parentElement:null,querySelectorAll:()=>[],contains:()=>false},railEntry={};
+  const projectTarget={prepend(item){item.parentElement=this;}},workspaceTarget={prepend(item){item.parentElement=this;}};
+  const context={desktopSyncApplying:false,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
+  vm.createContext(context);vm.runInContext(adapter.slice(adapter.indexOf('  function render(force=false){'),adapter.indexOf('  function collapse(')),context);
+  context.render(true);assert.equal(host.parentElement,projectTarget);
+  context.projectColumnActive=()=>false;context.scope=()=>M.scope('work');context.projectFor=()=>null;
+  context.render(true);assert.equal(host.parentElement,workspaceTarget);
+  const row={dataset:{memoryId:'note',memoryOwner:M.scope('work')},querySelector:()=>summary};
+  const heading={},summary={querySelector:selector=>selector==='b'?heading:{title:'Note'},setAttribute(name,value){this[name]=value;}};
+  context.expandedItems=new Set();context.itemFor=()=>({id:'note',scope:M.scope('work')});context.editItem=()=>({title:'Updated note'});context.save=()=>true;context.feedback=()=>{};
+  vm.runInContext(adapter.slice(adapter.indexOf('  function persistInline(input){'),adapter.indexOf("  host.addEventListener('focusout'")),context);
+  context.persistInline({closest:()=>row,dataset:{memoryInline:'title'},value:'Updated note'});
+  assert.equal(heading.textContent,'Updated note');assert.equal(summary['aria-label'],'Updated note · Note');
+}
 // Legacy project notes become ordinary pinned items exactly once, including
 // full shelves and notes that the user later edits or removes.
 {
