@@ -81,6 +81,7 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:6px;padding:12px 0;pointer-events:none;
 }
+.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
 .desktop-page-mark{display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;background:var(--sd-glass-muted);opacity:.5;border-radius:0}
 .desktop-page-mark.is-current{width:3px;height:34px;background:var(--desktop-marker-accent,var(--sd-glass-text));opacity:1}
 /* Keep the dark theme's geometry and colour language. Light needs a lighter
