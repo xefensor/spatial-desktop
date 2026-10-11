@@ -164,6 +164,9 @@ context.desktopPreset='demo';context.activeWorkspace='general';context.workspace
 const firstSeed=JSON.parse(data.get('spatial-workspace-timeline-v1'));
 assert(firstSeed.general.some(event=>event.id===stored.general[0].id),'Seeding preserves existing real activity');
 assert.equal(firstSeed.general.filter(event=>event.example).length,7);
+// Examples are relative to now and can all fall on yesterday just after midnight.
+make('#timelineDay').value=T.dayKey(Math.max(...firstSeed.general.filter(event=>event.example).map(event=>event.time)));
+make('#timelineDay').listeners.change();
 assert(make('#timelineEntries').innerHTML.includes('timeline-example-label'),'Demo rows visibly distinguish examples');
 vm.runInContext(source,context);
 assert.deepEqual(JSON.parse(data.get('spatial-workspace-timeline-v1')),firstSeed,'Reload neither duplicates nor re-dates example events');
