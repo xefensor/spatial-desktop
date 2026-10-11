@@ -38,7 +38,8 @@
   function itemFor(id){if(id?.startsWith('quick:'))return quickItem(id.slice(6));if(!id?.startsWith('resource:'))return model.get(id);try{const [workspace,project,index]=JSON.parse(id.slice(9));return resourceItems(M.scope(workspace,project)).find(item=>typeof index==='string'?item.fileId===index:item.resourceIndex===index);}catch{return null;}}
   function persistResources(){persistProjectState();queueDesktopStateBroadcast(0);}
   function editItem(id,value){const item=itemFor(id);if(item?.resourceIndex===undefined)return model.edit(id,value);const project=projectFor(item.scope),entry=project.resources[item.resourceIndex];
-    project.resources[item.resourceIndex]=[value.title??entry[0],value.text??entry[1],entry[2],entry[3],{...entry[4],source:value.source?M.source(value.source):item.source,address:value.source?.address??item.source.address,text:value.text??item.text,why:value.why??item.why,pinned:value.pinned??item.pinned,created:item.created||Date.now(),updated:Date.now()}];persistResources();return itemFor(id);
+    const title=String(value.title??entry[0]).trim()||String(value.text??item.text).trim().split('\n')[0].slice(0,60)||item.source.address.split('/').at(-1)||'Saved item';
+    project.resources[item.resourceIndex]=[title,value.text??entry[1],entry[2],entry[3],{...entry[4],source:value.source?M.source(value.source):item.source,address:value.source?.address??item.source.address,text:value.text??item.text,why:value.why??item.why,pinned:value.pinned??item.pinned,created:item.created||Date.now(),updated:Date.now()}];persistResources();return itemFor(id);
   }
   function addItem(key,value){const project=projectFor(key);if(project&&itemsFor(key).length>=80)return null;if(project&&value.source?.address){const resource=describeProjectResource(value.source.address);if(!resource)return null;selected.clear();project.resources.unshift([value.title?.trim()||resource[0],value.text||'',resource[2],resource[3],{fileId:'stash-'+(globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2)),address:value.source.address,source:M.source(value.source),text:value.text||'',why:value.why||'',created:Date.now(),updated:Date.now()}]);persistResources();return resourceItems(key)[0];}return model.add(key,value);}
 
@@ -99,7 +100,7 @@
   }
   function itemMarkup(item){
     const media=attachmentFor(item),address=item.source.address,localTool=item.source.label.startsWith('Local tool'),snippet=item.text.replace(/^Linked · /,'');
-    const type=media?.format||(item.resourceType==='folder'?'Folder':item.resourceType==='audio'?'Audio':item.resourceType==='document'?'Document':address?'Source':'Note');
+    const type=media?.format||(item.resourceType==='folder'?'Folder':item.resourceType==='audio'?'Audio':item.resourceType==='document'?'Document':item.resourceType==='web'||address&&!snippet.trim()?'Source':'Note');
     const sourceLabel=media?.credit||(address?address.replace(/^https?:\/\//,'').replace(/\/$/,''):item.source.label||'Note');
     let content='';
     if(media?.kind==='file')content='<p class="memory-file">'+icon('i-note')+escapeHtml(media.filename||item.title)+'</p>';
@@ -200,7 +201,7 @@
     if(!value||typeof value!=='object'||!allowed())return false;
     if(value.storageScope===key&&itemsFor(key).some(item=>(item.fileId||item.id)===value.id)){feedback('This item is already in this Stash.');return false;}
     const [workspace,project]=JSON.parse(key),source=M.source(value.source?.workspace?value.source:{workspace:value.workspace||workspace,project:value.project||null,app:value.app,label:value.app?appInfo[value.app]?.label||value.app:'Dropped content',address:value.address});
-    let attachment=F.safeAttachment(value.attachment);
+    let attachment=F.safeAttachment(value.attachment);if(attachment)attachment={...attachment,filename:attachment.filename||String(value.filename||value.title||'Saved file').slice(0,160)};
     if(attachment?.src){try{const blob=await F.copyAsset(ownerFor(key),{id:value.id,attachment}),blobKey='stash-upload-'+crypto.randomUUID();await F.put(blobKey,blob);attachment={...attachment,key:blobKey,src:undefined,filename:value.filename||value.title,mime:blob.type,size:blob.size};}catch{feedback('The file could not be copied.');return false;}}
     if(itemsFor(key).length>=80){feedback('This Stash holds up to 80 items.');return false;}
     const text=String(value.text||'').slice(0,12000),why=String(value.why||'').slice(0,1000),title=String(value.title||'').slice(0,120),address=source.address||M.source({address:value.address}).address;

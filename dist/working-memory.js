@@ -12,7 +12,7 @@
   // Workspace uploads are stored by local blob key; remote preview URLs are never retained.
   function attachment(value){
     if(!value||!['image','audio','document','file'].includes(value.kind)||!/^stash-[\w-]{1,160}$/.test(value.key||''))return undefined;
-    return {kind:value.kind,key:value.key,filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100)};
+    return {kind:value.kind,key:value.key,filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100),...(value.credit?{credit:clean(value.credit,200)}:{})};
   }
   function create(saved={},clock=()=>Date.now(),writer=Math.random().toString(36).slice(2)) {
     let state={version:1,records:Object.create(null)};let sequence=0;
