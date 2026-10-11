@@ -2439,7 +2439,7 @@ function areaCanBeHidden(name) {
 }
 
 function areaLabel(name) {
-  return name === "projects" ? "Project Space" : name === "apps" ? "Apps" : name === "ai" ? "AI" : "System";
+  return name === "projects" ? "Workspace & Projects" : name === "apps" ? "Apps" : name === "ai" ? "AI" : "System";
 }
 
 function dockGroup(edge, includeHidden = false) {
@@ -3554,7 +3554,7 @@ function refreshProjectSessionUi(name = activeProjectName) {
   $("#projectRailWindowCount").textContent = openCount || savedCount;
   $("#projectRailSession").title = "Show project desktops · " + openCount + " windows";
   if (projectColumnActive()) {
-    $("#projectAreaContext").textContent = "Project resources";
+    $("#projectAreaContext").textContent = project.name + " · Project";
     $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
   }
 }
@@ -3593,10 +3593,10 @@ function setProjectClosedState(closed) {
   $$(".project-pack-key").forEach(button => { button.disabled = closed; });
   if (closed) {
     renderAvailableProjectLibrary();
-    $("#projectAreaName").textContent = "Projects";
+    $("#projectAreaName").textContent = "Workspace & Projects";
     $("#projectAreaContext").removeAttribute("title");
     const count = Object.keys(projectSpaces).length;
-    $("#projectAreaContext").textContent = count + (count === 1 ? " project available" : " projects available");
+    $("#projectAreaContext").textContent = workspaceProfiles[activeWorkspace].label + " · " + count + (count === 1 ? " project available" : " projects available");
     if (!activeProjectName) $$("[data-overview-project]").forEach(card => {
       card.classList.remove("is-active");
       card.setAttribute("aria-pressed", "false");
@@ -3611,7 +3611,7 @@ function syncProjectAreaView() {
   if (!area) return;
   if (area.dataset.projectLibraryOpen !== String(!project)) setProjectClosedState(!project);
   if (project) {
-    $("#projectAreaName").textContent = project.name;
+    $("#projectAreaName").textContent = "Workspace & Projects";
     $("#projectRailName").textContent = project.name;
     refreshProjectSessionUi();
   }
@@ -3626,7 +3626,7 @@ function renderProjectSpace(name) {
   workspaceProjects[activeWorkspace] = name;
   rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
-  $("#projectAreaName").textContent = project.name;
+  $("#projectAreaName").textContent = "Workspace & Projects";
   $("#projectRailName").textContent = project.name;
   $("#projectRailName").title = project.name;
   $("#projectRailResourceCount").textContent = project.resources.length;
@@ -7577,7 +7577,7 @@ function renderAvailableProjectLibrary() {
   const list = $("#projectLibraryList");
   if (!list) return;
   const entries = Object.entries(projectSpaces);
-  if (!activeProjectName) $("#projectAreaContext").textContent = entries.length + (entries.length === 1 ? " project available" : " projects available");
+  if (!projectColumnActive()) $("#projectAreaContext").textContent = workspaceProfiles[activeWorkspace].label + " · " + entries.length + (entries.length === 1 ? " project available" : " projects available");
   list.innerHTML = entries.map(([id, project]) => {
     const detail = projectLocationMeta(project).label + " · " + project.resources.length + " resources";
     return '<button type="button" class="surface-key project-library-entry" data-open-area-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';

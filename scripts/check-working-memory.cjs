@@ -77,3 +77,53 @@ F.materialize(stashProject,[noteFile,linkFile,audioFile]);assert.equal(stashProj
 F.materialize(stashProject,[{...noteFile,title:'../Bad/path\u0000',text:'Changed body'},linkFile,audioFile]);assert(!stashProject.stash.files['saved-note'].name.includes('/'));assert.equal(stashProject.stash.files['saved-note'].content,'Changed body');
 assert.deepEqual(F.safeAttachment({kind:'image',key:'stash-upload-123',src:'https://untrusted.example/track.png'}),{kind:'image',key:'stash-upload-123',src:undefined},'Uploaded previews can only use their stored file');
 console.log('Project Stash folder passed: owned contents, project reload recovery, link files, safe names, stable collisions, edits, removal and undo.');
+
+// Workspace files use the same folder adapter, retaining uploads through reload
+// and display sync without leaking into another workspace or a project.
+const workspaceMedia=M.create({},()=>now,'uploads');
+const upload={kind:'image',key:'stash-upload-local',filename:'Reference.png',mime:'image/png',size:42,format:'Image'};
+const image=workspaceMedia.add(workspace,{title:'Reference.png',attachment:upload});
+assert(image,'A file without a text caption can be saved');
+workspaceMedia.edit(image.id,{text:'A useful reference',title:'My image'});
+const mediaReload=M.create(workspaceMedia.snapshot());
+assert.deepEqual(mediaReload.get(image.id).attachment,upload,'Caption edits and reload retain the blob key');
+assert.equal(mediaReload.items(M.scope('school')).length,0);
+assert.equal(mediaReload.items(project).length,0);
+assert.equal(mediaReload.search('my image','work')[0].id,image.id);
+assert.equal(workspaceMedia.add(workspace,{title:'Remote tracker',attachment:{kind:'image',src:'https://example.org/track.png'}}),null);
+const owners={M,F,model:mediaReload,projectSpaces:{launch:stashProject},workspaceProfiles:{work:{home:'/home/demo/Workspaces/work',folders:[['Documents','Documents','folder']]},school:{home:'/home/demo/Workspaces/school',folders:[]}},workspaceStashes:new Map(),activeWorkspace:'work'};
+vm.createContext(owners);
+vm.runInContext(section('function projectFor(','  function resourceItems('),owners);
+vm.runInContext(section('function ownerAtFolder(','  function openSavedFile('),owners);
+owners.key=workspace;
+const workOwner=vm.runInContext('ownerFor(key)',owners);
+F.materialize(workOwner,mediaReload.items(workspace));
+assert.equal(F.folder(workOwner),'/home/demo/Workspaces/work/Stash');
+owners.item=mediaReload.get(image.id);
+assert.equal(vm.runInContext('savedItem(item).path',owners),'/home/demo/Workspaces/work/Stash/My image.png');
+assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/work/Stash')[0][0]",owners),'My image.png');
+assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/work').at(-1)[0]",owners),'Stash');
+assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/school/Stash').length",owners),0);
+mediaReload.remove(image.id);F.materialize(workOwner,mediaReload.items(workspace));
+assert.equal(F.list(workOwner).length,0);
+mediaReload.restore(image.id);F.materialize(workOwner,mediaReload.items(workspace));
+assert.equal(F.list(workOwner)[0].attachment.key,upload.key);
+
+// A file upload can complete after the user switches workspace. The captured
+// destination must still receive it, and reloading must preserve that file.
+(async()=>{
+  const uploads=M.create({},()=>now,'upload-test');let currentScope=workspace,release;
+  const messages=[],written=[],owner={root:'/home/demo/Workspaces/work',files:[]};
+  const uploadContext={M,model:uploads,F:{...F,put:key=>new Promise(resolve=>{written.push(key);release=resolve;})},scope:()=>currentScope,projectFor:()=>null,ownerFor:()=>owner,itemsFor:key=>uploads.items(key),feedback:text=>messages.push(text),crypto:require('node:crypto').webcrypto,Date,URL:{createObjectURL:()=> 'blob:test'},mediaUrls:new Map(),selected:new Set(),current:workspace,save(){F.materialize(owner,uploads.items(workspace));},render(){}};
+  vm.createContext(uploadContext);vm.runInContext(section('async function saveFiles(','  function itemMarkup('),uploadContext);
+  uploadContext.files=[{name:'Photo.png',type:'image/png',size:50}];
+  const operation=vm.runInContext('saveFiles(files)',uploadContext);
+  currentScope=M.scope('school');uploadContext.current=currentScope;release();await operation;
+  const roundtrip=M.create(uploads.snapshot());
+  assert.equal(roundtrip.items(workspace).length,1);
+  assert.equal(roundtrip.items(currentScope).length,0);
+  assert.equal(roundtrip.items(workspace)[0].attachment.key,written[0]);
+  assert.equal(F.list(owner)[0].name,'Photo.png');
+  assert.equal(messages.length,0,'Completion does not announce the old workspace in the new one');
+  console.log('Workspace Stash passed: owned folder, upload keys, caption edits, search, reload/display sync, isolation, file navigation, undo and in-flight workspace switching.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

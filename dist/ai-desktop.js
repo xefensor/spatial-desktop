@@ -39,7 +39,7 @@
     persist();render();expand(false);
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · AI not connected';return true;
   }
-  $('#aiAreaToggle').addEventListener('click',toggle);$('#openAIButton').addEventListener('click',()=>expand());
+  $('#aiAreaToggle').addEventListener('click',toggle);
   prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);persist();status.textContent='AI not connected · your input stays here';});
   prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();model.draft(activeWorkspace,prompt.value);persist();status.textContent=prompt.value.trim()?'AI is not connected yet. Your request and attachments are kept here.':'AI not connected · type your own request';}if(event.key==='Escape'){event.stopPropagation();setMode('rail');layoutDockAreas(true);}});
   $('#aiComposer').addEventListener('submit',event=>event.preventDefault());
@@ -61,7 +61,7 @@
     const badge=target.closest('.app-identity .app-badge');
     if(badge&&frame){const app=frame.dataset.appFrame,base=appInfo[app].base||app,address=frame.dataset.fileLocation||$('.browser-toolbar input',frame)?.value||'';return {...source,id:'window:'+activeWorkspace+':'+app,title:appInfo[app].label+' · '+($('.app-identity small',frame)?.textContent||''),kind:base==='browser'?'browser':'app',address,text:base==='notes'?$('.notes-layout textarea',frame)?.value||'':base==='browser'?$('.start-page',frame)?.innerText?.slice(0,12000)||'':''};}
     const memory=target.closest('[data-memory-id]'),item=memory&&SpatialMemoryDesktop.itemFor(memory.dataset.memoryId);
-    if(item){const [workspace,project]=JSON.parse(item.scope),saved=projectSpaces[project]?.stash?.files[item.fileId||item.id];return {...source,workspace,project,id:item.fileId||item.id,title:item.title,kind:item.attachment?.kind||'note',text:item.text,address:saved?F.folder(projectSpaces[project])+'/'+saved.name:item.source.address,filename:saved?.name||''};}
+    if(item){const [workspace,project]=JSON.parse(item.scope),saved=SpatialMemoryDesktop.savedItem(item);return {...source,workspace,project,id:item.fileId||item.id,title:item.title,kind:item.attachment?.kind||'note',text:item.text,address:saved?saved.path:item.source.address,filename:saved?.file.name||''};}
     return source;
   }
   function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into AI to attach this app with its context';});}

@@ -9,6 +9,11 @@
     const address=clean(value.address,2000);
     return {label:clean(value.label,160),address:/^(https?:\/\/|\/)/i.test(address)?address:'',app:clean(value.app,100),desktop:Math.max(0,Number(value.desktop)||0)};
   }
+  // Workspace uploads are stored by local blob key; remote preview URLs are never retained.
+  function attachment(value){
+    if(!value||!['image','audio','document','file'].includes(value.kind)||!/^stash-[\w-]{1,160}$/.test(value.key||''))return undefined;
+    return {kind:value.kind,key:value.key,filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100)};
+  }
   function create(saved={},clock=()=>Date.now(),writer=Math.random().toString(36).slice(2)) {
     let state={version:1,records:Object.create(null)};let sequence=0;
     function merge(incoming){
@@ -19,13 +24,13 @@
         let owner;try{owner=JSON.parse(item.scope);}catch{return;}if(!Array.isArray(owner)||owner.length!==2||typeof owner[0]!=='string'||!(owner[1]===null||typeof owner[1]==='string'))return;
         const old=state.records[id];
         if(old&&(old.updated>item.updated||(old.updated===item.updated&&old.revision>=String(item.revision||''))))return;
-        state.records[id]={id,scope:item.scope,kind:item.kind,title:clean(item.title,120),text:clean(item.text),source:source(item.source),updated:item.updated,created:Number(item.created)||item.updated,revision:clean(item.revision,100),deleted:item.deleted===true,pinned:item.pinned===true,desktop:Math.max(0,Number(item.desktop)||0),apps:Array.isArray(item.apps)?item.apps.filter(x=>typeof x==='string').slice(0,40):[]};changed=true;
+        state.records[id]={id,scope:item.scope,kind:item.kind,title:clean(item.title,120),text:clean(item.text),source:source(item.source),attachment:attachment(item.attachment),updated:item.updated,created:Number(item.created)||item.updated,revision:clean(item.revision,100),deleted:item.deleted===true,pinned:item.pinned===true,desktop:Math.max(0,Number(item.desktop)||0),apps:Array.isArray(item.apps)?item.apps.filter(x=>typeof x==='string').slice(0,40):[]};changed=true;
       });return changed;
     }
     merge(saved);
     function write(id,patch){const prev=state.records[id]||{};const updated=Math.max(clock(),(prev.updated||0)+1);const item={...prev,...patch,id,updated,created:prev.created||updated,revision:writer+':'+(++sequence)};merge({version:1,records:{[id]:item}});return state.records[id];}
     function records(key,kind){return Object.values(state.records).filter(item=>item.scope===key&&item.kind===kind&&!item.deleted).sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updated-a.updated);}
-    function add(key,value){if(!clean(value.text).trim()&&!clean(value.source?.address).trim())return null;if(records(key,'item').length>=80)return null;const id=writer+'-'+clock().toString(36)+'-'+(++sequence);return write(id,{scope:key,kind:'item',title:clean(value.title,120).trim()||clean(value.text,60).split('\n')[0]||'Saved source',text:clean(value.text),source:source(value.source),pinned:false});}
+    function add(key,value){if(!clean(value.text).trim()&&!clean(value.source?.address).trim()&&!attachment(value.attachment))return null;if(records(key,'item').length>=80)return null;const id=writer+'-'+clock().toString(36)+'-'+(++sequence);return write(id,{scope:key,kind:'item',title:clean(value.title,120).trim()||clean(value.text,60).split('\n')[0]||'Saved source',text:clean(value.text),source:source(value.source),attachment:attachment(value.attachment),pinned:false});}
     function edit(id,patch){const old=state.records[id];if(!old||old.deleted||old.kind!=='item')return null;return write(id,{title:patch.title===undefined?old.title:clean(patch.title,120),text:patch.text===undefined?old.text:clean(patch.text),source:patch.source===undefined?old.source:source(patch.source),pinned:patch.pinned===undefined?old.pinned:!!patch.pinned});}
     function remove(id){if(state.records[id])write(id,{deleted:true});}
     function restore(id){if(state.records[id])write(id,{deleted:false});}
@@ -35,7 +40,7 @@
       let text=normalize(query);const yesterday=/\b(yesterday|vcera)\b/.test(text),today=/\b(today|dnes)\b/.test(text);
       text=text.replace(/\b(yesterday|today|vcera|dnes)\b/g,'');const words=text.match(/[\p{L}\p{N}]+/gu)||[];
       const day=new Date(now);day.setHours(0,0,0,0);const start=day.getTime();const previous=new Date(start);previous.setDate(previous.getDate()-1);
-      return Object.values(state.records).filter(item=>{if(item.deleted||!['item','next'].includes(item.kind)||(!item.text.trim()&&!item.source.address)||JSON.parse(item.scope)[0]!==workspace)return false;if(yesterday&&(item.updated<previous.getTime()||item.updated>=start))return false;if(today&&item.updated<start)return false;const haystack=normalize([item.title,item.text,item.source.label,item.source.address].join(' '));return (words.length||yesterday||today)&&words.every(word=>haystack.includes(word));}).sort((a,b)=>b.updated-a.updated).slice(0,30);
+      return Object.values(state.records).filter(item=>{if(item.deleted||!['item','next'].includes(item.kind)||(!item.text.trim()&&!item.source.address&&!item.attachment)||JSON.parse(item.scope)[0]!==workspace)return false;if(yesterday&&(item.updated<previous.getTime()||item.updated>=start))return false;if(today&&item.updated<start)return false;const haystack=normalize([item.title,item.text,item.source.label,item.source.address].join(' '));return (words.length||yesterday||today)&&words.every(word=>haystack.includes(word));}).sort((a,b)=>b.updated-a.updated).slice(0,30);
     }
     return {add,edit,remove,restore,next,visit,merge,search,promoteNext(key,duplicate){const item=records(key,'next')[0];if(!item)return;if(!item.text.trim()||item.text===duplicate)remove(item.id);else write(item.id,{kind:'item',title:'Next step note'});},items:key=>records(key,'item'),history:key=>records(key,'visit'),nextStep:key=>records(key,'next')[0]?.text||'',get:id=>state.records[id],snapshot:()=>JSON.parse(JSON.stringify(state)),seeded:key=>!!state.records['seed:'+key],markSeeded:key=>write('seed:'+key,{scope:key,kind:'seed'})};
   }

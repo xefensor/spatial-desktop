@@ -1,4 +1,4 @@
-/* Working memory belongs to the glass Project Area. Its content stays square. */
+/* Workspace and project Stashes share the same square glass Area. */
 .working-memory{flex:none;min-width:0;display:grid;gap:18px;padding:12px 6px 16px;border-bottom:1px solid var(--soft-line);font-size:13px;line-height:1.45}
 .working-memory[hidden],.working-memory [hidden]{display:none!important}
 .working-memory header{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
@@ -18,7 +18,7 @@
 .working-memory.is-drop-target{outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}.memory-header-key{width:28px;min-width:28px;height:28px;padding:5px!important}.memory-header-key svg{width:16px;height:16px}
 .project-area[data-area-state="rail"] #workingMemory{display:none!important}
 .project-area[data-area-state="rail"] .memory-header-key{display:grid!important}
-.project-area[data-project-library-open="true"] #workingMemory{margin-top:16px;border-top:1px solid var(--soft-line);border-bottom:0}
+.project-area[data-project-library-open="true"] #workingMemory{margin-top:12px;border-top:1px solid var(--soft-line);border-bottom:1px solid var(--soft-line)}
 #universalMemoryResults .universal-result>span:last-child{min-width:0}#universalMemoryResults small{white-space:normal;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.working-memory *{scroll-behavior:auto!important}}
 
@@ -37,3 +37,6 @@
 
 .memory-folder-action{display:flex;align-items:center;gap:7px;border:0;border-radius:0;background:none;color:inherit;padding:0;font:inherit;cursor:pointer}.memory-folder-action:hover b{text-decoration:underline;text-underline-offset:3px}.memory-folder-action:disabled{cursor:default;color:inherit;opacity:1}.memory-file{display:flex;align-items:center;gap:6px}.stash-file-content img{display:block;max-width:100%;max-height:320px;object-fit:contain}.stash-file-content iframe{display:block;width:100%;height:300px;border:0;background:#f1f0eb}.stash-file-content audio{width:100%;margin-block:10px}.stash-file-actions{display:flex;gap:10px;flex-wrap:wrap;padding:10px 0}.stash-file-actions a{font:inherit;text-decoration:none;display:inline-flex;align-items:center}
 
+
+/* Keep the full Area name legible beside its compact header actions. */
+.project-area .area-window-identity #projectAreaName{white-space:normal;font-size:12px;line-height:1.15}
