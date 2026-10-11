@@ -1,11 +1,11 @@
-/* Open windows occupy the start of the Apps rail; parked windows its end.
+/* Open windows occupy the start of the Apps rail; parked windows start halfway down.
    Expanded Areas show parked windows as cards only, with the same shortcut slots. */
 .app-rack-group{display:contents}
 .apps-zone:not([data-area-state="rail"]) .app-rack-parked{display:none}
 .apps-zone:not([data-area-state="rail"]) .app-rack:not(:has(.app-rack-open)){display:none}
 .apps-zone[data-area-state="rail"] .app-rack{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-rows:repeat(2,minmax(0,1fr));
   flex:1 1 0;
   min-width:0;
   min-height:0;
@@ -16,6 +16,8 @@
   display:flex;
   flex-direction:column;
   flex:0 1 auto;
+  align-self:start;
+  max-height:100%;
   min-width:0;
   min-height:0;
   gap:3px;
@@ -26,7 +28,8 @@
 }
 .apps-zone[data-area-state="rail"] .app-rack-group::-webkit-scrollbar{display:none}
 .apps-zone[data-area-state="rail"] .app-rack-group .app-key{flex:0 0 48px}
-.apps-zone[data-area-state="rail"] .app-rack-parked{margin-top:auto}
+.apps-zone[data-area-state="rail"] .app-rack-open{grid-row:1}
+.apps-zone[data-area-state="rail"] .app-rack-parked{grid-row:2;margin-top:0}
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{
   display:flex;
   flex-direction:row;
@@ -35,6 +38,7 @@
 }
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack-group{
   flex-direction:row;
+  align-self:stretch;
   overflow-x:auto;
   overflow-y:hidden;
 }

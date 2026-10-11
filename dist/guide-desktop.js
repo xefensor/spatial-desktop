@@ -342,13 +342,13 @@
     $('.guide-strip-recover',window).hidden = !currentRecovery;
     if (currentRecovery) $('.guide-strip-task',window).textContent = currentRecovery.text;
     const status = $('#guideTaskStatus');
-    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is Full fullscreen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Maximize detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'Full fullscreen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
+    if (status) status.textContent = !model.lesson.goals ? '' : ready ? 'Done — continue when you are ready.' : id === 'fullscreen' && session.fullscreen ? 'This is Fullscreen. Press Escape, then left-click maximize to fill the space between Areas.' : id === 'fullscreen' && done.includes('bounded-enter') ? 'Maximize detected. Left-click the same maximize button again to restore the app.' : id === 'true-fullscreen' && done.includes('full-enter') ? 'Fullscreen detected. Press Escape to return.' : done.length ? 'Good. Finish the remaining action to continue.' : 'Waiting for you to try it.';
     if (id === 'two-displays' && !ready) {
       const tips = {'display-linked':'Open the second practice display. Both windows share this practice desktop.', 'display-app-moved':'Right-click any app title bar → Move to Display 2.', 'display-app-returned':'In Display 2, right-click that app title bar → Move to Display 1.', 'display-area-moved':'Right-click any Area header → Move to Display 2.', 'display-max-enter':'Open another app here, then left-click Maximize. Watch its peer move to Display 2.', 'display-max-exit':'Left-click Maximize again to restore the app and bring its peers back.', 'display-full-enter':'On this display, middle-click an app’s maximize button. Look for apps and Areas on Display 2.', 'display-full-exit':'Press Escape on the full-screen app to restore it.'};
       const tip = extendedDesktopActive() ? tips[model.lesson.goals.find(goal=>!done.includes(goal))] : 'The second display is disconnected. Reopen it to continue, or skip this optional chapter.';
       if (status) status.textContent = tip; $('.guide-strip-task',window).textContent = tip;
     }
-    if (id === 'fullscreen' && session.fullscreen) $('.guide-strip-task',window).textContent = 'Full fullscreen — press Escape, then left-click maximize.';
+    if (id === 'fullscreen' && session.fullscreen) $('.guide-strip-task',window).textContent = 'Fullscreen — press Escape, then left-click maximize.';
     highlight(); positionGuide();
   }
   function start(chapter = null) {

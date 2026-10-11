@@ -18,7 +18,7 @@
     }
     function session(workspace){
       if(!Object.hasOwn(profiles(),workspace))throw new Error('Unknown workspace');
-      const record=records[workspace]||={draft:'',items:[],workingProject:null,mode:'rail',updated:0};
+      const record=records[workspace]||={draft:'',items:[],workingProject:null,mode:'expanded',updated:0};
       if(!Object.hasOwn(projects(),record.workingProject))record.workingProject=null;
       return record;
     }
@@ -26,7 +26,7 @@
     function load(snapshot){
       Object.entries(snapshot?.sessions||{}).forEach(([workspace,input])=>{
         if(!Object.hasOwn(profiles(),workspace)||!input||typeof input!=='object'||Number(input.updated||0)<(records[workspace]?.updated||0))return;
-        records[workspace]={draft:clean(input.draft,4000),items:(Array.isArray(input.items)?input.items:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),workingProject:Object.hasOwn(projects(),input.workingProject)?input.workingProject:null,mode:input.mode==='expanded'?'expanded':'rail',updated:Number(input.updated)||0};
+        records[workspace]={draft:clean(input.draft,4000),items:(Array.isArray(input.items)?input.items:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),workingProject:Object.hasOwn(projects(),input.workingProject)?input.workingProject:null,mode:snapshot.version>=2&&input.mode==='rail'?'rail':'expanded',updated:Number(input.updated)||0};
       });
     }
     load(value);
@@ -38,7 +38,7 @@
       mode(workspace,mode){const record=session(workspace);record.mode=mode==='expanded'?'expanded':'rail';changed(record);},
       folder(workspace,project){const record=session(workspace);record.workingProject=Object.hasOwn(projects(),project)?project:null;changed(record);},
       workingFolder(workspace){const record=session(workspace);return projects()[record.workingProject]?.root||profiles()[workspace].home;},
-      snapshot(){return JSON.parse(JSON.stringify({version:1,sessions:records}));}
+      snapshot(){return JSON.parse(JSON.stringify({version:2,sessions:records}));}
     };
   }
   return {MIME,create,inside};

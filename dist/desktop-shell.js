@@ -623,7 +623,7 @@ function parkFullscreenPeers(session) {
   fullscreen.parked ||= [];
   const peers = Object.keys(appState).filter(name => name !== fullscreen.name && appState[name] === "open" && isLocalApp(name));
   moveCoveredApps(session, fullscreen, peers);
-  const parked = parkTileWindows(peers, "Full fullscreen · " + appInfo[fullscreen.name].label, false);
+  const parked = parkTileWindows(peers, "Fullscreen · " + appInfo[fullscreen.name].label, false);
   parked.forEach(name => {
     session.parked[name].fullscreen = fullscreen.name;
     session.root = tileEngine.remove(session.root, name);
@@ -1433,8 +1433,8 @@ function syncMaximizeButton(frame) {
   const button = $('[data-window-action="maximize"]', frame);
   if (button) {
     button.setAttribute("aria-pressed", String(frame.dataset.maximized === "true"));
-    button.title = "Left click: Maximize · middle click: Full fullscreen · repeat to restore";
-    button.setAttribute("aria-label", "Maximize; middle click for Full fullscreen");
+    button.title = "Left click: Maximize · middle click: Fullscreen · repeat to restore";
+    button.setAttribute("aria-label", "Maximize; middle click for Fullscreen");
   }
 }
 
@@ -2588,7 +2588,7 @@ function initialAreaStates(profile) {
     states = { projects: "expanded", apps: "expanded", systems: "expanded" };
     areaPriority.forEach(name => {
       const edge = dockState[name].edge;
-      states[name] = name === "ai" ? (globalThis.SpatialAIDesktop?.mode() || "rail") : areaStateForSize(edge, dockSizes[edge]);
+      states[name] = name === "ai" ? (globalThis.SpatialAIDesktop?.mode() || "expanded") : areaStateForSize(edge, dockSizes[edge]);
       if (intentAreaPlan.rails[name]) states[name] = "rail";
     });
     return states;
@@ -2603,7 +2603,7 @@ function initialAreaStates(profile) {
   autoSpatialEdgeStates.forEach((state, edge) => {
     dockGroup(edge, true).forEach(name => { states[name] = state; });
   });
-  states.ai = globalThis.SpatialAIDesktop?.mode() || "rail";
+  states.ai = globalThis.SpatialAIDesktop?.mode() || "expanded";
   return states;
 }
 
@@ -2731,7 +2731,7 @@ function syncLayoutModeUI(profile = currentDisplayProfile) {
     control.classList.toggle("is-active", areasFollowWindows());
     if (control.matches("button")) control.setAttribute("aria-pressed", String(areasFollowWindows()));
     control.title = tileEngine
-      ? "Left drag keeps Areas fixed · middle drag and Full fullscreen may borrow Area space · " + profileLabel
+      ? "Left drag keeps Areas fixed · middle drag and Fullscreen may borrow Area space · " + profileLabel
       : layoutMode === "auto"
       ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
       : "Manual · Areas stay exactly where you place them · " + profileLabel;
@@ -3151,6 +3151,7 @@ function showArea(name, announce = true) {
   const area = areaFor(name);
   if (!area) return;
   area.hidden = false;
+  if (name === "ai") globalThis.SpatialAIDesktop?.setMode("expanded");
   layoutDockAreas(true);
   if (layoutMode === "auto") scheduleSpatialAutoLayout();
   if (announce) showToast(areaLabel(name) + " shown in its " + dockState[name].edge + " dock");
@@ -5950,7 +5951,7 @@ function contextMenuEntries(context) {
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Unpark" : "Open" },
       state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps Area" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / Maximize" : "Maximize", shortcut: "Alt+Enter" } : null,
-      state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave Full fullscreen" : "Full fullscreen", shortcut: "Middle click" } : null,
+      state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave Fullscreen" : "Fullscreen", shortcut: "Middle click" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-grow", icon: "i-max", label: "Give more space", shortcut: "Alt+wheel up" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-shrink", icon: "i-min", label: "Give less space", shortcut: "Alt+wheel down" } : null,

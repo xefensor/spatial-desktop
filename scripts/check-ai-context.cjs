@@ -5,7 +5,12 @@ const projects={film:{name:'Short Film',root:'/home/demo/Projects/film'},website
 const env={workspaces:()=>workspaces,projects:()=>projects};
 const model=C.create({},env);
 assert.equal(model.workingFolder('general'),workspaces.general.home,'AI works without a project');
-assert.equal(model.session('general').mode,'rail');
+assert.equal(model.session('general').mode,'expanded','AI opens ready for input');
+const legacy=C.create({version:1,sessions:{general:{mode:'rail',draft:'Keep my request',updated:1}}},env);
+assert.equal(legacy.session('general').mode,'expanded','Old default rails open fully after migration');
+assert.equal(legacy.session('general').draft,'Keep my request');
+legacy.mode('general','rail');
+assert.equal(C.create(legacy.snapshot(),env).session('general').mode,'rail','A deliberate rail choice survives reload');
 const file=model.add('general',{id:'storyboard',title:'Storyboard',kind:'image',address:projects.film.root+'/Stash/storyboard.svg',workspace:'general',app:'dolphin'});
 assert.equal(file.project,'film','Folder provenance is inferred even from a workspace Dolphin');
 assert.equal(model.workingFolder('general'),projects.film.root);
