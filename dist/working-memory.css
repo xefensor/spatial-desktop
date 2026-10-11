@@ -18,7 +18,7 @@
 .working-memory.is-drop-target{outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}.memory-header-key{width:28px;min-width:28px;height:28px;padding:5px!important}.memory-header-key svg{width:16px;height:16px}
 .project-area[data-area-state="rail"] #workingMemory{display:none!important}
 .project-area[data-area-state="rail"] .memory-header-key{display:grid!important}
-.project-area[data-project-library-open="true"] #workingMemory{margin-top:12px;border-top:1px solid var(--soft-line);border-bottom:1px solid var(--soft-line)}
+.project-area[data-project-library-open="true"] #workingMemory{margin-top:0;border-top:0;border-bottom:1px solid var(--soft-line)}
 #universalMemoryResults .universal-result>span:last-child{min-width:0}#universalMemoryResults small{white-space:normal;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.working-memory *{scroll-behavior:auto!important}}
 
@@ -40,3 +40,5 @@
 
 /* Keep the full Area name legible beside its compact header actions. */
 .project-area .area-window-identity #projectAreaName{white-space:normal;font-size:12px;line-height:1.15}
+
+.project-area[data-project-library-open="true"][data-area-state="rail"] .memory-rail-entry:not([hidden]){margin-top:0}

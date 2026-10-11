@@ -120,7 +120,8 @@
       if(draft){field('[data-memory-title]').value=draft.title;field('[data-memory-text]').value=draft.text;field('[data-memory-source]').value=draft.source;}
       field('.memory-feedback').textContent='';lastRemoved=null;field('[data-memory-action="undo"]').hidden=true;
     }
-    const target=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState');if(host.parentElement!==target){if(projectColumnActive()){target.prepend(quickNote);quickNote.after(host);}else target.insertBefore(host,target.querySelector("[data-create-area-project]"));}
+    const target=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState');if(host.parentElement!==target){if(projectColumnActive()){target.prepend(quickNote);quickNote.after(host);}else target.prepend(host);}
+    if(projectColumnActive()){if(railEntry!==area.lastElementChild)area.append(railEntry);}else if(railEntry.nextElementSibling!==target)area.insertBefore(railEntry,target);
     syncFolders();const project=projectFor(key),owner=ownerFor(key),items=itemsFor(key);field('[data-memory-action="folder"]').disabled=!owner;field('[data-memory-action="folder"]').title=owner?F.folder(owner):'Stash';field('[data-memory-action="files"]').hidden=!owner;
     if(project&&document.activeElement!==$('#projectQuickNote'))$('#projectQuickNote').value=project.note||'';
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature)return;signature=nextSignature;
