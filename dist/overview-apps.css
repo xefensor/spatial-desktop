@@ -23,16 +23,18 @@
 }
 .overview-apps-body .desktop-stage-heading {
   display:flex!important;
-  flex-direction:column;
-  align-items:stretch;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
   gap:10px;
   padding:0!important;
   min-height:0!important;
   background:transparent!important;
 }
 .overview-apps-body .desktop-stage-heading .eyebrow {display:block!important;font-size:10px;letter-spacing:.1em}
+.overview-apps-body .desktop-stage-heading>div:first-child {width:100%}
 .overview-apps-body .desktop-stage-heading h3 {font-size:14px!important;color:var(--sd-glass-text)!important;margin-top:3px}
-.overview-apps-body .overview-window-tools {justify-content:space-between;gap:8px;font-size:11px;color:var(--sd-glass-muted)}
+.overview-apps-body .desktop-stage-heading>.overview-window-tools {display:flex!important;width:100%;justify-content:space-between;gap:8px;font-size:11px;color:var(--sd-glass-muted)}
 .overview-apps-body .overview-window-tools>span {display:block}
 .overview-apps-body .overview-window-tools select {max-width:145px;min-width:0}
 .overview-apps-body .overview-running-layout {
@@ -137,6 +139,7 @@
   white-space:nowrap;
 }
 .overview-apps-body .launcher-category svg {width:13px;height:13px;flex:none}
+.overview-apps-body .launcher-category>span {font:inherit!important;font-weight:550!important}
 .universal-search .overview-carousel .overview-apps-body .launcher-results {
   flex:1;
   min-height:0;
@@ -185,7 +188,9 @@
     height:190px!important;max-height:38%!important;flex:0 0 190px!important;padding:10px 14px!important;
     border-right:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;gap:8px!important;
   }
-  .overview-apps-body .desktop-stage-heading {flex-direction:row;align-items:center;gap:8px}
+  .overview-apps-body .desktop-stage-heading {flex-direction:row!important;align-items:center!important;gap:8px}
+  .overview-apps-body .desktop-stage-heading>div:first-child {width:auto;flex:1;min-width:0}
+  .overview-apps-body .desktop-stage-heading>.overview-window-tools {width:auto;flex:none}
   .overview-apps-body .desktop-stage-heading .eyebrow {display:none!important}
   .overview-apps-body .desktop-stage-heading h3 {font-size:12px!important;margin:0}
   .overview-apps-body .overview-window-tools>span {display:none}
