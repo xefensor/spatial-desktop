@@ -2,9 +2,9 @@
  * Only unchanged built-in examples migrate; renamed or relocated projects
  * and user-written notes, resources and modes remain untouched. */
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory();
-  else root.SpatialDemoExamples = factory();
-})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./spatial-tiling.js"));
+  else root.SpatialDemoExamples = factory(root.SpatialTiling);
+})(typeof globalThis !== "undefined" ? globalThis : this, function (tiling) {
   "use strict";
   const projects = {
   "plasma": {
@@ -281,9 +281,32 @@
   scenarios.work.areas.sizes = {left:280,right:280,top:250,bottom:250};
   scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
 
+  function demoWindowTree(windows) {
+    return tiling.rowMajor(windows.map(window => window.id), {width:1000,height:900}, () => ({width:400,height:300}));
+  }
+
+  function migrateDemoWindowOrder(storage) {
+    const key = "spatial-demo-window-order-v1";
+    if (storage.getItem(key) === "1") return false;
+    const layouts = JSON.parse(storage.getItem("spatial-split-layouts-v1") || "{}");
+    for (const [workspace, example] of Object.entries(scenarios)) for (const column of example.windows) {
+      for (const page of new Set(column.windows.map(window => window.page))) {
+        const windows = column.windows.filter(window => window.page === page && window.state === "open");
+        const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
+        const session = layouts[prefix+page+":1"];
+        const previous = windows.reduce((root,window) => root ? {kind:"split",axis:"y",ratio:.5,a:root,b:leaf(window.id)} : leaf(window.id), null);
+        // Update only the exact shipped layout; keep manually rearranged sessions.
+        if (session && JSON.stringify(session.root) === JSON.stringify(previous)) session.root = demoWindowTree(windows);
+      }
+    }
+    storage.setItem("spatial-split-layouts-v1", JSON.stringify(layouts));
+    storage.setItem(key, "1");
+    return true;
+  }
+
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "4") return false;
+    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); return false; }
     const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
@@ -332,7 +355,7 @@
         const usedPages = [...new Set(column.windows.map(w=>w.page))];
         for (const page of usedPages) {
           const windows = column.windows.filter(w=>w.page===page && w.state==="open");
-          const tree = windows.reduce((root,w)=>root ? {kind:"split",axis:"y",ratio:.5,a:root,b:leaf(w.id)} : leaf(w.id), null);
+          const tree = demoWindowTree(windows);
           const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
           values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{}};
         }

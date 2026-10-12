@@ -115,7 +115,7 @@ assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later 
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
-assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'y');
+assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
 assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'terminal--demo-site-server']);
 freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));
 assert.equal(D.seedWorkspaces(freshScene.storage), false);
@@ -380,3 +380,19 @@ const fsMedia=require('node:fs'),pathMedia=require('node:path');
 for(const project of Object.values(D.projects))for(const row of project.resources){const media=row[4]?.attachment;if(media?.src.startsWith('media/stash/'))assert.ok(fsMedia.statSync(pathMedia.join(__dirname,'../dist',media.src)).size>100);}
 const wav=fsMedia.readFileSync(pathMedia.join(__dirname,'../dist/media/stash/closing-theme.wav'));assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.readUInt32LE(40)/(wav.readUInt32LE(24)*wav.readUInt16LE(22)*wav.readUInt16LE(34)/8),8);
 console.log('Typed examples passed: public migration, edited/deleted rows preserved, real assets and eight-second audio.');
+
+// Existing shipped demos adopt row-major layout without resetting user layouts.
+{
+  const key = 'work:project-column:plasma:desktop:0:1';
+  const initial = copy(tiles[key]);
+  const ids = require('../dist/spatial-tiling.js').names(initial.root);
+  const oldRoot = {kind:'split',axis:'y',ratio:.5,a:{kind:'window',name:ids[0]},b:{kind:'window',name:ids[1]}};
+  const store = sceneStore({'spatial-demo-scenes-v1':'4','spatial-split-layouts-v1':JSON.stringify({[key]:{...initial,root:oldRoot}})});
+  D.seedWorkspaces(store.storage);
+  assert.equal(store.read('spatial-split-layouts-v1')[key].root.axis,'x');
+  const customRoot = {...oldRoot,ratio:.7};
+  const edited = sceneStore({'spatial-demo-scenes-v1':'4','spatial-split-layouts-v1':JSON.stringify({[key]:{...initial,root:customRoot}})});
+  D.seedWorkspaces(edited.storage);
+  assert.deepEqual(edited.read('spatial-split-layouts-v1')[key].root,customRoot);
+  console.log('Demo window order migration passed: shipped pairs become vertical halves; user splits survive.');
+}
