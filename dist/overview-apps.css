@@ -1,0 +1,212 @@
+/* Apps has two clear jobs: return to existing work, or open a new tool. */
+.overview-carousel .overview-apps-section {
+  container-name:overview-apps;
+  container-type:inline-size;
+}
+.overview-apps-body {
+  display:grid;
+  grid-template-columns:minmax(260px,30%) minmax(0,1fr);
+  flex:1;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+.universal-search .overview-carousel .overview-apps-body .open-windows-section {
+  height:100%!important;
+  max-height:none!important;
+  min-height:0!important;
+  padding:16px!important;
+  gap:12px!important;
+  border:0!important;
+  border-right:1px solid var(--sd-glass-groove)!important;
+  background:color-mix(in srgb,var(--sd-glass-face-deep) 35%,transparent)!important;
+}
+.overview-apps-body .desktop-stage-heading {
+  display:flex!important;
+  flex-direction:column;
+  align-items:stretch;
+  gap:10px;
+  padding:0!important;
+  min-height:0!important;
+  background:transparent!important;
+}
+.overview-apps-body .desktop-stage-heading .eyebrow {display:block!important;font-size:10px;letter-spacing:.1em}
+.overview-apps-body .desktop-stage-heading h3 {font-size:14px!important;color:var(--sd-glass-text)!important;margin-top:3px}
+.overview-apps-body .overview-window-tools {justify-content:space-between;gap:8px;font-size:11px;color:var(--sd-glass-muted)}
+.overview-apps-body .overview-window-tools>span {display:block}
+.overview-apps-body .overview-window-tools select {max-width:145px;min-width:0}
+.overview-apps-body .overview-running-layout {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  flex:1;
+  min-height:0;
+}
+.overview-apps-body .desktop-column-map {
+  flex:0 1 auto;
+  max-height:42%!important;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--sd-glass-groove);
+}
+.overview-apps-body .desktop-column-card {display:flex;flex-direction:column;gap:5px}
+.overview-apps-body .desktop-column-card>header {padding:0;gap:7px;min-height:24px}
+.overview-apps-body .desktop-column-card>header b {font-size:11px;font-weight:550;color:var(--sd-glass-muted)}
+.overview-apps-body .desktop-column-pages {gap:6px;padding:2px 0 6px}
+.overview-apps-body .desktop-column-page {
+  flex:1 0 100px;
+  min-height:80px;
+  padding:9px 10px;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  align-items:stretch;
+  gap:8px;
+}
+.overview-apps-body .desktop-column-page b {font-size:12px;font-weight:600}
+.overview-apps-body .desktop-column-page small {font-size:10px;margin-top:3px}
+.overview-apps-body .desktop-column-apps {display:flex;gap:4px;min-height:17px;overflow:hidden}
+.overview-apps-body .desktop-column-apps .app-art {width:17px;height:17px;flex:0 0 17px}
+.universal-search .overview-carousel .overview-apps-body .overview-open-windows {
+  flex:1!important;
+  height:auto!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:6px;
+  padding:0 2px 4px;
+}
+.universal-search .overview-carousel .overview-apps-body .overview-window {
+  height:84px!important;
+  min-height:84px!important;
+  background:color-mix(in srgb,var(--overview-app) 5%,transparent)!important;
+  box-shadow:none!important;
+}
+.universal-search .overview-carousel .overview-apps-body .overview-window:hover {
+  background:color-mix(in srgb,var(--overview-app) 12%,transparent)!important;
+}
+.universal-search .overview-carousel .overview-apps-body .overview-window-titlebar {
+  grid-template-columns:34px minmax(0,1fr) auto!important;
+  gap:9px;
+  padding:10px!important;
+  background:transparent!important;
+}
+.overview-apps-body .overview-window-titlebar>.app-art {width:32px!important;height:32px!important}
+.overview-apps-body .overview-window-titlebar b {font-size:12px!important;font-weight:600}
+.overview-apps-body .overview-window-titlebar small {font-size:11px!important;margin-top:3px!important;line-height:1.3}
+.overview-window-state {display:block;margin-top:5px;color:var(--sd-glass-muted);font-size:10px;line-height:1.3}
+.overview-apps-body .overview-window-hotkey {
+  align-self:start;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--sd-glass-muted);
+  font:650 12px/1.3 ui-monospace,monospace;
+}
+.overview-apps-body .desktop-column-hint {font-size:11px;line-height:1.5;color:var(--sd-glass-muted)}
+.overview-launcher-section {display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.overview-library-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 8px;flex:none}
+.overview-library-heading h4 {margin:0;font-size:14px;font-weight:650}
+.overview-carousel .overview-library-heading .overview-category-field {display:none;margin:0!important;gap:8px}
+.universal-search .overview-carousel .overview-apps-body .overview-app-library {
+  display:flex!important;
+  flex-direction:column;
+  flex:1;
+  height:auto!important;
+  min-height:0!important;
+}
+.overview-apps-body .overview-app-library .launcher-categories {
+  display:flex!important;
+  flex-wrap:wrap;
+  flex:none;
+  gap:4px;
+  max-height:112px;
+  overflow:auto;
+  padding:0 14px 12px;
+  border:0;
+  border-bottom:1px solid var(--sd-glass-groove);
+  background:transparent!important;
+}
+.overview-apps-body .launcher-categories .launcher-category {
+  width:auto;
+  min-height:30px;
+  padding:5px 9px 7px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:11px;
+  white-space:nowrap;
+}
+.overview-apps-body .launcher-category svg {width:13px;height:13px;flex:none}
+.universal-search .overview-carousel .overview-apps-body .launcher-results {
+  flex:1;
+  min-height:0;
+  height:auto!important;
+  padding:14px 16px 18px!important;
+}
+.universal-search .overview-carousel .overview-apps-body .all-apps-grid {
+  grid-template-columns:repeat(auto-fill,minmax(100px,1fr))!important;
+  gap:8px!important;
+  align-content:start;
+}
+.universal-search .overview-carousel .overview-apps-body .launcher-app {
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:center;
+  height:98px;
+  min-height:98px!important;
+  gap:8px;
+  padding:10px 6px!important;
+  text-align:center;
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.universal-search .overview-carousel .overview-apps-body .launcher-app[hidden] {display:none!important}
+.universal-search .overview-carousel .overview-apps-body .launcher-app:hover {
+  background:color-mix(in srgb,var(--app-primary,var(--role-apps)) 9%,transparent)!important;
+}
+.universal-search .overview-carousel .overview-apps-body .launcher-icon,
+.universal-search .overview-carousel .overview-apps-body .launcher-icon .app-art {width:40px!important;height:40px!important;flex:none}
+.overview-apps-body .launcher-icon .app-tile {width:40px;height:40px}
+.overview-apps-body .launcher-app>span:last-child {
+  font-size:12px!important;
+  font-weight:550;
+  line-height:1.3!important;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+@container overview-apps (max-width:760px) {
+  .overview-apps-body {display:flex;flex-direction:column}
+  .universal-search .overview-carousel .overview-apps-body .open-windows-section {
+    height:190px!important;max-height:38%!important;flex:0 0 190px!important;padding:10px 14px!important;
+    border-right:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;gap:8px!important;
+  }
+  .overview-apps-body .desktop-stage-heading {flex-direction:row;align-items:center;gap:8px}
+  .overview-apps-body .desktop-stage-heading .eyebrow {display:none!important}
+  .overview-apps-body .desktop-stage-heading h3 {font-size:12px!important;margin:0}
+  .overview-apps-body .overview-window-tools>span {display:none}
+  .overview-apps-body .overview-running-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;overflow:hidden}
+  .overview-apps-body .desktop-column-map {max-height:none!important;border:0;padding:0}
+  .overview-apps-body .desktop-column-hint {display:none}
+  .overview-launcher-section {flex:1}
+  .overview-carousel .overview-library-heading .overview-category-field {display:flex;min-width:0}
+  .overview-library-heading .overview-category-field select {min-width:0;max-width:180px;min-height:32px}
+  .overview-apps-body .overview-app-library .launcher-categories {display:none!important}
+  .overview-library-heading {padding:10px 14px 4px}
+}
+@container overview-apps (max-width:440px) {
+  .overview-apps-body .desktop-column-page {flex-basis:88px}
+  .overview-apps-body .overview-window-titlebar>.app-art {display:none}
+  .universal-search .overview-carousel .overview-apps-body .overview-window-titlebar {grid-template-columns:minmax(0,1fr) auto!important;gap:4px;padding:8px!important}
+  .overview-library-heading .overview-category-field {font-size:0}
+  .overview-library-heading .overview-category-field select {max-width:145px;font-size:11px}
+  .universal-search .overview-carousel .overview-apps-body .all-apps-grid {grid-template-columns:repeat(auto-fill,minmax(88px,1fr))!important}
+}
+@media(max-height:650px) {
+  .overview-apps-body .overview-app-library .launcher-categories {display:none!important}
+  .overview-carousel .overview-library-heading .overview-category-field {display:flex}
+}

@@ -27,8 +27,9 @@
   <link rel="stylesheet" href="overview-carousel.css?v=12">
   <link rel="stylesheet" href="desktop-background.css?v=2">
   <link rel="stylesheet" href="control-refinements.css?v=2">
+  <link rel="stylesheet" href="overview-apps.css?v=1">
   <script src="workspace-setup.js?v=5"></script>
-  <script src="spatial-guide.js?v=25"></script>
+  <script src="spatial-guide.js?v=26"></script>
   
 </head>
 <body data-theme="oled">
@@ -304,15 +305,19 @@
           </section>
           <section class="overview-section overview-apps-section overview-panel" data-overview-panel="apps" aria-labelledby="allAppsTitle">
             <header class="overview-section-heading"><div><span class="overview-zone-mark"><svg><use href="#i-grid"/></svg></span><span><span class="eyebrow">APPS ZONE</span><h3 id="allAppsTitle">Applications</h3></span></div><span id="allAppsCount">33 apps</span></header>
+          <div class="overview-apps-body">
           <section class="overview-section open-windows-section" aria-labelledby="openWindowsTitle">
             <header class="overview-section-heading desktop-stage-heading"><div><span class="overview-zone-mark"><svg><use href="#i-monitor"/></svg></span><span><span class="eyebrow">OPEN WINDOWS</span><h3 id="openWindowsTitle">General workspace</h3></span></div><div class="overview-window-tools"><span id="workspaceOpenCount">2 windows</span><select id="overviewWindowFilter" aria-label="Filter running windows"><option value="all">All windows</option><option value="desktop">This desktop</option><option value="open">Open</option><option value="parked">Parked</option></select></div></header>
             <div class="overview-running-layout">
             <div class="desktop-column-map" id="desktopColumnMap" aria-label="Projects and workspace desktops"></div>
             <div class="overview-open-windows" id="overviewWindowGrid" aria-label="Open and parked windows"></div></div>
-            <p class="desktop-column-hint">Choose a desktop to visit it · choose a window to focus or unpark it</p>
+            <p class="desktop-column-hint">Choose a desktop or return to a window.</p>
           </section>
 
+          <section class="overview-launcher-section" aria-labelledby="overviewLibraryTitle">
+            <header class="overview-library-heading"><h4 id="overviewLibraryTitle">Open an app</h4>
             <label class="overview-category-field">Category<select id="overviewCategory" aria-label="Application category"><option value="all">All applications</option><option value="favorites">Favorites</option><option value="graphics">Graphics</option><option value="games">Games</option><option value="internet">Internet</option><option value="office">Office</option><option value="multimedia">Multimedia</option><option value="utilities">Utilities</option><option value="system">System</option><option value="education">Education</option><option value="development">Development</option><option value="help">Help</option><option value="lost">Lost &amp; Found</option></select></label>
+            </header>
             <div class="overview-app-library">
               <nav class="launcher-categories" aria-label="Application categories">
                 <button class="launcher-category" data-category-filter="favorites"><svg><use href="#i-star"/></svg><span>Favorites</span></button>
@@ -369,6 +374,8 @@
                 <p class="all-apps-empty" id="allAppsEmpty" hidden>No applications in this category</p>
               </div>
             </div>
+          </section>
+          </div>
           </section>
           <section class="overview-zone-lane overview-project-zone overview-panel" data-overview-panel="projects" aria-labelledby="overviewProjectZoneTitle">
             <header class="overview-zone-heading">
@@ -570,7 +577,7 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=2"></script>
-<script src="desktop-shell.js?v=255"></script>
+<script src="desktop-shell.js?v=256"></script>
 <script src="working-memory-desktop.js?v=26"></script>
 <script src="ai-desktop.js?v=13"></script>
 <script src="overview-desktop.js?v=15"></script>

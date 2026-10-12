@@ -231,11 +231,17 @@ const windowNodes=new Map(),windowContext={
   appInfo:Object.fromEntries(['left','right','other','park','closed','foreign'].map(name=>[name,{label:name,primary:'#22bb66',detail:'Detail'}])),
   desktopPages:{inColumn:(_,name)=>name!=='foreign',current:()=>0,pageOf:(_,name)=>name==='other'||name==='park'?1:0},
   workspaceHotbarNames:()=>['right','left','park'],isLocalApp:()=>true,
-  $:id=>{if(!windowNodes.has(id))windowNodes.set(id,{innerHTML:'',textContent:'',value:'all'});return windowNodes.get(id);},
-  escapeHtml:String,appArt:()=>'<svg></svg>',icon:()=>'<svg></svg>',refreshWorkspaceContext(){},renderDesktopColumnMap(){},prepareControlSemantics(){}
+  frameFor:name=>name==='right'?{detail:'report <draft>.md'}:null,
+  $:(id,parent)=>{if(id==='.app-identity small')return {textContent:parent.detail};if(!windowNodes.has(id))windowNodes.set(id,{innerHTML:'',textContent:'',value:'all'});return windowNodes.get(id);},
+  escapeHtml:value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),appArt:()=>'<svg></svg>',icon:()=>'<svg></svg>',refreshWorkspaceContext(){},renderDesktopColumnMap(){},prepareControlSemantics(){}
 };
 vm.createContext(windowContext);vm.runInContext(shell.slice(shell.indexOf('function renderOverviewWindows()'),shell.indexOf('function refreshWorkspaceContext()')),windowContext);
 const checkWindows=(filter,expected)=>{windowContext.$('#overviewWindowFilter').value=filter;windowContext.renderOverviewWindows();assert.deepEqual([...windowContext.$('#overviewWindowGrid').innerHTML.matchAll(/data-overview-open-app="([^"]+)"/g)].map(match=>match[1]),expected);};
 checkWindows('all',['right','left','other','park']);checkWindows('desktop',['right','left','park']);checkWindows('parked',['park']);checkWindows('open',['right','left','other']);
+const cards=windowContext.$('#overviewWindowGrid').innerHTML;
+assert(cards.includes('<small>report &lt;draft&gt;.md</small>'),'The live window title is shown and escaped');
+assert(cards.includes('<small>Detail</small>'),'Windows without a local frame retain their saved detail');
+assert(cards.match(/data-overview-open-app="right"[\s\S]*?class="overview-window-hotkey" aria-hidden="true">1<\/kbd>/),'Current hotbar numbering matches window order');
+assert(!cards.split('data-overview-open-app="other"')[1].split('</button>')[0].includes('overview-window-hotkey'),'A window outside the current hotbar gets no misleading shortcut');
 windowContext.appState.park='closed';checkWindows('parked',[]);assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state without hiding the app launcher');
 console.log('Overview improvements passed: current context, time jumps, available-day navigation, empty-day Now anchors, window filters and desktop/hotbar order.');
