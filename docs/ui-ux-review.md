@@ -8,6 +8,8 @@ New tiled windows fill rows from left to right, then top to bottom. The first pa
 
 Open hotbar icons follow the visible windows’ reading order. Moving or retiling windows updates their numbers and shortcuts together. Parked windows follow the open group. Each app instance has its own slot, and its title bar shows the matching number as plain text without a border, background or shadow. Slots run 1–9,0; Shift selects the next ten with Super.
 
+Desktop Guide uses thirteen chapters, generic app names and learner-chosen tools. Stash and AI are introduced before Projects; arranging Areas comes after Overview & Timeline.
+
 Fresh setup demo scenes follow the same window order. A one-time migration updates exact old shipped split trees, preserving manually changed trees and other session data.
 
 ## Overview
@@ -25,6 +27,10 @@ Apps combines the desktop map, running-window lists and the launcher. Filters sh
 - Toggle indicators remain distinct from momentary actions; press feedback stays short.
 - Keyboard focus is visible. Workspace tabs support Left/Right, Home and End; search navigation respects category selection.
 - System headers stay outside their scrolling content. Readable app content remains on solid surfaces.
+
+## Maximize, Fullscreen and ownership
+
+Maximize retains Areas; Fullscreen uses their display space. Other apps can transfer to a second demo display without displacing its existing apps, otherwise park. Restore respects deliberate moves, closing and parking. Fullscreen transfers Areas when possible or hides them temporarily. Project desktop stacks replace named Modes, and their sessions save automatically.
 
 ## Documentation and checks
 
