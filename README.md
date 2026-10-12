@@ -2,175 +2,93 @@
 
 **A tactile, project-centred computing environment.**
 
-**Work in progress (WIP).** The design, interactions and documentation are still evolving. This is an experimental browser prototype with simulated apps and integrations.
+**Work in progress.** An experimental browser prototype with simulated apps, files and system integrations. The design and interactions are still evolving.
 
-Spatial Desktop is an interactive browser prototype of a desktop organised around workspaces, projects and docked Areas. It explores how windows, useful app widgets and system tools can share the screen without a conventional taskbar.
+Spatial Desktop organises work around separate Workspaces, Projects and docked Areas. It explores a desktop where windows, useful app controls and project resources share the screen, and where users can find their work through its place and context.
 
-[Live demo](https://xefensor.github.io/spatial-desktop/) · [Design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html)
+[Try the demo](https://xefensor.github.io/spatial-desktop/) · [Start the guide](https://xefensor.github.io/spatial-desktop/?guide=start) · [Design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) · [Detailed reference](docs/prototype-reference.md)
 
-![Spatial Desktop overview with Website Launch and Short Film example projects](docs/images/overview.jpg)
+![Spatial Desktop Overview with example projects](docs/images/overview.jpg)
+
+## Try it
+
+New visitors start with an empty desktop and the optional **Spatial Guide**. It teaches interactions through hands-on tasks. You can also choose a clean desktop or populated demo scenes for General, School, Work and Gaming.
+
+Existing sessions restore their browser-local state. Repeating the guide uses isolated practice storage and offers a return to the original session. Explicitly choosing a clean or demo setup replaces the current session.
+
+The host operating system may intercept Super/Windows shortcuts. The prototype provides Alt+number as a fallback for window shortcuts.
+
+## What it explores
+
+- **Numbered windows:** the Apps hotbar and window title bars share the same number. Numbers follow the visible layout, including after moving or retiling a window. Title-bar numbers are plain text, without a box. Separate app instances have separate slots.
+- **Readable tiling:** new windows fill rows from left to right, then top to bottom. The first two form side-by-side vertical halves when space permits. Setup demo scenes use the same order. Minimum app sizes and floating obstacles still determine what fits; excess windows can be parked.
+- **Useful parked apps:** put a window into the Apps Area and keep its relevant controls available without occupying the canvas. Open icons come first; parked icons follow them.
+- **Projects and desktops:** several Projects can stay open. Each has its own folder, windows and vertical desktops. Switch sideways between Workspace and Projects, and vertically between desktops. Move a window between those contexts or detach it from a Project.
+- **Separate Workspaces:** each restores its own Home folders, app sessions, project context, Stash, activity and local plans. These are prototype contexts, not operating-system security boundaries.
+- **Four docked Areas:** Apps, Workspace & Projects, System and AI. Resize or reposition them with their handles, collapse them to rails, or hide and restore them. Visibility and layout are saved per Workspace.
+- **Overview and Timeline:** find apps, windows, projects and system tools; compare local desktop activity with calendar events, tasks and reminders on a shared time axis.
+- **Project Stash and AI:** save explicit notes, links and files with their sources, and attach them to a scripted AI conversation. The AI Area illustrates provenance and working folders; no model or AI provider is connected.
+
+## Main controls
+
+| Action | Control |
+| --- | --- |
+| Open or close Overview | Super / Windows, when received by the browser |
+| Select a window in slots 1–10 | Super+1–9,0; Alt+number fallback |
+| Select a window in slots 11–20 | Super+Shift+1–9,0; Alt+Shift+number fallback |
+| Create another app instance | Shift+click its hotbar icon |
+| Tile a window | Drag its title bar with the left mouse button |
+| Float a window | Middle-button drag, or Alt+left-button drag |
+| Switch vertical desktops | Scroll when no window is focused; Super+scroll from a window or Area |
+| Switch Workspace/Project columns | Top tabs or Shift+scroll; Super+Shift+scroll from a window or Area |
+| Change Areas | Drag their handles; use the context menu or Overview to hide/show |
+
+Window shortcut activation depends on state: it focuses or restores the window, and parks the currently focused window when invoked again. OS-reserved shortcuts remain subject to the browser and host desktop.
+
+## Materials
+
+Primary app windows use opaque ABS plastic with rounded silhouettes and controls. Main app content stays solid and readable. Structural content joins remain flat; the shortcut number is unframed text. Secondary Areas and transient surfaces use square acrylic/glass geometry. App colours communicate identity, and persistent light lines distinguish toggles from momentary buttons.
+
+See the [material and workflow reference](docs/prototype-reference.md) and [UI notes](docs/ui-ux-review.md).
 
 ## Run locally
 
-No build step or npm dependencies are required. From the repository root:
+No build step or npm dependencies are required:
 
 ```sh
 python3 -m http.server 8000 --directory dist
 ```
 
-Open **http://localhost:8000**, then use the browser's fullscreen command. In JetBrains IDEA, open this folder as a project and run the same command in its terminal.
+Open **http://localhost:8000**. Serve over HTTP rather than opening `index.html` directly. Browser storage is isolated by origin; use another port or browser profile to explore historical versions without reusing the current session. Two browser windows on the same origin and profile can simulate separate displays.
 
-Serve the files over HTTP rather than opening `index.html` directly. Browser storage saves demo state for each origin. To test an older version without reusing the current version's state, serve it on a different port or use a separate browser profile.
+## Development and publishing
 
-## Publish on GitHub Pages
-
-The workflow in [`.github/workflows/pages.yml`](.github/workflows/pages.yml) checks the JavaScript and runs the existing layout/interaction checks, then publishes only `dist/`. It runs on pushes to `main` and can also be started manually.
-
-### One-time setup
-
-1. Open [Settings → Pages](https://github.com/xefensor/spatial-desktop/settings/pages).
-2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
-3. Open [the publishing workflow](https://github.com/xefensor/spatial-desktop/actions/workflows/pages.yml) and choose **Run workflow** on `main`, or rerun the failed deployment after enabling Pages.
-
-Once deployment succeeds, the default site address is **https://xefensor.github.io/spatial-desktop/**. The workflow's deployment environment also shows the actual published URL.
-
-The workflow uses GitHub's built-in token; no custom deployment secret or personal access token is needed after the one-time Pages setup. Deployment fails with `Get Pages site failed / Not Found` when Pages are not enabled or available for the repository.
-
-GitHub documentation: [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
-
-## Explore the desktop
-
-- **Apps Area:** launch apps, use the numbered app hotbar and control parked windows through live cards.
-- **Workspace & Projects Area:** organise a project folder, linked resources, notes, quick launches and saved window arrangements. Each open Project has its own desktops and windows; several Projects can stay open at once.
-- **System Area:** keep relevant system widgets and notifications visible.
-- **Overview:** access workspaces, projects, apps and system tools together. The Super/Windows key works when the browser receives it; the operating system may intercept it.
-- **Windows:** ordinary dragging uses the tiled layout. Middle-button dragging or Alt + left-button dragging enables manual floating movement. New tiled windows try to avoid floating windows.
-- **Overview:** swipe sideways, use Shift+scroll, the section tabs, edge previews or Left/Right to move between Timeline, Apps, Projects & Home and System. Each section snaps to the centre and its neighbours remain visible at both edges. Lists inside keep their vertical scrolling. A compact header shows the current workspace, project and desktop. Workspaces and global search remain available above the sections. Apps shows the desktop map beside running windows, ordered by desktop and hotbar position; filters select this desktop, open windows or parked windows. Parked windows travel with the desktop. The launcher stays available below. Timeline has Now, Latest activity and previous/next day controls; it opens near recent real activity and always includes the current time on Today. Timeline records explicit app, file, browser, project and desktop actions per workspace, saved locally; its Open / Go to actions return to the relevant work. Calendar events, task deadlines and reminders also appear without any interaction: A shared time axis aligns desktop activity beside calendar and task lanes; calendar blocks span their actual duration, and overlapping events sit alongside one another. Choose a day to compare activity during a meeting. Add creates a workspace-owned event (with start and end), task or reminder; task completion and reminder dismissal persist across reloads and displays. The System calendar opens this view and shows the next scheduled item. Demo plans are labelled examples; clean and newly created workspaces start without them. These are local prototype calendar/task records, with no external calendar account connected. Typing, clipboard contents and background focus are not recorded. The Guide uses the same layout and reveals sections progressively.
-- **Areas:** all four Areas default to vertical side docks (Apps and Project left, System and AI right). Resize and reposition them using their handles. All four can be hidden from their context menus or Overview. Press Super to reopen Overview even when every Area is hidden; Show restores each Area at its saved edge and size. Visibility is saved separately for each workspace. Actual app fullscreen can temporarily move Areas to a second display when space permits.
-- **Two displays:** open the same local URL in two browser windows and use the prototype's display assignment controls. Synchronisation requires the same browser profile and origin; it is a simulation rather than access to native monitor/window management.
-
-## Demonstration examples
-
-New visitors begin on an empty desktop with **Spatial Guide**. The optional hands-on introduction reveals the System Area, Apps Area, tiling and middle-drag floating, app search in Overview, Maximize and Fullscreen, early Area resizing and docking to a different screen edge, parking and rail use, vertical desktops, creating an empty project and opening its own windows, project switching, the project Stash, creating your own empty workspace and exploring its Home folders. It then teaches the fourth AI Area with source tags and working folders (no AI provider connected), hiding and restoring Areas, sideways Overview navigation, trying a running-window filter and returning to any existing window. In Timeline, learners open any app, create their own event covering that activity, compare both lanes, use Latest activity, then add and complete a task. The reference explains the compact context header, window filters, Now and available-day navigation. Practice activity and plans stay in isolated Guide storage. Learners choose their apps throughout: tiling, floating, full screen, parking and project windows work with any supported app or instance. Search accepts any matching app, System practice accepts any quick setting, and Home-folder practice accepts any standard folder in the new workspace. The Guide remembers the selected window when a later action depends on it. Visible task checklists check actual desktop actions. The Guide remembers the learner’s expanded or compact view. It only temporarily compacts an expanded Guide when it obstructs an interaction. Each task can be skipped individually; the following task receives any missing prerequisites. Contextual recovery explains closed or parked windows, wrong full-screen modes and misplaced workspace/project contexts, with an action to get back on track. An independent task combines opening an app inside a project, parking it and returning to the ordinary desktop without target highlights. An optional final two-display chapter opens a second browser window in the same isolated practice session. It teaches moving any app there and back, moving an Area, and trying Maximize and Fullscreen: other apps move to the second display when they fit without parking existing apps there, then return on restore. Fullscreen also sends Areas there when space permits. Deliberate moves, closing and parking cancel automatic app return. One-monitor users can place the windows side by side or skip this chapter. The second practice display closes when the chapter ends; it never joins the saved desktop session. Overview exposes only the sections already introduced. Finishing or leaving the introduction offers a clean desktop (General only, no apps or projects), the populated four-workspace demo, or keeping the learner’s own work. New workspace creation remains available in Overview outside the Guide. New project creation opens inside the Workspace & Projects Area, including when that Area starts on a rail.
-
-The workspace-coloured wallpaper is one fixed viewport-sized background beneath all Areas, desktop windows and Overview. The canvas has no separate vignette. A single slow opacity pulse replaces the moving glow and animated particle layers; static specks use one SVG. Decorative animation pauses while the page is hidden, while holding the pointer, in Overview and under Fullscreen, and respects reduced motion. The minute clock updates at minute boundaries and resumes immediately on return. Paused or closed music players no longer trigger repeated rendering or storage writes.
-
-Find **Spatial Guide** again in Overview → Apps → Help, or search for its name. Every hands-on chapter explains when its feature is useful and shows a small, labeled workflow example before the learner’s own task. Examples illustrate reading beside writing, parking a music player, separate project browser windows, workspace/project/desktop scopes, reusing Stash sources, requesting an AI comparison, and finding work around a meeting. They do not populate the learner’s desktop or force particular apps. The same examples are searchable in the reference. Its searchable reference explains each topic, can highlight the corresponding desktop control, and offers a single-chapter practice session with the prerequisites already prepared. A chapter ends immediately after its own task; the complete introduction still teaches every part in the original continuous order. Repeating the introduction uses separate practice storage and offers returning to the original session when leaving; choosing clean or demo explicitly replaces that session. Chapter practice returns directly to the original session. Reloading during a lesson preserves both its progress and practice desktop. Existing saved sessions remain available without forcing the introduction. [Start the guide](https://xefensor.github.io/spatial-desktop/?guide=start).
-
-The demo also includes four distinct, resumable example scenes for existing sessions and illustrative project content:
-
-| Workspace | Activity | Initial layout |
-| --- | --- | --- |
-| General | Everyday files, no open Project | One Dolphin window, Apps on a left rail, System right |
-| School | Urban Ecology research, reading with project notes and linked sources | Apps and Project left, reading and observations in the centre, System and AI right |
-| Work | Website Launch and Short Film, each with two desktops | Preview above development terminal, Apps and Project left, System and AI right |
-| Gaming | Co-op session, no open Project | Games and friends in Web, music in a live Apps card on the left, System on a right rail |
-
-**Website Launch** pairs its preview with a development server on Desktop 1, and source files with a launch checklist on Desktop 2. **Short Film**, kept on another drive, pairs footage with edit notes on Desktop 1, and cut feedback with a parked soundtrack player on Desktop 2. **Urban Ecology** has reading and observations on Desktop 1, and survey evidence on Desktop 2. General and Gaming use Workspace desktops without an open Project. Files, resources, notifications, music and browser pages are illustrative data.
-
-Use the top tabs or **Shift + scroll** to switch Projects or return to Workspace. Scroll vertically to change desktops within the current Project or Workspace when no window is focused. **Win + scroll** changes desktops and **Win + Shift + scroll** changes Projects from any window or Area, including while carrying a window. The Apps Area holds **Parked** windows: use **Park** to put a window away and **Unpark** to bring it onto the current desktop. Closing a Project saves its windows and desktop arrangement.
-
-This scene update refreshes the built-in workspace arrangements once and retains a backup of their previous session data. Workspaces attached to custom Projects are left alone; edited Project definitions and existing workspace notes are preserved. Later visits and workspace switches restore the user's changes rather than reset the examples. Historical commits retain their original examples.
-
-## Area resize limits
-
-Border drags stop at the available space instead of extending off-screen or shrinking the opposite Area. Side docks can grow to 520 px and top/bottom docks to 360 px, with a further 40% display limit. The remaining canvas keeps up to a 440 px width and 320 px height reservation, scaled down on smaller viewports. Rails remain available. Old oversized layouts and viewport changes are fitted to the current display without losing the preferred size for a larger display. The dedicated Area layout on a spare monitor remains available.
-
-## Workspace folders and project downloads
-
-Each Workspace owns its Home and all eight standard Linux user folders: Desktop, Documents, Downloads, Music, Pictures, Videos, Templates and Public. General uses `/home/demo`; other Workspaces use `/home/demo/Workspaces/<Name>`. Home and Places always resolve inside the current Workspace, even while a Project is open.
-
-Projects do not override Home or any of these folders. **Download into this project**, disabled by default in project creation and settings, opts only its windows into `<project folder>/Downloads`. Enabling it creates that folder in the demo filesystem; disabling it returns new downloads to the Workspace and keeps existing files. A Project at a custom location behaves the same way. The originating window’s ownership determines the destination, including separate app instances.
-
-Use **Download page notes** in a Web window and **Open download folder** to try the routing. Demo entries, folder creation and the project preference survive reload and synchronize between demo displays. These are simulated files stored by the prototype; native Linux Home/XDG settings and the host browser’s real download directory are not changed.
-
-## Application windows
-
-Open app icons follow the desktop’s reading order: left to right across each row, then top to bottom. Moving or retiling windows updates their hotbar numbers and keyboard shortcuts together. Parked icons keep their existing order at the end of the rail.
-
-The five sample apps now use consistent toolbars, readable content and controls backed by persistent per-window state. App accents and ABS window silhouettes remain; internal layout surfaces stay square.
-
-- **Dolphin:** one actual location instead of decorative tabs, clickable breadcrumbs, Back/Forward/Up, folder filtering, sorting, list/grid views, file selection and inline previews. Double-click or Enter opens an item. New folder creates a persistent simulated folder. Ctrl+L edits the path; Ctrl+F filters; Alt+arrows navigate.
-- **Notes:** separately stored named notes, New note, document switching, autosave and word/character counts. Each window keeps its own documents. Ctrl+S also saves.
-- **Web:** local demo-page navigation, working Back/Forward/Start/Reload and address submission. External sites are clearly identified and offered as links to open outside the prototype. Downloaded page notes remain routed by window ownership.
-- **Konsole:** each window has its own working directory and command history. Enter runs supported demo commands; Up/Down recalls history; Ctrl+L clears. `pwd`, `ls`, `cd`, `echo`, `date` and `help` operate on demo folders; `$HOME` and XDG folder variables refer to the workspace.
-- **Elisa:** queue selection, previous/next, play/pause, seeking, volume and mute have independent state in each player window. Progress advances while playing in the active workspace. This is a playback simulation without audio sources.
-
-Parked cards use the owning window’s current location, note, terminal output, page or player. App sessions survive reload, transfer with windows between workspaces and synchronize between demo displays. The prototype does not execute native shell commands or load external websites inside its mock browser.
-
-On the Apps rail, open windows sit at the start and parked windows at the end. Right-click a parked icon for its app’s background controls: Elisa transport and mute, Dolphin folders, Notes documents, Web navigation, or Konsole demo commands. Background commands keep the window parked; actions that open a folder or note restore it. **Window options…** opens the full menu for moving the same window between desktops, projects, workspaces and displays.
-
-## Material philosophy
-
-Windows primarily use opaque ABS plastic surfaces, with short mechanical press feedback. Secondary surfaces use transparent glass/acrylic. Their lighting communicates state instead of adding decoration everywhere.
-
-- Main window content is always opaque.
-- Areas and their content use square geometry; app windows and controls can use softer corners.
-- Toggle controls have a persistent indicator line; momentary buttons do not.
-- App colours connect each window with its launcher and live card.
-- Important content stays readable, with small borders and efficient spacing.
-
-The detailed reasoning, experiments and workflow models are in [`dist/philosophy.html`](dist/philosophy.html). When the server above is running, open **http://localhost:8000/philosophy.html**.
-
-## Files
+Make source and documentation changes in this repository. The [GitHub Pages workflow](.github/workflows/pages.yml) checks JavaScript and the regression suites, then publishes `dist/` after a push to `main`. In repository Settings → Pages, the publishing source must be **GitHub Actions**.
 
 | Path | Purpose |
 | --- | --- |
-| `dist/index.html` | Current fullscreen desktop |
+| `dist/index.html` | Desktop entry point |
 | `dist/desktop-shell.js` / `.css` | Desktop behaviour and appearance |
-| `dist/app-tools.js` / `app-windows.js` / `app-windows.css` | Persistent app sessions and app controls/layout |
-| `dist/home-folders.js` | Workspace Home resolution and persistent simulated downloads |
-| `dist/spatial-tiling.js` | Tiling and floating-window obstacle layout |
-| `dist/demo-examples.js` | Generic project examples and saved-data migration |
-| `dist/spatial-intent.js` | Area allocation and fullscreen intent policy |
-| `dist/philosophy.*` | Design and workflow documentation |
-| `dist/material-guide.html` / `material-lab.html` | Material examples and earlier explorations |
-| `scripts/` | Layout and interaction checks |
-| `docs/history/` | Version map and exact original Git history |
-| `.openai/hosting.json` | Existing Sites hosting metadata; not needed for local use |
+| `dist/spatial-tiling.js` | Tiling, reading-order placement and floating obstacles |
+| `dist/app-tools.js`, `app-windows.js`, `app-windows.css` | Persistent simulated app sessions and controls |
+| `dist/demo-examples.js` | Example scenes and migration of shipped defaults |
+| `dist/philosophy.*` | Design philosophy and workflow explanations |
+| `scripts/check-*.cjs` | Automated regression checks |
+| `docs/` | Detailed reference, research and historical reports |
 
-## Workflow research and testing
-
-- [Cross-platform workflow audit: 100 scenarios](docs/workflow-audit-2026-10-07.md) — research, tested prototype behaviour, alternatives and tradeoffs.
-- [Filterable workflow matrix (CSV)](docs/workflow-matrix-2026-10-07.csv).
-- [Broad desktop testing report](docs/testing-2026-10-07.md).
-
-## Stash
-
-The Workspace & Projects Area now keeps explicit excerpts, notes and HTTP(S)/file sources with each project. Work outside projects has its own workspace Stash in Home/Stash. The Area is named Workspace & Projects; without a project, its Stash sits above New project and clearly names the workspace. In a project it names the project instead. Both support dropping and retrieving notes, links and uploaded media, opening the Stash folder in Dolphin and reloading saved content. Items can be pinned, edited, dragged into another app, removed and restored. Text can be dropped or pasted into Stash with its source; nothing captures the clipboard or screen in the background. Project notes live in Stash. Existing Quick notes migrate once to pinned notes without losing their content, and each item’s expansion state survives reloads. Stash items start collapsed, with file-type icons, spaced rows and clear separators. Expanded content stays grouped with its row and is readable in full. Drops save immediately with an automatic name; Note accepts text or a link without a title form. Expanded items show workspace, project and app provenance, a clickable original source and the saved time. Rename, content and caption edits happen inline and save automatically as you type. Origin stays separate from the destination when copying between Stashes. Dragging into AI carries the content and source; AI keeps the storage project as its working folder and shows any different source project/workspace explicitly. Each new capture adds a Timeline entry that returns to the saved item, even after other items are inserted or it is renamed. Extra item actions expand only when requested. AI has its own fourth Area, initially expanded on the right, with a sparkle icon and a freeform text input. There are no prompt preset buttons. Enter submits the freeform request to fixed local rules that illustrate summaries, comparisons, checklists, draft notes and media workflows. Every reply is labeled as scripted; no real model is used. Demo desktops include example conversations. Replies retain a snapshot of their sources and working folder, can be dragged into Stash, and persist separately in each workspace. Open it from its own header or Super+A; its header and border support the same docking, resizing, hiding and display transfer as the other Areas. It is available without a project. Drag Stash items, Dolphin files, project files, app title-bar icons, selected text or links into the Area to attach them with project, workspace and app provenance tags. The first project attachment sets the project root as its working folder; another project never silently replaces that folder. The folder selector also allows the workspace home or an attached project. Each workspace retains its own draft, attachments and chosen working folder across project switches and reloads. Files imported from outside are copied into browser storage, while desktop items reference the existing virtual files. No AI provider is connected and nothing is sent to a model. The Guide introduces source attachments, the working folder and a user-written request with a scripted reply. Project navigation and window restoration remain automatic, with no manual save-place or resume controls. Existing next-step text is retained as an ordinary Stash note. The Stash rail action expands the existing Area temporarily and releases it when focus leaves.
-
-Each project has a `Stash` folder in the demo filesystem. Its notes are Markdown files, web sources are `.url` files, and media keeps its own file type. The Stash heading opens that folder in Dolphin; files open the same stored content and can be downloaded. Add → Choose files and file drops copy file contents into IndexedDB (25 MB per file), while note bodies and the file manifest live with the project. Existing items are migrated without replacing user edits. A project’s Stash is shared when the project is opened from another workspace. This browser prototype does not write into the computer’s native project directories.
-
-Overview searches Stash in the current workspace, including `today` / `yesterday` (also `dnes` / `vcera`). This is local word matching, not semantic AI retrieval. No AI provider is connected and no data is sent to one. Stash persists through reloads and merges per item across displays, including deletion markers. Clean/demo resets and isolated Guide practice include this storage. Built-in demo projects receive a starter note once.
-
-## Checks
-
-With Node.js installed:
+Run the checks used by the publishing workflow:
 
 ```sh
-node scripts/check-spatial-intent.cjs
-node scripts/check-spatial-tiling.cjs
-node scripts/check-demo-examples.cjs
-node scripts/check-spatial-guide.cjs
-node scripts/check-workspace-setup.cjs
-node scripts/check-working-memory.cjs
-node scripts/check-ui-refinements.cjs
-node scripts/check-desktop-workflows.cjs
+for file in dist/*.js; do node --check "$file" || exit 1; done
+for file in scripts/check-*.cjs; do node "$file" || exit 1; done
 ```
 
-The [desktop testing report](docs/testing-2026-10-07.md) records browser workflows, regression coverage, confirmed fixes and remaining hardware/browser checks. The workflow suite also runs 1,200 deterministic mixed layout steps across eight workspace sizes.
+## Scope and evidence
 
-## Development history
+Apps, commands, files, calendars, AI replies and system actions demonstrate interaction models. They do not replace native applications or OS integrations. The mock browser does not embed external websites, the mock terminal does not execute native commands, and prototype files do not write into native Home or Project directories. State is stored in the browser.
 
-All **153 saved source versions**, from the original Material Interface Lab to the current Spatial Desktop, are imported as chronological commits. Each imported commit's source tree matches its original tree byte for byte.
-
-The connected GitHub interface recreates commit identities and dates, so the imported commits have new SHAs. Original SHAs, author/committer timestamps and the mapping to imported commits are recorded in [`docs/history/versions.json`](docs/history/versions.json). An included Git bundle preserves the **unaltered original commits** as well.
-
-See [`docs/history/README.md`](docs/history/README.md) for checking out versions or restoring the original history.
-
-## Work in progress & prototype scope
-
-Spatial Desktop is still under active development. This is a design demonstration, not a native desktop environment. Its apps, files, system widgets and project/workspace packaging illustrate interactions; they do not provide complete operating-system integrations. Demo data is stored in the browser.
-
-See the [UI and UX refinement notes](docs/ui-ux-review.md) for the latest overview and accessibility changes.
-
+- [Prototype reference](docs/prototype-reference.md): detailed current behaviour and persistence.
+- [UI and UX notes](docs/ui-ux-review.md): current layout and material conventions.
+- [Workflow audit, 7 October 2026](docs/workflow-audit-2026-10-07.md) and [CSV matrix](docs/workflow-matrix-2026-10-07.csv): 100 researched scenarios and tradeoffs.
+- [Testing report, 7 October 2026](docs/testing-2026-10-07.md): checks and limitations at that date; historical evidence, not a claim that every later revision received browser or hardware testing.
+- [Source history](docs/history/README.md): the 153 imported source snapshots, their SHA mapping and the original Git bundle. Development continues in normal commits after that imported history.

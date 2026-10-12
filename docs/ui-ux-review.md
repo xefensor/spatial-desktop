@@ -1,29 +1,33 @@
-# UI and UX refinement
+# UI and UX notes
 
-This pass preserves Spatial Desktop's material and spatial model while making its information easier to scan and its controls easier to use.
+Current conventions as of 12 October 2026. Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
+
+## Windows and hotbar
+
+New tiled windows fill rows from left to right, then top to bottom. The first pair forms two vertical halves when minimum usable sizes fit. Floating obstacles retain their reserved space; constrained layouts can park windows. Manual edge drops still choose a specific split.
+
+Open hotbar icons follow the visible windows’ reading order. Moving or retiling windows updates their numbers and shortcuts together. Parked windows follow the open group. Each app instance has its own slot, and its title bar shows the matching number as plain text without a border, background or shadow. Slots run 1–9,0; Shift selects the next ten with Super.
+
+Fresh setup demo scenes follow the same window order. A one-time migration updates exact old shipped split trees, preserving manually changed trees and other session data.
 
 ## Overview
 
-The Overview has three vertical contexts: Projects and Home, Applications, and System. Open and parked windows are compact rows above the application library, rather than miniature desktop previews. Window state remains visible without opening a separate page. Application names wrap when needed; the grid adapts to its own available width.
+Overview has four horizontally navigable sections: Timeline, Apps, Projects & Home, and System. Sideways swipes, Shift+scroll, section tabs, edge previews and Left/Right move between sections. Lists retain their own vertical scrolling. A compact context header identifies the current Workspace, Project and desktop.
 
-The category selector filters the existing library. Search accepts filenames, punctuation, accents and reordered words. An explicit close control complements Escape and Super. Workspace tabs support Left/Right, Home and End. Search navigation does not intercept category selection.
+Apps combines the desktop map, running-window lists and the launcher. Filters show the current desktop, open windows or parked windows. Timeline aligns local activity with calendar events, tasks and reminders. Search and Workspace selection remain available across sections.
 
-Notifications are mirrored from the System Area, including dismissal. Date, window counts, active project, favorite counts, music progress and timer state come from the existing state rather than separate mock values. The System heading stays outside its scrolling content.
+## Materials and accessibility
 
-## Material rules retained
+- App windows retain opaque ABS bodies, rounded silhouettes and rounded discrete controls. Structural content joins stay flat.
+- Areas, Overview and transient menus use square acrylic/glass geometry with thin edges.
+- Window shortcut numbers are unframed text, rather than another control or panel.
+- App colours connect windows, launcher icons and parked cards.
+- Toggle indicators remain distinct from momentary actions; press feedback stays short.
+- Keyboard focus is visible. Workspace tabs support Left/Right, Home and End; search navigation respects category selection.
+- System headers stay outside their scrolling content. Readable app content remains on solid surfaces.
 
-- Areas, Overview and transient menus use square, thin-edged acrylic glass.
-- App windows retain opaque ABS bodies and solid content surfaces.
-- Full-color app icons remain unframed where possible.
-- Application colors convey identity; no new titlebar fades are introduced.
-- Toggle indicators remain distinct from momentary actions.
-- Press feedback retains the short mechanical timing. Keyboard focus gets a clear outline.
-- Docking, tiling, project Modes, workspace sessions and display synchronization keep their existing implementation and saved state.
+## Documentation and checks
 
-## Supporting pages
+The [README](../README.md) introduces the prototype and its controls. The [reference](prototype-reference.md) describes persistence, demo scenes, app tools, Stash and simulated integrations. The [live philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) explains the design through workflow examples.
 
-The philosophy, material guide and reference share focus styling and project-relative navigation. The material token table retains every column on smaller screens. Reference device and appearance controls expose their selected state to assistive technology. Forms and guide sections have more resilient scrolling and text wrapping.
-
-`dist/ui-refinements.css` contains the presentation changes, loaded after each page's established material styles. Behavior changes stay in the existing desktop and reference controllers. Automated checks cover search, live workspace metadata, category parity, asset references and the existing tiling/intent/session policies.
-
-The site remains a browser prototype: simulated applications, system actions and sample files are not native OS integrations.
+Automated checks in `scripts/check-*.cjs` cover layout, window intent, demo migration, independent sessions, Overview, Guide and material behaviour. Passing these checks is distinct from visual browser inspection or native hardware testing. Dated audit and testing reports preserve their original findings.
