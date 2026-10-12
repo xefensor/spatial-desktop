@@ -41,3 +41,5 @@ Automated checks in `scripts/check-*.cjs` cover layout, window intent, demo migr
 ## Philosophy appearance
 
 The philosophy page shares the desktop’s Auto/OLED/Graphite/Light preference and follows system changes live in Auto. The header and chapter navigation use square acrylic; the reading surface is opaque ABS with rounded outer corners. Mobile layout keeps the same material hierarchy. Theme integration checks cover system updates, manual overrides and cross-tab synchronization.
+
+Live browser captures: [Graphite](images/philosophy-graphite-2026-10-12.jpg) and [Auto following a light system appearance](images/philosophy-auto-light-2026-10-12.jpg), captured 12 October 2026.
