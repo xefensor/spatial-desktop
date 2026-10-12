@@ -969,3 +969,27 @@ console.log("Moving a maximized/full-fullscreen owner releases its automatic tra
   assert(rects.get('third').x < rects.get('fourth').x);
   console.log('Automatic opening: two vertical halves, left-to-right rows and focus-independent placement passed.');
 }
+
+// On wide desktops four windows still prefer 2x2, rather than a long row.
+{
+  const ids = ['first','second','third','fourth'];
+  const minimum = () => ({width:400,height:300});
+  const wide = {x:0,y:0,width:2600,height:1000};
+  let tree = null;
+  for (const id of ids) tree=T.insert(tree,id,'first',null,wide,minimum);
+  const rects=T.layout(tree,wide).windows;
+  assert.equal(rects.get('first').y,rects.get('second').y);
+  assert.equal(rects.get('third').y,rects.get('fourth').y);
+  assert(rects.get('third').y>rects.get('first').y);
+  assert.equal(rects.get('first').x,rects.get('third').x);
+  assert.equal(rects.get('second').x,rects.get('fourth').x);
+  const triple=T.layout(T.rowMajor(ids.slice(0,3),wide,minimum),wide).windows;
+  assert.equal(triple.get('third').width,wide.width,'Third window uses the bottom row without an empty cell');
+  const short={...wide,height:350};
+  const fitted=T.fit(T.rowMajor(ids,short,minimum),short,minimum,'fourth');
+  assert.equal(fitted.parked.length,0,'A short wide workspace can use one row instead of unnecessarily parking peers');
+  assert([...fitted.windows.values()].every(rect=>rect.y===0));
+  const manual=T.insert(T.leaf('first'),'second','first','bottom',wide,minimum);
+  assert.equal(manual.axis,'y','Explicit user split direction is retained');
+  console.log('Preferred 2x2: wide desktops, three-window progression, short-screen fallback and manual direction passed.');
+}

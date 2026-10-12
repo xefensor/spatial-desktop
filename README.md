@@ -12,7 +12,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 
 ## The idea
 
-- Windows tile automatically and share numbered shortcuts with the Apps hotbar. Each title bar shows its number; new windows open left to right, then top to bottom.
+- Windows tile automatically and share numbered shortcuts with the Apps hotbar. Each title bar shows its number; new windows open left to right, then top to bottom, with four preferring a 2×2 grid when they fit.
 - Park apps as useful cards instead of hiding their work. Float a window when placement matters.
 - Projects keep their own folders, windows and vertical desktops, and resume automatically. Workspaces separate broader contexts such as personal life, study and work.
 - Apps, Workspace & Projects, System and AI remain in docked Areas that can expand, become rails or be hidden.

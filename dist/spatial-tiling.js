@@ -58,18 +58,29 @@
     if (node.kind === "window") return node.name === target ? replacement : node;
     return { ...node, a: replace(node.a, target, replacement), b: replace(node.b, target, replacement) };
   }
-  // Automatic openings fill a row before starting the next one.
+  // Fill reading-order rows, preferring two columns for three/four windows.
   function rowMajor(ordered, bounds, minimum) {
     if (!ordered.length) return null;
-    const maxWidth = Math.max(...ordered.map(name => minimum(name).width));
-    const columns = Math.min(ordered.length, Math.max(2, Math.floor((bounds.width + gap) / (maxWidth + gap))));
-    const rows = [];
-    for (let i = 0; i < ordered.length; i += columns) rows.push(ordered.slice(i, i + columns));
     function chain(items, axis, build) {
       if (items.length === 1) return build(items[0]);
       return { kind: "split", axis, ratio: 1 / items.length, a: build(items[0]), b: chain(items.slice(1), axis, build) };
     }
-    return chain(rows, "y", row => chain(row, "x", leaf));
+    function rowsWith(columns) {
+      const rows = [];
+      for (let i = 0; i < ordered.length; i += columns) rows.push(ordered.slice(i, i + columns));
+      return chain(rows, "y", row => chain(row, "x", leaf));
+    }
+    if (ordered.length >= 3 && ordered.length <= 4) {
+      const grid = rowsWith(2);
+      const fits = [...layout(grid, bounds).windows].every(([name, rect]) => {
+        const size = minimum(name);
+        return rect.width >= size.width - 1 && rect.height >= size.height - 1;
+      });
+      if (fits) return grid;
+    }
+    const maxWidth = Math.max(...ordered.map(name => minimum(name).width));
+    const columns = Math.min(ordered.length, Math.max(2, Math.floor((bounds.width + gap) / (maxWidth + gap))));
+    return rowsWith(columns);
   }
 
   function insert(node, name, target, side, bounds, minimum, placed = null) {
