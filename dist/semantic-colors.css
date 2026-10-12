@@ -3,7 +3,7 @@ body[data-theme] {
   --ui-neutral:#b9cbdc;
   --role-apps:#68cbff; --role-projects:#f1bd79; --role-systems:#65dfba; --role-ai:#bea9ff;
   --action-play:#73e2a7; --action-pause:#f0c778; --action-danger:#ff9d94;
-  --sd-glass-face:rgba(9,20,32,.74); --sd-glass-face-deep:rgba(4,12,23,.38);
+  --sd-glass-face:rgba(9,20,32,.60); --sd-glass-face-deep:rgba(4,12,23,.38);
   --sd-glass-edge:rgba(193,228,255,.30); --sd-glass-edge-soft:rgba(202,235,255,.13);
   --sd-glass-highlight:rgba(237,249,255,.23); --sd-glass-groove:rgba(197,225,247,.15);
   --sd-glass-groove-low:rgba(0,8,18,.48); --sd-glass-hover:rgba(192,232,255,.085);
@@ -12,7 +12,7 @@ body[data-theme] {
   --blue-glow:color-mix(in srgb,var(--workspace-accent,var(--blue)) 32%,transparent);
 }
 body[data-theme="graphite"] {
-  --sd-glass-face:rgba(20,32,47,.76);
+  --sd-glass-face:rgba(20,32,47,.66);
   --content-surface:#18222d; --content-surface-raised:#21303e;
 }
 body[data-theme="light"] {
@@ -200,6 +200,10 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 .app-frame button:is(.material-glass-button,.material-abs-button) {
   --state-tone:var(--app-primary)!important;
   --glass-key-tone:var(--app-primary)!important;
+}
+.app-frame button.material-abs-button:not(.danger) {
+  background:linear-gradient(180deg,color-mix(in srgb,var(--app-primary) 11%,var(--control-top)),color-mix(in srgb,var(--app-primary) 6%,var(--control-bottom)))!important;
+  border-color:color-mix(in srgb,var(--app-primary) 18%,var(--control-edge))!important;
 }
 body[data-theme] .app-frame :where(button,a,input,textarea,select,[tabindex]):focus-visible {
   outline-color:var(--app-primary)!important;
