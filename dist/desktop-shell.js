@@ -6774,13 +6774,18 @@ function prepareDesktopPages() {
     const frame = event.target.closest("[data-app-frame]");
     if (frame && !frame.hidden && isLocalApp(frame.dataset.appFrame)) bringToFront(frame.dataset.appFrame);
   });
-  const onDesktopWheel = event => {
+  const onDesktopWheel = (event, fromArea = false) => {
     const superHeld = event.metaKey || event.getModifierState?.("OS");
     if (superHeld) superKeyAlone = false;
-    if (event.defaultPrevented || event.ctrlKey || event.altKey || (!superHeld && desktopHasWindowFocus) || (!event.shiftKey && Math.abs(event.deltaX) > Math.abs(event.deltaY))) return;
+    if (event.defaultPrevented || event.ctrlKey || event.altKey || (!superHeld && !fromArea && desktopHasWindowFocus) || (!event.shiftKey && Math.abs(event.deltaX) > Math.abs(event.deltaY))) return;
     if (desktopNavigationBlocked() && !desktopPageAnimating) return;
+    if (fromArea && desktopHasWindowFocus) {
+      focusDesktop(false);
+      const focused = document.activeElement;
+      if (focused?.closest("[data-app-frame]")) focused.blur();
+    }
     event.preventDefault();
-    if (superHeld) event.stopPropagation();
+    if (superHeld || fromArea) event.stopPropagation();
     const delta = (event.shiftKey ? event.deltaY || event.deltaX : event.deltaY) * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? workspace.clientHeight : 1);
     if (event.shiftKey) {
       const direction = desktopColumnWheel.feed(delta, performance.now());
@@ -6792,10 +6797,24 @@ function prepareDesktopPages() {
     if (direction && !desktopPageAnimating) changeDesktopPage(desktopPages.current(activeWorkspace) + direction);
   };
   workspace.addEventListener("wheel", onDesktopWheel, { passive: false });
-  // Explicit desktop shortcuts also work over app content and Areas. Capture
-  // before their scroll handlers, while held-window gestures stay window-owned.
+  // Area chrome and rails navigate without a preliminary click. Scrollable
+  // content keeps the wheel until its edge; Shift+wheel switches columns.
+  // Super shortcuts also work over app content. Held-window gestures stay owned
+  // by the drag listener, and the shared gate suppresses trackpad momentum.
   document.addEventListener("wheel", event => {
-    if (event.metaKey || event.getModifierState?.("OS")) onDesktopWheel(event);
+    if (event.metaKey || event.getModifierState?.("OS")) { onDesktopWheel(event); return; }
+    const area = event.target?.closest("[data-area-window]");
+    if (!area || $(".desktop-shell").inert || event.defaultPrevented || event.ctrlKey || event.altKey || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
+    const delta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
+    if (!delta) return;
+    if (!event.shiftKey) {
+      for (let node = event.target; node && node !== area.parentElement; node = node.parentElement) {
+        const limit = node.scrollHeight - node.clientHeight;
+        if (limit > 1 && ["auto", "scroll"].includes(window.getComputedStyle(node).overflowY) &&
+          (delta < 0 ? node.scrollTop > 1 : node.scrollTop < limit - 1)) return;
+      }
+    }
+    onDesktopWheel(event, true);
   }, { capture: true, passive: false });
   document.addEventListener("keydown", event => {
     if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || desktopNavigationBlocked() || event.target.closest("input,textarea,select,[contenteditable=true]")) return;

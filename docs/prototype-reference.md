@@ -93,7 +93,7 @@ Explicit moves, closing or parking cancel automatic peer return. A busy second d
 
 ## Navigation and Areas
 
-Click desktop background or an Area to release window focus. Then scroll to change vertical desktop pages, or Shift+scroll to switch between ordinary Workspace desktops and open Projects. Super+scroll and Super+Shift+scroll work from windows or Areas when the browser receives them. Page Up/Down provide desktop navigation with focus released; Shift selects Project navigation.
+Scroll over an Area header, rail or non-scrollable content to change vertical desktop pages, even while a window is focused. Scrollable Area content uses the wheel until its edge; input fields retain their normal scrolling. Shift+scroll over an Area switches between the ordinary Workspace and open Projects. You can also click desktop background or an Area to release window focus, then scroll over the canvas. Super+scroll and Super+Shift+scroll work from windows or Areas when the browser receives them. Page Up/Down provide desktop navigation with focus released; Shift selects Project navigation.
 
 While holding a title bar with the left mouse button, scroll to carry the window to another desktop; Shift+scroll changes its Project context. Release to place it. Cancelled drags return to the original placement. Ordinary scrolling inside focused apps remains an app action.
 

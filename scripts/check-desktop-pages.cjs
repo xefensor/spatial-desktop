@@ -30,7 +30,7 @@ assert.equal(wheel.feed(30, 600), 0);
 assert.equal(wheel.feed(-30, 615), 0, 'Direction reversal discards incomplete accumulation');
 assert.equal(wheel.feed(-10, 630), -1);
 
-// Exercise the actual focus and wheel listeners; app/Area scroll must be untouched.
+// Exercise the actual focus and wheel listeners, including nested Area scrolling.
 const listeners = {};
 const node = key => ({ key, hidden: true, dataset: {}, textContent: '',
   classList: { contains: () => false, toggle() {}, remove() {} },
@@ -296,8 +296,88 @@ clock+=500;e=event();e.metaKey=true;listeners['document:wheel'](e);
 assert.equal(e.prevented,undefined,'Document navigation leaves held-window gestures to their own handler');
 ctx.tileInteraction=false;
 clock+=500;e=event();listeners['document:wheel'](e);
-assert.equal(e.prevented,undefined,'Plain Area scrolling is never intercepted globally');
+assert.equal(e.prevented,undefined,'Plain scrolling outside Areas is never intercepted globally');
 console.log('Win wheel passed: focused app/Area capture, project axis, OS alias, line deltas, momentum, duplicate/Overview prevention and input/menu/drag guards.');
+
+// Hovered Areas navigate without clicking or stealing their keyboard focus.
+nodes['.desktop-shell'].inert=false;
+ctx.window={getComputedStyle:element=>({overflowY:element.overflowY || 'visible'})};
+const areaTarget=(name,scroll={},editing=false)=>{
+  const area={dataset:{areaWindow:name},parentElement:null,clientHeight:800,scrollHeight:800};
+  const target={parentElement:area,clientHeight:200,scrollHeight:200,scrollTop:0,...scroll};
+  target.closest=selector=>selector==='[data-area-window]'?area:editing?target:null;
+  return target;
+};
+const areaEvent=(target,delta=80,options={})=>Object.assign(event(delta),{target},options);
+const resetAreaWheel=()=>{
+  clock+=500;ctx.desktopWheel.reset();ctx.desktopColumnWheel.reset();
+  ctx.desktopPages.select('work','workspace');ctx.desktopPages.go('work',0);
+  ctx.desktopHasWindowFocus=true;ctx.document.activeElement=null;
+};
+for(const name of ['apps','projects','systems','ai']){
+  resetAreaWheel();let blurred=false;
+  ctx.document.activeElement={closest:()=>({}),blur(){blurred=true;}};
+  const before=changes.length;
+  e=areaEvent(areaTarget(name));listeners['document:wheel'](e);
+  assert.equal(e.prevented,true);assert.equal(e.stopped,true);
+  assert.equal(ctx.desktopPages.current('work'),1,name+' navigates while a window is focused');
+  assert.equal(ctx.desktopHasWindowFocus,false);assert.equal(blurred,true);
+  assert.equal(workspaceFocusCalls,0,'Hover scrolling does not focus the canvas');
+  clock+=15;listeners['document:wheel'](areaEvent(areaTarget(name)));
+  listeners['.workspace-zone:wheel'](event());
+  assert.equal(changes.length,before+1,'Area and canvas share one momentum gate');
+  listeners['.workspace-zone:wheel'](e);
+  assert.equal(changes.length,before+1,'The consumed Area wheel cannot be handled twice');
+  clock+=500;listeners['document:wheel'](areaEvent(areaTarget(name),-80));
+  assert.equal(ctx.desktopPages.current('work'),0,'A new gesture returns to the previous desktop');
+}
+const scrollCases=[
+  {top:100,delta:80,navigate:false}, {top:100,delta:-80,navigate:false},
+  {top:0,delta:80,navigate:false}, {top:600,delta:-80,navigate:false},
+  {top:600,delta:80,navigate:true}, {top:0,delta:-80,navigate:true}
+];
+for(const {top,delta,navigate} of scrollCases){
+  resetAreaWheel();if(delta<0)ctx.desktopPages.go('work',1);
+  e=areaEvent(areaTarget('systems',{scrollHeight:800,scrollTop:top,overflowY:'auto'}),delta);
+  const before=changes.length;listeners['document:wheel'](e);
+  assert.equal(Boolean(e.prevented),navigate,'Scrollable content keeps its wheel until the relevant edge');
+  assert.equal(changes.length,before+Number(navigate));
+  assert.equal(ctx.desktopHasWindowFocus,!navigate,'Native list scrolling does not release app focus');
+}
+resetAreaWheel();
+const nested=areaTarget('projects');
+nested.parentElement={parentElement:nested.parentElement,scrollHeight:800,clientHeight:200,scrollTop:100,overflowY:'scroll'};
+e=areaEvent(nested);listeners['document:wheel'](e);
+assert.equal(e.prevented,undefined,'An overflow ancestor owns scroll from a child icon');
+resetAreaWheel();
+e=areaEvent(areaTarget('apps',{scrollHeight:800,overflowY:'hidden'}));listeners['document:wheel'](e);
+assert.equal(e.prevented,true,'Clipped content is not a user-scrollable list');
+resetAreaWheel();
+e=areaEvent(areaTarget('systems',{scrollHeight:800,scrollTop:100,overflowY:'auto'}),0,{shiftKey:true,deltaX:80});
+listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.column('work'),'site','Shift+wheel over a list selects the adjacent Project');
+assert.equal(e.prevented,true);
+for(const options of [{ctrlKey:true},{altKey:true},{deltaX:160},{defaultPrevented:true}]){
+  resetAreaWheel();e=areaEvent(areaTarget('apps'),80,options);listeners['document:wheel'](e);
+  assert.equal(e.prevented,undefined,'Modifier, horizontal and already-consumed input stays owned');
+  assert.equal(ctx.desktopHasWindowFocus,true);
+}
+for(const guard of ['editing','menu','overview','drag','inert']){
+  resetAreaWheel();
+  nodes['#desktopContextMenu'].hidden=guard!=='menu';
+  nodes['#universalSearch']={classList:{contains:()=>guard==='overview'}};
+  ctx.tileInteraction=guard==='drag';nodes['.desktop-shell'].inert=guard==='inert';
+  e=areaEvent(areaTarget('ai',{},guard==='editing'));listeners['document:wheel'](e);
+  assert.equal(e.prevented,undefined,guard+' keeps its normal input');
+  assert.equal(ctx.desktopHasWindowFocus,true,guard+' does not clear focus');
+}
+nodes['#desktopContextMenu'].hidden=true;delete nodes['#universalSearch'];
+ctx.tileInteraction=false;nodes['.desktop-shell'].inert=false;
+resetAreaWheel();e=areaEvent(areaTarget('apps'),3,{deltaMode:1});listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.current('work'),1,'Area wheels normalize line-mode deltas');
+resetAreaWheel();e=areaEvent(areaTarget('apps'),1,{deltaMode:2});listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.current('work'),1,'Area wheels normalize page-mode deltas');
+console.log('Area wheel passed: all four Areas, hover/focus, shared momentum, both list edges, nested overflow, Shift projects, native inputs, modals, drag and normalized deltas.');
 
 // Exercise the actual window-owned pointer gesture rather than global navigation.
 const dragListeners={},carried=[];
