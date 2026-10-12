@@ -1,6 +1,6 @@
 # Prototype reference
 
-Reviewed against source and retrieved project decisions on 12 October 2026. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
+Reviewed against source and retrieved project decisions on 12 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
 
 ## Context and ownership
 
