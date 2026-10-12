@@ -947,3 +947,25 @@ resetMonitors();
 vm.runInContext('openApp("dolphin");openApp("notes");toggleAppFullscreen("dolphin");transferAppToDisplay("dolphin",2)',sandbox);
 assert.equal(monitorAssignments.apps.notes,1);assert.equal(vm.runInContext('tileSession().fullscreen',sandbox),null);
 console.log("Moving a maximized/full-fullscreen owner releases its automatic transfers and temporary mode.");
+
+// Automatic openings follow reading order, independently of the focused tile.
+{
+  const bounds = {x:0,y:0,width:1000,height:900};
+  const minimum = () => ({width:400,height:300});
+  let tree = null;
+  for (const name of ['first','second','third','fourth']) {
+    tree = T.insert(tree,name,'first',null,bounds,minimum);
+    const rects = T.layout(tree,bounds).windows;
+    if (name === 'second') {
+      assert.equal(rects.get('first').height,900);
+      assert.equal(rects.get('second').height,900);
+      assert(rects.get('first').x < rects.get('second').x);
+    }
+  }
+  const rects = T.layout(tree,bounds).windows;
+  assert.equal(rects.get('first').y,rects.get('second').y);
+  assert.equal(rects.get('third').y,rects.get('fourth').y);
+  assert(rects.get('third').y > rects.get('first').y);
+  assert(rects.get('third').x < rects.get('fourth').x);
+  console.log('Automatic opening: two vertical halves, left-to-right rows and focus-independent placement passed.');
+}

@@ -7391,8 +7391,22 @@ function scheduleHotbarOrder() {
     if(before!==$('#appRack').dataset.layoutOrder)renderMiniApps();
   });
 }
+function syncWindowHotkeys() {
+  $$('[data-app-frame]').forEach(frame => {
+    const identity = $('.app-titlebar .app-identity', frame);
+    if (!identity) return;
+    let badge = $('.window-hotkey', identity);
+    if (!badge) { badge = document.createElement('kbd'); badge.className = 'window-hotkey'; identity.prepend(badge); }
+    const slot = hotbarSlotFor(frame.dataset.appFrame);
+    badge.hidden = slot === null;
+    if (slot === null) return;
+    badge.textContent = slot <= 10 ? String(slot % 10) : slot <= 20 ? '⇧' + slot % 10 : String(slot);
+    badge.title = slot <= 20 ? 'Super+' + (slot > 10 ? 'Shift+' : '') + slot % 10 : 'Hotbar slot ' + slot;
+    badge.setAttribute('aria-label', badge.title);
+  });
+}
 const originalSyncRack = syncRack;
-syncRack = function() { renderInstanceRack(); originalSyncRack(); };
+syncRack = function() { renderInstanceRack(); originalSyncRack(); syncWindowHotkeys(); };
 hotbarSlotFor = name => { const index = workspaceShortcutNames().indexOf(name); return index < 0 ? null : index + 1; };
 function captureWorkspaceContent() {
   const frames = {};

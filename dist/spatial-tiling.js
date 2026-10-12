@@ -58,13 +58,31 @@
     if (node.kind === "window") return node.name === target ? replacement : node;
     return { ...node, a: replace(node.a, target, replacement), b: replace(node.b, target, replacement) };
   }
+  // Automatic openings fill a row before starting the next one.
+  function rowMajor(ordered, bounds, minimum) {
+    if (!ordered.length) return null;
+    const maxWidth = Math.max(...ordered.map(name => minimum(name).width));
+    const columns = Math.min(ordered.length, Math.max(2, Math.floor((bounds.width + gap) / (maxWidth + gap))));
+    const rows = [];
+    for (let i = 0; i < ordered.length; i += columns) rows.push(ordered.slice(i, i + columns));
+    function chain(items, axis, build) {
+      if (items.length === 1) return build(items[0]);
+      return { kind: "split", axis, ratio: 1 / items.length, a: build(items[0]), b: chain(items.slice(1), axis, build) };
+    }
+    return chain(rows, "y", row => chain(row, "x", leaf));
+  }
+
   function insert(node, name, target, side, bounds, minimum, placed = null) {
     node = remove(node, name);
     if (!node) return leaf(name);
     const rects = layout(node, bounds).windows;
     placed?.forEach((rect, existing) => { if (rects.has(existing)) rects.set(existing,rect); });
     if (!rects.has(target)) target = names(node)[0];
-    if (!side) {
+    const obstructed = placed && [...placed].some(([existing, rect]) => {
+      const ideal = layout(node, bounds).windows.get(existing);
+      return ideal && (rect.x !== ideal.x || rect.y !== ideal.y || rect.width !== ideal.width || rect.height !== ideal.height);
+    });
+    if (!side && obstructed) {
       const feasible = [...rects].filter(([existing, rect]) => {
         const oldMin = minimum(existing), newMin = minimum(name);
         return rect.width >= oldMin.width + newMin.width + gap && rect.height >= Math.max(oldMin.height, newMin.height)
@@ -77,6 +95,10 @@
       const horizontalFit = Math.min(rect.width / (oldMin.width + newMin.width + gap), rect.height / Math.max(oldMin.height, newMin.height));
       const verticalFit = Math.min(rect.height / (oldMin.height + newMin.height + gap), rect.width / Math.max(oldMin.width, newMin.width));
       side = horizontalFit >= verticalFit ? "right" : "bottom";
+    }
+    if (!side) {
+      const ordered = [...rects].sort((a, b) => a[1].y - b[1].y || a[1].x - b[1].x).map(([existing]) => existing);
+      return rowMajor(ordered.concat(name), bounds, minimum);
     }
     const before = side === "left" || side === "top";
     const axis = side === "left" || side === "right" ? "x" : "y";
@@ -229,7 +251,7 @@
     }
     return next;
   }
-  const api = { gap, copy, leaf, names, contains, normalize, remove, layout, at, pathTo, insert, fit, fitAvoiding, resizeWindow };
+  const api = { gap, copy, leaf, names, contains, normalize, remove, layout, at, pathTo, rowMajor, insert, fit, fitAvoiding, resizeWindow };
   root.SpatialTiling = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
