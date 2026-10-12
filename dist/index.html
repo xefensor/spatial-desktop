@@ -23,14 +23,14 @@
   <link rel="stylesheet" href="spatial-guide.css?v=16">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
   <link rel="stylesheet" href="working-memory.css?v=14">
-  <link rel="stylesheet" href="ai-area.css?v=7">
+  <link rel="stylesheet" href="ai-area.css?v=8">
   <link rel="stylesheet" href="overview-carousel.css?v=12">
   <link rel="stylesheet" href="desktop-background.css?v=2">
   <link rel="stylesheet" href="control-refinements.css?v=2">
   <link rel="stylesheet" href="overview-apps.css?v=3">
   <link rel="stylesheet" href="interface-polish.css?v=2">
   <script src="workspace-setup.js?v=5"></script>
-  <script src="spatial-guide.js?v=26"></script>
+  <script src="spatial-guide.js?v=27"></script>
   
 </head>
 <body data-theme="oled">
@@ -200,9 +200,12 @@
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-hide="ai" aria-label="Hide AI area" title="Hide AI area"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
       </header>
       <div class="ai-content">
+        <div class="ai-chat-toolbar"><label class="sr-only" for="aiChatSelect">Chat</label><select id="aiChatSelect" aria-label="Chat"></select><button class="surface-key" id="aiNewChat" type="button">New chat</button><button class="surface-key" id="aiRenameChat" type="button" aria-label="Rename current chat">Rename</button></div>
+        <form id="aiRenameForm" class="ai-rename-form" hidden><label class="sr-only" for="aiChatName">Chat name</label><input id="aiChatName" aria-label="Chat name" maxlength="80" required><button class="surface-key" type="submit">Save</button><button class="surface-key" id="aiCancelRename" type="button">Cancel</button></form>
         <div class="ai-folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><label for="aiWorkingFolder">Working folder</label><select id="aiWorkingFolder" aria-label="AI working folder"></select></div>
-        <div class="ai-chat" aria-label="AI conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><details class="ai-context-sources" open><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message AI</label><textarea id="aiPrompt" aria-label="Message AI" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask about your sources…" autocomplete="off"></textarea><small id="aiStatus" role="status">AI demo · scripted replies · nothing is sent</small></form>
+        <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
+        <div class="ai-chat" aria-label="AI conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message AI</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message AI" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask about your sources…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiStatus" role="status">AI demo · scripted replies · nothing is sent</small></form>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize AI area" title="Drag this border to resize"></button>
     </aside>
@@ -574,13 +577,13 @@
   <script src="app-windows.js?v=11"></script>
 <script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
-<script src="ai-context.js?v=4"></script>
+<script src="ai-context.js?v=5"></script>
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=2"></script>
 <script src="desktop-shell.js?v=256"></script>
 <script src="working-memory-desktop.js?v=26"></script>
-<script src="ai-desktop.js?v=13"></script>
+<script src="ai-desktop.js?v=14"></script>
 <script src="overview-desktop.js?v=15"></script>
   <script src="guide-desktop.js?v=36"></script>
 </body>

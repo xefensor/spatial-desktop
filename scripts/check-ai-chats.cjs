@@ -1,0 +1,85 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm');
+const C=require('../dist/ai-context.js'),D=require('../dist/ai-demo.js');
+const profiles={general:{label:'General',home:'/home/demo'},work:{label:'Work',home:'/home/demo/Work'}};
+const projects={film:{name:'Film',root:'/home/demo/Projects/film'},site:{name:'Website',root:'/home/demo/Projects/site'}};
+const env={workspaces:()=>profiles,projects:()=>projects};
+const model=C.create({},env),first=model.session('general').id;
+model.add('general',{id:'brief',title:'Brief',text:'Original text',project:'film',workspace:'general'});
+model.exchange('general','Summarize the brief',D.reply('Summarize',{items:model.session('general').items}));
+model.draft('general','Unsent question');model.mode('general','rail');
+const second=model.newChat('general').id;
+assert.equal(model.session('general').mode,'rail','Area mode belongs to the workspace, not a chat');
+assert.equal(model.session('general').draft,'');assert.equal(model.session('general').items.length,0);assert.equal(model.session('general').turns.length,0);
+assert.equal(model.workingFolder('general'),profiles.general.home);
+model.add('general',{id:'page',title:'Page',project:'site',workspace:'work'});model.draft('general','Other draft');
+assert.equal(model.workingFolder('general'),projects.site.root);
+assert(model.rename('general',second,'Website review'));
+model.exchange('general','A different request',{text:'Reply'});
+assert.equal(model.session('general').title,'Website review','Explicit names survive subsequent messages');
+model.select('general',first);
+assert.equal(model.session('general').draft,'Unsent question');assert.equal(model.session('general').items[0].id,'brief');
+assert.equal(model.workingFolder('general'),projects.film.root);assert.equal(model.session('general').turns.length,1);
+model.add('general',{id:'brief',title:'Brief updated',text:'Revised text',project:'film'});
+assert.equal(model.session('general').items.length,1,'Re-dropping a source updates it instead of duplicating it');
+assert.equal(model.session('general').items[0].text,'Revised text');
+assert.equal(model.session('general').turns[0].sources[0].text,'Original text','Earlier context snapshots remain immutable');
+const reloaded=C.create(model.snapshot(),env);
+assert.equal(reloaded.session('general').id,first);assert.equal(reloaded.session('general',second).draft,'Other draft');
+assert.equal(reloaded.chats('general').length,2);assert.equal(reloaded.session('work').items.length,0);
+assert.equal(model.select('general','missing'),false);assert.equal(model.rename('general',first,'   '),false);
+const explicitHome=C.create({},env);explicitHome.folder('general',null);explicitHome.add('general',{id:'film-source',title:'Film source',project:'film'});
+assert.equal(explicitHome.workingFolder('general'),profiles.general.home,'An explicit Home choice cannot be replaced by a later project drop');
+assert.equal(C.create(explicitHome.snapshot(),env).workingFolder('general'),profiles.general.home);
+for(const version of [1,2,3]){
+  const migrated=C.create({version,sessions:{general:{draft:'Keep me',items:[{id:'old',title:'Legacy source',project:'film'}],turns:[{request:'Old request',text:'Old reply',sources:[{title:'Legacy source'}]}],workingProject:'film',mode:'rail',updated:15}}},env);
+  assert.equal(migrated.chats('general').length,1);assert.equal(migrated.session('general').draft,'Keep me');
+  assert.equal(migrated.session('general').turns[0].text,'Old reply');assert.equal(migrated.workingFolder('general'),projects.film.root);
+  assert.equal(migrated.session('general').mode,version===1?'expanded':'rail');
+  const twice=C.create(migrated.snapshot(),env);assert.equal(twice.chats('general').length,1);
+}
+// Independent chat edits and creations merge without replacing the whole workspace.
+const a=C.create(model.snapshot(),env),b=C.create(model.snapshot(),env);
+a.draft('general','A edited first',first);b.draft('general','B edited second',second);
+a.load(b.snapshot());b.load(a.snapshot());
+assert.equal(a.session('general',first).draft,'A edited first');assert.equal(a.session('general',second).draft,'B edited second');
+const newA=a.newChat('general').id,newB=b.newChat('general').id;
+a.load(b.snapshot(),{preserveSelection:'general'});b.load(a.snapshot(),{preserveSelection:'general'});
+assert(a.session('general',newB));assert(b.session('general',newA));assert.equal(a.session('general').id,newA);assert.equal(b.session('general').id,newB);
+const older=a.snapshot();a.draft('general','Latest');a.load(older);assert.equal(a.session('general').draft,'Latest');
+const many=C.create({},env);
+for(let i=0;i<24;i++)many.add('general',{id:'source-'+i,title:'Source '+i,text:'Text '+i});
+const turn=many.exchange('general','Summarize',D.reply('Summarize',{items:many.session('general').items}));
+assert.equal(turn.sources.length,24,'All current sources are recorded, including later drops');assert(turn.text.includes('Source 23'));
+for(let i=1;i<60;i++)assert(many.exchange('general','Request '+i,{text:'Reply'}));
+assert.equal(many.exchange('general','Beyond the limit',{text:'Reply'}),null);assert.equal(many.session('general').turns[0].request,'Summarize','Reaching the limit never drops earlier messages');
+assert(many.newChat('general'));assert(many.exchange('general','Fresh request',{text:'Reply'}));
+console.log('AI chats passed: legacy migration, drafts/folders/sources/history isolation, rename, refreshed sources, immutable provenance, concurrent edits and creation, local selection, full context and lossless limits.');
+
+// Boot the production adapter and switch chats/workspaces during an awaited file drop.
+(async()=>{
+  const nodes=new Map(),handlers={},storage=new Map();let releaseUpload,uploads=0;
+  const document={activeElement:null,addEventListener(){}};
+  function node(selector){if(!nodes.has(selector))nodes.set(selector,{dataset:{areaState:'expanded'},value:'',hidden:false,open:false,scrollTop:0,scrollHeight:100,innerHTML:'',textContent:'',listeners:{},classList:{contains:()=>false,remove(){},add(){},toggle(){}},contains:()=>false,querySelector:()=>node('summary'),addEventListener(type,fn){this.listeners[type]=fn;},setAttribute(){},focus(){document.activeElement=this;},select(){}});return nodes.get(selector);}
+  const area=node('area');area.addEventListener=(type,fn)=>handlers[type]=fn;
+  const boot={SpatialAIContext:C,SpatialAIDemo:D,SpatialStashFiles:{put:()=>++uploads===1?new Promise(resolve=>{releaseUpload=resolve;}):Promise.resolve()},readDesktopStorage:(_,fallback)=>fallback,workspaceProfiles:profiles,projectSpaces:projects,SpatialDemoExamples:{projects:{}},activeWorkspace:'general',activeProjectName:null,desktopPreset:'clean',areaFor:()=>area,$:node,$$:()=>[],desktopStorage:{getItem:()=>true,setItem:(key,value)=>storage.set(key,value)},queueDesktopStateBroadcast(){},escapeHtml:value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),icon:()=>'',appInfo:{},prepareControlSemantics(){},MutationObserver:class{observe(){}},document,window:{addEventListener(){}},layoutDockAreas(){},scheduleWindowTiling(){},extendedDesktopActive:()=>false,crypto:require('node:crypto')};
+  vm.createContext(boot);vm.runInContext(fs.readFileSync(require.resolve('../dist/ai-desktop.js'),'utf8'),boot);
+  const api=boot.SpatialAIDesktop,initial=api.snapshot().sessions.general.activeChat;
+  node('#aiPrompt').value='Draft before switching';node('#aiPrompt').listeners.input();
+  const drop=handlers.drop({preventDefault(){},stopPropagation(){},dataTransfer:{types:['Files'],getData:()=>'',files:[{size:20,name:'brief.txt',type:'text/plain',text:async()=>'Brief contents'},{size:10,name:'notes.txt',type:'text/plain',text:async()=>'Notes contents'}]}});
+  node('#aiNewChat').listeners.click();const next=api.snapshot().sessions.general.activeChat;
+  assert.notEqual(next,initial);assert.equal(node('#aiPrompt').value,'');
+  node('#aiPrompt').value='Draft in new chat';node('#aiPrompt').listeners.input();
+  boot.activeWorkspace='work';api.render();releaseUpload();await drop;
+  const snapshot=api.snapshot();assert.equal(snapshot.sessions.general.chats[initial].items.length,2);
+  assert.equal(snapshot.sessions.general.chats[next].items.length,0);assert.equal(snapshot.sessions.work.items.length,0);
+  assert.equal(snapshot.sessions.general.chats[initial].draft,'Draft before switching');assert.equal(snapshot.sessions.general.chats[next].draft,'Draft in new chat');
+  boot.activeWorkspace='general';api.render();node('#aiChatSelect').value=initial;node('#aiChatSelect').listeners.change();
+  assert.equal(node('#aiPrompt').value,'Draft before switching');assert(node('#aiAttachments').innerHTML.includes('ai-source-detail'));
+  node('#aiComposer').listeners.submit({preventDefault(){}});
+  assert.equal(api.snapshot().sessions.general.chats[initial].turns.length,1);assert.equal(api.snapshot().sessions.general.chats[next].turns.length,0);
+  assert.equal(node('#aiPrompt').value,'');assert.equal(node('.ai-context-sources').open,false);
+  const remote=C.create(api.snapshot(),env);remote.select('general',next);remote.draft('general','Remote draft',next);
+  api.merge(remote.snapshot());assert.equal(api.snapshot().sessions.general.activeChat,initial,'Another display cannot move input into a different chat');
+  console.log('AI chat adapter passed: actual new/select/send handlers, draft restoration, compact sources, two-file upload stays in its original chat/workspace, and display sync cannot redirect input.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -7,7 +7,9 @@
   const address=value=>/^(https?:\/\/|\/)/i.test(clean(value))?clean(value):'';
   const inside=(path,folder)=>Boolean(folder&&(path===folder||path.startsWith(folder.replace(/\/$/,'')+'/')));
   function create(value={},environment){
-    const records={};
+    const records=Object.create(null);let clock=0;
+    const tick=()=>clock=Math.max(Date.now(),clock+1);
+    const stamp=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):0;
     const profiles=()=>environment.workspaces(),projects=()=>environment.projects();
     function projectAt(path){return Object.keys(projects()).sort((a,b)=>projects()[b].root.length-projects()[a].root.length).find(id=>inside(path,projects()[id].root));}
     function normalize(item,workspace){
@@ -19,33 +21,75 @@
     }
     function normalizeTurn(turn,workspace){
       if(!turn||typeof turn!=='object'||!clean(turn.request,4000).trim())return null;
-      return {id:clean(turn.id,160)||'turn-'+Math.random().toString(36).slice(2),request:clean(turn.request,4000),title:clean(turn.title,120)||'Demo reply',text:clean(turn.text,12000),folder:address(turn.folder),project:Object.hasOwn(projects(),turn.project)?turn.project:null,workspace,example:turn.example===true,sources:(Array.isArray(turn.sources)?turn.sources:[]).slice(0,6).map(item=>normalize(item,workspace)).filter(Boolean),created:Math.max(0,Number(turn.created)||0)};
+      return {id:clean(turn.id,160)||'turn-'+Math.random().toString(36).slice(2),request:clean(turn.request,4000),title:clean(turn.title,120)||'Demo reply',text:clean(turn.text,12000),folder:address(turn.folder),project:Object.hasOwn(projects(),turn.project)?turn.project:null,workspace,example:turn.example===true,sources:(Array.isArray(turn.sources)?turn.sources:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),created:Math.max(0,Number(turn.created)||0)};
     }
-    function session(workspace){
+    function normalizeChat(input,workspace,id){
+      return {id,title:clean(input.title,80).trim()||'Chat',named:input.named===true,
+        draft:clean(input.draft,4000),items:(Array.isArray(input.items)?input.items:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),
+        turns:(Array.isArray(input.turns)?input.turns:[]).slice(-60).map(turn=>normalizeTurn(turn,workspace)).filter(Boolean),
+        examplesSeen:input.examplesSeen===true,folderChosen:input.folderChosen===true||Object.hasOwn(projects(),input.workingProject),workingProject:Object.hasOwn(projects(),input.workingProject)?input.workingProject:null,
+        created:stamp(input.created),updated:stamp(input.updated)};
+    }
+    function space(workspace){
       if(!Object.hasOwn(profiles(),workspace))throw new Error('Unknown workspace');
-      const record=records[workspace]||={draft:'',items:[],turns:[],examplesSeen:false,workingProject:null,mode:'expanded',updated:0};
-      if(!Object.hasOwn(projects(),record.workingProject))record.workingProject=null;
-      return record;
+      if(!records[workspace]){
+        const id='chat-'+workspace;
+        records[workspace]={mode:'expanded',modeUpdated:0,activeChat:id,selectionUpdated:0,chats:{[id]:normalizeChat({title:'New chat'},workspace,id)}};
+      }
+      return records[workspace];
     }
-    function changed(record){record.updated=Math.max(Date.now(),record.updated+1);}
-    function load(snapshot){
+    function session(workspace,id){
+      const record=space(workspace),chat=record.chats[id||record.activeChat];
+      if(!chat)return null;
+      if(!Object.hasOwn(projects(),chat.workingProject))chat.workingProject=null;
+      if(!Object.hasOwn(chat,'mode'))Object.defineProperty(chat,'mode',{enumerable:false,get:()=>record.mode});
+      return chat;
+    }
+    function changed(chat){chat.updated=tick();}
+    function titleFrom(chat,text){if(!chat.named&&!chat.turns.length)chat.title=clean(text,80).replace(/\s+/g,' ').trim()||chat.title;}
+    function load(snapshot,options={}){
       Object.entries(snapshot?.sessions||{}).forEach(([workspace,input])=>{
-        if(!Object.hasOwn(profiles(),workspace)||!input||typeof input!=='object'||Number(input.updated||0)<(records[workspace]?.updated||0))return;
-        records[workspace]={draft:clean(input.draft,4000),turns:(Array.isArray(input.turns)?input.turns:[]).slice(-12).map(turn=>normalizeTurn(turn,workspace)).filter(Boolean),examplesSeen:input.examplesSeen===true,items:(Array.isArray(input.items)?input.items:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),workingProject:Object.hasOwn(projects(),input.workingProject)?input.workingProject:null,mode:snapshot.version>=2&&input.mode==='rail'?'rail':'expanded',updated:Number(input.updated)||0};
+        if(!Object.hasOwn(profiles(),workspace)||!input||typeof input!=='object')return;
+        const existed=Boolean(records[workspace]),record=space(workspace);
+        const multi=snapshot.version>=4&&input.chats&&typeof input.chats==='object';
+        const entries=multi?Object.entries(input.chats).slice(0,50):[['chat-'+workspace,{...input,folderChosen:input.folderChosen??Boolean(input.workingProject||input.items?.length||input.turns?.length),title:input.turns?.[0]?.request||input.items?.[0]?.title||'Previous chat'}]];
+        entries.forEach(([id,data])=>{
+          if(!/^chat-[\w.-]{1,150}$/.test(id)||!data||typeof data!=='object')return;
+          const updated=stamp(data.updated);clock=Math.max(clock,updated);
+          if(record.chats[id]&&updated<record.chats[id].updated)return;
+          if(record.chats[id]&&existed&&updated===record.chats[id].updated)return;
+          record.chats[id]=normalizeChat(data,workspace,id);
+        });
+        const selectionUpdated=stamp(multi?input.selectionUpdated:input.updated),modeUpdated=stamp(multi?input.modeUpdated:input.updated);
+        clock=Math.max(clock,selectionUpdated,modeUpdated);
+        if(!existed||(workspace!==options.preserveSelection&&selectionUpdated>record.selectionUpdated)){
+          const active=multi?input.activeChat:'chat-'+workspace;
+          if(Object.hasOwn(record.chats,active))record.activeChat=active;
+          record.selectionUpdated=selectionUpdated;
+        }
+        if(!existed||modeUpdated>record.modeUpdated){record.mode=snapshot.version>=2&&input.mode==='rail'?'rail':'expanded';record.modeUpdated=modeUpdated;}
       });
     }
     load(value);
     return {
       session,load,normalize,projectAt,
-      add(workspace,item){const record=session(workspace),entry=normalize(item,workspace);if(!entry||record.items.length>=24)return null;const duplicate=record.items.find(old=>old.id===entry.id);if(duplicate)return duplicate;if(entry.project&&!record.workingProject)record.workingProject=entry.project;record.items.push(entry);changed(record);return entry;},
-      remove(workspace,id){const record=session(workspace);record.items=record.items.filter(item=>item.id!==id);changed(record);},
-      exchange(workspace,request,response,context={}){const record=session(workspace);const turn=normalizeTurn({id:'turn-'+Math.random().toString(36).slice(2),request,title:response.title,text:response.text,folder:context.folder||projects()[record.workingProject]?.root||profiles()[workspace].home,project:context.project===undefined?record.workingProject:context.project,sources:context.sources||record.items,example:context.example,created:Date.now()},workspace);if(!turn)return null;record.turns.push(turn);record.turns=record.turns.slice(-12);changed(record);return turn;},
+      chats(workspace){return Object.values(space(workspace).chats).sort((a,b)=>b.created-a.created||a.id.localeCompare(b.id)).map(chat=>({id:chat.id,title:chat.title,created:chat.created,updated:chat.updated,sources:chat.items.length,replies:chat.turns.length}));},
+      newChat(workspace){const record=space(workspace);if(Object.keys(record.chats).length>=50)return null;
+        const created=tick(),id='chat-'+created.toString(36)+'-'+Math.random().toString(36).slice(2);
+        const chat=normalizeChat({title:'New chat '+(Object.keys(record.chats).length+1),created,updated:created,examplesSeen:true},workspace,id);
+        record.chats[id]=chat;record.activeChat=id;record.selectionUpdated=tick();return session(workspace,id);},
+      select(workspace,id){const record=space(workspace);if(!Object.hasOwn(record.chats,id))return false;record.activeChat=id;record.selectionUpdated=tick();return true;},
+      rename(workspace,id,title){const chat=session(workspace,id),name=clean(title,80).trim();if(!chat||!name)return false;chat.title=name;chat.named=true;changed(chat);return true;},
+      add(workspace,item,id){const record=session(workspace,id),entry=normalize(item,workspace);if(!record||!entry)return null;const duplicate=record.items.find(old=>old.id===entry.id);if(duplicate){record.items[record.items.indexOf(duplicate)]=entry;changed(record);return entry;}if(record.items.length>=24)return null;if(entry.project&&!record.workingProject&&!record.folderChosen){record.workingProject=entry.project;record.folderChosen=true;}if(!record.items.length)titleFrom(record,entry.title);record.items.push(entry);changed(record);return entry;},
+      remove(workspace,id,chatId){const record=session(workspace,chatId);if(!record)return;record.items=record.items.filter(item=>item.id!==id);changed(record);},
+      exchange(workspace,request,response,context={},id){const record=session(workspace,id);if(!record||record.turns.length>=60)return null;const turn=normalizeTurn({id:'turn-'+Math.random().toString(36).slice(2),request,title:response.title,text:response.text,folder:context.folder||projects()[record.workingProject]?.root||profiles()[workspace].home,project:context.project===undefined?record.workingProject:context.project,sources:context.sources||record.items,example:context.example,created:Date.now()},workspace);if(!turn)return null;titleFrom(record,request);record.turns.push(turn);changed(record);return turn;},
       examplesSeen(workspace){const record=session(workspace);record.examplesSeen=true;changed(record);},
-      draft(workspace,text){const record=session(workspace);record.draft=clean(text,4000);changed(record);},
-      mode(workspace,mode){const record=session(workspace);record.mode=mode==='expanded'?'expanded':'rail';changed(record);},
-      folder(workspace,project){const record=session(workspace);record.workingProject=Object.hasOwn(projects(),project)?project:null;changed(record);},
-      workingFolder(workspace){const record=session(workspace);return projects()[record.workingProject]?.root||profiles()[workspace].home;},
-      snapshot(){return JSON.parse(JSON.stringify({version:3,sessions:records}));}
+      draft(workspace,text,id){const record=session(workspace,id);if(!record)return;record.draft=clean(text,4000);changed(record);},
+      mode(workspace,mode){const record=space(workspace);record.mode=mode==='expanded'?'expanded':'rail';record.modeUpdated=tick();},
+      folder(workspace,project,id){const record=session(workspace,id);if(!record)return;record.workingProject=Object.hasOwn(projects(),project)?project:null;record.folderChosen=true;changed(record);},
+      workingFolder(workspace,id){const record=session(workspace,id);return projects()[record?.workingProject]?.root||profiles()[workspace].home;},
+      snapshot(){const sessions={};Object.entries(records).forEach(([workspace,record])=>{const chat=session(workspace);sessions[workspace]={...record,draft:chat.draft,items:chat.items,turns:chat.turns,examplesSeen:chat.examplesSeen,workingProject:chat.workingProject,updated:Math.max(record.modeUpdated,record.selectionUpdated,...Object.values(record.chats).map(item=>item.updated))};});return JSON.parse(JSON.stringify({version:4,sessions}));}
+
     };
   }
   return {MIME,create,inside};

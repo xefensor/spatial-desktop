@@ -33,3 +33,35 @@ html[data-guide-ai="false"] :is(.ai-area,#openAIButton,[data-overview-area="ai"]
 .ai-turn-sources{font-size:10px;color:var(--muted)}.ai-turn-sources>summary{cursor:pointer;padding:5px}
 .ai-turn-folder{display:block;overflow-wrap:anywhere;padding:4px 5px}.ai-turn-sources ul{list-style:none;padding:0 5px;margin:4px 0}
 .ai-turn-sources li{padding:5px 0;overflow-wrap:anywhere}.ai-turn-sources li small{display:block;margin-top:3px}
+
+/* Each chat has a clean workspace: controls, a bounded source tray, then messages. */
+.ai-area .ai-chat-toolbar {display:flex;align-items:center;gap:6px;min-width:0;flex:none}
+.ai-area .ai-chat-toolbar select {min-width:0;flex:1;height:34px;font:inherit;font-size:12px;color:var(--sd-glass-text);background:var(--sd-glass-face-deep);border:1px solid var(--sd-glass-groove);padding:5px 7px}
+.ai-area .ai-chat-toolbar select option {color:var(--text);background:var(--shell)}
+.ai-area .ai-chat-toolbar button {flex:none;min-height:32px;font-size:11px;padding:6px 7px;white-space:nowrap}
+.ai-area .ai-rename-form {display:flex;gap:6px;flex:none;min-width:0}
+.ai-area .ai-rename-form input {min-width:0;flex:1;padding:6px 8px;font:inherit;font-size:12px;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);border:1px solid var(--sd-glass-groove)}
+.ai-area .ai-rename-form button {font-size:11px;padding:5px 7px;flex:none}
+.ai-area .ai-content>.ai-context-sources {flex:none;min-width:0;border-block:1px solid var(--sd-glass-groove)}
+.ai-area .ai-context-sources>summary {padding:8px 2px;font-size:12px;cursor:pointer;line-height:1.4}
+.ai-area .ai-attachments {display:grid;gap:0;max-height:160px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.ai-area .ai-attachment {display:block;position:relative;padding:7px 0;min-width:0;width:100%;border-top:1px solid var(--sd-glass-groove)}
+.ai-area .ai-source-detail>summary {display:flex;align-items:center;gap:8px;padding:3px 30px 3px 2px;cursor:pointer;list-style:none;min-width:0}
+.ai-area .ai-source-detail>summary::-webkit-details-marker {display:none}
+.ai-area .ai-source-detail>summary>svg {flex:none;width:18px;height:18px;color:var(--area-header-accent)}
+.ai-area .ai-source-detail>summary>span {min-width:0;flex:1}
+.ai-area .ai-source-detail>summary b {font-size:12px;font-weight:600;line-height:1.4}
+.ai-area .ai-source-detail>summary small {display:block;color:var(--sd-glass-muted);font-size:11px;line-height:1.4;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-area .ai-source-detail[open]>summary {background:var(--sd-glass-hover)}
+.ai-area .ai-attachment-main {padding:6px 4px 8px 28px}
+.ai-area .ai-attachment-main p {white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+.ai-area .ai-remove {position:absolute;top:9px;right:2px;width:24px;height:26px;display:grid;place-items:center;padding:4px}
+.ai-area .ai-chat {overscroll-behavior:contain;min-width:0}
+.ai-area .ai-compose-row {display:flex;align-items:flex-end;gap:6px;min-width:0}
+.ai-area .ai-compose-row textarea {min-width:0;flex:1;width:auto}
+.ai-area .ai-compose-row button {min-width:42px;min-height:34px;font-size:12px;padding:6px;flex:none}
+.ai-area .ai-compose-row button:disabled {opacity:.4;cursor:default}
+.ai-area:not([data-area-state="rail"]) .ai-chat:has(>.ai-empty:not([hidden])) {display:flex;flex-direction:column;justify-content:center}
+.ai-area:not([data-area-state="rail"]) .ai-chat:has(>.ai-empty:not([hidden])) .ai-empty {flex-direction:column;align-items:center;text-align:center;padding:18px 8px}
+.ai-area .ai-chat-toolbar [hidden],.ai-area .ai-rename-form[hidden] {display:none!important}
+.ai-area .ai-turn-sources {margin-top:6px}

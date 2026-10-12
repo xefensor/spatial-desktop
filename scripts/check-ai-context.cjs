@@ -21,7 +21,7 @@ const env={workspaces:()=>workspaces,projects:()=>projects};
   assert(D.reply('Transcribe this audio',{items:[{title:'Voice memo',kind:'audio'}]}).text.includes('does not inspect pixels or listen to audio'));
   assert(D.reply('Delete every file',{folder:projects.website.root}).text.includes('does not send messages, change files or run commands'));
   for(let i=0;i<15;i++)chat.exchange('general','Request '+i,{title:'Reply',text:'Sample'});
-  assert.equal(chat.session('general').turns.length,12);
+  assert.equal(chat.session('general').turns.length,16,'Earlier turns are retained instead of silently dropping history');
   const old=chat.snapshot();chat.exchange('general','Newest request',{text:'Newest'});chat.load(old);
   assert.equal(chat.session('general').turns.at(-1).request,'Newest request');
   const caption=D.reply('Describe this photo',{items:[{title:'Reference photo',kind:'image',text:'A saved caption'}]});

@@ -4,7 +4,7 @@
   const normalize=text=>String(text||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const excerpt=item=>String(item.text||'').split(/\n+/).map(line=>line.trim()).filter(Boolean).slice(0,3).join(' ').slice(0,280);
   function reply(request,{items=[],folder='',project=''}={}){
-    const query=normalize(request),sources=items.slice(0,6),readable=sources.filter(item=>excerpt(item)),name=project||'this workspace';
+    const query=normalize(request),sources=items.slice(0,24),readable=sources.filter(item=>excerpt(item)),name=project||'this workspace';
     const summary=readable.map(item=>item.title+': '+excerpt(item));
     if(/\b(delete|remove|send|publish|install|run|smaz|odesl|publik|spust)/.test(query))return {title:'Proposed action',text:'In a connected assistant, this request could produce a reviewable action for '+name+'.\n\nThis scripted demo does not send messages, change files or run commands. Working folder: '+folder};
     if(/\b(compare|difference|porovn|rozdil)/.test(query)){
