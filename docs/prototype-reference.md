@@ -160,6 +160,8 @@ Each Workspace keeps its draft, attachments, folder selection and conversation t
 
 ## Materials and background
 
+Controls use a fine reflected rim and a softer contact shadow, with a recessed, quick press. Navigation rows stay flush with their reading surface and retain the shared toggle indicator. The expanded Apps hotbar fits readable slots to the Area width; compact and rail layouts keep icons and shortcut digits, and narrow slots hide labels instead of wrapping them. Titles and secondary metadata have a consistent type hierarchy.
+
 App windows use opaque ABS bodies with rounded silhouettes and discrete controls. Structural content joins remain flat. Areas, Overview, Pack/Import and transient menus use square acrylic/glass geometry. Main window content stays opaque. App colour connects the window, hotbar and parked card; floating windows have a subtle app-colour rim. Toggle light lines persist; momentary controls use short press feedback. Window numbers are unframed text.
 
 The workspace-coloured wallpaper is one fixed background beneath the desktop and Areas, with static translucent blue/teal silk folds drawn in SVG. A slow opacity pulse replaces moving glow and particle layers. Cool acrylic sheets use restrained role colours: blue for Apps, project colour (amber in the library) for Workspace & Projects, mint for System, and lavender for AI. App casings and title bars carry their own accent; reading surfaces stay opaque with a gentler tint. Light mode uses a pale background and darker accent colours. Decorative animation pauses when hidden, during held-pointer interaction, in Overview and under Fullscreen, and respects reduced motion. The clock updates at minute boundaries.
