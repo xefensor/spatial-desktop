@@ -134,6 +134,8 @@ Overview has four horizontal sections: **Timeline, Apps, Projects & Home, System
 
 Apps keeps existing work on the left and the app library on the right. Desktop cards show their app icons; running-window rows show the current content, state, desktop and matching hotbar number. Windows are ordered by desktop and hotbar position. Filters select the current desktop, open windows or parked windows; the launcher stays available. The library has visible categories and an icon grid with readable labels. Narrow screens stack the work pane above the library and use a category selector. Projects & Home exposes context and folder navigation. System includes settings, notifications and recovery controls for Areas.
 
+![Apps in Overview: desktops and running windows beside the app library](images/overview-apps-2026-10-12.jpg)
+
 Timeline records explicit app, file, browser, Project, desktop and Stash actions per Workspace. Return actions reopen the relevant context or stored item. The shared time axis aligns activity with calendar, task and reminder lanes; calendar events show durations and overlaps. **Now**, **Latest activity** and day navigation help find a moment. The System calendar opens this view and shows the next planned item.
 
 Create local events with start/end, tasks and reminders. Completion and dismissal persist through reload and between demo displays. Plans can appear even without a recorded app interaction. Demo plans are labelled examples; clean and newly created Workspaces start without them. No external calendar account is connected. Timeline is explicit prototype activity history, not a keylogger, clipboard recorder or passive screen capture.

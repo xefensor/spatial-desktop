@@ -140,6 +140,10 @@
 }
 .overview-apps-body .launcher-category svg {width:13px;height:13px;flex:none}
 .overview-apps-body .launcher-category>span {font:inherit!important;font-weight:550!important}
+body[data-theme="light"] .universal-search .overview-apps-body .launcher-category:is(.is-active,[aria-pressed="true"]),
+body[data-theme="light"] .universal-search .overview-apps-body .launcher-category:is(.is-active,[aria-pressed="true"])>span {
+  color:var(--sd-glass-text)!important;
+}
 .universal-search .overview-carousel .overview-apps-body .launcher-results {
   flex:1;
   min-height:0;
