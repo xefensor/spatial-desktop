@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="ribbon" x1="0" y1="0" x2=".25" y2="1">
+      <stop stop-color="#b9ffff" stop-opacity=".82"/>
+      <stop offset=".23" stop-color="#35d8ed" stop-opacity=".68"/>
+      <stop offset=".53" stop-color="#197eff" stop-opacity=".57"/>
+      <stop offset=".83" stop-color="#6560ee" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#1b3255" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e5ffff" stop-opacity=".58"/>
+      <stop offset=".35" stop-color="#7deaff" stop-opacity=".34"/>
+      <stop offset=".85" stop-color="#638aff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="1" y1="0" x2="0" y2="1">
+      <stop stop-color="#d7baff" stop-opacity=".28"/>
+      <stop offset=".55" stop-color="#7285ff" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#4884ce" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <!-- Static translucent folds; only the separate CSS light layer breathes. -->
+  <g filter="url(#soft)">
+    <path fill="url(#ribbon)" d="M-180-70H650C543 81 714 209 645 339C568 484 300 432 228 620C184 735 263 821 174 933C279 687 46 604 113 422C163 286 420 294 456 149C479 56 316 27-180 259Z"/>
+    <path fill="url(#ribbon)" opacity=".72" d="M276-40H1086C917 81 1062 183 939 315C830 432 594 383 542 561C505 689 604 753 535 857C589 643 363 531 445 351C502 227 748 236 773 119C795 18 578 39 276-40Z"/>
+    <path fill="url(#ribbon)" opacity=".87" d="M806-50H1664C1469 76 1670 220 1530 348C1396 471 1133 414 1080 613C1047 735 1138 795 1071 923C1125 692 918 575 990 390C1051 231 1365 277 1392 113C1408 12 1152 18 806-50Z"/>
+    <path fill="url(#violet)" d="M1340-70H1950V951C1855 797 1678 828 1687 653C1697 440 1918 348 1788 219C1688 122 1507 149 1340-70Z"/>
+  </g>
+  <g fill="none" stroke="url(#rim)" stroke-width="1.4">
+    <path d="M498-45C392 91 637 159 536 308S186 380 160 556C143 674 252 755 192 881"/>
+    <path d="M832-20C703 112 962 160 821 310S516 386 501 551C487 660 561 758 535 836"/>
+    <path d="M1415-30C1294 83 1567 168 1451 310S1055 384 1056 556C1056 697 1131 784 1080 890"/>
+  </g>
+</svg>

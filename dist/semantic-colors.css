@@ -1,35 +1,53 @@
-/* Neutral materials; colour identifies an entity or communicates an action. */
+/* Cool acrylic, coloured identities and a quieter opaque reading surface. */
 body[data-theme] {
-  --ui-neutral:#c1c3c5;
-  --action-play:#70cd94; --action-pause:#e4c16e; --action-danger:#ed8e85;
-  --sd-glass-face:rgba(13,13,15,.68); --sd-glass-face-deep:rgba(5,5,7,.34);
-  --sd-glass-edge:rgba(240,240,244,.24); --sd-glass-edge-soft:rgba(240,240,244,.095);
-  --sd-glass-highlight:rgba(255,255,255,.15); --sd-glass-groove:rgba(226,226,230,.14);
-  --sd-glass-groove-low:rgba(0,0,0,.46); --sd-glass-hover:rgba(242,242,246,.055);
+  --ui-neutral:#b9cbdc;
+  --role-apps:#68cbff; --role-projects:#f1bd79; --role-systems:#65dfba; --role-ai:#bea9ff;
+  --action-play:#73e2a7; --action-pause:#f0c778; --action-danger:#ff9d94;
+  --sd-glass-face:rgba(9,20,32,.74); --sd-glass-face-deep:rgba(4,12,23,.38);
+  --sd-glass-edge:rgba(193,228,255,.30); --sd-glass-edge-soft:rgba(202,235,255,.13);
+  --sd-glass-highlight:rgba(237,249,255,.23); --sd-glass-groove:rgba(197,225,247,.15);
+  --sd-glass-groove-low:rgba(0,8,18,.48); --sd-glass-hover:rgba(192,232,255,.085);
   --sd-glass-down:rgba(0,0,0,.16); --sd-glass-text:rgba(248,248,250,.96);
-  --sd-glass-muted:rgba(226,226,230,.70); --blue-glow:transparent;
+  --sd-glass-muted:rgba(207,223,238,.80);
+  --blue-glow:color-mix(in srgb,var(--workspace-accent,var(--blue)) 32%,transparent);
+}
+body[data-theme="graphite"] {
+  --sd-glass-face:rgba(20,32,47,.76);
+  --content-surface:#18222d; --content-surface-raised:#21303e;
 }
 body[data-theme="light"] {
-  --ui-neutral:#53565a;
+  --ui-neutral:#4a6377;
+  --role-apps:#086fa6; --role-projects:#98601f; --role-systems:#147858; --role-ai:#7151b6;
   --action-play:#237647; --action-pause:#916718; --action-danger:#ac3830;
-  --sd-glass-face:rgba(234,234,237,.72); --sd-glass-face-deep:rgba(200,200,205,.23);
+  --sd-glass-face:rgba(238,247,253,.84); --sd-glass-face-deep:rgba(188,210,226,.24);
   --sd-glass-edge:rgba(255,255,255,.76); --sd-glass-edge-soft:rgba(255,255,255,.37);
   --sd-glass-highlight:rgba(255,255,255,.76); --sd-glass-groove:rgba(63,63,68,.19);
-  --sd-glass-groove-low:rgba(48,48,53,.22); --sd-glass-hover:rgba(255,255,255,.24);
+  --sd-glass-groove-low:rgba(48,66,83,.18); --sd-glass-hover:rgba(255,255,255,.38);
   --sd-glass-down:rgba(75,75,80,.11); --sd-glass-text:rgba(27,27,31,.96);
-  --sd-glass-muted:rgba(52,52,58,.70);
+  --sd-glass-muted:rgba(44,66,83,.82);
+  --content-surface:#f6f9fc; --content-surface-raised:#e8eff5;
 }
 
-/* Area roles use neutral material contrast; colour remains entity-specific. */
+/* A small amount of role colour makes the four docked sheets recognizable. */
+.apps-zone {--area-role:var(--role-apps)}
+.project-area {--area-role:var(--project-accent,var(--role-projects))}
+.project-area[data-project-library-open="true"] {--area-role:var(--role-projects)}
+.systems-zone {--area-role:var(--role-systems)}
+.ai-area {--area-role:var(--role-ai)}
 .area-window,.universal-search,.all-apps-drawer,.desktop-context-menu,.desktop-glass-dialog {
-  --area-header-accent:var(--ui-neutral)!important;
-  --area-body-tint:var(--ui-neutral)!important;
-  --state-tone:var(--ui-neutral)!important;
+  --area-header-accent:var(--area-role,var(--workspace-accent,var(--blue)))!important;
+  --area-body-tint:var(--area-header-accent)!important;
+  --control-accent:var(--area-header-accent);
+  --state-tone:var(--control-accent)!important;
 }
 .overview-zone-lane,.overview-apps-section,.open-windows-section,.overview-widgets {
-  --lane-accent:var(--ui-neutral)!important;
+  --lane-accent:var(--area-role,var(--workspace-accent,var(--blue)))!important;
 }
-.system-widget {--widget-tone:var(--ui-neutral)!important}
+.overview-panel[data-overview-panel="apps"] {--area-role:var(--role-apps)}
+.overview-panel[data-overview-panel="projects"] {--area-role:var(--role-projects)}
+.overview-panel[data-overview-panel="system"] {--area-role:var(--role-systems)}
+.overview-panel[data-overview-panel="timeline"] {--area-role:var(--role-ai)}
+.system-widget {--widget-tone:var(--role-systems)!important}
 body[data-theme] .area-window .area-window-bar {
   background:var(--sd-glass-face-deep)!important;
   border-color:var(--sd-glass-groove)!important;
@@ -37,37 +55,35 @@ body[data-theme] .area-window .area-window-bar {
 body[data-theme] .area-window .area-window-bar .area-window-identity b {color:var(--sd-glass-text)!important}
 body[data-theme] .area-window .area-window-bar .area-window-identity small {color:var(--sd-glass-muted)!important}
 body[data-theme] :is(.area-window-icon,.area-list-icon,.overview-zone-mark,.project-editor-mark,.package-mark) {
-  color:var(--ui-neutral)!important;background:transparent!important;
+  color:var(--area-role,var(--workspace-accent,var(--ui-neutral)))!important;background:transparent!important;
   border-color:var(--sd-glass-groove)!important;box-shadow:none!important;
 }
 body[data-theme] .project-area[data-project-library-open="false"] .area-window-icon {color:var(--project-accent)!important}
 .overview-system-heading,.overview-zone-heading,.overview-section-heading {
-  background:var(--sd-glass-face-deep)!important;color:var(--sd-glass-text)!important;
+  background:color-mix(in srgb,var(--area-role,var(--workspace-accent)) 10%,var(--sd-glass-face-deep))!important;color:var(--sd-glass-text)!important;
 }
 body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow {color:var(--sd-glass-muted)!important}
 .desktop-glass-dialog :is(.package-titlebar,.project-editor-titlebar) {background:var(--sd-glass-face-deep)!important}
 .project-editor-titlebar small,.package-window :is(.package-mark,.package-size,.package-mode-switch svg,.package-primary svg,.import-count),
 .overview-layout-status svg,.overview-areas-widget>header svg,.apps-zone .overview-launch svg,
 .system-launcher svg,.widget-heading svg,.launcher-category svg,.overview-area-row>button {
-  color:var(--ui-neutral)!important;
+  color:var(--area-role,var(--workspace-accent,var(--ui-neutral)))!important;
 }
 .package-window .package-size {background:var(--sd-glass-face-deep)!important}
-.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--ui-neutral)!important;box-shadow:none!important}
+.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--area-header-accent)!important;box-shadow:0 0 5px color-mix(in srgb,var(--area-header-accent) 30%,transparent)!important}
 
 /* Adjacent Areas remain separate sheets even when their dock rectangles meet.
    The glass edge faces the working canvas; shared seams divide dock peers. */
 body[data-theme] .area-window {
-  --area-sheet-shade:rgba(255,255,255,.025);
-  --area-header-shade:rgba(255,255,255,.055);
-  --area-seam-dark:rgba(0,0,0,.60);
-  --area-seam-light:rgba(255,255,255,.20);
+  --area-sheet-shade:rgba(221,241,255,.035);
+  --area-seam-dark:rgba(0,8,18,.52);
+  --area-seam-light:rgba(210,239,255,.32);
   --area-glass-edge-direction:to right;
   --area-join-seam:linear-gradient(transparent,transparent);
-  background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important;
+  background:linear-gradient(120deg,var(--area-sheet-shade),transparent 36% 78%,var(--area-sheet-shade)),color-mix(in srgb,var(--sd-glass-face) 96%,var(--area-header-accent) 4%)!important;
 }
 body[data-theme="light"] .area-window {
   --area-sheet-shade:rgba(255,255,255,.18);
-  --area-header-shade:rgba(255,255,255,.36);
   --area-seam-dark:rgba(45,45,50,.30);
   --area-seam-light:rgba(255,255,255,.85);
 }
@@ -78,7 +94,7 @@ body[data-theme] .area-window::after {
   z-index:30;
   pointer-events:none;
   background:
-    linear-gradient(var(--area-glass-edge-direction),var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px),
+    linear-gradient(var(--area-glass-edge-direction),var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px),
     var(--area-join-seam);
 }
 body[data-theme] .area-window[data-dock-edge="left"] {--area-glass-edge-direction:to left}
@@ -86,15 +102,15 @@ body[data-theme] .area-window[data-dock-edge="right"] {--area-glass-edge-directi
 body[data-theme] .area-window[data-dock-edge="top"] {--area-glass-edge-direction:to top}
 body[data-theme] .area-window[data-dock-edge="bottom"] {--area-glass-edge-direction:to bottom}
 body[data-theme] .area-window[data-area-join-edge="top"] {
-  --area-join-seam:linear-gradient(to bottom,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
+  --area-join-seam:linear-gradient(to bottom,var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px);
 }
 body[data-theme] .area-window[data-area-join-edge="left"] {
-  --area-join-seam:linear-gradient(to right,var(--area-seam-dark) 0 3px,var(--area-seam-light) 3px 4px,transparent 4px);
+  --area-join-seam:linear-gradient(to right,var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px);
 }
 body[data-theme] .area-window>.area-window-bar {
-  background:linear-gradient(var(--area-header-shade),var(--area-header-shade)),var(--sd-glass-face)!important;
-  border-bottom:1px solid var(--area-seam-light)!important;
-  box-shadow:none!important;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--area-header-accent) 24%,var(--sd-glass-face)),color-mix(in srgb,var(--area-header-accent) 10%,var(--sd-glass-face)))!important;
+  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 28%,var(--sd-glass-groove))!important;
+  box-shadow:inset 0 1px var(--sd-glass-highlight)!important;
 }
 body[data-theme] .area-window>.area-window-bar::after {content:none}
 
@@ -120,19 +136,19 @@ body[data-theme] .area-window>.area-window-bar::after {content:none}
   min-height:94px;
 }
 
-/* Desktop controls stay neutral; app controls inherit their window identity. */
-button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--ui-neutral)!important;--glass-key-tone:var(--ui-neutral)!important}
-body[data-theme] :where(button,a,input,textarea,select,[tabindex]):focus-visible {outline-color:var(--ui-neutral)!important}
-:where(input,textarea) {caret-color:var(--ui-neutral)}
+/* Coloured state lights remain distinct from ordinary momentary buttons. */
+button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--control-accent,var(--workspace-accent,var(--blue)))!important;--glass-key-tone:var(--state-tone)!important}
+body[data-theme] :where(button,a,input,textarea,select,[tabindex]):focus-visible {outline-color:var(--control-accent,var(--workspace-accent,var(--blue)))!important}
+:where(input,textarea) {caret-color:var(--control-accent,var(--workspace-accent,var(--blue)))}
 .quick-toggle:is(.is-active,[aria-pressed="true"]),.nav-choice.is-active {color:var(--text)!important}
-.quick-toggle svg {color:inherit!important}
+.quick-toggle:is(.is-active,[aria-pressed="true"]) svg {color:var(--role-systems)!important}
 .project-mode-status {background:var(--sd-glass-face-deep)!important;border-color:var(--sd-glass-groove)!important}
-.content-row.is-selected {background:color-mix(in srgb,var(--ui-neutral) 12%,var(--well-2));box-shadow:inset 2px 0 var(--ui-neutral)}
-.calendar-grid button.is-today {color:var(--text)!important;box-shadow:inset 0 -2px var(--ui-neutral)!important}
-.next-event>i,.timer-progress i,.equalizer i,.overview-track i {background:var(--ui-neutral)!important;box-shadow:none!important}
-input[type="range"] {accent-color:var(--ui-neutral)!important}
-body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track {background:linear-gradient(to right,var(--ui-neutral) var(--range-progress,0%),var(--sd-glass-groove) var(--range-progress,0%))!important;box-shadow:none!important}
-body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress {background:var(--ui-neutral)!important;box-shadow:none!important}
+.content-row.is-selected {background:color-mix(in srgb,var(--app-primary,var(--workspace-accent)) 16%,var(--well-2));box-shadow:inset 2px 0 var(--app-primary,var(--workspace-accent))}
+.calendar-grid button.is-today {color:var(--sd-glass-text)!important;background:color-mix(in srgb,var(--role-systems) 16%,var(--sd-glass-face-deep))!important;box-shadow:inset 0 -2px var(--role-systems)!important}
+.next-event>i,.timer-progress i,.equalizer i,.overview-track i {background:var(--control-accent,var(--workspace-accent))!important;box-shadow:none!important}
+input[type="range"] {accent-color:var(--control-accent,var(--workspace-accent,var(--blue)))!important}
+body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track {background:linear-gradient(to right,var(--control-accent,var(--workspace-accent)) var(--range-progress,0%),var(--sd-glass-groove) var(--range-progress,0%))!important;box-shadow:none!important}
+body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress {background:var(--control-accent,var(--workspace-accent))!important;box-shadow:none!important}
 
 /* Entity colour identifies launchers, workspaces and projects. */
 button[data-open-app] {--state-tone:var(--app-primary)!important;--glass-key-tone:var(--app-primary)!important}
@@ -143,7 +159,7 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 .overview-project,.workspace-context-card,.workspace-folder,.workspace-config-file {
   background:transparent!important;
 }
-.universal-search .overview-project:is(.is-active,[aria-selected="true"]) {background:var(--sd-glass-hover)!important}
+.universal-search .overview-project:is(.is-active,[aria-selected="true"]) {background:color-mix(in srgb,var(--project-card-accent) 12%,transparent)!important}
 .project-window-scope {background:transparent!important}
 
 /* Parked app identity is a full top light strip. Reset both axes: legacy
@@ -164,17 +180,18 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 /* The app accent belongs to the whole opaque window, not just its icon.
    Stronger casing tint and quieter document tint keep text easy to read. */
 .app-frame {
-  --app-content-surface:color-mix(in srgb,var(--content-surface) 92%,var(--app-primary) 8%);
-  --app-content-raised:color-mix(in srgb,var(--content-surface-raised) 88%,var(--app-primary) 12%);
+  --app-content-surface:color-mix(in srgb,var(--content-surface) 97%,var(--app-primary) 3%);
+  --app-content-raised:color-mix(in srgb,var(--content-surface-raised) 94%,var(--app-primary) 6%);
   --app-content:var(--app-content-surface);
 }
 .app-frame.material-surface-abs {
   background:linear-gradient(180deg,
-    color-mix(in srgb,var(--control-top) 84%,var(--app-primary) 16%),
-    color-mix(in srgb,var(--control-bottom) 88%,var(--app-primary) 12%));
+    color-mix(in srgb,var(--control-top) 76%,var(--app-primary) 24%),
+    color-mix(in srgb,var(--control-bottom) 86%,var(--app-primary) 14%));
 }
 .app-frame .app-titlebar {
-  background:color-mix(in srgb,var(--abs-mid) 80%,var(--app-primary) 20%);
+  background:linear-gradient(110deg,color-mix(in srgb,var(--abs-mid) 62%,var(--app-primary) 38%),color-mix(in srgb,var(--abs-mid) 76%,var(--app-primary) 24%));
+  box-shadow:inset 0 1px color-mix(in srgb,var(--app-primary) 34%,rgba(255,255,255,.20));
 }
 .app-frame.material-surface-abs :is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav) {
   background:color-mix(in srgb,var(--control-top) 88%,var(--app-primary) 12%);
@@ -190,6 +207,27 @@ body[data-theme] .app-frame :where(button,a,input,textarea,select,[tabindex]):fo
 .app-frame :where(input,textarea) {caret-color:var(--app-primary)}
 .app-frame input[type="range"] {accent-color:var(--app-primary)!important}
 .app-frame .equalizer i {background:var(--app-primary)!important}
+
+/* Local colour at interactive points; the rest of the material stays calm. */
+body[data-theme] .area-window button[data-open-app]:hover {
+  background:color-mix(in srgb,var(--app-primary) 14%,transparent)!important;
+}
+body[data-theme] .area-window .quick-toggle[aria-pressed="true"] {
+  background:color-mix(in srgb,var(--role-systems) 12%,var(--sd-glass-face-deep))!important;
+  border-color:color-mix(in srgb,var(--role-systems) 24%,var(--sd-glass-groove))!important;
+}
+body[data-theme] .universal-search .overview-section-tab[aria-pressed="true"] {
+  background:color-mix(in srgb,var(--workspace-accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--workspace-accent) 26%,var(--sd-glass-groove));
+}
+body[data-theme] .universal-search .workspace-tab.is-active {
+  background:color-mix(in srgb,var(--tab-color) 12%,transparent)!important;
+}
+.app-frame:not(.is-front):not(.is-dragging) {filter:saturate(.96) brightness(.96)}
+.empty-mark {
+  background:linear-gradient(135deg,rgba(224,249,255,.22),transparent 62%),color-mix(in srgb,var(--workspace-accent) 12%,var(--sd-glass-face));
+  box-shadow:0 12px 36px rgba(0,0,0,.20),inset 0 1px var(--sd-glass-highlight),inset 0 -1px var(--sd-glass-groove-low);
+}
 
 /* Action colour follows the available action, rather than the parent app. */
 button.play-toggle[aria-label="Play"],#timerToggle[aria-pressed="false"] {
@@ -207,8 +245,8 @@ button.project-editor-danger,.context-menu-item.is-danger {
 .app-frame .window-key.danger {color:var(--muted)!important;background:linear-gradient(var(--control-top),var(--control-bottom))!important;border-color:var(--control-edge)!important}
 
 @media(prefers-reduced-transparency:reduce) {
-  body[data-theme] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#19191c!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  body[data-theme="light"] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#eeeef1!important}
-  body[data-theme] .area-window {--sd-glass-face:#19191c;background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important}
-  body[data-theme="light"] .area-window {--sd-glass-face:#eeeef1}
+  body[data-theme] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#142332!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  body[data-theme="light"] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#eff5fa!important}
+  body[data-theme] .area-window {--sd-glass-face:#142332;background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important}
+  body[data-theme="light"] .area-window {--sd-glass-face:#eff5fa}
 }
