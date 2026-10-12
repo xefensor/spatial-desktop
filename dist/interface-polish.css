@@ -1,0 +1,207 @@
+/* Shared spacing and readable metadata. Materials and input stay intact. */
+.universal-search .universal-search-header {grid-template-columns:minmax(180px,.24fr) minmax(0,1fr)!important;align-items:center;gap:20px;padding-block:2px 10px}
+.universal-search .universal-search-title h2 {font-size:23px!important;line-height:1.2;margin-block:4px 6px}
+.universal-search .overview-context {font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.universal-search .universal-search-field {min-height:46px;height:46px!important}
+.universal-search .workspace-tab {min-height:44px!important;padding:7px 11px!important}
+.universal-search .workspace-tab b {font-size:13px;font-weight:600}
+.universal-search .workspace-tab small {font-size:11px;line-height:1.4}
+.universal-search .overview-section-tab {font-weight:550;min-height:36px}
+.universal-search .universal-search-footer {gap:12px;flex-wrap:wrap;font-size:11px;line-height:1.5}
+.overview-carousel .overview-project-zone,.overview-carousel .overview-widgets {container-type:inline-size;container-name:overview-pane}
+
+/* Home is a stable sidebar; projects receive the main browsing space. */
+.universal-search .overview-carousel .overview-project-body {grid-template-columns:minmax(270px,.38fr) minmax(0,.62fr)!important}
+.overview-carousel .workspace-home-header {padding:14px!important;gap:10px}
+.overview-carousel .workspace-home-header>span:nth-child(2) {min-width:0;flex:1}
+.overview-carousel .workspace-home-header h3 {font-size:15px;line-height:1.3;margin:3px 0}
+.overview-carousel .workspace-home-header small {font-size:12px;overflow-wrap:anywhere}
+.overview-carousel .workspace-home-open {flex:none;min-width:34px;min-height:34px;padding:7px}
+.overview-carousel .workspace-home-body {padding:14px!important}
+.overview-carousel .workspace-folders {gap:6px!important}
+.overview-carousel .workspace-folder {min-height:68px!important;padding:10px!important;gap:8px}
+.overview-carousel .workspace-folder b {font-size:12px;font-weight:600;white-space:normal;overflow-wrap:anywhere}
+.overview-carousel .workspace-folder small {font-size:11px;line-height:1.4}
+.overview-carousel .workspace-config-file {grid-column:1/-1}
+.overview-carousel .workspace-context-card {padding:16px 0 0!important;border-top:1px solid var(--sd-glass-groove)!important;margin-top:18px!important}
+.overview-carousel .workspace-context-card>b {font-size:13px;font-weight:600;line-height:1.5}
+.overview-carousel .workspace-context-card>small {font-size:12px;line-height:1.5}
+.overview-carousel .workspace-favorites {gap:8px;margin-top:12px}
+.overview-carousel .other-workspaces {margin-top:16px;padding:10px!important;min-height:56px}
+.overview-carousel .overview-projects-section>.overview-section-heading {padding:14px 16px!important;gap:10px;min-height:64px}
+.overview-carousel .overview-project-heading-actions {display:flex;align-items:center;gap:10px;flex:none}
+.overview-carousel .overview-project-heading-actions>span {display:block!important;font-size:11px;color:var(--sd-glass-muted)}
+.overview-carousel .overview-project-grid {grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))!important;align-content:start;gap:10px!important;padding:16px!important}
+.overview-carousel .overview-project {min-height:104px!important;padding:14px!important;gap:12px;align-items:center}
+.overview-carousel .overview-project>span:nth-child(2) {min-width:0}
+.overview-carousel .overview-project b {font-size:15px;font-weight:600;white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+.overview-carousel .overview-project small {display:block;font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;margin-top:6px}
+.overview-carousel .overview-project-icon {width:30px;min-width:30px;flex:none;color:var(--project-card-accent)}
+.overview-carousel .overview-project-icon svg {width:26px;height:26px}
+.overview-carousel .overview-project-open {font-size:11px;flex:none}
+.overview-carousel .overview-project-empty {grid-column:1/-1;min-height:160px;padding:24px;align-items:center;justify-content:center;gap:14px}
+.overview-carousel .overview-project-empty small {display:block;margin-top:6px;font-size:12px;line-height:1.5;max-width:32ch}
+
+/* Current status together; Area recovery remains a distinct right pane. */
+.universal-search .overview-carousel .overview-system-body {display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(250px,.9fr);grid-template-areas:"clock clock areas" "settings agenda areas" "media link areas" "notifications notifications notifications";gap:12px!important;padding:16px!important;align-content:start}
+.universal-search .overview-carousel .overview-system-body>.overview-widget {padding:16px!important;min-width:0}
+.overview-carousel .overview-clock-widget {grid-area:clock;display:flex;align-items:center;gap:20px;min-height:84px}
+.overview-carousel .overview-clock-widget>.live-time {font-size:40px!important;line-height:1;font-variant-numeric:tabular-nums}
+.overview-carousel .overview-clock-widget b {font-size:14px;font-weight:600}
+.overview-carousel .overview-clock-widget small {font-size:12px;line-height:1.5}
+.overview-carousel .overview-quick-widget {grid-area:settings}
+.overview-carousel .overview-agenda-widget {grid-area:agenda}
+.overview-carousel .overview-now-playing {grid-area:media}
+.overview-carousel .overview-connect-widget {grid-area:link;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.overview-carousel .overview-notifications-widget {grid-area:notifications}
+.overview-carousel .overview-areas-widget {grid-area:areas;align-self:start}
+.overview-carousel .overview-widget h3 {font-size:14px;font-weight:600;line-height:1.4}
+.overview-carousel .overview-widget header {gap:10px;min-width:0}
+.overview-carousel .overview-widget :is(header small,.overview-area-row small) {font-size:12px;line-height:1.45}
+.overview-carousel .overview-quick-grid {gap:8px!important;margin-top:12px}
+.overview-carousel .overview-quick-grid .quick-toggle {min-height:42px;gap:6px;padding:8px;font-size:12px}
+.overview-carousel .overview-areas-widget>header {align-items:flex-start;margin-bottom:14px}
+.overview-carousel .overview-areas-widget>header>span {min-width:0;gap:8px}
+.overview-carousel .overview-area-row {grid-template-columns:24px minmax(0,1fr) auto;min-height:70px!important;gap:10px!important;padding:10px 0}
+.overview-carousel .overview-area-row b {font-size:12px;font-weight:600;white-space:normal;line-height:1.4}
+.overview-carousel .overview-area-row>button {min-width:48px;height:32px!important;font-size:12px}
+.overview-carousel .overview-agenda-widget>button {min-height:58px;padding:10px;gap:10px;margin-top:6px}
+.overview-carousel .overview-agenda-widget>button b {font-size:12px;font-weight:600;line-height:1.5;white-space:normal}
+.overview-carousel .overview-agenda-widget>button small {font-size:11px;line-height:1.5;white-space:normal}
+.overview-carousel .overview-now-playing>header {display:flex;align-items:center;justify-content:space-between}
+.overview-carousel .overview-now-playing>header>small {display:none}
+.overview-carousel .overview-now-playing header b {font-size:13px;line-height:1.4}
+.overview-carousel .overview-now-playing .overview-track {margin-block:12px}
+.overview-carousel .overview-media-actions {gap:8px;justify-content:flex-start}
+.overview-carousel .overview-media-actions button {width:34px;height:34px}
+.overview-carousel .overview-connect-widget>span:nth-child(2) {flex:1;min-width:90px}
+.overview-carousel .overview-connect-widget b {font-size:13px;font-weight:600}
+.overview-carousel .overview-connect-widget small {font-size:12px;line-height:1.5}
+.overview-carousel .overview-notification {padding:12px 0;gap:12px}
+.overview-carousel .overview-notification b {font-size:13px;line-height:1.5}
+.overview-carousel .overview-notification small {font-size:12px;line-height:1.5}
+
+/* Time geometry belongs to the planner; preserve its measured card heights. */
+.timeline-toolbar {gap:8px;padding:12px 16px;align-items:center}
+.timeline-toolbar :is(select,input,.timeline-jump,.timeline-add) {height:36px;min-height:36px;font-size:12px}
+.timeline-toolbar>label:not(.timeline-search) select {width:180px;max-width:180px}
+.timeline-search {min-width:150px;flex:1 1 180px}
+.timeline-lane-headings {padding-block:13px}
+.timeline-lane-headings h4 {font-size:12px;font-weight:600;color:var(--sd-glass-text)}
+.timeline-entry h4 {font-size:13px;font-weight:600;line-height:1.4}
+.timeline-entry p,.timeline-entry time,.timeline-entry-action {font-size:11px;line-height:1.4}
+.timeline-plan-block {padding:10px;background:color-mix(in srgb,var(--workspace-accent) 5%,var(--content-surface-raised))}
+.timeline-plan-block .timeline-completion {font-size:11px;line-height:1.4;gap:6px}
+.timeline-plan-form {gap:12px;padding:16px}
+.timeline-plan-form label {font-size:12px;line-height:1.5}
+.timeline-plan-form label:has(#timelinePlanTitle) {grid-column:2/-1}
+.timeline-plan-form input,.timeline-plan-form select {height:38px;font-size:13px}
+.timeline-caption {font-size:12px;line-height:1.5;padding:10px 16px}
+
+/* Search destinations use readable names and a two-line context. */
+.universal-search .universal-results {padding:16px;scrollbar-width:thin}
+.universal-search .universal-group h3 {font-size:15px;font-weight:600;margin:18px 0 10px}
+.universal-search .universal-result-grid {grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))!important;gap:10px}
+.universal-search .universal-result {min-height:74px;height:auto;padding:12px;gap:12px;align-items:center}
+.universal-search .universal-result>span:last-of-type {min-width:0}
+.universal-search .universal-result b {font-size:13px;font-weight:600;line-height:1.4}
+.universal-search .universal-result small {font-size:12px;line-height:1.5;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body[data-theme="light"] .universal-search button.control-toggle:is([aria-pressed="true"],[aria-selected="true"]) :is(b,span:not(:has(svg))) {color:var(--sd-glass-text)!important}
+
+/* Docked sheets: wrapping controls, readable sources and calmer empty states. */
+.area-window:not([data-area-state="rail"]) .area-window-bar {min-height:44px}
+.project-area:not([data-area-state="rail"]) .area-window-actions {gap:3px}
+.project-area:not([data-area-state="rail"]) .area-window-key {width:26px;min-width:26px;height:28px;padding:4px}
+.area-window:not([data-area-state="rail"]) .widget-heading {min-height:32px;margin-bottom:8px}
+.systems-zone:not([data-area-state="rail"]) .system-widget {padding-block:12px}
+.systems-zone:not([data-area-state="rail"]) .notification {gap:9px;padding-block:10px}
+.systems-zone:not([data-area-state="rail"]) :is(.notification small,.device-row small,.next-event small) {font-size:12px;line-height:1.45}
+.systems-zone:not([data-area-state="rail"]) .notification b {font-size:13px;line-height:1.4}
+.systems-zone:not([data-area-state="rail"]) .next-event b {font-size:12px;line-height:1.5;white-space:normal}
+.systems-zone:not([data-area-state="rail"]) .calendar-week {font-size:11px;margin-bottom:5px}
+.systems-zone:not([data-area-state="rail"]) .calendar-grid button {font-size:12px;min-height:28px}
+.project-area:not([data-area-state="rail"]) .memory-toolbar {flex-wrap:wrap;gap:8px}
+.project-area:not([data-area-state="rail"]) .memory-select b {font-size:13px;line-height:1.45}
+.project-area:not([data-area-state="rail"]) :is(.memory-scope,.memory-saved-time,.memory-source-address,.memory-help) {font-size:12px;line-height:1.5}
+.project-area:not([data-area-state="rail"]) .memory-kind {font-size:10px!important;letter-spacing:.04em}
+.project-area:not([data-area-state="rail"]) .memory-item {margin-bottom:6px}
+.project-area:not([data-area-state="rail"]) .project-library-empty {font-size:13px;line-height:1.6;padding:16px 8px}
+.apps-zone:not([data-area-state="rail"]) .mini-empty {padding:18px 12px;font-size:12px;line-height:1.6;color:var(--sd-glass-muted)}
+.ai-area:not([data-area-state="rail"]) .ai-folder {gap:8px;font-size:12px;flex-wrap:wrap}
+.ai-area:not([data-area-state="rail"]) .ai-folder select {min-width:100px;height:32px}
+.ai-area:not([data-area-state="rail"]) .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) {display:flex;flex-direction:column;justify-content:center}
+.ai-area:not([data-area-state="rail"]) .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) .ai-empty {flex-direction:column;text-align:center;align-items:center;padding:20px 10px;gap:12px}
+.ai-area .ai-empty>svg {color:var(--role-ai);width:28px;height:28px}
+.ai-area .ai-empty {font-size:13px;line-height:1.5}
+.ai-area :is(.ai-empty small,.ai-attachment p,.ai-demo-output>header,.ai-output-hint,.ai-turn-sources,.ai-composer small) {font-size:11.5px;line-height:1.5}
+.ai-area :is(.ai-request>p,.ai-demo-output>p) {font-size:13px;line-height:1.65}
+.ai-area .ai-composer textarea {min-height:64px;padding:10px 12px;line-height:1.5}
+
+/* Opaque app interiors share the same hierarchy. */
+.app-frame[data-app-kind] :is(.app-status,.note-status,.music-library-status,.terminal-context) {font-size:11px;line-height:1.45}
+.app-frame[data-app-kind="dolphin"] .content-row b {font-size:13px}
+.app-frame[data-app-kind="dolphin"] .content-row small {font-size:12px}
+.app-frame[data-app-kind="dolphin"] .file-head {font-size:11px;letter-spacing:.025em}
+.app-frame[data-app-kind="dolphin"] .file-preview pre {font-size:13px;line-height:1.7;padding:18px}
+.app-frame[data-app-kind="notes"] .notes-layout .nav-choice {min-height:38px;height:38px}
+.app-frame[data-app-kind="notes"] .notes-layout .nav-choice>span {font-size:13px}
+.app-frame[data-app-kind="notes"] .note-toolbar {gap:12px;padding:10px 16px;min-height:48px}
+.app-frame[data-app-kind="notes"] .note-toolbar>span {font-size:11px}
+.app-frame[data-app-kind="terminal"] .terminal-screen {font-size:13px;line-height:1.75;padding:16px 18px}
+.app-frame[data-app-kind="elisa"] .track-copy h2 {white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.app-frame[data-app-kind="elisa"] .playlist .content-row {min-height:42px;height:42px}
+.app-frame[data-app-kind="elisa"] .playlist .content-row>span {font-size:13px}
+.app-frame[data-app-kind="elisa"] .music-controls>span {font-size:11px}
+.app-frame[data-app-kind="browser"] .start-page {background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--app-primary) 6%,transparent),transparent 60%),var(--app-content-surface)}
+.app-frame[data-app-kind="browser"] .demo-reading-page {padding-block:8px 20px}
+.app-frame[data-app-kind="browser"] .demo-reading-page>.eyebrow {color:color-mix(in srgb,var(--app-primary) 55%,var(--text));letter-spacing:.06em}
+.app-frame[data-app-kind="browser"] .browser-downloads>small {font-size:12px;line-height:1.5}
+
+/* Forms keep labels, content and actions visually separate. */
+.desktop-glass-dialog :is(.package-composer,.import-preview,.project-editor-body) {padding:18px}
+.desktop-glass-dialog :is(.package-titlebar,.project-editor-titlebar) {padding-inline:16px;min-height:60px}
+.desktop-glass-dialog :is(.package-titlebar h2,.project-editor-titlebar h2) {font-size:19px;font-weight:650;line-height:1.3}
+.desktop-glass-dialog :is(.package-intro small,.package-content-row small,.package-safety p,.package-safety ul,.package-actions small,.import-hero p,.import-grid small) {font-size:12px;line-height:1.55}
+.desktop-glass-dialog .package-mode-switch {gap:8px;margin-block:12px 16px}
+.desktop-glass-dialog .package-mode-switch button {min-height:78px;padding:12px;gap:10px;min-width:0}
+.desktop-glass-dialog .package-mode-switch b {font-size:13px;font-weight:600}
+.desktop-glass-dialog .package-mode-switch small {font-size:12px;line-height:1.4;white-space:normal}
+.desktop-glass-dialog .package-columns {gap:14px}
+.desktop-glass-dialog .package-content-row {min-height:62px;padding:10px 12px;gap:10px}
+.desktop-glass-dialog .package-panel>header {padding:12px;min-height:54px}
+.desktop-glass-dialog .package-actions {gap:12px;padding-top:14px;margin-top:14px}
+.desktop-glass-dialog .project-editor-form {gap:16px}
+.desktop-glass-dialog .project-editor-form label {gap:7px}
+.desktop-glass-dialog .project-editor-form label>span {font-size:13px;font-weight:600}
+.desktop-glass-dialog :is(.project-editor-form>p,.project-editor-manage small) {font-size:12px;line-height:1.6}
+.desktop-glass-dialog .project-editor-form footer {gap:10px;padding-top:14px}
+.workspace-create-form {padding-block:16px;gap:12px}
+.workspace-create-form>label {font-size:13px;line-height:1.5;align-self:center}
+.workspace-create-form p {font-size:12px;line-height:1.6}
+.desktop-context-menu .context-menu-item {min-height:34px;font-size:13px;padding:8px 10px}
+.guide-content :is(.guide-explanation,.guide-current-mission) {line-height:1.6;max-width:58ch}
+.guide-content :is(.guide-current-hint,.guide-more p,.guide-usage p) {font-size:13px;line-height:1.6}
+
+@container overview-pane (max-width:820px) {
+  .universal-search .overview-carousel .overview-system-body {grid-template-columns:minmax(0,1fr) minmax(230px,.9fr);grid-template-areas:"clock areas" "settings areas" "agenda areas" "media link" "notifications notifications"}
+  .universal-search .overview-carousel .overview-project-body {grid-template-columns:minmax(240px,.42fr) minmax(0,.58fr)!important}
+  .overview-carousel .overview-project-heading-actions>span {display:none!important}
+}
+@container overview-pane (max-width:560px) {
+  .universal-search .overview-carousel .overview-system-body {grid-template-columns:minmax(0,1fr);grid-template-areas:"clock" "settings" "agenda" "media" "link" "areas" "notifications"}
+  .universal-search .overview-carousel .overview-project-body {display:flex!important;flex-direction:column;overflow-y:auto!important}
+  .overview-carousel .workspace-home-card,.overview-carousel .overview-projects-section {height:auto!important;min-height:0;flex:none;overflow:visible!important}
+  .overview-carousel .workspace-home-body,.overview-carousel .overview-project-grid {overflow:visible!important}
+  .overview-carousel .workspace-home-card {border-right:0!important;border-bottom:1px solid var(--sd-glass-groove)!important}
+}
+@media(max-width:800px) {
+  .universal-search .universal-search-header {grid-template-columns:minmax(0,1fr)!important;gap:8px;padding-bottom:8px}
+  .universal-search .universal-search-title {flex-wrap:wrap}
+  .universal-search .overview-context {max-width:100%}
+  .timeline-plan-form label:has(#timelinePlanTitle) {grid-column:1/-1}
+  .desktop-glass-dialog :is(.package-composer,.import-preview,.project-editor-body) {padding:12px}
+}
+@media(max-height:650px) {
+  .universal-search .universal-search-title>.eyebrow {display:none}
+  .universal-search .universal-search-title h2 {font-size:20px!important;margin-block:0 4px}
+}
