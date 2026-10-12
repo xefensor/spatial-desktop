@@ -37,3 +37,7 @@ Maximize retains Areas; Fullscreen uses their display space. Other apps can tran
 The [README](../README.md) introduces the prototype and its controls. The [reference](prototype-reference.md) describes persistence, demo scenes, app tools, Stash and simulated integrations. The [live philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) explains the design through workflow examples.
 
 Automated checks in `scripts/check-*.cjs` cover layout, window intent, demo migration, independent sessions, Overview, Guide and material behaviour. Passing these checks is distinct from visual browser inspection or native hardware testing. Dated audit and testing reports preserve their original findings.
+
+## Philosophy appearance
+
+The philosophy page shares the desktop’s Auto/OLED/Graphite/Light preference and follows system changes live in Auto. The header and chapter navigation use square acrylic; the reading surface is opaque ABS with rounded outer corners. Mobile layout keeps the same material hierarchy. Theme integration checks cover system updates, manual overrides and cross-tab synchronization.

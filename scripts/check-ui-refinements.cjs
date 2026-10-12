@@ -257,3 +257,32 @@ assert(html.indexOf('desktop-theme.js') < html.indexOf('class="icon-sprite"'), '
 assert(source.includes('themePreference: SpatialDesktopTheme.preference'), 'Sync carries the preference separately');
 console.log('Theme checks passed: live system changes, manual override, reload, cross-tab changes, Auto sync and blocked storage.');
 
+
+// The actual philosophy controller binds the shared desktop theme, including
+// system changes and cross-tab preferences, rather than freezing an initial palette.
+{
+  const createTheme = require('../dist/desktop-theme.js');
+  const pageCode = fs.readFileSync(path.join(__dirname,'../dist/philosophy.js'),'utf8');
+  const values = {}, listeners = {}, mediaListeners = {};
+  const meta = {content:''}, span = {textContent:''}, attrs = {}, clicks = {};
+  const button = {querySelector:()=>span,setAttribute:(key,value)=>attrs[key]=value,addEventListener:(key,fn)=>clicks[key]=fn};
+  const document = {body:{dataset:{}},querySelector:selector=>selector==='#guideTheme'?button:selector==='meta[name="theme-color"]'?meta:null,querySelectorAll:()=>[]};
+  const media = {matches:false,addEventListener:(key,fn)=>mediaListeners[key]=fn};
+  const events = {addEventListener:(key,fn)=>listeners[key]=fn};
+  const shared = createTheme({document,media,events,storage:{getItem:key=>values[key],setItem:(key,value)=>values[key]=value}});
+  vm.runInNewContext(pageCode,{document,window:{SpatialDesktopTheme:shared}});
+  assert.equal(document.body.dataset.theme,'light');
+  assert.equal(span.textContent,'Auto');
+  assert(attrs['aria-label'].includes('follows system'));
+  media.matches=true;mediaListeners.change();
+  assert.equal(document.body.dataset.theme,'graphite');
+  clicks.click();assert.equal(values['spatial-color-theme-v1'],'oled');
+  media.matches=false;mediaListeners.change();assert.equal(document.body.dataset.theme,'oled');
+  listeners.storage({key:'spatial-color-theme-v1',newValue:'auto'});
+  assert.equal(document.body.dataset.theme,'light');assert.equal(span.textContent,'Auto');
+  for(const name of ['philosophy.html','philosophy-record.html']) {
+    const markup=fs.readFileSync(path.join(__dirname,'../dist',name),'utf8');
+    assert(markup.indexOf('src="desktop-theme.js')<markup.indexOf('class="skip-link"'),'Shared theme applies before page content');
+  }
+  console.log('Philosophy theme integration passed: Auto, live OS changes, manual override, shared preferences and early initialization.');
+}

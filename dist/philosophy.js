@@ -1,21 +1,14 @@
 (() => {
   const themeButton = document.querySelector('#guideTheme');
-  let savedTheme;
-  try { savedTheme = localStorage.getItem('spatial-guide-theme'); } catch {}
-  const setTheme = theme => {
-    document.body.dataset.guideTheme = theme;
-    themeButton.textContent = theme === 'light' ? 'Dark' : 'Light';
-    themeButton.setAttribute('aria-label', `Switch to ${theme === 'light' ? 'dark' : 'light'} appearance`);
-    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f4f7f9' : '#0c1218';
-  };
-  setTheme(savedTheme || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark'));
-  themeButton.addEventListener('click', () => {
-    const next = document.body.dataset.guideTheme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    try { localStorage.setItem('spatial-guide-theme', next); } catch {}
-  });
+  // Use the same preference, system listener and cross-tab sync as the desktop.
+  const theme = window.SpatialDesktopTheme;
+  if (theme && themeButton) {
+    theme.bind(themeButton);
+    themeButton.addEventListener('click', () => theme.next());
+  }
   const links = [...document.querySelectorAll('.guide-sidebar nav a')];
-  const chapters = links.map(link => document.querySelector(link.hash));
+  const chapters = links.map(link => document.querySelector(link.hash)).filter(Boolean);
+  if (!chapters.length) return;
   let pending = false;
   const updateChapter = () => {
     pending = false;
