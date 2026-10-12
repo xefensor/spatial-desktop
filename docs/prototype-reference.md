@@ -164,6 +164,8 @@ Sources occupy a bounded, collapsible tray above the messages. Each source start
 
 Replies can be dragged into Stash. Imported attachments are copied into browser storage; desktop attachments reference prototype files. Requests and replies are local and are not sent to a model. The scripted demo retains up to 60 replies and 24 sources per chat and 50 chats per Workspace. At the reply limit it keeps the draft and earlier history and asks for a new chat, rather than removing old replies. Legacy snapshots retain the active-chat projection needed by the Guide and display adapter.
 
+The chat pass passed all project checks, including legacy migration, independent chat merges, immutable reply context and switching chats/Workspaces during a pending file batch. Live review at 1363 × 936 verified creating and renaming two chats, isolated drafts, two source drops, Enter and Send, and a later repeat drop keeping the tray collapsed without duplicating the source. The floating practice Guide covered Send until moved aside. [Verified chat layout](images/ai-chats-2026-10-13.jpg).
+
 ## Materials and background
 
 The shared interface pass gives Projects & Home a Home sidebar and a project grid, groups System status beside Area recovery controls, and improves metadata in Timeline, search, Areas, app interiors and utility dialogs. Each pane keeps its bounded scroll region. Planner card heights remain tied to the time layout.
