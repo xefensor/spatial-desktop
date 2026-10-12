@@ -164,6 +164,8 @@ Each Workspace keeps its draft, attachments, folder selection and conversation t
 
 The shared interface pass gives Projects & Home a Home sidebar and a project grid, groups System status beside Area recovery controls, and improves metadata in Timeline, search, Areas, app interiors and utility dialogs. Each pane keeps its bounded scroll region. Planner card heights remain tied to the time layout.
 
+The pass was checked with the full regression suite and GitHub Pages deployment. Live visual review at 1363 × 936 covered System, Projects & Home with a created project, Timeline with a longer task, the project’s Areas, project creation and Pack. Follow-up app and narrow-layout visual checks were interrupted by a browser-control outage. The final contrast/alignment and Timeline completion-control adjustments passed automated checks; their final live visual review remains outstanding.
+
 Controls use a fine reflected rim and a softer contact shadow, with a recessed, quick press. Navigation rows stay flush with their reading surface and retain the shared toggle indicator. The expanded Apps hotbar fits readable slots to the Area width; compact and rail layouts keep icons and shortcut digits, and narrow slots hide labels instead of wrapping them. Titles and secondary metadata have a consistent type hierarchy.
 
 App windows use opaque ABS bodies with rounded silhouettes and discrete controls. Structural content joins remain flat. Areas, Overview, Pack/Import and transient menus use square acrylic/glass geometry. Main window content stays opaque. App colour connects the window, hotbar and parked card; floating windows have a subtle app-colour rim. Toggle light lines persist; momentary controls use short press feedback. Window numbers are unframed text.
