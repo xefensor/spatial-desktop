@@ -10,7 +10,9 @@
   host.innerHTML=`<section class="memory-shelf"><header><button class="memory-folder-action" data-memory-action="folder" aria-label="Open Stash folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><b>Stash</b></button><small data-memory-count></small></header><p class="memory-scope" data-memory-scope></p>
   <div class="memory-toolbar"><button class="surface-key" data-memory-action="add" aria-label="Add note or source" title="Add a note or paste a link">${icon('i-add')}<span>Note</span></button><button class="memory-text-action" data-memory-action="files">Choose files</button><input type="file" data-memory-files multiple hidden aria-label="Files to save in Stash"></div>
   <form class="memory-editor" hidden><label>Note or link<textarea data-memory-text maxlength="12000" rows="3" aria-label="Stash item content" placeholder="Write a note or paste a link…"></textarea></label><div class="memory-actions"><button class="surface-key" type="submit">Keep</button><button class="memory-text-action" type="button" data-memory-action="cancel">Cancel</button></div></form>
+  <div class="memory-browse"><label class="library-search">${icon('i-search')}<input type="search" data-memory-query aria-label="Search this Stash" placeholder="Find in Stash…"></label><select data-memory-filter aria-label="Filter Stash"><option value="all">All items</option><option value="pinned">Pinned</option></select></div>
   <div class="memory-items"></div>
+  <div class="memory-empty" hidden><b data-memory-empty-title></b><p data-memory-empty-detail></p><button class="library-reset" data-memory-action="clear-filter" hidden>Show all items</button></div>
   <p class="memory-help">Drop files, text or links</p><p class="memory-feedback" role="status"></p><button class="memory-text-action" data-memory-action="undo" hidden>Undo removal</button></section>`;
   const rail=document.createElement('button');rail.className='surface-key memory-header-key';rail.dataset.memoryAction='reveal';rail.title='Stash';rail.setAttribute('aria-label','Open Stash');rail.innerHTML=icon('i-note');$('.area-window-actions',area).prepend(rail);
   const railEntry=document.createElement('button');railEntry.className='surface-key memory-rail-entry rail-action';railEntry.setAttribute('aria-label','Open Stash');railEntry.innerHTML=icon('i-note')+'<span>Stash</span>';area.append(railEntry);
@@ -102,7 +104,7 @@
         if(itemsFor(key).length>=80){feedback('This Stash holds up to 80 items. Remove an item to make room.');break;}
         if(project){project.resources.unshift([file.name,'Saved in Stash',kind,kind==='image'?'i-image':kind==='audio'?'i-music':'i-note',{fileId,attachment,text,source:M.source({label:'Uploaded file',workspace:JSON.parse(key)[0],project:JSON.parse(key)[1]}),created:Date.now(),updated:Date.now()}]);persistResources();}
         else if(!model.add(key,{title:file.name,text,source:{label:'Uploaded file',workspace:JSON.parse(key)[0],project:JSON.parse(key)[1]},attachment})){feedback('This Stash holds up to 80 items.');break;}
-        mediaUrls.set(fileId,URL.createObjectURL(file));if(save()){const item=itemsFor(key).find(item=>(item.fileId||item.attachment?.key)===fileId);if(item)recordSaved(item);}selected.clear();render(true);if(current===key)feedback('Saved '+file.name+' in '+F.folder(owner)+'.');
+        mediaUrls.set(fileId,URL.createObjectURL(file));if(save()){const item=itemsFor(key).find(item=>(item.fileId||item.attachment?.key)===fileId);if(item)recordSaved(item);if(current===key)resetShelfFilters();}selected.clear();render(true);if(current===key)feedback('Saved '+file.name+' in '+F.folder(owner)+'.');
       }catch{feedback('Could not save '+file.name+'. This browser may be out of storage.');}
     }
   }
@@ -118,6 +120,26 @@
     if(media?.kind==='document')content='<details class="memory-document"><summary>Read document</summary><iframe title="'+escapeHtml(item.title)+'" src="'+escapeHtml(media.src)+'" sandbox loading="lazy"></iframe></details>';
     return '<details class="memory-item" data-memory-id="'+escapeHtml(item.id)+'" data-memory-owner="'+escapeHtml(item.scope)+'" draggable="true"'+(expandedItems.has(item.scope+'\n'+item.id)?' open':'')+'><summary class="memory-item-summary" aria-label="'+escapeHtml(item.title+' · '+type)+'"><span class="memory-type-icon" aria-hidden="true" title="'+escapeHtml(type)+'">'+icon(typeIcon)+'</span><span class="memory-select"><b>'+escapeHtml(item.title)+'</b></span>'+(item.pinned?'<small class="memory-pinned">Pinned</small>':'')+'</summary><div class="memory-item-body">'+content+(snippet&&!item.text.startsWith('Linked · ')?'<p class="memory-excerpt">'+escapeHtml(snippet)+'</p>':'')+originTags(item)+(address?'<button class="memory-text-action memory-source-address" data-memory-item-action="source" title="'+escapeHtml(address)+'">'+escapeHtml(address)+'</button>':media?.credit||localTool?'<small class="memory-source-address">'+(localTool?icon('i-tools'):'')+escapeHtml(sourceLabel)+'</small>':'')+(item.created||item.updated?'<time class="memory-saved-time" datetime="'+new Date(item.created||item.updated).toISOString()+'">Saved '+escapeHtml(new Date(item.created||item.updated).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}))+'</time>':'')+'<details class="memory-edit-details"><summary>Edit content</summary><label>Name <small>optional</small><input data-memory-inline="title" maxlength="120" aria-label="Rename '+escapeHtml(item.title)+'" value="'+escapeHtml(item.title)+'"></label><label>'+ (media?'Caption':'Content')+'<textarea data-memory-inline="text" maxlength="12000" rows="3" aria-label="Edit '+escapeHtml(item.title)+'">'+escapeHtml(item.text)+'</textarea></label></details><div class="memory-row-actions">'+(media?'<button class="memory-text-action" data-memory-item-action="saved-file">Open file</button>':!address&&item.source.app&&appInfo[item.source.app]?'<button class="memory-text-action" data-memory-item-action="source">Open source app</button>':'')+'<details class="memory-item-details"><summary aria-label="More options for '+escapeHtml(item.title)+'">More</summary><div class="memory-item-actions"><button class="memory-text-action" data-memory-item-action="pin" aria-label="Pin '+escapeHtml(item.title)+'" aria-pressed="'+item.pinned+'">'+(item.pinned?'Unpin':'Pin')+'</button><button class="memory-text-action" data-memory-item-action="remove">Remove</button></div></details></div></div></details>';
   }
+  function stashMatches(item,query,filter){
+    return (filter!=='pinned'||item.pinned)&&(!query.trim()||matchesSearch([item.title,item.text,item.source?.label,item.source?.address,item.source?.app,item.attachment?.filename].join(' '),query));
+  }
+  const shelfViews=new Map();
+  function filterShelf(items=itemsFor(current)){
+    const query=field('[data-memory-query]').value||'',filter=field('[data-memory-filter]').value||'all';
+    shelfViews.set(current,{query,filter});
+    const visible=new Set(items.filter(item=>stashMatches(item,query,filter)).map(item=>item.id));
+    // Hide existing disclosures: filtering must not rebuild previews or interrupt audio.
+    host.querySelectorAll('[data-memory-id]').forEach(row=>{row.hidden=!visible.has(row.dataset.memoryId);});
+    field('[data-memory-count]').textContent=(visible.size===items.length?items.length:visible.size+' of '+items.length)+' item'+(items.length===1?'':'s');
+    const filtered=Boolean(query.trim())||filter!=='all';
+    field('.memory-empty').hidden=visible.size>0;
+    field('[data-memory-empty-title]').textContent=items.length?'No matching items':'Nothing saved yet';
+    field('[data-memory-empty-detail]').textContent=items.length?'Try another search or show all items.':'Add a note, choose files or drop something here.';
+    field('[data-memory-action="clear-filter"]').hidden=!filtered;
+  }
+  function resetShelfFilters(){
+    field('[data-memory-query]').value='';field('[data-memory-filter]').value='all';filterShelf();
+  }
   let signature='',itemsSignature='';
   const drafts=new Map();
   function render(force=false){
@@ -127,6 +149,7 @@
     if(changed){
       if(current&&!field('.memory-editor').hidden)drafts.set(current,{text:field('[data-memory-text]').value});
       current=key;selected.clear();const draft=drafts.get(key);editing=draft?.editing||null;draftScope=draft?key:'';field('.memory-editor').hidden=!draft;
+      const view=shelfViews.get(key);field('[data-memory-query]').value=view?.query||'';field('[data-memory-filter]').value=view?.filter||'all';
       if(draft)field('[data-memory-text]').value=draft.text;
       field('.memory-feedback').textContent='';lastRemoved=null;field('[data-memory-action="undo"]').hidden=true;
     }
@@ -136,7 +159,8 @@
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature&&itemsSignature===nextSignature)return;signature=nextSignature;
     field('[data-memory-scope]').textContent=(project?'Project: '+project.name:'Workspace: '+workspaceProfiles[JSON.parse(key)[0]]?.label);field('[data-memory-count]').textContent=items.length+' item'+(items.length===1?'':'s');
     if(!changed&&document.activeElement?.matches('[data-memory-inline]')&&host.contains(document.activeElement))return;
-    const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.length?items.map(itemMarkup).join(''):'<p class="memory-empty">Keep notes, files and links here.</p>';itemsSignature=nextItemsSignature;}
+    const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.map(itemMarkup).join('');itemsSignature=nextItemsSignature;}
+    filterShelf(items);
     prepareControlSemantics(host);
   }
   function collapse(reflow=true){if(!temporaryRail)return;temporaryRail=null;delete area.dataset.memoryRailExpanded;[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','false'));if(reflow)layoutDockAreas(false,false);}
@@ -152,6 +176,7 @@
   function reveal(){render();if(!allowed())return;showArea('projects',false);if(area.dataset.areaState==='rail'&&!temporaryRail){temporaryRail={edge:dockState.projects.edge,scope:scope()};layoutDockAreas(false,false);}[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','true'));requestAnimationFrame(()=>host.scrollIntoView({block:'start',behavior:'smooth'}));}
   function editor(item=null){
     reveal();
+    resetShelfFilters();
     if(item){const row=host.querySelector('[data-memory-id="'+CSS.escape(item.id)+'"]');if(row){row.open=true;row.querySelector('.memory-edit-details').open=true;row.querySelector('[data-memory-inline="text"]')?.focus();row.scrollIntoView({block:'nearest'});}return;}
     editing=null;draftScope=current;field('.memory-editor').hidden=false;field('[data-memory-text]').value=drafts.get(current)?.text||'';field('[data-memory-text]').focus();
   }
@@ -173,9 +198,10 @@
     const text=field('[data-memory-text]').value.trim(),address=/^(https?:\/\/|\/)[^\s]+$/i.test(text)?text:'';
     const [workspace,project]=JSON.parse(current),item=addItem(current,{text:address?'':text,source:{label:'Your note',workspace,project,address}});
     if(!item){feedback('Write a note or paste a link. This Stash holds up to 80 items.');return;}
-    if(save()){recordSaved(item);drafts.delete(current);field('.memory-editor').hidden=true;editing=null;render(true);feedback('Saved to '+label()+'.');}
+    if(save()){recordSaved(item);drafts.delete(current);field('.memory-editor').hidden=true;editing=null;resetShelfFilters();render(true);feedback('Saved to '+label()+'.');}
   });
   host.addEventListener('change',event=>{
+    if(event.target.matches('[data-memory-filter]')){filterShelf();return;}
     if(event.target.matches('[data-memory-files]')){saveFiles([...event.target.files]);event.target.value='';return;}
     const input=event.target.closest('[data-memory-inline]'),row=input?.closest('[data-memory-id]');if(!row)return;
     const item=itemFor(row.dataset.memoryId);if(!item||item.scope!==row.dataset.memoryOwner)return;
@@ -188,6 +214,7 @@
   }
   host.addEventListener('focusout',event=>{if(event.target.matches('[data-memory-inline]'))requestAnimationFrame(()=>render());});
   host.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;const id=button.closest('[data-memory-id]')?.dataset.memoryId,item=id&&itemFor(id),action=button.dataset.memoryAction||button.dataset.memoryItemAction;
+    if(action==='clear-filter'){resetShelfFilters();field('[data-memory-query]').focus();return;}
     if(action==='folder'&&ownerFor(current))openFileLocation(F.folder(ownerFor(current)));if(action==='files')field('[data-memory-files]').click();if(action==='add')editor();if(action==='cancel'){drafts.delete(current);field('.memory-editor').hidden=true;}
     if(action==='saved-file'&&item){syncFolders();const owner=ownerFor(item.scope),file=owner?.stash?.files?.[item.fileId||item.id];if(file){openFileLocation(F.folder(owner));const frameId=Object.keys(appInfo).find(name=>(appInfo[name].base||name)==='dolphin'&&frameFor(name)?.dataset.fileLocation===F.folder(owner)&&desktopPages.inColumn(activeWorkspace,name));if(frameId)openAppFile(frameId,file.name);}}if(action==='play'){const audio=button.closest('.memory-item').querySelector('audio');if(audio.paused){host.querySelectorAll('audio').forEach(other=>{if(other!==audio)other.pause();});audio.play().catch(()=>feedback('This audio could not be played. Open its source to try again.'));}else audio.pause();}if(action==='edit')editor(item);if(action==='source')openSource(item);if(action==='pin'){editItem(id,{pinned:!item.pinned});save();render(true);}if(action==='remove'){lastRemoved={id,resource:item.resourceIndex===undefined?null:projectFor(item.scope).resources.splice(item.resourceIndex,1)[0],index:item.resourceIndex,scope:item.scope};if(lastRemoved.resource){selected.clear();persistResources();}else model.remove(id);save();render(true);field('[data-memory-action="undo"]').hidden=false;feedback('Removed '+item.title+'.');}if(action==='undo'&&lastRemoved){if(lastRemoved.resource){projectFor(lastRemoved.scope).resources.splice(lastRemoved.index,0,lastRemoved.resource);persistResources();}else model.restore(lastRemoved.id);save();render(true);lastRemoved=null;button.hidden=true;feedback('Item restored.');}
 
@@ -203,7 +230,7 @@
   function updateAudio(event){const audio=event.target;if(audio.tagName!=='AUDIO')return;const row=audio.closest('.memory-audio'),button=row.querySelector('button'),item=itemFor(row.closest('[data-memory-id]').dataset.memoryId);button.innerHTML=icon(audio.paused?'i-play':'i-pause');button.setAttribute('aria-label',(audio.paused?'Play ':'Pause ')+(item?.title||'audio'));const seek=row.querySelector('input');seek.max=Number.isFinite(audio.duration)?audio.duration:8;seek.value=audio.currentTime;row.querySelector('[data-memory-time]').textContent=audioTime(audio.currentTime)+' / '+audioTime(audio.duration);}
   ['loadedmetadata','timeupdate','play','pause','ended'].forEach(type=>host.addEventListener(type,updateAudio,true));
   host.addEventListener('error',event=>{if(event.target.tagName==='AUDIO')feedback('Audio unavailable. Try opening its source.');if(event.target.tagName==='IMG')event.target.alt='Image unavailable — open its source.';},true);
-  host.addEventListener('input',event=>{if(event.target.matches('[data-memory-inline]')){persistInline(event.target);return;}if(!event.target.matches('.memory-seek'))return;const audio=event.target.closest('.memory-audio').querySelector('audio');if(Number.isFinite(audio.duration))audio.currentTime=Number(event.target.value);});
+  host.addEventListener('input',event=>{if(event.target.matches('[data-memory-query]')){filterShelf();return;}if(event.target.matches('[data-memory-inline]')){persistInline(event.target);return;}if(!event.target.matches('.memory-seek'))return;const audio=event.target.closest('.memory-audio').querySelector('audio');if(Number.isFinite(audio.duration))audio.currentTime=Number(event.target.value);});
   host.addEventListener('dragstart',event=>{if(event.target.closest('input,textarea,button,a,audio,iframe')||event.target.closest('summary:not(.memory-item-summary)'))return;const item=itemFor(event.target.closest('[data-memory-id]')?.dataset.memoryId);if(!item)return;event.dataTransfer.setData(SpatialAIContext.MIME,JSON.stringify(contextFor(item)));event.dataTransfer.setData('text/plain',item.text||item.source.address);if(/^https?:\/\//.test(item.source.address))event.dataTransfer.setData('text/uri-list',item.source.address);event.dataTransfer.effectAllowed='copy';});
   const acceptsDrop=event=>{const types=[...event.dataTransfer.types],attachment=types.some(type=>type===SpatialAIContext.MIME||type==='Files');return allowed()&&types.some(type=>[SpatialAIContext.MIME,'Files','text/plain','text/uri-list'].includes(type))&&(attachment||!event.target?.closest?.('input,textarea,select,[contenteditable="true"]'));};
   const containsDropTarget=target=>Boolean(target&&(host.contains(target)||rail.contains(target)||railEntry.contains(target)));
@@ -226,7 +253,7 @@
     if(attachment&&project){const id='stash-'+crypto.randomUUID();projectFor(key).resources.unshift([title||attachment.filename||'Saved file',text,attachment.kind,attachment.kind==='image'?'i-image':attachment.kind==='audio'?'i-music':'i-note',{fileId:id,attachment,text,why,source,created:Date.now(),updated:Date.now()}]);persistResources();item=resourceItems(key)[0];}
     else item=addItem(key,{...data,source:{...source,address:attachment?source.address:address}});
     if(!item){feedback('This item has no content to keep.');return false;}
-    if(!save())return false;recordSaved(item);render(true);if(current===key)feedback('Saved with its source.');return true;
+    if(!save())return false;recordSaved(item);if(current===key)resetShelfFilters();render(true);if(current===key)feedback('Saved with its source.');return true;
   }
   function dropIntoStash(event){
     showDropTarget();if(!acceptsDrop(event))return;
@@ -248,7 +275,7 @@
   document.addEventListener('focusin',event=>{if(temporaryRail&&!area.contains(event.target))collapse();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&temporaryRail)collapse();});
 
-  document.addEventListener('click',event=>{const result=event.target.closest('[data-memory-result]');if(!result)return;const item=itemFor(result.dataset.memoryResult);if(!item)return;const [,project]=JSON.parse(item.scope);setUniversalSearchOpen(false);if(project&&projectSpaces[project])activateProject(project,false);else changeDesktopPage(desktopPages.current(activeWorkspace),false,'workspace');render(true);reveal();const row=$('[data-memory-id="'+CSS.escape(item.id)+'"]',host);if(row)row.open=true;row?.scrollIntoView({block:'center'});row?.setAttribute('tabindex','-1');row?.focus();});
+  document.addEventListener('click',event=>{const result=event.target.closest('[data-memory-result]');if(!result)return;const item=itemFor(result.dataset.memoryResult);if(!item)return;const [,project]=JSON.parse(item.scope);setUniversalSearchOpen(false);if(project&&projectSpaces[project])activateProject(project,false);else changeDesktopPage(desktopPages.current(activeWorkspace),false,'workspace');render(true);reveal();resetShelfFilters();const row=$('[data-memory-id="'+CSS.escape(item.id)+'"]',host);if(row)row.open=true;row?.scrollIntoView({block:'center'});row?.setAttribute('tabindex','-1');row?.focus();});
   function search(query){const searchable=M.create(model.snapshot());Object.entries(projectSpaces).forEach(([id,project])=>{if(project.originWorkspace===activeWorkspace||openProjectNames().includes(id)){const key=M.scope(activeWorkspace,id);itemsFor(key).map(item=>({...item,scope:key})).forEach(item=>searchable.merge({version:1,records:{[item.id]:item}}));}});const results=allowed()?searchable.search(query,activeWorkspace).filter(item=>!JSON.parse(item.scope)[1]||projectSpaces[JSON.parse(item.scope)[1]]):[];$('#universalMemoryResults').innerHTML=results.map(item=>'<button class="universal-result" data-memory-result="'+escapeHtml(item.id)+'"><span class="universal-symbol">'+icon('i-note')+'</span><span><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(label(item.scope)+' · '+(item.source.label||'Your note')+(item.updated?' · '+sessionAge(item.updated):''))+'</small><small>'+escapeHtml((item.text||item.source.address).slice(0,120))+'</small></span></button>').join('');prepareControlSemantics(searchGroup);return results.length;}
   function seed(){if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;Object.entries(projectSpaces).forEach(([id,project])=>{if(!SpatialDemoExamples.projects[id]||project.name!==SpatialDemoExamples.projects[id].name)return;const workspace=project.originWorkspace;if(!workspaceProfiles[workspace])return;const key=M.scope(workspace,id);if(model.seeded(key))return;model.markSeeded(key);model.add(key,{title:'Questions for the next review',text:'What is ready to share?\nWhat still needs testing?\nNext: review the project starting point before opening another task.',source:{}});});save();}
   function ownerAtFolder(path){
@@ -277,7 +304,7 @@
     else F.copyAsset(pair.owner,file).then(renderFile).catch(()=>{section.textContent='This saved file is unavailable in this browser.';});return true;
   }
   document.addEventListener('click',event=>{const button=event.target.closest('[data-stash-edit]');if(!button)return;const [workspace,id]=JSON.parse(button.dataset.stashScope);if(activeWorkspace!==workspace)renderWorkspace(workspace,false);if(id)activateProject(id,false);else changeDesktopPage(desktopPages.current(activeWorkspace),false,'workspace');render(true);const item=itemsFor(current).find(item=>(item.fileId||item.id)===button.dataset.stashEdit);if(item)editor(item);});
-  globalThis.SpatialMemoryDesktop={itemFor,savedItem,contextFor,contextAtFile(path){const folder=path.slice(0,path.lastIndexOf('/')),pair=ownerAtFolder(folder),file=pair&&F.list(pair.owner).find(file=>folder+'/'+file.name===path),item=file&&itemsFor(pair.key).find(item=>(item.fileId||item.id)===file.id);return item?contextFor(item):null;},keepContext,reveal,showDropTarget,revealItem(id,key){const item=itemsFor(key).find(item=>(item.fileId||item.id)===id);if(!item){reveal();feedback('This item is no longer in Stash.');return false;}reveal();const row=host.querySelector('[data-memory-id="'+CSS.escape(item.id)+'"]');if(row){row.open=true;row.scrollIntoView({block:'center'});row.querySelector('summary').focus();}return true;},items:()=>itemsFor(scope()),fileRows,openFile:openSavedFile,render,search,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
+  globalThis.SpatialMemoryDesktop={itemFor,savedItem,contextFor,contextAtFile(path){const folder=path.slice(0,path.lastIndexOf('/')),pair=ownerAtFolder(folder),file=pair&&F.list(pair.owner).find(file=>folder+'/'+file.name===path),item=file&&itemsFor(pair.key).find(item=>(item.fileId||item.id)===file.id);return item?contextFor(item):null;},keepContext,reveal,showDropTarget,revealItem(id,key){const item=itemsFor(key).find(item=>(item.fileId||item.id)===id);if(!item){reveal();feedback('This item is no longer in Stash.');return false;}reveal();resetShelfFilters();const row=host.querySelector('[data-memory-id="'+CSS.escape(item.id)+'"]');if(row){row.open=true;row.scrollIntoView({block:'center'});row.querySelector('summary').focus();}return true;},items:()=>itemsFor(scope()),fileRows,openFile:openSavedFile,render,search,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
   Object.values(model.snapshot().records).filter(item=>item.kind==='next'&&!item.deleted).forEach(item=>model.promoteNext(item.scope,projectFor(item.scope)?.note));
   seed();save();render(true);refreshStashBrowsers();prepareControlSemantics(rail.parentElement);
 })();

@@ -18,6 +18,10 @@ Overview has four horizontally navigable sections: Timeline, Apps, Projects & Ho
 
 Apps combines the desktop map, running-window lists and the launcher. Filters show the current desktop, open windows or parked windows. Timeline aligns local activity with calendar events, tasks and reminders. Search and Workspace selection remain available across sections.
 
+Projects & Home supports name, summary and folder-path search and a filter for Projects open in this Workspace. Cards show current/open/available status. Global search uses bounded groups in two columns and an explicit result-category selector; filtered-out results also leave keyboard navigation.
+
+Stash has context-owned text and Pinned filters, a visible filtered count and a recovery action when nothing matches. Filtering retains disclosure and media nodes. Direct returns and new captures reveal their item by clearing only the receiving shelf’s filter.
+
 ## Materials and accessibility
 
 - App windows retain opaque ABS bodies, rounded silhouettes and rounded discrete controls. Structural content joins stay flat.

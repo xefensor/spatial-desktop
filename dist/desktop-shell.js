@@ -3818,18 +3818,28 @@ function renderProjectModes() {
   $("#projectModeSwitcher").hidden = true;
 }
 
+let overviewProjectFilterWorkspace = '';
 function renderOverviewProjects() {
   renderAvailableProjectLibrary();
   const grid = $("#overviewProjectGrid");
   const entries = Object.entries(projectSpaces);
-  $("#overviewProjectCount").textContent = entries.length + (entries.length === 1 ? " project" : " projects");
-  grid.innerHTML = entries.map(([name, project]) => {
-    const selected = openProjectNames().includes(name);
+  if (overviewProjectFilterWorkspace !== activeWorkspace) {
+    overviewProjectFilterWorkspace = activeWorkspace;
+    $("#overviewProjectQuery").value = '';
+    $("#overviewProjectFilter").value = 'all';
+  }
+  const query = $("#overviewProjectQuery").value, filter = $("#overviewProjectFilter").value;
+  const open = openProjectNames(), current = desktopPages.column(activeWorkspace);
+  const visible = entries.filter(([name, project]) => (filter !== 'open' || open.includes(name)) && (!query.trim() || matchesSearch([project.name, project.root, project.summary].join(' '), query)));
+  $("#overviewProjectCount").textContent = (visible.length === entries.length ? entries.length : visible.length + ' of ' + entries.length) + (entries.length === 1 ? " project" : " projects");
+  grid.innerHTML = visible.map(([name, project]) => {
+    const selected = open.includes(name), active = current === name;
     const resourceCount = project.resources.length;
     const location = projectLocationMeta(project);
     const detail = location.label + " · " + resourceCount + (resourceCount === 1 ? " resource" : " resources");
-    return '<button class="overview-project' + (selected ? " is-active" : "") + (location.custom ? " is-custom-location" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" title="' + escapeHtml(project.root) + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span><span class="overview-project-open">Open<svg><use href="#i-right"/></svg></span></button>';
-  }).join("") || '<div class="overview-project-empty"><svg><use href="#i-folder"/></svg><span><b>No projects yet</b><small>Create one to attach a folder and resources.</small></span></div>';
+    const status = active ? 'Current · Desktop ' + (desktopPages.current(activeWorkspace, name) + 1) : selected ? 'Open in this workspace' : 'Available';
+    return '<button class="overview-project' + (selected ? " is-active" : "") + (active ? ' is-current' : '') + (location.custom ? " is-custom-location" : "") + '" data-overview-project="' + escapeHtml(name) + '" aria-pressed="' + selected + '" title="' + escapeHtml(project.root) + '" style="--project-card-accent:' + escapeHtml(project.accent) + '"><span class="overview-project-icon"><svg aria-hidden="true"><use href="#' + escapeHtml(project.icon) + '"/></svg></span><span><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small><small class="overview-project-status">' + escapeHtml(status) + '</small></span><span class="overview-project-open">' + (selected ? 'Return' : 'Open') + '<svg aria-hidden="true"><use href="#i-right"/></svg></span></button>';
+  }).join("") || '<div class="overview-project-empty"><svg aria-hidden="true"><use href="#i-folder"/></svg><span><b>' + (entries.length ? 'No matching projects' : 'No projects yet') + '</b><small>' + (entries.length ? 'Try another name or show all projects.' : 'Create one to attach a folder and resources.') + '</small>' + (entries.length ? '<button class="library-reset" data-project-filter-reset>Show all projects</button>' : '') + '</span></div>';
   prepareControlSemantics(grid);
 }
 
@@ -3851,8 +3861,9 @@ function setProjectClosedState(closed) {
     const count = Object.keys(projectSpaces).length;
     $("#projectAreaContext").textContent = workspaceProfiles[activeWorkspace].label + " · " + count + (count === 1 ? " project available" : " projects available");
     if (!activeProjectName) $$("[data-overview-project]").forEach(card => {
-      card.classList.remove("is-active");
-      card.setAttribute("aria-pressed", "false");
+      const open = openProjectNames().includes(card.dataset.overviewProject);
+      card.classList.toggle("is-active", open);
+      card.setAttribute("aria-pressed", String(open));
     });
   }
 }
@@ -4401,7 +4412,16 @@ function prepareProjectEditor() {
 
 function prepareProjectSpaces() {
   loadProjectState();
+  $("#overviewProjectQuery").addEventListener('input', renderOverviewProjects);
+  $("#overviewProjectFilter").addEventListener('change', renderOverviewProjects);
   $("#overviewProjectGrid").addEventListener("click", event => {
+    if (event.target.closest('[data-project-filter-reset]')) {
+      $("#overviewProjectQuery").value = '';
+      $("#overviewProjectFilter").value = 'all';
+      renderOverviewProjects();
+      $("#overviewProjectQuery").focus();
+      return;
+    }
     const button = event.target.closest("[data-overview-project]");
     if (!button) return;
     activateProject(button.dataset.overviewProject);
@@ -5282,9 +5302,11 @@ function filterUniversalSearch() {
   const searching = query.length > 0;
   $("#overviewHome").hidden = searching;
   $("#universalResults").hidden = !searching;
+  $("#universalSearchToolbar").hidden = !searching;
 
   if (!searching) {
     $("#universalSearchStatus").hidden = true;
+    $("#universalResultFilter").value = 'all';
     $("#universalWebLabel").textContent = "Search the web";
     globalThis.SpatialOverviewDesktop?.refresh();
     return;
@@ -5307,15 +5329,27 @@ function filterUniversalSearch() {
     if (!result.hidden && !isWeb) localVisible += 1;
   });
 
+  const resultFilter = $("#universalResultFilter").value, counts = { apps: localVisible };
   $$(".universal-group", $("#universalResults")).forEach(group => {
+    const id = group.dataset.universalGroup;
+    counts[id] = $$(".universal-result:not([hidden])", group).length;
+    if (resultFilter !== 'all' && id !== resultFilter) $$(".universal-result", group).forEach(result => { result.hidden = true; });
     group.hidden = !$(".universal-result:not([hidden])", group);
   });
+  const labels = { all: 'All results', apps: 'Applications', files: 'Files', memory: 'Stash', projects: 'Projects', settings: 'System & actions' };
+  Array.from($("#universalResultFilter").options).forEach(option => { option.textContent = labels[option.value] + ' · ' + (option.value === 'all' ? localVisible : counts[option.value] || 0); });
+  const visibleCount = resultFilter === 'all' ? localVisible : counts[resultFilter] || 0;
+  $("#universalFilterReset").hidden = resultFilter === 'all';
 
   $("#universalWebLabel").textContent = `Search the web for “${rawQuery}”`;
-  $("#universalEmpty").hidden = localVisible !== 0;
+  $("#universalEmpty").hidden = visibleCount !== 0;
+  $("#universalEmpty").textContent = resultFilter === 'all' ? 'No local results. Press Enter to search the web.' : 'No results in this category. Try another search or show all results.';
   $("#universalSearchStatus").hidden = false;
-  $("#universalSearchStatus").textContent = localVisible + (guideLimited ? (guideAppsOnly ? (localVisible === 1 ? ' application result' : ' application results') : (localVisible === 1 ? ' local result' : ' local results')) : (localVisible === 1 ? " desktop result" : " desktop results") + " · Web search available");
+  $("#universalSearchStatus").textContent = visibleCount + (visibleCount === 1 ? ' result' : ' results') + (resultFilter === 'all' ? ' · ' + (guideLimited ? 'This lesson' : workspaceProfiles[activeWorkspace]?.label || activeWorkspace) : ' · ' + labels[resultFilter]);
 }
+
+$("#universalResultFilter").addEventListener('change', filterUniversalSearch);
+$("#universalFilterReset").addEventListener('click', () => { $("#universalResultFilter").value = 'all'; filterUniversalSearch(); $("#universalSearchInput").focus(); });
 
 function setUniversalSearchOpen(open) {
   if (open && globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('overview')) return;

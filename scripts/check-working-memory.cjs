@@ -8,7 +8,7 @@ const M=require('../dist/working-memory.js');
   const fields=new Map(),field=name=>{if(!fields.has(name))fields.set(name,{});return fields.get(name);};
   const host={parentElement:null,querySelectorAll:()=>[],contains:()=>false},railEntry={};
   const projectTarget={prepend(item){item.parentElement=this;}},workspaceTarget={prepend(item){item.parentElement=this;}};
-  const context={desktopSyncApplying:false,dropPosition:null,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
+  const context={desktopSyncApplying:false,dropPosition:null,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,shelfViews:new Map(),filterShelf(){},itemMarkup(){},drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
   vm.createContext(context);vm.runInContext(adapter.slice(adapter.indexOf('  function render(force=false){'),adapter.indexOf('  function collapse(')),context);
   context.render(true);assert.equal(host.parentElement,projectTarget);
   context.projectColumnActive=()=>false;context.scope=()=>M.scope('work');context.projectFor=()=>null;
@@ -212,7 +212,7 @@ unified.stableResourceId=stableResource.id;
 assert.equal(vm.runInContext('itemFor(stableResourceId).title',unified),'Edited reference','New insertions do not retarget an existing saved item');
 
 (async()=>{
-  const retained=[],destination=M.create({},()=>now,'capture'),context={M,F,scope:()=>workspace,allowed:()=>true,itemsFor:key=>destination.items(key),appInfo:{browser:{label:'Web'}},ownerFor:()=>originOwner,projectFor:()=>null,addItem:(key,value)=>destination.add(key,value),save:()=>true,recordSaved:item=>retained.push(item),render(){},feedback(){},current:workspace};
+  const retained=[],destination=M.create({},()=>now,'capture'),context={M,F,scope:()=>workspace,allowed:()=>true,itemsFor:key=>destination.items(key),appInfo:{browser:{label:'Web'}},ownerFor:()=>originOwner,projectFor:()=>null,addItem:(key,value)=>destination.add(key,value),save:()=>true,recordSaved:item=>retained.push(item),resetShelfFilters(){},render(){},feedback(){},current:workspace};
   vm.createContext(context);vm.runInContext(section('async function keepContext(','  function dropIntoStash('),context);
   context.value={title:'Study reference',text:'The original excerpt',why:'Use in our website',workspace:'school',project:'research',source:{workspace:'school',project:'research',app:'browser',address:'https://example.org/reference'}};
   await vm.runInContext('keepContext(value)',context);

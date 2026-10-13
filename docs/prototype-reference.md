@@ -152,6 +152,8 @@ The containment change passed the full project check suite, including Area edge/
 
 Apps keeps existing work on the left and the app library on the right. Desktop cards show their app icons; running-window rows show the current content, state, desktop and matching hotbar number. Windows are ordered by desktop and hotbar position. Filters select the current desktop, open windows or parked windows; the launcher stays available. The library has visible categories and an icon grid with readable labels. Narrow screens stack the work pane above the library and use a category selector. Projects & Home exposes context and folder navigation. System includes settings, notifications and recovery controls for Areas.
 
+Projects & Home has its own project search, matching names, summaries and folder paths, plus **Open here** for the current Workspace. Cards distinguish available projects, projects open in this Workspace and the current Project’s desktop. Opening another Workspace clears this library filter. Global search groups results into two readable columns on a wide screen and one on a narrow screen; **Show** filters Applications, Files, Stash, Projects or System & actions. Clearing the search returns to Overview and resets the category.
+
 ![Apps in Overview: desktops and running windows beside the app library](images/overview-apps-2026-10-12.jpg)
 
 Timeline records explicit app, file, browser, Project, desktop and Stash actions per Workspace. Return actions reopen the relevant context or stored item. The shared time axis aligns activity with calendar, task and reminder lanes; calendar events show durations and overlaps. **Now**, **Latest activity** and day navigation help find a moment. The System calendar opens this view and shows the next planned item.
@@ -165,6 +167,8 @@ The Workspace & Projects Area shows the current context’s Stash. Ordinary work
 Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to AI. Source identity stays separate from the destination when copying between Stashes.
 
 While dragging over Stash, a destination label names the Project or Workspace Stash and its folder. It follows the current context and disappears when the drag ends or is cancelled.
+
+**Find in Stash** searches the current shelf’s titles, text, source labels and addresses, and filenames. **Pinned** isolates important items. Each Stash remembers its own filter during the session. Filtering hides existing disclosures without rebuilding media previews. An empty result offers **Show all items**; saving a new item or returning directly to one clears the receiving shelf’s filter so the item remains visible.
 
 Each capture records a Timeline return link keyed to the saved item, surviving later insertion and renaming. Search uses local word matching, with date terms such as `today` / `yesterday` and `dnes` / `vcera`; it is not semantic AI retrieval.
 

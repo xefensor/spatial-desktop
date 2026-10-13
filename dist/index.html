@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="interface-polish.css?v=2">
   <link rel="stylesheet" href="system-area.css?v=2">
   <link rel="stylesheet" href="interaction-feedback.css?v=1">
+  <link rel="stylesheet" href="browsing-controls.css?v=1">
   <script src="workspace-setup.js?v=5"></script>
   <script src="spatial-guide.js?v=29"></script>
   
@@ -409,6 +410,7 @@
 
           <section class="overview-section overview-projects-section" aria-labelledby="overviewProjectsTitle">
             <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton" aria-label="Create a project" title="Create a project"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
+            <div class="project-library-toolbar"><label class="library-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="overviewProjectQuery" aria-label="Search projects" placeholder="Find a project…"></label><label class="library-filter"><span>Show</span><select id="overviewProjectFilter" aria-label="Filter projects"><option value="all">All projects</option><option value="open">Open here</option></select></label></div>
             <div class="overview-project-grid" id="overviewProjectGrid"></div>
           </section>
           </div>
@@ -451,7 +453,7 @@
         <p class="overview-section-status" id="overviewSectionStatus" role="status" aria-live="polite"></p>
       </div>
 
-      <div id="universalSearchStatus" class="search-status" role="status" hidden></div>
+      <div class="search-results-toolbar" id="universalSearchToolbar" hidden><div id="universalSearchStatus" class="search-status" role="status" hidden></div><label class="library-filter"><span>Show</span><select id="universalResultFilter" aria-label="Filter search results"><option value="all">All results</option><option value="apps">Applications</option><option value="files">Files</option><option value="memory">Stash</option><option value="projects">Projects</option><option value="settings">System & actions</option></select></label><button class="library-reset" id="universalFilterReset" hidden>Show all results</button></div>
       <div class="universal-results" id="universalResults" aria-live="polite" hidden>
         <section class="universal-group" data-universal-group="apps">
           <h3>Applications</h3>
@@ -592,8 +594,8 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=2"></script>
-<script src="desktop-shell.js?v=260"></script>
-<script src="working-memory-desktop.js?v=27"></script>
+<script src="desktop-shell.js?v=261"></script>
+<script src="working-memory-desktop.js?v=28"></script>
 <script src="ai-desktop.js?v=15"></script>
 <script src="overview-desktop.js?v=16"></script>
   <script src="guide-desktop.js?v=36"></script>
