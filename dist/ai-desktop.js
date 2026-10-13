@@ -90,7 +90,7 @@
   function expand(focus=true){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
     if(extendedDesktopActive()&&!isLocalArea('ai')){displayAssignmentsFor().areas.ai=localDisplaySlot();persistDisplayAssignments();}
-    area.hidden=false;setMode('expanded');layoutDockAreas(true);scheduleWindowTiling();if(focus)prompt.focus();
+    setAreaState('ai','expanded',false);scheduleWindowTiling();if(focus)prompt.focus();
   }
   function toggle(){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
@@ -105,7 +105,7 @@
   }
   $('#aiAreaToggle').addEventListener('click',toggle);
   prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();status.textContent='AI demo · scripted replies · nothing is sent';});
-  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();setMode('rail');layoutDockAreas(true);}});
+  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});

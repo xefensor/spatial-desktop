@@ -36,7 +36,9 @@ The browsing pass on 13 October passed all 20 project checks and GitHub Pages de
 
 ## Area controls and recovery
 
-Area headers expose the same Expanded, On rail and Hidden choices through their context menu. Border handles remain the direct way to resize. Expanded remembers the previous size on each edge; cancelling an Area drag restores its starting placement. Recent layout changes offer an actionable Undo without restoring old app text or chat contents.
+Area headers expose the same Expanded, On rail and Hidden choices through their context menu. Border handles remain the direct way to resize. Areas in one dock column share their thickness and Expanded/On rail changes; Hidden remains individual. A moved Area adopts the destination column’s state, and showing a hidden Area rejoins its visible peers. Expanded remembers the column’s previous size on each edge; cancelling an Area drag restores its starting placement. Recent layout changes offer an actionable Undo without restoring old app text or chat contents.
+
+The Projects heading in Overview uses the surrounding glass surface. A conflicting generic heading rule previously added a separate grey background in light mode; the project heading now explicitly keeps a transparent background.
 
 System puts quick settings and the next planned item before the full month calendar. The month is a keyboard-accessible disclosure; the rail's Agenda action reveals it. AI and Stash drop labels name the receiving chat or context before release, including over narrow rails. Plain-text drops into editors remain text insertion.
 
