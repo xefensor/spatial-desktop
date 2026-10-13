@@ -43,6 +43,8 @@
 .systems-zone:not([data-area-state="rail"]) .system-launcher{min-height:30px;height:30px;gap:6px;padding:4px 8px}
 .systems-zone:not([data-area-state="rail"]) .system-launcher>span{font-size:11px}
 .systems-zone:not([data-area-state="rail"]) .layout-mode-status{padding:4px 2px;min-height:30px;gap:5px;font-size:10px}
+.systems-zone[data-area-state="expanded"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .system-launchers{grid-template-columns:minmax(0,1fr) auto}
+.systems-zone:not([data-area-state="rail"]) .layout-mode-status{grid-column:auto}
 .systems-zone:not([data-area-state="rail"])>.system-scroll-region>.static-widget-stack{
   margin:0;
   padding:0;
