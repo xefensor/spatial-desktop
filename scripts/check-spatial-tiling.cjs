@@ -235,6 +235,34 @@ vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', doc
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
 
+// An expanded AI peer must not stretch System's rail back to panel width.
+const mixedRailBaseline = vm.runInContext('JSON.stringify(snapshotAreaLayout())', docks);
+vm.runInContext('bindDockResize("systems", areaFor("systems"));', docks);
+const systemHandle = areaFrames.systems.handle;
+systemHandle.listeners.get('pointerdown')({button:0,pointerId:2,preventDefault(){},stopPropagation(){}});
+systemHandle.listeners.get('pointermove')({clientX:1530,clientY:200});
+systemHandle.listeners.get('pointerup')();
+assert.equal(areaFrames.systems.dataset.areaState,'rail');
+assert.equal(areaFrames.systems.rect.width,70,'System collapses to 70px beside expanded AI');
+assert.equal(areaFrames.systems.rect.x+areaFrames.systems.rect.width,1600,'The rail stays anchored to the outer edge');
+assert.equal(areaFrames.ai.dataset.areaState,'expanded','Collapsing System preserves AI chat mode');
+assert.equal(areaFrames.ai.rect.width,300,'Expanded AI retains its usable width');
+vm.runInContext('applyAreaSession("general");',docks);
+assert.equal(areaFrames.systems.rect.width,70,'Reloading the saved Area session preserves the mixed rail');
+for(const edge of ['left','right','top','bottom']){
+  docks.mixedEdge=edge;
+  vm.runInContext(`dockState.systems.edge=mixedEdge;dockState.ai.edge=mixedEdge;
+    dockSizes[mixedEdge]=mixedEdge==='left'||mixedEdge==='right'?70:64;layoutDockAreas();`,docks);
+  const r=areaFrames.systems.rect,vertical=['left','right'].includes(edge);
+  assert.equal(areaFrames.systems.dataset.areaState,'rail');
+  assert.equal(vertical?r.width:r.height,vertical?70:64,edge+': mixed rails keep their own thickness');
+  assert.equal(edge==='right'?r.x+r.width:edge==='bottom'?r.y+r.height:edge==='left'?r.x:r.y,edge==='right'?1600:edge==='bottom'?900:0,edge+': rail stays flush with its screen edge');
+  assert.equal(areaFrames.ai.dataset.areaState,'expanded');
+}
+docks.mixedRailBaseline=mixedRailBaseline;
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(mixedRailBaseline);applyAreaSession("general");',docks);
+console.log('Mixed dock rails passed: real System resize, expanded AI preservation, saved session restore and four-edge geometry.');
+
 // Area growth is bounded before layout: dragging to an extreme must not
 // squeeze the opposing panel, overlap it, or save an off-screen preference.
 const areaBoundsBaseline = vm.runInContext('JSON.stringify(snapshotAreaLayout())', docks);

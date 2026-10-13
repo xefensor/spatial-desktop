@@ -3149,13 +3149,20 @@ function layoutDockAreas(save = false, fitWindows = true) {
     if (!names.length) return;
     const availableHeight = height - gap * 2 - gap * (names.length - 1);
     const panelHeight = availableHeight / names.length;
-    names.forEach((name, index) => applyDockRect(name, { x, y: gap + index * (panelHeight + gap), width: sideWidth, height: panelHeight, joinEdge: index ? "top" : "none" }));
+    names.forEach((name, index) => {
+      // A rail retains its own thickness when a peer on this edge is expanded.
+      const panelWidth = resolved.states[name] === "rail" ? Math.min(sideWidth, stateSideMinimum(name, "rail")) : sideWidth;
+      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + index * (panelHeight + gap), width: panelWidth, height: panelHeight, joinEdge: index ? "top" : "none" });
+    });
   };
   const layoutHorizontal = (names, edge, y, panelHeight) => {
     if (!names.length) return;
     const availableWidth = centerWidth - gap * (names.length - 1);
     const panelWidth = availableWidth / names.length;
-    names.forEach((name, index) => applyDockRect(name, { x: centerLeft + index * (panelWidth + gap), y, width: panelWidth, height: panelHeight, joinEdge: index ? "left" : "none" }));
+    names.forEach((name, index) => {
+      const thickness = resolved.states[name] === "rail" ? Math.min(panelHeight, stateHorizontalMinimum(name, "rail")) : panelHeight;
+      applyDockRect(name, { x: centerLeft + index * (panelWidth + gap), y: edge === "bottom" ? y + panelHeight - thickness : y, width: panelWidth, height: thickness, joinEdge: index ? "left" : "none" });
+    });
   };
 
   layoutSide(left, "left", gap, leftWidth);
