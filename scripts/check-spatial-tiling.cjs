@@ -167,6 +167,7 @@ console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app
 // Window activity must never steal dock space or move Areas to another display.
 const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(name => [name, {
   hidden: false, dataset: {}, style: { removeProperty() {} },
+  scrollRegion: {scrollTop:0,scrollLeft:0},
   classList: { add() {}, remove() {}, toggle() {} },
   handle: { listeners: new Map(), setPointerCapture() {},
     addEventListener(type, fn) { this.listeners.set(type, fn); },
@@ -176,12 +177,12 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
 const shell = { clientWidth: 1600, clientHeight: 900,
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
-  tileEngine: T, activeWorkspace: "general", window: { innerWidth: 1600, innerHeight: 900 },
+  tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, window: { innerWidth: 1600, innerHeight: 900 },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
   desktopStorage: sandbox.desktopStorage, isLocalArea: () => true, projectColumnActive: () => true,
-  $: (selector, scope) => selector === ".desktop-shell" ? shell : scope?.handle,
+  $: (selector, scope) => selector === ".desktop-shell" ? shell : selector === ".system-scroll-region" ? scope?.scrollRegion : scope?.handle,
   extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
   captureBaseDockLaneRects() {}, syncAreaControls() {}, syncLayoutModeUI() {},
@@ -239,11 +240,15 @@ console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, 
 const mixedRailBaseline = vm.runInContext('JSON.stringify(snapshotAreaLayout())', docks);
 vm.runInContext('bindDockResize("systems", areaFor("systems"));', docks);
 const systemHandle = areaFrames.systems.handle;
+areaFrames.systems.scrollRegion.scrollTop=253;
+areaFrames.systems.scrollRegion.scrollLeft=80;
 systemHandle.listeners.get('pointerdown')({button:0,pointerId:2,preventDefault(){},stopPropagation(){}});
 systemHandle.listeners.get('pointermove')({clientX:1530,clientY:200});
 systemHandle.listeners.get('pointerup')();
 assert.equal(areaFrames.systems.dataset.areaState,'rail');
 assert.equal(areaFrames.systems.rect.width,70,'System collapses to 70px beside expanded AI');
+assert.equal(areaFrames.systems.scrollRegion.scrollTop,0,'Collapsing from a scrolled panel exposes the rail clock and alerts');
+assert.equal(areaFrames.systems.scrollRegion.scrollLeft,0,'The rail starts at the beginning on either dock axis');
 assert.equal(areaFrames.systems.rect.x+areaFrames.systems.rect.width,1600,'The rail stays anchored to the outer edge');
 assert.equal(areaFrames.ai.dataset.areaState,'expanded','Collapsing System preserves AI chat mode');
 assert.equal(areaFrames.ai.rect.width,300,'Expanded AI retains its usable width');

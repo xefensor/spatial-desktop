@@ -99,7 +99,7 @@ While holding a title bar with the left mouse button, scroll to carry the window
 
 All four Areas default to vertical side docks: Apps and Workspace & Projects on the left, System and AI on the right. Move an Area using its header/handle; resize its inner border. A rail and an expanded Area are presentations of the same dock. The removed Area Compact state is distinct from the Guide app’s compact view.
 
-A rail keeps its own thickness and stays anchored to the screen edge even when another Area on that edge remains expanded. System therefore stays 70 px wide on a side rail (64 px high on a horizontal rail) beside an expanded AI Area. The canvas reserves the widest/tallest peer's dock lane.
+A rail keeps its own thickness and stays anchored to the screen edge even when another Area on that edge remains expanded. System therefore stays 70 px wide on a side rail (64 px high on a horizontal rail) beside an expanded AI Area. Collapsing System resets its scroll position so the rail clock and alerts are immediately visible. The canvas reserves the widest/tallest peer's dock lane.
 
 All four Areas can be hidden through their context menus and restored in **Overview → System → Desktop Areas**. Super or the Overview keyboard fallback remains useful if every Area is hidden. Visibility and dock layout save per Workspace. Ordinary tiling respects dock bounds; explicit floating/fullscreen interactions can request temporary Area changes. Fullscreen Area transfers/hiding are reversible and respect Manual mode.
 

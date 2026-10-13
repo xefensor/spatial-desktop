@@ -3120,6 +3120,11 @@ function layoutDockAreas(save = false, fitWindows = true) {
     const area = areaFor(name);
     if (!area) return;
     const state = resolved.states[name];
+    if (name === "systems" && state === "rail" && area.dataset.areaState !== "rail" && !systemRailExpansion) {
+      const region = $(".system-scroll-region", area);
+      region.scrollTop = 0;
+      region.scrollLeft = 0;
+    }
     area.dataset.areaState = state;
     if (areasFollowWindows()) area.dataset.autoSize = state;
     else delete area.dataset.autoSize;
