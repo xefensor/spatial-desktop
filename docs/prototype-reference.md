@@ -113,6 +113,10 @@ Border drags stop at available space rather than pushing the opposite Area offsc
 
 Expanded System starts with a compact clock, quick settings and the focus action. **Next up** shows the nearest planned item and opens Timeline. **Month view** expands the calendar when needed, leaving more space for notifications and connected devices by default. The rail keeps its clock, alerts and daily tools; its Agenda action temporarily reveals the panel and opens the month.
 
+The 13 October System and recovery pass passed all 19 project checks and GitHub Pages deployment. Live review at 1363 × 936 covered light and OLED themes, opening and closing the month, System and AI rail changes with Undo, docking System at the top and restoring it, moving an app to another desktop and undoing it, and attaching then removing an app source in AI. The final spacing adjustment keeps the focus action and Area status in one row. Pointer cancellation, stale Undo protection and named AI/Stash destinations also have automated regression coverage.
+
+![Compact System with quick settings, next event and collapsed month](images/system-and-recovery-2026-10-13.jpg)
+
 ## Workspace Home and downloads
 
 Each Workspace owns simulated Home and the eight standard folders: Desktop, Documents, Downloads, Music, Pictures, Videos, Templates and Public. General uses `/home/demo`; built-in other Workspaces use `/home/demo/Workspaces/<Name>`. Newly created Workspaces use their unique workspace ID beneath `/home/demo/Workspaces/`. Home and Places resolve inside the current Workspace even while a Project is open.
