@@ -301,7 +301,7 @@ console.log('Win wheel passed: focused app/Area capture, project axis, OS alias,
 
 // Hovered Areas navigate without clicking or stealing their keyboard focus.
 nodes['.desktop-shell'].inert=false;
-ctx.window={getComputedStyle:element=>({overflowY:element.overflowY || 'visible'})};
+ctx.window={getComputedStyle:element=>({overflowY:element.overflowY || 'visible',overflowX:element.overflowX || 'visible'})};
 const areaTarget=(name,scroll={},editing=false)=>{
   const area={dataset:{areaWindow:name},parentElement:null,clientHeight:800,scrollHeight:800};
   const target={parentElement:area,clientHeight:200,scrollHeight:200,scrollTop:0,...scroll};
@@ -334,19 +334,19 @@ for(const name of ['apps','projects','systems','ai']){
 const scrollCases=[
   {top:100,delta:80,navigate:false}, {top:100,delta:-80,navigate:false},
   {top:0,delta:80,navigate:false}, {top:600,delta:-80,navigate:false},
-  {top:600,delta:80,navigate:true}, {top:0,delta:-80,navigate:true}
+  {top:600,delta:80,navigate:false}, {top:0,delta:-80,navigate:false}
 ];
 for(const {top,delta,navigate} of scrollCases){
   resetAreaWheel();if(delta<0)ctx.desktopPages.go('work',1);
   e=areaEvent(areaTarget('systems',{scrollHeight:800,scrollTop:top,overflowY:'auto'}),delta);
   const before=changes.length;listeners['document:wheel'](e);
-  assert.equal(Boolean(e.prevented),navigate,'Scrollable content keeps its wheel until the relevant edge');
+  assert.equal(Boolean(e.prevented),navigate,'Scrollable content owns its wheel at both edges');
   assert.equal(changes.length,before+Number(navigate));
   assert.equal(ctx.desktopHasWindowFocus,!navigate,'Native list scrolling does not release app focus');
 }
 resetAreaWheel();
 const nested=areaTarget('projects');
-nested.parentElement={parentElement:nested.parentElement,scrollHeight:800,clientHeight:200,scrollTop:100,overflowY:'scroll'};
+nested.parentElement={parentElement:nested.parentElement,scrollHeight:800,clientHeight:200,scrollTop:600,overflowY:'scroll'};
 e=areaEvent(nested);listeners['document:wheel'](e);
 assert.equal(e.prevented,undefined,'An overflow ancestor owns scroll from a child icon');
 resetAreaWheel();
@@ -357,6 +357,13 @@ e=areaEvent(areaTarget('systems',{scrollHeight:800,scrollTop:100,overflowY:'auto
 listeners['document:wheel'](e);
 assert.equal(ctx.desktopPages.column('work'),'site','Shift+wheel over a list selects the adjacent Project');
 assert.equal(e.prevented,true);
+for(const left of [0,600]){
+  resetAreaWheel();
+  e=areaEvent(areaTarget('apps',{scrollWidth:800,clientWidth:200,scrollLeft:left,overflowX:'auto'}),0,{shiftKey:true,deltaX:left?80:-80});
+  listeners['document:wheel'](e);
+  assert.equal(e.prevented,undefined,'A horizontal Area list owns Shift+wheel at both edges');
+  assert.equal(ctx.desktopPages.column('work'),'workspace','Horizontal overflow cannot switch Projects');
+}
 for(const options of [{ctrlKey:true},{altKey:true},{deltaX:160},{defaultPrevented:true}]){
   resetAreaWheel();e=areaEvent(areaTarget('apps'),80,options);listeners['document:wheel'](e);
   assert.equal(e.prevented,undefined,'Modifier, horizontal and already-consumed input stays owned');

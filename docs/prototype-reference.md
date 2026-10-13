@@ -93,7 +93,7 @@ Explicit moves, closing or parking cancel automatic peer return. A busy second d
 
 ## Navigation and Areas
 
-Scroll over an Area header, rail or non-scrollable content to change vertical desktop pages, even while a window is focused. Scrollable Area content uses the wheel until its edge; input fields retain their normal scrolling. Shift+scroll over an Area switches between the ordinary Workspace and open Projects. You can also click desktop background or an Area to release window focus, then scroll over the canvas. Super+scroll and Super+Shift+scroll work from windows or Areas when the browser receives them. Page Up/Down provide desktop navigation with focus released; Shift selects Project navigation.
+Scroll over an Area header, rail or non-scrollable content to change vertical desktop pages, even while a window is focused. Scrollable Area content keeps its wheel at both edges; input fields retain their normal scrolling. Nested scrollers do not pass motion to outer panes. Shift+scroll over an Area switches between the ordinary Workspace and open Projects unless a nested horizontal scroller owns that motion. You can also click desktop background or an Area to release window focus, then scroll over the canvas. Super+scroll and Super+Shift+scroll work from windows or Areas when the browser receives them. Page Up/Down provide desktop navigation with focus released; Shift selects Project navigation.
 
 While holding a title bar with the left mouse button, scroll to carry the window to another desktop; Shift+scroll changes its Project context. Release to place it. Cancelled drags return to the original placement. Ordinary scrolling inside focused apps remains an app action.
 
@@ -131,6 +131,8 @@ The mock Terminal does not execute native commands and Web Browser does not embe
 ## Overview, activity and plans
 
 Overview has four horizontal sections: **Timeline, Apps, Projects & Home, System**. Sideways swipes, Shift+scroll, section tabs, edge previews and Left/Right change sections. Each section snaps into view; lists retain vertical scrolling. Workspace selection and global search remain available, and a compact header names the current Workspace, Project and desktop.
+
+Nested lists keep wheel ownership at their top/bottom or left/right edges, without advancing the Overview section or scrolling a parent pane. Section navigation remains available over non-scrollable content; Shift+scroll can cross a vertical list, but stays inside a nested horizontal scroller.
 
 Apps keeps existing work on the left and the app library on the right. Desktop cards show their app icons; running-window rows show the current content, state, desktop and matching hotbar number. Windows are ordered by desktop and hotbar position. Filters select the current desktop, open windows or parked windows; the launcher stays available. The library has visible categories and an icon grid with readable labels. Narrow screens stack the work pane above the library and use a category selector. Projects & Home exposes context and folder navigation. System includes settings, notifications and recovery controls for Areas.
 

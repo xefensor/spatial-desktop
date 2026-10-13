@@ -7303,3 +7303,6 @@ body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
 /* The window and its hotbar card share the same shortcut. */
 .app-identity .window-hotkey { flex: 0 0 auto; display: inline; margin-right: 4px; padding: 0!important; border: 0!important; outline: 0!important; border-radius: 0!important; background: none!important; box-shadow: none!important; color: inherit; font: 700 13px/1 monospace; }
 .app-identity .window-hotkey[hidden] { display: none; }
+
+/* A nested scroller stops at its own edge instead of moving an outer pane. */
+.desktop-shell *, .universal-search * { overscroll-behavior: contain; }

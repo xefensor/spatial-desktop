@@ -6802,7 +6802,8 @@ function prepareDesktopPages() {
   };
   workspace.addEventListener("wheel", onDesktopWheel, { passive: false });
   // Area chrome and rails navigate without a preliminary click. Scrollable
-  // content keeps the wheel until its edge; Shift+wheel switches columns.
+  // content keeps its wheel even at an edge; Shift+wheel switches columns
+  // unless a nested horizontal scroller owns that motion.
   // Super shortcuts also work over app content. Held-window gestures stay owned
   // by the drag listener, and the shared gate suppresses trackpad momentum.
   document.addEventListener("wheel", event => {
@@ -6811,12 +6812,11 @@ function prepareDesktopPages() {
     if (!area || $(".desktop-shell").inert || event.defaultPrevented || event.ctrlKey || event.altKey || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
     const delta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
     if (!delta) return;
-    if (!event.shiftKey) {
-      for (let node = event.target; node && node !== area.parentElement; node = node.parentElement) {
-        const limit = node.scrollHeight - node.clientHeight;
-        if (limit > 1 && ["auto", "scroll"].includes(window.getComputedStyle(node).overflowY) &&
-          (delta < 0 ? node.scrollTop > 1 : node.scrollTop < limit - 1)) return;
-      }
+    for (let node = event.target; node && node !== area.parentElement; node = node.parentElement) {
+      const across = event.shiftKey;
+      const limit = across ? node.scrollWidth - node.clientWidth : node.scrollHeight - node.clientHeight;
+      const style = window.getComputedStyle(node);
+      if (limit > 1 && ["auto", "scroll"].includes(across ? style.overflowX : style.overflowY)) return;
     }
     onDesktopWheel(event, true);
   }, { capture: true, passive: false });

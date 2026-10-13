@@ -101,7 +101,7 @@ const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
   requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
-  window:{matchMedia:()=>({matches:true}),addEventListener(){},getComputedStyle:node=>({overflowY:node.overflowY||'visible'})},
+  window:{matchMedia:()=>({matches:true}),addEventListener(){},getComputedStyle:node=>({overflowY:node.overflowY||'visible',overflowX:node.overflowX||'visible'})},
   setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],
   activateProject:name=>{context.column=name;calls.push(['activate',name]);},changeDesktopColumn:name=>{context.column=name;calls.push(['column',name]);},
   changeDesktopPage:page=>calls.push(['page',page]),createAppInstance:base=>{calls.push(['instance',base]);return base;},
@@ -139,9 +139,25 @@ releaseWheel();overview.select('apps',false);
 const list={closest:()=>null,overflowY:'auto',scrollHeight:800,clientHeight:200,scrollTop:100,parentElement:wheelSurface};
 const beforeList=prevented;wheel({target:list});assert.equal(prevented,beforeList);assert.equal(overview.active(),'apps','Scrollable lists retain vertical scrolling while there is room');
 wheel({target:list,deltaY:-120});assert.equal(overview.active(),'apps','Lists can scroll back up');
-list.scrollTop=600;wheel({target:list});assert.equal(overview.active(),'projects','At the lower list edge the wheel navigates sections');
+list.scrollTop=600;wheel({target:list});assert.equal(overview.active(),'apps','The lower list edge never advances the section');assert.equal(prevented,beforeList);
 releaseWheel();list.scrollTop=0;wheel({target:list,deltaY:-120});assert.equal(overview.active(),'apps','At the upper list edge reverse navigation works');
+assert.equal(prevented,beforeList,'The upper edge retains native scrolling too');
+const child={closest:()=>null,parentElement:list};
+wheel({target:child,deltaY:-120});assert.equal(prevented,beforeList,'A child inside an exhausted list cannot navigate an outer section');
 releaseWheel();wheel({target:list,shiftKey:true});assert.equal(overview.active(),'projects','Shift scroll navigates directly over lists');
+releaseWheel();overview.select('apps',false);
+const horizontal={closest:()=>null,parentElement:track,overflowX:'auto',scrollWidth:800,clientWidth:200};
+for(const left of [0,600]){
+  horizontal.scrollLeft=left;
+  for(const motion of [{deltaX:left?80:-80,deltaY:0},{shiftKey:true,deltaY:left?120:-120}]){
+    releaseWheel();const count=prevented;wheel({target:horizontal,...motion});
+    assert.equal(overview.active(),'apps','A nested horizontal list keeps the section at both edges');
+    assert.equal(prevented,count,'Native horizontal list scrolling is preserved');
+  }
+}
+track.overflowX='auto';track.scrollWidth=3000;
+releaseWheel();wheel({target:{closest:()=>null,parentElement:track},deltaX:80,deltaY:0});
+assert.equal(overview.active(),'projects','The carousel itself remains a navigation surface');
 releaseWheel();overview.select('apps',false);
 wheel({deltaX:80,deltaY:0});assert.equal(overview.active(),'projects','Horizontal wheel advances one section');
 wheel({deltaX:80,deltaY:0});assert.equal(overview.active(),'projects','Momentum does not skip the next section');

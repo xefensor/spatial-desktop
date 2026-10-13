@@ -79,19 +79,21 @@
   track.addEventListener('scrollend',()=>{if(scrolling){if(Math.abs(track.scrollLeft-centre(panels.get(active)))<=1)finishSelection();}else settle();},{passive:true});
   track.addEventListener('pointerdown',()=>{if(scrolling){++selection;scrolling=false;clearTimeout(scrollTimer);track.scrollTo({left:track.scrollLeft,behavior:'instant'});}},{passive:true});
   // Ordinary wheel navigation works throughout Overview. A nested list gets
-  // first use of vertical motion while it can still scroll in that direction.
-  function canScrollVertically(target,delta){
+  // ownership of its axis, including at either edge. The section track itself
+  // remains the navigation surface, not a nested horizontal list.
+  function ownsScroll(target,across){
     for(let node=target;node&&node!==$('#universalSearch');node=node.parentElement){
-      if(node.scrollHeight<=node.clientHeight+1)continue;
-      if(!/^(auto|scroll)$/.test(window.getComputedStyle(node).overflowY))continue;
-      if(delta<0?node.scrollTop>1:node.scrollTop+node.clientHeight<node.scrollHeight-1)return true;
+      if(node===track)continue;
+      const extent=across?node.scrollWidth-node.clientWidth:node.scrollHeight-node.clientHeight;
+      const style=window.getComputedStyle(node);
+      if(extent>1&&/^(auto|scroll)$/.test(across?style.overflowX:style.overflowY))return true;
     }
     return false;
   }
   $('#universalSearch').addEventListener('wheel',event=>{
     if(home.hidden||event.ctrlKey||event.metaKey)return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
-    if(!across&&(event.target.closest('select,input[type=number],input[type=range]')||canScrollVertically(event.target,event.deltaY)))return;
+    if(event.target.closest('select,input[type=number],input[type=range]')||ownsScroll(event.target,across))return;
     event.preventDefault();event.stopPropagation();
     const delta=across&&!event.shiftKey?event.deltaX:event.deltaY||event.deltaX;
     const now=Date.now();
