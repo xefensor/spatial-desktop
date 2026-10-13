@@ -40,6 +40,8 @@ Area headers expose the same Expanded, On rail and Hidden choices through their 
 
 The Projects heading in Overview uses the surrounding glass surface. A conflicting generic heading rule previously added a separate grey background in light mode; the project heading now explicitly keeps a transparent background.
 
+The column correction passed all 20 checks and deployment. Live review at 1363 × 936 verified System and AI collapsing together to 70 px, Undo restoring both to 300 px, and a System border drag resizing both to 378 px while the left column stayed 280 px. The final System stylesheet also hides rail-only tools in expanded mode; rail controls remain available when collapsed. The Projects heading’s computed background is transparent and its light-mode appearance was reviewed. Verified views: [shared System/AI column](images/shared-area-column-verified-2026-10-13.jpg) and [Projects without the grey heading](images/projects-overview-fixed-2026-10-13.jpg).
+
 System puts quick settings and the next planned item before the full month calendar. The month is a keyboard-accessible disclosure; the rail's Agenda action reveals it. AI and Stash drop labels name the receiving chat or context before release, including over narrow rails. Plain-text drops into editors remain text insertion.
 
 ## Maximize, Fullscreen and ownership
