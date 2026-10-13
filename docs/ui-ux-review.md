@@ -22,6 +22,8 @@ Projects & Home supports name, summary and folder-path search and a filter for P
 
 Stash has context-owned text and Pinned filters, a visible filtered count and a recovery action when nothing matches. Filtering retains disclosure and media nodes. Direct returns and new captures reveal their item by clearing only the receiving shelf’s filter.
 
+The browsing pass on 13 October passed all 20 project checks and GitHub Pages deployment. Live accessibility review verified project-name search, the Open here empty state, Show all projects recovery, Workspace filter reset and current/open/available project labels. The new Stash controls were present after deployment. Final visual captures and live Stash/global-search interaction review were blocked by repeated browser-control timeouts; automated checks cover their filtering, context isolation and result recovery.
+
 ## Materials and accessibility
 
 - App windows retain opaque ABS bodies, rounded silhouettes and rounded discrete controls. Structural content joins stay flat.
