@@ -56,6 +56,7 @@ const nodes={};
 const node=key=>nodes[key] ||= {hidden:true,dataset:{},style:{setProperty(){}},classList:classes(),setAttribute(k,v){this[k]=v},removeAttribute(k){delete this[k]},focus(){},clientHeight:800,clientWidth:1000,children:[]};
 const frames=Object.fromEntries(['personal','draft'].map(name=>[name,{...node(name),dataset:{appFrame:name},style:{zIndex:20}}]));
 const ctx=vm.createContext({
+  cancelAreaPointerInteraction:null,placementUndoEpoch:0,
   desktopPages:Pages.create(),desktopWheel:Pages.wheelGate(),desktopColumnWheel:Pages.wheelGate(),
   activeWorkspace:'work',activeProjectName:'site',projectSpaces:{site:{name:'Website Launch',icon:'i-folder',accent:'#5af'}},workspaceProfiles:{work:{label:'Work',icon:'i-grid',accent:'#fa5'}},
   appInfo:{personal:{label:'Files'},draft:{label:'Notes'}},appState:{personal:'open',draft:'open'},windowMembership:{work:{personal:null,draft:'site'}},
@@ -207,6 +208,7 @@ console.log('Open-project header passed: zero/one/multiple projects, all labels,
   shell.append(area);shell.append(canvas);canvas.append(frame);body.append(shell);
   let reduced=false,visibilityChecks=0;
   const animationCtx=vm.createContext({
+    cancelAreaPointerInteraction:null,placementUndoEpoch:0,
     desktopPages:Pages.create(),activeWorkspace:'work',activeProjectName:'site',desktopPageAnimating:false,desktopHasWindowFocus:false,
     document:{body,createElement:()=>new Element('ghost')},window:{matchMedia:()=>({matches:reduced})},
     $:selector=>selector==='.workspace-zone'?canvas:shell,openProjectNames:()=>['site','film'],

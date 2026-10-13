@@ -14,6 +14,9 @@
   <p class="memory-help">Drop files, text or links</p><p class="memory-feedback" role="status"></p><button class="memory-text-action" data-memory-action="undo" hidden>Undo removal</button></section>`;
   const rail=document.createElement('button');rail.className='surface-key memory-header-key';rail.dataset.memoryAction='reveal';rail.title='Stash';rail.setAttribute('aria-label','Open Stash');rail.innerHTML=icon('i-note');$('.area-window-actions',area).prepend(rail);
   const railEntry=document.createElement('button');railEntry.className='surface-key memory-rail-entry rail-action';railEntry.setAttribute('aria-label','Open Stash');railEntry.innerHTML=icon('i-note')+'<span>Stash</span>';area.append(railEntry);
+  const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
+  dropHint.className='memory-drop-hint';dropHint.hidden=true;dropHint.setAttribute('role','status');dropHint.append(dropTitle,dropDetail);document.body.append(dropHint);
+  let dropPosition=null;
   const searchGroup=document.createElement('section');searchGroup.className='universal-group';searchGroup.dataset.universalGroup='memory';searchGroup.hidden=true;searchGroup.innerHTML='<h3>Stash · this workspace</h3><div class="universal-result-grid" id="universalMemoryResults"></div>';$('#universalResults').insertBefore(searchGroup,$('[data-universal-group="projects"]'));
   const field=selector=>$(selector,host);
   $('.project-resources-module').hidden=true;
@@ -45,6 +48,16 @@
   const scope=()=>{const column=desktopPages.column(activeWorkspace);return M.scope(activeWorkspace,projectSpaces[column]?column:null);};
   const allowed=()=>!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('stash');
   function label(key=current){const [workspace,project]=JSON.parse(key);return project?projectSpaces[project]?.name||'Unavailable project':workspaceProfiles[workspace]?.label+' workspace';}
+  function showDropTarget(event=null){
+    const visible=Boolean(event)&&allowed()&&!area.hidden;
+    [host,rail,railEntry].forEach(node=>node.classList.toggle('is-drop-target',visible));dropHint.hidden=!visible;dropPosition=visible?{clientX:event.clientX,clientY:event.clientY}:null;
+    if(!visible)return;
+    const key=scope(),owner=ownerFor(key),title='Save to '+label(key)+' Stash',detail=owner?F.folder(owner):'Copy with its source';
+    if(dropTitle.textContent!==title)dropTitle.textContent=title;if(dropDetail.textContent!==detail)dropDetail.textContent=detail;
+    const rect=dropHint.getBoundingClientRect();
+    dropHint.style.left=Math.max(8,Math.min(event.clientX+18,window.innerWidth-rect.width-8))+'px';
+    dropHint.style.top=Math.max(8,Math.min(event.clientY+18,window.innerHeight-rect.height-8))+'px';
+  }
   function feedback(text){field('.memory-feedback').textContent=text;}
   function save(){try{syncFolders();desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();queueDesktopStateBroadcast(0);return true;}catch{model=M.create(persisted);feedback('Stash is full in this browser. Remove an item or shorten its content before saving more.');return false;}}
   function sourceFor(id=frontApp){const frame=id&&frameFor(id);if(!frame||!isLocalApp(id))return M.source({label:label(scope()),workspace:activeWorkspace,project:JSON.parse(scope())[1],desktop:desktopPages.current(activeWorkspace)});const address=frame.dataset.fileLocation||$('.browser-toolbar input',frame)?.value||'';const owner=desktopPages.columnOf(activeWorkspace,id);return M.source({workspace:activeWorkspace,project:projectSpaces[owner]?owner:null,app:id,label:appInfo[id]?.label+' · '+($('.app-identity small',frame)?.textContent||''),address,desktop:desktopPages.pageOf(activeWorkspace,id)});}
@@ -109,6 +122,7 @@
   const drafts=new Map();
   function render(force=false){
     if(desktopSyncApplying){requestAnimationFrame(()=>render(force));return;}
+    if(dropPosition)showDropTarget(dropPosition);
     const key=scope(),changed=key!==current;host.hidden=!allowed();rail.hidden=!allowed();railEntry.hidden=!allowed();if(!allowed())return;
     if(changed){
       if(current&&!field('.memory-editor').hidden)drafts.set(current,{text:field('[data-memory-text]').value});
@@ -191,8 +205,14 @@
   host.addEventListener('error',event=>{if(event.target.tagName==='AUDIO')feedback('Audio unavailable. Try opening its source.');if(event.target.tagName==='IMG')event.target.alt='Image unavailable — open its source.';},true);
   host.addEventListener('input',event=>{if(event.target.matches('[data-memory-inline]')){persistInline(event.target);return;}if(!event.target.matches('.memory-seek'))return;const audio=event.target.closest('.memory-audio').querySelector('audio');if(Number.isFinite(audio.duration))audio.currentTime=Number(event.target.value);});
   host.addEventListener('dragstart',event=>{if(event.target.closest('input,textarea,button,a,audio,iframe')||event.target.closest('summary:not(.memory-item-summary)'))return;const item=itemFor(event.target.closest('[data-memory-id]')?.dataset.memoryId);if(!item)return;event.dataTransfer.setData(SpatialAIContext.MIME,JSON.stringify(contextFor(item)));event.dataTransfer.setData('text/plain',item.text||item.source.address);if(/^https?:\/\//.test(item.source.address))event.dataTransfer.setData('text/uri-list',item.source.address);event.dataTransfer.effectAllowed='copy';});
-  host.addEventListener('dragover',event=>{if(event.dataTransfer.types.some(type=>[SpatialAIContext.MIME,'Files','text/plain','text/uri-list'].includes(type))){event.preventDefault();event.dataTransfer.dropEffect='copy';host.classList.add('is-drop-target');}});
-  host.addEventListener('dragleave',event=>{if(!host.contains(event.relatedTarget))host.classList.remove('is-drop-target');});
+  const acceptsDrop=event=>{const types=[...event.dataTransfer.types],attachment=types.some(type=>type===SpatialAIContext.MIME||type==='Files');return allowed()&&types.some(type=>[SpatialAIContext.MIME,'Files','text/plain','text/uri-list'].includes(type))&&(attachment||!event.target?.closest?.('input,textarea,select,[contenteditable="true"]'));};
+  const containsDropTarget=target=>Boolean(target&&(host.contains(target)||rail.contains(target)||railEntry.contains(target)));
+  host.addEventListener('dragover',event=>{if(!acceptsDrop(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
+  [host,rail,railEntry].forEach(node=>node.addEventListener('dragleave',event=>{if(!containsDropTarget(event.relatedTarget))showDropTarget();}));
+  document.addEventListener('dragover',event=>{if(!containsDropTarget(event.target))showDropTarget();});
+  ['drop','dragend','pointercancel'].forEach(type=>document.addEventListener(type,()=>showDropTarget(),true));
+  window.addEventListener('blur',()=>showDropTarget());
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')showDropTarget();},true);
   async function keepContext(value,key=scope()){
     if(!value||typeof value!=='object'||!allowed())return false;
     if(value.storageScope===key&&itemsFor(key).some(item=>(item.fileId||item.id)===value.id)){feedback('This item is already in this Stash.');return false;}
@@ -209,8 +229,8 @@
     if(!save())return false;recordSaved(item);render(true);if(current===key)feedback('Saved with its source.');return true;
   }
   function dropIntoStash(event){
-    host.classList.remove('is-drop-target');if(event.dataTransfer.files.length){event.preventDefault();event.stopPropagation();saveFiles([...event.dataTransfer.files]);return;}
-    if(event.target.closest('textarea,input'))return;
+    showDropTarget();if(!acceptsDrop(event))return;
+    if(event.dataTransfer.files.length){event.preventDefault();event.stopPropagation();saveFiles([...event.dataTransfer.files]);return;}
     const raw=event.dataTransfer.getData(SpatialAIContext.MIME),text=event.dataTransfer.getData('text/plain'),url=event.dataTransfer.getData('text/uri-list').split('\n').find(line=>line&&!line.startsWith('#'));
     if(!raw&&!text&&!url)return;event.preventDefault();event.stopPropagation();
     if(raw){try{keepContext(JSON.parse(raw));}catch{feedback('This source could not be read.');}return;}
@@ -221,7 +241,7 @@
   host.addEventListener('paste',event=>{if(event.target.closest('input,textarea')||!event.clipboardData)return;dropIntoStash({target:event.target,dataTransfer:event.clipboardData,preventDefault:()=>event.preventDefault(),stopPropagation:()=>event.stopPropagation()});});
   [rail,railEntry].forEach(button=>{
     button.addEventListener('click',()=>{reveal();field('[data-memory-action="add"]').focus();});
-    button.addEventListener('dragover',event=>{if(!event.dataTransfer.types.some(type=>[SpatialAIContext.MIME,'Files','text/plain','text/uri-list'].includes(type)))return;event.preventDefault();event.dataTransfer.dropEffect='copy';reveal();});
+    button.addEventListener('dragover',event=>{if(!acceptsDrop(event))return;event.preventDefault();event.dataTransfer.dropEffect='copy';reveal();showDropTarget(event);});
     button.addEventListener('drop',event=>{reveal();dropIntoStash(event);});
   });
   document.addEventListener('pointerdown',event=>{if(temporaryRail&&!area.contains(event.target))collapse();},true);
@@ -257,7 +277,7 @@
     else F.copyAsset(pair.owner,file).then(renderFile).catch(()=>{section.textContent='This saved file is unavailable in this browser.';});return true;
   }
   document.addEventListener('click',event=>{const button=event.target.closest('[data-stash-edit]');if(!button)return;const [workspace,id]=JSON.parse(button.dataset.stashScope);if(activeWorkspace!==workspace)renderWorkspace(workspace,false);if(id)activateProject(id,false);else changeDesktopPage(desktopPages.current(activeWorkspace),false,'workspace');render(true);const item=itemsFor(current).find(item=>(item.fileId||item.id)===button.dataset.stashEdit);if(item)editor(item);});
-  globalThis.SpatialMemoryDesktop={itemFor,savedItem,contextFor,contextAtFile(path){const folder=path.slice(0,path.lastIndexOf('/')),pair=ownerAtFolder(folder),file=pair&&F.list(pair.owner).find(file=>folder+'/'+file.name===path),item=file&&itemsFor(pair.key).find(item=>(item.fileId||item.id)===file.id);return item?contextFor(item):null;},keepContext,reveal,revealItem(id,key){const item=itemsFor(key).find(item=>(item.fileId||item.id)===id);if(!item){reveal();feedback('This item is no longer in Stash.');return false;}reveal();const row=host.querySelector('[data-memory-id="'+CSS.escape(item.id)+'"]');if(row){row.open=true;row.scrollIntoView({block:'center'});row.querySelector('summary').focus();}return true;},items:()=>itemsFor(scope()),fileRows,openFile:openSavedFile,render,search,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
+  globalThis.SpatialMemoryDesktop={itemFor,savedItem,contextFor,contextAtFile(path){const folder=path.slice(0,path.lastIndexOf('/')),pair=ownerAtFolder(folder),file=pair&&F.list(pair.owner).find(file=>folder+'/'+file.name===path),item=file&&itemsFor(pair.key).find(item=>(item.fileId||item.id)===file.id);return item?contextFor(item):null;},keepContext,reveal,showDropTarget,revealItem(id,key){const item=itemsFor(key).find(item=>(item.fileId||item.id)===id);if(!item){reveal();feedback('This item is no longer in Stash.');return false;}reveal();const row=host.querySelector('[data-memory-id="'+CSS.escape(item.id)+'"]');if(row){row.open=true;row.scrollIntoView({block:'center'});row.querySelector('summary').focus();}return true;},items:()=>itemsFor(scope()),fileRows,openFile:openSavedFile,render,search,applyRailExpansion,snapshot:()=>model.snapshot(),merge(value){if(model.merge(value)){try{desktopStorage.setItem(storageKey,JSON.stringify(model.snapshot()));persisted=model.snapshot();}catch{}render(true);}}};
   Object.values(model.snapshot().records).filter(item=>item.kind==='next'&&!item.deleted).forEach(item=>model.promoteNext(item.scope,projectFor(item.scope)?.note));
   seed();save();render(true);refreshStashBrowsers();prepareControlSemantics(rail.parentElement);
 })();

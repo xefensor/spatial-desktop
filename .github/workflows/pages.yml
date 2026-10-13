@@ -30,22 +30,9 @@ jobs:
           for file in dist/*.js; do
             node --check "$file"
           done
-          node scripts/check-spatial-intent.cjs
-          node scripts/check-spatial-tiling.cjs
-          node scripts/check-demo-examples.cjs
-          node scripts/check-spatial-guide.cjs
-          node scripts/check-working-memory.cjs
-          node scripts/check-ai-context.cjs
-          node scripts/check-ai-chats.cjs
-          node scripts/check-overview-timeline.cjs
-          node scripts/check-workspace-setup.cjs
-          node scripts/check-ui-refinements.cjs
-          node scripts/check-material-identity.cjs
-          node scripts/check-desktop-performance.cjs
-          node scripts/check-system-rail.cjs
-          node scripts/check-desktop-pages.cjs
-          node scripts/check-desktop-columns.cjs
-          node scripts/check-desktop-workflows.cjs
+          for file in scripts/check-*.cjs; do
+            node "$file"
+          done
 
       - name: Upload website
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

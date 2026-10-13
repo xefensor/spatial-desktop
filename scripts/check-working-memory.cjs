@@ -8,7 +8,7 @@ const M=require('../dist/working-memory.js');
   const fields=new Map(),field=name=>{if(!fields.has(name))fields.set(name,{});return fields.get(name);};
   const host={parentElement:null,querySelectorAll:()=>[],contains:()=>false},railEntry={};
   const projectTarget={prepend(item){item.parentElement=this;}},workspaceTarget={prepend(item){item.parentElement=this;}};
-  const context={desktopSyncApplying:false,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
+  const context={desktopSyncApplying:false,dropPosition:null,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
   vm.createContext(context);vm.runInContext(adapter.slice(adapter.indexOf('  function render(force=false){'),adapter.indexOf('  function collapse(')),context);
   context.render(true);assert.equal(host.parentElement,projectTarget);
   context.projectColumnActive=()=>false;context.scope=()=>M.scope('work');context.projectFor=()=>null;
@@ -67,6 +67,24 @@ const Setup=require('../dist/workspace-setup.js');assert(Setup.sessionKeys.inclu
 // browser or file-manager instance owned by a different project.
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/working-memory-desktop.js'),'utf8');
 const section=(from,to)=>source.slice(source.indexOf(from),source.indexOf(to,source.indexOf(from)));
+// The real drag handlers name the current scope, remain readable on rail, and
+// release the hint when leaving/cancelling without taking over editable fields.
+{
+  const events={},globalEvents={},listen=(list,type,fn)=>(list[type]??=[]).push(fn);
+  const surface=()=>({classes:new Set(),classList:{toggle(name,on){this.owner.classes[on?'add':'delete'](name);}},contains(target){return target===this;},addEventListener(type,fn){listen(events,type,fn);}});
+  const host=surface(),rail=surface(),railEntry=surface();[host,rail,railEntry].forEach(node=>node.classList.owner=node);
+  const hint={hidden:true,style:{},getBoundingClientRect:()=>({width:280,height:80})},title={},detail={};
+  let destination=M.scope('work','launch');
+  const context={host,rail,railEntry,area:{hidden:false},allowed:()=>true,scope:()=>destination,ownerFor:()=>({root:'/home/work/Launch'}),F:{folder:owner=>owner.root+'/Stash'},projectSpaces:{launch:{name:'Launch <review>'}},workspaceProfiles:{work:{label:'Work'}},dropHint:hint,dropTitle:title,dropDetail:detail,dropPosition:null,SpatialAIContext:require('../dist/ai-context.js'),window:{innerWidth:1200,innerHeight:800,addEventListener(type,fn){listen(globalEvents,type,fn);}},document:{addEventListener(type,fn){listen(globalEvents,type,fn);}}};
+  vm.createContext(context);vm.runInContext(section('function label(','  function feedback('),context);vm.runInContext(section('  const acceptsDrop=','  async function keepContext('),context);
+  let prevented=false;const event={target:host,clientX:1190,clientY:780,preventDefault(){prevented=true;},dataTransfer:{types:['text/plain'],dropEffect:''}};
+  events.dragover[0](event);assert(prevented);assert.equal(title.textContent,'Save to Launch <review> Stash');assert.equal(title.innerHTML,undefined,'Project names are plain text');assert.equal(detail.textContent,'/home/work/Launch/Stash');assert.equal(hint.style.left,'912px');
+  destination=M.scope('work');events.dragover[0](event);assert.equal(title.textContent,'Save to Work workspace Stash');
+  events.dragleave[0]({relatedTarget:{}});assert(hint.hidden);assert(!rail.classes.has('is-drop-target'));
+  for(const [type,event] of [['dragover',{target:{}}],['drop',{}],['dragend',{}],['pointercancel',{}],['blur',{}],['keydown',{key:'Escape'}]]){context.showDropTarget({clientX:50,clientY:50});globalEvents[type].forEach(fn=>fn(event));assert(hint.hidden,type+' clears the Stash hint');}
+  prevented=false;events.dragover[0]({...event,target:{closest:()=>({})}});assert.equal(prevented,false);assert(hint.hidden,'Dropping over a Stash editor does not offer to create an attachment');
+  for(const type of ['Files',context.SpatialAIContext.MIME]){prevented=false;events.dragover[0]({...event,target:{closest:()=>({})},dataTransfer:{types:[type]}});assert(prevented,type+' over the editor remains an explicit attachment, avoiding browser file navigation');assert.equal(hint.hidden,false);}
+}
 const calls=[];const sandbox={createAppInstance:base=>{calls.push(['create',base]);return base+'--new';},navigateBrowser:(...args)=>calls.push(['navigate',...args]),renderFileLocation:(...args)=>calls.push(['folder',...args]),openAppFile:(...args)=>calls.push(['file',...args]),feedback:text=>calls.push(['message',text]),appInfo:{notes:{}}};vm.createContext(sandbox);vm.runInContext(section('function openSource(',"  host.addEventListener('submit'"),sandbox);
 sandbox.item={source:{address:'https://example.org/reference'}};vm.runInContext('openSource(item)',sandbox);assert.deepEqual(calls,[['create','browser'],['navigate','browser--new','https://example.org/reference']]);calls.length=0;
 sandbox.item={source:{address:'/home/demo/Projects/test/notes.md'}};vm.runInContext('openSource(item)',sandbox);assert.deepEqual(calls,[['create','dolphin'],['folder','dolphin--new','/home/demo/Projects/test'],['file','dolphin--new','notes.md']]);

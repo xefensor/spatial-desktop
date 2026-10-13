@@ -153,7 +153,7 @@ for (const edge of ['left', 'right', 'top', 'bottom']) {
   const rail = vm.createContext({
     dockState: { projects: { edge } }, dockSizes: { [edge]: 64 }, dockSizeManual: {},
     autoSpatialEdgeStates: new Map([[edge, 'rail']]), manualAreaOverride() {},
-    showArea(name) { assert.equal(name, 'projects'); shown = true; }, refreshIntentAreas() {},
+    setAreaState(name,state,announce) { assert.equal(name, 'projects'); assert.equal(state,'expanded'); assert.equal(announce,false); shown = true; }, refreshIntentAreas() {},
     requestAnimationFrame: callback => callback(),
     $: () => ({ focus() { focused = true; }, scrollIntoView() { scrolled = true; } })
   });

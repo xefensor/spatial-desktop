@@ -99,11 +99,19 @@ While holding a title bar with the left mouse button, scroll to carry the window
 
 All four Areas default to vertical side docks: Apps and Workspace & Projects on the left, System and AI on the right. Move an Area using its header/handle; resize its inner border. A rail and an expanded Area are presentations of the same dock. The removed Area Compact state is distinct from the Guide app’s compact view.
 
+Every Area header's context menu offers **Expanded**, **On rail** and **Hidden**, with the current state marked. Expanded remembers the previous size for that Area and screen edge. The same menu is available with Shift+F10 from a focused header control. Dragging remains available; Escape, a cancelled pointer or leaving the browser cancels an unfinished Area gesture.
+
+Completed Area changes and window moves offer **Undo** in their feedback message. Recovery restores placement and state, not document text, chat drafts or playback contents. The offer applies to the just-completed change; if another layout, context or display change intervenes, the previous offer cannot overwrite it. Maximize and Fullscreen keep their existing automatic Restore behavior.
+
 A rail keeps its own thickness and stays anchored to the screen edge even when another Area on that edge remains expanded. System therefore stays 70 px wide on a side rail (64 px high on a horizontal rail) beside an expanded AI Area. Collapsing System resets its scroll position so the rail clock and alerts are immediately visible. The canvas reserves the widest/tallest peer's dock lane.
 
 All four Areas can be hidden through their context menus and restored in **Overview → System → Desktop Areas**. Super or the Overview keyboard fallback remains useful if every Area is hidden. Visibility and dock layout save per Workspace. Ordinary tiling respects dock bounds; explicit floating/fullscreen interactions can request temporary Area changes. Fullscreen Area transfers/hiding are reversible and respect Manual mode.
 
 Border drags stop at available space rather than pushing the opposite Area offscreen. Side docks have a 520 px ceiling and top/bottom docks a 360 px ceiling, also capped at 40% of that display extent. Up to 440 px width / 320 px height remains reserved for the canvas, scaled down on small viewports. Old oversized states are fitted to the current display; the preferred size can return on a larger display.
+
+## System Area
+
+Expanded System starts with a compact clock, quick settings and the focus action. **Next up** shows the nearest planned item and opens Timeline. **Month view** expands the calendar when needed, leaving more space for notifications and connected devices by default. The rail keeps its clock, alerts and daily tools; its Agenda action temporarily reveals the panel and opens the month.
 
 ## Workspace Home and downloads
 
@@ -152,6 +160,8 @@ The Workspace & Projects Area shows the current context’s Stash. Ordinary work
 
 Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to AI. Source identity stays separate from the destination when copying between Stashes.
 
+While dragging over Stash, a destination label names the Project or Workspace Stash and its folder. It follows the current context and disappears when the drag ends or is cancelled.
+
 Each capture records a Timeline return link keyed to the saved item, surviving later insertion and renaming. Search uses local word matching, with date terms such as `today` / `yesterday` and `dnes` / `vcera`; it is not semantic AI retrieval.
 
 Notes are represented as Markdown files, web sources as `.url` files and media keeps its file type. File selection and file drops copy contents into IndexedDB, with a 25 MB limit per file; note bodies and the manifest persist with the context. Bundled examples include real local media. Stash/audio viewers can play those files. Nothing writes into the computer’s native Project folders.
@@ -163,6 +173,8 @@ Older Quick notes migrate to pinned Stash notes, and existing next-step text bec
 AI is its own fourth docked Area, also available without a Project. Its header or Super+A opens it. Enter submits a request; Shift+Enter adds a line. There are no preset prompt buttons and no real model/provider connection. Fixed local rules return explicitly labelled scripted examples.
 
 Attach a Stash item, file, app title-bar icon, selected text or link. Tags identify origin Workspace, Project and app. The first Project attachment selects that Project’s root as the working folder; another Project never silently replaces it. Choose Workspace Home or an attached Project explicitly. When a saved Stash item came from another Project, its storage owner supplies the working folder and its original source remains visible separately.
+
+The drag destination names the current chat and Workspace before release. Ordinary text dropped into an editable field remains text; file and explicit source drops attach to the chat, including when dropped over the composer.
 
 Each Workspace keeps a list of chats. **New chat** starts an empty conversation; the Chat selector returns to earlier conversations and **Rename** gives one an explicit name. Otherwise the first request supplies its title. Every chat has its own draft, attachments, working folder and replies, preserved through Project switches and reloads. Existing single conversations migrate into the list without discarding their content.
 

@@ -58,15 +58,38 @@ console.log('AI chats passed: legacy migration, drafts/folders/sources/history i
 
 // Boot the production adapter and switch chats/workspaces during an awaited file drop.
 (async()=>{
-  const nodes=new Map(),handlers={},storage=new Map();let releaseUpload,uploads=0;
-  const document={activeElement:null,addEventListener(){}};
-  function node(selector){if(!nodes.has(selector))nodes.set(selector,{dataset:{areaState:'expanded'},value:'',hidden:false,open:false,scrollTop:0,scrollHeight:100,innerHTML:'',textContent:'',listeners:{},classList:{contains:()=>false,remove(){},add(){},toggle(){}},contains:()=>false,querySelector:()=>node('summary'),addEventListener(type,fn){this.listeners[type]=fn;},setAttribute(){},focus(){document.activeElement=this;},select(){}});return nodes.get(selector);}
+  const nodes=new Map(),handlers={},storage=new Map(),documentHandlers={},windowHandlers={},created=[],areaTransitions=[];let releaseUpload,uploads=0;
+  const listen=(events,type,fn)=>(events[type]??=[]).push(fn);
+  const document={activeElement:null,addEventListener(type,fn){listen(documentHandlers,type,fn);},createElement(tag){const element=node('created-'+created.length);created.push(element);return element;},body:{append(){}}};
+  function node(selector){if(!nodes.has(selector)){const classes=new Set();nodes.set(selector,{dataset:{areaState:'expanded'},style:{},value:'',hidden:false,open:false,scrollTop:0,scrollHeight:100,innerHTML:'',textContent:'',listeners:{},classList:{contains:name=>classes.has(name),remove:name=>classes.delete(name),add:name=>classes.add(name),toggle(name,on){if(on)classes.add(name);else classes.delete(name);}},contains(target){return target===this;},append(){},getBoundingClientRect:()=>({width:280,height:80}),querySelector:()=>node('summary'),addEventListener(type,fn){this.listeners[type]=fn;},setAttribute(){},focus(){document.activeElement=this;},select(){}});}return nodes.get(selector);}
   const area=node('area');area.addEventListener=(type,fn)=>handlers[type]=fn;
-  const boot={SpatialAIContext:C,SpatialAIDemo:D,SpatialStashFiles:{put:()=>++uploads===1?new Promise(resolve=>{releaseUpload=resolve;}):Promise.resolve()},readDesktopStorage:(_,fallback)=>fallback,workspaceProfiles:profiles,projectSpaces:projects,SpatialDemoExamples:{projects:{}},activeWorkspace:'general',activeProjectName:null,desktopPreset:'clean',areaFor:()=>area,$:node,$$:()=>[],desktopStorage:{getItem:()=>true,setItem:(key,value)=>storage.set(key,value)},queueDesktopStateBroadcast(){},escapeHtml:value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),icon:()=>'',appInfo:{},prepareControlSemantics(){},MutationObserver:class{observe(){}},document,window:{addEventListener(){}},layoutDockAreas(){},scheduleWindowTiling(){},extendedDesktopActive:()=>false,crypto:require('node:crypto')};
+  const boot={SpatialAIContext:C,SpatialAIDemo:D,SpatialStashFiles:{put:()=>++uploads===1?new Promise(resolve=>{releaseUpload=resolve;}):Promise.resolve()},readDesktopStorage:(_,fallback)=>fallback,workspaceProfiles:profiles,projectSpaces:projects,SpatialDemoExamples:{projects:{}},activeWorkspace:'general',activeProjectName:null,desktopPreset:'clean',areaFor:()=>area,$:node,$$:()=>[],desktopStorage:{getItem:()=>true,setItem:(key,value)=>storage.set(key,value)},queueDesktopStateBroadcast(){},escapeHtml:value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),icon:()=>'',appInfo:{},prepareControlSemantics(){},MutationObserver:class{observe(){}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(type,fn){listen(windowHandlers,type,fn);}},layoutDockAreas(){},scheduleWindowTiling(){},extendedDesktopActive:()=>false,crypto:require('node:crypto')};
   vm.createContext(boot);vm.runInContext(fs.readFileSync(require.resolve('../dist/ai-desktop.js'),'utf8'),boot);
   const api=boot.SpatialAIDesktop,initial=api.snapshot().sessions.general.activeChat;
+  boot.setAreaState=(name,state)=>{areaTransitions.push([name,state]);area.dataset.areaState=state;area.hidden=state==='hidden';api.setMode(state);};boot.superKeyAlone=true;
+  node('#aiAreaToggle').listeners.click();assert.equal(api.mode(),'rail');
+  documentHandlers.keydown.forEach(fn=>fn({metaKey:true,code:'KeyA',preventDefault(){},stopPropagation(){}}));
+  assert.deepEqual(areaTransitions,[['ai','rail'],['ai','expanded']],'Header and Super+A use the shared remembered-size/Undo transition');assert.equal(document.activeElement,node('#aiPrompt'));
+  const hint=created[0],hintTitle=created[1],hintDetail=created[2];
+  const hover={target:area,clientX:1180,clientY:790,preventDefault(){},dataTransfer:{types:['text/plain'],dropEffect:''}};
+  node('#aiChatName').value='<Review & plans>';node('#aiRenameForm').listeners.submit({preventDefault(){}});
+  handlers.dragover(hover);assert.equal(hint.hidden,false);assert.equal(hintTitle.textContent,'Attach to <Review & plans>');assert.equal(hintTitle.innerHTML,'','Names remain text, never markup');
+  assert.equal(hintDetail.textContent,'General workspace · Copy source');assert.equal(hint.style.left,'912px');assert.equal(hint.style.top,'712px','Hint stays inside the viewport');
+  node('#aiNewChat').listeners.click();assert.equal(hintTitle.textContent,'Attach to New chat 2','The label follows the current chat, including a switch during drag');
+  node('#aiChatSelect').value=initial;node('#aiChatSelect').listeners.change();
+  for(const [events,type,event] of [[documentHandlers,'dragover',{target:{}}],[documentHandlers,'drop',{}],[documentHandlers,'dragend',{}],[documentHandlers,'keydown',{key:'Escape'}],[windowHandlers,'pointercancel',{}],[windowHandlers,'blur',{}]]){
+    handlers.dragover(hover);events[type].forEach(fn=>fn(event));assert.equal(hint.hidden,true,type+' clears the destination');assert.equal(area.classList.contains('is-ai-drop-target'),false);
+  }
+  let intercepted=false;const inputHover={...hover,target:{closest:()=>node('#aiPrompt')},preventDefault(){intercepted=true;}};
+  handlers.dragover(inputHover);await handlers.drop({...inputHover,dataTransfer:{...inputHover.dataTransfer,getData:()=> 'Text for my prompt',files:[]}});
+  assert.equal(intercepted,false,'Text fields retain their normal text-drop behavior');assert.equal(hint.hidden,true);
+  node('#aiNewChat').listeners.click();const contextChat=api.snapshot().sessions.general.activeChat;
+  const contextDrop={...inputHover,stopPropagation(){},dataTransfer:{types:[C.MIME],getData:type=>type===C.MIME?JSON.stringify({id:'editor-context',title:'Attached from editor',text:'Source text'}):'',files:[]}};
+  handlers.dragover(contextDrop);assert.equal(hint.hidden,false);await handlers.drop(contextDrop);assert(intercepted,'Explicit sources over the composer still attach');
+  assert.equal(api.snapshot().sessions.general.chats[contextChat].items[0].id,'editor-context');
+  node('#aiChatSelect').value=initial;node('#aiChatSelect').listeners.change();
   node('#aiPrompt').value='Draft before switching';node('#aiPrompt').listeners.input();
-  const drop=handlers.drop({preventDefault(){},stopPropagation(){},dataTransfer:{types:['Files'],getData:()=>'',files:[{size:20,name:'brief.txt',type:'text/plain',text:async()=>'Brief contents'},{size:10,name:'notes.txt',type:'text/plain',text:async()=>'Notes contents'}]}});
+  const drop=handlers.drop({target:inputHover.target,preventDefault(){},stopPropagation(){},dataTransfer:{types:['Files'],getData:()=>'',files:[{size:20,name:'brief.txt',type:'text/plain',text:async()=>'Brief contents'},{size:10,name:'notes.txt',type:'text/plain',text:async()=>'Notes contents'}]}});
   node('#aiNewChat').listeners.click();const next=api.snapshot().sessions.general.activeChat;
   assert.notEqual(next,initial);assert.equal(node('#aiPrompt').value,'');
   node('#aiPrompt').value='Draft in new chat';node('#aiPrompt').listeners.input();
@@ -81,5 +104,5 @@ console.log('AI chats passed: legacy migration, drafts/folders/sources/history i
   assert.equal(node('#aiPrompt').value,'');assert.equal(node('.ai-context-sources').open,false);
   const remote=C.create(api.snapshot(),env);remote.select('general',next);remote.draft('general','Remote draft',next);
   api.merge(remote.snapshot());assert.equal(api.snapshot().sessions.general.activeChat,initial,'Another display cannot move input into a different chat');
-  console.log('AI chat adapter passed: actual new/select/send handlers, draft restoration, compact sources, two-file upload stays in its original chat/workspace, and display sync cannot redirect input.');
+  console.log('AI chat adapter passed: current named drop destination, safe names, viewport positioning, leave/drop/cancel cleanup, normal input drops, actual new/select/send handlers, draft restoration, compact sources, two-file upload stays in its original chat/workspace, and display sync cannot redirect input.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

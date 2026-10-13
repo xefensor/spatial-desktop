@@ -241,6 +241,7 @@ Object.assign(ui.context, {
     school: { dolphin: 'closed', elisa: 'closed', browser: 'open', terminal: 'closed', notes: 'closed' }
   },
   desktopSyncApplying: false, desktopHasWindowFocus: true, frontApp: null, layoutMode: 'manual',
+  cancelAreaPointerInteraction: null, cancelWindowPointerInteraction: null, placementUndoEpoch: 0,
   requestAnimationFrame: fn => raf.push(fn), clearTimeout() {},
   hideNotificationPeek() {}, syncNotifications() {}, setFocusRunning(running) { ui.context.focusRunning = running; },
   persistWorkspaceAppStates() { ui.context.workspaceAppStates[ui.context.activeWorkspace] = { ...ui.context.appState }; },

@@ -1,6 +1,6 @@
 # UI and UX notes
 
-Current conventions as of 12 October 2026. Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
+Current conventions as of 13 October 2026. Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
 
 ## Windows and hotbar
 
@@ -27,6 +27,12 @@ Apps combines the desktop map, running-window lists and the launcher. Filters sh
 - Toggle indicators remain distinct from momentary actions; press feedback stays short.
 - Keyboard focus is visible. Workspace tabs support Left/Right, Home and End; search navigation respects category selection.
 - System headers stay outside their scrolling content. Readable app content remains on solid surfaces.
+
+## Area controls and recovery
+
+Area headers expose the same Expanded, On rail and Hidden choices through their context menu. Border handles remain the direct way to resize. Expanded remembers the previous size on each edge; cancelling an Area drag restores its starting placement. Recent layout changes offer an actionable Undo without restoring old app text or chat contents.
+
+System puts quick settings and the next planned item before the full month calendar. The month is a keyboard-accessible disclosure; the rail's Agenda action reveals it. AI and Stash drop labels name the receiving chat or context before release, including over narrow rails. Plain-text drops into editors remain text insertion.
 
 ## Maximize, Fullscreen and ownership
 

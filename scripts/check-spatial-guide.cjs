@@ -348,7 +348,7 @@ console.log('Desktop exit choices passed: skip/completion, clean/demo reset, pre
 
 const syncBoundary=desktop.slice(desktop.indexOf('function postDesktopSyncMessage('),desktop.indexOf('function prepareCrossDisplaySync('));
 let sent=[],applied=[],closed=0;
-const syncContext=vm.createContext({SpatialGuide:{model:{active:()=>true},syncScope:'guide:test',displayValid:true},desktopSyncScope:'guide:test',desktopSyncSource:'main',desktopSyncLastStamp:0,desktopSyncReady:true,desktopSyncApplying:false,desktopSyncTimer:0,desktopSyncAnnounced:false,
+const syncContext=vm.createContext({cancelAreaPointerInteraction:null,cancelWindowPointerInteraction:null,SpatialGuide:{model:{active:()=>true},syncScope:'guide:test',displayValid:true},desktopSyncScope:'guide:test',desktopSyncSource:'main',desktopSyncLastStamp:0,desktopSyncReady:true,desktopSyncApplying:false,desktopSyncTimer:0,desktopSyncAnnounced:false,
  desktopSyncChannel:{postMessage(packet){sent.push(packet);}},localDisplayDescriptor:()=>({guideCompanion:false}),captureDesktopSyncState:()=>({schema:4}),desktopStorage:{setItem(){}},desktopSyncPeers:new Map(),refreshIntentAreas(){},localDisplaySlot:()=>1,localDisplayRoleLabel:()=> 'Main display',
  document:{body:{classList:{toggle(){}}}},$(){return null;},areaFor(){return null;},rebalanceAreaDisplays:()=>false,applyExtendedDesktopPartition(){},showToast(){},workspaceProfiles:{general:{label:'General'}},activeWorkspace:'general',setTimeout,clearTimeout,
  applyDesktopSyncState(state){applied.push(state);},close(){closed++;}});

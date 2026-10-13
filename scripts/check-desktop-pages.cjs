@@ -390,6 +390,7 @@ console.log('Area wheel passed: all four Areas, hover/focus, shared momentum, bo
 const dragListeners={},carried=[];
 const held=vm.createContext({
   cancelWindowPointerInteraction:null,cancelAnimationFrame(){},tileLayoutFrame:0,tileInteraction:false,
+  capturePlacement:()=>({}),restorePlacement(){},offerPlacementUndo(){},appInfo:{notes:{label:"Notes"}},
   SpatialDesktopPages:Pages,desktopPages:Pages.create(),activeWorkspace:'work',tileSessions:{},
   activeDesktopDrag:null,desktopPageAnimating:false,superKeyAlone:true,performance:{now:()=>clock},
   $:()=>({clientHeight:800}),

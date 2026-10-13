@@ -126,6 +126,7 @@ const sandbox = {
   clearWindowAutoAvoidance() {}, displayAssignmentsFor: () => ({ apps: {} }),
   rebalanceAreaDisplays: () => false, applyExtendedDesktopPartition() {},
   requestAnimationFrame: () => 1, cancelAnimationFrame() {}, setTimeout() {},
+  capturePlacement: () => ({}), restorePlacement() {}, offerPlacementUndo() {},
   $: () => null, $$: selector => selector.includes("data-app-frame") ? Object.values(frames) : [],
   readGeometry: frame => ({ x: parseFloat(frame.style.left) || 8, y: parseFloat(frame.style.top) || 8, width: parseFloat(frame.style.width) || 440, height: parseFloat(frame.style.height) || 340 }),
   syncApps: () => Object.entries(frames).forEach(([name, frame]) => { frame.hidden = sandbox.appState[name] !== "open"; }),
@@ -177,7 +178,12 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
 const shell = { clientWidth: 1600, clientHeight: 900,
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
-  tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, window: { innerWidth: 1600, innerHeight: 900 },
+  tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, cancelAreaPointerInteraction:null,
+  window: { innerWidth: 1600, innerHeight: 900, ...eventTarget() },
+  cloneDesktopState: value => JSON.parse(JSON.stringify(value)),
+  capturePlacement: () => vm.runInContext("JSON.parse(JSON.stringify(snapshotAreaLayout()))", docks),
+  restorePlacement(before) { docks.beforeCancel=before; vm.runInContext("workspaceAreaSessions[activeWorkspace]=beforeCancel;applyAreaSession(activeWorkspace);",docks); },
+  offerPlacementUndo(before) { docks.lastUndo = before; },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
@@ -199,7 +205,7 @@ vm.runInContext(slice("function applyAutoAvoidance(", "function freezeCurrentAre
 vm.runInContext(slice("function secondaryAreaCanvasNames(", "function applySecondaryAreaCanvas("), docks);
 vm.runInContext(slice("function layoutDockAreas(", "function hideArea("), docks);
 vm.runInContext(slice("function rebalanceAreaDisplays(", "function displayTransferTarget("), docks);
-vm.runInContext(slice("function bindDockResize(", "function prepareAreaWindows("), docks);
+vm.runInContext(slice("function trackAreaPointer(", "function prepareAreaWindows("), docks);
 vm.runInContext(`workspaceAreaSessions.general = {
   layoutMode: "auto", sizes: {left: 320, right: 300, top: 250, bottom: 250},
   hidden: {projects: false, apps: false, systems: false}
@@ -234,6 +240,28 @@ vm.runInContext(`workspaceAreaSessions.school = {layoutMode: "auto", sizes: {lef
 assert.equal(areaFrames.projects.rect.width, 370, "Another workspace retains its own explicit size");
 vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', docks);
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
+// Only the resized Area changes mode, and collapse/reopen remembers its size.
+vm.runInContext('setAreaState("projects","expanded",false);',docks);
+projectHandle.listeners.get("pointerdown")({button:0,pointerId:11,preventDefault(){},stopPropagation(){}});
+projectHandle.listeners.get("pointermove")({pointerId:11,clientX:390,clientY:300});
+projectHandle.listeners.get("pointerup")();
+vm.runInContext('setAreaState("projects","rail",false);',docks);
+assert.equal(areaFrames.apps.dataset.areaState,"expanded","Collapsing Project does not also collapse Apps");
+assert.equal(areaFrames.projects.rect.width,68);
+vm.runInContext('setAreaState("projects","expanded",false);',docks);
+assert.equal(areaFrames.projects.rect.width,390,"Expanded restores the last dragged width");
+for(const cancellation of ["pointercancel","Escape","lostpointercapture"]) {
+  const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+  projectHandle.listeners.get("pointerdown")({button:0,pointerId:12,preventDefault(){},stopPropagation(){}});
+  projectHandle.listeners.get("pointermove")({pointerId:12,clientX:72,clientY:300});
+  assert.equal(areaFrames.projects.dataset.areaState,"rail");
+  if(cancellation==="Escape") docks.window.dispatchEvent({type:"keydown",key:"Escape",preventDefault(){},stopImmediatePropagation(){}});
+  else projectHandle.listeners.get(cancellation)({pointerId:12,type:cancellation});
+  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,cancellation+" restores preferences, expanded width and dock size");
+  assert.equal(areaFrames.projects.rect.width,390);
+  assert.equal(docks.window.listenerCount(),0,"Area gesture removes global listeners");
+}
+vm.runInContext('setAreaState("projects","rail",false);',docks);
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
 
 // An expanded AI peer must not stretch System's rail back to panel width.
@@ -257,7 +285,7 @@ assert.equal(areaFrames.systems.rect.width,70,'Reloading the saved Area session 
 for(const edge of ['left','right','top','bottom']){
   docks.mixedEdge=edge;
   vm.runInContext(`dockState.systems.edge=mixedEdge;dockState.ai.edge=mixedEdge;
-    dockSizes[mixedEdge]=mixedEdge==='left'||mixedEdge==='right'?70:64;layoutDockAreas();`,docks);
+    dockSizes[mixedEdge]=mixedEdge==='left'||mixedEdge==='right'?70:64;areaPreferredStates.systems="rail";layoutDockAreas();`,docks);
   const r=areaFrames.systems.rect,vertical=['left','right'].includes(edge);
   assert.equal(areaFrames.systems.dataset.areaState,'rail');
   assert.equal(vertical?r.width:r.height,vertical?70:64,edge+': mixed rails keep their own thickness');

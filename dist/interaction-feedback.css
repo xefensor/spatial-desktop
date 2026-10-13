@@ -1,0 +1,31 @@
+/* A recovery action belongs above the Areas and remains a clear click target. */
+.toast.has-action {
+  z-index:10040;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  width:max-content;
+  max-width:calc(100vw - 32px);
+  box-sizing:border-box;
+  border-radius:0;
+  line-height:1.45;
+}
+.toast.has-action.is-visible {pointer-events:auto}
+.toast.has-action:not(.is-visible) {visibility:hidden}
+.toast-action {
+  flex:0 0 auto;
+  min-height:34px;
+  padding:5px 12px;
+  color:var(--text);
+  background:var(--ui-quiet);
+  border:1px solid var(--line);
+  border-radius:0;
+  font:inherit;
+  font-weight:650;
+  cursor:pointer;
+}
+.toast-action:hover {background:var(--ui-quiet-hover)}
+.toast-action:active {transform:translateY(1px)}
+.toast-action:focus-visible {outline:2px solid var(--blue);outline-offset:3px}
+.toast-action:disabled {opacity:.5;cursor:default}
+@media(max-width:600px) {.toast.has-action {gap:10px;font-size:12px}}
