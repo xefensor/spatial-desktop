@@ -134,6 +134,8 @@ Overview has four horizontal sections: **Timeline, Apps, Projects & Home, System
 
 Nested lists keep wheel ownership at their top/bottom or left/right edges, without advancing the Overview section or scrolling a parent pane. Section navigation remains available over non-scrollable content; Shift+scroll can cross a vertical list, but stays inside a nested horizontal scroller.
 
+The containment change passed the full project check suite, including Area edge/focus routing and nested horizontal Overview lists. Live review verified repeated wheel input beyond both ends of the app library kept the Apps section selected. [Reviewed Overview](images/contained-scroll-2026-10-13.jpg).
+
 Apps keeps existing work on the left and the app library on the right. Desktop cards show their app icons; running-window rows show the current content, state, desktop and matching hotbar number. Windows are ordered by desktop and hotbar position. Filters select the current desktop, open windows or parked windows; the launcher stays available. The library has visible categories and an icon grid with readable labels. Narrow screens stack the work pane above the library and use a category selector. Projects & Home exposes context and folder navigation. System includes settings, notifications and recovery controls for Areas.
 
 ![Apps in Overview: desktops and running windows beside the app library](images/overview-apps-2026-10-12.jpg)
