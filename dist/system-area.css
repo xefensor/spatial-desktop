@@ -2,6 +2,7 @@
    the month grid takes space only when its native disclosure is open. */
 .systems-zone:not([data-area-state="rail"])>.system-scroll-region{gap:9px}
 .systems-zone:not([data-area-state="rail"])>.system-scroll-region>*{order:0}
+.systems-zone:not([data-area-state="rail"])>.system-scroll-region>.rail-group{display:none!important}
 .systems-zone:not([data-area-state="rail"]) .time-block{
   min-height:46px;
   align-items:center;
