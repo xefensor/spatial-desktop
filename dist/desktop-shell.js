@@ -2562,7 +2562,7 @@ function areaCanBeHidden(name) {
 }
 
 function areaLabel(name) {
-  return name === "projects" ? "Workspace & Projects" : name === "apps" ? "Apps" : name === "ai" ? "AI" : "System";
+  return name === "projects" ? "Workspace & Projects" : name === "apps" ? "Apps" : name === "ai" ? "Assistant" : "System";
 }
 
 function dockGroup(edge, includeHidden = false) {

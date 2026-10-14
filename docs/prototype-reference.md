@@ -32,7 +32,7 @@ The current thirteen chapters follow this order:
 | 4 | Parking | Put a useful app aside and bring its window back |
 | 5 | Desktops | Change page while keeping the same context |
 | 6 | Stash | Save and inspect an idea without requiring a Project |
-| 7 | AI | Attach a source, write a request and keep a scripted reply |
+| 7 | Assistant | Attach a source, write a request and keep a scripted reply |
 | 8 | Projects | Create a Project and use its separate windows/desktops |
 | 9 | Workspaces | Create a Workspace and explore its Home folders |
 | 10 | Overview & Timeline | Find work and compare local activity with a plan |
@@ -97,13 +97,13 @@ Scroll over an Area header, rail or non-scrollable content to change vertical de
 
 While holding a title bar with the left mouse button, scroll to carry the window to another desktop; Shift+scroll changes its Project context. Release to place it. Cancelled drags return to the original placement. Ordinary scrolling inside focused apps remains an app action.
 
-All four Areas default to vertical side docks: Apps and Workspace & Projects on the left, System and AI on the right. Move an Area using its header/handle; resize its inner border. A rail and an expanded Area are presentations of the same dock. The removed Area Compact state is distinct from the Guide app’s compact view.
+All four Areas default to vertical side docks: Apps and Workspace & Projects on the left, System and Assistant on the right. Move an Area using its header/handle; resize its inner border. A rail and an expanded Area are presentations of the same dock. The removed Area Compact state is distinct from the Guide app’s compact view.
 
 Every Area header's context menu offers **Expanded**, **On rail** and **Hidden**, with the current state marked. Areas sharing a dock column on the same display resize, collapse and expand together, remembering that column’s previous expanded thickness. Top/bottom rows share their height in the same way. Hidden applies to the chosen Area; showing it again joins its visible peers’ state and size. Docking into an occupied edge joins that column rather than replacing its width. The same menu is available with Shift+F10 from a focused header control. Dragging remains available; Escape, a cancelled pointer or leaving the browser cancels an unfinished Area gesture.
 
 Completed Area changes and window moves offer **Undo** in their feedback message. Recovery restores placement and state, not document text, chat drafts or playback contents. The offer applies to the just-completed change; if another layout, context or display change intervenes, the previous offer cannot overwrite it. Maximize and Fullscreen keep their existing automatic Restore behavior.
 
-A column of rails has one shared thickness and stays anchored to its screen edge. The System/AI column is 70 px wide on a side edge (64 px high on a horizontal edge). Collapsing System resets its scroll position so the rail clock and alerts are immediately visible. Temporary widget reveals can open over the scene without changing the column’s saved size. Older mixed rail/expanded preferences are fitted to their shared saved dock thickness.
+A column of rails has one shared thickness and stays anchored to its screen edge. The System/Assistant column is 70 px wide on a side edge (64 px high on a horizontal edge). Collapsing System resets its scroll position so the rail clock and alerts are immediately visible. Temporary widget reveals can open over the scene without changing the column’s saved size. Older mixed rail/expanded preferences are fitted to their shared saved dock thickness.
 
 All four Areas can be hidden through their context menus and restored in **Overview → System → Desktop Areas**. Super or the Overview keyboard fallback remains useful if every Area is hidden. Visibility and dock layout save per Workspace. Ordinary tiling respects dock bounds; explicit floating/fullscreen interactions can request temporary Area changes. Fullscreen Area transfers/hiding are reversible and respect Manual mode.
 
@@ -176,7 +176,7 @@ Steam provides three separate sample conversations with independent drafts, orig
 
 The Workspace & Projects Area shows the current context’s Stash. Ordinary work has a Workspace Stash in Home/Stash; a Project has its own Stash folder. It keeps explicit notes, excerpts, links and uploaded files with their source, saved time and provenance. The heading opens its folder in File Browser. A Project’s Stash is shared when that Project is opened from another Workspace.
 
-Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to AI. Source identity stays separate from the destination when copying between Stashes.
+Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to Assistant. Source identity stays separate from the destination when copying between Stashes.
 
 While dragging over Stash, a destination label names the Project or Workspace Stash and its folder. It follows the current context and disappears when the drag ends or is cancelled.
 
@@ -188,9 +188,9 @@ Notes are represented as Markdown files, web sources as `.url` files and media k
 
 Older Quick notes migrate to pinned Stash notes, and existing next-step text becomes an ordinary note. There is no separate Quick Note panel or manual save-place control. Per-item merge/deletion markers support synchronization between demo displays. Clean/demo reset and Guide practice use their own storage handling.
 
-## AI Area
+## Assistant Area
 
-AI is its own fourth docked Area, also available without a Project. Its header or Super+A opens it. Enter submits a request; Shift+Enter adds a line. There are no preset prompt buttons and no real model/provider connection. Fixed local rules return explicitly labelled scripted examples.
+Assistant is the digital assistant in its own fourth docked Area, also available without a Project. Its header or Super+A opens it. Enter submits a request; Shift+Enter adds a line. There are no preset prompt buttons and no real model/provider connection. Fixed local rules return explicitly labelled scripted examples.
 
 Attach a Stash item, file, app title-bar icon, selected text or link. Tags identify origin Workspace, Project and app. The first Project attachment selects that Project’s root as the working folder; another Project never silently replaces it. Choose Workspace Home or an attached Project explicitly. When a saved Stash item came from another Project, its storage owner supplies the working folder and its original source remains visible separately.
 
@@ -214,7 +214,7 @@ Controls use a fine reflected rim and a softer contact shadow, with a recessed, 
 
 App windows use opaque ABS bodies with rounded silhouettes and discrete controls. Structural content joins remain flat. Areas, Overview, Pack/Import and transient menus use square acrylic/glass geometry. Main window content stays opaque. App colour connects the window, hotbar and parked card; floating windows have a subtle app-colour rim. Toggle light lines persist; momentary controls use short press feedback. Window numbers are unframed text.
 
-The workspace-coloured wallpaper is one fixed background beneath the desktop and Areas, with static translucent blue/teal silk folds drawn in SVG. A slow opacity pulse replaces moving glow and particle layers. Cool acrylic sheets use restrained role colours: blue for Apps, project colour (amber in the library) for Workspace & Projects, mint for System, and lavender for AI. App casings and title bars carry their own accent; reading surfaces stay opaque with a gentler tint. Light mode uses a pale background and darker accent colours. Decorative animation pauses when hidden, during held-pointer interaction, in Overview and under Fullscreen, and respects reduced motion. The clock updates at minute boundaries.
+The workspace-coloured wallpaper is one fixed background beneath the desktop and Areas, with static translucent blue/teal silk folds drawn in SVG. A slow opacity pulse replaces moving glow and particle layers. Cool acrylic sheets use restrained role colours: blue for Apps, project colour (amber in the library) for Workspace & Projects, mint for System, and lavender for Assistant. App casings and title bars carry their own accent; reading surfaces stay opaque with a gentler tint. Light mode uses a pale background and darker accent colours. Decorative animation pauses when hidden, during held-pointer interaction, in Overview and under Fullscreen, and respects reduced motion. The clock updates at minute boundaries.
 
 ## Current prototype and intended system
 
@@ -223,7 +223,7 @@ The workspace-coloured wallpaper is one fixed background beneath the desktop and
 | Browser-local window geometry, contexts and app state | Managing real KWin/application windows |
 | Simulated Workspace Home and Project folders; stored uploads | Native filesystem integration and permission handling |
 | Workspace-owned mock browser/media sessions | Separate real browser profiles, native media sessions and app environments |
-| Scripted AI replies and explicit source tags | Connected AI providers and actual inference |
+| Scripted Assistant replies and explicit source tags | Connected AI providers and actual inference |
 | Local plans, reminders and explicit activity history | External calendar/task services and OS-level activity integrations |
 | Two browser windows with synchronized display assignments | Native monitor discovery, hot-plug and window/display control |
 | Prototype Pack/Import surfaces | Portable native app/workspace packaging |

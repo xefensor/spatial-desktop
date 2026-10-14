@@ -47,7 +47,7 @@
     model.examplesSeen(activeWorkspace);persist();
   }
   function submitRequest(){
-    const request=prompt.value.trim();if(!request){status.textContent='AI demo · write a request first';return;}
+    const request=prompt.value.trim();if(!request){status.textContent='Assistant demo · write a request first';return;}
     const session=model.session(activeWorkspace),workingFolder=model.workingFolder(activeWorkspace),project=projectSpaces[session.workingProject];
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:session.items,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}));
     if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return;}
@@ -68,10 +68,10 @@
     const next=JSON.stringify([activeWorkspace,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     $('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
     const expanded=area.dataset.areaState==='expanded';
-    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',expanded?'Put AI area on rail':'Expand AI area');
+    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',expanded?'Put Assistant area on rail':'Expand Assistant area');
     if(dropPosition)showDropTarget(dropPosition);
     if(next===signature)return;rememberView();signature=next;
-    if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='AI demo · scripted replies · nothing is sent';}
+    if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Assistant demo · scripted replies · nothing is sent';}
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title+' · '+chat.sources+' source'+(chat.sources===1?'':'s'))+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home)+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root)+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
@@ -104,7 +104,7 @@
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · ready for a scripted demo';return true;
   }
   $('#aiAreaToggle').addEventListener('click',toggle);
-  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();status.textContent='AI demo · scripted replies · nothing is sent';});
+  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();status.textContent='Assistant demo · scripted replies · nothing is sent';});
   prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
@@ -118,7 +118,7 @@
   }
   function describe(target){
     const output=target.closest('[data-ai-demo-turn]');
-    if(output){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===output.dataset.aiDemoTurn);return turn?{id:'demo-reply:'+turn.id,title:turn.title,kind:'note',text:turn.text,workspace:turn.workspace,project:turn.project,app:'ai-demo',source:{workspace:turn.workspace,project:turn.project,app:'ai-demo',label:'AI demo · scripted reply'}}:null;}
+    if(output){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===output.dataset.aiDemoTurn);return turn?{id:'demo-reply:'+turn.id,title:turn.title,kind:'note',text:turn.text,workspace:turn.workspace,project:turn.project,app:'ai-demo',source:{workspace:turn.workspace,project:turn.project,app:'ai-demo',label:'Assistant demo · scripted reply'}}:null;}
     const source=baseSource(target),frame=target.closest('[data-app-frame]');
     const row=target.closest('[data-file-name]');
     if(row){const path=frame.dataset.fileLocation.replace(/\/$/,'')+'/'+row.dataset.fileName,savedContext=globalThis.SpatialMemoryDesktop?.contextAtFile(path);if(savedContext)return savedContext;const project=model.projectAt(path)||source.project;const saved=project&&F.list(projectSpaces[project]).find(file=>F.folder(projectSpaces[project])+'/'+file.name===path);return {...source,project,source:{...source,project,address:path,label:appInfo[frame.dataset.appFrame]?.label||'Files',desktop:desktopPages.pageOf(activeWorkspace,frame.dataset.appFrame)},id:'file:'+path,title:row.dataset.fileName,kind:row.dataset.fileFolder?'folder':saved?.kind||'file',address:path,text:saved?.content||saved?.caption||'',filename:row.dataset.fileName,fileKey:saved?.attachment?.key||saved?.blobKey};}
@@ -132,7 +132,7 @@
     if(selection||link)return {...source,id:'selection-'+crypto.randomUUID(),title:(selection||link.textContent||address).slice(0,60),kind:link?'link':'text',text:selection||'',address,source:{...source,address,label:appInfo[frame.dataset.appFrame]?.label||'App',desktop:desktopPages.pageOf(activeWorkspace,frame.dataset.appFrame)}};
     return source;
   }
-  function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into AI to attach this app with its context';});}
+  function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into Assistant to attach this app with its context';});}
   prepareSources();
   const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
   // Desktop content uses the same pointer gestures as the rest of the scene.

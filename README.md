@@ -15,7 +15,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 - Windows tile automatically and share numbered shortcuts with the Apps hotbar. Each title bar shows its number; new windows open left to right, then top to bottom, with four preferring a 2×2 grid when they fit.
 - Park apps as useful cards instead of hiding their work. Float a window when placement matters.
 - Projects keep their own folders, windows and vertical desktops, and resume automatically. Workspaces separate broader contexts such as personal life, study and work.
-- Apps, Workspace & Projects, System and AI remain in docked Areas that can expand, become rails or be hidden.
+- Apps, Workspace & Projects, System and Assistant remain in docked Areas that can expand, become rails or be hidden.
 - Stash keeps notes, sources and files. Overview and Timeline help find work and its context.
 - Gaming demonstrates an app-contributed Steam Overview tab over a fullscreen game, with local chats, guides and notes.
 
@@ -35,6 +35,8 @@ Open **http://localhost:8000**. State is saved in browser storage. Use another p
 
 Source lives in `dist/`; checks live in `scripts/`. Pushes to `main` run the [GitHub Pages workflow](.github/workflows/pages.yml) and publish `dist/`.
 
+[Agent instructions](AGENTS.md) record Xef's default workflow: verify requested project changes, commit and push them to GitHub unless he explicitly asks for a preview without publishing.
+
 ```sh
 for file in dist/*.js; do node --check "$file" || exit 1; done
 for file in scripts/check-*.cjs; do node "$file" || exit 1; done
@@ -42,4 +44,4 @@ for file in scripts/check-*.cjs; do node "$file" || exit 1; done
 
 [Controls and prototype reference](docs/prototype-reference.md) · [UI notes](docs/ui-ux-review.md) · [Source history](docs/history/README.md)
 
-This is an interaction prototype with simulated apps, folders and system actions. AI replies are scripted; calendars and plans are local. Native OS integration remains future work. Reference media retain their individual [credits and licences](dist/images/philosophy/credits.json).
+This is an interaction prototype with simulated apps, folders and system actions. Assistant replies are scripted; calendars and plans are local. Native OS integration remains future work. Reference media retain their individual [credits and licences](dist/images/philosophy/credits.json).
