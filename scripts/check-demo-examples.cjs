@@ -249,7 +249,7 @@ Object.assign(ui.context, {
   applyAreaSession(name) { calls.push(['areas', name, vm.runInContext('activeProjectName', ui.context)]); },
   saveAreaLayout() {}, saveLayout() {},
   refreshWorkspaceContext() {}, workspaceFavoriteMarkup() {}, escapeHtml: x => x, icon: () => '', appArt: () => '',
-  applyAppPrimaryColors() {}, prepareControlSemantics() {}, syncApps() {},
+  applyAppPrimaryColors() {}, prepareControlSemantics() {}, ensureBondedFullscreenDesktops() {}, syncApps() {},
   renderWorkspaceExample() {}, endSystemRailExpansion() {}, syncProjectAreaView() {},
   renderOverviewProjects() {}, setProjectClosedState(closed) { element('project').hidden = closed; },
   renderProjectSpace(name) { vm.runInContext('activeProjectName = ' + JSON.stringify(name) + '; rememberWorkspaceProject();', ui.context); element('project').hidden = false; },

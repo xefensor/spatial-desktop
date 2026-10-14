@@ -591,7 +591,10 @@ let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, hidden: {}, canvas: {
 let applyingIntentAreas = false;
 
 function tileContextKey() {
-  return desktopPages.context(activeWorkspace) + localDisplaySlot();
+  const bond = desktopPages.selectedFullscreen?.(activeWorkspace);
+  const slot = localDisplaySlot();
+  const special = bond && Math.min(bond.display, activeDisplayRoster().length) === slot;
+  return desktopPages.context(activeWorkspace) + (special ? "fullscreen:" + encodeURIComponent(bond.name) + ":" + bond.display : slot);
 }
 
 function tileSession() {
@@ -733,7 +736,7 @@ function leaveTileFocus(session, restoreParked = false) {
 
 function parkFullscreenPeers(session) {
   const fullscreen = session.fullscreen;
-  if (!fullscreen || appState[fullscreen.name] !== "open") return;
+  if (!fullscreen || fullscreen.bonded || appState[fullscreen.name] !== "open") return;
   fullscreen.root ??= tileEngine.copy(session.root);
   fullscreen.parked ||= [];
   const peers = Object.keys(appState).filter(name => name !== fullscreen.name && appState[name] === "open" && isLocalApp(name));
@@ -749,6 +752,7 @@ function parkFullscreenPeers(session) {
 function leaveAppFullscreen(session = tileSession()) {
   const fullscreen = session.fullscreen;
   if (!fullscreen) return;
+  if (fullscreen.bonded) { leaveBondedFullscreen(fullscreen.name); return; }
   session.fullscreen = null;
   returnCoveredApps(session, fullscreen);
   (fullscreen.parked || []).forEach(name => {
@@ -1245,10 +1249,90 @@ function renderFullscreenWindow(name) {
   syncMaximizeButton(frame);
 }
 
+// Bonded fullscreen pages are navigation entries, not renumbered ordinary
+// desktops. Every display shares the route; only the owning display projects
+// its fullscreen entry. The other displays keep showing the parent page.
+function createBondedFullscreen(name, display = localDisplaySlot(), select = true) {
+  const page = desktopPages.pageOf(activeWorkspace,name), column = desktopPages.columnOf(activeWorkspace,name);
+  const prefix = desktopPages.context(activeWorkspace,page,column);
+  const parent = tileSessions[prefix+display] ||= {root:null,parked:{},floating:{},focus:null};
+  if (parent.fullscreen?.name === name) {
+    // Migrate the older mode without visiting its desktop or disturbing the
+    // user's current page. Only restore peers still owned by that old mode.
+    const legacy=parent.fullscreen,assignments=displayAssignmentsFor();
+    parent.fullscreen=null;
+    const belongs=peer=>desktopPages.columnOf(activeWorkspace,peer)===column && desktopPages.pageOf(activeWorkspace,peer)===page;
+    for(const [peer,record] of Object.entries(legacy.transferred || {})) {
+      if(appState[peer]!=="open" || !belongs(peer) || Number(assignments.apps[peer])!==record.target)continue;
+      const target=tileSessions[prefix+record.target];
+      if(target){target.root=tileEngine.remove(target.root,peer);delete target.floating?.[peer];}
+      assignments.apps[peer]=record.source;
+      if(record.floating)(parent.floating ||= {})[peer]=cloneDesktopState(record.floating);
+    }
+    for(const peer of legacy.parked || []) {
+      if(appState[peer]!=="minimized" || !belongs(peer) || parent.parked?.[peer]?.fullscreen!==name)continue;
+      appState[peer]="open";delete parent.parked[peer];
+    }
+    if(legacy.root)parent.root=tileEngine.normalize(legacy.root,Object.keys(appState).filter(peer=>appState[peer]==="open"&&belongs(peer)&&Number(assignments.apps[peer]||1)===display&&!parent.floating?.[peer]));
+    if(Object.keys(legacy.transferred || {}).length)persistDisplayAssignments();
+  }
+  const bond = desktopPages.addFullscreen(activeWorkspace,name,display);
+  const key = prefix + "fullscreen:" + encodeURIComponent(name) + ":" + display;
+  const root = tileEngine.copy(parent.root), rest = tileEngine.remove(root,name);
+  const originFloating = parent.floating?.[name] ? cloneDesktopState(parent.floating[name]) : null;
+  const originFocus = parent.focus?.name === name ? cloneDesktopState(parent.focus) : null;
+  tileSessions[key] = {root:tileEngine.leaf(name),parked:{},floating:{},focus:null,
+    fullscreen:{name,bonded:true,originRoot:root,originRest:cloneDesktopState(rest),originFloating,originFocus}};
+  parent.root = rest; delete parent.floating?.[name];
+  if (originFocus) parent.focus = null;
+  if (select) desktopPages.goFullscreen(activeWorkspace,name);
+  saveDesktopPages(); saveTileSessions();
+  return bond;
+}
+
+function leaveBondedFullscreen(name, follow = true) {
+  const bond = desktopPages.fullscreenBond?.(activeWorkspace,name);if(!bond)return false;
+  const prefix = desktopPages.context(activeWorkspace,bond.page,bond.column);
+  const key = prefix + "fullscreen:" + encodeURIComponent(name) + ":" + bond.display;
+  const mode = tileSessions[key]?.fullscreen;
+  const parentDisplay=Math.min(bond.display,activeDisplayRoster().length);
+  const parent = tileSessions[prefix+parentDisplay] ||= {root:null,parked:{},floating:{},focus:null};
+  const selected = desktopPages.selectedFullscreen(activeWorkspace)?.name === name;
+  desktopPages.removeFullscreen(activeWorkspace,name);delete tileSessions[key];
+  if (appState[name] === "open") {
+    if (mode?.originFloating) (parent.floating ||= {})[name] = cloneDesktopState(mode.originFloating);
+    else if (mode?.originRoot && JSON.stringify(parent.root) === JSON.stringify(mode.originRest)) parent.root = tileEngine.copy(mode.originRoot);
+    if (mode?.originFocus && !parent.focus) parent.focus = cloneDesktopState(mode.originFocus);
+  }
+  if (follow && selected) {desktopPages.select(activeWorkspace,bond.column);desktopPages.go(activeWorkspace,bond.page);}
+  const frame = frameFor(name);frame?.classList.remove("is-fullscreen","is-maximized");
+  if(frame)delete frame.dataset.maximized;appMaximizedState[name]=false;
+  saveDesktopPages();saveTileSessions();
+  return true;
+}
+
+function ensureBondedFullscreenDesktops() {
+  Object.keys(appState).filter(name => (appInfo[name]?.base || name) === "game").forEach(name => {
+    const bond = desktopPages.fullscreenBond(activeWorkspace,name);
+    if (bond) {if(appState[name] !== "open")leaveBondedFullscreen(name,false);return;}
+    if (appState[name] !== "open")return;
+    const page=desktopPages.pageOf(activeWorkspace,name),column=desktopPages.columnOf(activeWorkspace,name);
+    const prefix=desktopPages.context(activeWorkspace,page,column);
+    const legacy=Object.entries(tileSessions).find(([key,session])=>key.startsWith(prefix)&&/^\d+$/.test(key.slice(prefix.length))&&session.fullscreen?.name===name);
+    if(legacy)createBondedFullscreen(name,Number(legacy[0].slice(prefix.length)),desktopPages.column(activeWorkspace)===column&&desktopPages.current(activeWorkspace)===page);
+  });
+}
+
 function toggleAppFullscreen(name) {
   releaseBorrowedApp(name);
   if (appState[name] !== "open" || !isLocalApp(name)) return;
   const session = tileSession();
+  if ((appInfo[name].base || name) === "game") {
+    if (desktopPages.fullscreenBond(activeWorkspace,name)) leaveBondedFullscreen(name);
+    else createBondedFullscreen(name);
+    saveTileSessions(); syncApps(); refreshIntentAreas(); renderTileLayout(name);if(isLocalApp(name))bringToFront(name);queueDesktopStateBroadcast(0);
+    return;
+  }
   if (session.fullscreen?.name === name) {
     leaveAppFullscreen(session);
   } else {
@@ -1301,19 +1385,20 @@ function refreshIntentAreas() {
     const windows = [], demands = [];
     sessions.forEach(([key, session]) => {
       const display = Number(key.slice(prefix.length));
-      const openHere = name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
+      if(!Number.isInteger(display) || display < 1)return;
+      const openHere = name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
       tileEngine.names(session.root).filter(openHere).forEach(name => windows.push({ name, display }));
       Object.entries(session.floating || {}).filter(([name]) => openHere(name)).forEach(([name, rect]) => {
         windows.push({ name, display, floating: true, rect });
         if (rect.yieldEdges?.length) demands.push({ display, edges: rect.yieldEdges, overlayEdges: rect.overlayEdges, exclude: rect.excludeAreas });
       });
-      if (session.fullscreen && openHere(session.fullscreen.name)) demands.push({ display, fullscreen: true, edges: [...dockEdges], exclude: session.fullscreen.excludeAreas });
+      if (session.fullscreen && !session.fullscreen.bonded && openHere(session.fullscreen.name)) demands.push({ display, fullscreen: true, edges: [...dockEdges], exclude: session.fullscreen.excludeAreas });
     });
-    Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
+    Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && !desktopPages.fullscreenBond?.(activeWorkspace,name) && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
     const roster = activeDisplayRoster();
     const displays = roster.map((display, index) => {
       const session = tileSessions[prefix + (index + 1)];
-      const openNames = Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name) && appState[name] === "open" && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
+      const openNames = Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && !desktopPages.fullscreenBond?.(activeWorkspace,name) && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
       const openTree = tileEngine.normalize(session?.root, openNames);
       const minimum = window.SpatialIntent.minimumTree(openTree, minimumUsableWindowSize);
       if (!openTree && openNames.length) {
@@ -1473,7 +1558,7 @@ function openApp(name, dropPoint = null) {
 }
 
 function removeOffPageWindowTiles(name) {
-  if (desktopPages.visible(activeWorkspace, name)) return;
+  if (desktopPages.visible(activeWorkspace,name,localDisplaySlot(),extendedDesktopActive()?activeDisplayRoster().length:1)) return;
   const prefix = desktopPages.context(activeWorkspace, desktopPages.pageOf(activeWorkspace, name), desktopPages.columnOf(activeWorkspace, name));
   Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
     session.root = tileEngine.remove(session.root, name);
@@ -1486,6 +1571,8 @@ function removeOffPageWindowTiles(name) {
 
 function minimizeApp(name, preserveGeometry = false) {
   releaseBorrowedApp(name);
+  const bonded = desktopPages.fullscreenBond?.(activeWorkspace,name);
+  if (bonded) {leaveBondedFullscreen(name,false);preserveGeometry=true;}
   if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('parking')) return;
   removeOffPageWindowTiles(name);
   const frame = frameFor(name);
@@ -1516,6 +1603,7 @@ function minimizeApp(name, preserveGeometry = false) {
 }
 
 function closeApp(name) {
+  if(desktopPages.fullscreenBond?.(activeWorkspace,name))leaveBondedFullscreen(name,false);
   const wasOpen = appState[name] !== "closed";
   releaseBorrowedApp(name);
   removeOffPageWindowTiles(name);
@@ -4792,17 +4880,19 @@ function renderOverviewWindows() {
   const filter = $("#overviewWindowFilter")?.value || "all";
   const currentPage = desktopPages.current(activeWorkspace);
   const hotbarOrder = workspaceHotbarNames();
-  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "minimized" || desktopPages.pageOf(activeWorkspace,name) === currentPage : appState[name] === (filter === "parked" ? "minimized" : "open")));
+  const selectedBond=desktopPages.selectedFullscreen?.(activeWorkspace);
+  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "minimized" || (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage) : appState[name] === (filter === "parked" ? "minimized" : "open")));
   visibleNames.sort((a,b) => Number(appState[a] === "minimized") - Number(appState[b] === "minimized") || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b) || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b));
   target.innerHTML = visibleNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
-    const stateLabel = (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
+    const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
+    const stateLabel = bond ? "Fullscreen · below Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
     const frame = frameFor(name);
     const detail = (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
-    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
+    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + (bond ? "is-fullscreen-window " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
   }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or open an app below." : "Open an app below to start on this desktop.") + '</small></div>';
 
   refreshWorkspaceContext();
@@ -4894,6 +4984,7 @@ function renderWorkspace(name, announce = true) {
   prepareControlSemantics($("#appRack"));
   if (activeProjectName) renderProjectSpace(activeProjectName);
   else { setProjectClosedState(true); renderOverviewProjects(); }
+  ensureBondedFullscreenDesktops();
   syncApps();
   restoreWorkspaceAreaContent(name);
   const overview = $("#allAppsToggle");
@@ -6295,8 +6386,8 @@ function contextMenuEntries(context) {
   }
   if (context.kind === "desktop") return [
     { action: "desktop-overview", icon: "i-search", label: "Open Overview", shortcut: "Super" },
-    ...(desktopPages.current(activeWorkspace) > 0 ? [{ action: "desktop-page:-1", icon: "i-monitor", label: "Desktop above", shortcut: "Page Up" }] : []),
-    ...(desktopPages.current(activeWorkspace) < desktopPages.last(activeWorkspace) ? [{ action: "desktop-page:1", icon: "i-monitor", label: "Desktop below", shortcut: "Page Down" }] : []),
+    ...(desktopPages.next(activeWorkspace,-1) ? [{ action: "desktop-page:-1", icon: "i-monitor", label: "Desktop above", shortcut: "Page Up" }] : []),
+    ...(desktopPages.next(activeWorkspace,1) ? [{ action: "desktop-page:1", icon: "i-monitor", label: "Desktop below", shortcut: "Page Down" }] : []),
     separator,
     { action: "desktop-new-folder", icon: "i-folder", label: "New Folder" },
     { action: "desktop-paste", icon: "i-clipboard", label: "Paste" },
@@ -6411,7 +6502,10 @@ function executeContextAction(action) {
   if (!context) return;
   if (action === "app-new-instance") createAppInstance(context.name);
   if (action.startsWith("move-desktop:")) moveWindowToDesktop(context.name, Number(action.split(":")[1]));
-  if (action.startsWith("desktop-page:")) changeDesktopPage(desktopPages.current(activeWorkspace) + Number(action.split(":")[1]));
+  if (action.startsWith("desktop-page:")) {
+    const next=desktopPages.next(activeWorkspace,Number(action.split(":")[1]));
+    if(next)changeDesktopPage(next.page,true,desktopPages.column(activeWorkspace),next.fullscreen);
+  }
   if (action.startsWith("move-workspace:")) moveAppWorkspace(context.name, action.split(":")[1]);
   if (action.startsWith("move-project:")) moveAppProject(context.name, action.split(":")[1]);
   if (action === "detach-project") moveWindowToColumn(context.name, "workspace");
@@ -6539,8 +6633,8 @@ document.addEventListener("keydown", event => {
    session. BroadcastChannel is immediate; the storage message is a fallback
    for browsers that do not expose it. State remains entirely on this device. */
 const desktopSyncScope = globalThis.SpatialGuide?.syncScope || "desktop";
-const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v1" + (desktopSyncScope === "desktop" ? "" : ":" + desktopSyncScope);
-const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v1";
+const DESKTOP_SYNC_CHANNEL = "spatial-desktop-live-v2" + (desktopSyncScope === "desktop" ? "" : ":" + desktopSyncScope);
+const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v2";
 const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 const desktopSyncStartedAt = (() => {
   try {
@@ -6645,7 +6739,7 @@ function changeDesktopColumn(column, announce = true) {
   if (column !== "workspace" && !openProjectNames().includes(column)) return false;
   if (desktopPages.column(activeWorkspace) === column) return false;
   captureWorkspaceContent();
-  const changed = changeDesktopPage(desktopPages.current(activeWorkspace, column), true, column);
+  const changed = changeDesktopPage(desktopPages.current(activeWorkspace, column), true, column, desktopPages.selectedFullscreen(activeWorkspace,column)?.name || null);
   if (changed && announce) showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1), { duration: 3200, projectSwitch: true });
   return changed;
 }
@@ -6711,10 +6805,15 @@ function renderDesktopColumnMap() {
     const project = column === "workspace" ? null : projectSpaces[column];
     const current = desktopPages.column(activeWorkspace) === column;
     const names = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.columnOf(activeWorkspace, name) === column);
-    const pages = Array.from({length: desktopPages.last(activeWorkspace, column) + 1}, (_, page) => {
-      const windows = names.filter(name => desktopPages.pageOf(activeWorkspace, name) === page);
-      const selected = current && desktopPages.current(activeWorkspace) === page;
-      return '<button class="desktop-column-page" data-desktop-column="' + escapeHtml(column) + '" data-column-page="' + page + '" aria-pressed="' + selected + '" aria-label="' + escapeHtml(desktopColumnLabel(column) + ' · Desktop ' + (page + 1)) + '"><span><b>Desktop ' + (page + 1) + '</b><small>' + (windows.length ? windows.length + ' window' + (windows.length === 1 ? '' : 's') : 'Empty') + '</small></span><span class="desktop-column-apps">' + windows.slice(0, 5).map(appArt).join('') + '</span></button>';
+    const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
+    const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
+    const pages = desktopPages.entries(activeWorkspace,column).map(entry => {
+      const page=entry.page,bond=entry.fullscreen?desktopPages.fullscreenBond(activeWorkspace,entry.fullscreen):null;
+      const windows=names.filter(name=>bond?name===bond.name:desktopPages.pageOf(activeWorkspace,name)===page&&!desktopPages.fullscreenBond(activeWorkspace,name));
+      const selected=current && desktopPages.current(activeWorkspace)===page && (bond?localBond&&selectedBond?.name===bond.name:!localBond);
+      const title=bond?(appInfo[bond.name]?.label||'Fullscreen app'):'Desktop '+(page+1);
+      const detail=bond?'Fullscreen · below Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
+      return '<button class="desktop-column-page'+(bond?' is-fullscreen-page':'')+'" data-desktop-column="'+escapeHtml(column)+'" data-column-page="'+page+'"'+(bond?' data-fullscreen-page="'+escapeHtml(bond.name)+'" data-bond-parent="'+page+'"':'')+' aria-pressed="'+selected+'" aria-label="'+escapeHtml(desktopColumnLabel(column)+' · '+title+' · '+detail)+'"><span><b>'+(bond?icon('i-max'):'')+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span><span class="desktop-column-apps">'+windows.slice(0,5).map(appArt).join('')+'</span></button>';
     }).join("");
     return '<section class="desktop-column-card' + (current ? ' is-current' : '') + '" style="--column-accent:' + escapeHtml(project?.accent || workspaceProfiles[activeWorkspace].accent) + '"><header>' + icon(project?.icon || workspaceProfiles[activeWorkspace].icon) + '<b>' + escapeHtml(desktopColumnLabel(column)) + '</b></header><div class="desktop-column-pages">' + pages + '</div></section>';
   }).join("");
@@ -6776,6 +6875,10 @@ function updateDesktopPageUi() {
   const workspace = $(".workspace-zone");
   const button = $("#allAppsToggle");
   if (!workspace || !button) return;
+  const bond = desktopPages.selectedFullscreen?.(activeWorkspace);
+  const special = bond && Math.min(bond.display,activeDisplayRoster().length) === localDisplaySlot();
+  document.body?.classList?.toggle("is-fullscreen-desktop",Boolean(special));
+  if(workspace.dataset)workspace.dataset.fullscreenDesktop=special?bond.name:"";
   const focused = !desktopHasWindowFocus;
   workspace.dataset.desktopFocused = String(focused);
   workspace.dataset.desktopPage = String(page);
@@ -6785,7 +6888,7 @@ function updateDesktopPageUi() {
   const project = column === "workspace" ? null : projectSpaces[column];
   const context = project ? project.name + " project" : label + " workspace";
   workspace.dataset.desktopColumn = column;
-  workspace.setAttribute("aria-label", context + " · Desktop " + page);
+  workspace.setAttribute("aria-label", context + " · " + (special ? (appInfo[bond.name]?.label||"App")+" fullscreen · below Desktop "+page : "Desktop "+page));
   $("use", button)?.setAttribute("href", "#" + (project?.icon || workspaceProfiles[activeWorkspace].icon));
   button.style?.setProperty("--desktop-column-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
   $("#appsAreaContext").textContent = context + " · Desktop " + page;
@@ -6847,7 +6950,9 @@ function renderDesktopPageRail() {
   const last = Math.max(current, 0, ...names.map(name => desktopPages.pageOf(activeWorkspace, name)));
   const project = column === "workspace" ? null : projectSpaces[column];
   const label = (project?.name || workspaceProfiles[activeWorkspace].label + " workspace") + " · " + (last + 1) + " desktops · Desktop " + (current + 1) + " is current";
-  const marks = Array.from({ length: last + 1 }, (_, page) => '<span class="desktop-page-mark' + (page === current ? ' is-current' : '') + '" data-desktop-marker="' + page + '" aria-hidden="true"></span>').join("");
+  const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
+  const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
+  const marks=desktopPages.entries(activeWorkspace,column).filter(entry=>entry.page<=last && (!entry.fullscreen||Math.min(entry.display,activeDisplayRoster().length)===localDisplaySlot())).map(entry=>'<span class="desktop-page-mark'+(entry.fullscreen?' is-fullscreen-mark':'')+((entry.fullscreen?localBond&&selectedBond?.name===entry.fullscreen:!localBond&&entry.page===current)?' is-current':'')+'" data-desktop-marker="'+entry.page+'"'+(entry.fullscreen?' data-fullscreen-marker="'+escapeHtml(entry.fullscreen)+'"':'')+' aria-hidden="true"></span>').join('');
   rails.forEach(rail => {
     rail.style?.setProperty("--desktop-marker-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
     rail.setAttribute("aria-label", label);
@@ -6872,12 +6977,14 @@ function desktopNavigationBlocked() {
     ["#universalSearch", "#packageDialog", "#projectEditorDialog"].some(selector => $(selector)?.classList.contains("is-open")) || !$("#desktopContextMenu").hidden;
 }
 
-function changeDesktopPage(page, animate = true, column = desktopPages.column(activeWorkspace)) {
+function changeDesktopPage(page, animate = true, column = desktopPages.column(activeWorkspace), fullscreenName = null) {
   if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(column === 'workspace' ? 'desktops' : 'projects')) return false;
   const previous = desktopPages.current(activeWorkspace);
   const previousColumn = desktopPages.column(activeWorkspace);
   const horizontal = column !== previousColumn;
-  if ((!horizontal && page === previous) || page < 0 || page > desktopPages.last(activeWorkspace, column) || desktopPageAnimating) return false;
+  const previousFullscreen = desktopPages.selectedFullscreen?.(activeWorkspace)?.name || null;
+  if(fullscreenName && (desktopPages.fullscreenBond(activeWorkspace,fullscreenName)?.column !== column || desktopPages.fullscreenBond(activeWorkspace,fullscreenName)?.page !== page))return false;
+  if ((!horizontal && page === previous && fullscreenName === previousFullscreen) || page < 0 || page > desktopPages.last(activeWorkspace, column) || desktopPageAnimating) return false;
   cancelAreaPointerInteraction?.();
   placementUndoEpoch++;
   // A desktop moves inside the canvas; a project moves the complete scene.
@@ -6885,7 +6992,7 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   const workspace = $(".workspace-zone");
   const shell = $(".desktop-shell");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const ghost = animate && !reducedMotion ? (horizontal ? shell.cloneNode(true) : document.createElement("div")) : null;
+  const ghost = animate && !reducedMotion && !previousFullscreen && !fullscreenName ? (horizontal ? shell.cloneNode(true) : document.createElement("div")) : null;
   if (ghost) {
     if (horizontal) ghost.classList.add("desktop-column-ghost");
     else {
@@ -6900,13 +7007,13 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   }
   saveLayout();
   saveTileSessions();
-  if (tileSession().fullscreen) leaveAppFullscreen();
+  if (tileSession().fullscreen && !tileSession().fullscreen.bonded) leaveAppFullscreen();
   if (horizontal && column !== "workspace" && column !== activeProjectName) {
     captureWorkspaceContent();
     renderProjectSpace(column);
   }
   desktopPages.select(activeWorkspace, column);
-  desktopPages.go(activeWorkspace, page);
+  if(fullscreenName)desktopPages.goFullscreen(activeWorkspace,fullscreenName);else desktopPages.go(activeWorkspace, page);
   if (horizontal) { endSystemRailExpansion(false); layoutDockAreas(false, false); }
   desktopHasWindowFocus = false;
   frontApp = topOpenApp();
@@ -6937,7 +7044,7 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
       scheduleWindowVisibility();
     });
   }
-  globalThis.SpatialTimelineDesktop?.record(horizontal ? "project.switch" : "desktop.switch", {project:column === "workspace" ? "" : column,page,title:horizontal ? desktopColumnLabel(column) : "Desktop " + (page + 1)});
+  globalThis.SpatialTimelineDesktop?.record(horizontal ? "project.switch" : "desktop.switch", {project:column === "workspace" ? "" : column,page,app:fullscreenName||"",title:horizontal ? desktopColumnLabel(column) : fullscreenName ? (appInfo[fullscreenName]?.label||"App")+" · Fullscreen desktop" : "Desktop " + (page + 1),detail:fullscreenName ? "Bonded below Desktop "+(page+1) : ""});
   queueDesktopStateBroadcast(0);
   return true;
 }
@@ -7082,7 +7189,10 @@ function prepareDesktopPages() {
       return;
     }
     const direction = desktopWheel.feed(delta, performance.now());
-    if (direction && !desktopPageAnimating) changeDesktopPage(desktopPages.current(activeWorkspace) + direction);
+    if (direction && !desktopPageAnimating) {
+      const next=desktopPages.next(activeWorkspace,direction);
+      if(next)changeDesktopPage(next.page,true,desktopPages.column(activeWorkspace),next.fullscreen);
+    }
   };
   workspace.addEventListener("wheel", onDesktopWheel, { passive: false });
   // Area chrome and rails navigate without a preliminary click. Scrollable
@@ -7112,7 +7222,10 @@ function prepareDesktopPages() {
       if (event.shiftKey) {
         const target = adjacentDesktopColumn(event.key === "PageDown" ? 1 : -1);
         if (target) changeDesktopColumn(target);
-      } else changeDesktopPage(desktopPages.current(activeWorkspace) + (event.key === "PageDown" ? 1 : -1));
+      } else {
+        const next=desktopPages.next(activeWorkspace,event.key === "PageDown" ? 1 : -1);
+        if(next)changeDesktopPage(next.page,true,desktopPages.column(activeWorkspace),next.fullscreen);
+      }
     }
   });
   $("#desktopColumnMap").addEventListener("click", event => {
@@ -7122,7 +7235,7 @@ function prepareDesktopPages() {
     if (column !== "workspace" && !openProjectNames().includes(column)) return;
     setUniversalSearchOpen(false);
     const switchedProject = column !== desktopPages.column(activeWorkspace);
-    if (changeDesktopPage(Number(button.dataset.columnPage), true, column) && switchedProject) {
+    if (changeDesktopPage(Number(button.dataset.columnPage), true, column, button.dataset.fullscreenPage || null) && switchedProject) {
       showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1), { duration: 3200, projectSwitch: true });
     }
   });
@@ -7130,10 +7243,14 @@ function prepareDesktopPages() {
 }
 
 function isLocalApp(name) {
-  return desktopPages.visible(activeWorkspace, name) && (!extendedDesktopActive() || Number(displayAssignmentsFor().apps[name] || 1) === localDisplaySlot());
+  const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
+  const count=(bond || desktopPages.selectedFullscreen?.(activeWorkspace)) ? activeDisplayRoster().length : Infinity,slot=localDisplaySlot();
+  return desktopPages.visible(activeWorkspace,name,slot,count) && (!extendedDesktopActive() || Number(bond ? Math.min(bond.display,count) : displayAssignmentsFor().apps[name] || 1) === slot);
 }
 
 function isLocalArea(name) {
+  const bond=desktopPages.selectedFullscreen?.(activeWorkspace);
+  if(bond && Math.min(bond.display,activeDisplayRoster().length) === localDisplaySlot())return false;
   if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name==='projects'?'project-area':name)) return false;
   return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
 }
@@ -7213,6 +7330,7 @@ function mainDisplayFitForEdge(edge, names, windows, currentlyOnMain) {
 }
 
 function rebalanceAreaDisplays() {
+  if(desktopPages.selectedFullscreen?.(activeWorkspace))return false;
   if (!areasFollowWindows()) return false;
   const count = activeDisplayRoster().length;
   if (count < 2 || layoutMode !== "auto" || localDisplaySlot() !== 1) return false;
@@ -7311,7 +7429,7 @@ function captureDesktopSyncState() {
   areaContents[activeWorkspace] = snapshotWorkspaceAreaContent();
 
   return {
-    schema: 4,
+    schema: 5,
     workingMemory: globalThis.SpatialMemoryDesktop?.snapshot(),
     aiContext: globalThis.SpatialAIDesktop?.snapshot(),
     desktopPages: desktopPages.snapshot(),
@@ -7386,7 +7504,7 @@ function persistIncomingDesktopState(state) {
 }
 
 function applyDesktopSyncState(state) {
-  if (!state || ![1, 2, 3, 4].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
+  if (!state || ![1, 2, 3, 4, 5].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {
     if (state.tileSessions) tileSessions = cloneDesktopState(state.tileSessions);
@@ -7799,6 +7917,14 @@ openApp = function(name, point = null) {
   if (!appInfo[name]) return;
   if (appInfo[name].workspace && appInfo[name].workspace !== activeWorkspace) return;
   if (desktopPageAnimating) { setTimeout(() => openApp(name, point), 230); return; }
+  const targetBond=desktopPages.fullscreenBond(activeWorkspace,name);
+  if(targetBond && appState[name] === 'open') {
+    changeDesktopPage(targetBond.page,false,targetBond.column,name);
+    if(!isLocalApp(name)){queueDesktopStateBroadcast(0);showToast(appInfo[name].label+" · Fullscreen on Display "+targetBond.display);return;}
+  } else {
+    const selected=desktopPages.selectedFullscreen(activeWorkspace);
+    if(selected && Math.min(selected.display,activeDisplayRoster().length)===localDisplaySlot())changeDesktopPage(selected.page,false,selected.column);
+  }
   const newlyOpened = appState[name] === 'closed';
   const column = desktopPages.column(activeWorkspace);
   const owner = desktopPages.columnOf(activeWorkspace, name);
@@ -7812,7 +7938,7 @@ openApp = function(name, point = null) {
     removeOffPageWindowTiles(name);
     desktopPages.assign(activeWorkspace, name);
     saveDesktopPages();
-  } else changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
+  } else if(!targetBond)changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
   originalOpenApp(name, point);
   if (newlyOpened && (appInfo[name].base || name) === "dolphin" && !frameFor(name).dataset.demoExample?.startsWith(activeWorkspace + ":")) renderFileLocation(name, workspaceProfiles[activeWorkspace].home);
   refreshDownloadUi();

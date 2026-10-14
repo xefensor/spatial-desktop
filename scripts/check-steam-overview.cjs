@@ -32,6 +32,14 @@ let stopped=false;root.listeners.wheel({target:{closest:()=>node('steamMessages'
 context.setUniversalSearchOpen(false);assert.equal(fullscreen.name,'game');assert.equal(focused,'gameFrame:[data-steam-action="overview"]','Escape returns keyboard focus to the game');
 context.setUniversalSearchOpen(true);frames.splice(0).forEach(f=>f());assert.equal(context.active,'steam');assert(context.SpatialSteamOverview.running(),'Overview never leaves fullscreen');
 context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,null);assert.equal(context.appState.game,'open','Showing the desktop keeps the game running');assert.equal(open,false);
+// The bonded route's Show desktop action preserves fullscreen ownership.
+context.desktopPages=require('../dist/desktop-pages.js').create();context.desktopPages.assign('gaming','game',0);
+context.desktopPages.addFullscreen('gaming','game',1);context.desktopPages.goFullscreen('gaming','game');
+context.changeDesktopPage=(page,_,column)=>context.desktopPages.go('gaming',page,column);
+fullscreen={name:'game',bonded:true};const beforeFullscreen=fullscreen;
+context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,beforeFullscreen);assert.equal(context.desktopPages.selectedFullscreen('gaming'),null);
+assert(context.desktopPages.fullscreenBond('gaming','game'));assert.equal(context.appState.game,'open');
+delete context.desktopPages;delete context.changeDesktopPage;
 context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');assert.equal(context.appState.steam,'minimized');
 context.activeWorkspace='work';context.appState={game:'closed',steam:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),false);assert.equal(context.SpatialSteamOverview.running(),false);
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'closed','The sample cannot launch outside Gaming');

@@ -164,7 +164,23 @@ Create local events with start/end, tasks and reminders. Completion and dismissa
 
 The demo’s **Gaming** workspace starts with an illustrative Fallout 4 game open in fullscreen and Steam parked in Apps. Both are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions and Desktop Guide do not seed these examples.
 
-Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** leaves fullscreen while keeping the game open. Switching workspaces saves the existing fullscreen session.
+Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** returns to the bonded parent while keeping the game open in fullscreen. **Win + scroll** navigates between the parent, fullscreen child and subsequent desktops. Switching workspaces saves the existing fullscreen session.
+
+### Bonded fullscreen desktop
+
+Fallout 4 gets a temporary fullscreen desktop directly below its originating desktop. It remains in the same Workspace and Project column. The child has no Areas, desktop folders or context header, including in Manual mode. Overview remains available above the game. Ordinary desktop numbers and other window assignments stay unchanged.
+
+Switching away retains the game's fullscreen session and keeps it open. Selecting the game in Overview returns to its child; opening another app from the child returns to the parent first. Leaving fullscreen restores the game to its original desktop and removes the child. An explicit Park or Close also removes it. Original splits and floating placement are retained, while later changes to the parent are preserved. Reload and display synchronization retain the bond.
+
+Only the game's monitor displays the fullscreen child. The shared scroll route advances through the bond while the other monitor holds the parent:
+
+| Scroll position | Game's monitor | Other monitor |
+| --- | --- | --- |
+| Parent | Desktop 1 | Desktop 1 |
+| Bonded child | Fallout 4 fullscreen | Desktop 1 |
+| Past the bond | Desktop 2 | Desktop 2 |
+
+The reverse scroll follows the same route. Overview shows an indented, connected Fallout 4 card marked **Fullscreen · below Desktop 1 · Display 1**, with its fullscreen window labelled separately from the parent. The other monitor's Overview context identifies its held ordinary desktop. A fullscreen diamond appears in the owning monitor's desktop rail when on ordinary desktops; the game itself has no desktop chrome.
 
 Steam keeps its own navy library, green Play button, friends list and blue chat surfaces, including when the surrounding desktop uses light mode. The provider tab and its tools remain inside the common Overview.
 

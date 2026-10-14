@@ -37,10 +37,11 @@
   find('steamRemainingOnly').addEventListener('change',()=>{all('[data-steam-unlocked]').forEach(a=>{a.hidden=find('steamRemainingOnly').checked&&a.dataset.steamUnlocked==='true';});});
   const gameFrame=()=>frameFor('game');
   const available=()=>!globalThis.SpatialGuide?.model.active() && activeWorkspace==='gaming' && appState.steam!==undefined && appState.steam!=='closed';
+  const gameBond=()=>typeof desktopPages!=='undefined'?desktopPages.fullscreenBond?.(activeWorkspace,'game'):null;
   const running=()=>activeWorkspace==='gaming' && appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
     const gameOpen=activeWorkspace==='gaming' && appState.game && appState.game!=='closed';
-    find('steamGameState').textContent=running()?'CURRENT GAME · FULLSCREEN':gameOpen?'CURRENT GAME · OPEN':'READY TO PLAY';
+    find('steamGameState').textContent=gameBond()?'RUNNING · FULLSCREEN DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?'CURRENT GAME · OPEN':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
     globalThis.SpatialOverviewDesktop?.refresh();
   }
@@ -62,7 +63,8 @@
   function showDesktop(){
     if(activeWorkspace!=='gaming')return;
     setUniversalSearchOpen(false);
-    if(running())toggleAppFullscreen('game');else minimizeApp('game');
+    const bond=gameBond();
+    if(bond)changeDesktopPage(bond.page,false,bond.column);else if(running())toggleAppFullscreen('game');else minimizeApp('game');
     syncContext();
   }
   function openTools(tool){

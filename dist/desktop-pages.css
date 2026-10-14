@@ -95,3 +95,24 @@ body[data-theme="light"] .desktop-page-mark.is-current{
 }
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
+
+/* Fullscreen children belong to the page directly above them. They have an
+   indented edge and a fullscreen glyph, rather than another desktop number. */
+body[data-theme] .universal-search button.desktop-column-page.is-fullscreen-page{
+  margin-left:14px;flex-basis:92px;border-left:3px solid var(--column-accent)!important;
+  background:color-mix(in srgb,var(--column-accent) 12%,var(--sd-glass-face))!important;
+}
+.desktop-column-page.is-fullscreen-page::before{content:"";position:absolute;left:-13px;top:-9px;width:10px;height:27px;border-left:1px solid var(--column-accent);border-bottom:1px solid var(--column-accent);opacity:.65}
+.desktop-column-page.is-fullscreen-page b{display:flex;align-items:center;gap:6px}
+.desktop-column-page.is-fullscreen-page b svg{width:13px;height:13px;flex:none;color:var(--column-accent)}
+.desktop-page-mark.is-fullscreen-mark{width:5px;height:8px;transform:rotate(45deg);background:var(--desktop-marker-accent);opacity:.7}
+.desktop-page-mark.is-fullscreen-mark.is-current{width:7px;height:10px;opacity:1}
+.overview-window.is-fullscreen-window .overview-window-state{color:var(--overview-app)!important;font-weight:650}
+/* Only the game and explicitly opened system overlays inhabit this page.
+   Dock preferences remain untouched, including in Manual mode. */
+body.is-fullscreen-desktop .desktop-shell > :is([data-area-window],.desktop-context-header,.desktop-page-rail,#intentAreaEdges){display:none!important}
+/* Keep the canvas measurable for the split fitter; the fullscreen game is
+   reparented directly into the shell, outside this invisible canvas. */
+body.is-fullscreen-desktop .workspace-zone{visibility:hidden!important;pointer-events:none}
+
+.overview-apps-body .desktop-column-card:has(.is-fullscreen-page) .desktop-column-pages{max-height:230px}

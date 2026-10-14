@@ -178,6 +178,7 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
 const shell = { clientWidth: 1600, clientHeight: 900,
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
+  desktopPages: require("../dist/desktop-pages.js").create(),
   tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, cancelAreaPointerInteraction:null,
   window: { innerWidth: 1600, innerHeight: 900, ...eventTarget() },
   cloneDesktopState: value => JSON.parse(JSON.stringify(value)),
