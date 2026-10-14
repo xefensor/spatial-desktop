@@ -87,7 +87,7 @@ assert(ctx.isLocalApp('browser'));assert(!ctx.isLocalApp('game'));assert(ctx.des
 vm.runInContext(slice('function fullscreenPeekBond(','function focusDesktop('),ctx);
 const peek=node('#fullscreenDesktopPeek'),shell=node('.desktop-shell');
 assert.equal(ctx.fullscreenPeekBond().name,'game');ctx.renderFullscreenPeek();
-assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'36px');assert.match(peek['aria-label'],/linked to Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);
+assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'48px');assert.match(peek['aria-label'],/linked to Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);assert.match(peek.innerHTML,/Temporary desktop/);assert.match(peek.innerHTML,/Your game stays fullscreen while you use Desktop 1/);
 const previewMarkup=peek.innerHTML;peek.innerHTML='focus stays on this node';ctx.renderFullscreenPeek();assert.equal(peek.innerHTML,'focus stays on this node','A focus-only render does not replace the preview contents');peek.innerHTML=previewMarkup;
 slot=2;ctx.renderFullscreenPeek();assert.equal(peek.hidden,true,'The peer monitor must not advertise a duplicate child');assert.equal(shell.style['--fullscreen-peek-height'],'0px');
 slot=1;ctx.tileSession().fullscreen={name:'browser'};assert.equal(ctx.fullscreenPeekBond(),null,'Another full-screen window keeps every screen edge');delete ctx.tileSession().fullscreen;
@@ -98,7 +98,7 @@ ctx.desktopPages.go('gaming',0);ctx.desktopPages.fullscreenBond('gaming','game')
 // as another ordinary numbered page or duplicating the game on the parent.
 vm.runInContext(slice('function renderDesktopColumnMap(','function migrateDesktopColumns('),ctx);
 ctx.renderDesktopColumnMap();const markup=node('#desktopColumnMap').innerHTML;
-assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its temporary fullscreen desktop'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('linked to Desktop 1 · Display 1'));
+assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its temporary fullscreen desktop'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('Attached to Desktop 1 · Display 1'));
 assert.equal((markup.match(/<i>game<\/i>/g)||[]).length,1);
 // The original Apps Area retains a live link, after local windows and before
 // parked apps. Both monitor projections use it, without duplicating the game.
@@ -110,6 +110,17 @@ slot=2;assert.deepEqual(Array.from(ctx.workspaceHotbarNames()),['notes','game','
 slot=1;ctx.changeDesktopPage(1,false);assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another ordinary page');
 ctx.desktopPages.go('gaming',0);ctx.desktopPages.select('gaming','project');assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another Project column');
 ctx.desktopPages.select('gaming','workspace');
+// Overview explains why this surface exists and offers two distinct exits.
+ctx.refreshWorkspaceContext=()=>{};
+vm.runInContext(slice('function renderOverviewWindows()','function refreshWorkspaceContext()'),ctx);
+ctx.renderOverviewWindows();const temporaryCard=node('#overviewWindowGrid').innerHTML;
+assert(temporaryCard.includes('data-fullscreen-card="game"'));assert(temporaryCard.includes("Created for Fallout 4's fullscreen"));assert(temporaryCard.includes('Removed when the app leaves fullscreen or closes.'));assert(temporaryCard.includes('Back to Desktop 1'));assert(temporaryCard.includes('Restore window'));
+let overviewClosed=0;ctx.setUniversalSearchOpen=()=>{overviewClosed++;};ctx.saveIndependentSessions=()=>{};ctx.tileInteraction=false;
+ctx.desktopPages.goFullscreen('gaming','game');const fullscreenKey=ctx.tileContextKey();
+assert.equal(ctx.fullscreenDesktopAction('back','game'),true);assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert(ctx.desktopPages.fullscreenBond('gaming','game'));assert(ctx.tileSessions[fullscreenKey].fullscreen,'Back keeps the original fullscreen session running');assert.equal(ctx.appState.game,'open');
+assert.equal(ctx.fullscreenDesktopAction('restore','game'),true,'Restore also works from the parent desktop');assert(!ctx.desktopPages.fullscreenBond('gaming','game'));assert(!ctx.tileSessions[fullscreenKey]);assert.equal(ctx.appState.game,'open');assert.deepEqual(copy(ctx.tileSessions['gaming:desktop:0:1'].root),origin,'Restore returns the game to its original split');assert.equal(JSON.stringify(ctx.tileSessions['gaming:desktop:0:2']),peerBefore);
+const closedBefore=overviewClosed;assert.equal(ctx.fullscreenDesktopAction('restore','game'),false,'A stale Restore click cannot act on a removed temporary desktop');assert.equal(overviewClosed,closedBefore);
+ctx.toggleAppFullscreen('game');ctx.changeDesktopPage(0,false);ctx.desktopPageAnimating=true;assert.equal(ctx.fullscreenDesktopAction('restore','game'),false);ctx.desktopPageAnimating=false;assert(ctx.desktopPages.fullscreenBond('gaming','game'));
 // Launches from a fullscreen surface go back to its parent. Returning to the
 // game follows its existing bond; an action on the other monitor cannot steal it.
 let originalCalls=[];ctx.openApp=name=>originalCalls.push(name);ctx.saveIndependentSessions=()=>{};ctx.refreshDownloadUi=()=>{};
@@ -147,4 +158,9 @@ ctx.tileSessions['gaming:desktop:0:1']={root:T.leaf('game'),parked:{browser:{ful
 ctx.ensureBondedFullscreenDesktops();assert.equal(ctx.desktopPages.current('gaming'),1);assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);
 assert(ctx.desktopPages.fullscreenBond('gaming','game'));assert.equal(ctx.appState.browser,'open');
 const migrated=JSON.stringify(ctx.desktopPages.snapshot());ctx.ensureBondedFullscreenDesktops();assert.equal(JSON.stringify(ctx.desktopPages.snapshot()),migrated);
+// An action from another monitor restores on the game's owner, without using
+// the launch path that would re-enter fullscreen or move it to this monitor.
+ctx.leaveBondedFullscreen('game');ctx.desktopPages.go('gaming',0);slot=2;ctx.createBondedFullscreen('game',2);slot=1;
+const assignments={apps:{game:2,browser:1,notes:2,terminal:2},areas:{apps:2}};ctx.displayAssignmentsFor=()=>assignments;
+const launchesBefore=originalCalls.length;assert.equal(ctx.fullscreenDesktopAction('restore','game'),true);assert.equal(assignments.apps.game,2);assert.equal(originalCalls.length,launchesBefore);assert(!ctx.isLocalApp('game'));assert.equal(ctx.appState.game,'open');assert(!ctx.desktopPages.fullscreenBond('gaming','game'));
 console.log('Bonded fullscreen passed: stable page order, both scroll directions, held secondary display, Manual Area exclusion, reload/sync, Overview identity, parent launches, no focus-loss parking, original splits/floats, later edits, explicit Park/close, project ownership and monitor disconnect.');

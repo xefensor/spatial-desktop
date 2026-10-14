@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="project-surface.css?v=5">
   <link rel="stylesheet" href="semantic-colors.css?v=10">
   <link rel="stylesheet" href="toggle-controls.css?v=5">
-  <link rel="stylesheet" href="desktop-pages.css?v=20">
+  <link rel="stylesheet" href="desktop-pages.css?v=21">
   <link rel="stylesheet" href="empty-desktop.css?v=1">
   <link rel="stylesheet" href="material-shapes.css?v=16">
   <link rel="stylesheet" href="area-rails.css?v=7">
@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="system-area.css?v=3">
   <link rel="stylesheet" href="interaction-feedback.css?v=1">
   <link rel="stylesheet" href="browsing-controls.css?v=2">
-  <link rel="stylesheet" href="steam-overview.css?v=3">
+  <link rel="stylesheet" href="steam-overview.css?v=4">
   <link rel="stylesheet" href="app-identities.css?v=3">
   <script src="workspace-setup.js?v=6"></script>
   <script src="spatial-guide.js?v=30"></script>
@@ -475,7 +475,7 @@
         </aside>
           <section class="overview-panel steam-overview-panel" data-overview-panel="steam" hidden aria-labelledby="steamOverviewTitle">
             <header class="overview-zone-heading steam-heading"><span class="overview-zone-mark steam-logo-mark"><svg aria-hidden="true"><use href="#app-steam"/></svg></span><span><span class="eyebrow">IN-GAME OVERLAY · DEMO</span><h3 id="steamOverviewTitle">STEAM</h3></span><span class="steam-connected"><i></i> Gaming workspace</span></header>
-            <div class="steam-game-context"><span class="steam-game-art" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#app-game"/></svg></span><div><span class="eyebrow" id="steamGameState">CURRENT GAME · FULLSCREEN</span><h4>Fallout 4</h4><p>Sanctuary Hills <span>·</span> Gaming session</p></div><div class="steam-game-actions"><button class="steam-button steam-primary" id="steamReturnGame"><svg aria-hidden="true"><use href="#i-right"/></svg><span>Return to game</span><kbd>Esc</kbd></button><button class="steam-text-button" id="steamReturnDesktop">Switch app</button></div></div>
+            <div class="steam-game-context"><span class="steam-game-art" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#app-game"/></svg></span><div><span class="eyebrow" id="steamGameState">CURRENT GAME · FULLSCREEN</span><h4>Fallout 4</h4><p>Sanctuary Hills <span>·</span> Gaming session</p></div><div class="steam-game-actions"><button class="steam-button steam-primary" id="steamReturnGame"><svg aria-hidden="true"><use href="#i-right"/></svg><span>Return to game</span><kbd>Esc</kbd></button><button class="steam-text-button" id="steamReturnDesktop">Switch app</button></div><div class="steam-temporary-desktop" id="steamTemporaryDesktop" hidden><span><b id="steamTemporaryParent">Temporary desktop · Attached to Desktop 1</b><small>Removed when the app leaves fullscreen or closes.</small></span><div><button class="steam-text-button" id="steamBackToDesktop" data-fullscreen-action="back" data-fullscreen-app="game" title="Your game stays fullscreen on its temporary desktop.">Back to Desktop 1</button><button class="steam-text-button" data-fullscreen-action="restore" data-fullscreen-app="game" title="Return the game as a normal window and remove its temporary desktop.">Restore window</button></div></div></div>
             <nav class="steam-tool-tabs" role="tablist" aria-label="Steam tools"><button role="tab" id="steamTabFriends" data-steam-tool="friends" aria-controls="steamFriendsPanel" aria-selected="true" tabindex="0"><svg aria-hidden="true"><use href="#i-chat"/></svg>Friends &amp; chat <span>3</span></button><button role="tab" id="steamTabGuides" data-steam-tool="guides" aria-controls="steamGuidesPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-note"/></svg>Guides</button><button role="tab" id="steamTabNotes" data-steam-tool="notes" aria-controls="steamNotesPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-note"/></svg>Notes</button><button role="tab" id="steamTabAchievements" data-steam-tool="achievements" aria-controls="steamAchievementsPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-star"/></svg>Achievements</button></nav>
             <div class="steam-tool-content">
               <section class="steam-tool-panel steam-friends-layout" id="steamFriendsPanel" role="tabpanel" aria-labelledby="steamTabFriends">
@@ -635,13 +635,13 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=273"></script>
+<script src="desktop-shell.js?v=274"></script>
 <script src="empty-desktop.js?v=1"></script>
 <script src="working-memory-desktop.js?v=30"></script>
 <script src="ai-desktop.js?v=17"></script>
 <script src="overview-desktop.js?v=19"></script>
   <script src="guide-desktop.js?v=36"></script>
-  <script src="steam-overview.js?v=4"></script>
+  <script src="steam-overview.js?v=5"></script>
 </body>
 </html>
 

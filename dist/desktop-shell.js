@@ -1318,6 +1318,22 @@ function leaveBondedFullscreen(name, follow = true) {
   return true;
 }
 
+function fullscreenDesktopAction(action, name) {
+  const bond = desktopPages.fullscreenBond(activeWorkspace, name);
+  if (!bond || appState[name] !== "open" || !["back", "restore"].includes(action) || desktopPageAnimating || tileInteraction || manualWindowInteraction) return false;
+  setUniversalSearchOpen(false);
+  changeDesktopPage(bond.page, false, bond.column);
+  if (action === "back") return true;
+  // Restore the existing window directly. Launching it through openApp would
+  // let the Steam integration immediately request fullscreen again.
+  leaveBondedFullscreen(name, false);
+  syncApps(); refreshIntentAreas(); renderTileLayout(name);
+  if (isLocalApp(name)) bringToFront(name);
+  saveIndependentSessions(); queueDesktopStateBroadcast(0);
+  showToast(appInfo[name].label + " restored as a window · Desktop " + (bond.page + 1));
+  return true;
+}
+
 function ensureBondedFullscreenDesktops() {
   Object.keys(appState).filter(name => (appInfo[name]?.base || name) === "game").forEach(name => {
     const bond = desktopPages.fullscreenBond(activeWorkspace,name);
@@ -4899,6 +4915,14 @@ function renderOverviewWindows() {
     const detail = (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
+    if (bond) {
+      const reason = "Created for " + info.label + "'s fullscreen";
+      return '<article class="overview-temporary-desktop" data-fullscreen-card="' + escapeHtml(name) + '" style="--overview-app:' + info.primary + '">'
+        + '<button class="temporary-desktop-open" data-overview-open-app="' + escapeHtml(name) + '" aria-label="Enter ' + escapeHtml(info.label) + ' temporary desktop"><span class="temporary-desktop-scene" data-peek-kind="' + escapeHtml(info.base || name) + '"><span class="temporary-desktop-badge">' + icon('i-max') + 'Temporary desktop</span>' + appArt(name) + shortcut + '</span><span class="temporary-desktop-title"><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(reason) + '</small></span></button>'
+        + '<p class="temporary-desktop-parent">' + icon('i-monitor') + 'Attached to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display + '</p>'
+        + '<p class="temporary-desktop-lifetime">Removed when the app leaves fullscreen or closes.</p>'
+        + '<div class="temporary-desktop-actions"><button type="button" data-fullscreen-action="back" data-fullscreen-app="' + escapeHtml(name) + '" title="Your game stays fullscreen on its temporary desktop.">Back to Desktop ' + (bond.page + 1) + '</button><button type="button" data-fullscreen-action="restore" data-fullscreen-app="' + escapeHtml(name) + '" title="Return the app as a normal window and remove its temporary desktop.">Restore window</button></div></article>';
+    }
     return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + (bond ? "is-fullscreen-window " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
   }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or open an app below." : "Open an app below to start on this desktop.") + '</small></div>';
 
@@ -6819,8 +6843,9 @@ function renderDesktopColumnMap() {
       const windows=names.filter(name=>bond?name===bond.name:desktopPages.pageOf(activeWorkspace,name)===page&&!desktopPages.fullscreenBond(activeWorkspace,name));
       const selected=Boolean(current && desktopPages.current(activeWorkspace)===page && (bond?localBond&&selectedBond?.name===bond.name:!localBond));
       const title=bond?(appInfo[bond.name]?.label||'Fullscreen app'):'Desktop '+(page+1);
-      const detail=bond?'Temporary desktop · linked to Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
-      return '<button class="desktop-column-page'+(bond?' is-fullscreen-page':'')+'" data-desktop-column="'+escapeHtml(column)+'" data-column-page="'+page+'"'+(bond?' data-fullscreen-page="'+escapeHtml(bond.name)+'" data-bond-parent="'+page+'"':'')+' aria-pressed="'+selected+'" aria-label="'+escapeHtml(desktopColumnLabel(column)+' · '+title+' · '+detail)+'"><span><b>'+(bond?icon('i-max'):'')+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span><span class="desktop-column-apps">'+windows.slice(0,5).map(appArt).join('')+'</span></button>';
+      const detail=bond?'Temporary desktop · Attached to Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
+      const content = bond ? '<span class="desktop-column-apps temporary-desktop-scene" data-peek-kind="'+escapeHtml(appInfo[bond.name]?.base || bond.name)+'"><span class="temporary-desktop-badge">'+icon('i-max')+'Temporary</span>'+appArt(bond.name)+'</span><span><b>'+escapeHtml(title)+'</b><small>Attached to Desktop '+(page+1)+' · Display '+bond.display+'</small></span>' : '<span><b>'+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span><span class="desktop-column-apps">'+windows.slice(0,5).map(appArt).join('')+'</span>';
+      return '<button class="desktop-column-page'+(bond?' is-fullscreen-page':'')+'" data-desktop-column="'+escapeHtml(column)+'" data-column-page="'+page+'"'+(bond?' data-fullscreen-page="'+escapeHtml(bond.name)+'" data-bond-parent="'+page+'"':'')+' aria-pressed="'+selected+'" aria-label="'+escapeHtml(desktopColumnLabel(column)+' · '+title+' · '+detail)+'">'+content+'</button>';
     };
     const entries=desktopPages.entries(activeWorkspace,column);
     const pages=entries.filter(entry=>!entry.fullscreen).map(parent=>{
@@ -6992,7 +7017,7 @@ function renderFullscreenPeek() {
   const bond = fullscreenPeekBond();
   const wasVisible = !peek.hidden;
   peek.hidden = !bond;
-  shell.style.setProperty("--fullscreen-peek-height", bond ? "36px" : "0px");
+  shell.style.setProperty("--fullscreen-peek-height", bond ? "48px" : "0px");
   if (bond) {
     const info = appInfo[bond.name];
     const key = JSON.stringify([activeWorkspace, bond, info.label]);
@@ -7001,9 +7026,9 @@ function renderFullscreenPeek() {
       peek.dataset.peekKind = info.base || bond.name;
       peek.style.setProperty("--peek-accent", info.primary || "#b8d59a");
       peek.innerHTML = '<span class="fullscreen-peek-scene" aria-hidden="true"></span><span class="fullscreen-peek-label">'
-        + appArt(bond.name) + '<b>' + escapeHtml(info.label) + '</b><span>Temporary desktop · Borderless fullscreen</span></span><span class="fullscreen-peek-action" aria-hidden="true"><span>Scroll down or click</span><b>↓</b></span>';
+        + appArt(bond.name) + '<span class="fullscreen-peek-copy"><b>' + escapeHtml(info.label) + '</b><span><i class="fullscreen-peek-tag">Temporary desktop</i><small>Created for borderless fullscreen</small></span><span class="fullscreen-peek-explanation">Your game stays fullscreen while you use Desktop ' + (bond.page + 1) + '.</span></span></span><span class="fullscreen-peek-action" aria-hidden="true"><span><b>Enter desktop</b><small>Scroll down or click</small></span><i>↓</i></span>';
       peek.setAttribute("aria-label", "Enter " + info.label + " temporary desktop for borderless fullscreen, linked to Desktop " + (bond.page + 1));
-      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, linked to Desktop " + (bond.page + 1) + ". Scroll down or click to enter.";
+      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, attached to Desktop " + (bond.page + 1) + ". Your game stays fullscreen while you use the original desktop. Removed when the app leaves fullscreen or closes. Scroll down or click to enter.";
     }
   }
   // Keep the identity stable during focus changes. Only reserve space when
@@ -7298,6 +7323,12 @@ function prepareDesktopPages() {
     if (changeDesktopPage(Number(button.dataset.columnPage), true, column, button.dataset.fullscreenPage || null) && switchedProject) {
       showToast(desktopColumnLabel(column) + " · Desktop " + (desktopPages.current(activeWorkspace) + 1), { duration: 3200, projectSwitch: true });
     }
+  });
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-fullscreen-action]");
+    if (!button) return;
+    event.preventDefault();
+    fullscreenDesktopAction(button.dataset.fullscreenAction, button.dataset.fullscreenApp);
   });
   updateDesktopPageUi();
 }

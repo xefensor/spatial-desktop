@@ -56,3 +56,12 @@
 .steam-overview-panel .steam-heading{background:color-mix(in srgb,var(--steam-accent) 5%,transparent)!important}.steam-achievement-grid article[data-steam-unlocked="true"]{background:linear-gradient(125deg,color-mix(in srgb,#84c89a 8%,transparent),transparent);border-color:color-mix(in srgb,#84c89a 24%,var(--sd-glass-groove))}.steam-achievement-grid article[data-steam-unlocked="true"] .steam-achievement-icon{color:#84c89a}
 @container(max-width:650px){.steam-overview-panel .steam-game-context{padding:12px;min-height:90px}.steam-game-art{width:45px;height:56px}.steam-game-art>svg{width:34px;height:34px}.steam-game-location{bottom:25%;left:7%}.steam-game-location h2{font-size:clamp(26px,6cqw,48px)}.steam-game-stage>header{inset:16px}.steam-game-stage>header b{font-size:14px}.steam-game-stage>header small{font-size:9px}.steam-game-stage>header button{font-size:10px;padding:7px}.steam-game-stage>footer{inset:auto 6% 16px}.steam-game-stage>footer i{width:70px}.steam-game-stage>footer b{display:none}}
 @media(max-width:760px){.overview-section-nav{justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding-bottom:4px}.overview-provider-tabs{margin-inline-start:10px;padding-inline-start:10px;flex:none}.overview-section-tab{flex:none}}
+.steam-overview-panel .steam-game-context{flex-wrap:wrap}
+.steam-temporary-desktop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-basis:100%;padding-top:10px;border-top:1px solid #79bfec33}
+.steam-temporary-desktop[hidden]{display:none!important}
+.steam-temporary-desktop > span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.steam-temporary-desktop b{font-size:11px;font-weight:600}
+.steam-temporary-desktop small{font-size:10px;color:var(--muted);line-height:1.4}
+.steam-temporary-desktop > div{display:flex;align-items:center;gap:10px;flex:none}
+.steam-temporary-desktop .steam-text-button{font-size:11px;padding:8px 9px;border:1px solid #79bfec44}
+@container(max-width:650px){.steam-temporary-desktop{align-items:stretch;flex-direction:column;gap:8px}.steam-temporary-desktop > div{justify-content:flex-start}}
