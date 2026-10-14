@@ -479,6 +479,16 @@
   });
   document.addEventListener('click', event => {
     if (!model.active() || model.state.exitStatus) return;
+    // Steam's demo adapter is intentionally absent in isolated practice, but
+    // the game's two desktop-navigation controls must still work here.
+    if(model.lesson.id==='temporary-desktop' && activeWorkspace==='gaming') {
+      const action=event.target.closest('[data-steam-action]')?.dataset.steamAction;
+      if(action==='overview')showLessonOverview(model.lesson.id);
+      if(action==='desktop') {
+        const bond=desktopPages.fullscreenBond(activeWorkspace,'game');
+        if(bond)changeDesktopPage(bond.page,false,bond.column);
+      }
+    }
     const setting = event.target.closest('[data-area-window="systems"] [data-toggle]');
     if (setting && guide.observeToggle(model,setting.textContent.trim(),setting.getAttribute('aria-pressed') === 'true')) {guide.save();lastSignature = '';}
     check();

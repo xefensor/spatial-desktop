@@ -304,6 +304,11 @@ assert.equal(G.recovery(at('park'),normalScene),null,'Any open app provides the 
 
 // Execute the actual asynchronous prerequisite adapter for every replayable chapter.
 const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene()'),adapter.indexOf('  async function recover('));
+const gameControls={};
+const gameNavigation=vm.createContext({model:at('temporary-desktop'),activeWorkspace:'gaming',document:{addEventListener(_,handler){gameControls.click=handler;}},showLessonOverview(id){gameControls.overview=id;},desktopPages:{fullscreenBond:()=>({page:0,column:'workspace'})},changeDesktopPage(page,_,column){gameControls.parent={page,column};},check(){}});
+vm.runInContext(adapter.slice(adapter.indexOf("  document.addEventListener('click', event => {"),adapter.indexOf("  document.addEventListener('pointerdown', event => {")),gameNavigation);
+for(const action of ['overview','desktop'])gameControls.click({target:{closest:selector=>selector==='[data-steam-action]'?{dataset:{steamAction:action}}:null}});
+assert.equal(gameControls.overview,'temporary-desktop');assert.deepEqual(gameControls.parent,{page:0,column:'workspace'},'The practice game retains both desktop controls without the Steam adapter');
 // The full introduction also prepares the borderless example at its boundary,
 // then returns to the ordinary workspace for the following display chapter.
 (async()=>{

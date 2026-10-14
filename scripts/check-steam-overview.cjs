@@ -46,9 +46,6 @@ context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'clo
 context.activeWorkspace='gaming';context.appState={game:'open',steam:'closed'};context.SpatialSteamOverview.syncContext();assert.equal(context.provider.available(),false,'Closing Steam removes its contributed tab');
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.steam,'minimized');assert.equal(context.provider.available(),true);
 context.SpatialGuide={model:{active:()=>true}};assert.equal(context.provider.available(),false,'Guide practice never offers the Steam tab');
-context.setUniversalSearchOpen(false);context.active='';fullscreen={name:'game'};
-node('document').listeners.click({target:{closest:()=>({dataset:{steamAction:'overview'}})}});
-assert(open);assert.equal(context.active,'apps','The borderless practice game still opens the common Overview while Steam is unavailable');
 // Old demo storage gets only the new Gaming examples, once.
 const seed=new Map([['spatial-demo-scenes-v1','4'],['spatial-workspace-app-states-v1',JSON.stringify({general:{notes:'open'},gaming:{browser:'open',notes:'closed'}})],['spatial-desktop-pages-v1',JSON.stringify({gaming:{active:1,activeColumn:'workspace',windows:{browser:0},owners:{browser:'workspace'}}})],['spatial-workspace-area-layouts-v1',JSON.stringify({gaming:{sizes:{left:327}}})]]);
 const storage={getItem:k=>seed.get(k)||null,setItem:(k,v)=>seed.set(k,v)};D.seedWorkspaces(storage);

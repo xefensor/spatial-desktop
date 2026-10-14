@@ -74,10 +74,7 @@
     syncContext();
   }
   function openTools(tool){
-    if(!available()){
-      if(!tool && running()){setUniversalSearchOpen(true);globalThis.SpatialOverviewDesktop?.select('apps',false);}
-      return;
-    }
+    if(!available())return;
     setUniversalSearchOpen(true);
     requestAnimationFrame(()=>{if(available())globalThis.SpatialOverviewDesktop?.select('steam',false);if(tool)selectTool(tool);});
   }
