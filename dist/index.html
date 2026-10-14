@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="workspace-setup.css?v=1">
   <link rel="stylesheet" href="working-memory.css?v=15">
   <link rel="stylesheet" href="ai-area.css?v=9">
-  <link rel="stylesheet" href="overview-carousel.css?v=12">
+  <link rel="stylesheet" href="overview-carousel.css?v=13">
   <link rel="stylesheet" href="desktop-background.css?v=2">
   <link rel="stylesheet" href="control-refinements.css?v=2">
   <link rel="stylesheet" href="overview-apps.css?v=3">
@@ -32,7 +32,8 @@
   <link rel="stylesheet" href="system-area.css?v=3">
   <link rel="stylesheet" href="interaction-feedback.css?v=1">
   <link rel="stylesheet" href="browsing-controls.css?v=2">
-  <script src="workspace-setup.js?v=5"></script>
+  <link rel="stylesheet" href="steam-overview.css?v=1">
+  <script src="workspace-setup.js?v=6"></script>
   <script src="spatial-guide.js?v=29"></script>
   
 </head>
@@ -40,6 +41,9 @@
   <script src="desktop-theme.js?v=1"></script>
   <script src="desktop-background.js?v=1"></script>
   <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5"/></symbol>
+    <symbol id="app-steam" viewBox="0 0 48 48"><defs><linearGradient id="steamTile" x2="0" y2="1"><stop stop-color="#273d55"/><stop offset="1" stop-color="#122233"/></linearGradient></defs><rect x="4" y="4" width="40" height="40" rx="9" fill="url(#steamTile)"/><g fill="none" stroke="#d7edf8" stroke-width="3"><circle cx="31" cy="17" r="7"/><circle cx="16" cy="32" r="5"/><path d="m5 27 9 4m6-2 8-7"/></g></symbol>
+    <symbol id="app-game" viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="9" fill="#304843"/><path d="M10 36 29 10h6v25h5v4h-5v5h-5v-5H10Zm20-18L18 35h12Z" fill="#d6dfb2"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 5v15"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6M20 4v7h-7"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
@@ -161,6 +165,15 @@
       <article class="app-frame simple-app" data-app-frame="browser" aria-label="Web Browser" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge cyan"><svg><use href="#i-web"/></svg></span><div><b>Web Browser</b><small>Start page</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Web Browser"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Web Browser"><svg><use href="#i-close"/></svg></button></div></header><div class="browser-toolbar"><button class="surface-key compact-key" aria-label="Back" title="Back"><svg><use href="#i-left"/></svg></button><button class="surface-key compact-key" aria-label="Forward" title="Forward"><svg><use href="#i-right"/></svg></button><label class="recessed-field"><svg><use href="#i-search"/></svg><input value="Search the web" aria-label="Address"></label></div><div class="start-page"><span class="large-time live-time">--:--</span><p>Where do you want to go?</p><div class="site-grid"><button class="surface-key">Mail</button><button class="surface-key">Calendar</button><button class="surface-key">News</button><button class="surface-key">Weather</button></div></div></article>
       <article class="app-frame simple-app" data-app-frame="terminal" aria-label="Terminal" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge green"><svg><use href="#i-terminal"/></svg></span><div><b>Terminal</b><small>demo@desktop</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Terminal"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Terminal"><svg><use href="#i-close"/></svg></button></div></header><div class="terminal-screen" id="terminalScreen"><p><b>demo@desktop</b>:<i>~</i>$ neofetch</p><p class="terminal-output">OS: openSUSE Tumbleweed<br>DE: KDE Plasma 6 · Wayland<br>Shell: spatial-plasma<br>Resolution: adaptive</p><label><b>demo@desktop</b>:<i>~</i>$ <input id="terminalInput" autocomplete="off" aria-label="Terminal command"></label></div></article>
       <article class="app-frame simple-app" data-app-frame="notes" aria-label="Note Editor" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge amber"><svg><use href="#i-note"/></svg></span><div><b>Note Editor</b><small>Meeting notes</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Note Editor"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Note Editor"><svg><use href="#i-close"/></svg></button></div></header><div class="notes-layout"><nav><button class="nav-choice is-active">Meeting notes</button><button class="nav-choice">Ideas</button><button class="nav-choice">To-do</button></nav><textarea aria-label="Note">Launch review&#10;&#10;• Finalise the homepage copy.&#10;• Check the layout on a phone.&#10;• Collect feedback from the team.&#10;&#10;Next meeting: Thursday, 14:30.</textarea></div></article>
+      <article class="app-frame simple-app steam-game-window" data-app-frame="game" aria-label="Fallout 4" hidden>
+        <header class="app-titlebar"><div class="app-identity"><span class="app-badge green"><svg><use href="#i-gamepad"/></svg></span><div><b>Fallout 4</b><small>Sanctuary Hills</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Fallout 4"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-window-action="maximize" aria-label="Maximize Fallout 4"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Fallout 4"><svg><use href="#i-close"/></svg></button></div></header>
+        <section class="steam-game-stage" aria-label="Illustrative game scene"><div class="steam-game-crosshair" aria-hidden="true">+</div><header><span><b>FALLOUT 4</b><small>Illustrative game scene · Demo</small></span><button class="steam-button" data-steam-action="desktop">Show desktop</button></header><div class="steam-game-location"><span>COMMONWEALTH</span><h2>Sanctuary Hills</h2><p>A moment between adventures.</p></div><footer><span>HP <i></i> <b>LEVEL 12</b></span><div><button class="steam-button steam-primary" data-steam-action="overview"><svg aria-hidden="true"><use href="#i-grid"/></svg>Open Overview</button><small>Super · Alt + Space in the browser</small></div></footer></section>
+      </article>
+      <article class="app-frame simple-app steam-client-window" data-app-frame="steam" aria-label="Steam" hidden>
+        <header class="app-titlebar"><div class="app-identity"><span class="app-badge blue"><svg><use href="#i-gamepad"/></svg></span><div><b>Steam</b><small>Friends &amp; game tools</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Steam"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Steam"><svg><use href="#i-close"/></svg></button></div></header>
+        <div class="steam-client-content"><span class="eyebrow">YOUR GAMING WORKSPACE</span><h2>Your game. Your desktop.</h2><p>Friends, guides and personal notes live together in the Steam tab of Overview.</p><div class="steam-client-game"><span class="steam-game-art" aria-hidden="true"><svg><use href="#app-game"/></svg></span><div><small>CONTINUE YOUR SESSION</small><h3>Fallout 4</h3><span>Sanctuary Hills</span></div></div><div class="steam-client-actions"><button class="steam-button steam-primary" data-steam-action="resume"><svg><use href="#i-play"/></svg>Resume game</button><button class="steam-button" data-steam-action="overview"><svg><use href="#i-grid"/></svg>Open Steam tools</button></div><div class="steam-client-friends"><span class="steam-avatar avatar-green">M</span><span class="steam-avatar avatar-blue">C</span><span class="steam-avatar avatar-violet">J</span><span>2 friends online <small>Morgan · Claire · Jamie</small></span></div><small class="steam-client-disclaimer">Sample game and conversations · No Steam account is connected.</small></div>
+      </article>
+
     </section>
 
     <button class="zone-resizer zone-resizer-right" data-zone-resizer="systems" type="button" role="separator" aria-label="Resize Workspace and Systems areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
@@ -299,6 +312,7 @@
           <button class="overview-section-tab" data-overview-section="apps" aria-pressed="true"><svg aria-hidden="true"><use href="#i-grid"/></svg><span>Apps</span></button>
           <button class="overview-section-tab" data-overview-section="projects" aria-pressed="false"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Projects &amp; Home</span></button>
           <button class="overview-section-tab" data-overview-section="system" aria-pressed="false"><svg aria-hidden="true"><use href="#i-settings"/></svg><span>System</span></button>
+          <span class="overview-provider-tabs" data-overview-provider-group hidden aria-label="App-contributed sections"><button class="overview-section-tab steam-provider-tab" data-overview-section="steam" data-overview-provider="steam" aria-pressed="false" hidden><svg aria-hidden="true"><use href="#i-gamepad"/></svg><span>Steam</span><i aria-hidden="true"></i></button></span>
           <span class="overview-scroll-hint">Scroll to explore · ← →</span>
         </nav>
         <div class="overview-carousel-stage">
@@ -363,7 +377,8 @@
                   <button class="launcher-app" data-launch-app="Inkscape" data-category="graphics"><span class="launcher-icon app-tile tile-charcoal"><svg><use href="#i-code"/></svg></span><span>Vector Editor</span></button>
                   <button class="launcher-app" data-launch-app="Blender" data-category="graphics"><span class="launcher-icon app-tile tile-orange"><b>B</b></span><span>3D Editor</span></button>
                   <button class="launcher-app" data-launch-app="Spectacle" data-category="graphics"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-image"/></svg></span><span>Screenshot Tool</span></button>
-                  <button class="launcher-app" data-launch-app="Steam" data-category="games"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-gamepad"/></svg></span><span>Game Launcher</span></button>
+                  <button class="launcher-app" data-open-app="steam" data-app-workspace="gaming" data-category="games"><span class="launcher-icon"><svg class="app-art"><use href="#app-steam"/></svg></span><span>Steam</span></button>
+                  <button class="launcher-app" data-open-app="game" data-app-workspace="gaming" data-category="games"><span class="launcher-icon"><svg class="app-art"><use href="#app-game"/></svg></span><span>Fallout 4</span></button>
                   <button class="launcher-app" data-launch-app="Lutris" data-category="games"><span class="launcher-icon app-tile tile-amber"><b>L</b></span><span>Game Launcher</span></button>
                   <button class="launcher-app" data-launch-app="Thunderbird" data-category="internet"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-mail"/></svg></span><span>Email Client</span></button>
                   <button class="launcher-app" data-launch-app="KDE Connect" data-category="internet"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-phone"/></svg></span><span>Device Link</span></button>
@@ -447,6 +462,21 @@
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Phone</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
           </div>
         </aside>
+          <section class="overview-panel steam-overview-panel" data-overview-panel="steam" hidden aria-labelledby="steamOverviewTitle">
+            <header class="overview-zone-heading steam-heading"><span class="overview-zone-mark"><svg aria-hidden="true"><use href="#i-gamepad"/></svg></span><span><span class="eyebrow">APP CONTRIBUTION · SAMPLE DATA</span><h3 id="steamOverviewTitle">Steam</h3></span><span class="steam-connected"><i></i> Gaming workspace</span></header>
+            <div class="steam-game-context"><span class="steam-game-art" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#app-game"/></svg></span><div><span class="eyebrow" id="steamGameState">CURRENT GAME · FULLSCREEN</span><h4>Fallout 4</h4><p>Sanctuary Hills <span>·</span> Gaming session</p></div><div class="steam-game-actions"><button class="steam-button steam-primary" id="steamReturnGame"><svg aria-hidden="true"><use href="#i-right"/></svg><span>Return to game</span><kbd>Esc</kbd></button><button class="steam-text-button" id="steamReturnDesktop">Switch app</button></div></div>
+            <nav class="steam-tool-tabs" role="tablist" aria-label="Steam tools"><button role="tab" id="steamTabFriends" data-steam-tool="friends" aria-controls="steamFriendsPanel" aria-selected="true" tabindex="0"><svg aria-hidden="true"><use href="#i-chat"/></svg>Friends &amp; chat <span>3</span></button><button role="tab" id="steamTabGuides" data-steam-tool="guides" aria-controls="steamGuidesPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-note"/></svg>Guides</button><button role="tab" id="steamTabNotes" data-steam-tool="notes" aria-controls="steamNotesPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-note"/></svg>Notes</button><button role="tab" id="steamTabAchievements" data-steam-tool="achievements" aria-controls="steamAchievementsPanel" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-star"/></svg>Achievements</button></nav>
+            <div class="steam-tool-content">
+              <section class="steam-tool-panel steam-friends-layout" id="steamFriendsPanel" role="tabpanel" aria-labelledby="steamTabFriends">
+                <aside class="steam-friends-column"><header><h4>Friends</h4><span>2 online</span></header><div class="steam-friends-list" id="steamFriendList"><button data-steam-friend="morgan" aria-pressed="true"><span class="steam-avatar avatar-green">M</span><span><b>Morgan</b><small><i class="steam-online"></i> Playing Factorio</small></span><svg aria-hidden="true"><use href="#i-chat"/></svg></button><button data-steam-friend="claire" aria-pressed="false"><span class="steam-avatar avatar-blue">C</span><span><b>Claire</b><small><i class="steam-online"></i> Online</small></span><svg aria-hidden="true"><use href="#i-chat"/></svg></button><button data-steam-friend="jamie" aria-pressed="false"><span class="steam-avatar avatar-violet">J</span><span><b>Jamie</b><small><i class="steam-away"></i> Away</small></span><svg aria-hidden="true"><use href="#i-chat"/></svg></button></div><div class="steam-you"><span class="steam-avatar avatar-you">A</span><span><b>Alex</b><small>Playing Fallout 4</small></span><i class="steam-online"></i></div></aside>
+                <div class="steam-chat-column"><header class="steam-chat-heading"><span class="steam-avatar avatar-green" id="steamChatAvatar">M</span><span><h4 id="steamChatTitle">Morgan</h4><small id="steamChatPresence">Playing Factorio</small></span><span class="steam-chat-label">Sample conversation</span></header><div class="steam-messages" id="steamMessages" role="log" aria-live="polite" aria-label="Sample chat messages"></div><form class="steam-chat-form" id="steamChatForm"><label class="sr-only" for="steamMessageInput">Message in sample chat</label><input id="steamMessageInput" autocomplete="off" maxlength="1000" placeholder="Write a message…"><button class="steam-button steam-primary" type="submit" aria-label="Send sample message"><svg aria-hidden="true"><use href="#i-right"/></svg></button><small>Demo only · Messages stay in this browser</small></form></div>
+              </section>
+              <section class="steam-tool-panel steam-guides-layout" id="steamGuidesPanel" role="tabpanel" aria-labelledby="steamTabGuides" hidden><div class="steam-guide-list-column"><label class="steam-guide-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="steamGuideSearch" placeholder="Find a guide…" aria-label="Find a sample game guide"></label><div id="steamGuideList"><button data-steam-guide="settlement" aria-pressed="true"><span>01</span><b>A useful first settlement</b><small>Building · 3 min read</small></button><button data-steam-guide="explore" aria-pressed="false"><span>02</span><b>Explore at your own pace</b><small>Exploration · 2 min read</small></button><button data-steam-guide="inventory" aria-pressed="false"><span>03</span><b>Keep your pack manageable</b><small>Inventory · 2 min read</small></button></div><p id="steamGuideEmpty" hidden>No matching guides.</p><small class="steam-guide-source">Original sample notes for this concept</small></div><article class="steam-guide-article" id="steamGuideArticle" aria-live="polite"></article></section>
+              <section class="steam-tool-panel steam-notes-layout" id="steamNotesPanel" role="tabpanel" aria-labelledby="steamTabNotes" hidden><header><div><span class="eyebrow">FALLOUT 4 · PERSONAL NOTES</span><h4>Leave yourself a breadcrumb</h4><p>Keep a thought here, then pick up where you left off.</p></div><span id="steamNoteStatus" role="status">Saved locally</span></header><label class="sr-only" for="steamGameNotes">Notes for Fallout 4</label><textarea id="steamGameNotes" spellcheck="true" placeholder="What did you want to do next?" maxlength="20000"></textarea><footer><span><svg aria-hidden="true"><use href="#i-note"/></svg>Autosaved in this browser</span><button class="steam-text-button" id="steamCopyNotes">Copy notes</button></footer></section>
+              <section class="steam-tool-panel steam-achievements-layout" id="steamAchievementsPanel" role="tabpanel" aria-labelledby="steamTabAchievements" hidden><header><div><span class="eyebrow">FALLOUT 4 · EXAMPLE PROGRESS</span><h4>A little further each time</h4><p>2 of 4 sample milestones unlocked</p></div><label><input type="checkbox" id="steamRemainingOnly"> Show remaining</label></header><div class="steam-progress" role="progressbar" aria-label="Sample achievement progress" aria-valuemin="0" aria-valuemax="4" aria-valuenow="2"><span></span></div><div class="steam-achievement-grid"><article data-steam-unlocked="true"><span class="steam-achievement-icon">✓</span><div><b>Into the Commonwealth</b><p>Start exploring beyond the vault.</p><small>Unlocked · example</small></div></article><article data-steam-unlocked="true"><span class="steam-achievement-icon">✓</span><div><b>A place to call home</b><p>Give your settlement a fresh start.</p><small>Unlocked · example</small></div></article><article data-steam-unlocked="false"><span class="steam-achievement-icon">◇</span><div><b>Across the wasteland</b><p>Find somewhere you have never been.</p><small>Still ahead · example</small></div></article><article data-steam-unlocked="false"><span class="steam-achievement-icon">◇</span><div><b>One more story</b><p>Follow a new trail to its end.</p><small>Still ahead · example</small></div></article></div><p class="steam-achievement-footnote">Illustrative milestones · No Steam account is connected.</p></section>
+            </div>
+            <footer class="steam-provider-footer"><span><i></i> Steam provides the tools. Overview keeps the desktop controls.</span><span>Web concept · Local sample data</span></footer>
+          </section>
         </main>
         <button class="overview-neighbour overview-neighbour-next" data-overview-step="1" aria-label="Next Overview section"><span></span><svg aria-hidden="true"><use href="#i-right"/></svg></button>
         </div>
@@ -583,22 +613,23 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="spatial-tiling.js?v=154"></script>
   <script src="spatial-intent.js?v=159"></script>
-  <script src="demo-examples.js?v=173"></script>
+  <script src="demo-examples.js?v=174"></script>
   <script src="desktop-pages.js?v=3"></script>
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=1"></script>
-  <script src="app-windows.js?v=11"></script>
+  <script src="app-windows.js?v=12"></script>
 <script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
 <script src="ai-context.js?v=5"></script>
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=2"></script>
-<script src="desktop-shell.js?v=262"></script>
+<script src="desktop-shell.js?v=263"></script>
 <script src="working-memory-desktop.js?v=29"></script>
 <script src="ai-desktop.js?v=16"></script>
-<script src="overview-desktop.js?v=16"></script>
+<script src="overview-desktop.js?v=17"></script>
   <script src="guide-desktop.js?v=36"></script>
+  <script src="steam-overview.js?v=1"></script>
 </body>
 </html>
 

@@ -10,6 +10,7 @@ function saveAppWindows(broadcast = true) {
 function appWindowModel(id) {
   const frame = frameFor(id), kind = appInfo[id]?.base || id;
   return appWindowStore.get(activeWorkspace, id, () => {
+    if (kind === 'game' || kind === 'steam') return {kind};
     if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
     if (kind === 'notes') {
       const title = $('.app-identity small', frame).textContent || 'Notes';

@@ -261,3 +261,21 @@ assert(cards.match(/data-overview-open-app="right"[\s\S]*?class="overview-window
 assert(!cards.split('data-overview-open-app="other"')[1].split('</button>')[0].includes('overview-window-hotkey'),'A window outside the current hotbar gets no misleading shortcut');
 windowContext.appState.park='closed';checkWindows('parked',[]);assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state without hiding the app launcher');
 console.log('Overview improvements passed: current context, time jumps, available-day navigation, empty-day Now anchors, window filters and desktop/hotbar order.');
+
+// Contributed sections join the real carousel only while their app is available.
+const steamPanel=make('steam');steamPanel.dataset.overviewPanel='steam';steamPanel.offsetWidth=800;panelNodes.push(steamPanel);track.children.push(steamPanel);
+Object.defineProperty(steamPanel,'offsetLeft',{get:()=>100+track.children.indexOf(steamPanel)*824});
+const steamTab=make('tab:steam');steamTab.dataset.overviewSection='steam';tabs.push(steamTab);
+const providerGroup=make('provider-group'),priorQuery=context.$$;
+context.$$=(key,scope)=>key==='[data-overview-provider-group]'?[providerGroup]:key==='[data-overview-section]'&&scope===providerGroup?[steamTab]:priorQuery(key,scope);
+context.SpatialGuide=null;context.activeWorkspace='general';context.workspaceProfiles.gaming={label:'Gaming'};
+vm.runInContext(source,context);const contributed=context.SpatialOverviewDesktop;
+assert.equal(contributed.registerSection('apps',{available:()=>true}),false,'An app cannot replace a system section');
+assert.equal(contributed.registerSection('absent',{available:()=>true}),false,'An absent panel cannot be registered');
+contributed.registerSection('steam',{label:'Steam',available:()=>context.activeWorkspace==='gaming'&&context.steamOpen!==false});
+contributed.select('steam',false);assert.equal(contributed.active(),'apps');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden);
+context.activeWorkspace='gaming';contributed.refresh();contributed.select('steam',false);assert.equal(contributed.active(),'steam');assert(!steamPanel.hidden&&!steamTab.hidden&&!providerGroup.hidden);assert.equal(steamPanel.inert,false);
+contributed.step(1);assert.equal(contributed.active(),'timeline','The contributed section wraps back to the system sections');contributed.step(-1);assert.equal(contributed.active(),'steam');assert.equal(track.children.length,5,'No interactive controls are cloned');
+context.steamOpen=false;contributed.refresh();assert.equal(contributed.active(),'apps');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden,'Closing the provider removes it from navigation and layout');
+context.steamOpen=true;context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};contributed.refresh();assert(steamPanel.hidden&&steamTab.hidden,'Guide practice cannot reveal an untaught provider');
+console.log('Contributed Overview passed: system sections protected, contextual availability, carousel wrap, focus, provider grouping, and removal.');

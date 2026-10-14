@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#284f61"/><stop offset=".58" stop-color="#acc0b6"/><stop offset="1" stop-color="#536d65"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#f2dfab" stop-opacity=".9"/><stop offset=".2" stop-color="#e4d3a3" stop-opacity=".35"/><stop offset="1" stop-color="#e4d3a3" stop-opacity="0"/></radialGradient>
+ <linearGradient id="ground" x2="0" y2="1"><stop stop-color="#667a68"/><stop offset="1" stop-color="#1d3938"/></linearGradient>
+ <linearGradient id="road" x2=".7" y2="1"><stop stop-color="#81948a"/><stop offset="1" stop-color="#415659"/></linearGradient>
+ <linearGradient id="wall" x2="1" y2="1"><stop stop-color="#778578"/><stop offset="1" stop-color="#3b5654"/></linearGradient>
+ <linearGradient id="vignette"><stop stop-color="#091929" stop-opacity=".1"/><stop offset="1" stop-color="#071421" stop-opacity=".55"/></linearGradient>
+ <filter id="grain"><feTurbulence baseFrequency=".65" numOctaves="3" seed="11" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".045"/></feComponentTransfer></filter>
+ <pattern id="boards" width="12" height="16" patternUnits="userSpaceOnUse"><path d="M0 15h12" stroke="#223f3f" stroke-opacity=".26"/></pattern>
+ <g id="pine"><path d="M0 0 38 75H26l29 54H37l34 67H-71l34-67h-18l29-54h-12Z" fill="#244747"/><path d="M-5 178H5v54H-5Z" fill="#294644"/></g>
+ <g id="grass"><path d="m0 0-3-22M0 0l7-34M0 0l17-18m-1 16 10-35m-11 34-3-19" fill="none" stroke="#7a9473" stroke-width="2" opacity=".42"/></g>
+</defs>
+<path fill="url(#sky)" d="M0 0h1600v1000H0z"/><ellipse cx="1150" cy="240" rx="610" ry="450" fill="url(#sun)"/>
+<g fill="#dfdfc3" opacity=".09"><path d="M0 210q250-70 520-18t550-33 530 25v60q-390-12-630 15T0 270Z"/><path d="M70 350q230-49 620-25t620-17l270 65H70Z"/></g>
+<path d="m0 513 90-66 79 26 103-51 134 88 69-46 143 14 132-66 92 68 187-97 189 102 82-30 157 60 44-14v200H0Z" fill="#5b7b7b" opacity=".65"/>
+<path d="m0 558 208-73 175 80 210-18 183-62 233 90 180-58 186 49 225-47v250H0Z" fill="#466766"/>
+<g opacity=".38"><use href="#pine" transform="translate(1330 379) scale(.9)"/><use href="#pine" transform="translate(1380 393) scale(.72)"/><use href="#pine" transform="translate(1200 403) scale(.58)"/><use href="#pine" transform="translate(90 426) scale(.63)"/><use href="#pine" transform="translate(37 418) scale(.8)"/></g>
+<path d="M0 595q350-75 780 20t820-2v387H0Z" fill="url(#ground)"/>
+<path d="M991 567c-137 74-48 166-144 240-50 39-94 97-138 193h660c-200-139-220-239-266-317-32-54-69-75-59-116Z" fill="url(#road)"/>
+<path d="M1013 607q-23 26-21 56m31 53 29 90m6 57 56 126" stroke="#bcb69a" stroke-width="5" opacity=".3" stroke-dasharray="25 22" fill="none"/>
+<!-- An original stylised settlement scene, not a game screenshot. -->
+<g transform="translate(204 350)">
+ <path d="M37 195h535v207H37Z" fill="url(#wall)"/><path d="M37 195h535v207H37Z" fill="url(#boards)"/>
+ <path d="M-8 200 264 46l346 137-48 22L270 92 43 218Z" fill="#2b454b"/><path d="m269 46 57 8 63 77-39-13-30-35Z" fill="#496366"/><path d="m412 135 35 13 35 53-49-21Z" fill="#203a43"/>
+ <path d="M30 213h18v194H30Zm511-4h22v208h-22Z" fill="#9aa88f" opacity=".75"/>
+ <path d="M76 247h95v102H76Zm235 0h146v105H311Z" fill="#162e39" stroke="#95a594" stroke-width="8"/><path d="M123 250v96m194-49h134m-67-47v99" stroke="#849890" stroke-width="6"/>
+ <path d="M206 260h79v144h-79Z" fill="#283f41" stroke="#7f9286" stroke-width="5"/><path d="M209 263h73v57h-73Z" fill="#a2b396" opacity=".19"/><circle cx="268" cy="340" r="4" fill="#cebc86"/>
+ <path d="M8 407h582v15H8ZM-5 421h602v17H-5Z" fill="#526962"/><path d="M188 438h111v15H188Zm-8 15h123v16H180Z" fill="#657969"/>
+</g>
+<g transform="translate(1160 438) scale(.7)" opacity=".72"><path d="M0 153h330v147H0Z" fill="#60796c"/><path d="m-25 159 180-87 209 84-25 19-184-63L0 175Z" fill="#2b4650"/><path d="M50 190h69v65H50Zm179 0h70v65h-70Z" fill="#27454a"/><path d="M143 213h62v88h-62Z" fill="#294647"/></g>
+<g stroke="#263f43" fill="none" stroke-linecap="round"><path d="M106 930 130 450 105 292m24 162-68-58m66 81 88-126m-81 41 36-94m-48 288-67-74" stroke-width="15"/><path d="m132 452 10-96 52-44m-73 75-49-57m74 208 116-94m-146-98-14-57" stroke-width="7"/></g>
+<g opacity=".65" fill="none" stroke="#243e45"><path d="M886 650 910 365m-42 17h91" stroke-width="8"/><path d="M908 384q290 64 554-20M909 395q303 92 553-19" stroke-width="2"/></g>
+<g opacity=".55"><use href="#pine" transform="translate(1550 230) scale(2.7)"/><use href="#pine" transform="translate(1500 365) scale(1.8)"/></g>
+<g><use href="#grass" x="85" y="915"/><use href="#grass" x="332" y="850"/><use href="#grass" x="560" y="894"/><use href="#grass" x="665" y="942"/><use href="#grass" x="1447" y="951"/><use href="#grass" x="1310" y="855"/><use href="#grass" x="282" y="968"/></g>
+<path fill="url(#vignette)" d="M0 0h1600v1000H0z"/><path filter="url(#grain)" d="M0 0h1600v1000H0z"/>
+</svg>

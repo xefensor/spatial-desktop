@@ -160,6 +160,16 @@ Timeline records explicit app, file, browser, Project, desktop and Stash actions
 
 Create local events with start/end, tasks and reminders. Completion and dismissal persist through reload and between demo displays. Plans can appear even without a recorded app interaction. Demo plans are labelled examples; clean and newly created Workspaces start without them. No external calendar account is connected. Timeline is explicit prototype activity history, not a keylogger, clipboard recorder or passive screen capture.
 
+## Gaming and app-contributed Overview tabs
+
+The demo’s **Gaming** workspace starts with an illustrative Fallout 4 game open in fullscreen and Steam parked in Apps. Both are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions and Desktop Guide do not seed these examples.
+
+Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** leaves fullscreen while keeping the game open. Switching workspaces saves the existing fullscreen session.
+
+System sections remain Timeline, Apps, Projects & Home and System. App-contributed tabs have their own separated group after those sections. A tab is available only in its provider’s workspace while the provider is open or parked; closing Steam removes its tab. Registration cannot replace a system section, and unavailable panels are hidden and excluded from carousel navigation.
+
+Steam provides three separate sample conversations with independent drafts, original sample guides with search, browser-local autosaved game notes and illustrative achievement filters. All example names and UI are English. The scene is original SVG artwork, not a gameplay screenshot. No game process, Steam account or messaging service is connected, and sample messages stay in this browser.
+
 ## Stash
 
 The Workspace & Projects Area shows the current context’s Stash. Ordinary work has a Workspace Stash in Home/Stash; a Project has its own Stash folder. It keeps explicit notes, excerpts, links and uploaded files with their source, saved time and provenance. The heading opens its folder in File Browser. A Project’s Stash is shared when that Project is opened from another Workspace.

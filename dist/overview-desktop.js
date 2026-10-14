@@ -4,6 +4,7 @@
   const home=$('#overviewHome'),track=$('#overviewSectionTrack');
   const panels=new Map($$('[data-overview-panel]',track).map(panel=>[panel.dataset.overviewPanel,panel]));
   const labels={timeline:'Timeline',apps:'Apps',projects:'Projects & Home',system:'System'};
+  const providers=new Map();
   const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v1';
   const read=key=>{try{return JSON.parse(desktopStorage.getItem(key)||'{}');}catch{return {};}};
   const model=SpatialTimeline.create(read(historyKey));
@@ -11,13 +12,14 @@
   let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
-  function allowed(){return SpatialTimeline.sections.filter(id=>!globalThis.SpatialGuide?.model.active()||id==='apps'||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]));}
+  function allowed(){return [...SpatialTimeline.sections,...[...providers].filter(([,provider])=>provider.available()).map(([id])=>id)].filter(id=>!globalThis.SpatialGuide?.model.active()||id==='apps'||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]||'all'));}
   function centre(panel){return panel.offsetLeft+panel.offsetWidth/2-track.clientWidth/2;}
   function setCurrent(id){
     active=id;
     const visible=allowed();
     panels.forEach((panel,name)=>{panel.classList.toggle('is-current',name===id);panel.inert=name!==id;});
     $$('[data-overview-section]',home).forEach(button=>{const name=button.dataset.overviewSection;button.hidden=!visible.includes(name);button.setAttribute('aria-pressed',String(name===id));button.setAttribute('aria-current',name===id?'page':'false');});
+    $$('[data-overview-provider-group]',home).forEach(group=>{group.hidden=!$$('[data-overview-section]',group).some(button=>!button.hidden);});
     $$('[data-overview-step]',home).forEach(button=>{const name=SpatialTimeline.neighbour(id,Number(button.dataset.overviewStep),visible);button.hidden=visible.length<2;button.setAttribute('aria-label',(Number(button.dataset.overviewStep)<0?'Previous':'Next')+' section: '+labels[name]);$('span',button).textContent=labels[name]||'';});
     $('#overviewSectionStatus').textContent=labels[id]+' section';
     if(!limited()){
@@ -27,7 +29,7 @@
   }
   // Rotate existing panels, never clone their interactive controls or IDs.
   function keepNeighbours(panel){
-    const nodes=[...track.children],index=nodes.indexOf(panel);
+    const nodes=[...track.children].filter(node=>allowed().includes(node.dataset.overviewPanel)),index=nodes.indexOf(panel);
     if(nodes.length<3||index>0&&index<nodes.length-1)return;
     const current=panels.get(active),before=current.offsetLeft,position=track.scrollLeft;
     if(index===0)track.prepend(nodes.at(-1));else track.append(nodes[0]);
@@ -36,6 +38,7 @@
   function select(id,animate=true){
     if(!allowed().includes(id))id='apps';
     const panel=panels.get(id);if(!panel)return;
+    panels.forEach((node,name)=>{node.hidden=!allowed().includes(name);});
     clearTimeout(scrollTimer);
     const token=++selection;
     scrolling=true;
@@ -67,6 +70,7 @@
     requestAnimationFrame(()=>{
       let id=preferred[activeWorkspace]||'apps';
       if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='apps';}
+      if(!allowed().includes(id))id='apps';
       if(!scrolling||id!==active)select(id,false);
     });
   }
@@ -253,7 +257,11 @@
   window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
   window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
-  globalThis.SpatialOverviewDesktop={select,refresh,step,active:()=>active};
+  function registerSection(id,provider){
+    if(SpatialTimeline.sections.includes(id)||!panels.has(id)||typeof provider?.available!=='function')return false;
+    providers.set(id,provider);labels[id]=provider.label||id;refresh();return true;
+  }
+  globalThis.SpatialOverviewDesktop={select,refresh,step,registerSection,active:()=>active};
   function addPracticeMeeting(time){
     const guide=globalThis.SpatialGuide;
     if(!guide?.model.active()||guide.model.lesson.id!=='timeline'||!Number.isFinite(time))return null;

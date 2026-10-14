@@ -209,7 +209,9 @@ const appInfo = {
   elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
   browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "cyan", primary: "#55d8e9", detail: "Start page" },
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
-  notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" }
+  notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
+  steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", workspace: "gaming", singleInstance: true },
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", workspace: "gaming", singleInstance: true }
 };
 
 const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
@@ -1430,6 +1432,7 @@ function syncApps() {
      or leave that presentation immediately. */
   if (windowViewportLockReady && extendedDesktopActive()) layoutDockAreas(false, false);
   if (windowViewportLockReady && !tileRendering && !tileInteraction) scheduleWindowTiling();
+  globalThis.SpatialSteamOverview?.syncContext();
 }
 
 function openApp(name, dropPoint = null) {
@@ -4533,8 +4536,8 @@ const workspaceProfiles = {
     label: "Gaming", subtitle: "Games and friends", icon: "i-gamepad", accent: "#61d982", home: "/home/demo/Workspaces/Gaming",
     context: "Friends, games and background music", meta: "Co-op night · no project needed",
     folders: [["Desktop", "6 shortcuts", "folder"], ["Games", "23 installed", "folder"], ["Captures", "64 videos", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
-    rack: ["browser", "elisa", "dolphin", "terminal"],
-    favorites: [["i-gamepad", "Steam"], ["i-gamepad", "Lutris"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
+    rack: ["game", "steam", "browser", "elisa", "dolphin", "terminal"],
+    favorites: [["steam", "Steam"], ["game", "Fallout 4"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
     agenda: ["Gaming", "Co-op session", "20:00 · voice chat"]
   }
 };
@@ -4768,7 +4771,7 @@ function captureCurrentWorkspaceSession() {
 }
 
 function workspaceFavoriteMarkup([asset, label]) {
-  label = SpatialAppNames.label(label);
+  label = appInfo[asset]?.label || SpatialAppNames.label(label);
   if (appInfo[asset]) return '<button class="workspace-favorite" data-open-app="' + asset + '" title="' + escapeHtml(label) + '">' + appArt(asset) + '</button>';
   return '<button class="workspace-favorite generic" data-toast="' + escapeHtml(label) + ' launched" title="' + escapeHtml(label) + '">' + icon(asset) + '</button>';
 }
@@ -5247,7 +5250,7 @@ function filterLauncher() {
       (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
       button.dataset.category === activeLauncherCategory;
     const taughtApp = !globalThis.SpatialGuide?.model.active() || SpatialGuide.model.allows('all') || button.dataset.openApp || button.dataset.launchApp === 'Spatial Guide';
-    button.hidden = !matchesCategory || !taughtApp;
+    button.hidden = !matchesCategory || !taughtApp || Boolean(button.dataset.appWorkspace && button.dataset.appWorkspace !== activeWorkspace);
     if (!button.hidden) visible += 1;
   });
   $("#allAppsCount").textContent = visible + (visible === 1 ? " app" : " apps");
@@ -5283,6 +5286,7 @@ function matchesSearch(value, query) {
 function buildUniversalAppResults(query) {
   const target = $("#universalAppResults");
   const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
+    if (button.dataset.appWorkspace && button.dataset.appWorkspace !== activeWorkspace) return false;
     if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('all') && !button.dataset.openApp && button.dataset.launchApp !== 'Spatial Guide') return false;
     const searchable = `${button.textContent} ${button.dataset.category || ""}`.toLowerCase();
     return matchesSearch(searchable, query);
@@ -5414,6 +5418,7 @@ function setUniversalSearchOpen(open) {
     if (universalLastFocus && universalLastFocus.focus) universalLastFocus.focus({preventScroll:true});
     universalLastFocus = null;
   }
+  globalThis.SpatialSteamOverview?.overviewChanged(open);
 }
 
 $("#universalSearchInput").addEventListener("input", filterUniversalSearch);
@@ -7621,6 +7626,7 @@ function installInstance(id, base, bind = true) {
 Object.entries(instanceDefinitions).forEach(([id, base]) => installInstance(id, base, false));
 function createAppInstance(name) {
   const base = appInfo[name]?.base || name;
+  if (appInfo[base]?.singleInstance) { openApp(base); return base; }
   if (!pristineFrames[base]) return;
   const id = base + '--' + (++instanceSequence);
   instanceDefinitions[id] = base;
@@ -7777,10 +7783,12 @@ renderWorkspace = function(name, announce = true) {
   else restore();
   if (previousWorkspace !== activeWorkspace) globalThis.SpatialTimelineDesktop?.record("workspace", {title:workspaceProfiles[activeWorkspace].label});
   globalThis.SpatialOverviewDesktop?.refresh();
+  globalThis.SpatialSteamOverview?.workspaceChanged();
 };
 const originalOpenApp = openApp;
 openApp = function(name, point = null) {
   if (!appInfo[name]) return;
+  if (appInfo[name].workspace && appInfo[name].workspace !== activeWorkspace) return;
   if (desktopPageAnimating) { setTimeout(() => openApp(name, point), 230); return; }
   const newlyOpened = appState[name] === 'closed';
   const column = desktopPages.column(activeWorkspace);
@@ -7800,6 +7808,7 @@ openApp = function(name, point = null) {
   if (newlyOpened && (appInfo[name].base || name) === "dolphin" && !frameFor(name).dataset.demoExample?.startsWith(activeWorkspace + ":")) renderFileLocation(name, workspaceProfiles[activeWorkspace].home);
   refreshDownloadUi();
   saveIndependentSessions();
+  globalThis.SpatialSteamOverview?.appOpened(name);
 };
 function removeWindowFromSavedProjects(name) {
   Object.entries(projectWindowSessions).forEach(([key, session]) => {
@@ -7810,6 +7819,7 @@ function removeWindowFromSavedProjects(name) {
 }
 function moveAppWorkspace(name, destination) {
   if (!workspaceProfiles[destination] || appState[name] === 'closed') return;
+  if (appInfo[name]?.workspace && appInfo[name].workspace !== destination) { showToast(appInfo[name].label + ' belongs to the Gaming workspace in this demo'); return; }
   captureWorkspaceContent();
   const state = appState[name], contents = workspaceContent[activeWorkspace]?.frames?.[name];
   // Base windows already exist in every workspace. Transfer into a fresh identity

@@ -11,8 +11,12 @@ assert.equal(A.label('My research note'), 'My research note', 'User documents re
 const html = read('index.html');
 const primary = {dolphin:'Dolphin',elisa:'Elisa',browser:'Firefox',terminal:'Konsole',notes:'Notes'};
 const launchers = [...html.matchAll(/<button class="launcher-app"[^>]*data-(open|launch)-app="([^"]+)"[\s\S]*?<span>([^<>]+)<\/span><\/button>/g)];
-assert.equal(launchers.length,34,'Every catalog application is checked');
+assert.equal(launchers.length,35,'Every catalog application is checked');
 for (const [,action,id,label] of launchers) {
+  if (id === 'steam' || id === 'game') {
+    assert.equal(label,id === 'steam' ? 'Steam' : 'Fallout 4','App-contributed examples keep their identity');
+    continue;
+  }
   const brand = action === 'open' ? primary[id] : id;
   assert.equal(label,A.label(brand),id+' has a consistent function-first label');
   assert(!/\b(?:Dolphin|Elisa|Firefox|Konsole|KDE|LibreOffice|Krita|Steam|Spatial Guide)\b/.test(label), 'Visible labels contain only the generic function');

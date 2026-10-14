@@ -179,7 +179,7 @@
   projects.retold.summary = "Organise footage, review sound and collect cut feedback";
   projects.retold.note = "Rough cut: 02:48. Check the station transition at 01:12 and reduce the music under dialogue. Keep review feedback on Desktop 2.";
   projects.retold.files = [["Footage", "Source clips", "folder"], ["rough-cut.mp4", "Review copy · 02:48", "document"], ["edit-notes.md", "Cut feedback", "document"]];
-  const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed" };
+  const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed", steam: "closed", game: "closed" };
   const leaf = name => ({ kind: "window", name });
   const defaultAreaDocks = {
     apps: {edge:"left",order:0}, projects: {edge:"left",order:1},
@@ -269,6 +269,7 @@
     gaming: [windowSpec("browser", "browser", 0, {shortTitle:"Game library", address:"Gaming · game library", browser:scenarios.gaming.browser}), windowSpec("elisa", "elisa", 0, {shortTitle:"Game-night mix", music:{title:"Evening Light", artist:"Northbound · game-night mix", tracks:["Evening Light", "City Lights", "Blue Horizon"]}}, "minimized"), windowSpec("notes", "notes", 1, {shortTitle:"Co-op planning", note:scenarios.gaming.note})]
   };
   const openProjects = {general:[], school:["research"], work:["plasma","retold"], gaming:[]};
+  workspaceWindows.gaming.unshift(windowSpec("game", "game", 0, {shortTitle:"Sanctuary Hills"}), windowSpec("steam", "steam", 0, {shortTitle:"Friends & game tools"}, "minimized"));
   for (const [workspace, example] of Object.entries(scenarios)) {
     example.project = openProjects[workspace][0] || null;
     example.mode = example.project ? "default" : null;
@@ -306,7 +307,7 @@
 
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); return false; }
+    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); return false; }
     const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
@@ -357,7 +358,7 @@
           const windows = column.windows.filter(w=>w.page===page && w.state==="open");
           const tree = demoWindowTree(windows);
           const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
-          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{}};
+          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{},...(workspace === "gaming" && column.column === "workspace" && page === 0 ? {fullscreen:{name:"game"}} : {})};
         }
       }
       values["spatial-workspace-app-states-v1"][workspace]=apps;
@@ -376,7 +377,31 @@
     storage.setItem("spatial-project-spaces-v2", JSON.stringify(savedProjects));
     for (const key of keys) storage.setItem(key, JSON.stringify(values[key]));
     storage.setItem(versionKey,"4");
+    seedGamingOverlay(storage);
     return true;
+  }
+
+  // Add only the new Gaming examples to an existing demo. Never reseed its
+  // other windows, projects, page selection, notes, or Area preferences.
+  function seedGamingOverlay(storage) {
+    const key="spatial-demo-steam-v1";
+    if(storage.getItem(key))return false;
+    const read=key=>JSON.parse(storage.getItem(key)||'{}');
+    const states=read('spatial-workspace-app-states-v1'),pages=read('spatial-desktop-pages-v1'),layouts=read('spatial-split-layouts-v1'),independent=read('spatial-independent-sessions-v1');
+    states.gaming ||= {};pages.gaming ||= {active:0,activeColumn:'workspace',columns:{},migrated:true,columnsMigrated:true};
+    pages.gaming.windows ||= {};pages.gaming.owners ||= {};independent.membership ||= {};independent.membership.gaming ||= {};
+    const freshGame=!Object.hasOwn(states.gaming,'game');
+    for(const [id,state] of [['game','open'],['steam','minimized']]){
+      if(Object.hasOwn(states.gaming,id))continue;
+      states.gaming[id]=state;pages.gaming.windows[id]=0;pages.gaming.owners[id]='workspace';independent.membership.gaming[id]=null;
+    }
+    if(freshGame){
+      const session=layouts['gaming:desktop:0:1'] ||= {root:null,parked:{},floating:{}};
+      if(!tiling.contains(session.root,'game'))session.root=session.root?{kind:'split',axis:'x',ratio:.5,a:session.root,b:leaf('game')}:leaf('game');
+      if(!session.fullscreen)session.fullscreen={name:'game'};
+    }
+    for(const [key,value] of [['spatial-workspace-app-states-v1',states],['spatial-desktop-pages-v1',pages],['spatial-split-layouts-v1',layouts],['spatial-independent-sessions-v1',independent]])storage.setItem(key,JSON.stringify(value));
+    storage.setItem(key,'1');return true;
   }
 
   const legacy = {

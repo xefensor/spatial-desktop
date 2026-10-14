@@ -17,6 +17,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 - Projects keep their own folders, windows and vertical desktops, and resume automatically. Workspaces separate broader contexts such as personal life, study and work.
 - Apps, Workspace & Projects, System and AI remain in docked Areas that can expand, become rails or be hidden.
 - Stash keeps notes, sources and files. Overview and Timeline help find work and its context.
+- Gaming demonstrates an app-contributed Steam Overview tab over a fullscreen game, with local chats, guides and notes.
 
 Desktop Guide introduces these interactions through hands-on tasks. The [design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) is Xef’s own unfinished text, being written one topic at a time.
 
