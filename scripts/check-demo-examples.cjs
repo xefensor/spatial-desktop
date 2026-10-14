@@ -115,6 +115,26 @@ assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later 
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
+assert.equal(tiles['gaming:desktop:0:1'].fullscreen.startOnParent,true);
+assert.equal(sceneApps.gaming.game,'open','The parent opening view keeps Fallout running');
+assert.equal(freshScene.read('spatial-desktop-pages-v1').gaming.active,0);
+const oldGaming={active:0,activeColumn:'workspace',activeFullscreen:{workspace:'game'},windows:{game:0},owners:{game:'workspace'}};
+const oldGamingSession=()=>sceneStore({
+  'spatial-demo-scenes-v1':'4','spatial-demo-steam-v1':'1',
+  'spatial-desktop-pages-v1':JSON.stringify({gaming:copy(oldGaming)}),
+  'spatial-split-layouts-v1':JSON.stringify({'gaming:desktop:0:1':{fullscreen:{name:'game'}}})
+});
+const opening=oldGamingSession();D.seedWorkspaces(opening.storage);
+assert.equal(opening.read('spatial-desktop-pages-v1').gaming.activeFullscreen.workspace,undefined);
+assert.equal(opening.read('spatial-split-layouts-v1')['gaming:desktop:0:1'].fullscreen.startOnParent,true);
+opening.storage.setItem('spatial-desktop-pages-v1',JSON.stringify({gaming:copy(oldGaming)}));
+D.seedWorkspaces(opening.storage);
+assert.equal(opening.read('spatial-desktop-pages-v1').gaming.activeFullscreen.workspace,'game','Later choices survive subsequent visits');
+for(const changed of [{active:1},{activeColumn:'my-project'},{owners:{game:'my-project'}}]) {
+  const edited=oldGamingSession(),gaming={...copy(oldGaming),...changed};
+  edited.storage.setItem('spatial-desktop-pages-v1',JSON.stringify({gaming}));D.seedWorkspaces(edited.storage);
+  assert.deepEqual(edited.read('spatial-desktop-pages-v1').gaming,gaming,'Do not change a user-selected page or Project');
+}
 assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
 assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'terminal--demo-site-server']);
 freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));

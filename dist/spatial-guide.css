@@ -44,7 +44,7 @@ html[data-guide-stash="false"] [data-area-window="projects"],
 html[data-guide-projects="false"] .desktop-context-header,
 html[data-guide-apps="false"] :is([data-area-window="apps"],[data-app-frame]),
 html[data-guide-systems="false"] [data-area-window="systems"]{display:none!important}
-html[data-guide-level] #emptyWorkspace{display:none!important}
+html[data-guide-empty-desktop="false"] #emptyWorkspace{display:none!important}
 html[data-guide-overview="false"] #allAppsToggle{visibility:hidden;pointer-events:none}
 html[data-guide-parking="false"] :is(.mini-section,[data-window-action="minimize"]){display:none!important}
 html[data-guide-desktops="false"] :is(.desktop-page-rail,.desktop-column-map,.desktop-column-hint){display:none!important}

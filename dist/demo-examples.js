@@ -307,7 +307,7 @@
 
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); return false; }
+    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); seedGamingParent(storage); return false; }
     const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
@@ -358,7 +358,7 @@
           const windows = column.windows.filter(w=>w.page===page && w.state==="open");
           const tree = demoWindowTree(windows);
           const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
-          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{},...(workspace === "gaming" && column.column === "workspace" && page === 0 ? {fullscreen:{name:"game"}} : {})};
+          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{},...(workspace === "gaming" && column.column === "workspace" && page === 0 ? {fullscreen:{name:"game",startOnParent:true}} : {})};
         }
       }
       values["spatial-workspace-app-states-v1"][workspace]=apps;
@@ -378,7 +378,26 @@
     for (const key of keys) storage.setItem(key, JSON.stringify(values[key]));
     storage.setItem(versionKey,"4");
     seedGamingOverlay(storage);
+    seedGamingParent(storage);
     return true;
+  }
+
+  // Change only the shipped opening view once. User-chosen later pages,
+  // Project ownership, closed apps and subsequent visits remain their own.
+  function seedGamingParent(storage) {
+    const key='spatial-demo-gaming-parent-v1';
+    if(storage.getItem(key))return false;
+    const pages=JSON.parse(storage.getItem('spatial-desktop-pages-v1')||'{}');
+    const layouts=JSON.parse(storage.getItem('spatial-split-layouts-v1')||'{}');
+    const gaming=pages.gaming;
+    if(gaming?.windows?.game===0 && (!gaming.owners?.game || gaming.owners.game==='workspace')) {
+      if((!gaming.activeColumn || gaming.activeColumn==='workspace') && !gaming.active && gaming.activeFullscreen?.workspace==='game') delete gaming.activeFullscreen.workspace;
+      const initial=layouts['gaming:desktop:0:1']?.fullscreen;
+      if(initial?.name==='game' && !initial.bonded) initial.startOnParent=true;
+      storage.setItem('spatial-desktop-pages-v1',JSON.stringify(pages));
+      storage.setItem('spatial-split-layouts-v1',JSON.stringify(layouts));
+    }
+    storage.setItem(key,'1');return true;
   }
 
   // Add only the new Gaming examples to an existing demo. Never reseed its
@@ -398,7 +417,7 @@
     if(freshGame){
       const session=layouts['gaming:desktop:0:1'] ||= {root:null,parked:{},floating:{}};
       if(!tiling.contains(session.root,'game'))session.root=session.root?{kind:'split',axis:'x',ratio:.5,a:session.root,b:leaf('game')}:leaf('game');
-      if(!session.fullscreen)session.fullscreen={name:'game'};
+      if(!session.fullscreen)session.fullscreen={name:'game',startOnParent:true};
     }
     for(const [key,value] of [['spatial-workspace-app-states-v1',states],['spatial-desktop-pages-v1',pages],['spatial-split-layouts-v1',layouts],['spatial-independent-sessions-v1',independent]])storage.setItem(key,JSON.stringify(value));
     storage.setItem(key,'1');return true;

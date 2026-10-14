@@ -1342,7 +1342,7 @@ function ensureBondedFullscreenDesktops() {
     const page=desktopPages.pageOf(activeWorkspace,name),column=desktopPages.columnOf(activeWorkspace,name);
     const prefix=desktopPages.context(activeWorkspace,page,column);
     const legacy=Object.entries(tileSessions).find(([key,session])=>key.startsWith(prefix)&&/^\d+$/.test(key.slice(prefix.length))&&session.fullscreen?.name===name);
-    if(legacy)createBondedFullscreen(name,Number(legacy[0].slice(prefix.length)),desktopPages.column(activeWorkspace)===column&&desktopPages.current(activeWorkspace)===page);
+    if(legacy)createBondedFullscreen(name,Number(legacy[0].slice(prefix.length)),!legacy[1].fullscreen.startOnParent&&desktopPages.column(activeWorkspace)===column&&desktopPages.current(activeWorkspace)===page);
   });
 }
 
@@ -4921,7 +4921,7 @@ function renderOverviewWindows() {
         + '<button class="temporary-desktop-open" data-overview-open-app="' + escapeHtml(name) + '" aria-label="Enter ' + escapeHtml(info.label) + ' temporary desktop"><span class="temporary-desktop-scene" data-peek-kind="' + escapeHtml(info.base || name) + '"><span class="temporary-desktop-badge">' + icon('i-max') + 'Temporary desktop</span>' + appArt(name) + shortcut + '</span><span class="temporary-desktop-title"><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(reason) + '</small></span></button>'
         + '<p class="temporary-desktop-parent">' + icon('i-monitor') + 'Attached to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display + '</p>'
         + '<p class="temporary-desktop-lifetime">Removed when the app leaves fullscreen or closes.</p>'
-        + '<div class="temporary-desktop-actions"><button type="button" data-fullscreen-action="back" data-fullscreen-app="' + escapeHtml(name) + '" title="Your game stays fullscreen on its temporary desktop.">Back to Desktop ' + (bond.page + 1) + '</button><button type="button" data-fullscreen-action="restore" data-fullscreen-app="' + escapeHtml(name) + '" title="Return the app as a normal window and remove its temporary desktop.">Restore window</button></div></article>';
+        + '<div class="temporary-desktop-actions"><button type="button" data-fullscreen-action="back" data-fullscreen-app="' + escapeHtml(name) + '" title="The app stays fullscreen on its temporary desktop.">Back to Desktop ' + (bond.page + 1) + '</button><button type="button" data-fullscreen-action="restore" data-fullscreen-app="' + escapeHtml(name) + '" title="Return the app as a normal window and remove its temporary desktop.">Restore window</button></div></article>';
     }
     return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + (bond ? "is-fullscreen-window " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
   }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or open an app below." : "Open an app below to start on this desktop.") + '</small></div>';
@@ -7026,9 +7026,9 @@ function renderFullscreenPeek() {
       peek.dataset.peekKind = info.base || bond.name;
       peek.style.setProperty("--peek-accent", info.primary || "#b8d59a");
       peek.innerHTML = '<span class="fullscreen-peek-scene" aria-hidden="true"></span><span class="fullscreen-peek-label">'
-        + appArt(bond.name) + '<span class="fullscreen-peek-copy"><b>' + escapeHtml(info.label) + '</b><span><i class="fullscreen-peek-tag">Temporary desktop</i><small>Created for borderless fullscreen</small></span><span class="fullscreen-peek-explanation">Your game stays fullscreen while you use Desktop ' + (bond.page + 1) + '.</span></span></span><span class="fullscreen-peek-action" aria-hidden="true"><span><b>Enter desktop</b><small>Scroll down or click</small></span><i>↓</i></span>';
+        + appArt(bond.name) + '<span class="fullscreen-peek-copy"><b>' + escapeHtml(info.label) + '</b><span><i class="fullscreen-peek-tag">Temporary desktop</i><small>Created for borderless fullscreen</small></span><span class="fullscreen-peek-explanation">The app stays fullscreen while you use Desktop ' + (bond.page + 1) + '.</span></span></span><span class="fullscreen-peek-action" aria-hidden="true"><span><b>Enter desktop</b><small>Scroll down or click</small></span><i>↓</i></span>';
       peek.setAttribute("aria-label", "Enter " + info.label + " temporary desktop for borderless fullscreen, linked to Desktop " + (bond.page + 1));
-      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, attached to Desktop " + (bond.page + 1) + ". Your game stays fullscreen while you use the original desktop. Removed when the app leaves fullscreen or closes. Scroll down or click to enter.";
+      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, attached to Desktop " + (bond.page + 1) + ". The app stays fullscreen while you use the original desktop. Removed when the app leaves fullscreen or closes. Scroll down or click to enter.";
     }
   }
   // Keep the identity stable during focus changes. Only reserve space when

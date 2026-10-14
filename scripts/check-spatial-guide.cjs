@@ -20,7 +20,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,overview,tiling,float,fullscreen,true-fullscreen,park,unpark,desktops,project-stash,ai-context,projects,project-app,project-navigation,workspaces,folders,return,overview-navigation,timeline,timeline-task,resize-areas,area-rail,move-areas,hide-areas,challenge,two-displays,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,overview,app-instances,tiling,float,fullscreen,true-fullscreen,park,unpark,desktops,empty-desktop,project-stash,ai-context,projects,project-app,project-navigation,workspaces,folders,return,overview-navigation,timeline,timeline-task,resize-areas,area-rail,move-areas,hide-areas,challenge,temporary-desktop,two-displays,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -53,6 +53,40 @@ console.log('Spatial Guide passed: progressive access, task validation, first lo
 
 // Exercise the production observer with different apps and overlapping modes.
 function at(id) { return G.create({status:'active',version:2,lessonId:id}); }
+// New chapters credit a performed action, preserve old progress and distinguish
+// returning to a parent from actually restoring the fullscreen window.
+assert.equal(G.create({status:'active',version:8,index:11,done:['stash-saved']}).lesson.id,'project-stash');
+assert.deepEqual(G.create({status:'active',version:8,index:11,done:['stash-saved']}).state.done,['stash-saved']);
+assert.equal(G.create({status:'active',version:8,index:27}).lesson.id,'two-displays');
+assert(!at('desktops').allows('empty-desktop'));assert(at('empty-desktop').allows('empty-desktop'));
+const copies=at('app-instances');
+G.observeWindows(copies,{states:{notes:'open','notes--2':'open'},open:['notes','notes--2'],bases:{notes:'notes','notes--2':'notes'}});
+assert(!copies.ready(),'Already existing copies do not complete creating a window');
+G.observeWindows(copies,{states:{notes:'open','notes--2':'open',terminal:'open'},open:['notes','notes--2','terminal'],bases:{notes:'notes','notes--2':'notes',terminal:'terminal'}});
+assert(!copies.ready(),'A different tool is not a second window');
+G.observeWindows(copies,{states:{notes:'open','notes--2':'open','notes--3':'open'},open:['notes','notes--2','notes--3'],bases:{notes:'notes','notes--2':'notes','notes--3':'notes'}});
+assert(copies.ready());
+const empty=at('empty-desktop');
+const emptyScene={workspace:'general',column:'workspace',page:0,open:['notes'],bases:{notes:'notes','notes--2':'notes'}};
+G.observeWindows(empty,emptyScene);
+G.observeWindows(empty,{...emptyScene,column:'project',page:1,open:[]});assert(!empty.state.done.length);
+G.observeWindows(empty,{...emptyScene,page:1,open:[]});assert(empty.state.done.includes('empty-visited'));
+G.observeWindows(empty,{...emptyScene,page:1,open:['notes--2']});assert(!empty.ready(),'Opening through Overview is not using the empty desktop icons');
+G.observeWindows(empty,{...emptyScene,page:2,open:[]});
+empty.state.emptyLaunch={workspace:'work',column:'workspace',page:2,name:'notes'};
+G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(!empty.ready(),'A stamp from another workspace cannot count');
+empty.state.emptyLaunch={workspace:'general',column:'workspace',page:2,name:'notes'};
+G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(empty.ready(),'A later empty desktop also works, including independent copies');
+const temporary=at('temporary-desktop'),bond={name:'browser',page:0,column:'workspace',display:1};
+const parent={bond,state:'open',column:'workspace',page:0,open:[]};
+G.observeTemporaryDesktop(temporary,parent);assert(!temporary.state.done.length,'Preparing the fullscreen child cannot count as entering it');
+G.observeTemporaryDesktop(temporary,{...parent,selected:'browser',full:'browser',open:['browser']});
+assert.deepEqual(temporary.state.done,['temporary-enter']);
+G.observeTemporaryDesktop(temporary,{...parent,page:1});assert(!temporary.state.done.includes('temporary-back'));
+G.observeTemporaryDesktop(temporary,parent);assert(temporary.state.done.includes('temporary-back'));assert(!temporary.ready(),'Back preserves fullscreen and does not restore the window');
+G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'closed',open:[]});assert(!temporary.ready());
+G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'minimized',open:[]});assert(!temporary.ready());
+G.observeTemporaryDesktop(temporary,{...parent,bond:null,open:['browser']});assert(temporary.ready());
 const bounded = at('fullscreen');
 G.observeFullscreen(bounded,{bounded:'dolphin',open:['dolphin','notes']});
 assert(bounded.state.done.includes('bounded-enter'), 'Dolphin can complete the same fullscreen task as Notes');
@@ -147,7 +181,7 @@ const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mis
   dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
-  openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{current:()=>0,visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name]},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
+  openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{current:()=>0,visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name],fullscreenBond:()=>null},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
 context.mark = goal=>context.model.mark(goal);
 vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
@@ -266,10 +300,10 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
     const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
       desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{}},
-      tileSession:()=>({}),setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
+      tileSession:()=>({}),localDisplaySlot:()=>1,createBondedFullscreen(name,display){scene.bond={name,display,page:scene.page,column:scene.column};},syncApps(){},refreshIntentAreas(){},renderTileLayout(){},setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
-      desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace'},
+      desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace',fullscreenBond:(_,name)=>scene.bond?.name===name?scene.bond:null},
       changeDesktopPage(page,_,column=scene.column){scene.page=page;scene.column=column;},
       renderWorkspace(name){prepared.activeWorkspace=name;scene.workspace=name;},
       openProjectNames:()=>Object.keys(prepared.projectSpaces),
@@ -433,7 +467,7 @@ assert.doesNotThrow(()=>G.observeWindows(at('overview-navigation'),{open:[],stat
 assert.equal(G.recovery(at('overview-navigation'),{...normalScene,open:[],parked:[]}).action,'window','Empty-window recovery offers a real app rather than crashing');
 
 // Mission sequencing and stored progress remain meaningful after the reordering.
-assert.equal(G.chapters.length,13);
+assert.equal(G.chapters.length,14);
 assert(G.lessons.findIndex(l=>l.id==='project-stash') < G.lessons.findIndex(l=>l.id==='ai-context'));
 assert(G.lessons.findIndex(l=>l.id==='ai-context') < G.lessons.findIndex(l=>l.id==='projects'));
 assert(G.lessons.findIndex(l=>l.id==='resize-areas') > G.lessons.findIndex(l=>l.id==='timeline-task'));

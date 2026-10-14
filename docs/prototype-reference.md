@@ -22,15 +22,15 @@ Workspace separation is simulated under one browser profile. It does not create 
 
 The visible app is **Desktop Guide**. `Spatial Guide` remains a legacy launch key in source. New visitors begin on an empty desktop and can take the hands-on introduction or choose their desktop. Existing sessions do not have to repeat it.
 
-The current thirteen chapters follow this order:
+The current fourteen chapters contain 32 steps, including the welcome and finish screens:
 
 | Order | Chapter | Purpose |
 | --- | --- | --- |
 | 1 | System | Try a quick setting and learn toggle feedback |
-| 2 | Apps & Overview | Open a tool and find another through search |
+| 2 | Apps & Overview | Open a tool, find another through search and create an independent copy |
 | 3 | Windows | Tile, float, Maximize and try Fullscreen |
 | 4 | Parking | Put a useful app aside and bring its window back |
-| 5 | Desktops | Change page while keeping the same context |
+| 5 | Desktops | Change page and launch an app directly from an empty desktop |
 | 6 | Stash | Save and inspect an idea without requiring a Project |
 | 7 | Assistant | Attach a source, write a request and keep a scripted reply |
 | 8 | Projects | Create a Project and use its separate windows/desktops |
@@ -38,9 +38,14 @@ The current thirteen chapters follow this order:
 | 10 | Overview & Timeline | Find work and compare local activity with a plan |
 | 11 | Arrange your Areas | Resize, dock, hide and recover Areas |
 | 12 | Try it on your own | Combine actions without target highlights |
-| 13 | Two displays | Optional practice with a second browser window |
+| 13 | Fullscreen apps | Enter a temporary desktop, return to its parent and restore the window |
+| 14 | Two displays | Optional practice with a second browser window |
 
 Tasks use generic app names and let learners choose compatible tools. Each task can be skipped; the next task prepares missing prerequisites. Examples and extra explanations are expandable. Only introduced Overview sections are exposed during practice. The Guide supports expanded/compact presentation and contextual recovery when a window is closed, parked or in the wrong context.
+
+The fullscreen-apps chapter prepares a temporary desktop for the learner's chosen ordinary app on General. It uses the same production bond, preview and Overview controls as Gaming without adding the sample game to a clean practice session. Creating the example does not complete the task: learners enter it, use **Back to Desktop 1** (or navigate back) while the app remains fullscreen, then use **Restore window** to remove the child. Its expanded explanation also covers Gaming's parent-first opening, the Apps return icon, the child's lifetime and the held second monitor.
+
+The Guide audit also updated expanded explanations for hotbar numbering per window and its first twenty shortcuts, row-based tiling, carrying a window with title-bar + scroll (Shift for Project columns), Undo after hiding or docking Areas, temporary-desktop cards and Steam's contributed Overview controls. Existing saved lesson IDs and version-eight positional progress migrate without losing completed goals.
 
 Repeated introductions and chapter practice use isolated storage. Progress survives reload. Leaving a repeated introduction offers a return to the original session; individual chapter practice returns directly. Explicit **Clean desktop** or **Explore the demo** choices replace the current session while preserving display preferences. A clean desktop has General only, with no open apps or Projects. The temporary second practice display closes when its chapter ends and does not join the original session.
 
@@ -53,7 +58,7 @@ Find Desktop Guide in **Overview → Apps → Help**, or search its name. [Start
 | General | Everyday files | Ordinary Workspace desktops; no open Project |
 | School | Urban Ecology research | Reading, observations and survey evidence in a Project |
 | Work | Website Launch and Short Film | Two Projects, each with two desktops |
-| Gaming | Co-op session | Ordinary Workspace desktops and a parked Music Player |
+| Gaming | Co-op session | Desktop 1, with Firefox open, Fallout on its attached fullscreen desktop, Steam and Music Player parked |
 
 Website Launch pairs a preview with its development terminal on Desktop 1, and source files with a checklist on Desktop 2. Short Film pairs footage with edit notes, then cut feedback with a parked soundtrack player. Urban Ecology pairs reading and observations, with survey evidence on the next desktop. The data and app content illustrate workflows.
 
@@ -93,7 +98,7 @@ Explicit moves, closing or parking cancel automatic peer return. A busy second d
 
 ## Navigation and Areas
 
-An empty desktop shows **Open an app**, its Workspace or Project and desktop number, and large quick-launch icons for the demo's working apps. **All applications** opens the Apps section in Overview. Launching a regular app already open elsewhere creates an independent window on the current desktop and display, preserving the original window. A parked app in the same context restores here; Shift+click requests a new window. Single-instance apps such as Steam and Fallout show **Return to app** when already running. Gaming apps appear only in Gaming. The launcher disappears while this display has an open window and is excluded from fullscreen surfaces and the guided introduction.
+An empty desktop shows **Open an app**, its Workspace or Project and desktop number, and large quick-launch icons for the demo's working apps. **All applications** opens the Apps section in Overview. Launching a regular app already open elsewhere creates an independent window on the current desktop and display, preserving the original window. A parked app in the same context restores here; Shift+click requests a new window. Single-instance apps such as Steam and Fallout show **Return to app** when already running. Gaming apps appear only in Gaming. The launcher disappears while this display has an open window and is excluded from fullscreen surfaces. In the guided introduction it appears from the empty-desktop lesson onwards.
 
 Scroll over an Area header, rail or non-scrollable content to change vertical desktop pages, even while a window is focused. Scrollable Area content keeps its wheel at both edges; input fields retain their normal scrolling. Nested scrollers do not pass motion to outer panes. Shift+scroll over an Area switches between the ordinary Workspace and open Projects unless a nested horizontal scroller owns that motion. You can also click desktop background or an Area to release window focus, then scroll over the canvas. Super+scroll and Super+Shift+scroll work from windows or Areas when the browser receives them. Page Up/Down provide desktop navigation with focus released; Shift selects Project navigation.
 
@@ -164,7 +169,7 @@ Create local events with start/end, tasks and reminders. Completion and dismissa
 
 ## Gaming and app-contributed Overview tabs
 
-The demo’s **Gaming** workspace starts with an illustrative Fallout 4 game open in fullscreen and Steam parked in Apps. Both are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions and Desktop Guide do not seed these examples.
+The demo’s **Gaming** workspace opens on **Desktop 1**, with Firefox visible, Steam parked in Apps and the illustrative Fallout 4 game already running on its bonded fullscreen desktop below. Use the bottom **Temporary desktop** preview, Fallout's Apps icon or scroll down to enter the game. Both game and Steam are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions and Desktop Guide do not seed these examples. A one-time update returns the old shipped Desktop 1 fullscreen opening to its parent; subsequent visits preserve the user's selected page, Project and open/parked/closed app choices.
 
 Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** returns to the bonded parent while keeping the game open in fullscreen. **Win + scroll** navigates between the parent, fullscreen child and subsequent desktops. Switching workspaces saves the existing fullscreen session.
 
@@ -176,7 +181,7 @@ Switching away retains the game's fullscreen session and keeps it open. Its orig
 
 The fullscreen surface reaches all four display edges with square corners, no outer border or shadow. It bypasses the rounded material shape used by ordinary app windows. This is a browser simulation of fullscreen organization; native KWin and game integration remain future work.
 
-On its owning monitor, the originating desktop shows a **48 px bottom preview** of the attached fullscreen surface. It uses the game's scene and icon, shows a distinct **Temporary desktop** badge and **Created for borderless fullscreen**, and offers **Enter desktop** with **Scroll down or click**. The strip sits below the ordinary window canvas and above any bottom-docked Areas, without changing dock preferences. Floating windows can cover the resting strip. Hover or keyboard focus lifts it to 112 px without resizing the canvas again and reveals **Your game stays fullscreen while you use Desktop 1**. Its tooltip explains the parent link and lifetime. Click, Enter/Space, or a plain downward wheel gesture enters the existing child; the wheel shares the desktop momentum gate. The preview never appears on the held peer monitor, unrelated desktops or Project columns, the fullscreen child itself, or over another fullscreen window. Park, Close and leaving fullscreen remove it. Reduced-motion preferences disable its reveal animation.
+On its owning monitor, the originating desktop shows a **48 px bottom preview** of the attached fullscreen surface. It uses the game's scene and icon, shows a distinct **Temporary desktop** badge and **Created for borderless fullscreen**, and offers **Enter desktop** with **Scroll down or click**. The strip sits below the ordinary window canvas and above any bottom-docked Areas, without changing dock preferences. Floating windows can cover the resting strip. Hover or keyboard focus lifts it to 112 px without resizing the canvas again and reveals **The app stays fullscreen while you use Desktop 1**. Its tooltip explains the parent link and lifetime. Click, Enter/Space, or a plain downward wheel gesture enters the existing child; the wheel shares the desktop momentum gate. The preview never appears on the held peer monitor, unrelated desktops or Project columns, the fullscreen child itself, or over another fullscreen window. Park, Close and leaving fullscreen remove it. Reduced-motion preferences disable its reveal animation.
 
 Only the game's monitor displays the fullscreen child. The shared scroll route advances through the bond while the other monitor holds the parent:
 

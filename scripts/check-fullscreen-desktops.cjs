@@ -87,7 +87,7 @@ assert(ctx.isLocalApp('browser'));assert(!ctx.isLocalApp('game'));assert(ctx.des
 vm.runInContext(slice('function fullscreenPeekBond(','function focusDesktop('),ctx);
 const peek=node('#fullscreenDesktopPeek'),shell=node('.desktop-shell');
 assert.equal(ctx.fullscreenPeekBond().name,'game');ctx.renderFullscreenPeek();
-assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'48px');assert.match(peek['aria-label'],/linked to Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);assert.match(peek.innerHTML,/Temporary desktop/);assert.match(peek.innerHTML,/Your game stays fullscreen while you use Desktop 1/);
+assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'48px');assert.match(peek['aria-label'],/linked to Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);assert.match(peek.innerHTML,/Temporary desktop/);assert.match(peek.innerHTML,/The app stays fullscreen while you use Desktop 1/);
 const previewMarkup=peek.innerHTML;peek.innerHTML='focus stays on this node';ctx.renderFullscreenPeek();assert.equal(peek.innerHTML,'focus stays on this node','A focus-only render does not replace the preview contents');peek.innerHTML=previewMarkup;
 slot=2;ctx.renderFullscreenPeek();assert.equal(peek.hidden,true,'The peer monitor must not advertise a duplicate child');assert.equal(shell.style['--fullscreen-peek-height'],'0px');
 slot=1;ctx.tileSession().fullscreen={name:'browser'};assert.equal(ctx.fullscreenPeekBond(),null,'Another full-screen window keeps every screen edge');delete ctx.tileSession().fullscreen;
@@ -158,6 +158,14 @@ ctx.tileSessions['gaming:desktop:0:1']={root:T.leaf('game'),parked:{browser:{ful
 ctx.ensureBondedFullscreenDesktops();assert.equal(ctx.desktopPages.current('gaming'),1);assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);
 assert(ctx.desktopPages.fullscreenBond('gaming','game'));assert.equal(ctx.appState.browser,'open');
 const migrated=JSON.stringify(ctx.desktopPages.snapshot());ctx.ensureBondedFullscreenDesktops();assert.equal(JSON.stringify(ctx.desktopPages.snapshot()),migrated);
+// The shipped Gaming demo opens on Desktop 1 while its game already has a
+// fullscreen child. Ordinary unflagged fullscreen conversion still enters it.
+ctx.leaveBondedFullscreen('game');ctx.desktopPages.go('gaming',0);
+ctx.tileSessions['gaming:desktop:0:1']={root:T.leaf('game'),parked:{},floating:{},fullscreen:{name:'game',root:origin,parked:[],startOnParent:true}};
+ctx.ensureBondedFullscreenDesktops();assert.equal(ctx.desktopPages.current('gaming'),0);assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert(ctx.desktopPages.fullscreenBond('gaming','game'));assert.equal(ctx.appState.game,'open');
+ctx.leaveBondedFullscreen('game');
+ctx.tileSessions['gaming:desktop:0:1']={root:T.leaf('game'),parked:{},floating:{},fullscreen:{name:'game',root:origin,parked:[]}};
+ctx.ensureBondedFullscreenDesktops();assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game');
 // An action from another monitor restores on the game's owner, without using
 // the launch path that would re-enter fullscreen or move it to this monitor.
 ctx.leaveBondedFullscreen('game');ctx.desktopPages.go('gaming',0);slot=2;ctx.createBondedFullscreen('game',2);slot=1;
