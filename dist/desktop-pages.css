@@ -202,3 +202,20 @@ body[data-theme] .universal-search button.temporary-desktop-open{display:block;w
 body[data-theme] .universal-search .temporary-desktop-actions button{min-width:0;padding:8px 4px;border:1px solid var(--sd-glass-groove)!important;border-radius:0!important;background:var(--sd-glass-face)!important;color:var(--sd-glass-text)!important;font-size:10px;font-weight:600;line-height:1.35;box-shadow:none!important;cursor:pointer}
 body[data-theme] .universal-search .temporary-desktop-actions button:hover{background:var(--sd-glass-hover)!important}
 .overview-open-windows:has(.overview-temporary-desktop){grid-auto-rows:min-content!important}
+
+/* Keep the complete parent/child link and its actions in view together. */
+.overview-apps-body .desktop-column-map:has(.is-fullscreen-page){max-height:52%!important}
+.overview-apps-body .desktop-column-card:has(.is-fullscreen-page) .desktop-column-pages{max-height:none;overflow-x:auto}
+body[data-theme] .universal-search .desktop-bond-group > button.desktop-column-page:not(.is-fullscreen-page){min-height:60px;padding:6px!important;gap:4px}
+body[data-theme] .universal-search .desktop-bond-group > button.desktop-column-page.is-fullscreen-page{height:100px;min-height:100px;padding:0!important;gap:0}
+body[data-theme] .universal-search .desktop-column-page.is-fullscreen-page .temporary-desktop-scene{height:100px;min-height:100px;width:100%}
+body[data-theme] .universal-search .desktop-column-page.is-fullscreen-page .temporary-desktop-scene > .app-art{top:7px;bottom:auto;right:7px}
+.desktop-column-page.is-fullscreen-page > span:last-child{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:16px 7px 6px;background:linear-gradient(transparent,#101e20f5 45%);color:#e7efd8}
+body[data-theme] .universal-search .desktop-column-page.is-fullscreen-page > span:last-child :is(b,small){color:#e7efd8!important}
+.desktop-column-page.is-fullscreen-page > span:last-child small{font-size:9px}
+.temporary-desktop-open .temporary-desktop-scene{height:68px}
+.temporary-desktop-title{padding:7px 10px 3px;gap:3px}
+.temporary-desktop-parent{margin-top:2px}
+.temporary-desktop-lifetime{font-size:9px;line-height:1.35;margin:6px 10px}
+.temporary-desktop-actions{padding-bottom:7px}
+body[data-theme] .universal-search .temporary-desktop-actions button{padding-block:7px}
