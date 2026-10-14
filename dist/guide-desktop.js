@@ -67,7 +67,17 @@
     return name;
   }
   function prepareTemporaryDesktop() {
-    const name=ensureWorkspaceWindow();
+    // Use the real borderless game, in practice storage, with the same window
+    // policy as the demo. A decorated Firefox fullscreen does not qualify.
+    if(model.state.temporaryWindow!=='game'){model.state.done=[];delete model.state.temporaryDesktop;}
+    workspaceProfiles.gaming ||= cloneDesktopState(gamingWorkspaceProfile);
+    workspaceAppStates.gaming ||= Object.fromEntries(Object.keys(appInfo).map(name=>[name,'closed']));
+    workspaceProjectStates.gaming ||= {project:null,mode:null};workspaceOpenProjects.gaming ||= [];
+    workspaceProjects.gaming ||= null;windowMembership.gaming ||= {};
+    workspaceAreaContents.gaming ||= {...defaultAreaContent,noteDraft:'',notifications:[],notificationsHtml:''};
+    workspaceContent.gaming ||= {note:'',apps:{}};
+    renderWorkspaceTabs();renderWorkspace('gaming',false);changeDesktopPage(0,false,'workspace');
+    const name='game';openApp(name);
     if (!desktopPages.fullscreenBond(activeWorkspace,name)) createBondedFullscreen(name,localDisplaySlot(),false);
     const bond=desktopPages.fullscreenBond(activeWorkspace,name);
     model.state.temporaryWindow=name;
@@ -292,7 +302,7 @@
       bases:Object.fromEntries(Object.keys(appInfo).map(name=>[name,appInfo[name].base || name])),
       tiled:open.filter(name=>frameFor(name).classList.contains('is-tiled')),
       floating:open.filter(name=>session.floating?.[name]),interacting:!!manualWindowInteraction})) {guide.save();lastSignature = '';}
-    if(id==='temporary-desktop' && guide.observeTemporaryDesktop(model,{bond:desktopPages.fullscreenBond(activeWorkspace,model.state.temporaryWindow),selected:desktopPages.selectedFullscreen(activeWorkspace)?.name,full:session.fullscreen?.name,state:appState[model.state.temporaryWindow],column,page:desktopPages.current(activeWorkspace),open})) {guide.save();lastSignature='';}
+    if(id==='temporary-desktop' && guide.observeTemporaryDesktop(model,{borderless:!!appInfo[model.state.temporaryWindow]?.borderlessFullscreen,bond:desktopPages.fullscreenBond(activeWorkspace,model.state.temporaryWindow),selected:desktopPages.selectedFullscreen(activeWorkspace)?.name,full:session.fullscreen?.name,state:appState[model.state.temporaryWindow],column,page:desktopPages.current(activeWorkspace),open})) {guide.save();lastSignature='';}
     if (id === 'overview' && $('#universalSearch').classList.contains('is-open')) {
       if (guide.observeSearch(model,{query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp))})) {guide.save();lastSignature = '';}
     }
@@ -428,7 +438,8 @@
       if (!model.ready()) return;
       if (model.lesson.id === 'complete' || model.state.chapter) return requestExit('completed');
       if (model.lesson.id === 'two-displays') closePracticeDisplay();
-      if (model.next()) { guide.save(); updateGate(); if(['ai-context','project-stash'].includes(model.lesson.id)){showArea('projects',false);if(model.lesson.id==='ai-context')globalThis.SpatialAIDesktop?.expand(false);} render(); }
+      const previous=model.lesson.id;
+      if (model.next()) { guide.save(); updateGate(); if(model.lesson.id==='temporary-desktop'||previous==='temporary-desktop')await prepareLesson(); if(['ai-context','project-stash'].includes(model.lesson.id)){showArea('projects',false);if(model.lesson.id==='ai-context')globalThis.SpatialAIDesktop?.expand(false);} render(); }
     }
     if (action === 'skip' && !model.state.chapter) {
       if (model.lesson.id === 'two-displays') closePracticeDisplay();
@@ -531,6 +542,7 @@
   if (model.active()) {
     (async () => {
       if (!model.state.initialized) { resetPractice(); updateGate(); if (model.state.chapter) await prepareLesson(); }
+      if(model.lesson.id==='temporary-desktop' && model.state.temporaryWindow!=='game')await prepareLesson();
       updateGate(); guide.open(); interval = setInterval(check,180);
     })();
   }

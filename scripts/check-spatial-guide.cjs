@@ -85,16 +85,17 @@ empty.state.emptyLaunch={workspace:'work',column:'workspace',page:2,name:'notes'
 G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(!empty.ready(),'A stamp from another workspace cannot count');
 empty.state.emptyLaunch={workspace:'general',column:'workspace',page:2,name:'notes'};
 G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(empty.ready(),'A later empty desktop also works, including independent copies');
-const temporary=at('temporary-desktop'),bond={name:'browser',page:0,column:'workspace',display:1};
-const parent={bond,state:'open',column:'workspace',page:0,open:[]};
+const temporary=at('temporary-desktop'),bond={name:'game',page:0,column:'workspace',display:1};
+const parent={bond,borderless:true,state:'open',column:'workspace',page:0,open:[]};
+G.observeTemporaryDesktop(temporary,{...parent,borderless:false,selected:'game',full:'game',open:['game']});assert(!temporary.state.done.length,'Decorated fullscreen cannot complete the borderless practice');
 G.observeTemporaryDesktop(temporary,parent);assert(!temporary.state.done.length,'Preparing the fullscreen child cannot count as entering it');
-G.observeTemporaryDesktop(temporary,{...parent,selected:'browser',full:'browser',open:['browser']});
+G.observeTemporaryDesktop(temporary,{...parent,selected:'game',full:'game',open:['game']});
 assert.deepEqual(temporary.state.done,['temporary-enter']);
 G.observeTemporaryDesktop(temporary,{...parent,page:1});assert(!temporary.state.done.includes('temporary-back'));
 G.observeTemporaryDesktop(temporary,parent);assert(temporary.state.done.includes('temporary-back'));assert(!temporary.ready(),'Back preserves fullscreen and does not restore the window');
 G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'closed',open:[]});assert(!temporary.ready());
 G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'minimized',open:[]});assert(!temporary.ready());
-G.observeTemporaryDesktop(temporary,{...parent,bond:null,open:['browser']});assert(temporary.ready());
+G.observeTemporaryDesktop(temporary,{...parent,bond:null,open:['game']});assert(temporary.ready());
 const bounded = at('fullscreen');
 G.observeFullscreen(bounded,{bounded:'dolphin',open:['dolphin','notes']});
 assert(bounded.state.done.includes('bounded-enter'), 'Dolphin can complete the same fullscreen task as Notes');
@@ -303,13 +304,26 @@ assert.equal(G.recovery(at('park'),normalScene),null,'Any open app provides the 
 
 // Execute the actual asynchronous prerequisite adapter for every replayable chapter.
 const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene()'),adapter.indexOf('  async function recover('));
+// The full introduction also prepares the borderless example at its boundary,
+// then returns to the ordinary workspace for the following display chapter.
+(async()=>{
+  const scene={prepared:[]};
+  const transition=vm.createContext({model:at('challenge'),guide:{save(){}},window:{addEventListener(_,handler){scene.click=handler;}},updateGate(){},render(){},async prepareLesson(){scene.prepared.push(transition.model.lesson.id);},closePracticeDisplay(){}});
+  vm.runInContext(adapter.slice(adapter.indexOf("  window.addEventListener('click', async event => {"),adapter.indexOf("  window.addEventListener('input', event => {")),transition);
+  const next={target:{closest:selector=>selector==='[data-guide-action]'?{dataset:{guideAction:'next'}}:null}};
+  for(const goal of transition.model.lesson.goals)transition.model.mark(goal);
+  await scene.click(next);assert.equal(transition.model.lesson.id,'temporary-desktop');assert.deepEqual(scene.prepared,['temporary-desktop']);
+  for(const goal of transition.model.lesson.goals)transition.model.mark(goal);
+  await scene.click(next);assert.equal(transition.model.lesson.id,'two-displays');assert.deepEqual(scene.prepared,['temporary-desktop','two-displays']);
+})().catch(error=>{console.error(error);process.exitCode=1;});
 (async()=>{
   for(const lesson of G.lessons.filter(lesson=>lesson.goals)) {
     const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
-      desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{}},
+      desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed',game:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{},game:{borderlessFullscreen:true}},
       tileSession:()=>({}),localDisplaySlot:()=>1,createBondedFullscreen(name,display){scene.bond={name,display,page:scene.page,column:scene.column};},syncApps(){},refreshIntentAreas(){},renderTileLayout(){},setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
+      gamingWorkspaceProfile:{label:'Gaming'},cloneDesktopState:value=>JSON.parse(JSON.stringify(value)),workspaceAppStates:{},workspaceProjectStates:{},workspaceOpenProjects:{},workspaceProjects:{},windowMembership:{},workspaceAreaContents:{},workspaceContent:{},defaultAreaContent:{},renderWorkspaceTabs(){},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
       desktopPages:{column:()=>scene.column,current:()=>scene.page,pageOf:()=>scene.page,columnOf:(_,name)=>name.endsWith('--project')?'practice':'workspace',fullscreenBond:(_,name)=>scene.bond?.name===name?scene.bond:null},
       changeDesktopPage(page,_,column=scene.column){scene.page=page;scene.column=column;},
@@ -333,7 +347,12 @@ const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene
       assert.equal(scene.notes.notes[0].text,'Keep my own wording','Skipping preserves the learner’s existing note');
     }
     assert.equal(scene.column,needed.inProject?'practice':'workspace',lesson.id);
-    assert.equal(scene.workspace,needed.ownWorkspace?'mine':'general',lesson.id);
+    assert.equal(scene.workspace,lesson.id==='temporary-desktop'?'gaming':needed.ownWorkspace?'mine':'general',lesson.id);
+    if(lesson.id==='temporary-desktop') {
+      assert.equal(prepared.appState.game,'open');assert.equal(scene.bond.name,'game');assert.equal(prepared.appState.browser,'closed','The borderless example never seeds a decorated substitute');
+      prepared.model.state.temporaryWindow='browser';prepared.model.state.done=['temporary-enter'];
+      await prepared.prepareLesson();assert.equal(prepared.model.state.temporaryWindow,'game');assert(!prepared.model.state.done.length,'The old Firefox practice restarts only this task with the correct app');
+    }
     assert.equal(!!scene.path,needed.downloads,lesson.id);
   }
   // In-progress notes are never replaced when preparing the next task after a skip.

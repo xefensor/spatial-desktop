@@ -219,7 +219,7 @@ const appInfo = {
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
   steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", workspace: "gaming", singleInstance: true },
-  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", workspace: "gaming", singleInstance: true }
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", workspace: "gaming", singleInstance: true, borderlessFullscreen: true }
 };
 
 const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
@@ -1260,6 +1260,8 @@ function renderFullscreenWindow(name) {
 // desktops. Every display shares the route; only the owning display projects
 // its fullscreen entry. The other displays keep showing the parent page.
 function createBondedFullscreen(name, display = localDisplaySlot(), select = true) {
+  // Whole-display windows with their own title bar stay on the normal desktop.
+  if (!appInfo[name]?.borderlessFullscreen) return null;
   const page = desktopPages.pageOf(activeWorkspace,name), column = desktopPages.columnOf(activeWorkspace,name);
   const prefix = desktopPages.context(activeWorkspace,page,column);
   const parent = tileSessions[prefix+display] ||= {root:null,parked:{},floating:{},focus:null};
@@ -1335,10 +1337,10 @@ function fullscreenDesktopAction(action, name) {
 }
 
 function ensureBondedFullscreenDesktops() {
-  Object.keys(appState).filter(name => (appInfo[name]?.base || name) === "game").forEach(name => {
+  Object.keys(appState).forEach(name => {
     const bond = desktopPages.fullscreenBond(activeWorkspace,name);
-    if (bond) {if(appState[name] !== "open")leaveBondedFullscreen(name,false);return;}
-    if (appState[name] !== "open")return;
+    if (bond) {if(appState[name] !== "open" || !appInfo[name]?.borderlessFullscreen)leaveBondedFullscreen(name);return;}
+    if (appState[name] !== "open" || !appInfo[name]?.borderlessFullscreen)return;
     const page=desktopPages.pageOf(activeWorkspace,name),column=desktopPages.columnOf(activeWorkspace,name);
     const prefix=desktopPages.context(activeWorkspace,page,column);
     const legacy=Object.entries(tileSessions).find(([key,session])=>key.startsWith(prefix)&&/^\d+$/.test(key.slice(prefix.length))&&session.fullscreen?.name===name);
@@ -1350,7 +1352,7 @@ function toggleAppFullscreen(name) {
   releaseBorrowedApp(name);
   if (appState[name] !== "open" || !isLocalApp(name)) return;
   const session = tileSession();
-  if ((appInfo[name].base || name) === "game") {
+  if (appInfo[name].borderlessFullscreen) {
     if (desktopPages.fullscreenBond(activeWorkspace,name)) leaveBondedFullscreen(name);
     else createBondedFullscreen(name);
     saveTileSessions(); syncApps(); refreshIntentAreas(); renderTileLayout(name);if(isLocalApp(name))bringToFront(name);queueDesktopStateBroadcast(0);
@@ -4661,7 +4663,8 @@ const workspaceProfiles = {
   }
 };
 
-if (desktopPreset === 'clean') Object.keys(workspaceProfiles).filter(id => id !== 'general').forEach(id => delete workspaceProfiles[id]);
+const gamingWorkspaceProfile = workspaceProfiles.gaming;
+if (desktopPreset === 'clean') Object.keys(workspaceProfiles).filter(id => id !== 'general' && !(id === 'gaming' && globalThis.SpatialGuide?.model.active() && SpatialGuide.model.lesson.id === 'temporary-desktop')).forEach(id => delete workspaceProfiles[id]);
 try {
   const saved = JSON.parse(desktopStorage.getItem(SpatialWorkspaceSetup.profilesKey) || '{}');
   Object.entries(saved).forEach(([id, profile]) => {
@@ -4916,7 +4919,7 @@ function renderOverviewWindows() {
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
     if (bond) {
-      const reason = "Created for " + info.label + "'s fullscreen";
+      const reason = "Created for " + info.label + "'s borderless fullscreen";
       return '<article class="overview-temporary-desktop" data-fullscreen-card="' + escapeHtml(name) + '" style="--overview-app:' + info.primary + '">'
         + '<button class="temporary-desktop-open" data-overview-open-app="' + escapeHtml(name) + '" aria-label="Enter ' + escapeHtml(info.label) + ' temporary desktop"><span class="temporary-desktop-scene" data-peek-kind="' + escapeHtml(info.base || name) + '"><span class="temporary-desktop-badge">' + icon('i-max') + 'Temporary desktop</span>' + appArt(name) + shortcut + '</span><span class="temporary-desktop-title"><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(reason) + '</small></span></button>'
         + '<p class="temporary-desktop-parent">' + icon('i-monitor') + 'Attached to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display + '</p>'

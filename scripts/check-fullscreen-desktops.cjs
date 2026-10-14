@@ -49,6 +49,7 @@ const ctx={desktopPages:Pages.create(),activeWorkspace:'gaming',appInfo:Object.f
  workspaceProfiles:{gaming:{label:'Gaming',accent:'#5af',rack:['game','steam']}},projectSpaces:{},openProjectNames:()=>[],appArt:name=>'<i>'+name+'</i>',icon:()=>'<svg></svg>',escapeHtml:String,prepareControlSemantics(){},applyAppPrimaryColors(){}
 };
 vm.createContext(ctx);
+ctx.appInfo.game.borderlessFullscreen=true;
 vm.runInContext(slice('function tileContextKey(','function tileBounds('),ctx);
 vm.runInContext(slice('function leaveAppFullscreen(','// Subtract opaque'),ctx);
 vm.runInContext(slice('function createBondedFullscreen(','function updateFloatingYield('),ctx);
@@ -114,7 +115,7 @@ ctx.desktopPages.select('gaming','workspace');
 ctx.refreshWorkspaceContext=()=>{};
 vm.runInContext(slice('function renderOverviewWindows()','function refreshWorkspaceContext()'),ctx);
 ctx.renderOverviewWindows();const temporaryCard=node('#overviewWindowGrid').innerHTML;
-assert(temporaryCard.includes('data-fullscreen-card="game"'));assert(temporaryCard.includes("Created for Fallout 4's fullscreen"));assert(temporaryCard.includes('Removed when the app leaves fullscreen or closes.'));assert(temporaryCard.includes('Back to Desktop 1'));assert(temporaryCard.includes('Restore window'));
+assert(temporaryCard.includes('data-fullscreen-card="game"'));assert(temporaryCard.includes("Created for Fallout 4's borderless fullscreen"));assert(temporaryCard.includes('Removed when the app leaves fullscreen or closes.'));assert(temporaryCard.includes('Back to Desktop 1'));assert(temporaryCard.includes('Restore window'));
 let overviewClosed=0;ctx.setUniversalSearchOpen=()=>{overviewClosed++;};ctx.saveIndependentSessions=()=>{};ctx.tileInteraction=false;
 ctx.desktopPages.goFullscreen('gaming','game');const fullscreenKey=ctx.tileContextKey();
 assert.equal(ctx.fullscreenDesktopAction('back','game'),true);assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert(ctx.desktopPages.fullscreenBond('gaming','game'));assert(ctx.tileSessions[fullscreenKey].fullscreen,'Back keeps the original fullscreen session running');assert.equal(ctx.appState.game,'open');
@@ -171,4 +172,13 @@ ctx.ensureBondedFullscreenDesktops();assert.equal(ctx.desktopPages.selectedFulls
 ctx.leaveBondedFullscreen('game');ctx.desktopPages.go('gaming',0);slot=2;ctx.createBondedFullscreen('game',2);slot=1;
 const assignments={apps:{game:2,browser:1,notes:2,terminal:2},areas:{apps:2}};ctx.displayAssignmentsFor=()=>assignments;
 const launchesBefore=originalCalls.length;assert.equal(ctx.fullscreenDesktopAction('restore','game'),true);assert.equal(assignments.apps.game,2);assert.equal(originalCalls.length,launchesBefore);assert(!ctx.isLocalApp('game'));assert.equal(ctx.appState.game,'open');assert(!ctx.desktopPages.fullscreenBond('gaming','game'));
-console.log('Bonded fullscreen passed: stable page order, both scroll directions, held secondary display, Manual Area exclusion, reload/sync, Overview identity, parent launches, no focus-loss parking, original splits/floats, later edits, explicit Park/close, project ownership and monitor disconnect.');
+// A decorated whole-display window is not a borderless fullscreen app. Even
+// direct requests cannot manufacture a child; old Guide-created bonds recover.
+ctx.appState.browser='open';ctx.desktopPages.go('gaming',0);slot=1;
+const beforeDecorated=JSON.stringify(ctx.desktopPages.snapshot());
+assert.equal(ctx.createBondedFullscreen('browser'),null);assert.equal(JSON.stringify(ctx.desktopPages.snapshot()),beforeDecorated);
+ctx.toggleAppFullscreen('browser');assert.equal(ctx.tileSession().fullscreen.name,'browser');assert(!ctx.desktopPages.fullscreenBond('gaming','browser'));ctx.toggleAppFullscreen('browser');
+ctx.desktopPages.addFullscreen('gaming','browser',1);ctx.desktopPages.goFullscreen('gaming','browser');
+ctx.tileSessions['gaming:desktop:0:fullscreen:browser:1']={root:T.leaf('browser'),parked:{},floating:{},fullscreen:{name:'browser',bonded:true}};
+ctx.ensureBondedFullscreenDesktops();assert(!ctx.desktopPages.fullscreenBond('gaming','browser'));assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert.equal(ctx.appState.browser,'open');assert(!ctx.tileSessions['gaming:desktop:0:fullscreen:browser:1']);
+console.log('Bonded fullscreen passed: borderless eligibility, decorated fullscreen stays on its desktop, old Guide recovery, stable page order, both scroll directions, held secondary display, Manual Area exclusion, reload/sync, Overview identity, parent launches, no focus-loss parking, original splits/floats, later edits, explicit Park/close, project ownership and monitor disconnect.');
