@@ -65,7 +65,7 @@
     const column=desktopPages.column(activeWorkspace),project=projectSpaces[column];
     const bond=desktopPages.selectedFullscreen?.(activeWorkspace),page=desktopPages.current(activeWorkspace)+1;
     const local=bond && Math.min(bond.display,activeDisplayRoster().length)===localDisplaySlot();
-    const place=local ? (appInfo[bond.name]?.label||'App')+' fullscreen · below Desktop '+page : 'Desktop '+page+(bond?' · linked fullscreen on Display '+bond.display:'');
+    const place=local ? (appInfo[bond.name]?.label||'App')+' · temporary desktop · linked to Desktop '+page : 'Desktop '+page+(bond?' · temporary desktop on Display '+bond.display:'');
     $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name||'Workspace',place].join(' / ');
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();

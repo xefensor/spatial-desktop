@@ -4894,7 +4894,7 @@ function renderOverviewWindows() {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
     const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
-    const stateLabel = bond ? "Fullscreen · below Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
+    const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
     const frame = frameFor(name);
     const detail = (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
@@ -6819,14 +6819,14 @@ function renderDesktopColumnMap() {
       const windows=names.filter(name=>bond?name===bond.name:desktopPages.pageOf(activeWorkspace,name)===page&&!desktopPages.fullscreenBond(activeWorkspace,name));
       const selected=Boolean(current && desktopPages.current(activeWorkspace)===page && (bond?localBond&&selectedBond?.name===bond.name:!localBond));
       const title=bond?(appInfo[bond.name]?.label||'Fullscreen app'):'Desktop '+(page+1);
-      const detail=bond?'Fullscreen · below Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
+      const detail=bond?'Temporary desktop · linked to Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
       return '<button class="desktop-column-page'+(bond?' is-fullscreen-page':'')+'" data-desktop-column="'+escapeHtml(column)+'" data-column-page="'+page+'"'+(bond?' data-fullscreen-page="'+escapeHtml(bond.name)+'" data-bond-parent="'+page+'"':'')+' aria-pressed="'+selected+'" aria-label="'+escapeHtml(desktopColumnLabel(column)+' · '+title+' · '+detail)+'"><span><b>'+(bond?icon('i-max'):'')+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span><span class="desktop-column-apps">'+windows.slice(0,5).map(appArt).join('')+'</span></button>';
     };
     const entries=desktopPages.entries(activeWorkspace,column);
     const pages=entries.filter(entry=>!entry.fullscreen).map(parent=>{
       const children=entries.filter(entry=>entry.page===parent.page && entry.fullscreen);
       const content=pageMarkup(parent)+children.map(pageMarkup).join("");
-      return children.length ? '<div class="desktop-bond-group" role="group" aria-label="Desktop '+(parent.page+1)+' and its fullscreen app">'+content+'</div>' : content;
+      return children.length ? '<div class="desktop-bond-group" role="group" aria-label="Desktop '+(parent.page+1)+' and its temporary fullscreen desktop">'+content+'</div>' : content;
     }).join("");
     return '<section class="desktop-column-card' + (current ? ' is-current' : '') + '" style="--column-accent:' + escapeHtml(project?.accent || workspaceProfiles[activeWorkspace].accent) + '"><header>' + icon(project?.icon || workspaceProfiles[activeWorkspace].icon) + '<b>' + escapeHtml(desktopColumnLabel(column)) + '</b></header><div class="desktop-column-pages">' + pages + '</div></section>';
   }).join("");
@@ -6901,7 +6901,7 @@ function updateDesktopPageUi() {
   const project = column === "workspace" ? null : projectSpaces[column];
   const context = project ? project.name + " project" : label + " workspace";
   workspace.dataset.desktopColumn = column;
-  workspace.setAttribute("aria-label", context + " · " + (special ? (appInfo[bond.name]?.label||"App")+" fullscreen · below Desktop "+page : "Desktop "+page));
+  workspace.setAttribute("aria-label", context + " · " + (special ? (appInfo[bond.name]?.label||"App")+" · temporary desktop · linked to Desktop "+page : "Desktop "+page));
   $("use", button)?.setAttribute("href", "#" + (project?.icon || workspaceProfiles[activeWorkspace].icon));
   button.style?.setProperty("--desktop-column-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
   $("#appsAreaContext").textContent = context + " · Desktop " + page;
@@ -7000,10 +7000,9 @@ function renderFullscreenPeek() {
       peek.dataset.peekKind = info.base || bond.name;
       peek.style.setProperty("--peek-accent", info.primary || "#b8d59a");
       peek.innerHTML = '<span class="fullscreen-peek-scene" aria-hidden="true"></span><span class="fullscreen-peek-label">'
-        + appArt(bond.name) + '<b>' + escapeHtml(info.label) + '</b><span>Fullscreen below · Desktop ' + (bond.page + 1)
-        + '</span></span><span class="fullscreen-peek-action" aria-hidden="true"><span>Scroll down or click</span><b>↓</b></span>';
-      peek.setAttribute("aria-label", "Enter " + info.label + " fullscreen desktop, attached below Desktop " + (bond.page + 1));
-      peek.title = info.label + " is still running in fullscreen below this desktop. Scroll down or click to enter.";
+        + appArt(bond.name) + '<b>' + escapeHtml(info.label) + '</b><span>Temporary desktop · Borderless fullscreen</span></span><span class="fullscreen-peek-action" aria-hidden="true"><span>Scroll down or click</span><b>↓</b></span>';
+      peek.setAttribute("aria-label", "Enter " + info.label + " temporary desktop for borderless fullscreen, linked to Desktop " + (bond.page + 1));
+      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, linked to Desktop " + (bond.page + 1) + ". Scroll down or click to enter.";
     }
   }
   // Keep the identity stable during focus changes. Only reserve space when
@@ -7095,7 +7094,7 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
       scheduleWindowVisibility();
     });
   }
-  globalThis.SpatialTimelineDesktop?.record(horizontal ? "project.switch" : "desktop.switch", {project:column === "workspace" ? "" : column,page,app:fullscreenName||"",title:horizontal ? desktopColumnLabel(column) : fullscreenName ? (appInfo[fullscreenName]?.label||"App")+" · Fullscreen desktop" : "Desktop " + (page + 1),detail:fullscreenName ? "Bonded below Desktop "+(page+1) : ""});
+  globalThis.SpatialTimelineDesktop?.record(horizontal ? "project.switch" : "desktop.switch", {project:column === "workspace" ? "" : column,page,app:fullscreenName||"",title:horizontal ? desktopColumnLabel(column) : fullscreenName ? (appInfo[fullscreenName]?.label||"App")+" · Temporary desktop" : "Desktop " + (page + 1),detail:fullscreenName ? "Linked to Desktop "+(page+1) : ""});
   queueDesktopStateBroadcast(0);
   return true;
 }
@@ -7874,7 +7873,7 @@ function renderInstanceRack() {
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
     const bond = fullscreenHotbarBond(name);
-    const detail = bond ? ' · Return to fullscreen · below Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
+    const detail = bond ? ' · Return to temporary desktop · linked to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
     return '<button class="app-key' + (bond ? ' is-fullscreen-link' : '') + '" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + detail + ' · ' + shortcut + (info.singleInstance ? '' : ' · Shift+click: new window')) + '" aria-label="' + escapeHtml(info.label + detail + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + (bond ? '<span class="fullscreen-hotbar-mark" aria-hidden="true">' + icon('i-max') + '</span>' : '') + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   });
   const open = buttons.filter((_, index) => appState[names[index]] === 'open').join('');
@@ -7994,7 +7993,7 @@ openApp = function(name, point = null) {
   const targetBond=desktopPages.fullscreenBond(activeWorkspace,name);
   if(targetBond && appState[name] === 'open') {
     changeDesktopPage(targetBond.page,false,targetBond.column,name);
-    if(!isLocalApp(name)){queueDesktopStateBroadcast(0);showToast(appInfo[name].label+" · Fullscreen on Display "+targetBond.display);return;}
+    if(!isLocalApp(name)){queueDesktopStateBroadcast(0);showToast(appInfo[name].label+" · Temporary desktop on Display "+targetBond.display);return;}
   } else {
     const selected=desktopPages.selectedFullscreen(activeWorkspace);
     if(selected && Math.min(selected.display,activeDisplayRoster().length)===localDisplaySlot())changeDesktopPage(selected.page,false,selected.column);

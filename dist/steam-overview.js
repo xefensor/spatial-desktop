@@ -41,7 +41,7 @@
   const running=()=>activeWorkspace==='gaming' && appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
     const gameOpen=activeWorkspace==='gaming' && appState.game && appState.game!=='closed';
-    find('steamGameState').textContent=gameBond()?'RUNNING · FULLSCREEN DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?'CURRENT GAME · OPEN':'READY TO PLAY';
+    find('steamGameState').textContent=gameBond()?'RUNNING · TEMPORARY DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?'CURRENT GAME · OPEN':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
     globalThis.SpatialOverviewDesktop?.refresh();
   }

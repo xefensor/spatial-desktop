@@ -87,7 +87,7 @@ assert(ctx.isLocalApp('browser'));assert(!ctx.isLocalApp('game'));assert(ctx.des
 vm.runInContext(slice('function fullscreenPeekBond(','function focusDesktop('),ctx);
 const peek=node('#fullscreenDesktopPeek'),shell=node('.desktop-shell');
 assert.equal(ctx.fullscreenPeekBond().name,'game');ctx.renderFullscreenPeek();
-assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'36px');assert.match(peek['aria-label'],/attached below Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);
+assert.equal(peek.hidden,false);assert.equal(shell.style['--fullscreen-peek-height'],'36px');assert.match(peek['aria-label'],/linked to Desktop 1/);assert.match(peek.innerHTML,/Scroll down or click/);
 const previewMarkup=peek.innerHTML;peek.innerHTML='focus stays on this node';ctx.renderFullscreenPeek();assert.equal(peek.innerHTML,'focus stays on this node','A focus-only render does not replace the preview contents');peek.innerHTML=previewMarkup;
 slot=2;ctx.renderFullscreenPeek();assert.equal(peek.hidden,true,'The peer monitor must not advertise a duplicate child');assert.equal(shell.style['--fullscreen-peek-height'],'0px');
 slot=1;ctx.tileSession().fullscreen={name:'browser'};assert.equal(ctx.fullscreenPeekBond(),null,'Another full-screen window keeps every screen edge');delete ctx.tileSession().fullscreen;
@@ -98,14 +98,14 @@ ctx.desktopPages.go('gaming',0);ctx.desktopPages.fullscreenBond('gaming','game')
 // as another ordinary numbered page or duplicating the game on the parent.
 vm.runInContext(slice('function renderDesktopColumnMap(','function migrateDesktopColumns('),ctx);
 ctx.renderDesktopColumnMap();const markup=node('#desktopColumnMap').innerHTML;
-assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its fullscreen app'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('below Desktop 1 · Display 1'));
+assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its temporary fullscreen desktop'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('linked to Desktop 1 · Display 1'));
 assert.equal((markup.match(/<i>game<\/i>/g)||[]).length,1);
 // The original Apps Area retains a live link, after local windows and before
 // parked apps. Both monitor projections use it, without duplicating the game.
 vm.runInContext(slice('function workspaceHotbarNames(','let hotbarOrderFrame='),ctx);
 vm.runInContext(slice('function activateHotbarSlot(','document.addEventListener("keydown",'),ctx);
 assert.deepEqual(Array.from(ctx.workspaceHotbarNames()),['browser','game','steam']);
-ctx.renderInstanceRack();assert(node('#appRack').innerHTML.includes('is-fullscreen-link'));assert(node('#appRack').innerHTML.includes('Return to fullscreen · below Desktop 1 · Display 1'));
+ctx.renderInstanceRack();assert(node('#appRack').innerHTML.includes('is-fullscreen-link'));assert(node('#appRack').innerHTML.includes('Return to temporary desktop · linked to Desktop 1 · Display 1'));
 slot=2;assert.deepEqual(Array.from(ctx.workspaceHotbarNames()),['notes','game','steam'],'The held parent has a return link to the other display');
 slot=1;ctx.changeDesktopPage(1,false);assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another ordinary page');
 ctx.desktopPages.go('gaming',0);ctx.desktopPages.select('gaming','project');assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another Project column');
