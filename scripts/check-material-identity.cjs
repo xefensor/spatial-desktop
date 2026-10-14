@@ -17,6 +17,7 @@ for (const [,action,id,label] of launchers) {
     assert.equal(label,id === 'steam' ? 'Steam' : 'Fallout 4','App-contributed examples keep their identity');
     continue;
   }
+  if(id==='browser'){assert.equal(label,'Firefox','The requested Firefox example keeps its brand');continue;}
   const brand = action === 'open' ? primary[id] : id;
   assert.equal(label,A.label(brand),id+' has a consistent function-first label');
   assert(!/\b(?:Dolphin|Elisa|Firefox|Konsole|KDE|LibreOffice|Krita|Steam|Spatial Guide)\b/.test(label), 'Visible labels contain only the generic function');

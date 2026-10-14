@@ -44,3 +44,15 @@ const storage={getItem:k=>seed.get(k)||null,setItem:(k,v)=>seed.set(k,v)};D.seed
 const states=JSON.parse(seed.get('spatial-workspace-app-states-v1'));assert.deepEqual(states.general,{notes:'open'});assert.equal(states.gaming.game,'open');assert.equal(states.gaming.steam,'minimized');assert.equal(states.gaming.notes,'closed');assert.equal(JSON.parse(seed.get('spatial-desktop-pages-v1')).gaming.active,1,'Existing page selection is retained');assert.equal(JSON.parse(seed.get('spatial-workspace-area-layouts-v1')).gaming.sizes.left,327);
 assert.equal(JSON.parse(seed.get('spatial-split-layouts-v1'))['gaming:desktop:0:1'].fullscreen.name,'game');states.gaming.game='closed';seed.set('spatial-workspace-app-states-v1',JSON.stringify(states));D.seedWorkspaces(storage);assert.equal(JSON.parse(seed.get('spatial-workspace-app-states-v1')).gaming.game,'closed','Reload does not resurrect a closed game');
 console.log('Steam passed: Gaming scope, Guide isolation, fullscreen return, separate chats/drafts, safe text, notes, filters, scroll ownership, and one-time legacy seeding.');
+
+// The Overview keyboard listener runs before the window listener. One Escape
+// must not also exit fullscreen after Overview has consumed that same event.
+const shell=fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.js'),'utf8');
+const start=shell.indexOf('  if (root === document) document.addEventListener("keydown", event => {');
+const end=shell.indexOf('\n  const observer = new ResizeObserver',start);
+let windowEscape,exits=0;
+const keyboard={root:null,document:{addEventListener:(_,listener)=>windowEscape=listener},tileSession:()=>({fullscreen:{name:'game'}}),toggleAppFullscreen:()=>exits++,$:selector=>selector==='#desktopContextMenu'?{hidden:true}:{classList:{contains:()=>false}}};
+keyboard.root=keyboard.document;vm.createContext(keyboard);vm.runInContext(shell.slice(start,end),keyboard);
+windowEscape({key:'Escape',defaultPrevented:true,preventDefault(){}});assert.equal(exits,0,'An Escape consumed by Overview cannot leave fullscreen');
+windowEscape({key:'Escape',defaultPrevented:false,preventDefault(){}});assert.equal(exits,1,'A separate Escape still leaves fullscreen normally');
+console.log('Fullscreen Escape passed: consumed Overview/dialog keys cannot also exit the app.');

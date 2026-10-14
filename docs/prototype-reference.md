@@ -166,6 +166,8 @@ The demo’s **Gaming** workspace starts with an illustrative Fallout 4 game ope
 
 Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** leaves fullscreen while keeping the game open. Switching workspaces saves the existing fullscreen session.
 
+Steam keeps its own navy library, green Play button, friends list and blue chat surfaces, including when the surrounding desktop uses light mode. The provider tab and its tools remain inside the common Overview.
+
 System sections remain Timeline, Apps, Projects & Home and System. App-contributed tabs have their own separated group after those sections. A tab is available only in its provider’s workspace while the provider is open or parked; closing Steam removes its tab. Registration cannot replace a system section, and unavailable panels are hidden and excluded from carousel navigation.
 
 Steam provides three separate sample conversations with independent drafts, original sample guides with search, browser-local autosaved game notes and illustrative achievement filters. All example names and UI are English. The scene is original SVG artwork, not a gameplay screenshot. No game process, Steam account or messaging service is connected, and sample messages stay in this browser.
@@ -227,3 +229,9 @@ The workspace-coloured wallpaper is one fixed background beneath the desktop and
 | Prototype Pack/Import surfaces | Portable native app/workspace packaging |
 
 Design goals should be evaluated separately from the implemented demonstration. The [audit record](documentation-audit-2026-10-12.md) links the current documentation claims to source and regression checks. Dated research/testing reports retain their historical scope.
+
+## Recognizable app examples
+
+The browser example is **Firefox** across windows, hotbar, app library and search. It uses the Firefox icon, a theme-aware tab strip, navigation controls, address field, bookmarks and a New Tab page. Each tab has independent back/forward history, bounded to 20 tabs per window, and survives reload within its own window and workspace. New tab, selecting and closing tabs, address entry, the local New Tab search, bookmarking and the Firefox menu are interactive. Native pages remain simulated; external URLs use the existing explicit link to open outside the prototype.
+
+The bundled Firefox SVG is unchanged from [Mozilla’s official Firefox source](https://github.com/mozilla-firefox/firefox/blob/main/browser/branding/official/content/about-logo.svg). Firefox branding belongs to Mozilla. Steam visuals are a CSS/SVG interpretation of [Valve’s library](https://store.steampowered.com/libraryupdate) and [in-game tools](https://help.steampowered.com/en/faqs/view/3978-072C-18DF-FBF9); no account connection is implied. Spatial still owns window placement, numbered hotbar shortcuts, fullscreen state and the common Overview frame.

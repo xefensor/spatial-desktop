@@ -77,7 +77,23 @@
     state.position += 1;
     if (state.position >= state.tracks[state.index].duration) musicStep(state);
   }
-  const api = {create, navigation, current, visit, go, resolvePath, terminal, addNote, activeNote, words, musicStep, musicTick};
+  function browserTabs(state) {
+    if(!state.tabs?.length){state.tabs=[{id:'tab-1',navigation:state.navigation}];state.activeTab='tab-1';state.tabSequence=1;}
+    const tab=state.tabs.find(tab=>tab.id===state.activeTab)||state.tabs[0];
+    state.activeTab=tab.id;state.navigation=tab.navigation;return tab;
+  }
+  function browserAddTab(state,page) {
+    browserTabs(state);if(state.tabs.length>=20)return null;
+    state.tabSequence=Math.max(Number(state.tabSequence)||1,...state.tabs.map(tab=>Number(tab.id.split('-').at(-1))||1))+1;
+    const tab={id:'tab-'+state.tabSequence,navigation:navigation(page)};
+    state.tabs.push(tab);state.activeTab=tab.id;browserTabs(state);return tab;
+  }
+  function browserSelectTab(state,id) {browserTabs(state);if(!state.tabs.some(tab=>tab.id===id))return false;state.activeTab=id;browserTabs(state);return true;}
+  function browserCloseTab(state,id) {
+    browserTabs(state);const index=state.tabs.findIndex(tab=>tab.id===id);if(index<0)return true;if(state.tabs.length===1)return false;
+    state.tabs.splice(index,1);if(state.activeTab===id)state.activeTab=state.tabs[Math.min(index,state.tabs.length-1)].id;browserTabs(state);return true;
+  }
+  const api = {create, navigation, current, visit, go, resolvePath, terminal, addNote, activeNote, words, musicStep, musicTick, browserTabs, browserAddTab, browserSelectTab, browserCloseTab};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SpatialAppTools = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

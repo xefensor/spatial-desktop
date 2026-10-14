@@ -3,8 +3,8 @@
   const names = Object.freeze({
   "Dolphin": "File Browser",
   "Elisa": "Music Player",
-  "Firefox": "Web Browser",
-  "Web": "Web Browser",
+  "Firefox": "Firefox",
+  "Web": "Firefox",
   "Konsole": "Terminal",
   "Notes": "Note Editor",
   "Spatial Guide": "Desktop Guide",
@@ -46,7 +46,8 @@
   const previousLabels = Object.freeze({
   "File Browser Dolphin": "File Browser",
   "Music Player Elisa": "Music Player",
-  "Web Browser Firefox": "Web Browser",
+  "Web Browser Firefox": "Firefox",
+  "Web Browser": "Firefox",
   "Terminal Konsole": "Terminal",
   "Note Editor Notes": "Note Editor",
   "Desktop Guide Spatial Guide": "Desktop Guide",

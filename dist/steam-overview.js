@@ -5,7 +5,7 @@
   if(!root||desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;
   const find=id=>document.getElementById(id),all=selector=>[...root.querySelectorAll(selector)];
   const storeKey='spatial-gaming-steam-chats-v1',noteKey='spatial-gaming-fallout-note-v1';
-  const friends={morgan:{name:'Morgan',presence:'Playing Factorio',tone:'green',initial:'M',messages:[{you:false,text:'Want to join our factory after your quest?'},{you:true,text:'Give me ten minutes. Almost back at Sanctuary.'}]},claire:{name:'Claire',presence:'Online',tone:'blue',initial:'K',messages:[{you:false,text:'How is your settlement coming along?'}]},jamie:{name:'Jamie',presence:'Away',tone:'violet',initial:'J',messages:[{you:false,text:'Catch you later!'}]}};
+  const friends={morgan:{name:'Morgan',presence:'Playing Factorio',tone:'green',initial:'M',messages:[{you:false,text:'Want to join our factory after your quest?'},{you:true,text:'Give me ten minutes. Almost back at Sanctuary.'}]},claire:{name:'Claire',presence:'Online',tone:'blue',initial:'C',messages:[{you:false,text:'How is your settlement coming along?'}]},jamie:{name:'Jamie',presence:'Away',tone:'violet',initial:'J',messages:[{you:false,text:'Catch you later!'}]}};
   const drafts={};let selected='morgan',noteTimer;
   try{const saved=JSON.parse(localStorage.getItem(storeKey)||'{}');for(const id of Object.keys(friends)){if(Array.isArray(saved[id]))friends[id].messages=saved[id].filter(m=>typeof m?.text==='string'&&typeof m.you==='boolean').slice(-50).map(m=>({you:m.you,text:m.text.slice(0,1000)}));}}catch{}
   function persistChat(){try{localStorage.setItem(storeKey,JSON.stringify(Object.fromEntries(Object.entries(friends).map(([id,f])=>[id,f.messages]))));return true;}catch{return false;}}
@@ -65,10 +65,10 @@
     if(running())toggleAppFullscreen('game');else minimizeApp('game');
     syncContext();
   }
-  function openTools(){
+  function openTools(tool){
     if(!available())return;
     setUniversalSearchOpen(true);
-    requestAnimationFrame(()=>{if(available())globalThis.SpatialOverviewDesktop?.select('steam',false);});
+    requestAnimationFrame(()=>{if(available())globalThis.SpatialOverviewDesktop?.select('steam',false);if(tool)selectTool(tool);});
   }
   function workspaceChanged(){
     saveNote();filterLauncher();syncContext();
@@ -76,7 +76,7 @@
   }
   find('steamReturnGame').addEventListener('click',()=>startGame(false));
   find('steamReturnDesktop').addEventListener('click',()=>globalThis.SpatialOverviewDesktop?.select('apps',false));
-  document.addEventListener('click',event=>{const button=event.target.closest('[data-steam-action]');if(!button||activeWorkspace!=='gaming')return;const action=button.dataset.steamAction;if(action==='overview')openTools();else if(action==='resume')startGame(false);else if(action==='desktop')showDesktop();});
+  document.addEventListener('click',event=>{const button=event.target.closest('[data-steam-action]');if(!button||activeWorkspace!=='gaming')return;const action=button.dataset.steamAction;if(action==='overview')openTools();else if(['guides','notes','achievements'].includes(action))openTools(action);else if(action==='resume')startGame(false);else if(action==='desktop')showDesktop();});
   globalThis.SpatialSteamOverview={available,overviewChanged,startGame,showDesktop,running,appOpened,workspaceChanged,syncContext};
   renderChat();renderGuide('settlement');
   globalThis.SpatialOverviewDesktop?.registerSection('steam',{label:'Steam',available});

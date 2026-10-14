@@ -94,3 +94,17 @@ assert(!html.includes('class="folder-tabs"'),'Unbacked static file tabs have bee
 assert(html.indexOf('app-tools.js')<html.indexOf('app-windows.js')&&html.indexOf('app-windows.js')<html.indexOf('desktop-shell.js'));
 assert(shell.includes('prepareAppWindows();'),'Apps are hydrated after the desktop session');
 console.log('App windows passed: real folder navigation, history branching, breadcrumbs, saved note documents, isolated instances/workspaces, transfers, browser back/forward/reload, demo shell paths and variables, command limits, independent music queues and persistent folder creation.');
+
+// Firefox tabs retain their own history through migration and reload.
+const firefox={kind:'browser',navigation:A.navigation({address:'Studio',title:'Studio'})};
+A.visit(firefox.navigation,{address:'Checklist',title:'Checklist'});A.browserTabs(firefox);
+assert.equal(firefox.tabs.length,1,'Legacy browser history becomes the first tab');
+const firstTab=firefox.activeTab,secondTab=A.browserAddTab(firefox,{address:'about:newtab',title:'New Tab'});
+A.visit(firefox.navigation,{address:'Weather',title:'Weather'});assert.equal(A.current(firefox.navigation).title,'Weather');
+A.browserSelectTab(firefox,firstTab);assert.equal(A.current(firefox.navigation).title,'Checklist');A.go(firefox.navigation,-1);assert.equal(A.current(firefox.navigation).title,'Studio');
+A.browserSelectTab(firefox,secondTab.id);assert.equal(A.current(firefox.navigation).title,'Weather','Changing another tab history never changes this one');
+const tabReload=JSON.parse(JSON.stringify(firefox));A.browserTabs(tabReload);A.go(tabReload.navigation,-1);assert.equal(A.current(tabReload.tabs[1].navigation).title,'New Tab','Reload reconnects navigation to the selected tab');
+assert.equal(A.browserSelectTab(tabReload,'missing'),false);assert.equal(A.browserCloseTab(tabReload,secondTab.id),true);assert.equal(tabReload.activeTab,firstTab);assert.equal(A.browserCloseTab(tabReload,firstTab),false,'Closing the last tab asks the window manager to close this window');
+const sibling={navigation:A.navigation({title:'Other window'})};A.browserTabs(sibling);assert.equal(A.current(sibling.navigation).title,'Other window');
+while(firefox.tabs.length<20)A.browserAddTab(firefox,{address:'about:newtab',title:'New Tab'});assert.equal(A.browserAddTab(firefox,{title:'Beyond limit'}),null);assert.equal(firefox.tabs.length,20);
+console.log('Firefox tabs passed: legacy migration, independent history, reload, selection, closing, separate windows, and bounds.');

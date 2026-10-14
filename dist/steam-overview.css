@@ -41,6 +41,8 @@
 /* Opaque native app content; fullscreen is owned by the existing window manager. */
 .app-frame.steam-game-window,.app-frame.steam-client-window{grid-template-rows:48px minmax(0,1fr)!important;container-type:inline-size}
 .app-frame.steam-game-window.is-fullscreen{grid-template-rows:minmax(0,1fr)!important}
+.steam-game-window .steam-game-stage .steam-button{background:#172f39ed!important;color:#e6ebd4!important;border-color:#cbdcbe66!important;box-shadow:inset 0 1px #e6ebd41a,0 3px 10px #0002!important}
+.steam-game-window .steam-game-stage .steam-button:hover{background:#26444ced!important}
 .steam-game-window.is-fullscreen>.app-titlebar{display:none}
 .steam-game-stage>header{inset:22px 24px auto}.steam-game-stage>header>span{max-width:60%}
 .steam-client-content{min-height:0;overflow:auto;overscroll-behavior:contain;padding:clamp(20px,4cqw,36px);background:radial-gradient(ellipse at 100% 0,color-mix(in srgb,#79bfec 10%,transparent),transparent 70%),var(--content-surface);color:var(--text)}

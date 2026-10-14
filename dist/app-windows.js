@@ -9,7 +9,7 @@ function saveAppWindows(broadcast = true) {
 }
 function appWindowModel(id) {
   const frame = frameFor(id), kind = appInfo[id]?.base || id;
-  return appWindowStore.get(activeWorkspace, id, () => {
+  const model=appWindowStore.get(activeWorkspace, id, () => {
     if (kind === 'game' || kind === 'steam') return {kind};
     if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
     if (kind === 'notes') {
@@ -28,6 +28,8 @@ function appWindowModel(id) {
     });
     return {kind, tracks, index: 0, position: id === 'elisa' ? musicPosition : 0, playing: id === 'elisa' && appState[id] !== 'closed' ? musicPlaying : false, volume: Number($('.volume-range', frame)?.value || 72), muted: false};
   });
+  if(kind==='browser')SpatialAppTools.browserTabs(model);
+  return model;
 }
 function appActionButton(action, glyph, label, attributes = '') {
   return '<button class="surface-key compact-key" data-app-action="' + action + '" aria-label="' + label + '" title="' + label + '" ' + attributes + '>' + icon(glyph) + '</button>';
@@ -52,7 +54,8 @@ function hydrateAppWindow(id, force = false) {
     }
     renderNotes(id);
   } else if (kind === 'browser') {
-    $('.browser-toolbar', frame).innerHTML = '<div class="key-group">' + appActionButton('browser-back','i-left','Back · Alt+Left') + appActionButton('browser-forward','i-right','Forward · Alt+Right') + appActionButton('browser-reload','i-refresh','Reload') + '</div><label class="recessed-field"><svg><use href="#i-web"/></svg><input aria-label="Address" autocomplete="off" spellcheck="false"></label>' + appActionButton('browser-home','i-grid','Start page');
+    if(!$('.firefox-tab-strip',frame))$('.browser-toolbar',frame).insertAdjacentHTML('beforebegin','<nav class="firefox-tab-strip" aria-label="Firefox tabs"></nav>');
+    $('.browser-toolbar', frame).innerHTML = '<div class="key-group">' + appActionButton('browser-back','i-left','Back · Alt+Left') + appActionButton('browser-forward','i-right','Forward · Alt+Right') + appActionButton('browser-reload','i-refresh','Reload') + '</div><label class="firefox-address"><svg aria-hidden="true"><use href="#i-web"/></svg><input aria-label="Address" autocomplete="off" spellcheck="false" placeholder="Search or enter address"></label>' + appActionButton('browser-bookmark','i-star','Bookmark this tab','aria-pressed="false"') + '<details class="firefox-menu"><summary aria-label="Firefox menu" title="Firefox menu">'+icon('i-menu')+'</summary><div><b>Firefox · Demo</b>'+appActionButton('browser-new-tab','i-add','New tab')+appActionButton('browser-home','i-home','Start page')+'<small>Pages and history stay in this workspace.</small></div></details>';
     renderBrowserPage(id);
   } else if (kind === 'terminal') {
     if (!$('.terminal-context', frame)) $('.terminal-screen', frame).insertAdjacentHTML('beforebegin', '<div class="terminal-context"><span>Demo shell</span><span>↑↓ History · Ctrl+L Clear</span></div>');
@@ -181,6 +184,7 @@ function updateNoteStatus(id) {
 }
 function readBrowserPage(frame) {
   const page = $('.demo-reading-page', frame);
+  if(!page)return firefoxNewTab();
   return {address:$('.browser-toolbar input',frame)?.value || 'Start', title:page?.querySelector('h2')?.textContent || 'Start page',
     subtitle:page?.querySelector('.small-heading')?.textContent || workspaceProfiles[activeWorkspace].label + ' workspace',
     intro:page?.querySelector('p')?.textContent || 'Your workspace, your pages. Choose a shortcut or enter an address.',
@@ -192,9 +196,17 @@ function renderBrowserPage(id) {
   $('.browser-toolbar input',frame).value=page.address;
   $('.app-identity small',frame).textContent=page.title;appInfo[id].detail=page.title;
   $('.start-page',frame).innerHTML='<div class="demo-reading-page"><span class="small-heading">' + escapeHtml(page.subtitle) + '</span><h2>' + escapeHtml(page.title) + '</h2><p>' + escapeHtml(page.intro) + '</p><div class="site-grid">' + page.links.map(label=>'<button class="surface-key" data-demo-link="' + escapeHtml(label) + '">' + escapeHtml(label) + icon('i-right') + '</button>').join('') + '</div><section class="demo-page-detail"><h3>Page notes</h3><p>' + escapeHtml(page.detail) + '</p>' + (page.external ? '<a class="browser-external-link" href="' + escapeHtml(page.external) + '" target="_blank" rel="noopener noreferrer">Open in your browser ↗</a>' : '') + '</section></div>';
+  renderFirefoxChrome(id,page);
   $('[data-app-action="browser-back"]',frame).disabled=model.navigation.index===0;
   $('[data-app-action="browser-forward"]',frame).disabled=model.navigation.index===model.navigation.items.length-1;
   refreshDownloadUi(); prepareControlSemantics(frame);
+}
+function firefoxNewTab() {return {address:'about:newtab',title:'New Tab',subtitle:'Firefox',intro:'Search the web or choose a shortcut.',detail:'Local prototype pages and history stay in this workspace.',links:['Mail','Calendar','News','Weather'],firefoxHome:true};}
+function renderFirefoxChrome(id,page) {
+  const frame=frameFor(id),model=appWindowModel(id),strip=$('.firefox-tab-strip',frame);
+  if(strip)strip.innerHTML='<div class="firefox-tabs" role="tablist" aria-label="Open Firefox tabs">'+model.tabs.map(tab=>{const selected=tab.id===model.activeTab,title=SpatialAppTools.current(tab.navigation).title;return '<div class="firefox-tab'+(selected?' is-selected':'')+'"><button role="tab" aria-selected="'+selected+'" tabindex="'+(selected?'0':'-1')+'" data-app-action="browser-tab-select" data-browser-tab="'+escapeHtml(tab.id)+'"><img src="images/apps/firefox.svg" alt=""><span>'+escapeHtml(title)+'</span></button><button class="firefox-tab-close" data-app-action="browser-tab-close" data-browser-tab="'+escapeHtml(tab.id)+'" aria-label="Close tab: '+escapeHtml(title)+'">'+icon('i-close')+'</button></div>';}).join('')+'</div>'+appActionButton('browser-new-tab','i-add','New tab');
+  const bookmark=$('[data-app-action="browser-bookmark"]',frame);if(bookmark){bookmark.setAttribute('aria-pressed',String(Boolean(page.bookmarked)));bookmark.setAttribute('aria-label',page.bookmarked?'Remove bookmark':'Bookmark this tab');}
+  if(page.firefoxHome)$('.start-page',frame).innerHTML='<div class="firefox-newtab"><div class="firefox-wordmark"><img src="images/apps/firefox.svg" alt=""><b>Firefox</b></div><form class="firefox-newtab-search" data-firefox-search><svg aria-hidden="true"><use href="#i-search"/></svg><input aria-label="Search with Firefox" autocomplete="off" placeholder="Search the web"><button type="submit" aria-label="Search">'+icon('i-right')+'</button></form><div class="firefox-shortcuts">'+page.links.map((label,i)=>'<button data-demo-link="'+escapeHtml(label)+'"><span>'+icon(['i-mail','i-calendar','i-web','i-web'][i])+'</span><b>'+escapeHtml(label)+'</b></button>').join('')+'</div><p>Firefox demo · Your '+escapeHtml(workspaceProfiles[activeWorkspace].label)+' workspace</p></div>';
 }
 function navigateBrowser(id, address) {
   const model=appWindowModel(id);
@@ -319,7 +331,7 @@ function appMiniMarkup(id, original) {
   if(model.kind==='elisa')return header+'<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>'+escapeHtml(model.tracks[model.index]?.title||'Music')+'</b><small>Demo library</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track">'+icon('i-prev')+'</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="Play">'+icon('i-play')+'</button><button class="surface-key mini-control" data-music="next" aria-label="Next track">'+icon('i-next')+'</button><input class="track-range" type="range" min="0" max="218" aria-label="Track position"></div></div></article>';
   return original;
 }
-function performAppAction(id, action) {
+function performAppAction(id, action, value='') {
   const frame=frameFor(id), model=appWindowModel(id);
   if(action.startsWith('file-')) {
     let path=SpatialAppTools.current(model.navigation);
@@ -331,9 +343,15 @@ function performAppAction(id, action) {
     if(action==='file-preview-close')$('.file-preview',frame).hidden=true;
   } else if(action==='note-new'){SpatialAppTools.addNote(model);renderNotes(id);$('[data-note-title]',frame).focus();$('[data-note-title]',frame).select();}
   else if(action.startsWith('browser-')){
+    if(action==='browser-new-tab'&&!SpatialAppTools.browserAddTab(model,firefoxNewTab())){showToast('This demo supports up to 20 tabs per Firefox window.');return;}
+    if(action==='browser-tab-select')SpatialAppTools.browserSelectTab(model,value);
+    if(action==='browser-tab-close'&&!SpatialAppTools.browserCloseTab(model,value)){closeApp(id);return;}
+    if(action==='browser-bookmark'){const page=SpatialAppTools.current(model.navigation);page.bookmarked=!page.bookmarked;}
     if(action==='browser-back'||action==='browser-forward')SpatialAppTools.go(model.navigation,action==='browser-back'?-1:1);
-    if(action==='browser-home')SpatialAppTools.visit(model.navigation,model.navigation.items[0]);
+    if(action==='browser-home')SpatialAppTools.visit(model.navigation,firefoxNewTab());
     renderBrowserPage(id);
+    if(action==='browser-new-tab'){$('.browser-toolbar input',frame).focus();$('.browser-toolbar input',frame).select();}
+    if($('.firefox-menu',frame))$('.firefox-menu',frame).open=false;
   }
   saveAppWindows();
 }
@@ -483,7 +501,7 @@ function prepareAppWindows() {
   document.addEventListener('input',appWindowInput,true);
   document.addEventListener('change',event=>{const frame=event.target.closest('[data-app-frame]');if(frame&&event.target.matches('[data-file-sort]')){event.stopImmediatePropagation();const id=frame.dataset.appFrame;appWindowModel(id).sort=event.target.value;renderFileLocation(id,frame.dataset.fileLocation,{history:false});saveAppWindows();}},true);
   document.addEventListener('keydown',appWindowKey,true);
-  document.addEventListener('submit',event=>{const form=event.target.closest('[data-app-mini-browser],[data-app-mini-terminal]');if(!form)return;event.preventDefault();event.stopImmediatePropagation();const id=form.closest('[data-mini-card]').dataset.miniCard;const value=form.querySelector('input').value.trim();if(value){if(form.matches('[data-app-mini-browser]'))navigateBrowser(id,value);else runAppCommand(id,value);form.querySelector('input').value='';}},true);
+  document.addEventListener('submit',event=>{const search=event.target.closest('[data-firefox-search]');if(search){event.preventDefault();event.stopImmediatePropagation();const value=search.querySelector('input').value.trim();if(value)navigateBrowser(search.closest('[data-app-frame]').dataset.appFrame,value);return;}const form=event.target.closest('[data-app-mini-browser],[data-app-mini-terminal]');if(!form)return;event.preventDefault();event.stopImmediatePropagation();const id=form.closest('[data-mini-card]').dataset.miniCard;const value=form.querySelector('input').value.trim();if(value){if(form.matches('[data-app-mini-browser]'))navigateBrowser(id,value);else runAppCommand(id,value);form.querySelector('input').value='';}},true);
   setInterval(tickAppMusic,1000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAllAppMusic();});
   saveAppWindows(false);
@@ -504,7 +522,7 @@ function appWindowClick(event) {
   const miniFile=event.target.closest('[data-app-mini-file]');
   if(!action&&!place&&!path&&!row&&!note&&!link&&!music&&!track&&!miniFile)return;
   event.preventDefault();event.stopImmediatePropagation();
-  if(action){performAppAction(id,action.dataset.appAction);if(surface.dataset.miniCard){renderMiniApps();renderAllAppMusic();}}
+  if(action){performAppAction(id,action.dataset.appAction,action.dataset.browserTab);if(surface.dataset.miniCard){renderMiniApps();renderAllAppMusic();}}
   if(place){renderFileLocation(id,SpatialHomeFolders.folder(workspaceProfiles,activeWorkspace,place.dataset.homeFolder));saveAppWindows();}
   if(path){renderFileLocation(id,path.dataset.filePath);saveAppWindows();}
   if(row){model.selected=row.dataset.fileName;$$('[data-file-name]',frame).forEach(item=>{item.classList.toggle('is-selected',item===row);item.setAttribute('aria-selected',String(item===row));});$('.app-status span',frame).textContent=appFileRows(id,frame.dataset.fileLocation).length+' items · '+model.selected;saveAppWindows(false);}
@@ -547,6 +565,9 @@ function appWindowKey(event) {
     if(event.key==='Escape'&&!$('.file-preview',frame).hidden){performAppAction(id,'file-preview-close');handled=true;}
     if(event.key==='Escape'&&event.target.matches('[data-file-filter]')){performAppAction(id,'file-search');handled=true;}
   } else if(model.kind==='browser'){
+    if(event.ctrlKey&&event.key.toLowerCase()==='t'){performAppAction(id,'browser-new-tab');$('.browser-toolbar input',frame).focus();handled=true;}
+    const tab=event.target.closest('[role=tab][data-browser-tab]');
+    if(tab&&!event.altKey&&!event.ctrlKey&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){const index=model.tabs.findIndex(t=>t.id===model.activeTab),next=event.key==='Home'?0:event.key==='End'?model.tabs.length-1:(index+(event.key==='ArrowLeft'?-1:1)+model.tabs.length)%model.tabs.length;performAppAction(id,'browser-tab-select',model.tabs[next].id);$('[role=tab][aria-selected=true]',frame).focus();handled=true;}
     if(event.key==='Enter'&&event.target.matches('.browser-toolbar input')){if(event.target.value.trim())navigateBrowser(id,event.target.value.trim());handled=true;}
     if(event.ctrlKey&&event.key.toLowerCase()==='l'){$('.browser-toolbar input',frame).focus();$('.browser-toolbar input',frame).select();handled=true;}
     if(event.altKey&&['ArrowLeft','ArrowRight'].includes(event.key)){performAppAction(id,event.key==='ArrowLeft'?'browser-back':'browser-forward');handled=true;}
