@@ -225,7 +225,7 @@
     if (id === 'tiling' && tiled.length >= 2) model.mark('two-tiled');
     if (id === 'app-instances') {
       model.state.instanceBaseline ||= Object.keys(states);
-      if (open.some(name=>!model.state.instanceBaseline.includes(name) && open.some(other=>other!==name && scene.bases?.[other]===scene.bases?.[name] && scene.bases?.[name]))) model.mark('instance-created');
+      if (open.some(name=>!model.state.instanceBaseline.includes(name) && model.state.instanceBaseline.some(other=>other!==name && ['open','minimized'].includes(states[other]) && scene.bases?.[other]===scene.bases?.[name] && scene.bases?.[name]))) model.mark('instance-created');
     }
     if (id === 'empty-desktop') {
       model.state.emptyOrigin ||= {page,column};

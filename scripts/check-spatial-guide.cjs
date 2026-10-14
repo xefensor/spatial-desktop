@@ -66,6 +66,14 @@ G.observeWindows(copies,{states:{notes:'open','notes--2':'open',terminal:'open'}
 assert(!copies.ready(),'A different tool is not a second window');
 G.observeWindows(copies,{states:{notes:'open','notes--2':'open','notes--3':'open'},open:['notes','notes--2','notes--3'],bases:{notes:'notes','notes--2':'notes','notes--3':'notes'}});
 assert(copies.ready());
+const parkedCopy=at('app-instances');
+G.observeWindows(parkedCopy,{states:{browser:'open'},open:['browser'],bases:{browser:'browser'}});
+G.observeWindows(parkedCopy,{states:{browser:'minimized','browser--1':'open'},open:['browser--1'],bases:{browser:'browser','browser--1':'browser'}});
+assert(parkedCopy.ready(),'Creating an independent copy counts when layout pressure parks the original');
+const closedCopy=at('app-instances');
+G.observeWindows(closedCopy,{states:{browser:'open'},open:['browser'],bases:{browser:'browser'}});
+G.observeWindows(closedCopy,{states:{browser:'closed','browser--1':'open'},open:['browser--1'],bases:{browser:'browser','browser--1':'browser'}});
+assert(!closedCopy.ready(),'Closing the original and opening another does not count as keeping two windows');
 const empty=at('empty-desktop');
 const emptyScene={workspace:'general',column:'workspace',page:0,open:['notes'],bases:{notes:'notes','notes--2':'notes'}};
 G.observeWindows(empty,emptyScene);
