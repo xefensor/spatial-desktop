@@ -6920,11 +6920,12 @@ function updateDesktopPageUi() {
   renderFullscreenPeek();
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
-  $("strong", empty).textContent = "Desktop " + page + " is empty";
-  $("span", empty).textContent = "Open an app here. Scroll for another desktop" + (activeProjectName ? " · Shift+scroll to switch projects." : ". Open a project in Overview to use its desktops.");
+  $("strong", empty).textContent = "Open an app";
+  $("span", empty).textContent = context + " · Desktop " + page;
   $$(".desktop-folder").forEach(folder => {
     folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || (folder.dataset.desktopColumn || "workspace") !== column || Number(folder.dataset.desktopPage) !== page - 1;
   });
+  globalThis.SpatialEmptyDesktop?.refresh();
 }
 
 function renderDesktopContextColumns() {
