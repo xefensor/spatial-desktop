@@ -6917,6 +6917,7 @@ function updateDesktopPageUi() {
   }
   renderDesktopContextColumns();
   renderDesktopPageRail();
+  renderFullscreenPeek();
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
   $("strong", empty).textContent = "Desktop " + page + " is empty";
@@ -6971,6 +6972,43 @@ function renderDesktopPageRail() {
     rail.setAttribute("aria-label", label);
     rail.innerHTML = marks;
   });
+}
+
+function fullscreenPeekBond() {
+  // A second display holds the parent; it must not imply its own extra page.
+  if (desktopPages.selectedFullscreen(activeWorkspace)) return null;
+  const candidates = desktopPages.entries(activeWorkspace).filter(entry => entry.fullscreen
+    && entry.page === desktopPages.current(activeWorkspace) && appState[entry.fullscreen] === "open");
+  if (!candidates.length || tileSession().fullscreen) return null;
+  const count = activeDisplayRoster().length, slot = localDisplaySlot();
+  const entry = candidates.find(candidate => Math.min(candidate.display, count) === slot);
+  return entry ? desktopPages.fullscreenBond(activeWorkspace, entry.fullscreen) : null;
+}
+
+function renderFullscreenPeek() {
+  const peek = $("#fullscreenDesktopPeek"), shell = $(".desktop-shell");
+  if (!peek || !shell) return;
+  const bond = fullscreenPeekBond();
+  const wasVisible = !peek.hidden;
+  peek.hidden = !bond;
+  shell.style.setProperty("--fullscreen-peek-height", bond ? "36px" : "0px");
+  if (bond) {
+    const info = appInfo[bond.name];
+    const key = JSON.stringify([activeWorkspace, bond, info.label]);
+    if (peek.dataset.contentsKey !== key) {
+      peek.dataset.contentsKey = key;
+      peek.dataset.peekKind = info.base || bond.name;
+      peek.style.setProperty("--peek-accent", info.primary || "#b8d59a");
+      peek.innerHTML = '<span class="fullscreen-peek-scene" aria-hidden="true"></span><span class="fullscreen-peek-label">'
+        + appArt(bond.name) + '<b>' + escapeHtml(info.label) + '</b><span>Fullscreen below · Desktop ' + (bond.page + 1)
+        + '</span></span><span class="fullscreen-peek-action" aria-hidden="true"><span>Scroll down or click</span><b>↓</b></span>';
+      peek.setAttribute("aria-label", "Enter " + info.label + " fullscreen desktop, attached below Desktop " + (bond.page + 1));
+      peek.title = info.label + " is still running in fullscreen below this desktop. Scroll down or click to enter.";
+    }
+  }
+  // Keep the identity stable during focus changes. Only reserve space when
+  // entering/leaving a parent that actually owns a fullscreen child.
+  if (wasVisible !== Boolean(bond) && windowViewportLockReady && !tileInteraction && !manualWindowInteraction) scheduleWindowTiling();
 }
 
 function focusDesktop(moveKeyboardFocus = true) {
@@ -7208,6 +7246,15 @@ function prepareDesktopPages() {
     }
   };
   workspace.addEventListener("wheel", onDesktopWheel, { passive: false });
+  const fullscreenPeek = $("#fullscreenDesktopPeek");
+  fullscreenPeek?.addEventListener("click", () => {
+    if ($(".desktop-shell").inert || desktopNavigationBlocked()) return;
+    const bond = fullscreenPeekBond();
+    if (bond) openApp(bond.name);
+  });
+  fullscreenPeek?.addEventListener("wheel", event => {
+    if (!$(".desktop-shell").inert) onDesktopWheel(event, true);
+  }, { passive: false });
   // Area chrome and rails navigate without a preliminary click. Scrollable
   // content keeps its wheel even at an edge; Shift+wheel switches columns
   // unless a nested horizontal scroller owns that motion.

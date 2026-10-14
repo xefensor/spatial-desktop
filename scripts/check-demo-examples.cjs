@@ -260,6 +260,7 @@ vm.runInContext(slice('function snapshotWorkspaceAreaContent(', 'function worksp
 vm.runInContext(slice('function renderWorkspace(', 'function renderWorkspaceExample('), ui.context);
 vm.runInContext(slice('function updateDesktopPageUi(', 'function focusDesktop('), ui.context);
 ui.context.renderDesktopContextColumns = () => {}; // Real header rendering is covered by the column integration suite.
+ui.context.renderFullscreenPeek = () => {}; // Real preview rendering is covered by the fullscreen integration suite.
 vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
 element('#notificationList').innerHTML = 'General notification';
 element('.system-scroll-region').scrollTop = 120;

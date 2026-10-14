@@ -132,3 +132,36 @@ body.is-fullscreen-desktop #overviewContext{white-space:normal!important;overflo
 body[data-theme] .apps-zone .app-key > .fullscreen-hotbar-mark{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:16px;height:16px;padding:0;background:var(--sd-glass-face);color:var(--app-primary);border:1px solid currentColor;border-radius:2px;overflow:visible}
 body[data-theme="light"] .apps-zone .app-key > .fullscreen-hotbar-mark{color:color-mix(in srgb,var(--app-primary) 40%,#183019)}
 .apps-zone .fullscreen-hotbar-mark svg{width:11px;height:11px}
+
+/* The next fullscreen surface is physically below its parent canvas. The
+   resting strip has its own space; hover/focus only lifts its preview. */
+body.areas-docked .desktop-shell > .workspace-zone{bottom:calc(var(--workspace-bottom,0px) + var(--fullscreen-peek-height,0px))!important}
+.desktop-shell > .fullscreen-desktop-peek{
+  position:absolute;left:calc(var(--workspace-left,0px) + 8px);right:calc(var(--workspace-right,0px) + 8px);
+  bottom:var(--workspace-bottom,0px);height:36px;min-height:0;z-index:200;isolation:isolate;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;overflow:hidden;
+  padding:0 14px;border:0;border-top:2px solid var(--peek-accent,#b8d59a);border-radius:0;
+  background:#172922;color:#e7efd8;text-align:left;cursor:pointer;
+  box-shadow:0 -3px 12px #0002;transition:height 130ms ease-out,box-shadow 130ms ease-out;
+}
+.fullscreen-desktop-peek[hidden],body.is-fullscreen-desktop .fullscreen-desktop-peek,
+.desktop-shell:has(> .app-frame.is-fullscreen:not([hidden])) > .fullscreen-desktop-peek{display:none!important}
+.fullscreen-peek-scene{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#172922ee,#17292277 55%,#172922ee);pointer-events:none}
+.fullscreen-desktop-peek[data-peek-kind="game"] .fullscreen-peek-scene{background:linear-gradient(90deg,#101e20e8,#101e2066 50%,#101e20e8),url('images/gaming/sanctuary-concept.svg') center 46%/cover}
+.fullscreen-peek-label{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
+.fullscreen-peek-label .app-art{width:23px;height:23px;flex:none}
+.fullscreen-peek-label b{font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis}
+.fullscreen-peek-label > span{font-size:11px;color:#d3ddc9;overflow:hidden;text-overflow:ellipsis}
+.fullscreen-peek-action{display:flex;align-items:center;gap:10px;flex:none;color:#d3ddc9;font-size:10px}
+.fullscreen-peek-action b{font-size:21px;line-height:1;color:var(--peek-accent,#b8d59a);font-weight:400}
+.desktop-shell > .fullscreen-desktop-peek:is(:hover,:focus-visible){height:72px;z-index:745;box-shadow:0 -8px 22px #0005}
+.desktop-shell > .fullscreen-desktop-peek:focus-visible{outline:2px solid var(--peek-accent,#b8d59a);outline-offset:-4px}
+.desktop-shell > .fullscreen-desktop-peek:active{filter:brightness(1.13)}
+@media(max-width:850px){.fullscreen-peek-action > span{display:none}.fullscreen-peek-label > span{font-size:10px}.desktop-shell > .fullscreen-desktop-peek{padding-inline:9px;gap:8px}}
+@media(max-width:550px){.fullscreen-peek-label{gap:6px}.fullscreen-peek-label > span{max-width:120px}.fullscreen-peek-label b{max-width:95px}}
+@media(prefers-reduced-motion:reduce){.desktop-shell > .fullscreen-desktop-peek{transition:none}}
+
+/* The same scene strip identifies the indented child in the desktop map. */
+body[data-theme] .universal-search .desktop-bond-group > button.desktop-column-page.is-fullscreen-page{flex-direction:column;align-items:stretch;gap:7px}
+.desktop-column-page.is-fullscreen-page .desktop-column-apps{min-height:30px;align-items:center;padding:3px 6px;background:#172922;color:#e7efd8}
+.desktop-column-page[data-fullscreen-page="game"] .desktop-column-apps{background:linear-gradient(90deg,#101e2077,#101e2022),url('images/gaming/sanctuary-concept.svg') center 46%/cover}
