@@ -82,8 +82,8 @@ const materialNode = (selector,parent=null) => {
   const classes=new Set();
   const node={selector,parent,classes,
     matches: selectors => selectors.split(',').includes(selector),
-    closest: () => classes.has('material-surface-glass') || classes.has('material-surface-abs') ? node : node.parent?.closest(),
-    classList:{add: value=>classes.add(value),remove:value=>classes.delete(value),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
+    closest: selectors => selectors.split(',').some(value=>value===node.selector || value.startsWith('.')&&classes.has(value.slice(1))) ? node : node.parent?.closest(selectors),
+    classList:{add: (...values)=>values.forEach(value=>classes.add(value)),remove:(...values)=>values.forEach(value=>classes.delete(value)),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
   return node;
 };
 const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.notification-peek'].map(selector=>materialNode(selector));
@@ -110,6 +110,16 @@ assert(utilitySurfaces.at(-1).classes.has('material-glass-button'),'A notificati
 const appButton=materialNode('button',absApp);
 materialCtx.applyControlMaterial(appButton);
 assert(appButton.classes.has('material-abs-button'),'Application controls retain ABS');
+for(const selector of ['.steam-client-content','.steam-overview-panel','.browser-toolbar','.firefox-tab-strip','.firefox-newtab']){
+  const content=materialNode(selector,absApp),button=materialNode('button',content);
+  button.classes.add('material-glass-button');button.classes.add('material-abs-button');
+  materialCtx.applyControlMaterial(button);
+  assert(!button.classes.has('material-glass-button')&&!button.classes.has('material-abs-button'),'App-owned controls keep their own palette in '+selector);
+  if(selector!=='.firefox-tab-strip'){
+    const field=materialNode('input',content);field.classes.add('material-glass-field');field.classes.add('material-abs-field');materialCtx.applyFieldMaterial(field);
+    assert(!field.classes.has('material-glass-field')&&!field.classes.has('material-abs-field'),'App-owned fields keep their own palette in '+selector);
+  }
+}
 const guideButton=materialNode('button',absGuide),guideSearchInput=materialNode('input',guideSearch);
 materialCtx.applyControlMaterial(guideButton);materialCtx.applyFieldMaterial(guideSearchInput);
 assert(guideButton.classes.has('material-abs-button'),'Guide controls retain ABS');

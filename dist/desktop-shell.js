@@ -135,6 +135,10 @@ function nearestMaterialSurface(element) {
 }
 
 function applyControlMaterial(button) {
+  if(button.closest('.steam-client-content,.steam-overview-panel,.firefox-tab-strip,.browser-toolbar,.firefox-newtab')){
+    button.classList.remove('material-glass-button','material-abs-button');
+    return;
+  }
   const surface = nearestMaterialSurface(button);
   const glass = surface?.classList.contains("material-surface-glass");
   const abs = surface?.classList.contains("material-surface-abs");
@@ -143,6 +147,10 @@ function applyControlMaterial(button) {
 }
 
 function applyFieldMaterial(field) {
+  if(field.closest('.steam-client-content,.steam-overview-panel,.browser-toolbar,.firefox-newtab')){
+    field.classList.remove('material-glass-field','material-abs-field');
+    return;
+  }
   const surface = nearestMaterialSurface(field);
   const glass = surface?.classList.contains("material-surface-glass");
   const abs = surface?.classList.contains("material-surface-abs");
