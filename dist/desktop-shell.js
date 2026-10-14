@@ -843,6 +843,13 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
   if (tileRendering || (manualWindowInteraction && !activeDesktopDrag?.switching)) return;
   tileRendering = true;
   try {
+    const fullscreen=tileSession().fullscreen;
+    if(fullscreen?.bonded && appState[fullscreen.name]==="open" && isLocalApp(fullscreen.name)) {
+      // Exclusive fullscreen owns the viewport, independent of the minimum
+      // size or dock bounds used for ordinary tiled windows.
+      renderFloatingWindows(tileSession());renderTileDividers([]);renderFullscreenWindow(fullscreen.name);
+      saveTileSessions();return;
+    }
     parkFullscreenPeers(tileSession());
     const session = reconcileTileTree(preferredName);
     renderFloatingWindows(session);
@@ -6807,13 +6814,19 @@ function renderDesktopColumnMap() {
     const names = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.columnOf(activeWorkspace, name) === column);
     const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
     const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
-    const pages = desktopPages.entries(activeWorkspace,column).map(entry => {
+    const pageMarkup = entry => {
       const page=entry.page,bond=entry.fullscreen?desktopPages.fullscreenBond(activeWorkspace,entry.fullscreen):null;
       const windows=names.filter(name=>bond?name===bond.name:desktopPages.pageOf(activeWorkspace,name)===page&&!desktopPages.fullscreenBond(activeWorkspace,name));
-      const selected=current && desktopPages.current(activeWorkspace)===page && (bond?localBond&&selectedBond?.name===bond.name:!localBond);
+      const selected=Boolean(current && desktopPages.current(activeWorkspace)===page && (bond?localBond&&selectedBond?.name===bond.name:!localBond));
       const title=bond?(appInfo[bond.name]?.label||'Fullscreen app'):'Desktop '+(page+1);
       const detail=bond?'Fullscreen · below Desktop '+(page+1)+' · Display '+bond.display:(windows.length?windows.length+' window'+(windows.length===1?'':'s'):'Empty');
       return '<button class="desktop-column-page'+(bond?' is-fullscreen-page':'')+'" data-desktop-column="'+escapeHtml(column)+'" data-column-page="'+page+'"'+(bond?' data-fullscreen-page="'+escapeHtml(bond.name)+'" data-bond-parent="'+page+'"':'')+' aria-pressed="'+selected+'" aria-label="'+escapeHtml(desktopColumnLabel(column)+' · '+title+' · '+detail)+'"><span><b>'+(bond?icon('i-max'):'')+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span><span class="desktop-column-apps">'+windows.slice(0,5).map(appArt).join('')+'</span></button>';
+    };
+    const entries=desktopPages.entries(activeWorkspace,column);
+    const pages=entries.filter(entry=>!entry.fullscreen).map(parent=>{
+      const children=entries.filter(entry=>entry.page===parent.page && entry.fullscreen);
+      const content=pageMarkup(parent)+children.map(pageMarkup).join("");
+      return children.length ? '<div class="desktop-bond-group" role="group" aria-label="Desktop '+(parent.page+1)+' and its fullscreen app">'+content+'</div>' : content;
     }).join("");
     return '<section class="desktop-column-card' + (current ? ' is-current' : '') + '" style="--column-accent:' + escapeHtml(project?.accent || workspaceProfiles[activeWorkspace].accent) + '"><header>' + icon(project?.icon || workspaceProfiles[activeWorkspace].icon) + '<b>' + escapeHtml(desktopColumnLabel(column)) + '</b></header><div class="desktop-column-pages">' + pages + '</div></section>';
   }).join("");
@@ -7938,7 +7951,11 @@ openApp = function(name, point = null) {
     removeOffPageWindowTiles(name);
     desktopPages.assign(activeWorkspace, name);
     saveDesktopPages();
-  } else if(!targetBond)changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false);
+  } else if(!targetBond) {
+    const viewed=desktopPages.selectedFullscreen(activeWorkspace);
+    const heldParent=viewed && Math.min(viewed.display,activeDisplayRoster().length)!==localDisplaySlot() && desktopPages.pageOf(activeWorkspace,name)===viewed.page && owner===viewed.column;
+    if(!heldParent)changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false);
+  }
   originalOpenApp(name, point);
   if (newlyOpened && (appInfo[name].base || name) === "dolphin" && !frameFor(name).dataset.demoExample?.startsWith(activeWorkspace + ":")) renderFileLocation(name, workspaceProfiles[activeWorkspace].home);
   refreshDownloadUi();

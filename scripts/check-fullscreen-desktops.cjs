@@ -65,6 +65,13 @@ assert(ctx.desktopPages.selectedFullscreen('gaming'));assert.equal(ctx.tileSessi
 assert.equal(ctx.tileContextKey(),'gaming:desktop:0:fullscreen:game:1');
 assert.equal(ctx.appState.browser,'open');assert.equal(ctx.appState.notes,'open');assert.equal(ctx.appState.game,'open');
 assert(!ctx.isLocalArea('apps'),'Fullscreen page has no Areas even in Manual mode');
+// A fullscreen surface is rendered directly; a small ordinary canvas can
+// never park it through the minimum-size split fitter.
+const previousRenderer=ctx.renderTileLayout;let fullscreenRendered=0;
+Object.assign(ctx,{tileRendering:false,manualWindowInteraction:false,renderFloatingWindows(){},renderTileDividers(){},renderFullscreenWindow(){fullscreenRendered++;},scheduleWindowVisibility(){},reconcileTileTree(){throw Error('Fullscreen must bypass ordinary tile fitting');}});
+vm.runInContext(slice('function renderTileLayout(','function tileOpenWindows('),ctx);
+ctx.renderTileLayout('game');assert.equal(fullscreenRendered,1);assert.equal(ctx.appState.game,'open');ctx.renderTileLayout=previousRenderer;
+
 slot=2;assert.equal(ctx.tileContextKey(),'gaming:desktop:0:2');assert(ctx.isLocalApp('notes'));assert(!ctx.isLocalApp('game'));assert(ctx.isLocalArea('apps'));
 assert.equal(JSON.stringify(ctx.tileSessions['gaming:desktop:0:2']),peerBefore,'The held monitor tree and floats are untouched');
 // Scroll beyond the child advances BOTH displays to ordinary page 2.
@@ -79,7 +86,7 @@ assert(ctx.isLocalApp('browser'));assert(!ctx.isLocalApp('game'));assert(ctx.des
 // as another ordinary numbered page or duplicating the game on the parent.
 vm.runInContext(slice('function renderDesktopColumnMap(','function migrateDesktopColumns('),ctx);
 ctx.renderDesktopColumnMap();const markup=node('#desktopColumnMap').innerHTML;
-assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('below Desktop 1 · Display 1'));
+assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its fullscreen app'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('below Desktop 1 · Display 1'));
 assert.equal((markup.match(/<i>game<\/i>/g)||[]).length,1);
 // Launches from a fullscreen surface go back to its parent. Returning to the
 // game follows its existing bond; an action on the other monitor cannot steal it.
@@ -87,7 +94,8 @@ let originalCalls=[];ctx.openApp=name=>originalCalls.push(name);ctx.saveIndepend
 vm.runInContext(slice('const originalOpenApp = openApp;','function removeWindowFromSavedProjects('),ctx);
 ctx.openApp('game');assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game');
 ctx.openApp('browser');assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert(ctx.desktopPages.fullscreenBond('gaming','game'));
-slot=2;ctx.openApp('game');assert.equal(originalCalls.at(-1),'browser','Selecting the game from Display 2 does not move it there');
+ctx.openApp('game');slot=2;ctx.openApp('notes');assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game','Opening a parent window on the held monitor leaves the game visible');
+ctx.openApp('game');assert.equal(originalCalls.at(-1),'notes','Selecting the game from Display 2 does not move it there');
 slot=1;ctx.toggleAppFullscreen('game');assert(!ctx.desktopPages.fullscreenBond('gaming','game'));
 assert.deepEqual(copy(ctx.tileSessions['gaming:desktop:0:1'].root),origin,'The original split is restored');
 assert.equal(ctx.desktopPages.entries('gaming').filter(e=>e.fullscreen).length,0);
