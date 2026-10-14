@@ -118,12 +118,17 @@ body.is-fullscreen-desktop .workspace-zone{visibility:hidden!important;pointer-e
 .overview-apps-body .desktop-column-card:has(.is-fullscreen-page) .desktop-column-pages{max-height:230px}
 
 body[data-theme].is-fullscreen-desktop .desktop-shell > .app-frame.material-surface-abs.is-fullscreen{border:0!important;border-radius:0!important;corner-shape:square!important;box-shadow:none!important}
-body[data-theme] .steam-game-stage button.steam-button{background:#20382c!important;color:#e7efd8!important;border:1px solid #afc89388!important;box-shadow:none!important}
-body[data-theme] .steam-game-stage button.steam-button:hover{background:#304d37!important}
-body[data-theme] .steam-game-stage button.steam-button:active{background:#172b20!important}
+body[data-theme] .app-frame.steam-game-window .steam-game-stage button.steam-button{background:#20382c!important;color:#e7efd8!important;border:1px solid #afc89388!important;box-shadow:none!important}
+body[data-theme] .app-frame.steam-game-window .steam-game-stage button.steam-button:hover{background:#304d37!important}
+body[data-theme] .app-frame.steam-game-window .steam-game-stage button.steam-button:active{background:#172b20!important}
 
 body[data-theme] .universal-search .desktop-bond-group{display:flex;flex-direction:column;gap:8px;flex:0 0 136px;min-width:136px;align-self:start}
 body[data-theme] .universal-search .desktop-bond-group > button.desktop-column-page{flex:0 0 auto!important;width:100%!important;min-width:0!important;min-height:72px}
 body[data-theme] .universal-search .desktop-bond-group > button.desktop-column-page.is-fullscreen-page{width:calc(100% - 12px)!important;margin-left:12px;min-height:88px}
 body[data-theme="light"] .overview-window.is-fullscreen-window .overview-window-state{color:#40582e!important}
 body.is-fullscreen-desktop #overviewContext{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3}
+
+/* A live return link, also visible when Apps uses its compact icon rail. */
+body[data-theme] .apps-zone .app-key > .fullscreen-hotbar-mark{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:16px;height:16px;padding:0;background:var(--sd-glass-face);color:var(--app-primary);border:1px solid currentColor;border-radius:2px;overflow:visible}
+body[data-theme="light"] .apps-zone .app-key > .fullscreen-hotbar-mark{color:color-mix(in srgb,var(--app-primary) 40%,#183019)}
+.apps-zone .fullscreen-hotbar-mark svg{width:11px;height:11px}

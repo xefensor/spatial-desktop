@@ -31,14 +31,14 @@ assert(Pages.create(model.snapshot()).selectedFullscreen('gaming'),'Project owne
 // close and Park adapters. Peers on the second display retain their own tree.
 let slot=1,count=2;
 const classes=()=>{const values=new Set();return{add(...names){names.forEach(x=>values.add(x));},remove(...names){names.forEach(x=>values.delete(x));},toggle(name,on){on?values.add(name):values.delete(name);},contains:name=>values.has(name)};};
-const nodes=new Map(),node=key=>{if(!nodes.has(key))nodes.set(key,{key,dataset:{},style:{setProperty(){}},classList:classes(),hidden:true,children:[],setAttribute(){},focus(){},querySelectorAll:()=>[]});return nodes.get(key);};
+const nodes=new Map(),node=key=>{if(!nodes.has(key))nodes.set(key,{key,dataset:{},style:{setProperty(){}},classList:classes(),hidden:true,children:[],setAttribute(){},focus(){},querySelectorAll:()=>[],getBoundingClientRect:()=>({left:0,top:0})});return nodes.get(key);};
 const frames=Object.fromEntries(['game','browser','notes','terminal','steam'].map(name=>[name,node(name)]));
 for(const [name,frame]of Object.entries(frames))frame.dataset.appFrame=name;
 const ctx={desktopPages:Pages.create(),activeWorkspace:'gaming',appInfo:Object.fromEntries(Object.keys(frames).map(name=>[name,{label:name==='game'?'Fallout 4':name}])),
  appState:{game:'open',browser:'open',notes:'open',terminal:'open',steam:'minimized'},appMaximizedState:{},
  tileSessions:{},tileEngine:T,localDisplaySlot:()=>slot,activeDisplayRoster:()=>Array.from({length:count},()=>({width:1363,height:936})),extendedDesktopActive:()=>count>1,
  displayAssignmentsFor:()=>({apps:{game:1,browser:1,notes:2,terminal:2},areas:{apps:2}}),intentAreaPlan:{moves:{}},cloneDesktopState:copy,
- frameFor:name=>frames[name],document:{body:{classList:classes()}},window:{matchMedia:()=>({matches:true})},$:node,$$:()=>[],
+ frameFor:name=>frames[name],document:{body:{classList:classes()}},window:{matchMedia:()=>({matches:true}),setTimeout(){}},$:node,$$:()=>[],
  placementUndoEpoch:0,cancelAreaPointerInteraction:null,desktopPageAnimating:false,desktopHasWindowFocus:false,frontApp:'game',
  saveDesktopPages(){},saveTileSessions(){},saveLayout(){},returnCoveredApps(){},releaseBorrowedApp(){},refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},
  updateDesktopPageUi(){},focusDesktop(){},renderProjectSpace(){},captureWorkspaceContent(){},endSystemRailExpansion(){},layoutDockAreas(){},topOpenApp:()=>Object.keys(ctx.appState).find(name=>ctx.isLocalApp(name)&&ctx.appState[name]==='open'),
@@ -46,7 +46,7 @@ const ctx={desktopPages:Pages.create(),activeWorkspace:'gaming',appInfo:Object.f
  appMaximizedState:{},autoTiledWindows:new Set(),windowGeometry:new Map(),layoutMode:'manual',
  syncMaximizeButton(){},clearWindowAutoAvoidance(){},removeOffPageWindowTiles(){},scheduleSpatialAutoLayout(){},rebalanceAreaDisplays:()=>false,applyExtendedDesktopPartition(){},
  readGeometry:()=>({x:0,y:0,width:500,height:400}),desktopColumnLabel:()=> 'Gaming',
- workspaceProfiles:{gaming:{label:'Gaming',accent:'#5af'}},projectSpaces:{},openProjectNames:()=>[],appArt:name=>'<i>'+name+'</i>',icon:()=>'<svg></svg>',escapeHtml:String,prepareControlSemantics(){}
+ workspaceProfiles:{gaming:{label:'Gaming',accent:'#5af',rack:['game','steam']}},projectSpaces:{},openProjectNames:()=>[],appArt:name=>'<i>'+name+'</i>',icon:()=>'<svg></svg>',escapeHtml:String,prepareControlSemantics(){},applyAppPrimaryColors(){}
 };
 vm.createContext(ctx);
 vm.runInContext(slice('function tileContextKey(','function tileBounds('),ctx);
@@ -88,17 +88,30 @@ vm.runInContext(slice('function renderDesktopColumnMap(','function migrateDeskto
 ctx.renderDesktopColumnMap();const markup=node('#desktopColumnMap').innerHTML;
 assert(markup.includes('desktop-bond-group'));assert(markup.includes('Desktop 1 and its fullscreen app'));assert(!markup.includes('aria-pressed="null"'));assert(markup.includes('is-fullscreen-page'));assert(markup.includes('data-fullscreen-page="game"'));assert(markup.includes('below Desktop 1 · Display 1'));
 assert.equal((markup.match(/<i>game<\/i>/g)||[]).length,1);
+// The original Apps Area retains a live link, after local windows and before
+// parked apps. Both monitor projections use it, without duplicating the game.
+vm.runInContext(slice('function workspaceHotbarNames(','let hotbarOrderFrame='),ctx);
+vm.runInContext(slice('function activateHotbarSlot(','document.addEventListener("keydown",'),ctx);
+assert.deepEqual(Array.from(ctx.workspaceHotbarNames()),['browser','game','steam']);
+ctx.renderInstanceRack();assert(node('#appRack').innerHTML.includes('is-fullscreen-link'));assert(node('#appRack').innerHTML.includes('Return to fullscreen · below Desktop 1 · Display 1'));
+slot=2;assert.deepEqual(Array.from(ctx.workspaceHotbarNames()),['notes','game','steam'],'The held parent has a return link to the other display');
+slot=1;ctx.changeDesktopPage(1,false);assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another ordinary page');
+ctx.desktopPages.go('gaming',0,'project');assert(!ctx.workspaceHotbarNames().includes('game'),'No fullscreen link leaks to another Project column');
+ctx.desktopPages.go('gaming',0,'workspace');
 // Launches from a fullscreen surface go back to its parent. Returning to the
 // game follows its existing bond; an action on the other monitor cannot steal it.
 let originalCalls=[];ctx.openApp=name=>originalCalls.push(name);ctx.saveIndependentSessions=()=>{};ctx.refreshDownloadUi=()=>{};
 vm.runInContext(slice('const originalOpenApp = openApp;','function removeWindowFromSavedProjects('),ctx);
-ctx.openApp('game');assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game');
+ctx.desktopHasWindowFocus=true;ctx.frontApp='game';
+assert(ctx.activateHotbarSlot(ctx.workspaceShortcutNames().indexOf('game')+1));assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game');assert.equal(ctx.appState.game,'open','The parent shortcut returns to the child instead of parking a formerly focused game');
+assert.equal(ctx.fullscreenHotbarBond('game'),null,'The fullscreen surface itself is not an original-desktop link');
 ctx.openApp('browser');assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert(ctx.desktopPages.fullscreenBond('gaming','game'));
 ctx.openApp('game');slot=2;ctx.openApp('notes');assert.equal(ctx.desktopPages.selectedFullscreen('gaming').name,'game','Opening a parent window on the held monitor leaves the game visible');
 ctx.openApp('game');assert.equal(originalCalls.at(-1),'notes','Selecting the game from Display 2 does not move it there');
 slot=1;ctx.toggleAppFullscreen('game');assert(!ctx.desktopPages.fullscreenBond('gaming','game'));
 assert.deepEqual(copy(ctx.tileSessions['gaming:desktop:0:1'].root),origin,'The original split is restored');
 assert.equal(ctx.desktopPages.entries('gaming').filter(e=>e.fullscreen).length,0);
+ctx.renderInstanceRack();assert(!node('#appRack').innerHTML.includes('is-fullscreen-link'),'Leaving fullscreen removes the link badge from the regular game icon');
 // A later parent edit must not be overwritten on return.
 ctx.toggleAppFullscreen('game');ctx.changeDesktopPage(0,false);ctx.tileSessions['gaming:desktop:0:1'].root=T.leaf('terminal');
 ctx.changeDesktopPage(0,false,'workspace','game');ctx.toggleAppFullscreen('game');

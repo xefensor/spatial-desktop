@@ -174,3 +174,12 @@
     border-radius:3px!important;corner-shape:squircle!important;
   }
 }
+
+/* A bonded fullscreen surface meets the display edges rather than using the
+   outer-window squircle. Keep this exception in the material shape layer. */
+@layer material-shapes {
+  body.is-fullscreen-desktop .app-frame.is-fullscreen {
+    border-radius:0!important;
+    corner-shape:square!important;
+  }
+}

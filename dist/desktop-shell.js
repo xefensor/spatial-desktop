@@ -7796,25 +7796,39 @@ function workspaceHotbarNames() {
     else rows.push({top:item.y,windows:[item]});
   });
   const ordered=rows.flatMap(row=>row.windows.sort((a,b)=>a.x-b.x||a.y-b.y||a.index-b.index).map(item=>item.name));
+  // Fullscreen children keep a return icon on their originating desktop.
+  // They follow visible windows, without taking a slot from their hidden rect.
+  const fullscreen = names.filter(name => !ordered.includes(name) && fullscreenHotbarBond(name));
   // Minimized windows travel with the Apps Area, including its icon-only rail.
   return [...ordered,
+    ...fullscreen,
     ...names.filter(name => appState[name] === 'minimized' && desktopPages.inColumn(activeWorkspace, name))];
 }
 function workspaceShortcutNames() {
   // Icons and their useful cards share a single slot for each window.
   return workspaceHotbarNames();
 }
+function fullscreenHotbarBond(name) {
+  const bond = desktopPages.fullscreenBond?.(activeWorkspace, name);
+  if (!bond || appState[name] !== 'open' || bond.column !== desktopPages.column(activeWorkspace)
+      || bond.page !== desktopPages.current(activeWorkspace)) return null;
+  const selected = desktopPages.selectedFullscreen(activeWorkspace);
+  if (selected && Math.min(selected.display, activeDisplayRoster().length) === localDisplaySlot()) return null;
+  return bond;
+}
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
   $('#appRack').hidden = names.length === 0;
-  const order=JSON.stringify(names.map(name=>[name,appState[name]]));
+  const order=JSON.stringify(names.map(name=>[name,appState[name],fullscreenHotbarBond(name)]));
   if($('#appRack').dataset.layoutOrder===order){applyAppPrimaryColors($('#appRack'));return;}
   $('#appRack').dataset.layoutOrder=order;
   const buttons = names.map((name, index) => {
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
-    return '<button class="app-key" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + ' · ' + shortcut + ' · Shift+click: new window') + '" aria-label="' + escapeHtml(info.label + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
+    const bond = fullscreenHotbarBond(name);
+    const detail = bond ? ' · Return to fullscreen · below Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
+    return '<button class="app-key' + (bond ? ' is-fullscreen-link' : '') + '" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + detail + ' · ' + shortcut + (info.singleInstance ? '' : ' · Shift+click: new window')) + '" aria-label="' + escapeHtml(info.label + detail + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + (bond ? '<span class="fullscreen-hotbar-mark" aria-hidden="true">' + icon('i-max') + '</span>' : '') + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   });
   const open = buttons.filter((_, index) => appState[names[index]] === 'open').join('');
   const parked = buttons.filter((_, index) => appState[names[index]] === 'minimized').join('');
