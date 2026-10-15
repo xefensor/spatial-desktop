@@ -1,5 +1,5 @@
 /* Popup siblings can flip at every depth without being clipped by list scrolling. */
-#desktopContextMenu{overflow:visible;max-height:calc(100dvh - 16px)}
+#desktopContextMenu{z-index:10050;overflow:visible;max-height:calc(100dvh - 16px)}
 #desktopContextMenu>#contextMenuItems{max-height:calc(100dvh - 70px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 #desktopContextMenu>.context-submenu{position:absolute;animation:none;transform:none;min-width:260px;width:300px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;z-index:1}
 #desktopContextMenu>.context-submenu[hidden]{display:none!important}

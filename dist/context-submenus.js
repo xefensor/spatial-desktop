@@ -21,7 +21,7 @@
       if(others.length)children.push({label:'Other Projects',icon:'i-folder',detail:profile.label+' Workspace',children:others});
     }
     if(allowed('workspaces') && !restricted){
-      const others=Object.entries(profiles).filter(([id])=>id!==workspace).map(([id,space])=>({label:space.label,icon:space.icon||'i-monitor',detail:'Workspace · '+space.home,children:[{info:'Home: '+space.home},{info:'Moves out of its Project. Window content is kept; open files and locations stay at their paths.'},...pages(id,'workspace')]}));
+      const others=Object.entries(profiles).filter(([id])=>id!==workspace).map(([id,space])=>({label:space.label,icon:space.icon||'i-monitor',detail:'Workspace · '+space.home,children:[{info:'Home: '+space.home},{info:(owner==='workspace'?'':'Moves out of its Project. ')+'Window content is kept; open files and locations stay at their paths.'},...pages(id,'workspace')]}));
       if(others.length){children.push({separator:true},{label:'Other Workspaces',icon:'i-grid',detail:'A different Home and Workspace context',children:others});}
     }
     if(displayAction)children.push({separator:true},{label:'Displays',icon:'i-monitor',children:[displayAction]});
