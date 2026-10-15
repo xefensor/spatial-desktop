@@ -45,18 +45,10 @@ body::after{
   will-change:opacity;
 }
 .desktop-shell,body[data-theme] .desktop-shell{background:transparent}
-.desktop-shell::after{content:none}
-/* One quiet window field includes the reserved desktop-icon spacing.
-   Exposing the vivid wallpaper only in those narrow gaps made them look
-   like separate coloured columns, even with transparent marker containers. */
-.desktop-shell::before{
-  content:"";position:absolute;pointer-events:none;z-index:0;
-  left:var(--workspace-left,0px);right:var(--workspace-right,0px);
-  top:calc(var(--workspace-top,0px) + var(--desktop-context-height,0px));
-  bottom:var(--workspace-bottom,0px);background:var(--bg);
-}
-body.secondary-area-canvas .desktop-shell::before{display:none}
+.desktop-shell::before,.desktop-shell::after{content:none}
 .desktop-shell>.workspace-zone{background:transparent}
+/* A closed, mounted Overview must not keep a full-viewport blur layer. */
+.universal-search:not(.is-open){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 @keyframes wallpaper-breathe{
   from{opacity:var(--ambient-low)}
   to{opacity:var(--ambient-high)}

@@ -112,6 +112,14 @@ body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-page-app .app-art{display:block;width:18px;height:18px;min-width:18px;opacity:.78}
 .desktop-page-mark.is-current .app-art{opacity:.95}
 .desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:1px solid var(--desktop-marker-line);padding-left:2px;padding-right:4px}
+/* Marker spacing is raw wallpaper. It is never an acrylic surface, including
+   when a browser composites prefixed filters or decorative pseudo-elements. */
+body[data-theme] :is(.desktop-page-rail,.desktop-page-mark){
+  background:transparent!important;box-shadow:none!important;filter:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+:is(.desktop-page-rail,.desktop-page-mark)::before,
+:is(.desktop-page-rail,.desktop-page-mark)::after{content:none!important}
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
 

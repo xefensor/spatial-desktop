@@ -6304,15 +6304,13 @@ body.areas-docked .area-window{
   border:0!important;
   outline:0!important;
   overflow:hidden!important;
-  box-shadow:
-    0 8px 24px rgba(0,0,0,.14),
-    inset 0 1px rgba(236,250,255,.065)!important;
+  /* Keep the acrylic edge inside the Area: an outer blurred shadow paints
+     a full-height shaded column over the neighbouring desktop-icon gap. */
+  box-shadow:inset 0 1px rgba(236,250,255,.065)!important;
 }
 body[data-theme="light"] .area-window,
 body[data-theme="light"].areas-docked .area-window{
-  box-shadow:
-    0 7px 20px rgba(38,61,73,.10),
-    inset 0 1px rgba(255,255,255,.34)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.34)!important;
 }
 
 .area-window .area-window-bar,
