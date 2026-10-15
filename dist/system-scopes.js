@@ -36,9 +36,12 @@
   $('#layoutModeToggle').hidden=true;body(desktop).append($('#layoutModeToggle'));launchers.remove();topRail.remove();
   const shared=make('section','system-widget system-shared-alerts','<header class="widget-heading"><div>'+icon('i-bell')+'<h2>System alerts</h2></div><span id="systemWideNotificationCount">0</span></header><div id="systemWideNotificationList"></div>');shared.id='systemWideNotificationWidget';shared.hidden=true;
   const deviceDetails=make('details','system-device-details','<summary>Connected devices</summary>');deviceDetails.append(devices);
-  body(system).append(foreign,shared,clock,deviceDetails);
+  body(system).append(foreign,shared,deviceDetails);
+  system.querySelector('.system-scope-heading').append(clock);
   system.append(globalRail,settings);
-  scroll.replaceChildren(desktopRail,desktop,projectRail,project,middleRail,workspace,system);
+  const local=make('div','system-local-scopes');local.tabIndex=0;local.setAttribute('aria-label','Desktop, project and Workspace controls');
+  local.append(desktopRail,desktop,projectRail,project,middleRail,workspace);
+  scroll.replaceChildren(local,system);scroll.scrollTop=0;
   let pending=0;
   function syncAgenda(plans,now=Date.now()){
     const owner=desktopPages.column(activeWorkspace),space=projectSpaces[owner],result=agendas(plans,activeWorkspace,space?owner:'',now);
@@ -69,6 +72,7 @@
     }
     $('#systemRailDesktop').classList.toggle('has-system-request',items.length>0);$('#systemRailDesktop').title=place+' · '+items.length+' pending '+(items.length===1?'request':'requests');
     $('#launchTimer').hidden=!timer.hidden;
+    deviceDetails.hidden=!devices.querySelector('.system-widget:not([hidden])');
     const count=$$('.notification',$('#systemWideNotificationList')).length;shared.hidden=!count;$('#systemWideNotificationCount').textContent=count;wideAlerts.hidden=!count;wideAlerts.querySelector('small').textContent=count;wideAlerts.setAttribute('aria-label','Show '+count+' system-wide alerts');
     syncAgenda(root.SpatialTimelineDesktop?.snapshot().plans||[]);
   }
@@ -81,6 +85,8 @@
   const originalPages=updateDesktopPageUi;updateDesktopPageUi=function(...args){const result=originalPages(...args);schedule();return result;};
   const originalSave=saveAppWindows;saveAppWindows=function(...args){const result=originalSave(...args);schedule();return result;};
   const originalTimer=updateTimer;updateTimer=function(...args){const result=originalTimer(...args);$('#launchTimer').hidden=!timer.hidden;return result;};
+  const originalSnapshot=snapshotWorkspaceAreaContent;snapshotWorkspaceAreaContent=function(){const snapshot=originalSnapshot();snapshot.scroll.systems=local.scrollTop;return snapshot;};
+  const originalRestore=restoreWorkspaceAreaContent;restoreWorkspaceAreaContent=function(name,...args){const result=originalRestore(name,...args);local.scrollTop=workspaceAreaContents[name]?.scroll?.systems||0;return result;};
   if(typeof MutationObserver==='function'){
     const observer=new MutationObserver(()=>{schedule();root.SpatialWorkspaceNotificationViews?.scan();});observer.observe(dynamic,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});observer.observe(timer,{attributes:true,attributeFilter:['hidden']});observer.observe($('#systemWideNotificationList'),{childList:true,subtree:true});
   }

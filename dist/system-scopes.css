@@ -1,5 +1,12 @@
 /* Near-to-wide scope, with the machine controls anchored at the trailing end. */
-.systems-zone.system-scopes-ready .system-scroll-region{gap:0!important}
+.systems-zone.system-scopes-ready .system-scroll-region{gap:0!important;overflow:hidden!important}
+.system-local-scopes{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.system-local-scopes .system-scope{padding-block:8px}
+.system-scope[data-system-scope="desktop"]:has(.system-scope-empty) .system-scope-heading{margin-bottom:0}
+.system-desktop-requests:has(.system-scope-empty){display:none}
+.system-scope-body>#dynamicWidgetStack{order:0!important}
+.system-scope-body>.system-focus-controls{order:1!important}
+.system-scope-body>.system-agenda-stack{order:2!important}
 .system-scopes-ready :is(.system-rail-desktop,#systemScopeDesktop){order:0!important}
 .system-scopes-ready :is(.system-rail-project,#systemScopeProject){order:1!important}
 .system-scopes-ready :is(.system-rail-middle,#systemScopeWorkspace){order:2!important}
@@ -25,10 +32,19 @@
 .system-focus-controls{display:flex;flex-direction:column;gap:6px}.system-focus-controls:has(>#launchTimer[hidden]):has(>#timerWidget[hidden]){display:none}
 .system-focus-controls #launchTimer{justify-content:flex-start;gap:8px;width:100%;padding:7px 9px;font-size:11px}.system-focus-controls #launchTimer[hidden]{display:none!important}
 .system-focus-controls .timer-face strong{font-size:25px}.system-focus-controls .timer-actions button{font-size:11px;padding:5px 9px}
-.system-scope[data-system-scope="system"]{--system-scope-accent:#8aa4b8;margin-top:auto;padding-top:14px;border-bottom:0}
-.system-scope[data-system-scope="system"] .workspace-notifications-widget{padding:0 3px 9px;border-top:0;border-bottom:1px solid var(--sd-glass-groove)}
+.system-scope[data-system-scope="system"]{--system-scope-accent:#8aa4b8;margin-top:auto;padding-top:8px;border-top:1px solid var(--sd-glass-groove);border-bottom:0;max-height:48%;overflow-y:auto;scrollbar-width:thin}
+.system-scope[data-system-scope="system"]>.system-scope-heading{align-items:center;margin-bottom:4px;gap:7px}
+.system-scope[data-system-scope="system"]>.system-scope-body{gap:5px}
+.system-scope-heading>b:empty{display:none}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 3px;border:0}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget[hidden]{display:none!important}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget header{margin:0}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget h3{font-size:9px;max-width:70px}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget header small{display:none}
 .system-scope .time-block{padding:0 3px!important;margin:2px 0!important;min-height:40px;gap:12px;display:flex;align-items:center}
 .system-scope .time-block>.live-time{font-size:25px!important}.system-scope .time-block b{font-size:11px}.system-scope .time-block small{font-size:10px}
+.system-scope-heading>.time-block{margin-left:auto!important;min-height:30px;gap:6px;padding:0!important}
+.system-scope-heading>.time-block>.live-time{font-size:20px!important}.system-scope-heading>.time-block b{font-size:9px}.system-scope-heading>.time-block small{font-size:8px}
 .system-scope>.quick-settings{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:10px 0 0!important;padding:0!important;flex:none}
 .system-scope>.quick-settings .quick-toggle{min-width:0;min-height:38px;padding:5px!important;gap:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .system-scope>.quick-settings .quick-toggle svg{width:16px;height:16px}
@@ -37,6 +53,9 @@
 .systems-zone:not([data-area-state="rail"]) :is(.system-rail-desktop,.system-rail-project,.system-rail-global,.system-rail-middle){display:none!important}
 .systems-zone[data-area-state="rail"] :is(.system-scope:not([data-system-scope="system"]),.system-scope-heading,.system-scope[data-system-scope="system"]>.system-scope-body){display:none!important}
 .systems-zone[data-area-state="rail"] .system-scope[data-system-scope="system"]{display:flex;flex-direction:column;gap:7px;border:0;padding:7px 0 0;flex:none;min-height:0}
+.systems-zone[data-area-state="rail"] .system-local-scopes{display:contents}
+.systems-zone[data-area-state="rail"] .system-scope[data-system-scope="system"]{max-height:none;overflow:visible}
+.systems-zone.system-scopes-ready[data-area-state="rail"] .system-scroll-region{overflow:auto!important}
 .systems-zone[data-area-state="rail"] .system-scroll-region{gap:7px!important}
 .systems-zone[data-area-state="rail"] :is(.system-rail-desktop,.system-rail-project,.system-rail-middle,.system-rail-global){display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;padding:0;margin:0}
 .systems-zone[data-area-state="rail"] .system-rail-middle{border-top:1px solid var(--sd-glass-groove);padding-top:7px}
