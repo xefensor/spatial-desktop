@@ -6937,15 +6937,16 @@ function renderDesktopPageRail() {
   const label = (project?.name || workspaceProfiles[activeWorkspace].label + " workspace") + " · " + (last + 1) + " desktops · Desktop " + (current + 1) + " is current · All window icons";
   const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
   const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
+  const appLabel = name => appInfo[appInfo[name]?.base || name]?.label || appInfo[name]?.label || name;
   const marks = desktopPages.entries(activeWorkspace, column)
     .filter(entry => entry.page <= last && (!entry.fullscreen || Math.min(entry.display, activeDisplayRoster().length) === localDisplaySlot()))
     .map(entry => {
       const windows = names.filter(name => entry.fullscreen ? name === entry.fullscreen : desktopPages.pageOf(activeWorkspace, name) === entry.page && !desktopPages.fullscreenBond(activeWorkspace, name));
       const selected = Boolean(entry.fullscreen ? localBond && selectedBond?.name === entry.fullscreen : !localBond && entry.page === current);
-      const title = 'Desktop ' + (entry.page + 1) + (selected ? ' · Current' : '') + ' · ' + (windows.length ? windows.map(name => (appInfo[name]?.label || name) + (appState[name] === 'minimized' ? ' (parked)' : '')).join(', ') : 'Empty');
+      const title = 'Desktop ' + (entry.page + 1) + (selected ? ' · Current' : '') + ' · ' + (windows.length ? windows.map(name => appLabel(name) + (appState[name] === 'minimized' ? ' (parked)' : '')).join(', ') : 'Empty');
       // Every window gets its own icon, including separate instances of one app.
       // Background services have no desktop owner and are outside appState.
-      const icons = windows.map(name => '<span class="desktop-page-app' + (appState[name] === 'minimized' ? ' is-parked' : '') + '" data-desktop-marker-app="' + escapeHtml(name) + '" title="' + escapeHtml((appInfo[name]?.label || name) + (appState[name] === 'minimized' ? ' · Parked' : ' · Open')) + '">' + appArt(name) + '</span>').join('');
+      const icons = windows.map(name => '<span class="desktop-page-app' + (appState[name] === 'minimized' ? ' is-parked' : '') + '" data-desktop-marker-app="' + escapeHtml(name) + '" title="' + escapeHtml(appLabel(name) + (appState[name] === 'minimized' ? ' · Parked' : ' · Open')) + '">' + appArt(name) + '</span>').join('');
       return '<span class="desktop-page-mark' + (entry.fullscreen ? ' is-fullscreen-mark' : '') + (selected ? ' is-current' : '') + '" data-desktop-marker="' + entry.page + '"' + (entry.fullscreen ? ' data-fullscreen-marker="' + escapeHtml(entry.fullscreen) + '"' : '') + ' role="img" aria-label="' + escapeHtml(title) + '" title="' + escapeHtml(title) + '"><span class="desktop-page-index" aria-hidden="true">' + (entry.page + 1) + '</span><span class="desktop-page-icons" aria-hidden="true">' + icons + '</span></span>';
     }).join('');
   rails.forEach(rail => {

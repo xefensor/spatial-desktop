@@ -441,9 +441,10 @@ const rail = vm.createContext({
 vm.runInContext(slice('function escapeHtml(', 'function showToast('), rail);
 vm.runInContext(slice('function appArt(', 'function applyAppPrimaryColors('), rail);
 vm.runInContext(slice('function renderDesktopPageRail(', 'function fullscreenPeekBond('), rail);
+rail.appInfo.browser = {label: 'Firefox'};
 for (let i = 0; i < 24; i++) {
   const id = 'browser--' + i;
-  rail.appInfo[id] = {base: 'browser', label: 'Firefox'};
+  rail.appInfo[id] = {base: 'browser', label: 'Firefox · Private document ' + i};
   rail.appState[id] = i === 23 ? 'minimized' : 'open';
   rail.desktopPages.assign('work', id, i === 22 ? 1 : 0);
 }
@@ -455,6 +456,7 @@ rail.renderDesktopPageRail();
 const markup = () => railNodes['#desktopPageRail'].innerHTML;
 assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 24, 'All 24 windows render, with no cap or same-app deduplication');
 assert.equal((markup().match(/href="#app-browser"/g) || []).length, 24, 'Every instance uses the application artwork');
+assert(!markup().includes('Private document'), 'Icon tooltips and accessible names expose app identity only');
 assert.equal((markup().match(/data-desktop-marker="/g) || []).length, 2, 'Closed windows cannot advertise an unused desktop');
 assert.match(markup(), /is-current[^>]*data-desktop-marker="0"/);
 assert.match(markup(), /is-parked[^>]*data-desktop-marker-app="browser--23"/);
