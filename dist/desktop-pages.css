@@ -73,24 +73,18 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 }
 .toast.is-project-switch.is-visible{transform:translate(-50%,-50%)}
 
-/* A narrow strip on each side keeps every desktop's window icons visible.
-   Reserve its space in the canvas so icons never cover tiled app content. */
-.desktop-shell{--desktop-page-rail-width:30px}
-html[data-guide-desktops="false"] .desktop-shell,
-body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
-.desktop-shell>.workspace-zone{
-  left:calc(var(--workspace-left,0px) + var(--desktop-page-rail-width))!important;
-  right:calc(var(--workspace-right,0px) + var(--desktop-page-rail-width))!important;
-}
+/* Compact markers sit on the Area/canvas seam. They do not reserve a
+   full-height lane or reduce the desktop's usable width. */
 .desktop-page-rail{
-  position:absolute;left:calc(var(--workspace-left,0px) + 1px);
-  top:calc(var(--workspace-top,0px) + var(--desktop-context-height,0px));
-  bottom:var(--workspace-bottom,0px);width:28px;z-index:740;
+  position:absolute;left:max(0px,calc(var(--workspace-left,0px) - 12px));
+  top:calc(50% + (var(--workspace-top,0px) + var(--desktop-context-height,0px) - var(--workspace-bottom,0px)) / 2);
+  transform:translateY(-50%);width:28px;height:max-content;z-index:740;
+  max-height:calc(100% - var(--workspace-top,0px) - var(--desktop-context-height,0px) - var(--workspace-bottom,0px) - 24px);
   display:flex;flex-direction:column;align-items:center;justify-content:safe center;
-  gap:10px;padding:12px 2px;overflow-x:hidden;overflow-y:auto;
+  gap:10px;padding:2px;overflow-x:hidden;overflow-y:auto;
   overscroll-behavior:contain;scrollbar-width:thin;
 }
-.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
+.desktop-page-rail-right{left:auto;right:max(0px,calc(var(--workspace-right,0px) - 12px))}
 .desktop-page-rail:focus-visible{outline:1px solid var(--desktop-marker-accent);outline-offset:-1px}
 .desktop-page-mark{
   --desktop-marker-line:color-mix(in srgb,var(--sd-glass-text) 28%,transparent);
