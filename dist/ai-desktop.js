@@ -109,7 +109,7 @@
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
-  document.addEventListener('keydown',event=>{if((event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;toggle();}},true);
+  document.addEventListener('keydown',event=>{if((globalThis.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;toggle();}},true);
 
   function baseSource(target){
     const frame=target.closest('[data-app-frame]'),app=frame?.dataset.appFrame,owner=app&&desktopPages.columnOf(activeWorkspace,app);

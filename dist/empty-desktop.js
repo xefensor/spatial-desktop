@@ -36,7 +36,7 @@
   });
   panel.addEventListener('wheel', event => {
     const launcher = event.target.closest('.empty-desktop-launcher');
-    if (launcher && !event.metaKey && !event.getModifierState?.('OS') && !event.shiftKey && !event.ctrlKey && launcher.scrollHeight > launcher.clientHeight + 1) event.stopPropagation();
+    if (launcher && !globalThis.SpatialDemoSuper?.held() && !event.metaKey && !event.getModifierState?.('OS') && !event.shiftKey && !event.ctrlKey && launcher.scrollHeight > launcher.clientHeight + 1) event.stopPropagation();
   }, { passive: true });
   $('#emptyDesktopAllApps').addEventListener('click', () => {
     if (panel.hidden || $('.desktop-shell').inert || desktopNavigationBlocked()) return;

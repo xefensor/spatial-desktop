@@ -92,7 +92,7 @@ The hotbar follows visible windows’ reading order: left to right across a row,
 | 11–20 | Super+Shift+1–9,0 |
 | Later slots | Click the entry; no additional keyboard bank is bound |
 
-Alt+number and Alt+Shift+number are browser fallbacks. Focus or restore with the shortcut; invoking it again on the focused window parks that window. Shift+click a hotbar icon creates another app instance. The host OS may intercept Super shortcuts.
+**F2 is the browser-only alternative to Super.** Press and release F2 alone to toggle Overview; hold F2 with 1–9 or 0 for the hotbar, add Shift for slots 11–20, use F2+A for Assistant, F2+scroll for desktops and F2+Shift+scroll for Project columns. Press F2 before the other keys. Release after a combination does not toggle Overview. Leaving the browser clears the held key. This does not remap the host OS. Alt+number and Alt+Shift+number remain browser fallbacks. Focus or restore with the shortcut; invoking it again on the focused window parks that window. Shift+click a hotbar icon creates another app instance. The host OS may intercept Super shortcuts.
 
 ### Preview privacy
 
@@ -224,7 +224,7 @@ Create local events with start/end, tasks and reminders. Completion and dismissa
 
 The demo’s **Gaming** workspace opens on **Desktop 1**, with Firefox visible, Steam parked in Apps and the illustrative Fallout 4 game already running on its bonded fullscreen desktop below. Use the bottom **Temporary desktop** preview, Fallout's Apps icon or scroll down to enter the game. Both game and Steam are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions do not seed these examples. Desktop Guide creates only its isolated Fallout practice in the borderless-fullscreen chapter. A one-time update returns the old shipped Desktop 1 fullscreen opening to its parent; subsequent visits preserve the user's selected page, Project and open/parked/closed app choices.
 
-Press **Super** (or **Alt+Space** in a browser) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** returns to the bonded parent while keeping the game open in fullscreen. **Win + scroll** navigates between the parent, fullscreen child and subsequent desktops. Switching workspaces saves the existing fullscreen session.
+Press **F2** or **Super** (Ctrl+Space is another browser fallback) or use **Open Overview** in the game. Overview opens above fullscreen and selects Steam when it is running in Gaming. **Escape** closes Overview and returns to the game; **Switch app** opens the Apps section. Choosing another app uses the usual window manager. **Return to game** restores the game’s fullscreen view. **Show desktop** returns to the bonded parent while keeping the game open in fullscreen. **Win + scroll** navigates between the parent, fullscreen child and subsequent desktops. Switching workspaces saves the existing fullscreen session.
 
 ### Bonded fullscreen desktop
 

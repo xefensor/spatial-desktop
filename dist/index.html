@@ -45,8 +45,9 @@
   <link rel="stylesheet" href="app-identities.css?v=3">
   <link rel="stylesheet" href="scoped-settings.css?v=2">
   <link rel="stylesheet" href="context-submenus.css?v=2">
+  <script src="demo-super-key.js?v=1"></script>
   <script src="workspace-setup.js?v=8"></script>
-  <script src="spatial-guide.js?v=43"></script>
+  <script src="spatial-guide.js?v=44"></script>
   
 </head>
 <body data-theme="oled">
@@ -189,7 +190,7 @@
       <article class="app-frame simple-app" data-app-frame="notes" aria-label="Note Editor" hidden><header class="app-titlebar"><div class="app-identity"><span class="app-badge amber"><svg><use href="#i-note"/></svg></span><div><b>Note Editor</b><small>Meeting notes</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Note Editor"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Note Editor"><svg><use href="#i-close"/></svg></button></div></header><div class="notes-layout"><nav><button class="nav-choice is-active">Meeting notes</button><button class="nav-choice">Ideas</button><button class="nav-choice">To-do</button></nav><textarea aria-label="Note">Launch review&#10;&#10;• Finalise the homepage copy.&#10;• Check the layout on a phone.&#10;• Collect feedback from the team.&#10;&#10;Next meeting: Thursday, 14:30.</textarea></div></article>
       <article class="app-frame simple-app steam-game-window" data-app-frame="game" aria-label="Fallout 4" hidden>
         <header class="app-titlebar"><div class="app-identity"><span class="app-badge green"><svg><use href="#i-gamepad"/></svg></span><div><b>Fallout 4</b><small>Sanctuary Hills</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Fallout 4"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key" data-window-action="maximize" aria-label="Maximize Fallout 4"><svg><use href="#i-max"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Fallout 4"><svg><use href="#i-close"/></svg></button></div></header>
-        <section class="steam-game-stage" aria-label="Illustrative game scene"><div class="steam-game-crosshair" aria-hidden="true">+</div><header><span><b>FALLOUT 4</b><small>Illustrative game scene · Demo</small></span><button class="steam-button" data-steam-action="desktop">Show desktop</button></header><div class="steam-game-location"><span>COMMONWEALTH</span><h2>Sanctuary Hills</h2><p>A moment between adventures.</p></div><footer><span>HP <i></i> <b>LEVEL 12</b></span><div><button class="steam-button steam-primary" data-steam-action="overview"><svg aria-hidden="true"><use href="#i-grid"/></svg>Open Overview</button><small>Super · Alt + Space in the browser<br>Win + scroll · switch desktops</small></div></footer></section>
+        <section class="steam-game-stage" aria-label="Illustrative game scene"><div class="steam-game-crosshair" aria-hidden="true">+</div><header><span><b>FALLOUT 4</b><small>Illustrative game scene · Demo</small></span><button class="steam-button" data-steam-action="desktop">Show desktop</button></header><div class="steam-game-location"><span>COMMONWEALTH</span><h2>Sanctuary Hills</h2><p>A moment between adventures.</p></div><footer><span>HP <i></i> <b>LEVEL 12</b></span><div><button class="steam-button steam-primary" data-steam-action="overview"><svg aria-hidden="true"><use href="#i-grid"/></svg>Open Overview</button><small>F2 or Super · open Overview<br>Hold F2 + scroll · switch desktops</small></div></footer></section>
       </article>
       <article class="app-frame simple-app steam-client-window" data-app-frame="steam" aria-label="Steam" hidden>
         <header class="app-titlebar"><div class="app-identity"><span class="app-badge blue"><svg><use href="#i-gamepad"/></svg></span><div><b>Steam</b><small>Friends &amp; game tools</small></div></div><div class="window-actions"><button class="surface-key window-key" data-window-action="minimize" aria-label="Park Steam"><svg><use href="#i-min"/></svg></button><button class="surface-key window-key danger" data-window-action="close" aria-label="Close Steam"><svg><use href="#i-close"/></svg></button></div></header>
@@ -245,7 +246,7 @@
 
     <aside class="zone ai-area area-window" data-area-window="ai" aria-label="Assistant area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon" id="aiAreaToggle" aria-label="Expand Assistant area" aria-expanded="false" title="Assistant · Super+A"><svg aria-hidden="true"><use href="#i-ai"/></svg></button><span><b>Assistant</b><small id="aiAreaContext">General workspace</small></span></div>
+        <div class="area-window-identity"><button class="surface-key area-window-icon" id="aiAreaToggle" aria-label="Expand Assistant area" aria-expanded="false" title="Assistant · Super+A or F2+A"><svg aria-hidden="true"><use href="#i-ai"/></svg></button><span><b>Assistant</b><small id="aiAreaContext">General workspace</small></span></div>
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-hide="ai" aria-label="Hide Assistant area" title="Hide Assistant area"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
       </header>
       <div class="ai-content">
@@ -543,7 +544,7 @@
         <p class="universal-empty" id="universalEmpty" hidden>No local results. Press Enter to search the web.</p>
       </div>
 
-      <footer class="universal-search-footer"><span><kbd>Super</kbd> Close overview</span><span><kbd>Super + 1–9</kbd> App hotbar · Alt fallback</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span><a class="overview-guide-link" href="philosophy.html" title="Work in progress: read the evolving design philosophy and prototype scope.">Philosophy &amp; guide · WIP</a></footer>
+      <footer class="universal-search-footer"><span><kbd>F2 / Super</kbd> Close overview</span><span><kbd>F2 + 1–9, 0</kbd> Hold F2 · app hotbar</span><span><kbd>Type</kbd> Search everything</span><span><kbd>Enter</kbd> Open</span><a class="overview-guide-link" href="philosophy.html" title="Work in progress: read the evolving design philosophy and prototype scope.">Philosophy &amp; guide · WIP</a></footer>
     </div>
   </section>
   <section class="project-editor-overlay" id="projectEditorDialog" role="dialog" aria-modal="true" aria-labelledby="projectEditorTitle" aria-hidden="true" inert hidden>
@@ -648,22 +649,22 @@
   <script src="desktop-pages.js?v=4"></script>
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=2"></script>
-  <script src="app-windows.js?v=18"></script>
+  <script src="app-windows.js?v=19"></script>
 <script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
 <script src="ai-context.js?v=5"></script>
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=285"></script>
+<script src="desktop-shell.js?v=286"></script>
 <script src="parked-previews.js?v=4"></script>
 <script src="owned-dialogs.js?v=1"></script>
 <script src="background-apps.js?v=2"></script>
 <script src="preview-privacy.js?v=1"></script>
-<script src="empty-desktop.js?v=1"></script>
+<script src="empty-desktop.js?v=2"></script>
 <script src="working-memory-desktop.js?v=30"></script>
-<script src="ai-desktop.js?v=17"></script>
-<script src="overview-desktop.js?v=21"></script>
+<script src="ai-desktop.js?v=18"></script>
+<script src="overview-desktop.js?v=22"></script>
   <script src="guide-desktop.js?v=40"></script>
   <script src="steam-overview.js?v=8"></script>
 <script src="all-workspaces.js?v=3"></script>

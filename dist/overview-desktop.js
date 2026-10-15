@@ -123,7 +123,7 @@
     return false;
   }
   $('#universalSearch').addEventListener('wheel',event=>{
-    if(separateActive||home.hidden||event.ctrlKey||event.metaKey)return;
+    if(separateActive||home.hidden||event.ctrlKey||(globalThis.SpatialDemoSuper?.held()||event.metaKey))return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
     if(event.target.closest('select,input[type=number],input[type=range]')||ownsScroll(event.target,across))return;
     event.preventDefault();event.stopPropagation();
@@ -138,7 +138,7 @@
   },{passive:false});
   home.addEventListener('keydown',event=>{
     if(separateActive)return;
-    if(event.altKey||event.ctrlKey||event.metaKey||event.target.matches('input,textarea,select,[contenteditable]'))return;
+    if(event.altKey||event.ctrlKey||(globalThis.SpatialDemoSuper?.held()||event.metaKey)||event.target.matches('input,textarea,select,[contenteditable]'))return;
     if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();step(event.key==='ArrowLeft'?-1:1);$('[data-overview-section="'+active+'"]',home)?.focus({preventScroll:true});}
   });
   // Tab focus reaches only the current panel; touch / scrollbar navigation still snaps.

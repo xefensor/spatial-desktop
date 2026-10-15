@@ -2141,7 +2141,7 @@ function trackWindowPointer(event, handle, move, finish, desktopDrag = null, pla
     cancel();
   };
   const onWheel = scroll => {
-    const superHeld = scroll.metaKey || scroll.getModifierState?.("OS");
+    const superHeld = (globalThis.SpatialDemoSuper?.held() || scroll.metaKey || scroll.getModifierState?.("OS"));
     if (!drag || finished || scroll.ctrlKey || scroll.altKey || (!scroll.shiftKey && Math.abs(scroll.deltaX) > Math.abs(scroll.deltaY))) return;
     if (superHeld) superKeyAlone = false;
     scroll.preventDefault();
@@ -5801,15 +5801,15 @@ document.addEventListener("keydown", event => {
     return;
   }
 
-  const isSuper = event.key === "Meta" || event.key === "OS";
+  const isSuper = event.key === "Meta" || event.key === "OS" || (event.key === "F2" && (event.type === "keyup" || globalThis.SpatialDemoSuper?.held()));
   if (isSuper && !event.repeat) {
     superKeyAlone = true;
     return;
   }
-  if (event.metaKey && !isSuper) superKeyAlone = false;
+  if ((globalThis.SpatialDemoSuper?.held() || event.metaKey) && !isSuper) superKeyAlone = false;
 
   const hotbarMatch = /^(?:Digit|Numpad)([0-9])$/.exec(event.code);
-  const superHeld = event.metaKey || event.getModifierState?.("OS");
+  const superHeld = (globalThis.SpatialDemoSuper?.held() || event.metaKey || event.getModifierState?.("OS"));
   /* Browsers on Windows/KDE may never receive OS-reserved Super+number.
      Alt+number mirrors it only inside this prototype so the behavior remains
      testable; the desktop-shell binding remains Super+number. */
@@ -5836,7 +5836,7 @@ document.addEventListener("keydown", event => {
     return;
   }
 
-  const universalShortcut = event.code === "Space" && (event.metaKey || event.altKey || event.ctrlKey);
+  const universalShortcut = event.code === "Space" && (globalThis.SpatialDemoSuper?.held() || event.metaKey || event.altKey || event.ctrlKey);
   if (universalShortcut) {
     event.preventDefault();
     superKeyAlone = false;
@@ -5881,7 +5881,7 @@ document.addEventListener("keyup", event => {
     return;
   }
 
-  const isSuper = event.key === "Meta" || event.key === "OS";
+  const isSuper = event.key === "Meta" || event.key === "OS" || (event.key === "F2" && (event.type === "keyup" || globalThis.SpatialDemoSuper?.held()));
   if (isSuper && superKeyAlone) {
     event.preventDefault();
     setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
@@ -5889,6 +5889,7 @@ document.addEventListener("keyup", event => {
   if (isSuper) superKeyAlone = false;
 });
 window.addEventListener("blur", () => { superKeyAlone = false; });
+document.addEventListener("pointerdown", () => { if (globalThis.SpatialDemoSuper?.held()) superKeyAlone = false; }, true);
 
 $$("[data-toast]").forEach(button => button.addEventListener("click", () => showToast(button.dataset.toast)));
 function setSystemToggle(label, active, persist = true) {
@@ -6453,7 +6454,7 @@ function contextMenuEntries(context) {
     ].filter(Boolean);
   }
   if (context.kind === "desktop") return [
-    { action: "desktop-overview", icon: "i-search", label: "Open Overview", shortcut: "Super" },
+    { action: "desktop-overview", icon: "i-search", label: "Open Overview", shortcut: "Super / F2" },
     ...(desktopPages.next(activeWorkspace,-1) ? [{ action: "desktop-page:-1", icon: "i-monitor", label: "Desktop above", shortcut: "Page Up" }] : []),
     ...(desktopPages.next(activeWorkspace,1) ? [{ action: "desktop-page:1", icon: "i-monitor", label: "Desktop below", shortcut: "Page Down" }] : []),
     separator,
@@ -6974,7 +6975,7 @@ function updateDesktopPageUi() {
   $("#appsAreaContext").textContent = context + " · Desktop " + page;
   $("#openWindowsTitle").textContent = context;
   button.setAttribute("aria-label", "Open " + context + " overview · Desktop " + page);
-  button.title = "Overview · " + context + " · Desktop " + page + " · Super · Win+scroll: desktops · Win+Shift+scroll: projects";
+  button.title = "Overview · " + context + " · Desktop " + page + " · Super or F2 · F2+scroll: desktops · F2+Shift+scroll: projects";
   const contextToggle = $("#desktopContextToggle");
   if (contextToggle) {
     $(".desktop-context-page", contextToggle).textContent = "Desktop " + page;
@@ -7288,7 +7289,7 @@ function prepareDesktopPages() {
     if (frame && !frame.hidden && isLocalApp(frame.dataset.appFrame)) bringToFront(frame.dataset.appFrame);
   });
   const onDesktopWheel = (event, fromArea = false) => {
-    const superHeld = event.metaKey || event.getModifierState?.("OS");
+    const superHeld = (globalThis.SpatialDemoSuper?.held() || event.metaKey || event.getModifierState?.("OS"));
     if (superHeld) superKeyAlone = false;
     if (event.defaultPrevented || event.ctrlKey || event.altKey || (!superHeld && !fromArea && desktopHasWindowFocus) || (!event.shiftKey && Math.abs(event.deltaX) > Math.abs(event.deltaY))) return;
     if (desktopNavigationBlocked() && !desktopPageAnimating) return;
@@ -7328,7 +7329,7 @@ function prepareDesktopPages() {
   // Super shortcuts also work over app content. Held-window gestures stay owned
   // by the drag listener, and the shared gate suppresses trackpad momentum.
   document.addEventListener("wheel", event => {
-    if (event.metaKey || event.getModifierState?.("OS")) { onDesktopWheel(event); return; }
+    if ((globalThis.SpatialDemoSuper?.held() || event.metaKey || event.getModifierState?.("OS"))) { onDesktopWheel(event); return; }
     const area = event.target?.closest("[data-area-window]");
     if (!area || $(".desktop-shell").inert || event.defaultPrevented || event.ctrlKey || event.altKey || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
     const delta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
@@ -7945,7 +7946,7 @@ function renderInstanceRack() {
   const buttons = names.map((name, index) => {
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
-    const shortcut = bank === 0 ? 'Super+' + digit : bank === 1 ? 'Super+Shift+' + digit : 'Click · slot ' + slot;
+    const shortcut = bank === 0 ? 'Super+' + digit + ' · F2+' + digit : bank === 1 ? 'Super+Shift+' + digit + ' · F2+Shift+' + digit : 'Click · slot ' + slot;
     const bond = fullscreenHotbarBond(name);
     const detail = bond ? ' · Return to temporary desktop · linked to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
     return '<button class="app-key' + (bond ? ' is-fullscreen-link' : '') + '" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + detail + ' · ' + shortcut + (info.singleInstance ? '' : ' · Shift+click: new window')) + '" aria-label="' + escapeHtml(info.label + detail + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + (bond ? '<span class="fullscreen-hotbar-mark" aria-hidden="true">' + icon('i-max') + '</span>' : '') + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
@@ -7977,7 +7978,7 @@ function syncWindowHotkeys() {
     badge.hidden = slot === null;
     if (slot === null) return;
     badge.textContent = slot <= 10 ? String(slot % 10) : slot <= 20 ? '⇧' + slot % 10 : String(slot);
-    badge.title = slot <= 20 ? 'Super+' + (slot > 10 ? 'Shift+' : '') + slot % 10 : 'Hotbar slot ' + slot;
+    badge.title = slot <= 20 ? 'Super+' + (slot > 10 ? 'Shift+' : '') + slot % 10 + ' · F2+' + (slot > 10 ? 'Shift+' : '') + slot % 10 : 'Hotbar slot ' + slot;
     badge.setAttribute('aria-label', badge.title);
   });
 }

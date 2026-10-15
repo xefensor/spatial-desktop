@@ -299,6 +299,14 @@ assert.equal(e.prevented,undefined,'Document navigation leaves held-window gestu
 ctx.tileInteraction=false;
 clock+=500;e=event();listeners['document:wheel'](e);
 assert.equal(e.prevented,undefined,'Plain scrolling outside Areas is never intercepted globally');
+// Browser F2 uses the same real wheel routes without a native OS modifier.
+ctx.SpatialDemoSuper={held:()=>true};ctx.desktopHasWindowFocus=true;
+ctx.desktopPages.select('work','workspace');ctx.desktopPages.go('work',0);
+clock+=500;e=event();listeners['document:wheel'](e);
+assert.equal(e.prevented,true);assert.equal(ctx.desktopPages.current('work'),1,'F2+wheel navigates from a focused app');
+clock+=500;e=event();e.shiftKey=true;listeners['document:wheel'](e);
+assert.equal(ctx.desktopPages.column('work'),'site','F2+Shift+wheel selects a Project');
+delete ctx.SpatialDemoSuper;
 console.log('Win wheel passed: focused app/Area capture, project axis, OS alias, line deltas, momentum, duplicate/Overview prevention and input/menu/drag guards.');
 
 // Hovered Areas navigate without clicking or stealing their keyboard focus.

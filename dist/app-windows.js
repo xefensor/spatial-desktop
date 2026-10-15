@@ -552,7 +552,7 @@ function appWindowInput(event) {
   if(event.target.matches('.track-range,.volume-range')){event.stopImmediatePropagation();if(event.target.matches('.track-range'))model.position=Number(event.target.value);else model.volume=Number(event.target.value);renderAppMusic(id);saveAppWindows(false);}
 }
 function appWindowKey(event) {
-  const frame=event.target.closest('[data-app-frame]');if(!frame||event.metaKey)return;
+  const frame=event.target.closest('[data-app-frame]');if(!frame||(globalThis.SpatialDemoSuper?.held()||event.metaKey))return;
   const id=frame.dataset.appFrame,model=appWindowModel(id);let handled=false;
   if(model.ownedDialog)return;
   if(model.kind==='dolphin'){
