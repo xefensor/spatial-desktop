@@ -19,7 +19,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 - Stash keeps notes, sources and files. Overview and Timeline help find work and its context.
 - System follows the same near-to-wide order as Apps: current-desktop requests, current-project plans, Workspace notifications/focus/calendar, then shared alerts, other Workspaces, clock, devices and machine controls. The rail keeps that order too.
 - Overview's **System** tab mirrors the System Area's scope order. It holds local notifications, shared system alerts and other Workspaces' unread badges. New foreign arrivals only light their icon and update the count; click to preview without switching context. Steam remains separately grouped on the right. Background apps share the bottom Apps row across Workspaces.
-- Borderless games use a fixed-resolution virtual screen that can fill the display or tile on its original desktop. Win+D (F2+D in the browser) tiles the fullscreen game; Overview offers both presentations. Steam contributes local chats, guides and notes.
+- Borderless games use a fixed-resolution virtual screen that can fill the display or tile on its original desktop. Win+D (F2+D in the browser) tiles the fullscreen game; Overview offers both presentations. Steam and Fallout are available in every Workspace; Steam contributes local chats, guides and notes with separate data per Workspace.
 
 Firefox and Steam show read-only window previews when parked; apps with a parking widget keep their interactive controls.
 App-owned dialogs park directly below their app preview as a connected group. Try Firefox's **Save page as…** from its menu or **Ctrl+S**, then park Firefox; restoring either card brings back both the window and its waiting dialog.

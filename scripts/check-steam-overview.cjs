@@ -37,9 +37,15 @@ context.SpatialSteamOverview.appOpened('game');assert.equal(fullscreen,null,'Sel
 delete context.SpatialVirtualScreen;
 context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');assert.equal(context.appState.steam,'minimized');
 fullscreen=null;context.SpatialVirtualScreen={prefersTiled:()=>true,refresh(){}};context.SpatialSteamOverview.startGame();assert.equal(fullscreen,null,'Returning through Steam preserves the tiled virtual screen');delete context.SpatialVirtualScreen;context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');
+node('steamMessageInput').value='Gaming draft';node('steamGameNotes').value='Gaming pending note';node('steamGameNotes').listeners.input();
 context.activeWorkspace='work';context.appState={game:'closed',steam:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),false);assert.equal(context.SpatialSteamOverview.running(),false);
-context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'closed','The sample cannot launch outside Gaming');
-context.activeWorkspace='gaming';context.appState={game:'open',steam:'closed'};context.SpatialSteamOverview.syncContext();assert.equal(context.provider.available(),false,'Closing Steam removes its contributed tab');
+assert.equal(memory.get('spatial-gaming-fallout-note-v1'),'Gaming pending note','Pending notes flush into their originating Workspace');
+assert.notEqual(node('steamGameNotes').value,'Gaming pending note');assert.equal(node('steamMessageInput').value,'');
+context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'open','Fallout launches in Work');assert.equal(context.provider.available(),true,'A running Steam instance contributes its tab in Work');
+node('steamGameNotes').value='Work note';node('steamGameNotes').listeners.input();timers.at(-1)();assert.equal(memory.get('spatial-work-fallout-note-v1'),'Work note');
+node('steamMessageInput').value='Only in Work';node('steamChatForm').listeners.submit({preventDefault(){}});assert.equal(JSON.parse(memory.get('spatial-work-steam-chats-v1')).morgan.at(-1).text,'Only in Work');
+context.activeWorkspace='gaming';context.appState={game:'open',steam:'closed'};context.SpatialSteamOverview.syncContext();
+assert.equal(node('steamGameNotes').value,'Gaming pending note');assert.equal(node('steamMessageInput').value,'Gaming draft');assert(!node('steamMessages').children.some(row=>row.children[1].textContent==='Only in Work'),'Foreign chats never enter the current Steam panel');assert.equal(context.provider.available(),false,'Closing Steam removes its contributed tab');
 context.SpatialBackgroundApps={running:id=>id==='steam'};assert.equal(context.provider.available(),true,'Steam services remain available without a window while running in the background');
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.steam,'closed','Resuming a game does not create a parked client window when Steam already runs in the background');delete context.SpatialBackgroundApps;
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.steam,'minimized');assert.equal(context.provider.available(),true);
@@ -49,7 +55,10 @@ const seed=new Map([['spatial-demo-scenes-v1','4'],['spatial-workspace-app-state
 const storage={getItem:k=>seed.get(k)||null,setItem:(k,v)=>seed.set(k,v)};D.seedWorkspaces(storage);
 const states=JSON.parse(seed.get('spatial-workspace-app-states-v1'));assert.deepEqual(states.general,{notes:'open'});assert.equal(states.gaming.game,'open');assert.equal(states.gaming.steam,'minimized');assert.equal(states.gaming.notes,'closed');assert.equal(JSON.parse(seed.get('spatial-desktop-pages-v1')).gaming.active,1,'Existing page selection is retained');assert.equal(JSON.parse(seed.get('spatial-workspace-area-layouts-v1')).gaming.sizes.left,327);
 assert.equal(JSON.parse(seed.get('spatial-split-layouts-v1'))['gaming:desktop:0:1'].fullscreen,undefined,'New game example has no child or hidden fullscreen');states.gaming.game='closed';seed.set('spatial-workspace-app-states-v1',JSON.stringify(states));D.seedWorkspaces(storage);assert.equal(JSON.parse(seed.get('spatial-workspace-app-states-v1')).gaming.game,'closed','Reload does not resurrect a closed game');
-console.log('Steam passed: Gaming scope, Guide isolation, fullscreen return, separate chats/drafts, safe text, notes, filters, scroll ownership, and one-time legacy seeding.');
+for(const workspace of ['general','school','work','custom-workspace']){context.SpatialGuide=undefined;context.activeWorkspace=workspace;context.appState={steam:'open',game:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),true,'Steam available in '+workspace);context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'open');}
+for(const id of ['steam','game']){const button=html.match(new RegExp('<button[^>]*data-open-app="'+id+'"[^>]*>'))?.[0];assert(button&&!button.includes('data-app-workspace'),'Installed app is not filtered by Workspace');}
+assert(!fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.js'),'utf8').includes('workspace: "gaming", singleInstance'),'Base apps have no Gaming launch restriction');
+console.log('Steam passed: every Workspace, isolated chat/note/draft state, pending-save ownership, legacy Gaming keys, Guide isolation, fullscreen return, separate chats/drafts, safe text, notes, filters, scroll ownership, and one-time legacy seeding.');
 
 // The Overview keyboard listener runs before the window listener. One Escape
 // must not also exit fullscreen after Overview has consumed that same event.

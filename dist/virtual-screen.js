@@ -51,7 +51,7 @@
       resize(viewport);
     }
     const control=document.getElementById('steamVirtualScreenMode');
-    if(control){control.hidden=activeWorkspace!=='gaming'||!['open','minimized'].includes(appState.game);control.textContent=fullscreen('game')?'Show tiled':'Show fullscreen';control.title=fullscreen('game')?'Win+D or F2+D · tile the virtual screen':'Fill this display with the virtual screen';}
+    if(control){control.hidden=!['open','minimized'].includes(appState.game);control.textContent=fullscreen('game')?'Show tiled':'Show fullscreen';control.title=fullscreen('game')?'Win+D or F2+D · tile the virtual screen':'Fill this display with the virtual screen';}
   }
   function overviewCard(name,{shortcut,detail,minimized}){
     return card({name,label:appInfo[name].label,primary:appInfo[name].primary,fullscreen:fullscreen(name),shortcut,detail,privatePreview:Boolean(root.SpatialPreviewPrivacy?.hidden(name)),minimized,page:desktopPages.pageOf(activeWorkspace,name),escape:escapeHtml,art:appArt(name),icon});

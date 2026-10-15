@@ -218,8 +218,8 @@ const appInfo = {
   browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "amber", primary: "#ff7139", detail: "New Tab", parkingWidget: false },
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
-  steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", workspace: "gaming", singleInstance: true, parkingWidget: false },
-  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", workspace: "gaming", singleInstance: true, borderlessFullscreen: true }
+  steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", singleInstance: true, parkingWidget: false },
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true }
 };
 
 const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));

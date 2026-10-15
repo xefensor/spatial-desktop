@@ -42,7 +42,7 @@
   if(!row)return;
   let timer=0;
   const kind=id=>appInfo[id]?.base || id;
-  const activity=id=>reason(kind(id),appWindowModel(id),activeWorkspace==='gaming' && appState.game==='open');
+  const activity=id=>reason(kind(id),appWindowModel(id),appState.game==='open');
   const running=id=>Boolean(appInfo[id] && appState[id]==='closed' && appWindowModel(id).background);
   const allEntries=()=>entries(appWindowStore.snapshot(),workspaceAppStates,activeWorkspace,appState,appInfo,workspaceProfiles);
   root.SpatialBackgroundApps={...api,running,players:()=>allEntries().filter(entry=>entry.workspace!==activeWorkspace && kind(entry.id)==='elisa').map(entry=>appWindowStore.get(entry.workspace,entry.id))};
@@ -59,7 +59,7 @@
   }
   function prepareSteam() {
     const frame=frameFor('steam');
-    if(!frame || activeWorkspace!=='gaming' || globalThis.SpatialGuide?.model.active())return;
+    if(!frame || globalThis.SpatialGuide?.model.active())return;
     const summary=frame.querySelector('.steam-library-summary');if(!summary)return;
     let panel=summary.querySelector('[data-background-download]');
     if(!panel){panel=document.createElement('section');panel.className='steam-demo-download';panel.dataset.backgroundDownload='';summary.append(panel);}
