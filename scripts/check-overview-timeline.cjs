@@ -279,3 +279,19 @@ contributed.step(1);assert.equal(contributed.active(),'timeline','The contribute
 context.steamOpen=false;contributed.refresh();assert.equal(contributed.active(),'apps');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden,'Closing the provider removes it from navigation and layout');
 context.steamOpen=true;context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};contributed.refresh();assert(steamPanel.hidden&&steamTab.hidden,'Guide practice cannot reveal an untaught provider');
 console.log('Contributed Overview passed: system sections protected, contextual availability, carousel wrap, focus, provider grouping, and removal.');
+
+// Global inspection is explicit and never joins the workspace carousel.
+delete context.SpatialGuide;context.activeWorkspace='work';
+const globalPanel=make('global-panel'),globalButton=make('global-button');let globalRenders=0,globalCloses=0;
+assert(contributed.registerSeparateSection('global',{panel:globalPanel,button:globalButton,label:'All Workspaces',available:()=>true,render(){globalRenders++;},close(){globalCloses++;}}));
+assert(!contributed.registerSeparateSection('apps',{panel:globalPanel,button:globalButton,available:()=>true}));
+contributed.select('apps',false);contributed.select('global',false);
+assert.equal(contributed.active(),'global');assert.equal(globalPanel.hidden,false);assert.equal(globalPanel.inert,false);
+assert.equal(make('.overview-carousel-stage').hidden,true);assert(!track.children.includes(globalPanel),'Other workspace content never appears in an edge preview');
+assert(!Object.values(JSON.parse(data.get('spatial-overview-section-v1'))).includes('global'),'Global inspection is never saved as a workspace preference');
+contributed.refresh();assert.equal(contributed.active(),'global');assert(globalRenders>=2);
+contributed.overviewChanged(false);assert.equal(globalPanel.hidden,true);assert.equal(contributed.active(),'apps');assert(globalCloses>0);
+contributed.refresh();assert.equal(contributed.active(),'apps','Reopening restores a local section');
+const queued=[];context.requestAnimationFrame=fn=>queued.push(fn);contributed.refresh();contributed.select('global',false);queued.splice(0).forEach(fn=>fn());assert.equal(contributed.active(),'global','An older local refresh cannot override an explicit global selection');context.requestAnimationFrame=fn=>fn();
+context.activeWorkspace='general';contributed.refresh();assert.notEqual(contributed.active(),'global','Changing Workspace closes global inspection');
+console.log('Separate global Overview passed: explicit selection, isolated panel and scrolling, no neighbour previews, refresh races, no stored preference, close/reopen and workspace-change privacy.');

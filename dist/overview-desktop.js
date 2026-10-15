@@ -5,6 +5,7 @@
   const panels=new Map($$('[data-overview-panel]',track).map(panel=>[panel.dataset.overviewPanel,panel]));
   const labels={timeline:'Timeline',apps:'Apps',projects:'Projects & Home',system:'System'};
   const providers=new Map();
+  const separate=new Map();let separateActive='',separateWorkspace='';
   const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v1';
   const read=key=>{try{return JSON.parse(desktopStorage.getItem(key)||'{}');}catch{return {};}};
   const model=SpatialTimeline.create(read(historyKey));
@@ -27,6 +28,23 @@
       try{desktopStorage.setItem(sectionKey,JSON.stringify(preferred));}catch{}
     }
   }
+  function leaveSeparate(){
+    if(!separateActive)return;
+    const provider=separate.get(separateActive);separateActive='';
+    provider.panel.hidden=true;provider.panel.inert=true;provider.button.setAttribute('aria-pressed','false');provider.button.setAttribute('aria-current','false');provider.close?.();
+    $('.overview-carousel-stage',home).hidden=false;$('.overview-carousel-stage',home).inert=false;
+    delete home.dataset.globalView;
+  }
+  function selectSeparate(id){
+    const provider=separate.get(id);if(!provider?.available())return;
+    leaveSeparate();clearTimeout(scrollTimer);++selection;scrolling=false;
+    track.scrollTo({left:track.scrollLeft,behavior:'instant'});separateActive=id;separateWorkspace=activeWorkspace;
+    $('.overview-carousel-stage',home).hidden=true;$('.overview-carousel-stage',home).inert=true;
+    home.dataset.globalView=id;provider.panel.hidden=false;provider.panel.inert=false;
+    $$('[data-overview-section]',home).forEach(button=>{button.setAttribute('aria-pressed','false');button.setAttribute('aria-current','false');});
+    provider.button.setAttribute('aria-pressed','true');provider.button.setAttribute('aria-current','page');
+    $('#overviewContext').textContent=provider.label+' / System-wide activity';$('#overviewSectionStatus').textContent=provider.label+' section';provider.render();
+  }
   // Rotate existing panels, never clone their interactive controls or IDs.
   function keepNeighbours(panel){
     const nodes=[...track.children].filter(node=>allowed().includes(node.dataset.overviewPanel)),index=nodes.indexOf(panel);
@@ -36,6 +54,8 @@
     track.scrollTo({left:position+current.offsetLeft-before,behavior:'instant'});
   }
   function select(id,animate=true){
+    if(separate.has(id)){selectSeparate(id);return;}
+    leaveSeparate();
     if(!allowed().includes(id))id='apps';
     const panel=panels.get(id);if(!panel)return;
     panels.forEach((node,name)=>{node.hidden=!allowed().includes(name);});
@@ -57,11 +77,13 @@
     scrolling=false;
   }
   function settle(){
-    if(scrolling||!track.clientWidth||home.hidden)return;
+    if(separateActive||scrolling||!track.clientWidth||home.hidden)return;
     const panel=[...panels.values()].filter(panel=>allowed().includes(panel.dataset.overviewPanel)).reduce((nearest,panel)=>Math.abs(centre(panel)-track.scrollLeft)<Math.abs(centre(nearest)-track.scrollLeft)?panel:nearest,panels.get(active));
     if(Math.abs(centre(panel)-track.scrollLeft)>1||panel.dataset.overviewPanel!==active)select(panel.dataset.overviewPanel,true);
   }
   function refresh(){
+    if(separateActive&&separateWorkspace!==activeWorkspace)leaveSeparate();
+    separate.forEach(provider=>{provider.button.hidden=!provider.available();});
     const column=desktopPages.column(activeWorkspace),project=projectSpaces[column];
     const bond=desktopPages.selectedFullscreen?.(activeWorkspace),page=desktopPages.current(activeWorkspace)+1;
     const local=bond && Math.min(bond.display,activeDisplayRoster().length)===localDisplaySlot();
@@ -69,8 +91,10 @@
     $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name||'Workspace',place].join(' / ');
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
+    if(separateActive){const provider=separate.get(separateActive);if(provider.available()){$('#overviewContext').textContent=provider.label+' / System-wide activity';$('#overviewSectionStatus').textContent=provider.label+' section';provider.render();return;}leaveSeparate();}
     // Read the preference in the frame: a later explicit navigation wins.
     requestAnimationFrame(()=>{
+      if(separateActive)return;
       let id=preferred[activeWorkspace]||'apps';
       if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='apps';}
       if(!allowed().includes(id))id='apps';
@@ -79,6 +103,7 @@
   }
   function step(direction){const id=SpatialTimeline.neighbour(active,direction,allowed());if(id&&id!==active)select(id);}
   home.addEventListener('click',event=>{
+    const special=event.target.closest('[data-overview-separate]');if(special){selectSeparate(special.dataset.overviewSeparate);return;}
     const tab=event.target.closest('[data-overview-section]'),edge=event.target.closest('[data-overview-step]');
     if(tab)select(tab.dataset.overviewSection);if(edge)step(Number(edge.dataset.overviewStep));
   });
@@ -98,7 +123,7 @@
     return false;
   }
   $('#universalSearch').addEventListener('wheel',event=>{
-    if(home.hidden||event.ctrlKey||event.metaKey)return;
+    if(separateActive||home.hidden||event.ctrlKey||event.metaKey)return;
     const across=event.shiftKey||Math.abs(event.deltaX)>Math.abs(event.deltaY);
     if(event.target.closest('select,input[type=number],input[type=range]')||ownsScroll(event.target,across))return;
     event.preventDefault();event.stopPropagation();
@@ -112,11 +137,12 @@
     if(Math.abs(wheelTotal)>=24){wheelLocked=true;step(Math.sign(wheelTotal));}
   },{passive:false});
   home.addEventListener('keydown',event=>{
+    if(separateActive)return;
     if(event.altKey||event.ctrlKey||event.metaKey||event.target.matches('input,textarea,select,[contenteditable]'))return;
     if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();step(event.key==='ArrowLeft'?-1:1);$('[data-overview-section="'+active+'"]',home)?.focus({preventScroll:true});}
   });
   // Tab focus reaches only the current panel; touch / scrollbar navigation still snaps.
-  new ResizeObserver(()=>{const width=track.clientWidth;if(width&&Math.abs(width-trackWidth)>1){trackWidth=width;if(!home.hidden)select(active,false);}}).observe(track);
+  new ResizeObserver(()=>{const width=track.clientWidth;if(width&&Math.abs(width-trackWidth)>1){trackWidth=width;if(!home.hidden&&!separateActive)select(active,false);}}).observe(track);
   function save(){
     model.merge(read(historyKey));
     try{desktopStorage.setItem(historyKey,JSON.stringify(model.snapshot()));}catch{}
@@ -264,7 +290,12 @@
     if(SpatialTimeline.sections.includes(id)||!panels.has(id)||typeof provider?.available!=='function')return false;
     providers.set(id,provider);labels[id]=provider.label||id;refresh();return true;
   }
-  globalThis.SpatialOverviewDesktop={select,refresh,step,registerSection,active:()=>active};
+  function closeSeparate(){if(separateActive){leaveSeparate();select(active,false);}}
+  function registerSeparateSection(id,provider){
+    if(panels.has(id)||separate.has(id)||!provider?.panel||!provider?.button||typeof provider.available!=='function')return false;
+    separate.set(id,provider);provider.panel.hidden=true;provider.panel.inert=true;provider.button.hidden=!provider.available();return true;
+  }
+  globalThis.SpatialOverviewDesktop={select,refresh,step,registerSection,registerSeparateSection,closeSeparate,overviewChanged:()=>closeSeparate(),active:()=>separateActive||active};
   function addPracticeMeeting(time){
     const guide=globalThis.SpatialGuide;
     if(!guide?.model.active()||guide.model.lesson.id!=='timeline'||!Number.isFinite(time))return null;

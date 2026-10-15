@@ -17,6 +17,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 - Projects keep their own folders, windows and vertical desktops, and resume automatically. Workspaces separate broader contexts such as personal life, study and work.
 - Apps, Workspace & Projects, System and Assistant remain in docked Areas that can expand, become rails or be hidden.
 - Stash keeps notes, sources and files. Overview and Timeline help find work and its context.
+- Overview's separate **All Workspaces** tab sits to the left of the four local tabs, with Steam on the right. It gathers notifications and ongoing activity by origin, opens only on explicit selection and never becomes the saved default. App notifications stay in their own Workspace; shared system alerts remain global.
 - Gaming starts on Desktop 1, with Fallout 4 already running in borderless fullscreen on a temporary desktop bonded below it. A clickable bottom preview and a return icon in Apps take you there. Fullscreen fills the display with square corners. Other monitors stay on the original until you scroll past the bond. Steam contributes an Overview tab with local chats, guides and notes.
 
 Firefox and Steam show read-only window previews when parked; apps with a parking widget keep their interactive controls.

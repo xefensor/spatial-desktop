@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="owned-dialogs.css?v=1">
   <link rel="stylesheet" href="background-apps.css?v=1">
   <link rel="stylesheet" href="preview-privacy.css?v=1">
+  <link rel="stylesheet" href="all-workspaces.css?v=1">
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=17">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
@@ -40,7 +41,7 @@
   <link rel="stylesheet" href="steam-overview.css?v=4">
   <link rel="stylesheet" href="app-identities.css?v=3">
   <script src="workspace-setup.js?v=7"></script>
-  <script src="spatial-guide.js?v=37"></script>
+  <script src="spatial-guide.js?v=38"></script>
   
 </head>
 <body data-theme="oled">
@@ -324,6 +325,7 @@
 
       <div class="overview-home overview-carousel" id="overviewHome" data-overview-state="all">
         <nav class="overview-section-nav" aria-label="Overview sections">
+          <span class="overview-global-tabs" aria-label="System-wide section"><button class="overview-section-tab overview-global-tab" id="allWorkspacesTab" data-overview-separate="global" aria-controls="allWorkspacesPanel" aria-pressed="false" hidden><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>All Workspaces</span><i aria-hidden="true"></i></button></span>
           <button class="overview-section-tab" data-overview-section="timeline" aria-pressed="false"><svg aria-hidden="true"><use href="#i-clock"/></svg><span>Timeline</span></button>
           <button class="overview-section-tab" data-overview-section="apps" aria-pressed="true"><svg aria-hidden="true"><use href="#i-grid"/></svg><span>Apps</span></button>
           <button class="overview-section-tab" data-overview-section="projects" aria-pressed="false"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Projects &amp; Home</span></button>
@@ -496,6 +498,11 @@
         </main>
         <button class="overview-neighbour overview-neighbour-next" data-overview-step="1" aria-label="Next Overview section"><span></span><svg aria-hidden="true"><use href="#i-right"/></svg></button>
         </div>
+        <section class="all-workspaces-panel" id="allWorkspacesPanel" aria-labelledby="allWorkspacesTitle" hidden inert>
+          <header class="all-workspaces-heading"><span class="all-workspaces-mark"><svg aria-hidden="true"><use href="#i-monitor"/></svg></span><div><span class="eyebrow">SYSTEM-WIDE VIEW</span><h3 id="allWorkspacesTitle">All Workspaces</h3><p>Notifications, background activity and apps waiting for you. Items stay in their own workspace.</p></div></header>
+          <div class="all-workspaces-scroll" id="allWorkspacesGroups" aria-label="Activity grouped by workspace"></div>
+          <footer class="all-workspaces-footer">Opened only by your choice · Other workspaces never send app pop-ups or sounds here.</footer>
+        </section>
         <p class="overview-section-status" id="overviewSectionStatus" role="status" aria-live="polite"></p>
       </div>
 
@@ -640,7 +647,7 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=279"></script>
+<script src="desktop-shell.js?v=280"></script>
 <script src="parked-previews.js?v=4"></script>
 <script src="owned-dialogs.js?v=1"></script>
 <script src="background-apps.js?v=1"></script>
@@ -648,9 +655,10 @@
 <script src="empty-desktop.js?v=1"></script>
 <script src="working-memory-desktop.js?v=30"></script>
 <script src="ai-desktop.js?v=17"></script>
-<script src="overview-desktop.js?v=19"></script>
+<script src="overview-desktop.js?v=20"></script>
   <script src="guide-desktop.js?v=39"></script>
   <script src="steam-overview.js?v=8"></script>
+<script src="all-workspaces.js?v=1"></script>
 </body>
 </html>
 

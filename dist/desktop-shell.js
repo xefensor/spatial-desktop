@@ -5534,6 +5534,7 @@ function setUniversalSearchOpen(open) {
   if (open && globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('overview')) return;
   const overlay = $("#universalSearch");
   if (open === overlay.classList.contains("is-open")) return;
+  globalThis.SpatialOverviewDesktop?.overviewChanged?.(open);
   if (open) universalLastFocus = document.activeElement;
   overlay.classList.toggle("is-open", open);
   overlay.inert = !open;
@@ -6127,6 +6128,7 @@ function showNotificationPeek(title, detail, tone, glyph) {
 }
 
 function drawAttentionToNotification(item, title, detail, tone, glyph) {
+  if(item?.isConnected===false || item?.dataset?.notificationWorkspace && item.dataset.notificationWorkspace!==activeWorkspace)return;
   const area = areaFor("systems");
   const local = area && !area.hidden && !area.classList.contains("is-on-other-display") && isLocalArea("systems");
   const expanded = local && area.dataset.areaState === "expanded" && !$("#universalSearch")?.classList.contains("is-open");
