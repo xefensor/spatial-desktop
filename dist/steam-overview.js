@@ -49,6 +49,7 @@
   const running=()=>appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
     loadWorkspace();
+    const workspaceLabel=frameFor('steam')?.querySelector('[data-steam-workspace-label]');if(workspaceLabel)workspaceLabel.textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const gameOpen=appState.game && appState.game!=='closed';
     find('steamGameState').textContent=running()?'VIRTUAL SCREEN · FULLSCREEN':gameOpen?'VIRTUAL SCREEN · TILED':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
