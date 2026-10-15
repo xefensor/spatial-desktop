@@ -50,7 +50,7 @@
     const old=root.SpatialBackgroundServices.legacyId(workspace,id),base=kind(id);
     if(!legacy||!services.known(old)){
       const serviceId=legacy?old:'service-'+crypto.randomUUID();
-      services.put({id:serviceId,kind:base,label:appInfo[base]?.label||appInfo[id].label,model:clone(model),gameSession:base==='steam'&&(workspace===activeWorkspace?appState:workspaceAppStates[workspace]||{}).game==='open'});
+      services.put({id:serviceId,kind:base,label:appInfo[base]?.label||appInfo[id].label,model:clone(model),gameSession:base==='steam'&&anyGame()});
       if(!legacy)services.remove(old);
     }
     stop(model);
@@ -115,7 +115,7 @@
   }
   root.SpatialBackgroundApps={...api,running:id=>services.items().some(item=>item.kind===kind(id)),players:()=>services.items().filter(item=>item.kind==='elisa').map(item=>item.model),snapshot:()=>services.snapshot(),restore,stop:force,render};
   const originalSave=saveAppWindows;saveAppWindows=function(...args){normalize();flush();return originalSave(...args);};
-  const originalClose=closeApp;closeApp=function(id,{force=false}={}){if(!appInfo[id])return;const model=appWindowModel(id),needed=!force&&reason(kind(id),model,appState.game==='open');if(needed)detach(activeWorkspace,id,model);else stop(model);const result=originalClose(id);saveAppWindows();render();if(needed)showToast(appInfo[id].label+' is running system-wide · '+needed);return result;};
+  const originalClose=closeApp;closeApp=function(id,{force=false}={}){if(!appInfo[id])return;const model=appWindowModel(id),needed=!force&&reason(kind(id),model,anyGame());if(needed)detach(activeWorkspace,id,model);else stop(model);const result=originalClose(id);saveAppWindows();render();if(needed)showToast(appInfo[id].label+' is running system-wide · '+needed);return result;};
   const originalOpen=openApp;openApp=function(id,...args){const service=!appInfo[id]?.base&&appState[id]==='closed'?services.items().find(item=>item.kind===id):null;if(service)return restore(service.id);const result=originalOpen(id,...args);render();return result;};
   const originalSync=syncApps;syncApps=function(...args){const result=originalSync(...args);render();return result;};
   const originalMini=renderMiniApps;renderMiniApps=function(...args){const result=originalMini(...args);render();return result;};

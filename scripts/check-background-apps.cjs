@@ -61,7 +61,7 @@ const steam=add('steam','steam',{download:{active:true,received:100,total:400,up
 context.closeApp('steam');assert(!steam.download.active);assert.equal(row.children.length,1);assert.match(row.children[0].attrs['aria-label'],/25%/);
 const steamService=row.children[0].dataset.backgroundOpen;context.renderWorkspace('work');context.syncApps();assert(context.SpatialBackgroundApps.running('steam'));
 context.contextMenuState={name:'steam',background:true,backgroundService:steamService};context.executeContextAction('app-force-quit');assert.equal(context.activeWorkspace,'work');assert(row.hidden);
-context.appState.game='open';context.appState.steam='open';const localSteam=context.appWindowModel('steam');localSteam.kind='steam';delete localSteam.download;context.closeApp('steam');assert(!row.hidden,'A running game may keep the global Steam service alive');
+context.workspaceAppStates.gaming.game='open';context.appState.game='closed';context.appState.steam='open';const localSteam=context.appWindowModel('steam');localSteam.kind='steam';delete localSteam.download;context.closeApp('steam');assert(!row.hidden,'A game in another Workspace keeps the global Steam service alive');
 context.appState.game='closed';context.workspaceAppStates.gaming.game='closed';context.syncApps();assert(row.hidden,'The last game ending releases its service');
 assert(timeouts.length>0);assert(saves>0);
 
