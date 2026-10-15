@@ -24,6 +24,13 @@ for(const width of [320,800,1440])for(const height of [420,900])for(const x of [
   assert(position.left>=8 && position.left+size.width<=width-8);assert(position.top>=8 && position.top+size.height<=height-8);
 }
 
+// A flipped child can overlap an ancestor; it must always paint above that ancestor.
+const panel=()=>({hidden:true,style:{},getBoundingClientRect:()=>({width:300,height:200})});
+const panelA=panel(),panelB=panel(),chain=[];
+const menuContext={clearTimeout(){},hoverTimer:0,chain,panels:new Map([['a',{panel:panelA,parent:'',opener:{getBoundingClientRect:()=>({left:850,right:1120,top:300}),setAttribute(){}}}],['b',{panel:panelB,parent:'a',opener:{getBoundingClientRect:()=>({left:550,right:850,top:350}),setAttribute(){}}}]]),closeAfter(parent){chain.splice(parent?chain.indexOf(parent)+1:0);},menu:{getBoundingClientRect:()=>({left:300,top:200})},window:{innerWidth:1200,innerHeight:800},items:()=>[],place};
+vm.createContext(menuContext);vm.runInContext(segment('  function open(id,focus=false){','  function click(event){'),menuContext);
+menuContext.open('a');menuContext.open('b');assert(Number(panelB.style.zIndex)>Number(panelA.style.zIndex));menuContext.open('a');assert(Number(panelB.style.zIndex)>Number(panelA.style.zIndex),'Hovering the ancestor cannot cover an already open child');
+
 // Exercise the shipped transfer adapter against the real desktop ownership model.
 function fixture(){
   const pages=Pages.create();pages.assign('work','notes',1,'film');pages.go('work',0,'workspace');

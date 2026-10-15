@@ -72,6 +72,7 @@
       const anchor=record.opener.getBoundingClientRect(),size=record.panel.getBoundingClientRect(),base=menu.getBoundingClientRect(),position=place(anchor,size,{width:window.innerWidth,height:window.innerHeight});
       record.panel.style.left=(position.left-base.left)+'px';record.panel.style.top=(position.top-base.top)+'px';record.panel.style.visibility='';record.opener.setAttribute('aria-expanded','true');chain.push(id);
     }
+    record.panel.style.zIndex=String(chain.indexOf(id)+2);
     if(focus)items(record.panel)[0]?.focus({preventScroll:true});
   }
   function click(event){
