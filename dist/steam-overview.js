@@ -36,7 +36,7 @@
   find('steamCopyNotes').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(notes.value);showToast('Game notes copied.');}catch{selectTool('notes');notes.focus();notes.select();showToast('Select and copy these notes with Ctrl+C.');}});
   find('steamRemainingOnly').addEventListener('change',()=>{all('[data-steam-unlocked]').forEach(a=>{a.hidden=find('steamRemainingOnly').checked&&a.dataset.steamUnlocked==='true';});});
   const gameFrame=()=>frameFor('game');
-  const available=()=>!globalThis.SpatialGuide?.model.active() && activeWorkspace==='gaming' && appState.steam!==undefined && appState.steam!=='closed';
+  const available=()=>!globalThis.SpatialGuide?.model.active() && activeWorkspace==='gaming' && appState.steam!==undefined && (appState.steam!=='closed' || Boolean(globalThis.SpatialBackgroundApps?.running('steam')));
   const gameBond=()=>typeof desktopPages!=='undefined'?desktopPages.fullscreenBond?.(activeWorkspace,'game'):null;
   const running=()=>activeWorkspace==='gaming' && appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
@@ -61,7 +61,7 @@
   }
   function startGame(withOverview=false){
     if(activeWorkspace!=='gaming')return;
-    if(appState.steam==='closed'){openApp('steam');minimizeApp('steam');}
+    if(appState.steam==='closed' && !globalThis.SpatialBackgroundApps?.running('steam')){openApp('steam');minimizeApp('steam');}
     openApp('game');
     setUniversalSearchOpen(withOverview);
     if(withOverview)overviewChanged(true);

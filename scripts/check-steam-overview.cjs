@@ -44,6 +44,8 @@ context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');as
 context.activeWorkspace='work';context.appState={game:'closed',steam:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),false);assert.equal(context.SpatialSteamOverview.running(),false);
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'closed','The sample cannot launch outside Gaming');
 context.activeWorkspace='gaming';context.appState={game:'open',steam:'closed'};context.SpatialSteamOverview.syncContext();assert.equal(context.provider.available(),false,'Closing Steam removes its contributed tab');
+context.SpatialBackgroundApps={running:id=>id==='steam'};assert.equal(context.provider.available(),true,'Steam services remain available without a window while running in the background');
+context.SpatialSteamOverview.startGame();assert.equal(context.appState.steam,'closed','Resuming a game does not create a parked client window when Steam already runs in the background');delete context.SpatialBackgroundApps;
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.steam,'minimized');assert.equal(context.provider.available(),true);
 context.SpatialGuide={model:{active:()=>true}};assert.equal(context.provider.available(),false,'Guide practice never offers the Steam tab');
 // Old demo storage gets only the new Gaming examples, once.

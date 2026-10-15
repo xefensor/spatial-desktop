@@ -285,7 +285,7 @@ function renderAppMusic(id) {
   const count=$('[data-music-track-count]',frame);if(count)count.textContent=model.tracks.length+' tracks · '+(model.muted?'Muted':model.volume+'% volume');
 }
 function currentAppMusicId() {
-  return Object.keys(appInfo).filter(id=>(appInfo[id].base||id)==='elisa'&&appState[id]!=='closed').sort((a,b)=>{
+  return Object.keys(appInfo).filter(id=>(appInfo[id].base||id)==='elisa'&&(appState[id]!=='closed'||appWindowModel(id).background)).sort((a,b)=>{
     const first=appWindowModel(a),second=appWindowModel(b);
     return Number(second.playing)-Number(first.playing)||(second.lastUsed||0)-(first.lastUsed||0);
   })[0] || null;
@@ -311,7 +311,7 @@ function renderAllAppMusic() {
   $$('[data-music="play"]',$('.overview-now-playing')).forEach(button=>{button.innerHTML=icon(model.playing?'i-pause':'i-play');button.setAttribute('aria-pressed',String(model.playing));button.setAttribute('aria-label',model.playing?'Pause':'Play');});
 }
 function tickAppMusic() {
-  const players = Object.keys(appInfo).filter(id => (appInfo[id].base || id) === 'elisa' && appState[id] !== 'closed');
+  const players = Object.keys(appInfo).filter(id => (appInfo[id].base || id) === 'elisa' && (appState[id] !== 'closed' || appWindowModel(id).background));
   const playing = players.map(appWindowModel).filter(model => model.playing && model.tracks.length);
   if (!playing.length) return;
   playing.forEach(model => SpatialAppTools.musicTick(model));
@@ -469,9 +469,6 @@ function prepareAppWindows() {
   const originalAction=executeContextAction;
   executeContextAction=function(action){
     const context=contextMenuState;
-    if(context?.parkedRail&&action==='app-close'&&(appInfo[context.name]?.base||context.name)==='elisa'){
-      appWindowModel(context.name).playing=false;saveAppWindows(false);
-    }
     if(context?.kind==='app'&&context.parkedRail&&action.startsWith('parked:')){
       if(action==='parked:window-options'){
         const rect=$('#desktopContextMenu').getBoundingClientRect();
