@@ -356,6 +356,7 @@ function performAppAction(id, action, value='') {
   saveAppWindows();
 }
 function parkedAppMenuEntries(id) {
+  if(appInfo[id]?.parkingWidget===false)return [];
   const kind=appInfo[id]?.base||id;
   if(!['elisa','notes','dolphin','browser','terminal'].includes(kind))return [];
   const model=appWindowModel(id);
@@ -389,7 +390,7 @@ function parkedAppMenuEntries(id) {
   ];
 }
 function executeParkedAppAction(id, action) {
-  if(appState[id]!=='minimized')return;
+  if(appState[id]!=='minimized' || appInfo[id]?.parkingWidget===false)return;
   const model=appWindowModel(id);
   if(action.startsWith('music-')){
     model.lastUsed=Date.now();

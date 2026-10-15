@@ -215,10 +215,10 @@ function observeMaterialInheritance() {
 const appInfo = {
   dolphin: { label: SpatialAppNames.label("Dolphin"), icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
   elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
-  browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "amber", primary: "#ff7139", detail: "New Tab" },
+  browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "amber", primary: "#ff7139", detail: "New Tab", parkingWidget: false },
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
-  steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", workspace: "gaming", singleInstance: true },
+  steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", workspace: "gaming", singleInstance: true, parkingWidget: false },
   game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", workspace: "gaming", singleInstance: true, borderlessFullscreen: true }
 };
 

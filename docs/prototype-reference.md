@@ -72,6 +72,10 @@ Tiled windows avoid floating obstacles when space allows. Floating windows can o
 
 **Park** replaces minimization in the visible interface. The window leaves the canvas but its app remains available through a useful card. **Unpark** restores it on the currently viewed desktop in its owning context. Parked apps travel between desktops inside that Workspace or Project; parking does not change ownership.
 
+Apps with a parking-widget integration keep their useful controls in the card, such as Music Player transport or an editable note. **Firefox and Steam** deliberately have no parking widget: their card shows a read-only **Window preview** of that specific app window, including its current tabs, page and visible app content. Clicking the preview or **Unpark** restores the original window; dragging the header places it on the desktop. The preview cannot type, click links, switch tabs or activate app controls. Browser instances keep separate previews and hotbar slots. Preview-only apps expose ordinary window actions on a rail, without invented background commands.
+
+The web prototype renders an inert copy of its own simulated app DOM, with isolated styles and icon definitions. Content changes update the preview without a polling timer; Area resizing preserves the full window's proportions. Copies omit window identities, action attributes and duplicate document IDs, and keep live input values. A native implementation would obtain the application's surface from the compositor. This demo does not capture real third-party windows.
+
 Expanded Apps displays open-window icons at the top and useful parked cards below, without duplicating each parked card with an extra icon. On a rail, open icons remain at the top and parked icons start around the lower middle. Right-click a parked icon for relevant background actions. Commands such as playback keep the window parked; opening a file or note restores it. **Window options…** opens the movement menu.
 
 ### Numbers and shortcuts

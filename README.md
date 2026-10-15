@@ -19,6 +19,8 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 - Stash keeps notes, sources and files. Overview and Timeline help find work and its context.
 - Gaming starts on Desktop 1, with Fallout 4 already running in borderless fullscreen on a temporary desktop bonded below it. A clickable bottom preview and a return icon in Apps take you there. Fullscreen fills the display with square corners. Other monitors stay on the original until you scroll past the bond. Steam contributes an Overview tab with local chats, guides and notes.
 
+Firefox and Steam show read-only window previews when parked; apps with a parking widget keep their interactive controls.
+
 Desktop Guide introduces these interactions through 32 steps across 14 chapters, including independent app windows, quick launch from an empty desktop and entering, leaving and restoring a temporary desktop for a borderless fullscreen app. Ordinary fullscreen windows keep their existing desktop. The [design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) is Xef’s own unfinished text, being written one topic at a time.
 
 ## Run locally

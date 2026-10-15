@@ -1,0 +1,11 @@
+/* A compositor-style read-only thumbnail, independent of the app's widgets. */
+.mini-card-preview .parked-preview-viewport{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--abs-body,var(--shell)) 92%,#000);border:1px solid var(--soft-line);border-radius:0}
+.parked-preview-surface{position:absolute;transform-origin:0 0;pointer-events:none;user-select:none;contain:layout style paint}
+.mini-card-preview .parked-preview-restore{position:absolute;inset:0;z-index:1;width:100%;height:100%;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:pointer;display:grid;place-items:center;color:var(--text)}
+.mini-card-preview .parked-preview-restore span{padding:7px 11px;background:var(--shell);border:1px solid var(--line);box-shadow:0 2px 7px #0003;opacity:0;transition:opacity 90ms linear;font-size:12px}
+.mini-card-preview .parked-preview-restore:is(:hover,:focus-visible) span{opacity:1}
+.mini-card-preview .parked-preview-restore:focus-visible{outline:2px solid var(--app-primary,var(--blue));outline-offset:-3px}
+.parked-preview-caption{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:7px;line-height:1.4}
+.parked-preview-caption>span{flex:none;color:var(--app-primary,var(--blue));font-size:10px;font-weight:650}
+.parked-preview-caption small{font-size:9px;text-align:right;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.mini-card-preview .parked-preview-restore span{transition:none}}

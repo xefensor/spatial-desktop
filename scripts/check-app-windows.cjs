@@ -85,6 +85,7 @@ assert(tray.parkedAppMenuEntries('notes').some(entry=>entry.label==='Open note: 
 assert(!tray.parkedAppMenuEntries('web').some(entry=>entry.label==='Back'),'No dead Back command at the start of history');
 A.visit(trayModels.web.navigation,{title:'Second'});
 assert(tray.parkedAppMenuEntries('web').some(entry=>entry.label==='Back'));
+tray.appInfo.web.parkingWidget=false;assert.deepEqual(Array.from(tray.parkedAppMenuEntries('web')),[],'Apps without a widget expose no invented background actions');
 tray.executeParkedAppAction('files','file-downloads');
 assert.deepEqual(folders,[['files',home+'/Downloads']]);assert.deepEqual(trayRestored,['files'],'Open Downloads restores the same file window');
 tray.executeParkedAppAction('console','terminal-help');assert.deepEqual(commands,[['console','help']]);
