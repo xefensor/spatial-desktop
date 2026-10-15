@@ -48,7 +48,8 @@
     try{
       const bytes=input instanceof Uint8Array?input:new Uint8Array(await input.arrayBuffer()),review=A.inspect(bytes);if(token!==generation||state?.direction!=='import')return;
       state.review=review;const p=review.manifest.project,known=review.manifest.requirements||[];
-      const id=uniqueProjectId(p.name),folder=workspaceProfiles[state.workspace].home+'/Projects/'+id;
+      const id=uniqueProjectId(p.name),base=workspaceProfiles[state.workspace].home+'/Projects/'+id;
+      const occupied=new Set([...Object.values(projectSpaces).map(project=>project.root),...workspaceDownloads.snapshot().directories]);let folder=base,suffix=2;while(occupied.has(folder))folder=base+'-'+suffix++;
       node('projectImportDestination').value=folder;node('projectImportReview').hidden=false;
       node('projectImportSummary').innerHTML='<section><b>'+escapeHtml(p.name)+'</b><small>One Project copy</small></section><section><b>'+review.files.size+' files</b><small>Project folder + included resources</small></section><section><b>'+escapeHtml(workspaceProfiles[state.workspace].label)+'</b><small>Opened Workspace</small></section>';
       node('projectImportFiles').innerHTML=[...review.files.keys()].map(path=>row(path,path.startsWith('Linked resources/')?'Included linked file':'Project file',size(review.files.get(path).length))).join('');
@@ -107,8 +108,9 @@
   node('projectArchiveInput').addEventListener('change',event=>{const file=event.target.files?.[0];if(file)reviewArchive(file);});
   node('importProject').addEventListener('click',importProject);
   async function previewBinary(id,path,file){
+    const workspace=activeWorkspace,directory=path.slice(0,path.lastIndexOf('/'));
     const blob=await F.get(file.key);if(!blob){showToast('Imported file bytes are unavailable.');return;}
-    const surface=frameFor(id)?.querySelector('.file-preview');if(!surface)return;
+    const frame=frameFor(id),surface=frame?.querySelector('.file-preview');if(!surface||activeWorkspace!==workspace||frame.dataset.fileLocation!==directory)return;
     const url=URL.createObjectURL(blob),media=file.kind==='image'?'<img class="project-package-preview-image" src="'+url+'" alt="Imported Project image">':file.kind==='audio'?'<audio controls src="'+url+'"></audio>':file.kind==='document'?'<iframe src="'+url+'" title="Imported document" sandbox></iframe>':'<a href="'+url+'" download="'+escapeHtml(path.split('/').at(-1))+'">Download file</a>';
     surface.innerHTML='<header><div><b>'+escapeHtml(path.split('/').at(-1))+'</b><small>Imported Project file</small></div>'+appActionButton('file-preview-close','i-close','Close file preview')+'</header>'+media;surface.hidden=false;prepareControlSemantics(surface);
   }

@@ -4748,7 +4748,7 @@ function fileLocationRows(frame, path) {
     if (project) rows = [[".spatial-project.toml", "Project settings", "config"], ...project.files];
     else if (frame.dataset.fileSeedPath === path) rows = JSON.parse(frame.dataset.fileSeedRows || "[]");
   }
-  return [...rows, ...workspaceDownloads.list(path).map(file => [file.name, "Demo download", "document"])];
+  return [...rows, ...workspaceDownloads.list(path).filter(file=>!rows.some(row=>row[0]===file.name)).map(file => [file.name, "Saved file", "document"])];
 }
 function renderFileLocation(id, path) {
   const frame = frameFor(id);
