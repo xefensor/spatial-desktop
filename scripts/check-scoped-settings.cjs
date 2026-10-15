@@ -18,6 +18,9 @@ assert(html.indexOf('data-setting-scope="workspace"')<html.indexOf('data-setting
 assert.match(html,/Film &lt;cut&gt; Project/);assert(!html.includes('Film <cut>'));
 assert.match(html,/data-project-download-toggle/);assert.match(html,/class="project-download-destination"/,'Original project download listener has its destination target');
 assert.match(html,/apply to all desktops and Projects in Work/);assert.match(html,/do not change native hardware/);
+assert.match(html,/data-settings-desktop-markers/);
+assert(html.indexOf('data-setting-scope="system"')<html.indexOf('data-settings-desktop-markers'),'Desktop-indicator appearance is explicitly system-wide');
+assert.match(html,/<option value="lines">Lines only<\/option><option value="icons">Lines and app icons<\/option>/);
 ctx={workspace:'Work',workspaceId:'work',owner:'workspace',project:null,page:0,display:1};sandbox.renderSettings();html=$('#projectEditorBody').innerHTML;
 assert(!html.includes('data-setting-scope="project"'));assert.equal(sandbox.projectEditorState.projectName,null,'Last active Project cannot become the target on an ordinary desktop');
 ctx.temporary=true;sandbox.renderSettings();assert.match($('#projectEditorBody').innerHTML,/Return to fullscreen app/);
@@ -40,14 +43,18 @@ vm.createContext(trapContext);vm.runInContext('function routeTab(event){'+shell.
 trapContext.routeTab({key:'Tab'});assert.deepEqual(trapped,['#projectEditorDialog'],'Interior Tab cannot fall through into inert Overview');
 
 // Run shipped action handlers: settings reuse existing mutations and preserve navigation.
-const handlers={};let hidden=false,visibility=[],globalToggle,themeValue,reset=0,closed=0,overview,focused=false,refreshed=0;
+const handlers={};let hidden=false,visibility=[],globalToggle,themeValue,markerValue,markerRenders=0,reset=0,closed=0,overview,focused=false,refreshed=0;
 const node={hidden:false,dataset:{areaState:'expanded'}};
 const actionContext={dialog:{addEventListener:(name,handler)=>handlers[name]=handler},projectEditorState:{view:'settings'},areaFor:()=>({...node,hidden}),showArea:(name,announce)=>{hidden=false;visibility.push(['show',name,announce]);},hideArea:name=>{hidden=true;visibility.push(['hide',name]);},refresh:()=>refreshed++,$$:()=>[{textContent:'Wi-Fi',click:()=>globalToggle=['Wi-Fi',false]}],queueDesktopStateBroadcast(){},closeProjectEditor:()=>closed++,setUniversalSearchOpen:value=>overview=value,$:selector=>selector==='#resetAreas'?{click:()=>reset++}:{focus:()=>focused=true},renderProjectEditor(){},SpatialDesktopTheme:{setPreference:value=>themeValue=value}};
+actionContext.root={SpatialDesktopMarkers:{setPreference:value=>markerValue=value}};
+actionContext.renderDesktopPageRail=()=>markerRenders++;
 vm.createContext(actionContext);vm.runInContext(segment("  dialog.addEventListener('click',event=>{","  const areaNote="),actionContext);
 const click=(selector,data)=>handlers.click({target:{closest:key=>key===selector?{dataset:data,getAttribute:()=> 'true'}:null}});
 click('[data-settings-area]',{settingsArea:'apps'});assert.equal(hidden,true);click('[data-settings-area]',{settingsArea:'apps'});assert.equal(hidden,false);assert.deepEqual(visibility,[['hide','apps'],['show','apps',false]]);
 click('[data-settings-toggle]',{settingsToggle:'Wi-Fi'});assert.deepEqual(globalToggle,['Wi-Fi',false]);
-handlers.change({target:{matches:()=>true,value:'oled'}});assert.equal(themeValue,'oled');
+handlers.change({target:{matches:selector=>selector==='[data-settings-theme]',value:'oled'}});assert.equal(themeValue,'oled');
+handlers.change({target:{matches:selector=>selector==='[data-settings-desktop-markers]',value:'lines'}});assert.equal(markerValue,'lines');assert.equal(themeValue,'oled','Changing markers does not change the color theme');
+actionContext.root.SpatialDesktopMarkers.onChange();assert.equal(markerRenders,1,'Local and remote preference changes refresh the real desktop markers');
 click('[data-setting-action]',{settingAction:'reset-areas'});assert.equal(reset,1);
 click('[data-setting-action]',{settingAction:'desktop'});assert.equal(closed,1);assert.equal(overview,false);assert(focused);
 assert(refreshed>=5);

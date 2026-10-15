@@ -41,6 +41,7 @@
     const toggles=['Wi-Fi','Bluetooth','Sound'].map(label=>'<button type="button" class="scoped-system-toggle surface-key" data-settings-toggle="'+label+'" aria-pressed="false"><b>'+label+'</b><small></small></button>').join('');
     content+=section('system','System-wide',names.system,
       row('Color theme','Shared by every Workspace. Auto follows your system’s appearance.','<select data-settings-theme aria-label="Color theme for all Workspaces"><option value="auto">Auto</option><option value="oled">OLED</option><option value="graphite">Graphite</option><option value="light">Light</option></select>')+
+      row('Desktop indicators','Shared by every Workspace and display. Choose simple lines or include every open window’s app icon. Window spacing stays the same.','<select data-settings-desktop-markers aria-label="Desktop indicators for all Workspaces"><option value="lines">Lines only</option><option value="icons">Lines and app icons</option></select>')+
       '<div class="scoped-device-heading"><b>Connection & sound</b><small>Demo controls · these switches do not change native hardware.</small></div><div class="scoped-system-toggles">'+toggles+'</div>');
     $('#projectEditorBody').innerHTML='<div class="settings-scopes">'+content+'</div>';
     prepareMaterialSurfaces(dialog);prepareControlSemantics(dialog);refresh();
@@ -54,6 +55,7 @@
       button.textContent=area.hidden?'Show':'Hide';button.setAttribute('aria-label',(area.hidden?'Show ':'Hide ')+areaLabel(name)+' in '+workspaceProfiles[activeWorkspace].label+' Workspace');
     });
     const select=$('[data-settings-theme]',dialog);if(select)select.value=SpatialDesktopTheme.preference;
+    const markers=$('[data-settings-desktop-markers]',dialog);if(markers)markers.value=root.SpatialDesktopMarkers?.preference||'icons';
     $$('[data-settings-toggle]',dialog).forEach(button=>{
       const label=button.dataset.settingsToggle,source=$$('.quick-toggle[data-toggle]').find(node=>node.textContent.trim()===label);
       const active=source?.classList.contains('is-active')||false;
@@ -90,7 +92,11 @@
       if(action==='reset-areas'){$('#resetAreas').click();refresh();}
     }
   });
-  dialog.addEventListener('change',event=>{if(event.target.matches('[data-settings-theme]')){SpatialDesktopTheme.setPreference(event.target.value);refresh();}});
+  dialog.addEventListener('change',event=>{
+    if(event.target.matches('[data-settings-theme]')){SpatialDesktopTheme.setPreference(event.target.value);refresh();}
+    if(event.target.matches('[data-settings-desktop-markers]')){root.SpatialDesktopMarkers?.setPreference(event.target.value);refresh();}
+  });
+  if(root.SpatialDesktopMarkers)root.SpatialDesktopMarkers.onChange=()=>{renderDesktopPageRail();refresh();};
   const areaNote=document.createElement('p');areaNote.id='overviewAreaSettingsScope';areaNote.className='settings-scope-note';$('.overview-areas-widget').prepend(areaNote);
   const updateNotes=()=>{
     const ctx=context();areaNote.textContent='Applies to: '+ctx.workspace+' Workspace · all its desktops and Projects';

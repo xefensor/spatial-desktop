@@ -6934,7 +6934,7 @@ function renderDesktopPageRail() {
   // Include the current empty desktop, but do not advertise an unused spare.
   const last = Math.max(current, 0, ...names.map(name => desktopPages.pageOf(activeWorkspace, name)));
   const project = column === "workspace" ? null : projectSpaces[column];
-  const label = (project?.name || workspaceProfiles[activeWorkspace].label + " workspace") + " · " + (last + 1) + " desktops · Desktop " + (current + 1) + " is current · All open window icons";
+  const label = (project?.name || workspaceProfiles[activeWorkspace].label + " workspace") + " · " + (last + 1) + " desktops · Desktop " + (current + 1) + " is current · " + (globalThis.SpatialDesktopMarkers?.preference === 'lines' ? 'Desktop position lines' : 'All open window icons');
   const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
   const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
   const appLabel = name => appInfo[appInfo[name]?.base || name]?.label || appInfo[name]?.label || name;
