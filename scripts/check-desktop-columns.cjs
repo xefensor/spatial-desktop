@@ -81,6 +81,7 @@ vm.runInContext(slice('function projectColumnActive(', 'function renderDesktopCo
 vm.runInContext(slice('function setProjectClosedState(', 'function renderProjectSpace('),ctx);
 vm.runInContext(slice('function isLocalApp(', 'function persistDisplayAssignments('),ctx);
 vm.runInContext(slice('function topOpenApp(', 'function openApp('),ctx);
+vm.runInContext(slice('function appArt(', 'function applyAppPrimaryColors('),ctx);
 vm.runInContext(slice('function updateDesktopPageUi(', 'function moveWindowToDesktop('),ctx);
 vm.runInContext(slice('function detachDraggedDesktopWindow(', '// A floating window is reparented'),ctx);
 ctx.desktopPages.assign('work','personal',0,'workspace');

@@ -428,3 +428,51 @@ let peekOpened=null;ctx.openApp=name=>{peekOpened=name;};
 listeners['#fullscreenDesktopPeek:click']();assert.equal(peekOpened,null);
 assert(!fs.readFileSync(require.resolve('../dist/index.html'),'utf8').includes('id="fullscreenDesktopPeek"'));
 console.log('Fullscreen desktop navigation passed: retired preview has no route or DOM control.');
+
+// Render real page groups: no icon cap, separate instances, correct context,
+// parked identity, live close/move updates, and no unused empty trailing page.
+const railNodes = Object.fromEntries(['#desktopPageRail', '#desktopPageRailRight'].map(key => [key, node(key)]));
+const rail = vm.createContext({
+  desktopPages: Pages.create(), activeWorkspace: 'work', appState: {}, appInfo: {},
+  projectSpaces: {site: {name: 'Site', accent: '#abc'}},
+  workspaceProfiles: {work: {label: 'Work', accent: '#def'}},
+  $: key => railNodes[key], activeDisplayRoster: () => [{}], localDisplaySlot: () => 1
+});
+vm.runInContext(slice('function escapeHtml(', 'function showToast('), rail);
+vm.runInContext(slice('function appArt(', 'function applyAppPrimaryColors('), rail);
+vm.runInContext(slice('function renderDesktopPageRail(', 'function fullscreenPeekBond('), rail);
+for (let i = 0; i < 24; i++) {
+  const id = 'browser--' + i;
+  rail.appInfo[id] = {base: 'browser', label: 'Firefox'};
+  rail.appState[id] = i === 23 ? 'minimized' : 'open';
+  rail.desktopPages.assign('work', id, i === 22 ? 1 : 0);
+}
+rail.appInfo.closed = {label: 'Closed'}; rail.appState.closed = 'closed';
+rail.desktopPages.assign('work', 'closed', 5);
+rail.appInfo.project = {label: 'Project only'}; rail.appState.project = 'open';
+rail.desktopPages.assign('work', 'project', 0, 'site');
+rail.renderDesktopPageRail();
+const markup = () => railNodes['#desktopPageRail'].innerHTML;
+assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 24, 'All 24 windows render, with no cap or same-app deduplication');
+assert.equal((markup().match(/href="#app-browser"/g) || []).length, 24, 'Every instance uses the application artwork');
+assert.equal((markup().match(/data-desktop-marker="/g) || []).length, 2, 'Closed windows cannot advertise an unused desktop');
+assert.match(markup(), /is-current[^>]*data-desktop-marker="0"/);
+assert.match(markup(), /is-parked[^>]*data-desktop-marker-app="browser--23"/);
+assert(!markup().includes('data-desktop-marker-app="project"'));
+const groups = markup().split('<span class="desktop-page-mark');
+assert(groups[1].includes('data-desktop-marker-app="browser--0"'));
+assert(!groups[1].includes('data-desktop-marker-app="browser--22"'));
+assert(groups[2].includes('data-desktop-marker-app="browser--22"'), 'A window appears in its owning page group');
+assert.equal(markup(), railNodes['#desktopPageRailRight'].innerHTML, 'Both sides show the same complete desktop contents');
+rail.appState['browser--0'] = 'closed';
+rail.desktopPages.assign('work', 'browser--1', 1);
+rail.desktopPages.go('work', 2);
+rail.renderDesktopPageRail();
+assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 23);
+assert(!markup().includes('data-desktop-marker-app="browser--0"'));
+assert.match(markup(), /is-current[^>]*data-desktop-marker="2"[^>]*aria-label="Desktop 3 · Current · Empty"/);
+rail.desktopPages.select('work', 'site'); rail.renderDesktopPageRail();
+assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 1);
+assert(markup().includes('data-desktop-marker-app="project"'));
+assert(!markup().includes('data-desktop-marker-app="browser--'));
+console.log('Desktop icon strips passed: every instance, open/parked states, page and Project ownership, empty current page, close/move refresh and mirrored artwork.');
