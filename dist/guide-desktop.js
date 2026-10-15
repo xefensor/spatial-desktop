@@ -67,8 +67,8 @@
     return name;
   }
   function prepareTemporaryDesktop() {
-    // Use the real borderless game, in practice storage, with the same window
-    // policy as the demo. A decorated Firefox fullscreen does not qualify.
+    // The stable lesson ID now practices a virtual screen on its ordinary
+    // desktop. A decorated Firefox fullscreen does not qualify.
     if(model.state.temporaryWindow!=='game'){model.state.done=[];delete model.state.temporaryDesktop;}
     workspaceProfiles.gaming ||= cloneDesktopState(gamingWorkspaceProfile);
     workspaceAppStates.gaming ||= Object.fromEntries(Object.keys(appInfo).map(name=>[name,'closed']));
@@ -78,10 +78,8 @@
     workspaceContent.gaming ||= {note:'',apps:{}};
     renderWorkspaceTabs();renderWorkspace('gaming',false);changeDesktopPage(0,false,'workspace');
     const name='game';openApp(name);
-    if (!desktopPages.fullscreenBond(activeWorkspace,name)) createBondedFullscreen(name,localDisplaySlot(),false);
-    const bond=desktopPages.fullscreenBond(activeWorkspace,name);
     model.state.temporaryWindow=name;
-    changeDesktopPage(bond.page,false,bond.column);
+    globalThis.SpatialVirtualScreen?.showFullscreen(name);
     syncApps();refreshIntentAreas();renderTileLayout();
   }
   async function prepareLesson() {
@@ -195,7 +193,7 @@
     if (model.lesson.challenge) return;
     const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
     const currentGoal=guide.mission(model).goal;
-    const missionTarget=({'instance-created':'#appRack [data-open-app]','empty-visited':'.desktop-page-rail','empty-launched':'#emptyDesktopApps','temporary-enter':'#fullscreenDesktopPeek','temporary-back':'#overviewWindowGrid [data-fullscreen-action="back"]','temporary-restore':'#overviewWindowGrid [data-fullscreen-action="restore"]','stash-saved':'#workingMemory [data-memory-action="add"]','stash-inspected':'#workingMemory [data-memory-id] summary','ai-source':'#workingMemory [data-memory-id]','ai-request':'#aiPrompt','ai-kept':'[data-ai-demo-turn]','ai-project-source':'[data-app-frame] .app-badge','app-unpark':'#miniStack','search-launch':'[data-search-open-app]','project-workspace':'.desktop-context-header','project-return':'.desktop-context-header'})[currentGoal];
+    const missionTarget=({'instance-created':'#appRack [data-open-app]','empty-visited':'.desktop-page-rail','empty-launched':'#emptyDesktopApps','temporary-enter':'[data-app-frame="game"]','temporary-back':'#overviewWindowGrid [data-virtual-screen-tiled]','temporary-restore':'#overviewWindowGrid [data-virtual-screen-fullscreen]','stash-saved':'#workingMemory [data-memory-action="add"]','stash-inspected':'#workingMemory [data-memory-id] summary','ai-source':'#workingMemory [data-memory-id]','ai-request':'#aiPrompt','ai-kept':'[data-ai-demo-turn]','ai-project-source':'[data-app-frame] .app-badge','app-unpark':'#miniStack','search-launch':'[data-search-open-app]','project-workspace':'.desktop-context-header','project-return':'.desktop-context-header'})[currentGoal];
     const contextTarget = missionTarget || overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':model.state.hiddenArea?'.overview-areas-widget':'[data-area-drag-handle]'})[model.lesson.id];
     const target = contextTarget || (model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'[data-area-drag-handle]','display-max-enter':'[data-app-frame] [data-window-action="maximize"]','display-max-exit':'[data-app-frame] [data-window-action="maximize"]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target);
     if (target) highlighted = $$(target).filter(element => !element.closest('[hidden],.is-on-other-display') && element.getClientRects().length);
@@ -245,7 +243,6 @@
     const nextControl = overviewTarget && $('#universalSearch.is-open ' + overviewTarget);
     if (nextControl) targets.push(nextControl.getBoundingClientRect());
     if (model.lesson.id==='empty-desktop' && !$('#emptyWorkspace').hidden) targets.push($('#emptyDesktopApps').getBoundingClientRect());
-    if (model.lesson.id==='temporary-desktop' && !$('#fullscreenDesktopPeek').hidden) targets.push($('#fullscreenDesktopPeek').getBoundingClientRect());
     if (model.lesson.id === 'ai-context' || (model.lesson.id === 'project-app' && model.state.done.includes('project-app-open'))) {
       const ai = areaFor('ai'); if (ai && !ai.hidden) targets.push(ai.getBoundingClientRect());
     }
@@ -302,7 +299,7 @@
       bases:Object.fromEntries(Object.keys(appInfo).map(name=>[name,appInfo[name].base || name])),
       tiled:open.filter(name=>frameFor(name).classList.contains('is-tiled')),
       floating:open.filter(name=>session.floating?.[name]),interacting:!!manualWindowInteraction})) {guide.save();lastSignature = '';}
-    if(id==='temporary-desktop' && guide.observeTemporaryDesktop(model,{borderless:!!appInfo[model.state.temporaryWindow]?.borderlessFullscreen,bond:desktopPages.fullscreenBond(activeWorkspace,model.state.temporaryWindow),selected:desktopPages.selectedFullscreen(activeWorkspace)?.name,full:session.fullscreen?.name,state:appState[model.state.temporaryWindow],column,page:desktopPages.current(activeWorkspace),open})) {guide.save();lastSignature='';}
+    if(id==='temporary-desktop' && guide.observeTemporaryDesktop(model,{name:model.state.temporaryWindow,borderless:!!appInfo[model.state.temporaryWindow]?.borderlessFullscreen,virtualTiled:!!globalThis.SpatialVirtualScreen?.prefersTiled(model.state.temporaryWindow),full:session.fullscreen?.name,state:appState[model.state.temporaryWindow],column,page:desktopPages.current(activeWorkspace),open})) {guide.save();lastSignature='';}
     if (id === 'overview' && $('#universalSearch').classList.contains('is-open')) {
       if (guide.observeSearch(model,{query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp))})) {guide.save();lastSignature = '';}
     }
@@ -371,7 +368,7 @@
     }
     if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && open.some(name => (appInfo[name].base || name) === 'dolphin' && SpatialHomeFolders.standard.some(folder => frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/' + folder))) mark('workspace-folder');
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
-    currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,temporaryBond:desktopPages.fullscreenBond(activeWorkspace,model.state.temporaryWindow),temporaryOpen:appState[model.state.temporaryWindow]==='open',parked:Object.keys(states).filter(name=>states[name] === 'minimized')});
+    currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,temporaryHere:column==='workspace'&&desktopPages.current(activeWorkspace)===0,temporaryOpen:appState[model.state.temporaryWindow]==='open',parked:Object.keys(states).filter(name=>states[name] === 'minimized')});
     const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery,id === 'two-displays' && extendedDesktopActive()]);
     if (signature === lastSignature) { positionGuide(); return; }
     lastSignature = signature;
@@ -479,15 +476,12 @@
   });
   document.addEventListener('click', event => {
     if (!model.active() || model.state.exitStatus) return;
-    // Steam's demo adapter is intentionally absent in isolated practice, but
-    // the game's two desktop-navigation controls must still work here.
+    // Steam's adapter is absent in isolated practice; keep the game's
+    // Overview and Show desktop controls using the same screen-mode actions.
     if(model.lesson.id==='temporary-desktop' && activeWorkspace==='gaming') {
       const action=event.target.closest('[data-steam-action]')?.dataset.steamAction;
       if(action==='overview')showLessonOverview(model.lesson.id);
-      if(action==='desktop') {
-        const bond=desktopPages.fullscreenBond(activeWorkspace,'game');
-        if(bond)changeDesktopPage(bond.page,false,bond.column);
-      }
+      if(action==='desktop')globalThis.SpatialVirtualScreen?.showTiled('game');
     }
     const setting = event.target.closest('[data-area-window="systems"] [data-toggle]');
     if (setting && guide.observeToggle(model,setting.textContent.trim(),setting.getAttribute('aria-pressed') === 'true')) {guide.save();lastSignature = '';}

@@ -54,7 +54,7 @@ console.log('Spatial Guide passed: progressive access, task validation, first lo
 // Exercise the production observer with different apps and overlapping modes.
 function at(id) { return G.create({status:'active',version:2,lessonId:id}); }
 // New chapters credit a performed action, preserve old progress and distinguish
-// returning to a parent from actually restoring the fullscreen window.
+// the fullscreen and tiled presentations of one screen on its ordinary page.
 assert.equal(G.create({status:'active',version:8,index:11,done:['stash-saved']}).lesson.id,'project-stash');
 assert.deepEqual(G.create({status:'active',version:8,index:11,done:['stash-saved']}).state.done,['stash-saved']);
 assert.equal(G.create({status:'active',version:8,index:27}).lesson.id,'two-displays');
@@ -85,17 +85,19 @@ empty.state.emptyLaunch={workspace:'work',column:'workspace',page:2,name:'notes'
 G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(!empty.ready(),'A stamp from another workspace cannot count');
 empty.state.emptyLaunch={workspace:'general',column:'workspace',page:2,name:'notes'};
 G.observeWindows(empty,{...emptyScene,page:2,open:['notes--2']});assert(empty.ready(),'A later empty desktop also works, including independent copies');
-const temporary=at('temporary-desktop'),bond={name:'game',page:0,column:'workspace',display:1};
-const parent={bond,borderless:true,state:'open',column:'workspace',page:0,open:[]};
-G.observeTemporaryDesktop(temporary,{...parent,borderless:false,selected:'game',full:'game',open:['game']});assert(!temporary.state.done.length,'Decorated fullscreen cannot complete the borderless practice');
-G.observeTemporaryDesktop(temporary,parent);assert(!temporary.state.done.length,'Preparing the fullscreen child cannot count as entering it');
-G.observeTemporaryDesktop(temporary,{...parent,selected:'game',full:'game',open:['game']});
+const temporary=at('temporary-desktop');
+const virtualScene={name:'game',borderless:true,state:'open',column:'workspace',page:0,open:['game'],virtualTiled:false};
+G.observeTemporaryDesktop(temporary,{...virtualScene,borderless:false,full:'game'});assert(!temporary.state.done.length,'Decorated fullscreen cannot complete the borderless practice');
+G.observeTemporaryDesktop(temporary,virtualScene);assert(!temporary.state.done.length,'A normal window is not the fullscreen starting point');
+G.observeTemporaryDesktop(temporary,{...virtualScene,full:'game'});
 assert.deepEqual(temporary.state.done,['temporary-enter']);
-G.observeTemporaryDesktop(temporary,{...parent,page:1});assert(!temporary.state.done.includes('temporary-back'));
-G.observeTemporaryDesktop(temporary,parent);assert(temporary.state.done.includes('temporary-back'));assert(!temporary.ready(),'Back preserves fullscreen and does not restore the window');
-G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'closed',open:[]});assert(!temporary.ready());
-G.observeTemporaryDesktop(temporary,{...parent,bond:null,state:'minimized',open:[]});assert(!temporary.ready());
-G.observeTemporaryDesktop(temporary,{...parent,bond:null,open:['game']});assert(temporary.ready());
+G.observeTemporaryDesktop(temporary,{...virtualScene,page:1,virtualTiled:true});assert(!temporary.state.done.includes('temporary-back'),'A different desktop cannot complete the tile task');
+G.observeTemporaryDesktop(temporary,{...virtualScene,virtualTiled:true,state:'closed',open:[]});assert(!temporary.state.done.includes('temporary-back'));
+G.observeTemporaryDesktop(temporary,{...virtualScene,virtualTiled:true,state:'minimized',open:[]});assert(!temporary.state.done.includes('temporary-back'));
+G.observeTemporaryDesktop(temporary,{...virtualScene,virtualTiled:true});assert(temporary.state.done.includes('temporary-back'));assert(!temporary.ready(),'Tiling must be followed by showing the same screen fullscreen again');
+G.observeTemporaryDesktop(temporary,{...virtualScene,full:'other'});assert(!temporary.ready(),'A different fullscreen window cannot complete the return');
+G.observeTemporaryDesktop(temporary,{...virtualScene,full:'game'});assert(temporary.ready());
+assert.deepEqual(G.create(temporary.snapshot()).state.done,temporary.state.done,'Stable borderless goal IDs retain completed progress');
 const bounded = at('fullscreen');
 G.observeFullscreen(bounded,{bounded:'dolphin',open:['dolphin','notes']});
 assert(bounded.state.done.includes('bounded-enter'), 'Dolphin can complete the same fullscreen task as Notes');
@@ -305,10 +307,10 @@ assert.equal(G.recovery(at('park'),normalScene),null,'Any open app provides the 
 // Execute the actual asynchronous prerequisite adapter for every replayable chapter.
 const prepareSource=adapter.slice(adapter.indexOf('  async function waitForScene()'),adapter.indexOf('  async function recover('));
 const gameControls={};
-const gameNavigation=vm.createContext({model:at('temporary-desktop'),activeWorkspace:'gaming',document:{addEventListener(_,handler){gameControls.click=handler;}},showLessonOverview(id){gameControls.overview=id;},desktopPages:{fullscreenBond:()=>({page:0,column:'workspace'})},changeDesktopPage(page,_,column){gameControls.parent={page,column};},check(){}});
+const gameNavigation=vm.createContext({model:at('temporary-desktop'),activeWorkspace:'gaming',document:{addEventListener(_,handler){gameControls.click=handler;}},showLessonOverview(id){gameControls.overview=id;},SpatialVirtualScreen:{showTiled(name){gameControls.tiled=name;}},check(){}});
 vm.runInContext(adapter.slice(adapter.indexOf("  document.addEventListener('click', event => {"),adapter.indexOf("  document.addEventListener('pointerdown', event => {")),gameNavigation);
 for(const action of ['overview','desktop'])gameControls.click({target:{closest:selector=>selector==='[data-steam-action]'?{dataset:{steamAction:action}}:null}});
-assert.equal(gameControls.overview,'temporary-desktop');assert.deepEqual(gameControls.parent,{page:0,column:'workspace'},'The practice game retains both desktop controls without the Steam adapter');
+assert.equal(gameControls.overview,'temporary-desktop');assert.equal(gameControls.tiled,'game','The practice Show desktop action tiles the same screen without the Steam adapter');
 // The full introduction also prepares the borderless example at its boundary,
 // then returns to the ordinary workspace for the following display chapter.
 (async()=>{
@@ -326,7 +328,7 @@ assert.equal(gameControls.overview,'temporary-desktop');assert.deepEqual(gameCon
     const scene={workspace:'general',column:'workspace',page:0,notes:{notes:[{text:''}]},projectApp:false};
     const prepared=vm.createContext({model:at(lesson.id),guide:{prerequisites:G.prerequisites,save(){}},
       desktopPageAnimating:false,activeWorkspace:'general',activeProjectName:null,projectSpaces:{},appState:{browser:'closed',terminal:'closed',notes:'closed',dolphin:'closed',game:'closed'},appInfo:{browser:{},terminal:{},notes:{},dolphin:{},game:{borderlessFullscreen:true}},
-      tileSession:()=>({}),localDisplaySlot:()=>1,createBondedFullscreen(name,display){scene.bond={name,display,page:scene.page,column:scene.column};},syncApps(){},refreshIntentAreas(){},renderTileLayout(){},setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
+      tileSession:()=>scene.session ||= {},toggleAppFullscreen(){scene.session.fullscreen=null;},SpatialVirtualScreen:{showFullscreen(name){scene.session ||= {};scene.session.fullscreen={name};scene.fullscreenPage=scene.page;scene.fullscreenColumn=scene.column;}},syncApps(){},refreshIntentAreas(){},renderTileLayout(){},setUniversalSearchOpen(){},$(){return {value:"parked"};},renderOverviewWindows(){},showArea(){},focusDesktop(){},captureCurrentWorkspaceSession(){},saveAppWindows(){},saveIndependentSessions(){},saveDesktopPages(){},renderNotes(){},
       appWindowModel:()=>scene.notes,renderFileLocation:(_,path)=>{scene.path=path;},workspaceProfiles:{general:{home:'/home/demo'}},
       gamingWorkspaceProfile:{label:'Gaming'},cloneDesktopState:value=>JSON.parse(JSON.stringify(value)),workspaceAppStates:{},workspaceProjectStates:{},workspaceOpenProjects:{},workspaceProjects:{},windowMembership:{},workspaceAreaContents:{},workspaceContent:{},defaultAreaContent:{},renderWorkspaceTabs(){},
       createWorkspaceFromEditor(){prepared.workspaceProfiles.mine={custom:true,home:'/home/demo/Workspaces/mine'};scene.column='workspace';return 'mine';},
@@ -354,7 +356,7 @@ assert.equal(gameControls.overview,'temporary-desktop');assert.deepEqual(gameCon
     assert.equal(scene.column,needed.inProject?'practice':'workspace',lesson.id);
     assert.equal(scene.workspace,lesson.id==='temporary-desktop'?'gaming':needed.ownWorkspace?'mine':'general',lesson.id);
     if(lesson.id==='temporary-desktop') {
-      assert.equal(prepared.appState.game,'open');assert.equal(scene.bond.name,'game');assert.equal(prepared.appState.browser,'closed','The borderless example never seeds a decorated substitute');
+      assert.equal(prepared.appState.game,'open');assert.equal(scene.session.fullscreen.name,'game');assert.equal(scene.fullscreenPage,0);assert.equal(scene.fullscreenColumn,'workspace');assert.equal(scene.bond,undefined,'Fullscreen preparation never creates a child page');assert.equal(prepared.appState.browser,'closed','The borderless example never seeds a decorated substitute');
       prepared.model.state.temporaryWindow='browser';prepared.model.state.done=['temporary-enter'];
       await prepared.prepareLesson();assert.equal(prepared.model.state.temporaryWindow,'game');assert(!prepared.model.state.done.length,'The old Firefox practice restarts only this task with the correct app');
     }

@@ -6,24 +6,29 @@
     const scale=Math.max(0,Math.min(width/WIDTH,height/HEIGHT));
     return {scale,width:WIDTH*scale,height:HEIGHT*scale};
   }
-  function card({name,label,primary,bond,shortcut,detail,privatePreview,minimized,page,escape,art,icon}){
-    const id=escape(name),mode=bond?'Fullscreen':minimized?'Parked':'Tiled';
+  function card({name,label,primary,fullscreen,shortcut,detail,privatePreview,minimized,page,escape,art,icon}){
+    const id=escape(name),mode=fullscreen?'Fullscreen':minimized?'Parked':'Tiled';
     return '<article class="overview-temporary-desktop overview-virtual-screen" data-fullscreen-card="'+id+'" style="--overview-app:'+primary+'">'
       +'<button class="temporary-desktop-open" data-overview-open-app="'+id+'" aria-label="Return to '+escape(label)+' virtual screen"><span class="temporary-desktop-scene" data-peek-kind="'+(privatePreview?'private':id)+'"><span class="temporary-desktop-badge">'+icon('i-monitor')+'Virtual screen · '+mode+'</span>'+art+shortcut+'</span><span class="temporary-desktop-title"><b>'+escape(label)+'</b><small>'+escape(privatePreview?'Preview hidden':detail)+'</small></span></button>'
       +'<p class="virtual-screen-spec">1920 × 1080 <span>·</span> 16:9 <span>·</span> Fixed resolution</p>'
-      +'<p class="temporary-desktop-parent">'+icon('i-monitor')+(bond?'Temporary desktop · attached to Desktop '+(bond.page+1):'Desktop '+(page+1)+' · scales to fit its tile')+'</p>'
-      +'<div class="temporary-desktop-actions">'+(bond?'<button type="button" data-fullscreen-action="back" data-fullscreen-app="'+id+'">Back to Desktop '+(bond.page+1)+'</button><button type="button" data-fullscreen-action="restore" data-fullscreen-app="'+id+'" title="Tile the same virtual display; keep its resolution and aspect ratio.">Show tiled</button>':'<button type="button" data-overview-open-app="'+id+'">'+(minimized?'Unpark screen':'Return to screen')+'</button><button type="button" data-virtual-screen-fullscreen="'+id+'">Show fullscreen</button>')+'</div></article>';
+      +'<p class="temporary-desktop-parent">'+icon('i-monitor')+('Desktop '+(page+1)+(fullscreen?' · fullscreen on this desktop':' · scales to fit its tile'))+'</p>'
+      +'<div class="temporary-desktop-actions">'+(fullscreen?'<button type="button" data-overview-open-app="'+id+'">Return to screen</button><button type="button" data-virtual-screen-tiled="'+id+'" title="Win+D or F2+D · keep the game resolution and aspect ratio.">Show tiled</button>':'<button type="button" data-overview-open-app="'+id+'">'+(minimized?'Unpark screen':'Return to screen')+'</button><button type="button" data-virtual-screen-fullscreen="'+id+'">Show fullscreen</button>')+'</div></article>';
   }
   if(typeof module!=='undefined'&&module.exports){module.exports={fit,card};return;}
   const key='spatial-virtual-screen-modes-v1';let modes={};
   try{modes=JSON.parse(desktopStorage.getItem(key)||'{}')||{};}catch{}
   const eligible=name=>Boolean(appInfo[name]?.borderlessFullscreen);
-  const bond=name=>desktopPages.fullscreenBond(activeWorkspace,name);
+  function sessionFor(name){
+    const display=Math.min(Number(displayAssignmentsFor().apps[name]||1),activeDisplayRoster().length);
+    const key=desktopPages.context(activeWorkspace,desktopPages.pageOf(activeWorkspace,name),desktopPages.columnOf(activeWorkspace,name))+display;
+    return tileSessions[key];
+  }
+  const fullscreen=name=>eligible(name)&&sessionFor(name)?.fullscreen?.name===name;
   function remember(name,tiled){
     modes[activeWorkspace] ||= {};modes[activeWorkspace][name]=tiled?'tiled':'fullscreen';
     try{desktopStorage.setItem(key,JSON.stringify(modes));}catch{}
   }
-  const prefersTiled=name=>eligible(name)&&!bond(name)&&modes[activeWorkspace]?.[name]==='tiled';
+  const prefersTiled=name=>eligible(name)&&!fullscreen(name)&&modes[activeWorkspace]?.[name]!=='fullscreen';
   const observer=new ResizeObserver(entries=>entries.forEach(entry=>resize(entry.target)));
   function resize(viewport){
     const size=fit(viewport.clientWidth,viewport.clientHeight),canvas=viewport.firstElementChild;
@@ -46,38 +51,43 @@
       resize(viewport);
     }
     const control=document.getElementById('steamVirtualScreenMode');
-    if(control){control.hidden=activeWorkspace!=='gaming'||!['open','minimized'].includes(appState.game)||Boolean(bond('game'));control.textContent='Show fullscreen';}
+    if(control){control.hidden=activeWorkspace!=='gaming'||!['open','minimized'].includes(appState.game);control.textContent=fullscreen('game')?'Show tiled':'Show fullscreen';control.title=fullscreen('game')?'Win+D or F2+D · tile the virtual screen':'Fill this display with the virtual screen';}
   }
-  function overviewCard(name,{bond:current,shortcut,detail,minimized}){
-    return card({name,label:appInfo[name].label,primary:appInfo[name].primary,bond:current,shortcut,detail,privatePreview:Boolean(root.SpatialPreviewPrivacy?.hidden(name)),minimized,page:desktopPages.pageOf(activeWorkspace,name),escape:escapeHtml,art:appArt(name),icon});
+  function overviewCard(name,{shortcut,detail,minimized}){
+    return card({name,label:appInfo[name].label,primary:appInfo[name].primary,fullscreen:fullscreen(name),shortcut,detail,privatePreview:Boolean(root.SpatialPreviewPrivacy?.hidden(name)),minimized,page:desktopPages.pageOf(activeWorkspace,name),escape:escapeHtml,art:appArt(name),icon});
   }
-  const originalRestore=fullscreenDesktopAction;
-  fullscreenDesktopAction=function(action,name){
-    const origin=bond(name);
-    const changed=originalRestore(action,name);
-    if(changed&&action==='restore'&&eligible(name)){
-      remember(name,true);
-      const session=tileSessions[desktopPages.context(activeWorkspace,origin.page,origin.column)+Math.min(origin.display,activeDisplayRoster().length)];
-      if(session){delete session.floating?.[name];if(session.focus?.name===name)session.focus=null;}
-      appMaximizedState[name]=false;saveTileSessions();renderTileLayout(name);saveIndependentSessions();
-      root.SpatialSteamOverview?.syncContext();refresh();
-      showToast(appInfo[name].label+' · Virtual screen tiled · 1920 × 1080 unchanged');
-    }
-    return changed;
-  };
-  function showFullscreen(name){
-    if(!eligible(name)||!['open','minimized'].includes(appState[name])||bond(name)||desktopPageAnimating||tileInteraction||manualWindowInteraction)return false;
+  function canPresent(name){
+    if(!eligible(name)||!['open','minimized'].includes(appState[name])||desktopPageAnimating||tileInteraction||manualWindowInteraction)return false;
+    const display=Math.min(Number(displayAssignmentsFor().apps[name]||1),activeDisplayRoster().length);
+    if(display!==localDisplaySlot()){showToast('Open the virtual screen on its owning display.');return false;}
+    return true;
+  }
+  function showTiled(name){
+    if(!canPresent(name)||!fullscreen(name))return false;
     setUniversalSearchOpen(false);
     changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false,desktopPages.columnOf(activeWorkspace,name));
-    if(!isLocalApp(name)){showToast('Open the virtual screen on its owning display.');return false;}
-    if(appState[name]==='minimized')openApp(name);
-    if(!bond(name))toggleAppFullscreen(name);
-    return Boolean(bond(name));
+    remember(name,true);
+    const session=sessionFor(name);
+    if(session.fullscreen?.name===name)leaveAppFullscreen(session);
+    delete session.floating?.[name];if(session.focus?.name===name)session.focus=null;
+    appMaximizedState[name]=false;saveTileSessions();syncApps();refreshIntentAreas();renderTileLayout(name);
+    if(isLocalApp(name))bringToFront(name);
+    saveIndependentSessions();queueDesktopStateBroadcast(0);root.SpatialSteamOverview?.syncContext();
+    showToast(appInfo[name].label+' · Virtual screen tiled · 1920 × 1080 unchanged');
+    return true;
+  }
+  function showFullscreen(name){
+    if(!canPresent(name)||fullscreen(name))return false;
+    setUniversalSearchOpen(false);
+    changeDesktopPage(desktopPages.pageOf(activeWorkspace,name),false,desktopPages.columnOf(activeWorkspace,name));
+    if(appState[name]==='minimized'){remember(name,true);openApp(name);}
+    if(!fullscreen(name))toggleAppFullscreen(name);
+    return Boolean(fullscreen(name));
   }
   const originalToggle=toggleAppFullscreen;
   toggleAppFullscreen=function(name){
     const result=originalToggle(name);
-    if(eligible(name)){remember(name,!bond(name));root.SpatialSteamOverview?.syncContext();refresh();}
+    if(eligible(name)){remember(name,!fullscreen(name));root.SpatialSteamOverview?.syncContext();refresh();}
     return result;
   };
   const originalSync=syncApps;
@@ -87,18 +97,32 @@
     const entries=originalEntries(context);
     if(context.kind!=='app'||context.background||context.parkedRail||!eligible(context.name)||appState[context.name]==='closed')return entries;
     const next=entries.filter(entry=>entry.action!=='app-fullscreen');
-    next.splice(next.findIndex(entry=>entry.action==='app-open')+1,0,{action:bond(context.name)?'virtual-screen:tiled':'virtual-screen:fullscreen',icon:'i-monitor',label:bond(context.name)?'Show tiled virtual screen':'Show fullscreen virtual screen'});
+    next.splice(next.findIndex(entry=>entry.action==='app-open')+1,0,{action:fullscreen(context.name)?'virtual-screen:tiled':'virtual-screen:fullscreen',icon:'i-monitor',label:fullscreen(context.name)?'Show tiled virtual screen':'Show fullscreen virtual screen'});
     return next;
   };
   const originalAction=executeContextAction;
   executeContextAction=function(action){
     const name=contextMenuState?.name;
-    if(action==='virtual-screen:tiled')return fullscreenDesktopAction('restore',name);
+    if(action==='virtual-screen:tiled')return showTiled(name);
     if(action==='virtual-screen:fullscreen')return showFullscreen(name);
     return originalAction(action);
   };
-  document.addEventListener('click',event=>{const button=event.target.closest('[data-virtual-screen-fullscreen]');if(button){event.preventDefault();showFullscreen(button.dataset.virtualScreenFullscreen);}});
+  document.addEventListener('click',event=>{
+    const button=event.target.closest('[data-virtual-screen-fullscreen],[data-virtual-screen-tiled],[data-virtual-screen-toggle]');if(!button)return;
+    event.preventDefault();
+    if(button.dataset.virtualScreenTiled)showTiled(button.dataset.virtualScreenTiled);
+    else if(button.dataset.virtualScreenFullscreen)showFullscreen(button.dataset.virtualScreenFullscreen);
+    else {const name=button.dataset.virtualScreenToggle;fullscreen(name)?showTiled(name):showFullscreen(name);}
+  });
+  document.addEventListener('keydown',event=>{
+    const superHeld=root.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS');
+    if(!superHeld||event.code!=='KeyD'||event.repeat||event.ctrlKey||event.altKey||event.shiftKey||event.isComposing)return;
+    if(document.querySelector('#packageDialog.is-open,#projectEditorDialog.is-open'))return;
+    const name=tileSession().fullscreen?.name;
+    if(!eligible(name)||!isLocalApp(name))return;
+    event.preventDefault();event.stopPropagation();superKeyAlone=false;showTiled(name);
+  },true);
   window.addEventListener('storage',event=>{if(event.key===key){try{modes=JSON.parse(event.newValue||'{}')||{};}catch{}refresh();}});
-  root.SpatialVirtualScreen={fit,overviewCard,prefersTiled,showFullscreen,refresh};
+  root.SpatialVirtualScreen={fit,overviewCard,prefersTiled,fullscreen,showTiled,showFullscreen,refresh};
   refresh();renderOverviewWindows();
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -31,15 +31,10 @@ node('steamRemainingOnly').checked=true;node('steamRemainingOnly').listeners.cha
 let stopped=false;root.listeners.wheel({target:{closest:()=>node('steamMessages')},stopPropagation(){stopped=true;}});assert(stopped,'Nested tools retain wheel ownership at either edge');
 context.setUniversalSearchOpen(false);assert.equal(fullscreen.name,'game');assert.equal(focused,'gameFrame:[data-steam-action="overview"]','Escape returns keyboard focus to the game');
 context.setUniversalSearchOpen(true);frames.splice(0).forEach(f=>f());assert.equal(context.active,'steam');assert(context.SpatialSteamOverview.running(),'Overview never leaves fullscreen');
-context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,null);assert.equal(context.appState.game,'open','Showing the desktop keeps the game running');assert.equal(open,false);
-// The bonded route's Show desktop action preserves fullscreen ownership.
-context.desktopPages=require('../dist/desktop-pages.js').create();context.desktopPages.assign('gaming','game',0);
-context.desktopPages.addFullscreen('gaming','game',1);context.desktopPages.goFullscreen('gaming','game');
-context.changeDesktopPage=(page,_,column)=>context.desktopPages.go('gaming',page,column);
-fullscreen={name:'game',bonded:true};const beforeFullscreen=fullscreen;
-context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,beforeFullscreen);assert.equal(context.desktopPages.selectedFullscreen('gaming'),null);
-assert(context.desktopPages.fullscreenBond('gaming','game'));assert.equal(context.appState.game,'open');
-delete context.desktopPages;delete context.changeDesktopPage;
+context.SpatialVirtualScreen={showTiled(){fullscreen=null;},refresh(){},prefersTiled:()=>!fullscreen};
+context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,null);assert.equal(context.appState.game,'open','Showing the desktop tiles the game without closing it');assert.equal(open,false);
+context.SpatialSteamOverview.appOpened('game');assert.equal(fullscreen,null,'Selecting a tiled game preserves its mode');
+delete context.SpatialVirtualScreen;
 context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');assert.equal(context.appState.steam,'minimized');
 fullscreen=null;context.SpatialVirtualScreen={prefersTiled:()=>true,refresh(){}};context.SpatialSteamOverview.startGame();assert.equal(fullscreen,null,'Returning through Steam preserves the tiled virtual screen');delete context.SpatialVirtualScreen;context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');
 context.activeWorkspace='work';context.appState={game:'closed',steam:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),false);assert.equal(context.SpatialSteamOverview.running(),false);
@@ -53,7 +48,7 @@ context.SpatialGuide={model:{active:()=>true}};assert.equal(context.provider.ava
 const seed=new Map([['spatial-demo-scenes-v1','4'],['spatial-workspace-app-states-v1',JSON.stringify({general:{notes:'open'},gaming:{browser:'open',notes:'closed'}})],['spatial-desktop-pages-v1',JSON.stringify({gaming:{active:1,activeColumn:'workspace',windows:{browser:0},owners:{browser:'workspace'}}})],['spatial-workspace-area-layouts-v1',JSON.stringify({gaming:{sizes:{left:327}}})]]);
 const storage={getItem:k=>seed.get(k)||null,setItem:(k,v)=>seed.set(k,v)};D.seedWorkspaces(storage);
 const states=JSON.parse(seed.get('spatial-workspace-app-states-v1'));assert.deepEqual(states.general,{notes:'open'});assert.equal(states.gaming.game,'open');assert.equal(states.gaming.steam,'minimized');assert.equal(states.gaming.notes,'closed');assert.equal(JSON.parse(seed.get('spatial-desktop-pages-v1')).gaming.active,1,'Existing page selection is retained');assert.equal(JSON.parse(seed.get('spatial-workspace-area-layouts-v1')).gaming.sizes.left,327);
-assert.equal(JSON.parse(seed.get('spatial-split-layouts-v1'))['gaming:desktop:0:1'].fullscreen.name,'game');states.gaming.game='closed';seed.set('spatial-workspace-app-states-v1',JSON.stringify(states));D.seedWorkspaces(storage);assert.equal(JSON.parse(seed.get('spatial-workspace-app-states-v1')).gaming.game,'closed','Reload does not resurrect a closed game');
+assert.equal(JSON.parse(seed.get('spatial-split-layouts-v1'))['gaming:desktop:0:1'].fullscreen,undefined,'New game example has no child or hidden fullscreen');states.gaming.game='closed';seed.set('spatial-workspace-app-states-v1',JSON.stringify(states));D.seedWorkspaces(storage);assert.equal(JSON.parse(seed.get('spatial-workspace-app-states-v1')).gaming.game,'closed','Reload does not resurrect a closed game');
 console.log('Steam passed: Gaming scope, Guide isolation, fullscreen return, separate chats/drafts, safe text, notes, filters, scroll ownership, and one-time legacy seeding.');
 
 // The Overview keyboard listener runs before the window listener. One Escape

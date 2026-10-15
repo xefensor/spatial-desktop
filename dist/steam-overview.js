@@ -37,17 +37,10 @@
   find('steamRemainingOnly').addEventListener('change',()=>{all('[data-steam-unlocked]').forEach(a=>{a.hidden=find('steamRemainingOnly').checked&&a.dataset.steamUnlocked==='true';});});
   const gameFrame=()=>frameFor('game');
   const available=()=>!globalThis.SpatialGuide?.model.active() && activeWorkspace==='gaming' && appState.steam!==undefined && (appState.steam!=='closed' || Boolean(globalThis.SpatialBackgroundApps?.running('steam')));
-  const gameBond=()=>typeof desktopPages!=='undefined'?desktopPages.fullscreenBond?.(activeWorkspace,'game'):null;
   const running=()=>activeWorkspace==='gaming' && appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
     const gameOpen=activeWorkspace==='gaming' && appState.game && appState.game!=='closed';
-    const bond=gameBond();
-    find('steamTemporaryDesktop').hidden=!bond;
-    if(bond){
-      find('steamTemporaryParent').textContent='Temporary desktop · Attached to Desktop '+(bond.page+1);
-      find('steamBackToDesktop').textContent='Back to Desktop '+(bond.page+1);
-    }
-    find('steamGameState').textContent=gameBond()?'RUNNING · TEMPORARY DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?(globalThis.SpatialVirtualScreen?.prefersTiled('game')?'VIRTUAL SCREEN · TILED':'CURRENT GAME · OPEN'):'READY TO PLAY';
+    find('steamGameState').textContent=running()?'VIRTUAL SCREEN · FULLSCREEN':gameOpen?'VIRTUAL SCREEN · TILED':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
     globalThis.SpatialOverviewDesktop?.refresh();
     globalThis.SpatialVirtualScreen?.refresh();
@@ -70,8 +63,7 @@
   function showDesktop(){
     if(activeWorkspace!=='gaming')return;
     setUniversalSearchOpen(false);
-    const bond=gameBond();
-    if(bond)changeDesktopPage(bond.page,false,bond.column);else if(running())toggleAppFullscreen('game');else minimizeApp('game');
+    if(running())globalThis.SpatialVirtualScreen?.showTiled('game');
     syncContext();
   }
   function openTools(tool){

@@ -422,18 +422,9 @@ dragListeners.pointerup({pointerId:1,type:'pointerup'});
 assert.equal(dragListeners.wheel,undefined,'Release removes the window-owned wheel handler');
 console.log('Held-window Win wheel passed: desktop/project carry, standalone-key suppression and release cleanup.');
 
-// The preview is desktop navigation even while an ordinary window owns focus.
-resetAreaWheel();
-ctx.appState.game='open';ctx.desktopPages.assign('work','game',0);ctx.desktopPages.addFullscreen('work','game',1);
-ctx.activeDisplayRoster=()=>[{}];ctx.localDisplaySlot=()=>1;
-let peekOpened=null,peekRoutes=[];
-ctx.openApp=name=>{peekOpened=name;ctx.desktopPages.goFullscreen('work',name);};
-ctx.changeDesktopPage=(page,animate,column,name)=>{peekRoutes.push({page,name});if(name)ctx.desktopPages.goFullscreen('work',name);else ctx.desktopPages.go('work',page,column);return true;};
-listeners['#fullscreenDesktopPeek:click']();assert.equal(peekOpened,'game');assert.equal(ctx.desktopPages.selectedFullscreen('work').name,'game','Click returns to the existing fullscreen child');
-resetAreaWheel();e=event();listeners['#fullscreenDesktopPeek:wheel'](e);
-assert.equal(e.prevented,true);assert.equal(ctx.desktopHasWindowFocus,false);assert.equal(peekRoutes.at(-1).name,'game','A plain down-scroll enters the child without requiring Super');
-clock+=15;listeners['#fullscreenDesktopPeek:wheel'](event());assert.equal(peekRoutes.length,1,'Preview scroll uses the shared momentum gate');
-resetAreaWheel();peekOpened=null;nodes['.desktop-shell'].inert=true;listeners['#fullscreenDesktopPeek:click']();e=event();listeners['#fullscreenDesktopPeek:wheel'](e);assert.equal(peekOpened,null);assert.equal(e.prevented,undefined,'Modal isolation blocks both preview actions');
-nodes['.desktop-shell'].inert=false;nodes['#desktopContextMenu'].hidden=false;listeners['#fullscreenDesktopPeek:click']();assert.equal(peekOpened,null,'An open context menu blocks preview navigation');nodes['#desktopContextMenu'].hidden=true;
-ctx.desktopPages.removeFullscreen('work','game');listeners['#fullscreenDesktopPeek:click']();assert.equal(peekOpened,null,'A stale click cannot recreate a removed child');
-console.log('Fullscreen preview navigation passed: click, focused-window plain wheel, shared momentum, modal/menu guards and removed-child cleanup.');
+// The retired child preview cannot recreate a fullscreen navigation entry.
+resetAreaWheel();ctx.fullscreenPeekBond=()=>null;
+let peekOpened=null;ctx.openApp=name=>{peekOpened=name;};
+listeners['#fullscreenDesktopPeek:click']();assert.equal(peekOpened,null);
+assert(!fs.readFileSync(require.resolve('../dist/index.html'),'utf8').includes('id="fullscreenDesktopPeek"'));
+console.log('Fullscreen desktop navigation passed: retired preview has no route or DOM control.');

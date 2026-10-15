@@ -844,9 +844,10 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
   tileRendering = true;
   try {
     const fullscreen=tileSession().fullscreen;
-    if(fullscreen?.bonded && appState[fullscreen.name]==="open" && isLocalApp(fullscreen.name)) {
+    if((fullscreen?.bonded || appInfo[fullscreen?.name]?.borderlessFullscreen) && appState[fullscreen.name]==="open" && isLocalApp(fullscreen.name)) {
       // Exclusive fullscreen owns the viewport, independent of the minimum
       // size or dock bounds used for ordinary tiled windows.
+      parkFullscreenPeers(tileSession());
       renderFloatingWindows(tileSession());renderTileDividers([]);renderFullscreenWindow(fullscreen.name);
       saveTileSessions();return;
     }
@@ -1256,48 +1257,9 @@ function renderFullscreenWindow(name) {
   syncMaximizeButton(frame);
 }
 
-// Bonded fullscreen pages are navigation entries, not renumbered ordinary
-// desktops. Every display shares the route; only the owning display projects
-// its fullscreen entry. The other displays keep showing the parent page.
-function createBondedFullscreen(name, display = localDisplaySlot(), select = true) {
-  // Whole-display windows with their own title bar stay on the normal desktop.
-  if (!appInfo[name]?.borderlessFullscreen) return null;
-  const page = desktopPages.pageOf(activeWorkspace,name), column = desktopPages.columnOf(activeWorkspace,name);
-  const prefix = desktopPages.context(activeWorkspace,page,column);
-  const parent = tileSessions[prefix+display] ||= {root:null,parked:{},floating:{},focus:null};
-  if (parent.fullscreen?.name === name) {
-    // Migrate the older mode without visiting its desktop or disturbing the
-    // user's current page. Only restore peers still owned by that old mode.
-    const legacy=parent.fullscreen,assignments=displayAssignmentsFor();
-    parent.fullscreen=null;
-    const belongs=peer=>desktopPages.columnOf(activeWorkspace,peer)===column && desktopPages.pageOf(activeWorkspace,peer)===page;
-    for(const [peer,record] of Object.entries(legacy.transferred || {})) {
-      if(appState[peer]!=="open" || !belongs(peer) || Number(assignments.apps[peer])!==record.target)continue;
-      const target=tileSessions[prefix+record.target];
-      if(target){target.root=tileEngine.remove(target.root,peer);delete target.floating?.[peer];}
-      assignments.apps[peer]=record.source;
-      if(record.floating)(parent.floating ||= {})[peer]=cloneDesktopState(record.floating);
-    }
-    for(const peer of legacy.parked || []) {
-      if(appState[peer]!=="minimized" || !belongs(peer) || parent.parked?.[peer]?.fullscreen!==name)continue;
-      appState[peer]="open";delete parent.parked[peer];
-    }
-    if(legacy.root)parent.root=tileEngine.normalize(legacy.root,Object.keys(appState).filter(peer=>appState[peer]==="open"&&belongs(peer)&&Number(assignments.apps[peer]||1)===display&&!parent.floating?.[peer]));
-    if(Object.keys(legacy.transferred || {}).length)persistDisplayAssignments();
-  }
-  const bond = desktopPages.addFullscreen(activeWorkspace,name,display);
-  const key = prefix + "fullscreen:" + encodeURIComponent(name) + ":" + display;
-  const root = tileEngine.copy(parent.root), rest = tileEngine.remove(root,name);
-  const originFloating = parent.floating?.[name] ? cloneDesktopState(parent.floating[name]) : null;
-  const originFocus = parent.focus?.name === name ? cloneDesktopState(parent.focus) : null;
-  tileSessions[key] = {root:tileEngine.leaf(name),parked:{},floating:{},focus:null,
-    fullscreen:{name,bonded:true,originRoot:root,originRest:cloneDesktopState(rest),originFloating,originFocus}};
-  parent.root = rest; delete parent.floating?.[name];
-  if (originFocus) parent.focus = null;
-  if (select) desktopPages.goFullscreen(activeWorkspace,name);
-  saveDesktopPages(); saveTileSessions();
-  return bond;
-}
+// Compatibility entry point for older Guide/storage adapters. Fullscreen now
+// belongs to the original desktop and never creates a navigation page.
+function createBondedFullscreen() { return null; }
 
 function leaveBondedFullscreen(name, follow = true) {
   const bond = desktopPages.fullscreenBond?.(activeWorkspace,name);if(!bond)return false;
@@ -1337,27 +1299,28 @@ function fullscreenDesktopAction(action, name) {
 }
 
 function ensureBondedFullscreenDesktops() {
-  Object.keys(appState).forEach(name => {
-    const bond = desktopPages.fullscreenBond(activeWorkspace,name);
-    if (bond) {if(appState[name] !== "open" || !appInfo[name]?.borderlessFullscreen)leaveBondedFullscreen(name);return;}
-    if (appState[name] !== "open" || !appInfo[name]?.borderlessFullscreen)return;
-    const page=desktopPages.pageOf(activeWorkspace,name),column=desktopPages.columnOf(activeWorkspace,name);
-    const prefix=desktopPages.context(activeWorkspace,page,column);
-    const legacy=Object.entries(tileSessions).find(([key,session])=>key.startsWith(prefix)&&/^\d+$/.test(key.slice(prefix.length))&&session.fullscreen?.name===name);
-    if(legacy)createBondedFullscreen(name,Number(legacy[0].slice(prefix.length)),!legacy[1].fullscreen.startOnParent&&desktopPages.column(activeWorkspace)===column&&desktopPages.current(activeWorkspace)===page);
-  });
+  // Retire old child sessions without resetting window ownership or other
+  // desktops. A viewed child stays fullscreen on its original desktop;
+  // a child left behind on another route returns as a normal tile.
+  for (const name of Object.keys(appState)) {
+    const bond=desktopPages.fullscreenBond(activeWorkspace,name);if(!bond)continue;
+    const selected=desktopPages.selectedFullscreen(activeWorkspace,bond.column)?.name===name;
+    leaveBondedFullscreen(name,false);
+    const key=desktopPages.context(activeWorkspace,bond.page,bond.column)+Math.min(bond.display,activeDisplayRoster().length);
+    const parent=tileSessions[key];
+    if(selected && appState[name]==='open' && appInfo[name]?.borderlessFullscreen && parent)parent.fullscreen={name};
+  }
+  // Older demo seeds opened on the parent while the game occupied a child.
+  // That opening is now simply a tiled game on the same ordinary desktop.
+  for(const [key,session] of Object.entries(tileSessions)) {
+    if(key.startsWith(activeWorkspace+':') && session.fullscreen?.startOnParent)delete session.fullscreen;
+  }
 }
 
 function toggleAppFullscreen(name) {
   releaseBorrowedApp(name);
   if (appState[name] !== "open" || !isLocalApp(name)) return;
   const session = tileSession();
-  if (appInfo[name].borderlessFullscreen) {
-    if (desktopPages.fullscreenBond(activeWorkspace,name)) leaveBondedFullscreen(name);
-    else createBondedFullscreen(name);
-    saveTileSessions(); syncApps(); refreshIntentAreas(); renderTileLayout(name);if(isLocalApp(name))bringToFront(name);queueDesktopStateBroadcast(0);
-    return;
-  }
   if (session.fullscreen?.name === name) {
     leaveAppFullscreen(session);
   } else {
@@ -7044,40 +7007,11 @@ function renderDesktopPageRail() {
   });
 }
 
-function fullscreenPeekBond() {
-  // A second display holds the parent; it must not imply its own extra page.
-  if (desktopPages.selectedFullscreen(activeWorkspace)) return null;
-  const candidates = desktopPages.entries(activeWorkspace).filter(entry => entry.fullscreen
-    && entry.page === desktopPages.current(activeWorkspace) && appState[entry.fullscreen] === "open");
-  if (!candidates.length || tileSession().fullscreen) return null;
-  const count = activeDisplayRoster().length, slot = localDisplaySlot();
-  const entry = candidates.find(candidate => Math.min(candidate.display, count) === slot);
-  return entry ? desktopPages.fullscreenBond(activeWorkspace, entry.fullscreen) : null;
-}
-
+function fullscreenPeekBond() { return null; }
 function renderFullscreenPeek() {
-  const peek = $("#fullscreenDesktopPeek"), shell = $(".desktop-shell");
-  if (!peek || !shell) return;
-  const bond = fullscreenPeekBond();
-  const wasVisible = !peek.hidden;
-  peek.hidden = !bond;
-  shell.style.setProperty("--fullscreen-peek-height", bond ? "48px" : "0px");
-  if (bond) {
-    const info = appInfo[bond.name];
-    const key = JSON.stringify([activeWorkspace, bond, info.label]);
-    if (peek.dataset.contentsKey !== key) {
-      peek.dataset.contentsKey = key;
-      peek.dataset.peekKind = info.base || bond.name;
-      peek.style.setProperty("--peek-accent", info.primary || "#b8d59a");
-      peek.innerHTML = '<span class="fullscreen-peek-scene" aria-hidden="true"></span><span class="fullscreen-peek-label">'
-        + appArt(bond.name) + '<span class="fullscreen-peek-copy"><b>' + escapeHtml(info.label) + '</b><span><i class="fullscreen-peek-tag">Temporary desktop</i><small>Created for borderless fullscreen</small></span><span class="fullscreen-peek-explanation">The app stays fullscreen while you use Desktop ' + (bond.page + 1) + '.</span></span></span><span class="fullscreen-peek-action" aria-hidden="true"><span><b>Enter desktop</b><small>Scroll down or click</small></span><i>↓</i></span>';
-      peek.setAttribute("aria-label", "Enter " + info.label + " temporary desktop for borderless fullscreen, linked to Desktop " + (bond.page + 1));
-      peek.title = "Temporary desktop opened for " + info.label + " in borderless fullscreen, attached to Desktop " + (bond.page + 1) + ". The app stays fullscreen while you use the original desktop. Removed when the app leaves fullscreen or closes. Scroll down or click to enter.";
-    }
-  }
-  // Keep the identity stable during focus changes. Only reserve space when
-  // entering/leaving a parent that actually owns a fullscreen child.
-  if (wasVisible !== Boolean(bond) && windowViewportLockReady && !tileInteraction && !manualWindowInteraction) scheduleWindowTiling();
+  // Kept for storage/privacy adapters from the retired child-desktop design.
+  const peek=$("#fullscreenDesktopPeek");if(peek)peek.hidden=true;
+  $(".desktop-shell")?.style.setProperty("--fullscreen-peek-height","0px");
 }
 
 function focusDesktop(moveKeyboardFocus = true) {

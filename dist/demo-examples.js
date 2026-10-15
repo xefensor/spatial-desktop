@@ -358,7 +358,7 @@
           const windows = column.windows.filter(w=>w.page===page && w.state==="open");
           const tree = demoWindowTree(windows);
           const prefix = column.column === "workspace" ? workspace+":desktop:" : workspace+":project-column:"+column.column+":desktop:";
-          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{},...(workspace === "gaming" && column.column === "workspace" && page === 0 ? {fullscreen:{name:"game",startOnParent:true}} : {})};
+          values["spatial-split-layouts-v1"][prefix+page+":1"] = {root:tree,parked:{},floating:{}};
         }
       }
       values["spatial-workspace-app-states-v1"][workspace]=apps;
@@ -417,7 +417,7 @@
     if(freshGame){
       const session=layouts['gaming:desktop:0:1'] ||= {root:null,parked:{},floating:{}};
       if(!tiling.contains(session.root,'game'))session.root=session.root?{kind:'split',axis:'x',ratio:.5,a:session.root,b:leaf('game')}:leaf('game');
-      if(!session.fullscreen)session.fullscreen={name:'game',startOnParent:true};
+
     }
     for(const [key,value] of [['spatial-workspace-app-states-v1',states],['spatial-desktop-pages-v1',pages],['spatial-split-layouts-v1',layouts],['spatial-independent-sessions-v1',independent]])storage.setItem(key,JSON.stringify(value));
     storage.setItem(key,'1');return true;

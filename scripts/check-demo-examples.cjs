@@ -115,7 +115,7 @@ assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later 
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
-assert.equal(tiles['gaming:desktop:0:1'].fullscreen.startOnParent,true);
+assert.equal(tiles['gaming:desktop:0:1'].fullscreen,undefined,'The initial game tiles on the ordinary desktop');
 assert.equal(sceneApps.gaming.game,'open','The parent opening view keeps Fallout running');
 assert.equal(freshScene.read('spatial-desktop-pages-v1').gaming.active,0);
 const oldGaming={active:0,activeColumn:'workspace',activeFullscreen:{workspace:'game'},windows:{game:0},owners:{game:'workspace'}};
