@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="app-windows.css?v=5">
   <link rel="stylesheet" href="parked-previews.css?v=1">
   <link rel="stylesheet" href="owned-dialogs.css?v=2">
-  <link rel="stylesheet" href="background-apps.css?v=2">
+  <link rel="stylesheet" href="background-apps.css?v=3">
   <link rel="stylesheet" href="preview-privacy.css?v=1">
   <link rel="stylesheet" href="workspace-notifications.css?v=2">
   <link rel="stylesheet" href="system-scopes.css?v=2">
@@ -48,8 +48,8 @@
   <link rel="stylesheet" href="project-packages.css?v=1">
   <link rel="stylesheet" href="overview-system.css?v=2">
   <script src="demo-super-key.js?v=1"></script>
-  <script src="workspace-setup.js?v=8"></script>
-  <script src="spatial-guide.js?v=51"></script>
+  <script src="workspace-setup.js?v=9"></script>
+  <script src="spatial-guide.js?v=52"></script>
   
 </head>
 <body data-theme="oled">
@@ -629,6 +629,11 @@
       <circle class="cursor-badge" cx="21" cy="27" r="5"/><path class="cursor-badge-mark" d="M18.5 27h5M21 24.5v5"/>
     </svg>
   </div>
+  <section id="backgroundAppPopup" class="background-app-popup material-surface-glass" role="dialog" aria-modal="false" aria-label="Background app controls" hidden inert>
+    <header><div><small>SYSTEM-WIDE · BACKGROUND APP</small><h2></h2></div><button type="button" data-background-popup-close aria-label="Close background app controls">×</button></header>
+    <p data-background-popup-status></p><div data-background-popup-content></div>
+    <div class="background-popup-actions"><button type="button" data-background-popup-open>Open window here</button><button type="button" data-background-popup-stop>Force quit</button></div>
+  </section>
   <div class="desktop-context-menu" id="desktopContextMenu" role="menu" aria-label="Context menu" hidden>
     <div class="context-menu-title" id="contextMenuTitle"></div>
     <div class="context-menu-items" id="contextMenuItems"></div>
@@ -657,17 +662,18 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=292"></script>
+<script src="desktop-shell.js?v=293"></script>
 <script src="parked-previews.js?v=4"></script>
   <script src="owned-dialogs.js?v=2"></script>
-<script src="background-apps.js?v=3"></script>
+<script src="background-services.js?v=1"></script>
+<script src="background-apps.js?v=4"></script>
 <script src="preview-privacy.js?v=1"></script>
 <script src="empty-desktop.js?v=2"></script>
 <script src="working-memory-desktop.js?v=30"></script>
 <script src="ai-desktop.js?v=18"></script>
 <script src="overview-desktop.js?v=22"></script>
   <script src="guide-desktop.js?v=41"></script>
-  <script src="steam-overview.js?v=12"></script>
+  <script src="steam-overview.js?v=13"></script>
 <script src="all-workspaces.js?v=4"></script>
 <script src="workspace-notifications.js?v=4"></script>
 <script src="system-scopes.js?v=3"></script>
@@ -677,7 +683,7 @@
 <script src="virtual-screen.js?v=4"></script>
 <script src="project-packages.js?v=2"></script>
 <script src="overview-system.js?v=1"></script>
-<script src="scoped-actions.js?v=2"></script>
+<script src="scoped-actions.js?v=3"></script>
 </body>
 </html>
 

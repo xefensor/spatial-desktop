@@ -61,6 +61,7 @@ const glassMaterialSurfaceSelector = [
   ".overview-app-library",
   ".project-module",
   ".desktop-context-menu",
+  ".background-app-popup",
   ".all-apps-drawer",
   ".project-editor-window",
   ".package-window",

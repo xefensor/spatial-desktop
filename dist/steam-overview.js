@@ -45,11 +45,12 @@
   find('steamCopyNotes').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(notes.value);showToast('Game notes copied.');}catch{selectTool('notes');notes.focus();notes.select();showToast('Select and copy these notes with Ctrl+C.');}});
   find('steamRemainingOnly').addEventListener('change',()=>{all('[data-steam-unlocked]').forEach(a=>{a.hidden=find('steamRemainingOnly').checked&&a.dataset.steamUnlocked==='true';});});
   const gameFrame=()=>frameFor('game');
-  const available=()=>!globalThis.SpatialGuide?.model.active() && appState.steam!==undefined && (appState.steam!=='closed' || Boolean(globalThis.SpatialBackgroundApps?.running('steam')));
+  const steamOpen=()=>Object.entries(appState).some(([id,state])=>(id==='steam'||appInfo[id]?.base==='steam')&&state!=='closed');
+  const available=()=>!globalThis.SpatialGuide?.model.active() && (steamOpen() || Boolean(globalThis.SpatialBackgroundApps?.running('steam')));
   const running=()=>appState.game==='open' && isLocalApp('game') && tileSession().fullscreen?.name==='game';
   function syncContext(){
     loadWorkspace();
-    const workspaceLabel=frameFor('steam')?.querySelector('[data-steam-workspace-label]');if(workspaceLabel)workspaceLabel.textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
+    for(const id of Object.keys(appState).filter(id=>id==='steam'||appInfo[id]?.base==='steam')){const workspaceLabel=frameFor(id)?.querySelector('[data-steam-workspace-label]');if(workspaceLabel)workspaceLabel.textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;}
     const gameOpen=appState.game && appState.game!=='closed';
     find('steamGameState').textContent=running()?'VIRTUAL SCREEN · FULLSCREEN':gameOpen?'VIRTUAL SCREEN · TILED':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
@@ -65,7 +66,7 @@
     syncContext();
   }
   function startGame(withOverview=false){
-    if(appState.steam==='closed' && !globalThis.SpatialBackgroundApps?.running('steam')){openApp('steam');minimizeApp('steam');}
+    if(!steamOpen() && !globalThis.SpatialBackgroundApps?.running('steam')){openApp('steam');minimizeApp('steam');}
     openApp('game');
     setUniversalSearchOpen(withOverview);
     if(withOverview)overviewChanged(true);

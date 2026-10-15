@@ -8,7 +8,7 @@ assert(!menu.some(item=>item.action==='desktop-settings'),'The old display place
 assert.equal(menu.find(item=>item.label?.startsWith('Project ·')).children.at(-1).label,'Close Project: Website <draft>');
 assert(!S.entries(original,{kind:'desktop',workspace,project,page:0,allowed:()=>false}).some(item=>item.label?.startsWith('Project ·')||item.label?.startsWith('Workspace ·')),'Guide gates apply to nested commands');
 const background=S.entries([{action:'app-open'},{action:'app-force-quit'}],{kind:'app',workspace:{label:'Gaming'},label:'Steam',background:true});
-assert.equal(background[1].label,'Open Steam in Gaming');assert.match(background[2].detail,/only this instance in Gaming/);
+assert.equal(background.length,2);assert(!background.some(item=>item.info||item.detail),'Global service menus gain no Workspace association');
 
 // Exercise the shipped command adapter, including stale origin protection.
 const calls=[],sections=[],frames=[];

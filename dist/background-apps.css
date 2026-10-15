@@ -3,8 +3,6 @@
 .apps-zone .background-apps[hidden]{display:none!important}
 body[data-theme] .apps-zone .background-app-icon{position:relative;display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:5px;border:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:var(--background-accent);cursor:pointer}
 .apps-zone .background-app-icon .app-art{width:24px;height:24px}
-.background-workspace-icon{position:absolute;right:0;top:0;display:grid;place-items:center;width:12px;height:12px;background:var(--content-surface);color:var(--background-workspace-accent)}
-.background-workspace-icon svg{width:10px;height:10px}
 .apps-zone .background-app-icon>i{position:absolute;bottom:1px;left:7px;right:7px;height:2px;background:linear-gradient(to right,var(--background-accent) var(--background-progress),var(--soft-line) var(--background-progress))}
 body[data-theme] .apps-zone .background-app-icon:is(:hover,:focus-visible){border-color:var(--background-accent);background:color-mix(in srgb,var(--background-accent) 12%,transparent);outline:none}
 .apps-zone[data-area-state="rail"] .background-apps{flex-direction:column;flex-wrap:nowrap;max-height:30%;padding:5px 0 0;margin-top:4px;align-items:center}
@@ -15,3 +13,14 @@ body[data-theme] .apps-zone .background-app-icon:is(:hover,:focus-visible){borde
 .steam-demo-download small{color:#9eafbf}
 .steam-demo-download progress{width:100%;height:5px;order:3;accent-color:#a4cd69}
 .steam-demo-download .steam-button{font-size:11px;padding:7px 10px}
+.background-app-popup{position:fixed;z-index:10060;padding:15px;border:1px solid var(--sd-glass-groove);background:var(--content-surface-raised);box-shadow:0 12px 40px #0004;color:var(--text);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+.background-app-popup[hidden]{display:none!important}
+.background-app-popup>header{display:flex;justify-content:space-between;gap:14px;align-items:start;border-bottom:1px solid var(--sd-glass-groove);padding-bottom:10px}
+.background-app-popup h2{font-size:16px;margin:5px 0 0}
+.background-app-popup header small{font-size:9px;letter-spacing:.08em;color:var(--muted)}
+.background-app-popup p{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.background-app-popup button{border:1px solid var(--sd-glass-groove);padding:7px 10px;color:var(--text);background:var(--sd-glass-face);font-size:11px;cursor:pointer}
+.background-app-popup button:focus-visible{outline:2px solid var(--workspace-accent);outline-offset:2px}
+.background-app-popup progress{width:100%;height:7px;accent-color:var(--cyan);margin-bottom:10px}
+.background-transport,.background-popup-actions{display:flex;gap:7px;flex-wrap:wrap}
+.background-popup-actions{border-top:1px solid var(--sd-glass-groove);padding-top:12px;margin-top:15px}
