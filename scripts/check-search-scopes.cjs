@@ -51,4 +51,11 @@ const navigation={$:()=>controls,desktopPages:{pageOf:()=>2,columnOf:()=> 'film'
 vm.createContext(navigation);vm.runInContext(segment(shell,'$("#universalResults").addEventListener("click", event => {','$("#universalResults").addEventListener("click", event => {\n  const result = event.target.closest("[data-search-project]"'),navigation);
 handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'fallout',searchWindow:'true'}})}});
 assert.deepEqual(navigated,[2,false,'film','fallout']);assert.equal(opened,'fallout');
+// File actions must bring an existing File Browser's desktop into view first.
+let fileHandler,fileDirectory,project;
+const fileContext={results:{addEventListener:(_,handler)=>fileHandler=handler},appInfo:{files:{base:'dolphin'}},appState:{files:'open'},activeWorkspace:'work',activateProject:id=>project=id,desktopPages:{inColumn:()=>true,pageOf:()=>1,columnOf:()=> 'film'},changeDesktopPage:(...args)=>navigated=args,openFileLocation:path=>fileDirectory=path,showToast(){}};
+vm.createContext(fileContext);vm.runInContext(segment(source,"  results.addEventListener('click',event=>{","  root.SpatialSearchScopes="),fileContext);
+fileHandler({target:{closest:()=>({dataset:{searchOwner:'film',searchFileDirectory:'/projects/film',searchFileName:'Shot list.md'}})}});
+assert.equal(project,'film');assert.deepEqual(navigated,[1,false,'film']);assert.equal(fileDirectory,'/projects/film');
+assert.match(segment(shell,'function renderWorkspace(name,','function renderDemoAppExample('),/SpatialSearchScopes[\s\S]*filterUniversalSearch\(\)/,'Workspace switching refreshes existing queries');
 console.log('Scoped search passed: desktop/project/Workspace/system ranking, actual parked instances, private titles, owned files and downloads, foreign-context exclusion and fullscreen return.');

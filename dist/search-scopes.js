@@ -123,6 +123,8 @@
     const owner=row.dataset.searchOwner;
     if(owner && owner!=='workspace')activateProject(owner,false);
     else if(desktopPages.column(activeWorkspace)!=='workspace')changeDesktopColumn('workspace',false);
+    const browser=Object.keys(appInfo).find(id=>(appInfo[id].base||id)==='dolphin' && appState[id]!=='closed' && desktopPages.inColumn(activeWorkspace,id));
+    if(browser)changeDesktopPage(desktopPages.pageOf(activeWorkspace,browser),false,desktopPages.columnOf(activeWorkspace,browser));
     openFileLocation(row.dataset.searchFileDirectory);
     if(row.dataset.searchFileName)showToast(row.dataset.searchFileName+' · shown in its folder');
   });

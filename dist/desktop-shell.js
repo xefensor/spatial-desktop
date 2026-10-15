@@ -5049,6 +5049,7 @@ function renderWorkspace(name, announce = true) {
     if (layoutMode === "auto") scheduleSpatialAutoLayout();
   });
   globalThis.SpatialOverviewDesktop?.refresh();
+  if (globalThis.SpatialSearchScopes && $("#universalSearch").classList.contains("is-open") && $("#universalSearchInput").value.trim()) filterUniversalSearch();
   if (announce) showToast(profile.label + " workspace loaded");
 }
 
