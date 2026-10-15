@@ -1,0 +1,26 @@
+/* The outer window participates in tiling; this display never reflows. */
+.app-frame.virtual-screen-window{grid-template-rows:48px minmax(0,1fr)!important}
+.app-frame.virtual-screen-window.is-fullscreen{grid-template-rows:minmax(0,1fr)!important}
+.virtual-screen-window .app-identity small{color:var(--muted);font-size:10px;letter-spacing:.02em}
+.virtual-screen-viewport{position:relative;min-width:0;min-height:0;width:100%;height:100%;overflow:hidden;background:#050706;isolation:isolate}
+.virtual-screen-window .virtual-screen-viewport>.steam-game-stage{position:absolute!important;left:50%!important;top:50%!important;width:1920px!important;height:1080px!important;min-width:1920px;min-height:1080px;transform-origin:center;flex:none;container-type:normal;box-sizing:border-box}
+/* Fixed-canvas HUD overrides the responsive ordinary-window demonstration. */
+.virtual-screen-viewport>.steam-game-stage>header{inset:34px 42px auto!important}
+.virtual-screen-viewport>.steam-game-stage>header b{font-size:26px!important}
+.virtual-screen-viewport>.steam-game-stage>header small{font-size:15px!important}
+.virtual-screen-viewport>.steam-game-stage>header button{font-size:18px!important;padding:12px 18px!important}
+.virtual-screen-viewport .steam-game-location{left:8%!important;bottom:23%!important}
+.virtual-screen-viewport .steam-game-location>span{font-size:16px!important}
+.virtual-screen-viewport .steam-game-location h2{font-size:76px!important}
+.virtual-screen-viewport .steam-game-location p{font-size:20px!important}
+.virtual-screen-viewport>.steam-game-stage>footer{inset:auto 5% 42px!important;font-size:19px!important}
+.virtual-screen-viewport>.steam-game-stage>footer>span{display:flex!important}
+.virtual-screen-viewport>.steam-game-stage>footer i{width:150px!important;height:8px!important}
+.virtual-screen-viewport>.steam-game-stage>footer b{display:inline!important;font-size:15px!important}
+.virtual-screen-viewport>.steam-game-stage>footer .steam-button{font-size:19px!important;padding:13px 20px!important}
+.virtual-screen-viewport>.steam-game-stage>footer small{font-size:15px!important}
+.virtual-screen-viewport .steam-game-crosshair{font-size:38px}
+.overview-virtual-screen .virtual-screen-spec{margin:6px 10px;color:var(--sd-glass-muted);font-size:10px;line-height:1.5}
+.virtual-screen-spec span{padding:0 3px}
+.overview-virtual-screen .temporary-desktop-actions{margin-top:9px}
+.app-frame.virtual-screen-window:not(.is-fullscreen)>.app-titlebar{border-bottom:2px solid color-mix(in srgb,var(--app-primary,#b8d59a) 65%,transparent)}

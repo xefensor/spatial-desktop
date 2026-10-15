@@ -4933,6 +4933,7 @@ function renderOverviewWindows() {
     const detail = globalThis.SpatialPreviewPrivacy?.hidden(name) ? 'Preview hidden' : (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
+    if (info.borderlessFullscreen && globalThis.SpatialVirtualScreen) return SpatialVirtualScreen.overviewCard(name,{bond,shortcut,detail,minimized});
     if (bond) {
       const reason = "Created for " + info.label + "'s borderless fullscreen";
       return '<article class="overview-temporary-desktop" data-fullscreen-card="' + escapeHtml(name) + '" style="--overview-app:' + info.primary + '">'

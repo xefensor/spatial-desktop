@@ -47,16 +47,17 @@
       find('steamTemporaryParent').textContent='Temporary desktop · Attached to Desktop '+(bond.page+1);
       find('steamBackToDesktop').textContent='Back to Desktop '+(bond.page+1);
     }
-    find('steamGameState').textContent=gameBond()?'RUNNING · TEMPORARY DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?'CURRENT GAME · OPEN':'READY TO PLAY';
+    find('steamGameState').textContent=gameBond()?'RUNNING · TEMPORARY DESKTOP':running()?'CURRENT GAME · FULLSCREEN':gameOpen?(globalThis.SpatialVirtualScreen?.prefersTiled('game')?'VIRTUAL SCREEN · TILED':'CURRENT GAME · OPEN'):'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
     globalThis.SpatialOverviewDesktop?.refresh();
+    globalThis.SpatialVirtualScreen?.refresh();
   }
   function overviewChanged(open){
     if(open&&available()&&running())requestAnimationFrame(()=>{if(available()&&running()&&find('universalSearch').classList.contains('is-open')&&!find('universalSearchInput').value)globalThis.SpatialOverviewDesktop?.select('steam',false);});
     if(!open&&running())gameFrame()?.querySelector('[data-steam-action="overview"]')?.focus({preventScroll:true});
   }
   function appOpened(name){
-    if(name==='game'&&activeWorkspace==='gaming'&&isLocalApp('game')&&tileSession().fullscreen?.name!=='game')toggleAppFullscreen('game');
+    if(name==='game'&&activeWorkspace==='gaming'&&isLocalApp('game')&&tileSession().fullscreen?.name!=='game'&&!globalThis.SpatialVirtualScreen?.prefersTiled('game'))toggleAppFullscreen('game');
     syncContext();
   }
   function startGame(withOverview=false){

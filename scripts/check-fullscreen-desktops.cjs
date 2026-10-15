@@ -182,3 +182,25 @@ ctx.desktopPages.addFullscreen('gaming','browser',1);ctx.desktopPages.goFullscre
 ctx.tileSessions['gaming:desktop:0:fullscreen:browser:1']={root:T.leaf('browser'),parked:{},floating:{},fullscreen:{name:'browser',bonded:true}};
 ctx.ensureBondedFullscreenDesktops();assert(!ctx.desktopPages.fullscreenBond('gaming','browser'));assert.equal(ctx.desktopPages.selectedFullscreen('gaming'),null);assert.equal(ctx.appState.browser,'open');assert(!ctx.tileSessions['gaming:desktop:0:fullscreen:browser:1']);
 console.log('Bonded fullscreen passed: borderless eligibility, decorated fullscreen stays on its desktop, old Guide recovery, stable page order, both scroll directions, held secondary display, Manual Area exclusion, reload/sync, Overview identity, parent launches, no focus-loss parking, original splits/floats, later edits, explicit Park/close, project ownership and monitor disconnect.');
+// Virtual-screen presentation uses the production bond transition, clears only
+// its owner's float/focus and persists the tiled preference used by Steam.
+let virtualSaved={};
+ctx.desktopStorage={getItem:key=>virtualSaved[key]||null,setItem:(key,value)=>virtualSaved[key]=value};
+ctx.document.getElementById=()=>null;ctx.ResizeObserver=class{observe(){}};ctx.document.addEventListener=()=>{};ctx.window.addEventListener=()=>{};
+for(const frame of Object.values(frames))frame.querySelector=()=>null;
+ctx.contextMenuEntries=()=>[];ctx.executeContextAction=()=>{};
+ctx.appState.game='open';ctx.desktopPages.go('gaming',0);slot=1;assignments.apps.game=1;
+ctx.tileSessions['gaming:desktop:0:1']={root:T.leaf('game'),parked:{},floating:{game:{left:10,top:10,width:500,height:400}},focus:{name:'game'}};
+vm.runInContext(fs.readFileSync(require.resolve('../dist/virtual-screen.js'),'utf8'),ctx);
+ctx.toggleAppFullscreen('game');assert(ctx.desktopPages.fullscreenBond('gaming','game'));
+assert(!ctx.SpatialVirtualScreen.prefersTiled('game'));
+assert(ctx.fullscreenDesktopAction('restore','game'));assert(!ctx.desktopPages.fullscreenBond('gaming','game'));
+assert(ctx.SpatialVirtualScreen.prefersTiled('game'));assert(!ctx.tileSession().floating.game);assert(!ctx.tileSession().focus);
+assert.equal(JSON.parse(virtualSaved['spatial-virtual-screen-modes-v1']).gaming.game,'tiled');
+ctx.renderOverviewWindows();assert(node('#overviewWindowGrid').innerHTML.includes('Virtual screen · Tiled'));
+assert(ctx.SpatialVirtualScreen.showFullscreen('game'));assert(ctx.desktopPages.selectedFullscreen('gaming'));assert(!ctx.SpatialVirtualScreen.prefersTiled('game'));
+ctx.fullscreenDesktopAction('restore','game');ctx.appState.game='minimized';
+const savedOpen=ctx.openApp;ctx.openApp=name=>{ctx.appState[name]='open';};
+assert(ctx.SpatialVirtualScreen.showFullscreen('game'),'A parked tiled screen can explicitly resume fullscreen');ctx.openApp=savedOpen;
+assert.equal(Object.keys(ctx.desktopPages.space('gaming').fullscreen).filter(id=>id==='game').length,1,'One game identity, one fullscreen child');
+console.log('Virtual-screen adapter passed: production tile/fullscreen round trip, floating/focus recovery, remembered presentation, Overview projection and explicit parked-screen resume.');

@@ -41,6 +41,7 @@ context.SpatialSteamOverview.showDesktop();assert.equal(fullscreen,beforeFullscr
 assert(context.desktopPages.fullscreenBond('gaming','game'));assert.equal(context.appState.game,'open');
 delete context.desktopPages;delete context.changeDesktopPage;
 context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');assert.equal(context.appState.steam,'minimized');
+fullscreen=null;context.SpatialVirtualScreen={prefersTiled:()=>true,refresh(){}};context.SpatialSteamOverview.startGame();assert.equal(fullscreen,null,'Returning through Steam preserves the tiled virtual screen');delete context.SpatialVirtualScreen;context.SpatialSteamOverview.startGame();assert.equal(fullscreen.name,'game');
 context.activeWorkspace='work';context.appState={game:'closed',steam:'closed'};context.SpatialSteamOverview.workspaceChanged();assert.equal(context.provider.available(),false);assert.equal(context.SpatialSteamOverview.running(),false);
 context.SpatialSteamOverview.startGame();assert.equal(context.appState.game,'closed','The sample cannot launch outside Gaming');
 context.activeWorkspace='gaming';context.appState={game:'open',steam:'closed'};context.SpatialSteamOverview.syncContext();assert.equal(context.provider.available(),false,'Closing Steam removes its contributed tab');
