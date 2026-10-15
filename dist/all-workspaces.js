@@ -1,4 +1,4 @@
-/* Explicit global inspection; ordinary notifications remain workspace-local. */
+/* Persistent notification routing; presentation lives in System and its Area. */
 (function(root){
   'use strict';
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -43,12 +43,11 @@
   }
   const api={create,destination,displayNotification,activities};
   if(typeof module!=='undefined' && module.exports){module.exports=api;return;}
-  const panel=document.getElementById('allWorkspacesPanel'),button=document.getElementById('allWorkspacesTab'),groups=document.getElementById('allWorkspacesGroups');
-  if(!panel || !root.SpatialOverviewDesktop || root.SpatialGuide?.model.active())return;
+  if(!root.SpatialOverviewDesktop || root.SpatialGuide?.model.active())return;
   const key='spatial-workspace-notifications-v1';
   let saved={};try{saved=JSON.parse(desktopStorage.getItem(key)||'{}');}catch{}
   const notifications=create(saved),listeners=new Set();let painting=false,restoring=false,pending=0;
-  const visible=()=>SpatialOverviewDesktop.active()==='global'&&!panel.hidden;
+  const visible=()=>SpatialOverviewDesktop.active()==='system'&&$('#universalSearch').classList.contains('is-open');
   const id=()=>root.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2);
   const tones=new Set(['blue','cyan','violet','green','amber','rose']);
   const localItems=()=>document.querySelectorAll('#notificationList [data-notification-id],#systemWideNotificationList [data-notification-id]');
@@ -120,43 +119,7 @@
       const finish=()=>{if(workspace!==null&&activeWorkspace!==workspace)return;if(desktopPageAnimating){setTimeout(finish,60);return;}openApp(app);};finish();
     }else revealSystemRailWidget('#notificationWidget');
   }
-  function reconcile(list,items,workspace){
-    const keys=new Set(items.map(item=>item.id));
-    for(const node of [...list.children])if(!keys.has(node.dataset.globalItem))node.remove();
-    for(const item of items){
-      let node=[...list.children].find(node=>node.dataset.globalItem===item.id);
-      if(!node){
-        node=document.createElement('article');node.className='global-activity-item';node.dataset.globalItem=item.id;
-        node.innerHTML='<span class="global-item-icon" aria-hidden="true"></span><div class="global-item-copy"><span class="global-item-category"></span><h4></h4><p></p></div><div class="global-item-actions"><button type="button" data-global-open>Open</button></div>';
-        list.append(node);
-        if(item.notification){const dismiss=document.createElement('button');dismiss.type='button';dismiss.dataset.globalDismiss=item.notification;dismiss.textContent='Dismiss';node.querySelector('.global-item-actions').append(dismiss);}
-      }
-      node.querySelector('.global-item-category').textContent=item.category;
-      node.querySelector('h4').textContent=item.title;node.querySelector('p').textContent=item.detail;
-      const art=item.app&&appInfo[item.app]?appArt(item.app):icon(item.notification?'i-bell':'i-monitor'),artNode=node.querySelector('.global-item-icon');if(artNode.dataset.art!==art){artNode.dataset.art=art;artNode.innerHTML=art;}
-      const open=node.querySelector('[data-global-open]');open.dataset.globalWorkspace=workspace===null?'@system':workspace;open.dataset.globalApp=item.app||'';open.dataset.globalNotification=item.notification||'';open.setAttribute('aria-label','Open '+item.title+' in '+(workspace===null?'System':workspaceProfiles[workspace].label));
-      const dismiss=node.querySelector('[data-global-dismiss]');if(dismiss)dismiss.setAttribute('aria-label','Dismiss '+item.title);
-    }
-  }
-  function render(){
-    if(!visible())return;
-    const snapshot=appWindowStore.snapshot();
-    const scopes=[null,...Object.keys(workspaceProfiles)];
-    for(const workspace of scopes){
-      const scope=workspace===null?'@system':workspace,profile=workspaceProfiles[workspace];
-      let group=[...groups.children].find(node=>node.dataset.globalWorkspaceGroup===scope);
-      if(!group){group=document.createElement('section');group.className='global-workspace-group';group.dataset.globalWorkspaceGroup=scope;group.innerHTML='<header><span class="global-group-icon" aria-hidden="true"></span><div><h4></h4><small></small></div></header><div class="global-group-items"></div><p class="global-group-empty"></p>';groups.append(group);}
-      group.style.setProperty('--global-group-accent',profile?.accent||'#8aa4b8');
-      group.querySelector('header h4').textContent=profile?.label||'System';group.querySelector('header small').textContent=workspace===null?'Shared system alerts':workspace===activeWorkspace?'Current workspace':'Workspace-local activity';
-      group.querySelector('.global-group-icon').innerHTML=icon(profile?.icon||'i-settings');
-      const models=snapshot[workspace]||{},states=workspace===activeWorkspace?appState:workspaceAppStates[workspace]||{};
-      const items=notifications.list(workspace).map(note=>({...displayNotification(note,models[note.app],appInfo[note.app]?.label),id:'notification:'+note.id,notification:note.id,app:note.app,category:'Notification'}));
-      if(workspace!==null)items.push(...activities(models,states,workspace,activeWorkspace,appInfo));
-      reconcile(group.querySelector('.global-group-items'),items,workspace);
-      group.querySelector('.global-group-empty').hidden=items.length>0;group.querySelector('.global-group-empty').textContent=workspace===null?'No system-wide alerts':'No pending notifications or activity';
-    }
-    for(const group of [...groups.children])if(group.dataset.globalWorkspaceGroup!=='@system'&&!workspaceProfiles[group.dataset.globalWorkspaceGroup])group.remove();
-  }
+  function render(){root.SpatialOverviewSystem?.render();}
   function schedule(){if(!visible()||pending)return;pending=requestAnimationFrame(()=>{pending=0;render();});}
   function checkDownloads(quiet=false){
     for(const [workspace,models] of Object.entries(appWindowStore.snapshot()))for(const [app,model] of Object.entries(models))if(model.download?.received>=model.download?.total && !model.download.notified){
@@ -166,19 +129,12 @@
   }
   const originalSaveApps=saveAppWindows;
   saveAppWindows=function(...args){checkDownloads();originalSaveApps(...args);schedule();};
-  groups.addEventListener('click',event=>{
-    const dismiss=event.target.closest('[data-global-dismiss]');if(dismiss){notifications.dismiss(dismiss.dataset.globalDismiss);save();renderLocal();render();return;}
-    const open=event.target.closest('[data-global-open]');if(open){if(open.dataset.globalNotification)markRead([open.dataset.globalNotification]);openOrigin(open.dataset.globalWorkspace==='@system'?null:open.dataset.globalWorkspace,open.dataset.globalApp);}
-  });
   $('#notificationList').addEventListener('click',event=>{
     const dismiss=event.target.closest('.dismiss-button'),note=dismiss?.closest('[data-notification-id]');
     if(note){notifications.dismiss(note.dataset.notificationId);save();}
   },true);
-  $('#universalSearchInput').addEventListener('input',()=>{if($('#universalSearchInput').value.trim())SpatialOverviewDesktop.closeSeparate();});
-  button.addEventListener('keydown',event=>{if(event.key==='ArrowRight'){event.preventDefault();event.stopPropagation();SpatialOverviewDesktop.select('timeline',false);$('[data-overview-section="timeline"]')?.focus({preventScroll:true});}});
   window.addEventListener('storage',event=>{if(event.key===key){try{notifications.merge(JSON.parse(event.newValue||'{}'));renderLocal();schedule();listeners.forEach(listener=>listener());}catch{}}});
   for(const workspace of Object.keys(workspaceProfiles))readLegacy(workspace,workspace===activeWorkspace);
   root.SpatialAllWorkspaces={notify,notifications:()=>notifications.snapshot(),render,refreshLocal:renderLocal,list:notifications.list,unread:notifications.unread,markRead,dismiss,content,openOrigin,subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);}};
-  SpatialOverviewDesktop.registerSeparateSection('global',{button,panel,label:'All Workspaces',available:()=>!root.SpatialGuide?.model.active(),render,close:()=>groups.replaceChildren()});
   save(false);renderLocal();checkDownloads(true);originalSaveApps(false);
 })(typeof globalThis!=='undefined'?globalThis:this);

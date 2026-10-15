@@ -15,12 +15,13 @@
   if(typeof module!=='undefined' && module.exports){module.exports={createPreview};return;}
   const store=root.SpatialAllWorkspaces,popup=document.getElementById('workspaceNotificationPopup');
   if(!store || !popup)return;
-  const preview=createPreview(),rows=[document.getElementById('workspaceNotificationBadges'),document.getElementById('systemRailWorkspaceNotifications')];
+  const preview=createPreview(),rows=[document.getElementById('workspaceNotificationBadges'),document.getElementById('systemRailWorkspaceNotifications'),document.getElementById('overviewWorkspaceNotificationBadges')].filter(Boolean);
   const list=popup.querySelector('[data-workspace-notification-list]'),status=popup.querySelector('[data-workspace-notification-status]');
   let origin=null,scanPending=0;
   function renderBadges(){
     const scopes=Object.keys(workspaceProfiles).filter(workspace=>workspace!==activeWorkspace);
     document.getElementById('workspaceNotificationsWidget').hidden=!scopes.length;
+    const overviewWidget=document.getElementById('overviewWorkspaceNotificationsWidget');if(overviewWidget)overviewWidget.hidden=!scopes.length;
     for(const row of rows){
       row.hidden=!scopes.length;
       for(const node of [...row.children])if(!scopes.includes(node.dataset.notificationWorkspaceToggle))node.remove();
@@ -95,7 +96,7 @@
   const originalWorkspace=renderWorkspace;
   renderWorkspace=function(...args){close(false);const result=originalWorkspace(...args);renderBadges();scan();return result;};
   const originalOverview=setUniversalSearchOpen;
-  setUniversalSearchOpen=function(...args){if(args[0])close();const result=originalOverview(...args);scan();return result;};
+  setUniversalSearchOpen=function(...args){close(false);const result=originalOverview(...args);scan();return result;};
   // Read state changes only for notifications actually revealed to the user.
   // Overflow clipping, hidden rails and the inert desktop under Overview count as hidden.
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
@@ -107,10 +108,12 @@
     }
     if(ids.length)store.markRead(ids);
   },{threshold:.6}):null;
-  function scan(){if(!observer||scanPending)return;scanPending=requestAnimationFrame(()=>{scanPending=0;observer.disconnect();document.querySelectorAll('#notificationList [data-notification-id],#systemWideNotificationList [data-notification-id],#allWorkspacesGroups [data-global-item^="notification:"]').forEach(node=>observer.observe(node));});}
+  function scan(){if(!observer||scanPending)return;scanPending=requestAnimationFrame(()=>{scanPending=0;observer.disconnect();document.querySelectorAll('#notificationList [data-notification-id],#systemWideNotificationList [data-notification-id],#overviewNotificationList [data-notification-id],#overviewSystemWideNotificationList [data-notification-id]').forEach(node=>observer.observe(node));});}
   if(typeof MutationObserver==='function'){
     const mutations=new MutationObserver(scan);
-    for(const node of [document.getElementById('notificationList'),document.getElementById('allWorkspacesGroups')])mutations.observe(node,{childList:true,subtree:true});
+    const overviewSystem=document.querySelector('[data-overview-panel="system"]');
+    if(overviewSystem){const visibility=new MutationObserver(()=>{if((overviewSystem.inert||overviewSystem.hidden)&&origin?.closest('[data-overview-panel="system"]'))close(false);});visibility.observe(overviewSystem,{attributes:true,attributeFilter:['inert','hidden']});}
+    for(const node of [document.getElementById('notificationList'),document.getElementById('overviewNotificationList'),document.getElementById('overviewSystemWideNotificationList')].filter(Boolean))mutations.observe(node,{childList:true,subtree:true});
   }
   document.addEventListener('visibilitychange',()=>{if(document.hidden)close(false);else scan();});
   store.subscribe(()=>{renderBadges();renderPopup();scan();});

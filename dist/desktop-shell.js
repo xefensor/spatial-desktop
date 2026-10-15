@@ -6092,7 +6092,7 @@ function syncNotifications() {
   $("#systemRailNotifications").title = count + (count === 1 ? " notification" : " notifications");
   $("#overviewNotifications").hidden = count === 0;
   $("#overviewNotificationCount").textContent = count;
-  $("#overviewNotificationList").innerHTML = $$(".notification", $("#notificationList")).map((item, index) => '<article class="overview-notification"><span><b>' + escapeHtml($("b", item)?.textContent || "Notification") + '</b><small>' + escapeHtml($("small", item)?.textContent || "") + '</small></span><button class="dismiss-button" data-overview-dismiss="' + index + '" aria-label="Dismiss ' + escapeHtml($("b", item)?.textContent || "notification") + '">×</button></article>').join("");
+  $("#overviewNotificationList").innerHTML = $$(".notification", $("#notificationList")).map((item, index) => '<article class="overview-notification"'+(item.dataset.notificationId?' data-notification-id="'+escapeHtml(item.dataset.notificationId)+'"':'')+'><span><b>' + escapeHtml($("b", item)?.textContent || "Notification") + '</b><small>' + escapeHtml($("small", item)?.textContent || "") + '</small></span><button class="dismiss-button" data-overview-dismiss="' + index + '" aria-label="Dismiss ' + escapeHtml($("b", item)?.textContent || "notification") + '">×</button></article>').join("");
   prepareControlSemantics($("#overviewNotificationList"));
   if (count) revealDynamicWidget($("#notificationWidget"));
   else concealDynamicWidget($("#notificationWidget"));

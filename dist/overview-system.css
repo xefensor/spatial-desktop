@@ -1,0 +1,28 @@
+/* The System tab uses the same near-to-wide hierarchy as the System Area. */
+.overview-system-scoped .overview-system-body{display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(270px,1fr)!important;gap:22px!important;align-items:start;overflow-y:auto!important;padding:17px!important;overscroll-behavior:contain}
+.overview-system-local{min-width:0;display:flex;flex-direction:column;gap:18px}
+.overview-system-scope{min-width:0;--overview-system-accent:var(--workspace-accent)}
+.overview-system-scope[hidden]{display:none!important}
+.overview-system-scope-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--sd-glass-groove)}
+.overview-system-scope-heading h4{margin:0;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:650;color:var(--muted)}
+.overview-system-scope-heading>span{font-size:12px;color:var(--overview-system-accent);overflow-wrap:anywhere;text-align:right}
+.overview-system-scope-body{display:flex;flex-direction:column;gap:12px;min-width:0}
+.overview-system-scoped .overview-system-scope-body>.overview-widget{width:auto!important;min-width:0;grid-column:auto!important;margin:0!important;flex:none}
+.overview-system-scoped [data-overview-system-scope="system"]{border-left:1px solid var(--sd-glass-groove);padding-left:22px;--overview-system-accent:#8aa4b8}
+.overview-system-scoped [data-overview-system-scope="system"]>.overview-system-scope-heading{border-bottom-color:color-mix(in srgb,#8aa4b8 40%,var(--sd-glass-groove))}
+.overview-system-empty{margin:4px 0;color:var(--muted);font-size:11px;line-height:1.5}
+.overview-system-empty[hidden]{display:none!important}
+.overview-system-request,.overview-project-plan{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:48px;width:100%;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);color:var(--text);text-align:left;cursor:pointer}
+.overview-system-request>.app-art{width:25px;height:25px;flex:none}
+.overview-system-request>span,.overview-project-plan>span{flex:1;min-width:0}
+.overview-system-request b,.overview-project-plan b{display:block;font-size:12px;font-weight:600}
+.overview-system-request small,.overview-project-plan small{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+.overview-system-request>svg:last-child,.overview-project-plan>svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6}
+.overview-system-request:is(:hover,:focus-visible),.overview-project-plan:is(:hover,:focus-visible){outline:1px solid var(--overview-system-accent);outline-offset:-1px}
+.overview-system-scoped .overview-notification{min-width:0;align-items:start}
+.overview-system-scoped .overview-notification b,.overview-system-scoped .overview-notification small{white-space:normal!important;overflow-wrap:anywhere}
+.overview-system-scoped .workspace-notifications-widget .workspace-notification-badges{margin:10px 0;gap:10px}
+.overview-system-scoped .workspace-notification-badge{min-width:56px;min-height:42px;gap:8px}
+.overview-system-scoped .overview-workspace-focus>.quick-toggle{width:100%;justify-content:flex-start;margin-top:8px}
+.overview-system-scoped .overview-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:750px){.overview-system-scoped .overview-system-body{grid-template-columns:minmax(0,1fr)!important;gap:22px!important}.overview-system-scoped [data-overview-system-scope="system"]{border-left:0;border-top:1px solid var(--sd-glass-groove);padding:18px 0 0}}

@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const N=require('../dist/all-workspaces.js'),S=require('../dist/overview-system.js');
+const store=N.create(),profiles={work:{},gaming:{},school:{}};
+store.add({id:'work',workspace:'work',title:'Current review',time:10});store.add({id:'system',workspace:null,title:'Battery low',time:20});store.add({id:'gaming',workspace:'gaming',title:'Private gaming content',detail:'Secret lobby',time:30});
+let view=S.notificationScopes(store,'work',profiles);
+assert.deepEqual(view.local.map(n=>n.id),['work']);assert.deepEqual(view.shared.map(n=>n.id),['system']);
+assert.deepEqual(view.foreign,[{workspace:'gaming',unread:1},{workspace:'school',unread:0}]);
+assert(!JSON.stringify(view).includes('Private gaming content'));assert(!JSON.stringify(view).includes('Secret lobby'),'System receives foreign counts, never foreign message content');
+store.markRead(['gaming'],40);view=S.notificationScopes(store,'work',profiles);assert.equal(view.foreign[0].unread,0);assert.equal(store.list('gaming').length,1,'Viewing a badge does not dismiss messages');
+view=S.notificationScopes(store,'gaming',profiles);assert.equal(view.local[0].title,'Private gaming content');assert(!view.foreign.some(item=>item.workspace==='gaming'));
+const html=fs.readFileSync('dist/index.html','utf8'),source=fs.readFileSync('dist/all-workspaces.js','utf8'),badges=fs.readFileSync('dist/workspace-notifications.js','utf8');
+assert(!html.includes('id="allWorkspacesTab"'));assert(!html.includes('id="allWorkspacesPanel"'));assert(!source.includes('registerSeparateSection'));
+assert(html.includes('id="overviewWorkspaceNotificationBadges"'));assert(html.includes('id="overviewSystemWideNotificationList"'));assert(badges.includes("document.getElementById('overviewWorkspaceNotificationBadges')"));
+assert(badges.includes('setUniversalSearchOpen=function(...args){close(false);'),'Closing Overview always clears a foreign preview');
+assert(badges.includes("origin?.closest('[data-overview-panel=\"system\"]')"),'Leaving the System panel clears its foreign preview');
+console.log('Overview System passed: current/foreign/shared scopes, count-only foreign projection, read state retained, removed global UI, shared badge adapter and preview close guards.');

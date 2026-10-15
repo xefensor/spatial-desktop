@@ -91,7 +91,7 @@
     const observer=new MutationObserver(()=>{schedule();root.SpatialWorkspaceNotificationViews?.scan();});observer.observe(dynamic,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});observer.observe(timer,{attributes:true,attributeFilter:['hidden']});observer.observe($('#systemWideNotificationList'),{childList:true,subtree:true});
   }
   root.SpatialAllWorkspaces?.subscribe(schedule);
-  root.SpatialSystemScopes={render,syncAgenda};
+  root.SpatialSystemScopes={render,syncAgenda,agendas,requests};
   root.SpatialAllWorkspaces?.refreshLocal?.();
   prepareControlSemantics(area);area.classList.add('system-scopes-ready');render();
 })(typeof globalThis!=='undefined'?globalThis:this);
