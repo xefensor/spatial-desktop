@@ -7,7 +7,10 @@
 .overview-system-scope-heading h4{margin:0;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:650;color:var(--muted)}
 .overview-system-scope-heading>span{font-size:12px;color:var(--overview-system-accent);overflow-wrap:anywhere;text-align:right}
 .overview-system-scope-body{display:flex;flex-direction:column;gap:12px;min-width:0}
-.overview-system-scoped .overview-system-scope-body>.overview-widget{width:auto!important;min-width:0;grid-column:auto!important;margin:0!important;flex:none}
+.overview-system-scoped .overview-system-scope-body>.overview-widget{width:auto!important;min-width:0;align-self:stretch!important;grid-column:auto!important;margin:0!important;flex:none}
+.overview-system-scoped .overview-shared-alerts>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.overview-system-scoped .overview-shared-alerts h3{margin:0}
+.overview-system-scoped .overview-shared-alerts>header>span{font-size:12px;color:var(--muted)}
 .overview-system-scoped [data-overview-system-scope="system"]{border-left:1px solid var(--sd-glass-groove);padding-left:22px;--overview-system-accent:#8aa4b8}
 .overview-system-scoped [data-overview-system-scope="system"]>.overview-system-scope-heading{border-bottom-color:color-mix(in srgb,#8aa4b8 40%,var(--sd-glass-groove))}
 .overview-system-empty{margin:4px 0;color:var(--muted);font-size:11px;line-height:1.5}
