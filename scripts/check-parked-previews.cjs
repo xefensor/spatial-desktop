@@ -19,6 +19,7 @@ class Element {
   removeAttribute(name){delete this.attrs[name];}setAttribute(name,value){this.attrs[name]=value;}
   matches(selector){return selector.split(',').includes(this.tag);}
   querySelectorAll(){return this.children.flatMap(child=>[child,...child.querySelectorAll('*')]);}
+  querySelector(selector){return this.querySelectorAll().find(node=>node.classList.contains(selector.slice(1))) || null;}
   cloneNode(){return new Element(this.tag,this.attrs,this.children.map(c=>c.cloneNode(true)));}
 }
 const field=new Element('input',{id:'address',name:'query','data-app-action':'search',autofocus:'',onclick:'bad()'});field.value='My current page';field.checked=true;

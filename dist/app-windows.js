@@ -557,6 +557,7 @@ function appWindowInput(event) {
 function appWindowKey(event) {
   const frame=event.target.closest('[data-app-frame]');if(!frame||event.metaKey)return;
   const id=frame.dataset.appFrame,model=appWindowModel(id);let handled=false;
+  if(model.ownedDialog)return;
   if(model.kind==='dolphin'){
     if(event.ctrlKey&&event.key.toLowerCase()==='l'){$('.address-bar input',frame).focus();$('.address-bar input',frame).select();handled=true;}
     if(event.ctrlKey&&event.key.toLowerCase()==='f'){if(!model.search)performAppAction(id,'file-search');else $('[data-file-filter]',frame).focus();handled=true;}

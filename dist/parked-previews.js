@@ -33,6 +33,8 @@
     clone.dataset.appKind=frame.dataset.appKind;
     clone.classList.remove('is-fullscreen','is-maximized','is-floating','is-front','is-auto-tiling','is-dragging','is-resizing');
     clone.classList.add('parked-preview-window');
+    // An owned dialog has its own connected card below this app preview.
+    clone.querySelector('.owned-dialog-layer')?.remove();
     return clone;
   }
   const api={usesPreview,fit,markup,cloneWindow};

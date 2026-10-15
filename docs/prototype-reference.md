@@ -90,6 +90,12 @@ The hotbar follows visible windows’ reading order: left to right across a row,
 
 Alt+number and Alt+Shift+number are browser fallbacks. Focus or restore with the shortcut; invoking it again on the focused window parks that window. Shift+click a hotbar icon creates another app instance. The host OS may intercept Super shortcuts.
 
+### Dialogs attached to an app
+
+Firefox's menu offers **Save page as…**; **Ctrl+S** opens the same local demo dialog. It belongs to the particular Firefox window, blocks that window's content while leaving its title bar available, and follows its desktop, Project and display. Other apps remain usable. Park Firefox while the dialog is open: its read-only app preview stays above an indented dialog card, connected by the app's accent line and labelled **Dialog · Firefox** and **Needs input**. Both belong to one parked group and one app slot. The dialog does not become an independent parked app. Clicking either preview or Unpark restores the same window and focuses the waiting dialog; dragging the parent card also restores the group. Switching contexts and reloading preserve the dialog and its filename. There is no automatic focus switch while parked.
+
+**Save** writes the captured demo page text into the owning window's current workspace/Project download destination. **Cancel** or Escape dismisses the dialog; explicitly closing the parent also closes its dialog. A second Firefox window has its own dialog state. This is a prototype of app ownership, not an integration with native file pickers or external app dialogs.
+
 ### Maximize and Fullscreen
 
 | Action | Input | Space and other windows |
