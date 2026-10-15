@@ -24,6 +24,7 @@
     projectEditorState.projectName=project?.id||null;
     $('#projectEditorKicker').textContent=ctx.workspace+' / '+(project?.name||'Workspace');
     $('#projectEditorTitle').textContent='Settings';
+    $('.project-editor-mark use',dialog).setAttribute('href','#i-settings');
     $('#closeProjectEditor').setAttribute('aria-label','Close Settings');
     let content=section('desktop','This desktop',names.desktop,row(ctx.temporary?'Borderless fullscreen':'Window arrangement',ctx.temporary?'This temporary desktop is dedicated to its fullscreen app. Restore the window before arranging it.':'Positions, splits and floating windows belong to this desktop and display.',action('desktop',ctx.temporary?'Return to fullscreen app':'Arrange on desktop')));
     if(project){
@@ -68,6 +69,7 @@
   renderProjectEditor=function(...args){
     if(projectEditorState?.view==='settings')return renderSettings();
     $('#closeProjectEditor').setAttribute('aria-label','Close project editor');
+    $('.project-editor-mark use',dialog).setAttribute('href','#i-folder');
     const result=originalRender(...args);
     const project=projectSpaces[projectEditorState?.projectName];
     if(project && ['manage','delete-project'].includes(projectEditorState?.view)){

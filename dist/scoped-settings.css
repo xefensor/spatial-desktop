@@ -1,15 +1,15 @@
 /* Scoped Settings shares the existing glass utility dialog and focus behavior. */
 #projectEditorDialog:has(.settings-scopes) .project-editor-window{width:min(860px,calc(100vw - 32px));max-width:860px}
-#projectEditorDialog:has(.settings-scopes) #projectEditorBody{padding:18px;overflow-y:auto;min-height:0}
-.settings-scopes{display:flex;flex-direction:column;gap:14px}
+#projectEditorDialog:has(.settings-scopes) #projectEditorBody{padding:14px;max-height:calc(100dvh - 130px);overflow-y:auto;min-height:0}
+.settings-scopes{display:flex;flex-direction:column;gap:10px}
 .settings-scope{border:1px solid var(--sd-glass-groove);border-inline-start:2px solid var(--workspace-accent);background:var(--sd-glass-face-deep);min-width:0}
 .settings-scope[data-setting-scope="system"]{border-inline-start-color:var(--muted);margin-top:4px}
-.settings-scope>header{padding:11px 15px;border-bottom:1px solid var(--sd-glass-groove);display:flex;align-items:baseline;justify-content:space-between;gap:8px 18px;flex-wrap:wrap}
+.settings-scope>header{padding:9px 15px;border-bottom:1px solid var(--sd-glass-groove);display:flex;align-items:baseline;justify-content:space-between;gap:8px 18px;flex-wrap:wrap}
 .settings-scope h3{font-size:12px;margin:0;letter-spacing:.04em}
 .settings-scope>header p{font-size:11px!important;margin:0!important;color:var(--sd-glass-muted)}
 .settings-scope>header b{color:var(--sd-glass-text);font-weight:600}
-.settings-scope-content{padding:3px 15px 12px}
-.settings-scope .scoped-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;min-width:0}
+.settings-scope-content{padding:3px 15px 10px}
+.settings-scope .scoped-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:9px 0;min-width:0}
 .settings-scope :is(.scoped-setting-row>div,.scoped-area-heading>div,.scoped-area-row>span){min-width:0}
 .settings-scope b{font-size:12px;line-height:1.5}
 .settings-scope small{display:block;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere}
@@ -23,7 +23,7 @@
 .settings-scope .project-download-destination b{font-size:10px}
 .scoped-area-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--sd-glass-groove);padding:10px 0}
 .scoped-area-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
-.scoped-area-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0}
+.scoped-area-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0}
 .scoped-area-row small{font-size:10px}
 .scoped-device-heading{padding:10px 0;border-top:1px solid var(--sd-glass-groove)}
 .scoped-system-toggles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
