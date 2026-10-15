@@ -11,13 +11,13 @@ const background=S.entries([{action:'app-open'},{action:'app-force-quit'}],{kind
 assert.equal(background[1].label,'Open Steam in Gaming');assert.match(background[2].detail,/only this instance in Gaming/);
 
 // Exercise the shipped command adapter, including stale origin protection.
-const calls=[],sections=[];
+const calls=[],sections=[],frames=[];
 const runtime=vm.createContext({
   contextMenuDescriptor:()=>({kind:'desktop'}),contextMenuEntries:()=>original,executeContextAction:action=>calls.push(['original',action]),
   activeWorkspace:'work',activeProjectName:'site',desktopPages:{column:()=>runtime.column,current:()=>1},column:'site',
   workspaceProfiles:{work:workspace,school:{label:'School',home:'/school'}},projectSpaces:{site:project},appInfo:{},appState:{},
-  openFileLocation:path=>calls.push(['folder',path]),openProjectEditor:(view,options)=>calls.push([view,options.projectName]),closeActiveProject:()=>calls.push(['close','site']),
-  SpatialSettings:{open:()=>calls.push(['settings'])},document:{querySelector:selector=>({scrollIntoView:()=>sections.push(selector),querySelector:()=>({focus(){}})})}
+  openFileLocation:path=>calls.push(['folder',path]),openProjectEditor:(view,options)=>{runtime.projectEditorState={view};calls.push([view,options.projectName]);},closeActiveProject:()=>calls.push(['close','site']),projectEditorState:null,
+  requestAnimationFrame:fn=>frames.push(fn),SpatialSettings:{open:()=>{runtime.projectEditorState={view:'settings'};frames.push(()=>sections.push('initial dialog focus'));calls.push(['settings']);}},document:{querySelector:selector=>({scrollIntoView:()=>sections.push(selector),querySelector:()=>({focus(){}})})}
 });
 vm.runInContext(fs.readFileSync('dist/scoped-actions.js','utf8'),runtime);
 runtime.contextMenuState=runtime.contextMenuDescriptor();
@@ -25,8 +25,8 @@ runtime.executeContextAction('scope:project-folder');assert.deepEqual(calls.at(-
 runtime.executeContextAction('scope:project-manage');assert.deepEqual(calls.at(-1),['manage','site']);
 runtime.executeContextAction('scope:project-close');assert.deepEqual(calls.at(-1),['close','site']);
 runtime.executeContextAction('scope:workspace-home');assert.deepEqual(calls.at(-1),['folder','/work']);
-runtime.executeContextAction('scope:workspace-settings');assert.equal(sections.at(-1),'[data-setting-scope="workspace"]');
-runtime.executeContextAction('scope:system-settings');assert.equal(sections.at(-1),'[data-setting-scope="system"]');
+runtime.executeContextAction('scope:workspace-settings');while(frames.length)frames.shift()();assert.equal(sections.at(-1),'[data-setting-scope="workspace"]','Requested scope wins over the initial dialog focus');
+runtime.executeContextAction('scope:system-settings');while(frames.length)frames.shift()();assert.equal(sections.at(-1),'[data-setting-scope="system"]');
 const count=calls.length;runtime.activeWorkspace='school';runtime.executeContextAction('scope:project-close');assert.equal(calls.length,count,'An old menu cannot close a Project after a Workspace switch');
 runtime.activeWorkspace='work';runtime.column='workspace';runtime.executeContextAction('scope:project-folder');assert.equal(calls.length,count,'An old menu cannot act in a newly selected column');
 runtime.executeContextAction('app-open');assert.deepEqual(calls.at(-1),['original','app-open'],'Existing app/virtual-screen/transfer commands retain their adapters');

@@ -56,12 +56,17 @@
     const scope=contextMenuState?.actionScope;if(!scope||scope.workspace!==activeWorkspace||scope.owner!==desktopPages.column(activeWorkspace))return;
     const project=projectSpaces[scope.owner];
     if(action==='scope:project-folder'&&project)openFileLocation(project.root);
-    if(action==='scope:project-manage'&&project)openProjectEditor('manage',{projectName:scope.owner});
+    if(action==='scope:project-manage'&&project){openProjectEditor('manage',{projectName:scope.owner});projectEditorState.returnFocus=document.querySelector('.workspace-zone');}
     if(action==='scope:project-close'&&project&&activeProjectName===scope.owner)closeActiveProject();
     if(action==='scope:workspace-home')openFileLocation(workspaceProfiles[activeWorkspace].home);
     if(action==='scope:workspace-settings'||action==='scope:system-settings'){
       SpatialSettings.open();
-      const section=document.querySelector('[data-setting-scope="'+(action==='scope:workspace-settings'?'workspace':'system')+'"]');section?.scrollIntoView({block:'start'});section?.querySelector('button,select')?.focus({preventScroll:true});
+      if(projectEditorState?.view==='settings')projectEditorState.returnFocus=document.querySelector('.workspace-zone');
+      // The dialog schedules its initial focus; select the requested scope after it.
+      requestAnimationFrame(()=>{
+        if(activeWorkspace!==scope.workspace||projectEditorState?.view!=='settings')return;
+        const section=document.querySelector('[data-setting-scope="'+(action==='scope:workspace-settings'?'workspace':'system')+'"]');section?.scrollIntoView({block:'start'});section?.querySelector('button,select')?.focus({preventScroll:true});
+      });
     }
   };
 })(typeof globalThis!=='undefined'?globalThis:this);
