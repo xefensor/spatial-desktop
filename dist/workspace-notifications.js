@@ -95,7 +95,7 @@
   const originalWorkspace=renderWorkspace;
   renderWorkspace=function(...args){close(false);const result=originalWorkspace(...args);renderBadges();scan();return result;};
   const originalOverview=setUniversalSearchOpen;
-  setUniversalSearchOpen=function(...args){if(args[0])close(false);const result=originalOverview(...args);scan();return result;};
+  setUniversalSearchOpen=function(...args){if(args[0])close();const result=originalOverview(...args);scan();return result;};
   // Read state changes only for notifications actually revealed to the user.
   // Overflow clipping, hidden rails and the inert desktop under Overview count as hidden.
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
