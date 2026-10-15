@@ -107,12 +107,14 @@
     }
     if(ids.length)store.markRead(ids);
   },{threshold:.6}):null;
-  function scan(){if(!observer||scanPending)return;scanPending=requestAnimationFrame(()=>{scanPending=0;observer.disconnect();document.querySelectorAll('#notificationList [data-notification-id],#allWorkspacesGroups [data-global-item^="notification:"]').forEach(node=>observer.observe(node));});}
+  function scan(){if(!observer||scanPending)return;scanPending=requestAnimationFrame(()=>{scanPending=0;observer.disconnect();document.querySelectorAll('#notificationList [data-notification-id],#systemWideNotificationList [data-notification-id],#allWorkspacesGroups [data-global-item^="notification:"]').forEach(node=>observer.observe(node));});}
   if(typeof MutationObserver==='function'){
     const mutations=new MutationObserver(scan);
     for(const node of [document.getElementById('notificationList'),document.getElementById('allWorkspacesGroups')])mutations.observe(node,{childList:true,subtree:true});
   }
   document.addEventListener('visibilitychange',()=>{if(document.hidden)close(false);else scan();});
   store.subscribe(()=>{renderBadges();renderPopup();scan();});
+  // System-wide alerts may be mounted by the scope layout after this adapter.
+  root.SpatialWorkspaceNotificationViews={scan};
   renderBadges();scan();
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -205,6 +205,7 @@
     const next=planner.list(activeWorkspace).find(event=>!event.done&&(event.time>=now||event.endTime>now));
     for(const id of ['#systemAgendaTitle','#workspaceAgendaTitle'])$(id).textContent=next?.title||'No upcoming events or tasks';
     for(const id of ['#systemAgendaMeta','#workspaceAgendaMeta'])$(id).textContent=next?new Date(next.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+(next.projectName?' · '+next.projectName:''): 'Add one in Timeline';
+    globalThis.SpatialSystemScopes?.syncAgenda(planner.list(activeWorkspace),now);
   }
   function showPlanForm(open){
     const form=$('#timelinePlanForm'),toggle=$('#timelineAddToggle');form.hidden=!open;toggle.setAttribute('aria-pressed',String(open));toggle.setAttribute('aria-expanded',String(open));

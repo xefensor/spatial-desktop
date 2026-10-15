@@ -51,6 +51,7 @@
   const visible=()=>SpatialOverviewDesktop.active()==='global'&&!panel.hidden;
   const id=()=>root.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2);
   const tones=new Set(['blue','cyan','violet','green','amber','rose']);
+  const localItems=()=>document.querySelectorAll('#notificationList [data-notification-id],#systemWideNotificationList [data-notification-id]');
   function notificationMarkup(note){
     const tone=tones.has(note.tone)?note.tone:'blue',glyph=/^i-[a-z-]+$/.test(note.glyph)?note.glyph:'i-bell';
     return '<article class="notification" data-notification-id="'+escapeHtml(note.id)+'"'+(note.workspace===null?' data-notification-system="true"':' data-notification-workspace="'+escapeHtml(note.workspace)+'"')+(note.app?' data-app-origin="'+escapeHtml(note.app)+'"':'')+'><span class="app-badge '+tone+'">'+icon(glyph)+'</span><div><b>'+escapeHtml(note.title)+'</b><small>'+escapeHtml(note.detail)+'</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article>';
@@ -74,12 +75,17 @@
   const originalSync=syncNotifications;
   function renderLocal(){
     if(painting)return;painting=true;
-    try{$('#notificationList').innerHTML=[...notifications.list(null),...notifications.list(activeWorkspace)].map(notificationMarkup).join('');originalSync();}finally{painting=false;}
+    try{
+      const shared=document.getElementById('systemWideNotificationList');
+      $('#notificationList').innerHTML=[...(shared?[]:notifications.list(null)),...notifications.list(activeWorkspace)].map(notificationMarkup).join('');
+      if(shared)shared.innerHTML=notifications.list(null).map(notificationMarkup).join('');
+      originalSync();
+    }finally{painting=false;}
   }
   syncNotifications=function(...args){
     if(painting||restoring)return originalSync(...args);
     if(desktopSyncApplying){renderLocal();schedule();return;}
-    const shown=new Set([...$('#notificationList').querySelectorAll('[data-notification-id]')].map(item=>item.dataset.notificationId));
+    const shown=new Set([...localItems()].map(item=>item.dataset.notificationId));
     let changed=false;
     for(const note of [...notifications.list(activeWorkspace),...notifications.list(null)])if(!shown.has(note.id)){notifications.dismiss(note.id);changed=true;}
     if(changed)save();originalSync(...args);schedule();
@@ -91,7 +97,7 @@
     if(workspace===null||workspace===activeWorkspace){
       renderLocal();
       if(!options.quiet)requestAnimationFrame(()=>{
-        const item=[...$('#notificationList').querySelectorAll('[data-notification-id]')].find(node=>node.dataset.notificationId===note.id);
+        const item=[...localItems()].find(node=>node.dataset.notificationId===note.id);
         if(item&&notifications.get(note.id))drawAttentionToNotification(item,note.title,note.detail,note.tone,note.glyph);
       });
     }
@@ -172,7 +178,7 @@
   button.addEventListener('keydown',event=>{if(event.key==='ArrowRight'){event.preventDefault();event.stopPropagation();SpatialOverviewDesktop.select('timeline',false);$('[data-overview-section="timeline"]')?.focus({preventScroll:true});}});
   window.addEventListener('storage',event=>{if(event.key===key){try{notifications.merge(JSON.parse(event.newValue||'{}'));renderLocal();schedule();listeners.forEach(listener=>listener());}catch{}}});
   for(const workspace of Object.keys(workspaceProfiles))readLegacy(workspace,workspace===activeWorkspace);
-  root.SpatialAllWorkspaces={notify,notifications:()=>notifications.snapshot(),render,list:notifications.list,unread:notifications.unread,markRead,dismiss,content,openOrigin,subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);}};
+  root.SpatialAllWorkspaces={notify,notifications:()=>notifications.snapshot(),render,refreshLocal:renderLocal,list:notifications.list,unread:notifications.unread,markRead,dismiss,content,openOrigin,subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);}};
   SpatialOverviewDesktop.registerSeparateSection('global',{button,panel,label:'All Workspaces',available:()=>!root.SpatialGuide?.model.active(),render,close:()=>groups.replaceChildren()});
   save(false);renderLocal();checkDownloads(true);originalSaveApps(false);
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -6132,21 +6132,24 @@ function drawAttentionToNotification(item, title, detail, tone, glyph) {
   const area = areaFor("systems");
   const local = area && !area.hidden && !area.classList.contains("is-on-other-display") && isLocalArea("systems");
   const expanded = local && area.dataset.areaState === "expanded" && !$("#universalSearch")?.classList.contains("is-open");
+  const widget = item?.closest?.(".system-widget") || $("#notificationWidget");
+  const peek = $("#notificationPeek");
+  if (peek?.dataset) peek.dataset.notificationScope = item?.dataset?.notificationSystem ? "system" : "workspace";
   clearTimeout(notificationAttentionTimer);
   $$(".notification.is-new-attention", $("#notificationList")).forEach(notification => notification.classList.remove("is-new-attention"));
   area?.classList.remove("has-notification-attention");
-  $("#notificationWidget")?.classList.remove("has-new-attention");
+  widget?.classList.remove("has-new-attention");
 
   if (expanded) {
     hideNotificationPeek();
     item.classList.add("is-new-attention");
     area.classList.add("has-notification-attention");
-    $("#notificationWidget").classList.add("has-new-attention");
+    widget.classList.add("has-new-attention");
     item.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     notificationAttentionTimer = setTimeout(() => {
       item.classList.remove("is-new-attention");
       area.classList.remove("has-notification-attention");
-      $("#notificationWidget")?.classList.remove("has-new-attention");
+      widget?.classList.remove("has-new-attention");
     }, 2500);
     return;
   }
@@ -6320,7 +6323,7 @@ $("#notificationList").addEventListener("click", event => {
 
 $("#notificationPeek").addEventListener("click", () => {
   hideNotificationPeek();
-  revealSystemRailWidget("#notificationWidget");
+  revealSystemRailWidget($("#notificationPeek").dataset.notificationScope === "system" && $("#systemWideNotificationWidget") ? "#systemWideNotificationWidget" : "#notificationWidget");
 });
 
 $$('[data-phone-ping]').forEach(button => button.addEventListener("click", () => {
