@@ -93,24 +93,23 @@ body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
 .desktop-page-rail:focus-visible{outline:1px solid var(--desktop-marker-accent);outline-offset:-1px}
 .desktop-page-mark{
+  --desktop-marker-line:color-mix(in srgb,var(--sd-glass-text) 28%,transparent);
   position:relative;display:flex;flex-direction:column;align-items:center;
   flex:none;width:24px;min-height:30px;gap:5px;padding:5px 2px 5px 4px;
-  border-left:2px solid var(--sd-glass-muted);border-radius:0;
-  background:color-mix(in srgb,var(--sd-glass-face) 78%,transparent);
+  border-left:1px solid var(--desktop-marker-line);border-radius:0;
+  background:none;box-shadow:none;
 }
 .desktop-page-mark.is-current{
-  border-left-color:var(--desktop-marker-accent,var(--sd-glass-text));
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--desktop-marker-accent) 42%,transparent);
-  background:color-mix(in srgb,var(--desktop-marker-accent) 18%,var(--sd-glass-face));
+  --desktop-marker-line:color-mix(in srgb,var(--desktop-marker-accent,var(--sd-glass-text)) 75%,transparent);
 }
-.desktop-page-index{font:600 10px/12px system-ui,sans-serif;color:var(--sd-glass-text)}
-.desktop-page-mark.is-current .desktop-page-index{font-weight:800}
+.desktop-page-index{font:500 10px/12px system-ui,sans-serif;color:var(--sd-glass-text);opacity:.5}
+.desktop-page-mark.is-current .desktop-page-index{font-weight:600;opacity:.85}
 .desktop-page-icons{display:flex;flex-direction:column;gap:5px}
 .desktop-page-icons:empty{display:none}
 .desktop-page-app{position:relative;display:block;width:18px;height:20px}
-.desktop-page-app .app-art{display:block;width:18px;height:18px;min-width:18px}
-.desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:2px solid var(--sd-glass-muted);padding-left:2px;padding-right:4px}
-.desktop-page-rail-right .desktop-page-mark.is-current{border-right-color:var(--desktop-marker-accent,var(--sd-glass-text))}
+.desktop-page-app .app-art{display:block;width:18px;height:18px;min-width:18px;opacity:.78}
+.desktop-page-mark.is-current .app-art{opacity:.95}
+.desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:1px solid var(--desktop-marker-line);padding-left:2px;padding-right:4px}
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
 
