@@ -46,8 +46,9 @@
     const shadow=host.attachShadow({mode:'open',clonable:true});
     for(const link of styleLinks){const copy=link.cloneNode(true);copy.addEventListener('load',schedule);shadow.append(copy);}
     const style=document.createElement('style');
-    style.textContent='.parked-preview-window{display:grid!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;margin:0!important;transform:none!important;transition:none!important;animation:none!important;opacity:1!important;visibility:visible!important;z-index:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;pointer-events:none!important}.parked-preview-window *{animation:none!important;transition:none!important;caret-color:transparent!important}';
-    shadow.append(style);return host;
+    style.textContent='body.parked-preview-context{display:block!important;position:relative!important;inset:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;background:none!important;overflow:hidden!important}.parked-preview-window{display:grid!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;margin:0!important;transform:none!important;transition:none!important;animation:none!important;opacity:1!important;visibility:visible!important;z-index:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;pointer-events:none!important}.parked-preview-window *{animation:none!important;transition:none!important;caret-color:transparent!important}';
+    const context=document.createElement('body');context.className='parked-preview-context';
+    shadow.append(style,context);return host;
   }
   function copyIcons(frame,shadow) {
     const sprite=document.createElementNS('http://www.w3.org/2000/svg','svg');sprite.style.display='none';
@@ -77,7 +78,9 @@
     entry.host.style.width=entry.width+'px';entry.host.style.height=entry.height+'px';
     const shadow=entry.host.shadowRoot;
     shadow.querySelector('.parked-preview-window')?.remove();shadow.querySelector('[data-preview-icons]')?.remove();
-    const clone=cloneWindow(frame);copyIcons(frame,shadow);shadow.append(clone);dirty.delete(id);
+    const clone=cloneWindow(frame),computed=getComputedStyle(frame);
+    for(const property of computed)if(property.startsWith('--'))clone.style.setProperty(property,computed.getPropertyValue(property));
+    copyIcons(frame,shadow);shadow.querySelector('.parked-preview-context').append(clone);dirty.delete(id);
     entry.original=frame;entry.clone=clone;
     entry.title=frame.querySelector('.app-identity small')?.textContent || appInfo[id].detail;
   }
@@ -101,6 +104,7 @@
       let entry=entries.get(id);
       if(!entry){entry={host:makeHost(),width:960,height:640};entries.set(id,entry);dirty.add(id);}
       if(dirty.has(id))update(id,entry);
+      entry.host.shadowRoot.querySelector('.parked-preview-context').dataset.theme=document.body.dataset.theme;
       if(entry.host.parentElement!==viewport)viewport.prepend(entry.host);
       const detail=viewport.closest('[data-mini-card]').querySelector('header small');if(detail)detail.textContent=entry.title || appInfo[id].detail;
       place(viewport,entry);resize.observe(viewport);
@@ -114,6 +118,7 @@
   miniMarkup=function(id){const original=originalMarkup(id);return usesPreview(appInfo[id])?markup(original,id,appInfo[id].label,escapeHtml):original;};
   const originalRender=renderMiniApps;
   renderMiniApps=function(...args){originalRender(...args);refresh();};
+  if(document.body)new MutationObserver(()=>{for(const id of entries.keys())dirty.add(id);schedule();}).observe(document.body,{attributes:true,attributeFilter:['data-theme']});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
   renderMiniApps();
 })(typeof globalThis!=='undefined'?globalThis:this);
