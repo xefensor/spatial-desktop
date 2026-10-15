@@ -220,6 +220,14 @@ Timeline records explicit app, file, browser, Project, desktop and Stash actions
 
 Create local events with start/end, tasks and reminders. Completion and dismissal persist through reload and between demo displays. Plans can appear even without a recorded app interaction. Demo plans are labelled examples; clean and newly created Workspaces start without them. No external calendar account is connected. Timeline is explicit prototype activity history, not a keylogger, clipboard recorder or passive screen capture.
 
+## Project ZIP packing and importing
+
+Pack and Import apply only to Projects. **Pack** in the Project Area creates a standard ZIP containing a copy of the Project folder, its editable settings, note, Stash files and linked local resources. External files are gathered under **Linked resources/**, with relative references inside the copied Project; repeated sources are copied once and colliding names receive suffixes. Web links stay web links. Original folders, references and source bytes are unchanged. The old Workspace packaging, Template/Portable/Handoff choices and Workspace import preview are removed.
+
+The dialog shows the actual included linked files and unavailable sources. Missing local sources block a complete ZIP until the user supplies their bytes with **Provide this file**. Project application requirements are recorded without bundling or installing applications or their accounts. **Import project** lives beside New project in **Overview → Projects & Home**, reviews a chosen ZIP and a new destination folder in the opened Workspace, names unavailable apps, and creates an independent Project copy. Imported file references rebase to that destination. Existing folders are not overwritten. A downloaded copy can be reviewed directly from the packing dialog.
+
+This is a real browser-local archive round trip for the prototype filesystem. Saved media and notes retain actual bytes, imported binary files persist in IndexedDB and open through the File Browser, and ZIPs use inspectable Project JSON/TOML settings. Listed-only demo files have no original native contents; their archived files explicitly contain labeled sample text, and the packing/import previews identify them. Native filesystem traversal and application-internal dependency discovery remain future work. Browser import currently accepts the stored/uncompressed ZIPs created by this demo, up to 40 MB and 1,000 files; arbitrary externally compressed archives are not supported yet.
+
 ## Gaming and app-contributed Overview tabs
 
 The demo’s **Gaming** workspace opens on **Desktop 1**, with Firefox and the illustrative Fallout 4 virtual screen belonging to that same desktop, and Steam parked in Apps. Both game and Steam are native prototype windows with hotbar slots. They are scoped to Gaming; they do not appear in the other workspaces’ app library or search, and this sample cannot be moved into another workspace. Clean sessions do not seed these examples. Desktop Guide creates only its isolated Fallout practice in the borderless-fullscreen chapter. Existing user choices of page, Project, open/parked/closed apps and virtual-screen presentation are retained. Old attached fullscreen sessions migrate onto their original ordinary desktop.
@@ -296,7 +304,7 @@ The workspace-coloured wallpaper is one fixed background beneath the desktop and
 | Scripted Assistant replies and explicit source tags | Connected AI providers and actual inference |
 | Local plans, reminders and explicit activity history | External calendar/task services and OS-level activity integrations |
 | Two browser windows with synchronized display assignments | Native monitor discovery, hot-plug and window/display control |
-| Prototype Pack/Import surfaces | Portable native app/workspace packaging |
+| Project-only ZIP copies with saved demo bytes, gathered linked resources and import | Native filesystem traversal and app-internal resource discovery |
 
 Design goals should be evaluated separately from the implemented demonstration. The [audit record](documentation-audit-2026-10-12.md) links the current documentation claims to source and regression checks. Dated research/testing reports retain their historical scope.
 

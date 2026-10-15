@@ -148,6 +148,7 @@ function openAppFile(id, name) {
   if (row[2] === 'folder') { renderFileLocation(id,row[3] || path.replace(/\/$/,'') + '/' + row[0]); saveAppWindows(); return; }
   globalThis.SpatialTimelineDesktop?.record('file.open',{app:id,title:name,path:path.replace(/\/$/,'')+'/'+name});
   if(globalThis.SpatialMemoryDesktop?.openFile(id,path,name))return;
+  if(globalThis.SpatialProjectPackages?.openFile(id,path,name))return;
   const file = workspaceDownloads.list(path).find(file => file.name === name);
   const project = Object.values(projectSpaces).find(project => project.root === path);
   let text = file?.content;

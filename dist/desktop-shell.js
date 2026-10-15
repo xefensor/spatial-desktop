@@ -3823,6 +3823,8 @@ function normalizeProject(project, id) {
     downloadToProject: project.downloadToProject === true,
     originWorkspace: project.originWorkspace && workspaceProfiles[project.originWorkspace] ? project.originWorkspace : detectedWorkspace,
     files: Array.isArray(project.files) ? project.files : [],
+    archiveFiles: project.archiveFiles && typeof project.archiveFiles === "object" ? cloneDesktopState(project.archiveFiles) : undefined,
+    requirements: Array.isArray(project.requirements) ? project.requirements.filter(value=>typeof value==="string") : undefined,
     stash: project.stash?.version === 1 && project.stash.files ? cloneDesktopState(project.stash) : undefined,
     note: typeof project.note === "string" ? project.note : "",
     resources: Array.isArray(project.resources) ? project.resources : [],
@@ -5132,65 +5134,17 @@ function prepareWorkspaces() {
   renderWorkspace(activeWorkspace, false);
 }
 
-const packageModes = {
-  template: { summary: "A reusable layout with app requirements and widgets, but no personal files.", workspaceSize: "6.4 MB", projectSize: "420 KB" },
-  portable: { summary: "A portable copy with settings and the files you select.", workspaceSize: "1.8 GB", projectSize: "286 MB" },
-  handoff: { summary: "A resumable snapshot with open windows and session context.", workspaceSize: "1.9 GB", projectSize: "301 MB" }
-};
-
-let packageKind = "workspace";
-let packageMode = "portable";
 let packageLastFocus = null;
+function renderPackageComposer() { globalThis.SpatialProjectPackages?.prepare('pack'); }
 
-function packageRows(kind) {
-  const workspaceRows = [
-    ["i-folder", "Workspace Home", "Desktop, Documents, Downloads and selected files", "1.6 GB", true],
-    ["i-grid", "Desktop context", "Area layout, favourites, widgets and wallpaper", "3.8 MB", true],
-    ["i-folder", "Selected projects", Object.values(projectSpaces).map(project => project.name).join(", ") || "No projects", Object.keys(projectSpaces).length + " links", true],
-    ["i-archive", "App requirements", "Package names and suggested versions", "33 apps", true],
-    ["i-monitor", "Window session", "Open apps, positions and view state", "optional", packageMode === "handoff"]
-  ];
-  const projectRows = [
-    ["i-folder", "Project folder", "Files under the project root", "274 MB", true],
-    ["i-link", "Linked resources", "Portable copies or safe relative references", "2 links", true],
-    ["i-note", "Notes and widgets", "Project notes and selected widget state", "84 KB", true],
-    ["i-grid", "Window session", "Project windows across desktop pages and displays", "all desktops", true],
-    ["i-clipboard", "Project clipboard", "Off by default because it may be sensitive", "optional", false]
-  ];
-  return kind === "project" ? projectRows : workspaceRows;
-}
-
-function renderPackageComposer() {
-  const profile = workspaceProfiles[activeWorkspace];
-  const project = projectSpaces[activeProjectName];
-  const subject = packageKind === "project" ? project.name : profile.label;
-  const suffix = packageKind === "project" ? ".project" : ".workspace";
-  $("#packageKicker").textContent = packageKind === "project" ? "PORTABLE PROJECT" : "PORTABLE WORKSPACE";
-  $("#packageTitle").textContent = "Pack " + subject;
-  $("#packageFileName").textContent = subject.replace(/\s+/g, "-") + suffix;
-  $("#packageSummary").textContent = packageModes[packageMode].summary;
-  $("#packageSize").textContent = packageModes[packageMode][packageKind + "Size"];
-  $$("[data-package-mode]").forEach(button => {
-    const selected = button.dataset.packageMode === packageMode;
-    button.classList.toggle("is-active", selected);
-    button.setAttribute("aria-pressed", String(selected));
-    button.setAttribute("aria-checked", String(selected));
-  });
-  $("#packageContentList").innerHTML = packageRows(packageKind).map(([itemIcon, label, detail, size, checked]) => '<label class="package-content-row"><input type="checkbox" ' + (checked ? "checked" : "") + '><span>' + icon(itemIcon) + '</span><span><b>' + escapeHtml(label) + '</b><small>' + escapeHtml(detail) + '</small></span><small>' + escapeHtml(size) + '</small></label>').join("");
-  prepareControlSemantics($("#packageDialog"));
-}
-
-function openPackageDialog(kind = "workspace", direction = "pack") {
-  packageKind = kind;
+function openPackageDialog(kind = "project", direction = "pack") {
+  if(kind!=="project")return false;
+  if(direction==="pack"&&!projectSpaces[activeProjectName]){showToast("Open a Project to pack its folder and linked files.");return false;}
   const dialog = $("#packageDialog");
   packageLastFocus = document.activeElement;
   $("#packageComposer").hidden = direction !== "pack";
   $("#importPreview").hidden = direction !== "import";
-  if (direction === "pack") renderPackageComposer();
-  else {
-    $("#packageKicker").textContent = "IMPORT PREVIEW";
-    $("#packageTitle").textContent = "Review shared Workspace";
-  }
+  globalThis.SpatialProjectPackages?.prepare(direction);
   dialog.hidden = false;
   dialog.inert = false;
   dialog.setAttribute("aria-hidden", "false");
@@ -5219,27 +5173,10 @@ function closePackageDialog() {
 }
 
 function preparePackages() {
-  $$("[data-open-package]").forEach(button => button.addEventListener("click", event => { event.stopPropagation(); openPackageDialog(button.dataset.openPackage); }));
+  $$("[data-open-package]").forEach(button => button.addEventListener("click", event => { event.stopPropagation(); openPackageDialog("project"); }));
   $$("[data-close-package]").forEach(button => button.addEventListener("click", closePackageDialog));
-  $("[data-import-package]").addEventListener("click", () => openPackageDialog("workspace", "import"));
-  $$("[data-package-mode]").forEach(button => button.addEventListener("click", () => { packageMode = button.dataset.packageMode; renderPackageComposer(); }));
-  $("#packageSelectAll").addEventListener("click", () => $$("input[type=checkbox]", $("#packageContentList")).forEach(input => { input.checked = true; }));
-  $("#createPackage").addEventListener("click", () => {
-    const button = $("#createPackage");
-    const original = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = icon("i-timer") + "<span>Building preview…</span>";
-    setTimeout(() => {
-      button.disabled = false;
-      button.innerHTML = original;
-      closePackageDialog();
-      showToast((packageKind === "project" ? "Project" : "Workspace") + " package preview created");
-    }, 650);
-  });
-  $("#importWorkspace").addEventListener("click", () => { closePackageDialog(); showToast("Creative Studio workspace imported · preview"); });
-  $("#importProjectOnly").addEventListener("click", () => { closePackageDialog(); showToast("2 projects imported · preview"); });
+  $$("[data-import-package]").forEach(button=>button.addEventListener("click", () => openPackageDialog("project", "import")));
   $("#packageDialog").addEventListener("pointerdown", event => { if (event.target === $("#packageDialog")) closePackageDialog(); });
-  renderPackageComposer();
 }
 
 function ensureOpenWindowGeometry() {

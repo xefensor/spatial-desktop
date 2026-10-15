@@ -46,9 +46,10 @@
   <link rel="stylesheet" href="scoped-settings.css?v=2">
   <link rel="stylesheet" href="context-submenus.css?v=2">
   <link rel="stylesheet" href="virtual-screen.css?v=3">
+  <link rel="stylesheet" href="project-packages.css?v=1">
   <script src="demo-super-key.js?v=1"></script>
   <script src="workspace-setup.js?v=8"></script>
-  <script src="spatial-guide.js?v=47"></script>
+  <script src="spatial-guide.js?v=48"></script>
   
 </head>
 <body data-theme="oled">
@@ -328,7 +329,6 @@
         </div>
         <button class="workspace-action workspace-create-toggle" id="newWorkspaceButton" aria-expanded="false" aria-controls="workspaceCreateForm"><svg><use href="#i-add"/></svg><span>New workspace</span></button>
         <form id="workspaceCreateForm" class="workspace-create-form" hidden><label for="workspaceName">Workspace name</label><input id="workspaceName" name="name" maxlength="48" required autocomplete="off" placeholder="My workspace"><p>Starts empty with its own windows and standard Home folders.</p><div class="workspace-create-actions"><button class="surface-key" type="button" id="cancelWorkspaceCreate">Cancel</button><button class="surface-key" type="submit">Create workspace</button></div></form>
-        <div class="workspace-switcher-actions"><button class="workspace-action" data-import-package><svg><use href="#i-archive"/></svg><span>Import</span></button><button class="workspace-action primary" data-open-package="workspace"><svg><use href="#i-link"/></svg><span>Pack workspace</span></button></div>
       </section>
 
       <div class="overview-home overview-carousel" id="overviewHome" data-overview-state="all">
@@ -450,7 +450,7 @@
           </section>
 
           <section class="overview-section overview-projects-section" aria-labelledby="overviewProjectsTitle">
-            <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" id="createProjectButton" aria-label="Create a project" title="Create a project"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
+            <header class="overview-section-heading"><div><span class="eyebrow">AVAILABLE EVERYWHERE</span><h3 id="overviewProjectsTitle">Projects</h3></div><div class="overview-project-heading-actions"><span id="overviewProjectCount">2 projects</span><button class="surface-key overview-new-project" data-import-package title="Import a Project ZIP"><svg><use href="#i-archive"/></svg><span>Import project</span></button><button class="surface-key overview-new-project" id="createProjectButton" aria-label="Create a project" title="Create a project"><svg><use href="#i-add"/></svg><span>New project</span></button></div></header>
             <div class="project-library-toolbar"><label class="library-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="overviewProjectQuery" aria-label="Search projects" placeholder="Find a project…"></label><label class="library-filter"><span>Show</span><select id="overviewProjectFilter" aria-label="Filter projects"><option value="all">All projects</option><option value="open">Open here</option></select></label></div>
             <div class="overview-project-grid" id="overviewProjectGrid"></div>
           </section>
@@ -560,29 +560,32 @@
   <section class="package-overlay" id="packageDialog" role="dialog" aria-modal="true" aria-labelledby="packageTitle" aria-hidden="true" inert hidden>
     <div class="package-window desktop-glass-dialog material-surface-glass">
       <header class="package-titlebar">
-        <div><span class="package-mark"><svg><use href="#i-archive"/></svg></span><span><small id="packageKicker">PORTABLE WORKSPACE</small><h2 id="packageTitle">Pack General</h2></span></div>
+        <div><span class="package-mark"><svg><use href="#i-archive"/></svg></span><span><small id="packageKicker">PROJECT ZIP</small><h2 id="packageTitle">Pack Project</h2></span></div>
         <button class="surface-key package-close" data-close-package aria-label="Close package preview"><svg><use href="#i-close"/></svg></button>
       </header>
 
       <div class="package-composer" id="packageComposer">
-        <section class="package-intro"><div><b id="packageFileName">General.workspace</b><small id="packageSummary">A portable copy of this Workspace and its selected content.</small></div><span class="package-size" id="packageSize">1.8 GB</span></section>
-        <div class="package-mode-switch" role="radiogroup" aria-label="Package type">
-          <button role="radio" data-package-mode="template" aria-checked="false" aria-pressed="false"><svg><use href="#i-grid"/></svg><span><b>Template</b><small>Layout, apps and widgets</small></span></button>
-          <button class="is-active" role="radio" data-package-mode="portable" aria-checked="true" aria-pressed="true"><svg><use href="#i-archive"/></svg><span><b>Portable copy</b><small>Settings and selected files</small></span></button>
-          <button role="radio" data-package-mode="handoff" aria-checked="false" aria-pressed="false"><svg><use href="#i-link"/></svg><span><b>Handoff snapshot</b><small>Resume the same session</small></span></button>
-        </div>
+        <section class="package-intro"><div><b id="packageFileName">Project.zip</b><small id="packageSummary">A copy of the Project folder with its linked files included.</small></div><span class="package-size" id="packageSize"></span></section>
+        <p class="project-package-explanation">Linked files are copied into <b>Linked resources/</b>. Links in the copy point to those files. Web links stay as links. Your original Project and source files stay unchanged.</p>
         <div class="package-columns">
-          <section class="package-panel package-contents"><header><span><span class="eyebrow">INCLUDED</span><h3>Package contents</h3></span><button id="packageSelectAll">Select all</button></header><div id="packageContentList"></div></section>
-          <section class="package-panel package-safety"><header><span class="safety-shield"><svg><use href="#i-lock"/></svg></span><span><span class="eyebrow">PRIVACY CHECK</span><h3>Safe to share</h3></span></header><p>Personal authentication and device identity stay on this computer.</p><ul><li>Passwords, tokens and cookies</li><li>SSH keys and device IDs</li><li>Notifications and private recents</li><li>Clipboard history and absolute paths</li></ul><button class="safety-details" data-toast="Privacy exclusions reviewed">Review exclusions</button></section>
+          <section class="package-panel package-contents"><header><span><span class="eyebrow">PROJECT ZIP</span><h3>Files to include</h3></span></header><div id="packageContentList"></div></section>
+          <section class="package-panel package-contents"><header><span><span class="eyebrow">LINKED FILES</span><h3>Gather external resources</h3></span></header><div id="packageLinkedList"></div></section>
         </div>
-        <footer class="package-actions"><span><svg><use href="#i-link"/></svg><span><b>Open package format</b><small>Manifest + files · inspectable like a ZIP</small></span></span><div><button class="package-secondary" data-close-package>Cancel</button><button class="package-primary" id="createPackage"><svg><use href="#i-archive"/></svg><span>Create package</span></button></div></footer>
+        <p class="project-package-status" id="packageStatus" role="status"></p>
+        <p class="project-package-demo" id="packageDemoNotice">Browser demo: saved notes and media are copied. Listed-only example files contain labeled sample text. Your computer’s folders are not accessed.</p>
+        <footer class="package-actions"><span><svg><use href="#i-folder"/></svg><span><b>One Project, one ZIP</b><small>Project files + settings + linked resources</small></span></span><div><button class="package-secondary" data-close-package>Cancel</button><button class="package-secondary" id="packageReviewImport" hidden>Review import of this ZIP</button><button class="package-primary" id="createPackage"><svg><use href="#i-archive"/></svg><span>Download Project ZIP</span></button></div></footer>
       </div>
-
       <div class="import-preview" id="importPreview" hidden>
-        <section class="import-hero"><span class="import-file-icon"><svg><use href="#i-archive"/></svg></span><span><small>WORKSPACE PACKAGE</small><h3>Creative Studio.workspace</h3><p>Shared by a collaborator · 1.8 GB</p></span><span class="import-trust"><svg><use href="#i-lock"/></svg> Privacy check passed</span></section>
-        <div class="import-grid"><section><span class="import-count">4</span><b>Apps ready</b><small>3 apps need installation</small></section><section><span class="import-count">2</span><b>Projects included</b><small>Website Launch, Short Film</small></section><section><span class="import-count">8</span><b>Home folders</b><small>1 external link unavailable</small></section></div>
-        <section class="import-map"><header><span><span class="eyebrow">IMPORT PREVIEW</span><h3>What will be created</h3></span><button data-toast="Package manifest opened">View manifest</button></header><div class="import-tree"><span><i></i><b>New Workspace</b><small>Creative Studio</small></span><span><i></i><b>Workspace Home</b><small>All standard Home folders</small></span><span><i></i><b>Desktop context</b><small>Areas, widgets, favourites and wallpaper</small></span><span><i></i><b>Projects</b><small>Available from every Workspace</small></span></div></section>
-        <footer class="package-actions"><button class="package-secondary" data-close-package>Cancel</button><div><button class="package-secondary" id="importProjectOnly">Projects only</button><button class="package-primary" id="importWorkspace"><svg><use href="#i-grid"/></svg><span>Import as new Workspace</span></button></div></footer>
+        <section class="package-intro"><div><b>Import a Project ZIP</b><small>Unpack a new copy into the opened Workspace. Applications use your existing accounts.</small></div></section>
+        <label class="project-package-file">Choose Project ZIP<input type="file" id="projectArchiveInput" accept=".zip,application/zip"></label>
+        <p class="project-package-status" id="importStatus" role="status">Choose a Project ZIP created by this demo.</p>
+        <section id="projectImportReview" hidden>
+          <div class="import-grid" id="projectImportSummary"></div>
+          <label class="project-package-destination">New Project folder<input id="projectImportDestination" autocomplete="off" aria-label="New Project folder"></label>
+          <div class="package-panel package-contents"><header><h3>Included files and linked resources</h3></header><div id="projectImportFiles"></div></div>
+          <p class="project-package-explanation" id="projectImportApps"></p>
+        </section>
+        <footer class="package-actions"><button class="package-secondary" data-close-package>Cancel</button><button class="package-primary" id="importProject" disabled><svg><use href="#i-folder"/></svg><span>Import Project</span></button></footer>
       </div>
     </div>
   </section>
@@ -649,14 +652,15 @@
   <script src="desktop-pages.js?v=4"></script>
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=2"></script>
-  <script src="app-windows.js?v=19"></script>
+  <script src="project-archive.js?v=1"></script>
+  <script src="app-windows.js?v=20"></script>
 <script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
 <script src="ai-context.js?v=5"></script>
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=288"></script>
+<script src="desktop-shell.js?v=289"></script>
 <script src="parked-previews.js?v=4"></script>
 <script src="owned-dialogs.js?v=1"></script>
 <script src="background-apps.js?v=2"></script>
@@ -674,6 +678,7 @@
 <script src="scoped-settings.js?v=2"></script>
 <script src="context-submenus.js?v=3"></script>
 <script src="virtual-screen.js?v=3"></script>
+<script src="project-packages.js?v=1"></script>
 </body>
 </html>
 
