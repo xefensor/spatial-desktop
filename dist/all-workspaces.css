@@ -1,4 +1,5 @@
 /* This scope sits outside the workspace carousel, mirroring Steam's right group. */
+.overview-global-tab{--workspace-accent:#8aa4b8}
 .overview-global-tabs{display:inline-flex;align-items:center;flex:none;margin-inline-end:16px;padding-inline-end:16px;border-right:1px solid var(--sd-glass-groove)}
 .overview-global-tabs:has(button[hidden]){display:none}
 body[data-theme] .overview-global-tab{border:1px solid color-mix(in srgb,#8aa4b8 45%,var(--sd-glass-groove));background:color-mix(in srgb,#8aa4b8 9%,transparent);color:var(--text)}

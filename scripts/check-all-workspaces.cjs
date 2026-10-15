@@ -39,3 +39,9 @@ alerts.drawAttentionToNotification({isConnected:false,dataset:{notificationWorks
 assert.equal(attention,0);assert.equal(peek,0,'Neither another workspace nor a detached delayed item can show a popup');
 alerts.drawAttentionToNotification({isConnected:true,dataset:{notificationWorkspace:'work'}},'Work alert','','blue','i-bell');assert.equal(peek,1);
 console.log('All Workspaces passed: explicit notification origins, local-only lists, shared System alerts, bounded persistence, dismissal tombstones, privacy, real activity projection and cross-workspace/delayed-popup guards.');
+
+// Changing presets clears this session's notification history with other workspace data.
+const Setup = require('../dist/workspace-setup.js');
+const remaining = new Map([['spatial-workspace-notifications-v1','private demo activity']]);
+Setup.reset({removeItem:key=>remaining.delete(key),setItem:(key,value)=>remaining.set(key,value)}, 'clean');
+assert(!remaining.has('spatial-workspace-notifications-v1'));
