@@ -2427,13 +2427,14 @@ function bindMiniDrag(card) {
   const header = $("header", card);
   header.addEventListener("pointerdown", event => {
     if (event.button !== 0 || event.target.closest("button,input")) return;
-    const name = card.dataset.miniCard;
+    const name = card.dataset.miniCard, workspaceName=activeWorkspace, column=desktopPages.column(activeWorkspace);
     const startX = event.clientX;
     const startY = event.clientY;
-    let ghost = null;
+    let ghost = null, finished=false;
     header.setPointerCapture(event.pointerId);
 
     const move = moveEvent => {
+      if(moveEvent.pointerId!==event.pointerId)return;
       if (!ghost && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) > 6) {
         ghost = card.cloneNode(true);
         ghost.classList.add("drag-ghost");
@@ -2449,22 +2450,36 @@ function bindMiniDrag(card) {
       setDropTarget(workspace, pointInside(workspace.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
     };
 
-    const finish = upEvent => {
-      header.removeEventListener("pointermove", move);
-      header.removeEventListener("pointerup", finish);
-      header.removeEventListener("pointercancel", finish);
+    const finish = (upEvent,cancelled=false) => {
+      if(finished || (upEvent.pointerId!==undefined && upEvent.pointerId!==event.pointerId))return;
+      finished=true;
+      globalThis.removeEventListener("pointermove",move,true);
+      globalThis.removeEventListener("pointerup",finish,true);
+      globalThis.removeEventListener("pointercancel",cancel,true);
+      globalThis.removeEventListener("blur",cancel);
+      globalThis.removeEventListener("keydown",key,true);
+      document.removeEventListener("visibilitychange",hidden);
       const workspace = $(".workspace-zone");
       setDropTarget(workspace, false);
       clearTileDropPreview();
+      const moved=!!ghost;
       if (ghost) ghost.remove();
-      if (pointInside(workspace.getBoundingClientRect(), upEvent.clientX, upEvent.clientY)) {
+      if (!cancelled && moved && workspaceName===activeWorkspace && column===desktopPages.column(activeWorkspace) && appState[name]==='minimized' && pointInside(workspace.getBoundingClientRect(), upEvent.clientX, upEvent.clientY)) {
         openApp(name, { x: upEvent.clientX, y: upEvent.clientY });
         showToast(appInfo[name].label + " unparked onto desktop");
       }
     };
-    header.addEventListener("pointermove", move);
-    header.addEventListener("pointerup", finish);
-    header.addEventListener("pointercancel", finish);
+    const cancel=cancelEvent=>finish(cancelEvent,true);
+    const key=keyEvent=>{if(keyEvent.key==='Escape'){keyEvent.preventDefault();keyEvent.stopPropagation();cancel(keyEvent);}};
+    const hidden=()=>{if(document.hidden)cancel({});};
+    // A tray refresh may replace the captured header during the gesture.
+    // Keep movement and release on the window so that neither is lost.
+    globalThis.addEventListener("pointermove",move,true);
+    globalThis.addEventListener("pointerup",finish,true);
+    globalThis.addEventListener("pointercancel",cancel,true);
+    globalThis.addEventListener("blur",cancel);
+    globalThis.addEventListener("keydown",key,true);
+    document.addEventListener("visibilitychange",hidden);
   });
 }
 

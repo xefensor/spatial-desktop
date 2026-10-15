@@ -40,3 +40,22 @@ assert.equal(rendered,1);
 for(const id of ['browser','browser--2','steam'])assert(runtime.miniMarkup(id).includes('data-parked-preview="'+id+'"'));
 assert(runtime.miniMarkup('notes').includes('<textarea>Widget</textarea>'));runtime.renderMiniApps();assert.equal(rendered,2);
 console.log('Parked previews passed: capability fallback, independent window identities, preserved native widgets, aspect-ratio fitting, current form values, inert snapshots and removed duplicate IDs/actions.');
+
+// Run the actual drag adapter with a header replaced between press and release.
+const listeners=new Map(),documentListeners=new Map(),opened=[];
+const header={listeners:{},addEventListener(type,fn){this.listeners[type]=fn;},setPointerCapture(){}};
+let removed=0;
+const card={dataset:{miniCard:'browser'},getBoundingClientRect:()=>({width:280}),cloneNode:()=>({classList:{add(){}},style:{},setAttribute(){},remove(){removed++;}})};
+const canvas={getBoundingClientRect:()=>({left:300,right:1200,top:0,bottom:900})};
+const dragging=vm.createContext({activeWorkspace:'gaming',desktopPages:{column:()=> 'workspace'},appState:{browser:'minimized'},appInfo:{browser:{label:'Firefox'}},
+  $:selector=>selector==='header'?header:canvas,document:{body:{append(){}},addEventListener:(type,fn)=>documentListeners.set(type,fn),removeEventListener:type=>documentListeners.delete(type)},
+  addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:type=>listeners.delete(type),
+  showTileDropPreview(){},setDropTarget(){},clearTileDropPreview(){},openApp:(...args)=>opened.push(args),showToast(){},pointInside:(rect,x,y)=>x>=rect.left&&x<=rect.right&&y>=rect.top&&y<=rect.bottom});
+const shell=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
+vm.runInContext(shell.slice(shell.indexOf('function bindMiniDrag('),shell.indexOf('const zoneLayout =')),dragging);dragging.bindMiniDrag(card);
+const press={button:0,pointerId:7,clientX:100,clientY:200,target:{closest:()=>null}};
+header.listeners.pointerdown(press);listeners.get('pointermove')({pointerId:7,clientX:780,clientY:390});header.listeners={};
+listeners.get('pointerup')({pointerId:7,clientX:780,clientY:390});assert.equal(opened.length,1);assert.equal(opened[0][0],'browser');assert.equal(removed,1);assert.equal(listeners.size,0);assert.equal(documentListeners.size,0);
+dragging.bindMiniDrag(card);header.listeners.pointerdown(press);listeners.get('pointermove')({pointerId:7,clientX:780,clientY:390});listeners.get('keydown')({key:'Escape',preventDefault(){},stopPropagation(){}});
+assert.equal(opened.length,1,'Cancel never restores the preview');assert.equal(removed,2);assert.equal(listeners.size,0);
+console.log('Parked-card dragging passed: replaced-header release, original window restoration, Escape rollback and complete listener/ghost cleanup.');
