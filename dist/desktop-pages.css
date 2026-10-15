@@ -120,6 +120,11 @@ body[data-theme] :is(.desktop-page-rail,.desktop-page-mark){
 }
 :is(.desktop-page-rail,.desktop-page-mark)::before,
 :is(.desktop-page-rail,.desktop-page-mark)::after{content:none!important}
+/* A tiled window's large outer shadow is clipped at the canvas edge into a
+   blurred vertical strip. Keep its material highlight inside the frame. */
+body[data-theme] .app-frame.material-surface-abs.is-tiled:not(.is-fullscreen){
+  box-shadow:inset 0 1px var(--control-highlight,rgba(255,255,255,.12))!important;
+}
 body.secondary-area-canvas .desktop-page-rail,
 .desktop-shell:has(.app-frame.is-fullscreen:not([hidden]))>.desktop-page-rail{display:none}
 
