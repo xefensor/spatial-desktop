@@ -24,10 +24,7 @@ const states={web:'minimized',music:'closed',steam:'closed'};
 const items=G.activities(models,states,'gaming','work',info);
 assert(items.some(item=>item.category==='Needs input'&&item.detail==='Preview hidden'));
 assert(!items.some(item=>item.detail.includes('private.txt')));
-assert(items.some(item=>item.category==='Saved playback'&&item.detail==='Resumes in this workspace'),'An inactive simulated player is not falsely labelled as audible now');
-assert(items.some(item=>item.category==='Background download'&&item.detail.includes('50%')));
-assert(G.activities(models,states,'gaming','gaming',info).some(item=>item.category==='Playing audio'));
-models.steam.background=false;assert(!G.activities(models,states,'gaming','work',info).some(item=>item.app==='steam'),'Force-quit instances are excluded');
+assert.equal(items.length,1,'Workspace columns contain pending dialogs, without system-wide background apps, downloads or playback');
 
 // Exercise the production attention guard, including a queued event after switching.
 const shell=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
@@ -45,3 +42,30 @@ const Setup = require('../dist/workspace-setup.js');
 const remaining = new Map([['spatial-workspace-notifications-v1','private demo activity']]);
 Setup.reset({removeItem:key=>remaining.delete(key),setItem:(key,value)=>remaining.set(key,value)}, 'clean');
 assert(!remaining.has('spatial-workspace-notifications-v1'));
+
+// Read state is independent of dismissal and survives old or concurrent display snapshots.
+const unread=G.create();
+unread.add({id:'first',workspace:'gaming',title:'Invitation',time:10});
+assert.equal(unread.unread('gaming'),1);assert.equal(unread.unread('work'),0);
+const older=unread.snapshot();assert(unread.markRead(['first'],20));
+assert.equal(unread.unread('gaming'),0);assert.equal(unread.list('gaming').length,1,'Reading retains the notification');
+unread.merge(older);assert.equal(unread.unread('gaming'),0,'An older display cannot make a read item unread');
+const withRead=G.create(unread.snapshot());assert.equal(withRead.unread('gaming'),0);
+assert(!withRead.markRead(['first'],30),'Repeated observer callbacks create no writes');
+withRead.add({id:'next',workspace:'gaming',title:'A private new invitation',time:40});
+assert.equal(withRead.unread('gaming'),1);
+const Preview=require('../dist/workspace-notifications.js');
+const preview=Preview.createPreview();preview.open('gaming',unread.list('gaming'));
+assert.equal(preview.items(withRead).length,1,'An open preview excludes new arrivals');
+assert.equal(preview.pending(withRead),1);
+assert(!JSON.stringify(preview.items(withRead)).includes('private new invitation'),'New notification contents never enter an existing popup');
+preview.close();assert.equal(preview.ids().length,0,'Closing clears foreign contents');
+preview.open('gaming',withRead.list('gaming'));assert.equal(preview.items(withRead).length,2);
+withRead.markRead(preview.ids(),50);assert.equal(withRead.unread('gaming'),0);
+withRead.dismiss('next',60);assert.equal(preview.items(withRead).length,1);
+withRead.merge(older);assert.equal(withRead.unread('gaming'),0);
+const notificationRuntime=vm.createContext({notifications:G.create(),destination:G.destination,activeWorkspace:'work',workspaceProfiles:profiles,id:()=> 'arrived',save(){this.writes=(this.writes||0)+1;},renderLocal(){throw new Error('Foreign notification entered the current list');},requestAnimationFrame(){throw new Error('Foreign notification requested a popup');},Date});
+vm.runInContext(fs.readFileSync(require.resolve('../dist/all-workspaces.js'),'utf8').split('  function notify(options){')[1].split('  addNotification=function')[0].replace(/^/, 'function notify(options){'),notificationRuntime);
+notificationRuntime.notify({workspace:'gaming',title:'Quiet invitation'});
+assert.equal(notificationRuntime.notifications.unread('gaming'),1);
+console.log('Unread notifications passed: actual inactive notification routing, read/dismiss separation, persistent read state and frozen explicit previews.');

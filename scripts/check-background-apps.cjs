@@ -17,10 +17,10 @@ class Node {
 }
 const row=new Node(),events={},opened=[],closed=[],timeouts=[];
 const store=A.create(),models={};let saves=0;
-const context=vm.createContext({appInfo:{},appState:{},activeWorkspace:'gaming',appWindowStore:store,
+const context=vm.createContext({appInfo:{},appState:{},activeWorkspace:'gaming',appWindowStore:store,workspaceAppStates:{gaming:{},work:{}},workspaceProfiles:{gaming:{label:'Gaming',icon:'i-gamepad'},work:{label:'Work',icon:'i-note'}},
   appWindowModel:id=>store.get(context.activeWorkspace,id,()=>models[id]||{kind:id}),
   document:{getElementById:id=>id==='backgroundApps'?row:null,querySelectorAll:()=>[],createElement:()=>new Node(),addEventListener:(type,fn)=>events[type]=fn},
-  frameFor:()=>null,prepareControlSemantics(){},appArt:id=>'<svg>'+id+'</svg>',
+  frameFor:()=>null,prepareControlSemantics(){},appArt:id=>'<svg>'+id+'</svg>',icon:id=>'<svg>'+id+'</svg>',desktopPageAnimating:false,desktopPages:{columnOf:()=> 'workspace'},openProjectNames:()=>[],changeDesktopColumn(){},renderWorkspace:workspace=>{context.workspaceAppStates[context.activeWorkspace]={...context.appState};context.activeWorkspace=workspace;context.appState={...context.workspaceAppStates[workspace]};},
   saveAppWindows(){saves++;},closeApp:id=>{closed.push(id);context.appState[id]='closed';},openApp:id=>{opened.push(id);context.appState[id]='open';},
   syncApps(){},renderMiniApps(){},renderAllAppMusic(){},hydrateAppWindow(){},contextMenuDescriptor:()=>null,contextMenuEntries:()=>[],executeContextAction(){},
   showToast(){},setTimeout:fn=>{timeouts.push(fn);return timeouts.length;},Date});
@@ -43,8 +43,16 @@ assert(row.hidden);
 const steam=add('steam','steam',{download:{active:true,received:100,total:400,updated:Date.now()}});
 context.closeApp('steam');assert(steam.background&&steam.download.active);assert.equal(row.children.length,1);
 assert.match(row.children[0].attrs['aria-label'],/Background.*25%/);
-context.activeWorkspace='work';context.syncApps();assert(row.hidden,'Background icons stay in their owning workspace');
-context.activeWorkspace='gaming';context.syncApps();assert(!row.hidden);
+context.renderWorkspace('work');context.syncApps();assert(!row.hidden,'Background icons are available in every workspace');
+assert.equal(row.children[0].dataset.backgroundWorkspace,'gaming');
+context.contextMenuState={name:'steam',background:true,backgroundWorkspace:'gaming'};
+context.executeContextAction('app-open');assert.equal(context.activeWorkspace,'gaming');assert(opened.includes('steam'));
+context.closeApp('steam');context.renderWorkspace('work');context.syncApps();
+const workPlayer=context.appWindowModel('steam');workPlayer.kind='steam';workPlayer.download={active:true,received:12,total:400,updated:Date.now()};
+context.contextMenuState={name:'steam',background:true,backgroundWorkspace:'gaming'};context.executeContextAction('app-force-quit');
+assert.equal(context.activeWorkspace,'work','Force quitting foreign background work does not switch workspace');
+assert(!steam.download.active);assert(workPlayer.download.active,'A same-named instance in the current workspace is unaffected');
+context.renderWorkspace('gaming');steam.download.active=true;steam.background=true;context.syncApps();assert(!row.hidden);
 context.contextMenuState={name:'steam'};context.executeContextAction('app-force-quit');
 assert(!steam.download.active&&!steam.background);assert(row.hidden);
 context.appState.game='open';context.appState.steam='open';context.closeApp('steam');assert(steam.background,'A game session can keep Steam services alive');
@@ -60,4 +68,7 @@ vm.runInContext(appSource.slice(appSource.indexOf('function currentAppMusicId(')
 vm.runInContext(appSource.slice(appSource.indexOf('function tickAppMusic('),appSource.indexOf('function appMiniMarkup(')),music);
 assert.equal(music.currentAppMusicId(),'music');music.tickAppMusic();assert.equal(musicModel.position,1);assert.equal(tickSaves,1);
 musicModel.playing=false;music.tickAppMusic();assert.equal(tickSaves,1,'Idle playback creates no repeating writes');
+const foreignMusic={kind:'elisa',background:true,playing:true,index:0,position:0,tracks:[{title:'Other',duration:20}]};
+music.SpatialBackgroundApps={players:()=>[foreignMusic]};music.tickAppMusic();assert.equal(foreignMusic.position,1,'Closed background playback continues from another workspace');
+foreignMusic.playing=false;music.tickAppMusic();assert.equal(foreignMusic.position,1,'Stopped background players do not tick');
 console.log('Background apps passed: needed vs idle Close, separate window/activity state, bottom-only icons, no duplicate window slots, restore, force quit by middle click/menu, independent instances/workspaces, reload, activity completion, download sync and real background music ticking.');

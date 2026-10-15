@@ -3,9 +3,10 @@
   'use strict';
   const clone=value=>JSON.parse(JSON.stringify(value));
   function create(saved={}) {
-    const records={},dismissed={},imported={};
+    const records={},dismissed={},imported={},read={};
     function merge(value={}) {
       Object.assign(imported,value.imported||{});
+      for(const [id,time] of Object.entries(value.read||{}))read[id]=Math.max(read[id]||0,Number(time)||0);
       for(const [id,time] of Object.entries(value.dismissed||{}))dismissed[id]=Math.max(dismissed[id]||0,Number(time)||0);
       for(const [id,item] of Object.entries(value.records||{})){
         if(!item || typeof item.title!=='string' || !Number.isFinite(item.time))continue;
@@ -22,21 +23,21 @@
       return clone(note);
     }
     function dismiss(id,time=Date.now()){dismissed[id]=Math.max(time,records[id]?.updated||0,dismissed[id]||0);delete records[id];}
+    function markRead(ids,time=Date.now()){
+      let changed=false;
+      for(const id of ids){const note=records[id];if(note && !(read[id]>=(note.updated||note.time))){read[id]=Math.max(time,note.updated||note.time);changed=true;}}
+      return changed;
+    }
     merge(saved);
-    return {list,add,dismiss,merge,get:id=>records[id]?clone(records[id]):null,imported:workspace=>Boolean(imported[workspace]),markImported:workspace=>{imported[workspace]=true;},snapshot:()=>clone({records,dismissed,imported})};
+    return {list,add,dismiss,merge,markRead,unread:workspace=>list(workspace).filter(note=>!(read[note.id]>=(note.updated||note.time))).length,get:id=>records[id]?clone(records[id]):null,imported:workspace=>Boolean(imported[workspace]),markImported:workspace=>{imported[workspace]=true;},snapshot:()=>clone({records,dismissed,imported,read})};
   }
   function destination(options,current,profiles){return options?.system?null:Object.hasOwn(profiles,options?.workspace||current)?options?.workspace||current:undefined;}
   function displayNotification(note,model,label){return model?.previewHidden?{title:(label||'App')+' notification',detail:'Preview hidden'}:{title:note.title,detail:note.detail};}
   function activities(models,states,workspace,current,info) {
     const result=[];
     for(const [id,model] of Object.entries(models||{})){
-      const state=states[id]||'closed',kind=model.kind||info[id]?.base||id,label=info[id]?.label||id,privatePreview=model.previewHidden;
-      if(state==='closed'&&!model.background)continue;
+      const state=states[id]||'closed',label=info[id]?.label||id,privatePreview=model.previewHidden;
       if(model.ownedDialog && state!=='closed')result.push({id:'dialog:'+id,app:id,title:label,category:'Needs input',detail:privatePreview?'Preview hidden':[model.ownedDialog.title,model.ownedDialog.filename].filter(Boolean).join(' · ')});
-      const downloading=model.download?.active;
-      if(downloading)result.push({id:'download:'+id,app:id,title:label,category:state==='closed'?'Background download':'Download',detail:privatePreview?'Preview hidden':'Demo update · '+Math.floor(model.download.received/model.download.total*100)+'%'});
-      else if(kind==='elisa' && model.playing)result.push({id:'audio:'+id,app:id,title:label,category:workspace===current?'Playing audio':'Saved playback',detail:privatePreview?'Preview hidden':workspace===current?model.tracks?.[model.index]?.title||'Music':'Resumes in this workspace'});
-      else if(model.background)result.push({id:'background:'+id,app:id,title:label,category:'Background',detail:privatePreview?'Preview hidden':kind==='steam'&&states.game==='open'?'Game session':'Running without a window'});
     }
     return result;
   }
@@ -46,7 +47,7 @@
   if(!panel || !root.SpatialOverviewDesktop || root.SpatialGuide?.model.active())return;
   const key='spatial-workspace-notifications-v1';
   let saved={};try{saved=JSON.parse(desktopStorage.getItem(key)||'{}');}catch{}
-  const notifications=create(saved);let painting=false,restoring=false,pending=0;
+  const notifications=create(saved),listeners=new Set();let painting=false,restoring=false,pending=0;
   const visible=()=>SpatialOverviewDesktop.active()==='global'&&!panel.hidden;
   const id=()=>root.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2);
   const tones=new Set(['blue','cyan','violet','green','amber','rose']);
@@ -66,7 +67,10 @@
     }else for(const [title,detail,tone,glyph] of area?.notifications||[])notifications.add({id:id(),workspace,title,detail,tone,glyph,time:Date.now(),app:glyph==='i-gamepad'?'steam':''});
     notifications.markImported(workspace);
   }
-  function save(broadcast=true){try{desktopStorage.setItem(key,JSON.stringify(notifications.snapshot()));}catch{}if(broadcast)queueDesktopStateBroadcast(120);schedule();}
+  function save(broadcast=true){try{desktopStorage.setItem(key,JSON.stringify(notifications.snapshot()));}catch{}if(broadcast)queueDesktopStateBroadcast(120);schedule();listeners.forEach(listener=>listener());}
+  function markRead(ids){if(notifications.markRead(ids))save();}
+  function dismiss(id){notifications.dismiss(id);save();renderLocal();}
+  function content(note){const model=appWindowStore.snapshot()[note.workspace]?.[note.app];return displayNotification(note,model,appInfo[note.app]?.label);}
   const originalSync=syncNotifications;
   function renderLocal(){
     if(painting)return;painting=true;
@@ -124,7 +128,7 @@
       node.querySelector('.global-item-category').textContent=item.category;
       node.querySelector('h4').textContent=item.title;node.querySelector('p').textContent=item.detail;
       const art=item.app&&appInfo[item.app]?appArt(item.app):icon(item.notification?'i-bell':'i-monitor'),artNode=node.querySelector('.global-item-icon');if(artNode.dataset.art!==art){artNode.dataset.art=art;artNode.innerHTML=art;}
-      const open=node.querySelector('[data-global-open]');open.dataset.globalWorkspace=workspace===null?'@system':workspace;open.dataset.globalApp=item.app||'';open.setAttribute('aria-label','Open '+item.title+' in '+(workspace===null?'System':workspaceProfiles[workspace].label));
+      const open=node.querySelector('[data-global-open]');open.dataset.globalWorkspace=workspace===null?'@system':workspace;open.dataset.globalApp=item.app||'';open.dataset.globalNotification=item.notification||'';open.setAttribute('aria-label','Open '+item.title+' in '+(workspace===null?'System':workspaceProfiles[workspace].label));
       const dismiss=node.querySelector('[data-global-dismiss]');if(dismiss)dismiss.setAttribute('aria-label','Dismiss '+item.title);
     }
   }
@@ -158,7 +162,7 @@
   saveAppWindows=function(...args){checkDownloads();originalSaveApps(...args);schedule();};
   groups.addEventListener('click',event=>{
     const dismiss=event.target.closest('[data-global-dismiss]');if(dismiss){notifications.dismiss(dismiss.dataset.globalDismiss);save();renderLocal();render();return;}
-    const open=event.target.closest('[data-global-open]');if(open)openOrigin(open.dataset.globalWorkspace==='@system'?null:open.dataset.globalWorkspace,open.dataset.globalApp);
+    const open=event.target.closest('[data-global-open]');if(open){if(open.dataset.globalNotification)markRead([open.dataset.globalNotification]);openOrigin(open.dataset.globalWorkspace==='@system'?null:open.dataset.globalWorkspace,open.dataset.globalApp);}
   });
   $('#notificationList').addEventListener('click',event=>{
     const dismiss=event.target.closest('.dismiss-button'),note=dismiss?.closest('[data-notification-id]');
@@ -166,9 +170,9 @@
   },true);
   $('#universalSearchInput').addEventListener('input',()=>{if($('#universalSearchInput').value.trim())SpatialOverviewDesktop.closeSeparate();});
   button.addEventListener('keydown',event=>{if(event.key==='ArrowRight'){event.preventDefault();event.stopPropagation();SpatialOverviewDesktop.select('timeline',false);$('[data-overview-section="timeline"]')?.focus({preventScroll:true});}});
-  window.addEventListener('storage',event=>{if(event.key===key){try{notifications.merge(JSON.parse(event.newValue||'{}'));renderLocal();schedule();}catch{}}});
+  window.addEventListener('storage',event=>{if(event.key===key){try{notifications.merge(JSON.parse(event.newValue||'{}'));renderLocal();schedule();listeners.forEach(listener=>listener());}catch{}}});
   for(const workspace of Object.keys(workspaceProfiles))readLegacy(workspace,workspace===activeWorkspace);
-  root.SpatialAllWorkspaces={notify,notifications:()=>notifications.snapshot(),render};
+  root.SpatialAllWorkspaces={notify,notifications:()=>notifications.snapshot(),render,list:notifications.list,unread:notifications.unread,markRead,dismiss,content,openOrigin,subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);}};
   SpatialOverviewDesktop.registerSeparateSection('global',{button,panel,label:'All Workspaces',available:()=>!root.SpatialGuide?.model.active(),render,close:()=>groups.replaceChildren()});
   save(false);renderLocal();checkDownloads(true);originalSaveApps(false);
 })(typeof globalThis!=='undefined'?globalThis:this);

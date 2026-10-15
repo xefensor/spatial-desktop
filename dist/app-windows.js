@@ -312,7 +312,7 @@ function renderAllAppMusic() {
 }
 function tickAppMusic() {
   const players = Object.keys(appInfo).filter(id => (appInfo[id].base || id) === 'elisa' && (appState[id] !== 'closed' || appWindowModel(id).background));
-  const playing = players.map(appWindowModel).filter(model => model.playing && model.tracks.length);
+  const playing = [...players.map(appWindowModel),...(globalThis.SpatialBackgroundApps?.players?.()||[])].filter(model => model.playing && model.tracks.length);
   if (!playing.length) return;
   playing.forEach(model => SpatialAppTools.musicTick(model));
   if (!document.hidden) renderAllAppMusic();

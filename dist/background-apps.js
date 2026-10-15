@@ -23,7 +23,20 @@
     if(model.kind==='elisa')model.playing=false;
     if(model.download)model.download.active=false;
   }
-  const api={reason,advance,stop};
+  function entries(snapshot,states,current,currentStates,info,profiles){
+    const result=[];
+    for(const [workspace,models] of Object.entries(snapshot)){
+      if(!profiles[workspace])continue;
+      const local=workspace===current?currentStates:states[workspace]||{};
+      for(const [id,model] of Object.entries(models)){
+        if(!info[id] || !model.background || (local[id]||'closed')!=='closed')continue;
+        const activity=reason(info[id].base||id,model,local.game==='open');
+        if(activity)result.push({workspace,id,activity,model});
+      }
+    }
+    return result;
+  }
+  const api={reason,advance,stop,entries};
   if(typeof module!=='undefined' && module.exports){module.exports=api;return;}
   const row=document.getElementById('backgroundApps');
   if(!row)return;
@@ -31,9 +44,13 @@
   const kind=id=>appInfo[id]?.base || id;
   const activity=id=>reason(kind(id),appWindowModel(id),activeWorkspace==='gaming' && appState.game==='open');
   const running=id=>Boolean(appInfo[id] && appState[id]==='closed' && appWindowModel(id).background);
-  root.SpatialBackgroundApps={...api,running};
+  const allEntries=()=>entries(appWindowStore.snapshot(),workspaceAppStates,activeWorkspace,appState,appInfo,workspaceProfiles);
+  root.SpatialBackgroundApps={...api,running,players:()=>allEntries().filter(entry=>entry.workspace!==activeWorkspace && kind(entry.id)==='elisa').map(entry=>appWindowStore.get(entry.workspace,entry.id))};
   function normalize() {
-    for(const id of Object.keys(appInfo))if(running(id) && !activity(id))appWindowModel(id).background=false;
+    for(const [workspace,models] of Object.entries(appWindowStore.snapshot())){
+      const states=workspace===activeWorkspace?appState:workspaceAppStates[workspace]||{};
+      for(const [id,model] of Object.entries(models))if(model.background && (states[id]||'closed')==='closed' && !reason(kind(id),model,states.game==='open'))appWindowStore.get(workspace,id).background=false;
+    }
   }
   function prepareCloseButtons() {
     for(const button of document.querySelectorAll('[data-window-action="close"],[data-mini-close]')){
@@ -58,19 +75,20 @@
   }
   function render() {
     normalize();
-    const names=Object.keys(appInfo).filter(id=>running(id) && (!appInfo[id].workspace || appInfo[id].workspace===activeWorkspace));
-    row.hidden=!names.length;
-    const key=JSON.stringify(names.map(id=>[id,appInfo[id].label,activity(id)]));
+    const items=allEntries(),keys=items.map(({workspace,id})=>workspace+':'+id);
+    row.hidden=!items.length;
+    const key=JSON.stringify(items.map(({workspace,id,activity})=>[workspace,id,appInfo[id].label,activity]));
     if(row.dataset.rendered!==key){
       row.dataset.rendered=key;
       // Retain button identity and focus as progress changes.
-      for(const button of [...row.children])if(!names.includes(button.dataset.backgroundOpen))button.remove();
-      for(const id of names){
-        let button=[...row.children].find(node=>node.dataset.backgroundOpen===id);
-        if(!button){button=document.createElement('button');button.type='button';button.className='background-app-icon';button.dataset.backgroundOpen=id;button.innerHTML=appArt(id)+'<i aria-hidden="true"></i>';row.append(button);}
-        const label=appInfo[id].label+' · Background · '+activity(id)+' · Click to open · Middle click to force quit';
+      for(const button of [...row.children])if(!keys.includes(button.dataset.backgroundWorkspace+':'+button.dataset.backgroundOpen))button.remove();
+      for(const {workspace,id,activity,model} of items){
+        let button=[...row.children].find(node=>node.dataset.backgroundOpen===id && node.dataset.backgroundWorkspace===workspace);
+        if(!button){button=document.createElement('button');button.type='button';button.className='background-app-icon';button.dataset.backgroundOpen=id;button.dataset.backgroundWorkspace=workspace;button.innerHTML=appArt(id)+'<span class="background-workspace-icon" aria-hidden="true">'+icon(workspaceProfiles[workspace].icon)+'</span><i aria-hidden="true"></i>';row.append(button);}
+        const label=appInfo[id].label+' · Background · '+workspaceProfiles[workspace].label+' · '+activity+' · Click to open in its workspace · Middle click to force quit';
         button.title=label;button.setAttribute('aria-label',label);button.style.setProperty('--background-accent',appInfo[id].primary);
-        button.style.setProperty('--background-progress',kind(id)==='steam' && appWindowModel(id).download?.active?Math.floor(appWindowModel(id).download.received/appWindowModel(id).download.total*100)+'%':'100%');
+        button.style.setProperty('--background-workspace-accent',workspaceProfiles[workspace].accent);
+        button.style.setProperty('--background-progress',kind(id)==='steam' && model.download?.active?Math.floor(model.download.received/model.download.total*100)+'%':'100%');
       }
     }
     prepareCloseButtons();prepareSteam();schedule();
@@ -114,7 +132,7 @@
   const originalHydrate=hydrateAppWindow;
   hydrateAppWindow=function(id,...args){originalHydrate(id,...args);prepareCloseButtons();if(id==='steam')prepareSteam();};
   const originalDescriptor=contextMenuDescriptor;
-  contextMenuDescriptor=function(target,...args){const icon=target.closest?.('[data-background-open]');return icon?{kind:'app',name:icon.dataset.backgroundOpen,title:appInfo[icon.dataset.backgroundOpen].label,background:true}:originalDescriptor(target,...args);};
+  contextMenuDescriptor=function(target,...args){const icon=target.closest?.('[data-background-open]');return icon?{kind:'app',name:icon.dataset.backgroundOpen,title:appInfo[icon.dataset.backgroundOpen].label,background:true,backgroundWorkspace:icon.dataset.backgroundWorkspace}:originalDescriptor(target,...args);};
   const originalEntries=contextMenuEntries;
   contextMenuEntries=function(context){
     if(context.kind!=='app')return originalEntries(context);
@@ -123,10 +141,26 @@
     if(appState[context.name]!=='closed')entries.push({action:'app-force-quit',icon:'i-close',label:'Force quit',shortcut:'Middle click ×',danger:true});
     return entries;
   };
+  function openBackground(workspace,id){
+    if(!workspaceProfiles[workspace] || !appInfo[id])return;
+    if(workspace===activeWorkspace){openApp(id);return;}
+    renderWorkspace(workspace,false);
+    const owner=desktopPages.columnOf(workspace,id);
+    if(owner!=='workspace'&&!openProjectNames().includes(owner))activateProject(owner,false);else changeDesktopColumn(owner,false);
+    const finish=()=>{if(activeWorkspace!==workspace)return;if(desktopPageAnimating){setTimeout(finish,60);return;}openApp(id);};finish();
+  }
+  function forceBackground(workspace,id){
+    if(workspace===activeWorkspace){closeApp(id,{force:true});return;}
+    const entry=allEntries().find(item=>item.workspace===workspace && item.id===id);if(!entry)return;
+    stop(appWindowStore.get(workspace,id));saveAppWindows();render();showToast(appInfo[id].label+' force quit · '+workspaceProfiles[workspace].label);
+  }
   const originalAction=executeContextAction;
-  executeContextAction=function(action){if(action==='app-force-quit'){closeApp(contextMenuState.name,{force:true});return;}return originalAction(action);};
+  executeContextAction=function(action){
+    if(contextMenuState?.background){if(action==='app-open'){openBackground(contextMenuState.backgroundWorkspace,contextMenuState.name);return;}if(action==='app-force-quit'){forceBackground(contextMenuState.backgroundWorkspace,contextMenuState.name);return;}}
+    if(action==='app-force-quit'){closeApp(contextMenuState.name,{force:true});return;}return originalAction(action);
+  };
   document.addEventListener('click',event=>{
-    const icon=event.target.closest('[data-background-open]');if(icon){event.preventDefault();event.stopImmediatePropagation();openApp(icon.dataset.backgroundOpen);return;}
+    const icon=event.target.closest('[data-background-open]');if(icon){event.preventDefault();event.stopImmediatePropagation();openBackground(icon.dataset.backgroundWorkspace,icon.dataset.backgroundOpen);return;}
     if(event.target.closest('[data-background-download-toggle]')){
       event.preventDefault();event.stopImmediatePropagation();
       const model=appWindowModel('steam');
@@ -141,7 +175,8 @@
     if(event.button!==1)return;
     const button=event.target.closest('[data-window-action="close"],[data-mini-close],[data-background-open]');if(!button)return;
     event.preventDefault();event.stopImmediatePropagation();
-    const id=button.dataset.miniClose || button.dataset.backgroundOpen || button.closest('[data-app-frame]').dataset.appFrame;
+    if(button.dataset.backgroundOpen){forceBackground(button.dataset.backgroundWorkspace,button.dataset.backgroundOpen);return;}
+    const id=button.dataset.miniClose || button.closest('[data-app-frame]').dataset.appFrame;
     closeApp(id,{force:true});
   },true);
   // Catch up a saved simulated download without replaying or duplicating work.

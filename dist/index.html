@@ -22,9 +22,10 @@
   <link rel="stylesheet" href="app-windows.css?v=5">
   <link rel="stylesheet" href="parked-previews.css?v=1">
   <link rel="stylesheet" href="owned-dialogs.css?v=1">
-  <link rel="stylesheet" href="background-apps.css?v=1">
+  <link rel="stylesheet" href="background-apps.css?v=2">
   <link rel="stylesheet" href="preview-privacy.css?v=1">
-  <link rel="stylesheet" href="all-workspaces.css?v=3">
+  <link rel="stylesheet" href="all-workspaces.css?v=4">
+  <link rel="stylesheet" href="workspace-notifications.css?v=1">
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=17">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
@@ -41,7 +42,7 @@
   <link rel="stylesheet" href="steam-overview.css?v=4">
   <link rel="stylesheet" href="app-identities.css?v=3">
   <script src="workspace-setup.js?v=8"></script>
-  <script src="spatial-guide.js?v=38"></script>
+  <script src="spatial-guide.js?v=39"></script>
   
 </head>
 <body data-theme="oled">
@@ -136,7 +137,7 @@
         <div class="mini-stack" id="miniStack" tabindex="0" aria-label="Parked application cards" aria-live="polite"></div>
       </section>
       </div>
-      <nav class="background-apps" id="backgroundApps" aria-label="Background applications" hidden></nav>
+      <nav class="background-apps" id="backgroundApps" aria-label="System-wide background applications" hidden></nav>
       <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag this border to resize"></button>
     </aside>
 
@@ -203,6 +204,7 @@
       <section class="rail-group system-rail-start" aria-label="Time and notifications">
         <div class="rail-clock"><strong class="live-time">--:--</strong><small id="systemRailDate"></small></div>
         <button class="surface-key rail-action" id="systemRailNotifications" aria-label="Show notifications" title="Show notifications"><svg aria-hidden="true"><use href="#i-bell"/></svg><span>Alerts</span><small id="systemRailNotificationCount">0</small></button>
+        <nav class="workspace-notification-badges workspace-notification-rail" id="systemRailWorkspaceNotifications" aria-label="Other workspace notifications" hidden></nav>
       </section>
       <nav class="rail-group system-rail-middle" aria-label="Daily tools">
         <button class="surface-key rail-action" id="systemRailTimer" aria-pressed="false" aria-label="Start focus timer" title="Start focus timer"><svg aria-hidden="true"><use href="#i-timer"/></svg><span>Focus</span><small id="systemRailTimerValue">25:00</small></button>
@@ -227,6 +229,7 @@
       </div>
       <div class="dynamic-widget-stack" id="dynamicWidgetStack" aria-live="polite">
         <section class="system-widget notification-widget dynamic-widget is-visible" id="notificationWidget"><header class="widget-heading"><div><svg><use href="#i-bell"/></svg><h2>Notifications</h2></div><span id="notificationCount">2</span></header><div id="notificationList"><article class="notification"><span class="app-badge blue"><svg><use href="#i-folder"/></svg></span><div><b>Download finished</b><small>landscape.jpg · 6.8 MiB</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article><article class="notification"><span class="app-badge violet"><svg><use href="#i-music"/></svg></span><div><b>Music Player is still playing</b><small>Evening Light · 1:55</small></div><button class="dismiss-button" aria-label="Dismiss">×</button></article></div></section>
+        <section class="workspace-notifications-widget" id="workspaceNotificationsWidget" hidden><header><h3>Other Workspaces</h3><small>Unread</small></header><nav class="workspace-notification-badges" id="workspaceNotificationBadges" aria-label="Other workspace notifications" hidden></nav></section>
         <section class="system-widget timer-widget dynamic-widget" id="timerWidget" hidden><header class="widget-heading"><div><svg><use href="#i-timer"/></svg><h2>Focus timer</h2></div><span id="timerState">Ready</span></header><div class="timer-face"><strong id="timerValue">25:00</strong><div class="timer-progress"><i id="timerProgress"></i></div></div><div class="timer-actions"><button class="surface-key" id="timerToggle">Pause</button><button class="surface-key" id="timerReset">Dismiss</button></div></section>
       </div>
       <div class="static-widget-stack system-device-stack" aria-label="Connected devices">
@@ -499,7 +502,7 @@
         <button class="overview-neighbour overview-neighbour-next" data-overview-step="1" aria-label="Next Overview section"><span></span><svg aria-hidden="true"><use href="#i-right"/></svg></button>
         </div>
         <section class="all-workspaces-panel" id="allWorkspacesPanel" aria-labelledby="allWorkspacesTitle" hidden inert>
-          <header class="all-workspaces-heading"><span class="all-workspaces-mark"><svg aria-hidden="true"><use href="#i-monitor"/></svg></span><div><span class="eyebrow">SYSTEM-WIDE VIEW</span><h3 id="allWorkspacesTitle">All Workspaces</h3><p>Notifications, background activity and apps waiting for you. Items stay in their own workspace.</p></div></header>
+          <header class="all-workspaces-heading"><span class="all-workspaces-mark"><svg aria-hidden="true"><use href="#i-monitor"/></svg></span><div><span class="eyebrow">SYSTEM-WIDE VIEW</span><h3 id="allWorkspacesTitle">All Workspaces</h3><p>Notifications and apps waiting for you, in workspace columns. Background apps stay in the shared Apps row.</p></div></header>
           <div class="all-workspaces-scroll" id="allWorkspacesGroups" aria-label="Activity grouped by workspace"></div>
           <footer class="all-workspaces-footer">Opened only by your choice · Other workspaces never send app pop-ups or sounds here.</footer>
         </section>
@@ -629,6 +632,11 @@
     <div class="context-menu-title" id="contextMenuTitle"></div>
     <div class="context-menu-items" id="contextMenuItems"></div>
   </div>
+  <section class="workspace-notification-popup" id="workspaceNotificationPopup" role="dialog" aria-modal="false" aria-labelledby="workspaceNotificationPopupTitle" hidden inert>
+    <header><span data-workspace-notification-symbol aria-hidden="true"></span><div><h2 id="workspaceNotificationPopupTitle"></h2><small>Preview · stay in your current workspace</small></div><button type="button" data-notification-preview-close aria-label="Close workspace notifications">×</button></header>
+    <div class="workspace-notification-list" data-workspace-notification-list></div><p class="workspace-notification-empty" data-workspace-notification-empty hidden>No notifications to show.</p>
+    <footer><small data-workspace-notification-status role="status"></small><button type="button" data-notification-preview-workspace>Open workspace</button></footer>
+  </section>
   <button class="notification-peek" id="notificationPeek" type="button" aria-live="polite" aria-hidden="true">
     <span class="notification-peek-icon blue" id="notificationPeekIcon"><svg><use href="#i-bell"/></svg></span>
     <span class="notification-peek-copy"><b id="notificationPeekTitle">New notification</b><small id="notificationPeekDetail"></small></span>
@@ -640,7 +648,7 @@
   <script src="desktop-pages.js?v=4"></script>
   <script src="home-folders.js?v=1"></script>
   <script src="app-tools.js?v=2"></script>
-  <script src="app-windows.js?v=16"></script>
+  <script src="app-windows.js?v=17"></script>
 <script src="working-memory.js?v=6"></script>
 <script src="stash-files.js?v=2"></script>
 <script src="ai-context.js?v=5"></script>
@@ -650,7 +658,7 @@
 <script src="desktop-shell.js?v=280"></script>
 <script src="parked-previews.js?v=4"></script>
 <script src="owned-dialogs.js?v=1"></script>
-<script src="background-apps.js?v=1"></script>
+<script src="background-apps.js?v=2"></script>
 <script src="preview-privacy.js?v=1"></script>
 <script src="empty-desktop.js?v=1"></script>
 <script src="working-memory-desktop.js?v=30"></script>
@@ -658,7 +666,8 @@
 <script src="overview-desktop.js?v=20"></script>
   <script src="guide-desktop.js?v=39"></script>
   <script src="steam-overview.js?v=8"></script>
-<script src="all-workspaces.js?v=1"></script>
+<script src="all-workspaces.js?v=2"></script>
+<script src="workspace-notifications.js?v=1"></script>
 </body>
 </html>
 
