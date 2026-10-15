@@ -40,8 +40,9 @@
         const stage=frame.querySelector('.steam-game-stage');if(!stage)continue;
         viewport=document.createElement('div');viewport.className='virtual-screen-viewport';viewport.setAttribute('aria-label','Virtual screen · 1920 by 1080 · 16:9');
         stage.before(viewport);viewport.append(stage);observer.observe(viewport);
-        const label=frame.querySelector('.app-identity small');if(label)label.textContent='Virtual screen · 1920 × 1080 · 16:9';
       }
+      const identity=frame.querySelector('.app-identity > div');
+      if(identity&&!identity.querySelector('.virtual-screen-label')){const label=document.createElement('span');label.className='virtual-screen-label';label.innerHTML=icon('i-monitor')+'Virtual screen · 1920 × 1080 · 16:9';identity.append(label);}
       resize(viewport);
     }
     const control=document.getElementById('steamVirtualScreenMode');

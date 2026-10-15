@@ -24,3 +24,7 @@
 .virtual-screen-spec span{padding:0 3px}
 .overview-virtual-screen .temporary-desktop-actions{margin-top:9px}
 .app-frame.virtual-screen-window:not(.is-fullscreen)>.app-titlebar{border-bottom:2px solid color-mix(in srgb,var(--app-primary,#b8d59a) 65%,transparent)}
+
+.virtual-screen-window .app-identity small{display:none!important}
+.virtual-screen-label{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:9px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.virtual-screen-label svg{width:11px;height:11px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6}
