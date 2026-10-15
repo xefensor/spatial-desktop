@@ -109,7 +109,6 @@ body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-page-icons:empty{display:none}
 .desktop-page-app{position:relative;display:block;width:18px;height:20px}
 .desktop-page-app .app-art{display:block;width:18px;height:18px;min-width:18px}
-.desktop-page-app.is-parked::after{content:"";position:absolute;bottom:0;left:6px;width:6px;height:2px;background:var(--sd-glass-text)}
 .desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:2px solid var(--sd-glass-muted);padding-left:2px;padding-right:4px}
 .desktop-page-rail-right .desktop-page-mark.is-current{border-right-color:var(--desktop-marker-accent,var(--sd-glass-text))}
 body.secondary-area-canvas .desktop-page-rail,

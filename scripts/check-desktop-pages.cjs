@@ -430,7 +430,7 @@ assert(!fs.readFileSync(require.resolve('../dist/index.html'),'utf8').includes('
 console.log('Fullscreen desktop navigation passed: retired preview has no route or DOM control.');
 
 // Render real page groups: no icon cap, separate instances, correct context,
-// parked identity, live close/move updates, and no unused empty trailing page.
+// column-wide parked exclusion, live state/move updates and no unused spare.
 const railNodes = Object.fromEntries(['#desktopPageRail', '#desktopPageRailRight'].map(key => [key, node(key)]));
 const rail = vm.createContext({
   desktopPages: Pages.create(), activeWorkspace: 'work', appState: {}, appInfo: {},
@@ -445,11 +445,13 @@ rail.appInfo.browser = {label: 'Firefox'};
 for (let i = 0; i < 24; i++) {
   const id = 'browser--' + i;
   rail.appInfo[id] = {base: 'browser', label: 'Firefox · Private document ' + i};
-  rail.appState[id] = i === 23 ? 'minimized' : 'open';
+  rail.appState[id] = 'open';
   rail.desktopPages.assign('work', id, i === 22 ? 1 : 0);
 }
 rail.appInfo.closed = {label: 'Closed'}; rail.appState.closed = 'closed';
 rail.desktopPages.assign('work', 'closed', 5);
+rail.appInfo.parked = {label: 'Parked'}; rail.appState.parked = 'minimized';
+rail.desktopPages.assign('work', 'parked', 4);
 rail.appInfo.project = {label: 'Project only'}; rail.appState.project = 'open';
 rail.desktopPages.assign('work', 'project', 0, 'site');
 rail.renderDesktopPageRail();
@@ -457,15 +459,22 @@ const markup = () => railNodes['#desktopPageRail'].innerHTML;
 assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 24, 'All 24 windows render, with no cap or same-app deduplication');
 assert.equal((markup().match(/href="#app-browser"/g) || []).length, 24, 'Every instance uses the application artwork');
 assert(!markup().includes('Private document'), 'Icon tooltips and accessible names expose app identity only');
-assert.equal((markup().match(/data-desktop-marker="/g) || []).length, 2, 'Closed windows cannot advertise an unused desktop');
+assert.equal((markup().match(/data-desktop-marker="/g) || []).length, 2, 'Closed and parked windows cannot advertise an unused desktop');
 assert.match(markup(), /is-current[^>]*data-desktop-marker="0"/);
-assert.match(markup(), /is-parked[^>]*data-desktop-marker-app="browser--23"/);
+assert(!markup().includes('data-desktop-marker-app="parked"'));
 assert(!markup().includes('data-desktop-marker-app="project"'));
 const groups = markup().split('<span class="desktop-page-mark');
 assert(groups[1].includes('data-desktop-marker-app="browser--0"'));
 assert(!groups[1].includes('data-desktop-marker-app="browser--22"'));
 assert(groups[2].includes('data-desktop-marker-app="browser--22"'), 'A window appears in its owning page group');
 assert.equal(markup(), railNodes['#desktopPageRailRight'].innerHTML, 'Both sides show the same complete desktop contents');
+rail.appState['browser--0'] = 'minimized'; rail.renderDesktopPageRail();
+assert(!markup().includes('data-desktop-marker-app="browser--0"'), 'Parking immediately removes the desktop icon');
+assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 23);
+rail.appState['browser--0'] = 'open';
+rail.desktopPages.assign('work', 'browser--0', 1); rail.renderDesktopPageRail();
+assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 24);
+assert(markup().split('<span class="desktop-page-mark')[2].includes('data-desktop-marker-app="browser--0"'), 'Restoring puts the icon on the window’s new desktop');
 rail.appState['browser--0'] = 'closed';
 rail.desktopPages.assign('work', 'browser--1', 1);
 rail.desktopPages.go('work', 2);
@@ -477,4 +486,4 @@ rail.desktopPages.select('work', 'site'); rail.renderDesktopPageRail();
 assert.equal((markup().match(/data-desktop-marker-app=/g) || []).length, 1);
 assert(markup().includes('data-desktop-marker-app="project"'));
 assert(!markup().includes('data-desktop-marker-app="browser--'));
-console.log('Desktop icon strips passed: every instance, open/parked states, page and Project ownership, empty current page, close/move refresh and mirrored artwork.');
+console.log('Desktop icon strips passed: every open instance, Project-wide parked exclusion, park/restore refresh, page and Project ownership, empty current page, close/move refresh and mirrored artwork.');
