@@ -154,6 +154,17 @@ The 13 October System and recovery pass passed all 19 project checks and GitHub 
 
 ![Compact System with quick settings, next event and collapsed month](images/system-and-recovery-2026-10-13.jpg)
 
+## Settings and scope
+
+Open **Settings** from the System Area gear, the System Settings application or search result, or **Overview → System → Settings**. The view follows **This desktop → Project → Workspace → System-wide**. Each section names the context it applies to; controls retain their existing scope, without a scope selector that implies unsupported combinations.
+
+- **This desktop** identifies the current desktop, Project column, Workspace and display. It explains arranging windows on this desktop and offers **Arrange on desktop**; it does not introduce a global tiling preference. Temporary borderless-fullscreen desktops instead offer **Return to fullscreen app**.
+- **Project** appears only when a Project is selected. It shows that Project's folder, its existing **Download into this project** preference and **Manage Project** action. The folder is a displayed location, not an editable default-tools or Home setting. Download routing affects only that Project's windows; opening the same Project elsewhere uses the same Project preference.
+- **Workspace** names the active Workspace and its Home. Area visibility and **Reset** use the existing Area actions. Their scope is **all desktops and Projects in this Workspace**. Existing Area controls also name this scope, so changing an Area while viewing a Project does not imply a Project-only layout.
+- **System-wide** applies to all Workspaces. The existing shared color-theme preference offers **Auto**, **OLED**, **Graphite** and **Light**; Auto follows the host's preferred color scheme. Wi-Fi, Bluetooth and Sound retain their shared simulated toggle state. These demo controls do not configure native networking or audio.
+
+The Project editor also identifies the Project affected by its download preference. Settings does not add a wallpaper chooser, app-default picker, notification policy or native monitor configuration. Existing windows and sessions remain intact while settings change; values continue to save locally and synchronize through the existing display session.
+
 ## Workspace Home and downloads
 
 Each Workspace owns simulated Home and the eight standard folders: Desktop, Documents, Downloads, Music, Pictures, Videos, Templates and Public. General uses `/home/demo`; built-in other Workspaces use `/home/demo/Workspaces/<Name>`. Newly created Workspaces use their unique workspace ID beneath `/home/demo/Workspaces/`. Home and Places resolve inside the current Workspace even while a Project is open.

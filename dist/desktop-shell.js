@@ -5365,6 +5365,7 @@ document.addEventListener("click", event => {
 });
 
 $$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
+  if (button.dataset.launchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
   if (button.dataset.launchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
   pulseBusyCursor();
   showToast(SpatialAppNames.label(button.dataset.launchApp) + " launched");
@@ -5590,6 +5591,7 @@ $("#universalResults").addEventListener("click", event => {
   } else if (result.dataset.searchNewInstance) createAppInstance(result.dataset.searchOpenApp);
   else if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
   if (result.dataset.searchLaunchApp) {
+    if (result.dataset.searchLaunchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
     showToast(SpatialAppNames.label(result.dataset.searchLaunchApp) + " launched");
@@ -5786,9 +5788,9 @@ document.addEventListener("keydown", event => {
   const packageDialog = $("#packageDialog");
   const projectEditorDialog = $("#projectEditorDialog");
   const universalSearch = $("#universalSearch");
-  if (packageDialog.classList.contains("is-open") && trapDialogFocus(packageDialog, event)) return;
-  if (projectEditorDialog.classList.contains("is-open") && !projectEditorDialog.classList.contains("is-inline") && trapDialogFocus(projectEditorDialog, event)) return;
-  if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
+  if (packageDialog.classList.contains("is-open")) { if (trapDialogFocus(packageDialog, event)) return; }
+  else if (projectEditorDialog.classList.contains("is-open") && !projectEditorDialog.classList.contains("is-inline")) { if (trapDialogFocus(projectEditorDialog, event)) return; }
+  else if (universalSearch.classList.contains("is-open") && trapDialogFocus(universalSearch, event)) return;
 
   if (projectEditorDialog.classList.contains("is-open") || packageDialog.classList.contains("is-open")) {
     if (event.key === "Escape") {
