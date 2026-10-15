@@ -1,0 +1,54 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {scopeFor,localProject}=require('../dist/search-scopes.js');
+const source=fs.readFileSync(require.resolve('../dist/search-scopes.js'),'utf8');
+const shell=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
+function segment(text,first,last){const start=text.indexOf(first),end=text.indexOf(last,start+first.length);assert(start>=0&&end>start);return text.slice(start,end);}
+const context={owner:'film'};
+assert.equal(scopeFor({kind:'window',owner:'film',visible:true},context),'desktop');
+assert.equal(scopeFor({kind:'window',owner:'film',visible:false},context),'project');
+assert.equal(scopeFor({kind:'window',owner:'workspace',visible:false},context),'workspace');
+assert.equal(scopeFor({kind:'window',owner:'other',visible:false},context),'workspace');
+assert.equal(scopeFor({kind:'file',owner:'film'},context),'project');
+assert.equal(scopeFor({kind:'memory',owner:'film'},context),'project');
+assert.equal(scopeFor({kind:'memory',owner:'workspace'},context),'workspace');
+assert.equal(scopeFor({kind:'project',owner:'other'},context),'workspace');
+assert.equal(scopeFor({kind:'app'},context),'system');
+assert.equal(scopeFor({kind:'action',scope:'workspace'},context),'workspace');
+assert.equal(scopeFor({kind:'window',owner:'workspace',visible:true},{owner:'workspace'}),'desktop');
+assert(localProject({originWorkspace:'work'},'film','work',[]));
+assert(!localProject({originWorkspace:'gaming'},'game','work',[]));
+assert(localProject({originWorkspace:'gaming'},'game','work',['game']));
+
+// Execute the shipped app and file builders, including private titles and actual instances.
+const targets=new Map();
+const target=id=>{if(!targets.has(id))targets.set(id,{children:[],replaceChildren(){this.children=[];},append(row){this.children.push(row);}});return targets.get(id);};
+const ctx={scopeFor,localProject,activeWorkspace:'work',workspaceProfiles:{work:{label:'Work',home:'/home/work',folders:[['Documents','Documents'],['.workspace.toml','Settings','config']]}},
+  projectSpaces:{film:{name:'Film',root:'/projects/film',originWorkspace:'work',files:[['Shot list.md','Notes','document'],['Clips','Footage','folder']]},foreign:{originWorkspace:'gaming',root:'/private',files:[['Secret.md','Secret','document']]}},
+  appState:{browser:'open',second:'minimized',secret:'open',closed:'closed'},
+  appInfo:{browser:{label:'Firefox',detail:'Studio'},second:{base:'browser',label:'Firefox · Research',detail:'Research'},secret:{base:'browser',label:'Firefox · Confidential',detail:'Confidential'},closed:{label:'Closed'}},
+  appWindowStore:{snapshot:()=>({work:{secret:{previewHidden:true}}})},
+  desktopPages:{columnOf:(_,id)=>id==='second'?'film':'workspace'},openProjectNames:()=>['film'],
+  workspaceDownloads:{snapshot:()=>({files:[{workspace:'work',directory:'/home/work/Documents',name:'Review.txt'},{workspace:'gaming',directory:'/private',name:'Secret.txt'}]})},
+  $:id=>target(id),$$:()=>[],appArt:id=>id,icon:id=>id,prepareControlSemantics(){},result:(action,label,detail)=>({dataset:action,label,detail})};
+vm.createContext(ctx);
+vm.runInContext(segment(shell,'function normalizeSearchText(','function buildUniversalAppResults(')+segment(source,'  function appResults(','  function metadata('),ctx);
+vm.runInContext('function availableProjects(){return Object.entries(projectSpaces).filter(([id,p])=>localProject(p,id,activeWorkspace,openProjectNames()));}',ctx);
+assert.equal(ctx.appResults('firefox'),3,'Each running or parked instance is individually searchable');
+assert.equal(target('#universalAppResults').children.filter(row=>row.dataset.searchWindow==='true').length,3);
+assert(!JSON.stringify(target('#universalAppResults').children).includes('Confidential'),'Private window title is absent');
+assert.equal(ctx.appResults('confidential'),0,'Private content cannot be discovered through a matching query');
+assert.equal(ctx.appResults('research'),1);
+assert.equal(target('#universalAppResults').children[0].dataset.searchOpenApp,'second');
+ctx.fileResults('shot');assert.equal(target('#universalFileResults').children[0].dataset.searchOwner,'film');
+ctx.fileResults('review');assert.equal(target('#universalFileResults').children[0].dataset.searchFileDirectory,'/home/work/Documents');
+ctx.fileResults('secret');assert.equal(target('#universalFileResults').children.length,0,'Foreign Home and unopened Project files stay out');
+ctx.fileResults('workspace toml');assert.equal(target('#universalFileResults').children[0].dataset.searchFileDirectory,'/home/work','Config is a file, not an invented folder');
+
+// Search result navigation uses its actual page, project column and fullscreen bond.
+const handlers=[];const controls={addEventListener:(event,handler)=>handlers.push(handler)};
+let navigated,opened;
+const navigation={$:()=>controls,desktopPages:{pageOf:()=>2,columnOf:()=> 'film',fullscreenBond:()=>({name:'fallout'})},activeWorkspace:'gaming',changeDesktopPage:(...args)=>navigated=args,openApp:name=>opened=name,setUniversalSearchOpen(){}};
+vm.createContext(navigation);vm.runInContext(segment(shell,'$("#universalResults").addEventListener("click", event => {','$("#universalResults").addEventListener("click", event => {\n  const result = event.target.closest("[data-search-project]"'),navigation);
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'fallout',searchWindow:'true'}})}});
+assert.deepEqual(navigated,[2,false,'film','fallout']);assert.equal(opened,'fallout');
+console.log('Scoped search passed: desktop/project/Workspace/system ranking, actual parked instances, private titles, owned files and downloads, foreign-context exclusion and fullscreen return.');

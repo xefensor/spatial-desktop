@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="all-workspaces.css?v=4">
   <link rel="stylesheet" href="workspace-notifications.css?v=1">
   <link rel="stylesheet" href="system-scopes.css?v=2">
+  <link rel="stylesheet" href="search-scopes.css?v=1">
   <link rel="stylesheet" href="desktop-alignment.css?v=3">
   <link rel="stylesheet" href="spatial-guide.css?v=17">
   <link rel="stylesheet" href="workspace-setup.css?v=1">
@@ -43,7 +44,7 @@
   <link rel="stylesheet" href="steam-overview.css?v=4">
   <link rel="stylesheet" href="app-identities.css?v=3">
   <script src="workspace-setup.js?v=8"></script>
-  <script src="spatial-guide.js?v=40"></script>
+  <script src="spatial-guide.js?v=41"></script>
   
 </head>
 <body data-theme="oled">
@@ -518,11 +519,7 @@
         </section>
         <section class="universal-group" data-universal-group="files">
           <h3>Files</h3>
-          <div class="universal-result-grid">
-            <button class="universal-result" data-universal-search="meeting notes markdown document" data-toast="Opening meeting-notes.md"><span class="universal-file-icon"><i class="document-glyph"></i></span><span><b>meeting-notes.md</b><small>Documents · modified today</small></span></button>
-            <button class="universal-result" data-universal-search="landscape photo image jpg pictures" data-toast="Opening landscape.jpg"><span class="universal-file-icon"><i class="document-glyph image"></i></span><span><b>landscape.jpg</b><small>Pictures · 6.8 MiB</small></span></button>
-            <button class="universal-result" data-universal-search="short film project folder video editing" data-toast="Opening Short Film"><span class="universal-file-icon"><i class="folder-glyph"></i></span><span><b>Short Film</b><small>Projects · 84 items</small></span></button>
-          </div>
+          <div class="universal-result-grid" id="universalFileResults"></div>
         </section>
         <section class="universal-group" data-universal-group="projects">
           <h3>Projects and resources</h3>
@@ -534,7 +531,7 @@
             <button class="universal-result" data-area-show="projects" data-universal-search="show workspace projects area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Workspace &amp; Projects</b><small>Desktop area</small></span></button>
             <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
             <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
-            <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>System action</small></span></button>
+            <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>Workspace focus timer</small></span></button>
           </div>
         </section>
         <section class="universal-group universal-web-group" data-universal-group="web">
@@ -656,7 +653,7 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=5"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=281"></script>
+<script src="desktop-shell.js?v=282"></script>
 <script src="parked-previews.js?v=4"></script>
 <script src="owned-dialogs.js?v=1"></script>
 <script src="background-apps.js?v=2"></script>
@@ -670,6 +667,7 @@
 <script src="all-workspaces.js?v=3"></script>
 <script src="workspace-notifications.js?v=3"></script>
 <script src="system-scopes.js?v=2"></script>
+<script src="search-scopes.js?v=1"></script>
 </body>
 </html>
 

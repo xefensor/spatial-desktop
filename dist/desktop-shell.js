@@ -5433,6 +5433,7 @@ function matchesSearch(value, query) {
 }
 
 function buildUniversalAppResults(query) {
+  if (globalThis.SpatialSearchScopes && !globalThis.SpatialGuide?.model.active()) return SpatialSearchScopes.appResults(query);
   const target = $("#universalAppResults");
   const matches = $$(".launcher-app", $("#allAppsGrid")).filter(button => {
     if (button.dataset.appWorkspace && button.dataset.appWorkspace !== activeWorkspace) return false;
@@ -5456,6 +5457,7 @@ function buildUniversalAppResults(query) {
 function projectSearchResults(query) {
   const results = [];
   Object.entries(projectSpaces).forEach(([id, project]) => {
+    if (project.originWorkspace && project.originWorkspace !== activeWorkspace && !openProjectNames().includes(id)) return;
     const searchable = [project.name, project.root, project.summary, ...Object.values(project.modes).map(mode => mode.label)].join(" ");
     if (matchesSearch(searchable, query)) results.push({ id, label: project.name, detail: project.root, search: searchable });
     if (!globalThis.SpatialMemoryDesktop) (project.resources || []).forEach(([label, detail]) => {
@@ -5476,6 +5478,7 @@ function buildUniversalProjectResults(query) {
 }
 
 function filterUniversalSearch() {
+  globalThis.SpatialSearchScopes?.restore();
   const rawQuery = $("#universalSearchInput").value.trim();
   const query = rawQuery.toLowerCase();
   const searching = query.length > 0;
@@ -5495,6 +5498,8 @@ function filterUniversalSearch() {
   const guideLimited = globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('all');
   const guideAppsOnly = guideLimited && !SpatialGuide.model.allows('projects');
   globalThis.SpatialMemoryDesktop?.search(query);
+  if (!guideLimited || SpatialGuide.model.allows('folders')) globalThis.SpatialSearchScopes?.fileResults(query);
+  else if (globalThis.SpatialSearchScopes) $("#universalFileResults").innerHTML = '';
   if (!guideAppsOnly) buildUniversalProjectResults(query);
   else $("#universalProjectResults").innerHTML = '';
 
@@ -5525,6 +5530,7 @@ function filterUniversalSearch() {
   $("#universalEmpty").textContent = resultFilter === 'all' ? 'No local results. Press Enter to search the web.' : 'No results in this category. Try another search or show all results.';
   $("#universalSearchStatus").hidden = false;
   $("#universalSearchStatus").textContent = visibleCount + (visibleCount === 1 ? ' result' : ' results') + (resultFilter === 'all' ? ' · ' + (guideLimited ? 'This lesson' : workspaceProfiles[activeWorkspace]?.label || activeWorkspace) : ' · ' + labels[resultFilter]);
+  globalThis.SpatialSearchScopes?.render();
 }
 
 $("#universalResultFilter").addEventListener('change', filterUniversalSearch);
@@ -5573,10 +5579,15 @@ function setUniversalSearchOpen(open) {
 
 $("#universalSearchInput").addEventListener("input", filterUniversalSearch);
 
-$("#universalAppResults").addEventListener("click", event => {
-  const result = event.target.closest(".universal-result");
+$("#universalResults").addEventListener("click", event => {
+  const result = event.target.closest("[data-search-open-app],[data-search-launch-app]");
   if (!result) return;
-  if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
+  if (result.dataset.searchWindow) {
+    const name = result.dataset.searchOpenApp;
+    changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false, desktopPages.columnOf(activeWorkspace, name), desktopPages.fullscreenBond(activeWorkspace, name)?.name || null);
+    openApp(name);
+  } else if (result.dataset.searchNewInstance) createAppInstance(result.dataset.searchOpenApp);
+  else if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
   if (result.dataset.searchLaunchApp) {
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
@@ -5585,7 +5596,7 @@ $("#universalAppResults").addEventListener("click", event => {
   setUniversalSearchOpen(false);
 });
 
-$("#universalProjectResults").addEventListener("click", event => {
+$("#universalResults").addEventListener("click", event => {
   const result = event.target.closest("[data-search-project]");
   if (!result || !projectSpaces[result.dataset.searchProject]) return;
   activateProject(result.dataset.searchProject);
