@@ -16,12 +16,14 @@ assert(!unsafe.includes('<img'));assert(unsafe.includes('&lt;img'));
 
 // Exercise the production adapters and events with independent window models.
 const store=A.create(),events={},opened=[],files=[],focused=[];
-let saves=0,currentDirectory='/gaming/Downloads';
+let saves=0,currentDirectory='/gaming/Downloads',currentProject=null;
 const frames={};
 const runtime=vm.createContext({appInfo:{},appState:{},activeWorkspace:'gaming',SpatialAppTools:A,
   appWindowModel:id=>store.get(runtime.activeWorkspace,id,()=>({kind:'browser',navigation:A.navigation({title:id,address:id,intro:'Page text'})})),
   frameFor:id=>frames[id],document:{addEventListener:(type,fn)=>events[type]=fn},
-  downloadContext:()=>({directory:currentDirectory,workspace:runtime.activeWorkspace,project:null}),
+  downloadContext:()=>({directory:currentDirectory,workspace:runtime.activeWorkspace,project:currentProject}),
+  workspaceProfiles:{gaming:{label:'Gaming',home:'/gaming'},work:{label:'Work',home:'/work'}},
+  appFileRows:()=>[['Existing.txt']],ensureProjectDownloads(){},
   saveAppWindows(){saves++;},renderMiniApps(){},hydrateAppWindow(){},syncApps(){},prepareControlSemantics(){},isLocalApp:()=>true,
   openApp:id=>{runtime.appState[id]='open';opened.push(id);},closeApp:id=>{runtime.appState[id]='closed';},performAppAction(){},
   miniMarkup:id=>parent.replaceAll('browser--2',id),escapeHtml:escape,
@@ -50,6 +52,28 @@ events.submit({target:{closest:()=>form},preventDefault(){},stopImmediatePropaga
 assert.equal(files.length,1);assert.equal(files[0].directory,currentDirectory,'Save follows the current owning context');
 assert.equal(files[0].name,'My pending draft.txt');assert.equal(runtime.appWindowModel('browser').ownedDialog,undefined);
 assert(runtime.appWindowModel('browser--2').ownedDialog,'Saving one instance leaves its sibling pending');
+// An explicit Workspace choice remains independent of the Project's default.
+currentProject='site';runtime.projectSpaces.site={name:'Site',root:'/projects/site',downloadToProject:true};
+runtime.performAppAction('browser','browser-save-page');
+const chosen=runtime.appWindowModel('browser').ownedDialog;chosen.filename='Existing.txt';
+events.change({target:{closest:()=>({dataset:{ownedDialog:'browser'}}),matches:()=>true,value:'workspace-documents'}});
+assert.equal(chosen.directory,'/gaming/Documents');
+events.submit({target:{closest:()=>form},preventDefault(){},stopImmediatePropagation(){}});
+assert.equal(files.at(-1).directory,'/gaming/Documents');assert.equal(files.at(-1).project,null);
+assert.equal(files.at(-1).name,'Existing (2).txt','Saving never replaces an existing file or listed example');
+assert.equal(runtime.projectSpaces.site.downloadToProject,true,'A one-file choice never changes download defaults');
+// A transferred pending dialog follows its new owner, rather than its old explicit target.
+runtime.performAppAction('browser','browser-save-page');
+const moved=runtime.appWindowModel('browser').ownedDialog;
+events.change({target:{closest:()=>({dataset:{ownedDialog:'browser'}}),matches:()=>true,value:'project-folder'}});
+assert.equal(moved.directory,'/projects/site');
+currentProject=null;currentDirectory='/gaming/Downloads';
+events.submit({target:{closest:()=>form},preventDefault(){},stopImmediatePropagation(){}});
+assert.equal(files.at(-1).directory,'/gaming/Downloads');assert.equal(files.at(-1).project,null);
+const groups=D.destinations({workspace:'gaming',project:null,directory:'/gaming/Downloads'},runtime.workspaceProfiles,runtime.projectSpaces);
+assert.deepEqual(groups.map(group=>group.label),['This window','Workspace · Gaming']);
+assert(!JSON.stringify(groups).includes('/work'),'Other Workspace files are not suggested');
+assert.equal(D.destination({...moved,saveOwner:JSON.stringify(['gaming',null]),saveLocation:'removed'}, {workspace:'gaming',project:null,directory:'/gaming/Downloads'},runtime.workspaceProfiles,runtime.projectSpaces).key,'default');
 runtime.closeApp('browser--2');assert.equal(runtime.appWindowModel('browser--2').ownedDialog,undefined,'Closing the parent also closes its dialog');
 assert(saves>0);
-console.log('Owned dialogs passed: connected cards below their parent, one window identity, safe labels and filenames, independent instances/workspaces, park/restore focus, reload, current save destination and parent-close cleanup.');
+console.log('Owned dialogs passed: attached parking, independent instances, reload, scoped file destinations, explicit-choice metadata, unchanged defaults, collision protection, transfer recovery and parent-close cleanup.');
