@@ -432,7 +432,7 @@ function prepareAppWindows() {
   const originalCapture=captureWorkspaceContent;
   captureWorkspaceContent=function(){saveAppWindows(false);originalCapture();};
   const originalMove=moveAppWorkspace;
-  moveAppWorkspace=function(id,destination){const origin=activeWorkspace;originalMove(id,destination);appWindowStore.copy(origin,id,destination,(appInfo[id].base||id)+'--'+instanceSequence);saveAppWindows();};
+  moveAppWorkspace=function(id,destination,page=null){const origin=activeWorkspace;const result=originalMove(id,destination,page);if(result){appWindowStore.copy(origin,id,destination,result.id);saveAppWindows();}return result;};
   const originalSnapshot=captureDesktopSyncState;
   captureDesktopSyncState=function(){return {...originalSnapshot(),appWindows:appWindowStore.snapshot()};};
   const originalIncoming=persistIncomingDesktopState;

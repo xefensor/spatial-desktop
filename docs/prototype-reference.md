@@ -16,6 +16,10 @@ Project navigation and window arrangements save automatically. Closing a Project
 
 Window options can move a window between desktops, Projects, Workspaces and demo displays, or detach it into the ordinary Workspace so that closing the Project no longer closes that window. Separate app instances keep their own state.
 
+**Move to…** now uses nested destination menus rather than a flat list. **This Project / This Workspace** lists its desktops, **Other Projects** opens Project → desktop (including Workspace desktops outside Projects), and the separated **Other Workspaces** branch opens Workspace → desktop. Each desktop names the complete destination path; the current location is disabled and marked **Current**, and the trailing empty desktop is marked **New**. Closed Projects say that the window is stored until the Project is opened. Moving to another Workspace targets its ordinary Workspace context, with its Home shown explicitly; window content is retained and open file locations stay at their original paths. This is simulated window/session transfer, not native process or Home migration. Gaming-only apps stay in Gaming. Display transfer appears under **Displays** when a second display is available.
+
+Hover or click opens a submenu. Up/Down and Home/End stay in its current level; Right opens a child, Left or Escape returns one level, and each popup has a Back control for pointer/touch use. Tab closes the menu. Submenus flip at screen edges and scroll independently. Selecting a destination keeps the current view and offers placement Undo; newer edits to a transferred destination window prevent stale Undo. These menus also work on windows reached through Overview and on parked windows through **Window options…**.
+
 Workspace separation is simulated under one browser profile. It does not create native users, sandbox applications, change native Home folders, enforce file permissions or replace the system clipboard.
 
 ## Desktop Guide and setup

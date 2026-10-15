@@ -6506,6 +6506,7 @@ function contextMenuEntries(context) {
 function closeDesktopContextMenu(restoreFocus = false) {
   const menu = $("#desktopContextMenu");
   if (!menu || menu.hidden) return;
+  globalThis.SpatialContextSubmenus?.reset();
   menu.classList.remove("is-open");
   menu.hidden = true;
   if (restoreFocus && contextMenuState?.origin?.focus) contextMenuState.origin.focus({ preventScroll: true });
@@ -6527,10 +6528,11 @@ function openDesktopContextMenu(context, clientX, clientY, keyboard = false) {
   if (!menu || !entries.length) return;
   contextMenuState = { ...context, origin: document.activeElement };
   $("#contextMenuTitle").textContent = context.title;
-  $("#contextMenuItems").innerHTML = entries.map(entry => {
+  $("#contextMenuItems").innerHTML = globalThis.SpatialContextSubmenus ? SpatialContextSubmenus.markup(entries) : entries.map(entry => {
     if (entry.separator) return '<div class="context-menu-separator" role="separator"></div>';
     return '<button class="context-menu-item' + (entry.danger ? ' is-danger' : '') + '" role="' + (typeof entry.checked === "boolean" ? 'menuitemradio" aria-checked="' + entry.checked : "menuitem") + '" data-context-action="' + entry.action + '">' + icon(entry.icon) + '<span>' + escapeHtml(entry.label) + '</span>' + (entry.checked ? '<kbd>Current</kbd>' : entry.shortcut ? '<kbd>' + escapeHtml(entry.shortcut) + '</kbd>' : '') + '</button>';
   }).join("");
+  globalThis.SpatialContextSubmenus?.mount();
   prepareControlSemantics(menu);
   menu.hidden = false;
   menu.classList.add("is-open");
@@ -6654,6 +6656,7 @@ function prepareContextMenus() {
     openDesktopContextMenu(context, event.clientX, event.clientY);
   });
   menu.addEventListener("click", event => {
+    if (globalThis.SpatialContextSubmenus?.click(event)) return;
     const item = event.target.closest("[data-context-action]");
     if (!item) return;
     const action = item.dataset.contextAction;
@@ -6661,6 +6664,7 @@ function prepareContextMenus() {
     closeDesktopContextMenu();
   });
   menu.addEventListener("keydown", event => {
+    if (globalThis.SpatialContextSubmenus?.key(event)) return;
     const items = $$(".context-menu-item", menu);
     const index = items.indexOf(document.activeElement);
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -6682,6 +6686,7 @@ document.addEventListener("keydown", event => {
   }
     if (event.key === "Escape" && !menu.hidden) {
       event.preventDefault();
+      if (globalThis.SpatialContextSubmenus?.back(true)) return;
       closeDesktopContextMenu(true);
       return;
     }
@@ -6812,7 +6817,7 @@ function changeDesktopColumn(column, announce = true) {
   return changed;
 }
 
-function moveWindowToColumn(name, column, follow = true) {
+function moveWindowToColumn(name, column, follow = true, destinationPage = null) {
   if (!appInfo[name] || appState[name] === "closed" || (column !== "workspace" && !openProjectNames().includes(column))) return false;
   const previous = desktopPages.columnOf(activeWorkspace, name);
   if (previous === column) return false;
@@ -6820,7 +6825,7 @@ function moveWindowToColumn(name, column, follow = true) {
   const floating = tileSessions[desktopPages.context(activeWorkspace, page, previous) + localDisplaySlot()]?.floating?.[name];
   removeWindowFromSavedProjects(name);
   detachDraggedDesktopWindow(name, page, previous);
-  desktopPages.assign(activeWorkspace, name, desktopPages.current(activeWorkspace, column), column);
+  desktopPages.assign(activeWorkspace, name, Number.isSafeInteger(destinationPage) && destinationPage >= 0 ? destinationPage : desktopPages.current(activeWorkspace, column), column);
   windowMembership[activeWorkspace] ||= {};
   windowMembership[activeWorkspace][name] = column === "workspace" ? null : column;
   if (floating) {
@@ -8098,7 +8103,7 @@ function removeWindowFromSavedProjects(name) {
     ['states','geometry','displays'].forEach(field => { if (session[field]) delete session[field][name]; });
   });
 }
-function moveAppWorkspace(name, destination) {
+function moveAppWorkspace(name, destination, destinationPage = null) {
   if (!workspaceProfiles[destination] || appState[name] === 'closed') return;
   if (appInfo[name]?.workspace && appInfo[name].workspace !== destination) { showToast(appInfo[name].label + ' belongs to the Gaming workspace in this demo'); return; }
   captureWorkspaceContent();
@@ -8112,18 +8117,18 @@ function moveAppWorkspace(name, destination) {
   workspaceContent[destination].frames ||= {};
   workspaceContent[destination].frames[id] = contents;
   windowMembership[destination] ||= {}; windowMembership[destination][id] = null;
-  desktopPages.assign(destination, id, desktopPages.current(destination, 'workspace'), 'workspace'); saveDesktopPages();
+  desktopPages.assign(destination, id, Number.isSafeInteger(destinationPage) && destinationPage >= 0 ? destinationPage : desktopPages.current(destination, 'workspace'), 'workspace'); saveDesktopPages();
   removeWindowFromSavedProjects(name);
   closeApp(name); windowMembership[activeWorkspace][name] = null; syncProjectWindowScopes();
   persistProjectState(); persistWorkspaceAppStates(); saveIndependentSessions();
   showToast('Window moved to ' + workspaceProfiles[destination].label + ' · content preserved');
   return { destination, id };
 }
-function moveAppProject(name, destination) {
+function moveAppProject(name, destination, destinationPage = null) {
   if (!projectSpaces[destination] || appState[name] === 'closed') return;
-  if (openProjectNames().includes(destination)) { moveWindowToColumn(name, destination); return; }
+  if (openProjectNames().includes(destination)) { moveWindowToColumn(name, destination, destinationPage === null, destinationPage); return; }
   removeWindowFromSavedProjects(name);
-  const page = desktopPages.current(activeWorkspace, destination);
+  const page = Number.isSafeInteger(destinationPage) && destinationPage >= 0 ? destinationPage : desktopPages.current(activeWorkspace, destination);
   const key = projectSessionKey(destination);
   const session = projectWindowSessions[key] ||= {apps:[], states:{}, geometry:{}, displays:{}, pages:{}};
   session.apps.push(name); session.states[name] = appState[name];
