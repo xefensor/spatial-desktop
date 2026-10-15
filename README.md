@@ -21,6 +21,7 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 
 Firefox and Steam show read-only window previews when parked; apps with a parking widget keep their interactive controls.
 App-owned dialogs park directly below their app preview as a connected group. Try Firefox's **Save page as…** from its menu or **Ctrl+S**, then park Firefox; restoring either card brings back both the window and its waiting dialog.
+Use **Hide preview** in a window or parked card's context menu to show only its app identity and a restore placeholder. Attached dialog content is hidden too, while **Needs input** stays visible. The choice saves per window; **Show preview** restores its preview or parking widget.
 Left-click **Close** closes the window while needed activity can continue; middle-click **Close** force quits that app instance and stops its activity. Background-only apps appear as small icons at the bottom of Apps, below open windows and parked cards. Try playing Music Player or starting Steam's local demo update, then close its window.
 
 Desktop Guide introduces these interactions through 32 steps across 14 chapters, including independent app windows, quick launch from an empty desktop and entering, leaving and restoring a temporary desktop for a borderless fullscreen app. Ordinary fullscreen windows keep their existing desktop. The [design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html) is Xef’s own unfinished text, being written one topic at a time.

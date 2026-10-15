@@ -90,6 +90,14 @@ The hotbar follows visible windows’ reading order: left to right across a row,
 
 Alt+number and Alt+Shift+number are browser fallbacks. Focus or restore with the shortcut; invoking it again on the focused window parks that window. Shift+click a hotbar icon creates another app instance. The host OS may intercept Super shortcuts.
 
+### Preview privacy
+
+An open window, hotbar icon or parked card's context menu offers **Hide preview** / **Show preview**. The preference belongs to that particular window in its Workspace session, persists through restore/repark, close/reopen and reload, travels with a transferred window and synchronizes between displays. Sibling windows have independent settings.
+
+A hidden parked card contains only the app identity, **Preview hidden** and its normal restore/close controls. Its placeholder restores the original window and its header still supports drag placement. This also replaces interactive parking widgets such as Notes or Music Player, so their text and app controls are not exposed in a private card. An attached dialog stays below its app, connected and labelled **Needs input**, but its title, filename and destination are omitted. Restoring either card focuses the real dialog as before. The window's own visible contents are unchanged when opened.
+
+Hidden windows bypass snapshot/widget rendering; existing cached DOM snapshots are discarded rather than blurred. Overview's window detail and tooltip say **Preview hidden** instead of the document title. A hidden borderless app also uses a plain icon scene in its temporary-desktop Overview cards and bottom return preview. This controls window previews; it does not erase the window's saved content or separately saved Stash/Timeline entries.
+
 ### Background applications and closing
 
 Apps has three positions: open-window icons at the top, parked cards in the middle, and small **background-only** icons at the bottom. The bottom row exists only when needed, remains outside the parked list's scroll viewport and keeps its position on an Apps rail. A horizontal rail places it at the trailing end. It has no numbered window shortcuts or duplicate icons for apps that still have an open/parked window. Background activity belongs to the current Workspace and remains available across its desktop and Project columns. It is not counted as an open or parked window in Overview.

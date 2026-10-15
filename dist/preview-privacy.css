@@ -1,0 +1,10 @@
+/* Wait for saved privacy preferences before showing any restored previews. */
+body:not(.preview-privacy-ready) :is(#miniStack,#overviewWindowGrid,#desktopColumnMap,#fullscreenDesktopPeek){visibility:hidden}
+body[data-theme] .mini-card .private-preview-restore{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:104px;width:100%;padding:16px 8px;border:1px solid var(--soft-line);border-radius:0;box-shadow:none;background:var(--well);color:var(--text);cursor:pointer}
+.private-preview-restore>.app-art{width:30px;height:30px;opacity:.8}
+.private-preview-restore>b{font-size:12px;font-weight:550}
+.private-preview-restore>small{font-size:9px;color:var(--muted);text-align:center}
+body[data-theme] .mini-card .private-preview-restore:is(:hover,:focus-visible){outline:2px solid var(--app-primary);outline-offset:-2px}
+.private-scene-label{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:inherit;padding:22px 8px 8px}
+.temporary-desktop-scene[data-preview-hidden="true"]{background:var(--well)!important;color:var(--text)}
+.temporary-desktop-scene[data-preview-hidden="true"] .temporary-desktop-badge{z-index:1}

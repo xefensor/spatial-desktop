@@ -69,6 +69,7 @@
     if(!observed.has(frame)) {
       observed.add(frame);
       new MutationObserver(()=>{
+        if(root.SpatialPreviewPrivacy?.hidden(id)){dirty.delete(id);return;}
         dirty.add(id);
         if(appState[id]==='minimized' && desktopPages.inColumn(activeWorkspace,id))schedule();
       }).observe(frame,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['value','checked','selected','hidden','open','aria-selected','data-app-ready-workspace']});
@@ -99,10 +100,11 @@
   });
   function refresh() {
     if(workspace!==activeWorkspace){entries.clear();dirty.clear();workspace=activeWorkspace;}
-    for(const [id] of entries)if(appState[id]==='closed')entries.delete(id);
+    for(const [id,entry] of entries)if(appState[id]==='closed' || root.SpatialPreviewPrivacy?.hidden(id)){entry.host.remove();entries.delete(id);dirty.delete(id);}
     resize.disconnect();
     for(const viewport of document.querySelectorAll('#miniStack [data-parked-preview]')) {
       const id=viewport.dataset.parkedPreview;
+      if(root.SpatialPreviewPrivacy?.hidden(id))continue;
       let entry=entries.get(id);
       if(!entry){entry={host:makeHost(),width:960,height:640};entries.set(id,entry);dirty.add(id);}
       if(dirty.has(id))update(id,entry);

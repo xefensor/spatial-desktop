@@ -4930,7 +4930,7 @@ function renderOverviewWindows() {
     const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
     const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
     const frame = frameFor(name);
-    const detail = (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
+    const detail = globalThis.SpatialPreviewPrivacy?.hidden(name) ? 'Preview hidden' : (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
     if (bond) {
