@@ -177,6 +177,12 @@
   function describe(target){
     const output=target.closest('[data-ai-demo-turn]');
     if(output){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===output.dataset.aiDemoTurn);return turn?{id:'demo-reply:'+turn.id,title:turn.title,kind:'note',text:turn.text,workspace:turn.workspace,project:turn.project,app:'ai-demo',source:{workspace:turn.workspace,project:turn.project,app:'ai-demo',label:'Assistant demo · scripted reply'}}:null;}
+    // The working-material shelf is a body portal, so its owner is captured
+    // from the active column at gesture start instead of an Area ancestor.
+    const shelfFile=target.closest('[data-project-shelf-path]');
+    if(shelfFile){const column=desktopPages.column(activeWorkspace),project=projectSpaces[column]?column:null,path=shelfFile.dataset.projectShelfPath;return {id:'shelf-file:'+activeWorkspace+':'+path,title:shelfFile.dataset.projectShelfFile,address:path,filename:shelfFile.dataset.projectShelfFile,workspace:activeWorkspace,project,kind:shelfFile.dataset.projectShelfFolder==='true'?'folder':'file',source:{label:project?'Project files':'Workspace files',address:path,workspace:activeWorkspace,project}};}
+    const shelfPin=target.closest('[data-project-shelf-item]'),pinned=shelfPin&&globalThis.SpatialMemoryDesktop?.itemFor(shelfPin.dataset.projectShelfItem);
+    if(pinned)return SpatialMemoryDesktop.contextFor(pinned);
     const source=baseSource(target),frame=target.closest('[data-app-frame]');
     const row=target.closest('[data-file-name]');
     if(row){const path=frame.dataset.fileLocation.replace(/\/$/,'')+'/'+row.dataset.fileName,savedContext=globalThis.SpatialMemoryDesktop?.contextAtFile(path);if(savedContext)return savedContext;const project=model.projectAt(path)||source.project;const saved=project&&F.list(projectSpaces[project]).find(file=>F.folder(projectSpaces[project])+'/'+file.name===path);return {...source,project,source:{...source,project,address:path,label:appInfo[frame.dataset.appFrame]?.label||'Files',desktop:desktopPages.pageOf(activeWorkspace,frame.dataset.appFrame)},id:'file:'+path,title:row.dataset.fileName,kind:row.dataset.fileFolder?'folder':saved?.kind||'file',address:path,text:saved?.content||saved?.caption||'',filename:row.dataset.fileName,fileKey:saved?.attachment?.key||saved?.blobKey};}
@@ -190,9 +196,9 @@
     if(selection||link)return {...source,id:'selection-'+crypto.randomUUID(),title:(selection||link.textContent||address).slice(0,60),kind:link?'link':'text',text:selection||'',address,source:{...source,address,label:appInfo[frame.dataset.appFrame]?.label||'App',desktop:desktopPages.pageOf(activeWorkspace,frame.dataset.appFrame)}};
     return source;
   }
-  function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into Assistant to attach this app with its context';});}
+  function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item],[data-project-shelf-path],[data-project-shelf-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into Assistant to attach this app with its context';});}
   prepareSources();
-  const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
+  const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item],[data-project-shelf-path],[data-project-shelf-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
   // Desktop content uses the same pointer gestures as the rest of the scene.
   // Native HTML drops remain available for external files, links and selections.
   function bindContentTransfers(){
@@ -203,7 +209,7 @@
     document.addEventListener('pointerdown',event=>{
       suppressClick=false;
       if(event.button!==0||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))||(withinAssistant(event.target)&&!event.target.closest('[data-ai-demo-turn]')))return;
-      const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id],[data-ai-demo-turn]');
+      const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-project-shelf-path],[data-project-shelf-item],[data-memory-id],[data-ai-demo-turn]');
       if(!source||event.target.closest('input,textarea,a,audio,iframe')||event.target.closest('summary:not(.memory-item-summary)')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;
       event.target.closest('.memory-item-summary')?.focus();
