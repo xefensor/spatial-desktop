@@ -3,6 +3,7 @@
 .area-window[data-area-state="rail"][data-compact-layout="grid"]{
   display:flex;
   flex-direction:column;
+  align-items:stretch;
   min-width:0;
   min-height:0;
   padding:5px;
@@ -13,6 +14,8 @@
   min-height:36px!important;
   max-height:36px;
   width:auto;
+  min-width:0;
+  max-width:none;
   margin:-5px -5px 4px!important;
   padding:3px 7px;
   flex-direction:row;
@@ -28,6 +31,7 @@
   gap:7px;
   width:100%;
 }
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity::after{content:none!important;display:none!important}
 .area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity>span:last-child{display:block;min-width:0;flex:1}
 .area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity :is(b,small){display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity b{font-size:12px;line-height:1.2}
@@ -35,12 +39,13 @@
 .area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-icon{width:28px;height:28px;flex:0 0 28px}
 
 /* System retains its existing action buttons and anchored popovers. */
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.system-scroll-region{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.system-scroll-region{
   display:flex!important;
   flex-direction:column!important;
   flex:1 1 0;
   min-width:0;
   min-height:0;
+  align-items:stretch;
   gap:7px!important;
   padding:0 2px 4px;
   overflow-x:hidden!important;
@@ -48,9 +53,9 @@
   overscroll-behavior:contain;
   scrollbar-width:thin;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region>.system-local-scopes{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region>.system-local-scopes{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
   grid-auto-rows:minmax(52px,auto);
   align-content:start;
   align-items:stretch;
@@ -60,12 +65,13 @@
   min-height:0;
   overflow:visible!important;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-desktop:has(.has-system-request),
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-project:not([hidden]),
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-middle{display:contents!important}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-desktop:has(.has-system-request),
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-project:not([hidden]),
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-middle{display:contents!important}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action{
   width:100%;
   min-width:0;
+  max-width:none;
   min-height:48px;
   height:auto;
   padding:4px 2px;
@@ -73,14 +79,15 @@
   justify-content:center;
   align-self:stretch;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>svg{width:17px;height:17px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>span{font-size:10px;line-height:1.15}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{max-width:100%;font-size:9px;line-height:1.2}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailTimerValue{font-size:11px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>svg{width:17px;height:17px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>span{font-size:10px;line-height:1.15}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{max-width:100%;font-size:9px;line-height:1.2}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailTimerValue{font-size:11px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
   grid-auto-rows:minmax(44px,auto);
+  align-items:stretch;
   gap:4px;
   flex:0 0 auto;
   min-width:0;
@@ -89,10 +96,11 @@
   margin:0!important;
   padding:6px 0 0;
   border-top:1px solid var(--sd-glass-groove);
+  border-left:0;
   overflow:visible;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.system-rail-global{display:contents!important}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-global>.rail-clock{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.system-rail-global{display:contents!important}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-global>.rail-clock{
   grid-column:span 2;
   min-width:0;
   min-height:44px;
@@ -100,11 +108,11 @@
   justify-content:center;
   gap:3px;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock strong{font-size:17px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock small{font-size:9px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWideAlerts,
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings{grid-column:auto;min-height:44px;padding:4px 2px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock strong{font-size:17px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock small{font-size:9px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWideAlerts,
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings{grid-column:auto;width:100%;min-width:0;max-width:none;min-height:44px;padding:4px 2px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications{
   display:flex;
   flex-direction:row;
   flex-wrap:wrap;
@@ -116,7 +124,7 @@
   gap:3px;
   padding:3px 0;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge{
   flex:1 1 22px;
   flex-direction:row;
   min-width:22px;
@@ -125,10 +133,10 @@
   padding:4px 2px;
   gap:2px;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge svg{width:13px;height:13px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge small{font-size:9px;line-height:1.1}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings{display:contents!important;grid-column:auto}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings .system-rail-sound{
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge svg{width:13px;height:13px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge small{font-size:9px;line-height:1.1}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings{display:contents!important;grid-column:auto}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings .system-rail-sound{
   width:100%;
   min-width:0;
   min-height:44px;
@@ -136,8 +144,8 @@
   padding:4px 2px!important;
   gap:3px;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings>span,
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-sound>span{font-size:10px}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings>span,
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-sound>span{font-size:10px}
 
 /* The wrapper has no box in existing layouts. A wide Compact Apps Area gives
    all three regions one viewport while its header and resize edge stay fixed. */
@@ -159,29 +167,40 @@
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-scroll-region{
   display:flex;
   flex:0 0 auto;
+  flex-direction:column;
+  justify-content:flex-start;
+  gap:0;
   min-height:min-content;
   overflow:visible;
 }
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-quick-launch{
   flex:0 0 auto;
   max-height:none;
+  max-width:none;
+  width:100%;
   padding:0 0 5px;
+  border-right:0;
+  border-bottom:1px solid var(--sd-glass-groove);
   overflow:visible;
 }
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-quick-launch-grid{
-  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(42px,1fr));
   gap:3px;
   overflow:visible;
 }
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-quick-launch-key{width:100%}
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .app-rack{
   flex:0 0 auto;
+  flex-direction:column;
+  width:100%;
   min-height:min-content;
   padding:5px 0 0;
   overflow:visible;
 }
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .app-rack-group{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(42px,1fr));
   grid-auto-rows:44px;
   gap:3px;
   max-height:none;
@@ -195,25 +214,32 @@
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"] .background-apps{
   display:grid;
   flex:0 0 auto;
-  grid-template-columns:repeat(auto-fit,minmax(36px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(36px,1fr));
   grid-auto-rows:36px;
   align-content:start;
   justify-items:center;
   gap:3px;
   max-height:none;
+  max-width:none;
+  width:100%;
   margin-top:6px;
   padding:5px 0 0;
+  border-left:0;
+  border-top:1px solid var(--soft-line);
   overflow:visible;
 }
 
 /* Current material tools and pinned items share a compact grid. The complete
    grid scrolls, so a short slot never hides Files, More or a pinned item. */
+.project-area[data-area-state="rail"][data-compact-layout="grid"][data-project-rail-ready]>.project-closed-state.project-library,
+.project-area[data-area-state="rail"][data-compact-layout="grid"][data-project-rail-ready]>:is(.project-space-content,.project-switcher,.project-session-bar,.project-rail-tools,.memory-rail-entry){display:none!important}
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail{
   display:grid;
   flex:1 1 0;
-  grid-template-columns:repeat(auto-fit,minmax(48px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(48px,1fr));
   grid-auto-rows:minmax(44px,auto);
   align-content:start;
+  align-items:stretch;
   gap:4px;
   padding-bottom:3px;
   overflow-x:hidden;
@@ -225,7 +251,7 @@
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail :is(.project-material-pinned,footer){display:contents}
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-pinned-label{display:none}
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail :is(.rail-action,.project-material-item){
-  width:100%;
+  width:100%!important;
   min-width:0;
   min-height:44px;
   justify-content:center;
@@ -242,6 +268,7 @@
   grid-template-columns:minmax(0,1fr) 64px;
   grid-auto-rows:minmax(48px,auto);
   align-content:start;
+  align-items:stretch;
   gap:5px;
   padding:0 0 3px;
   overflow-x:hidden;
@@ -260,7 +287,7 @@
 .ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat-title{-webkit-line-clamp:2;flex:1;font-size:11px;line-height:1.3}
 .ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-sources{flex:none;font-size:10px}
 .ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat>small:not([hidden]){position:absolute;right:4px;top:2px;font-size:8px}
-.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-new{justify-content:center;gap:2px;padding:4px 2px!important}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-new{width:100%;min-width:0;justify-content:center;gap:2px;padding:4px 2px!important}
 
 /* The seam belongs to both neighbours. Its eight-pixel pointer target adds
    no visual gutter or extra material to the shared column or row. */

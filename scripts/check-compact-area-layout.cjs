@@ -85,7 +85,9 @@ function allocated(input){
     assert(panel.offset+panel.extent<=extent+tolerance,'Every Area remains inside its dock');
     const expectedState=input.states?.[name]==='rail'||panel.extent+1e-7<Compact.expandedMinimum(axis,name)?'rail':'expanded';
     assert.equal(panel.state,expectedState,'Content fit affects the resolved state, retaining explicit Compact preferences');
-    assert.equal(panel.compactGrid,axis==='vertical'&&Number.isFinite(input.crossSize)&&input.crossSize>=240&&panel.state==='rail');
+    const crossSize=Number.isFinite(input.crossSize)?Math.max(0,input.crossSize):0;
+    const gridFits=axis==='vertical'?crossSize>=240:panel.extent>=160&&crossSize>=120;
+    assert.equal(panel.compactGrid,gridFits&&panel.state==='rail');
     edge=panel.offset+panel.extent+(index<names.length-1?gap:0);
   }
   if(names.length)assert(Math.abs(edge-extent)<tolerance,'The final panel consumes the remaining extent exactly');
@@ -103,6 +105,7 @@ result=allocated({names:['apps','systems'],states:fullStates,axis:'vertical',cro
 near(result.apps.extent,240);assert.equal(result.apps.state,'expanded','A panel automatically returns to its preferred Expanded state when the same shares fit');
 result=allocated({names:['projects','ai'],states:fullStates,axis:'horizontal',crossSize:180,extent:1000,shares:{projects:1,ai:3}});
 assert.equal(result.projects.extent,250);assert.equal(result.projects.state,'rail');assert.equal(result.ai.extent,750);assert.equal(result.ai.state,'expanded');
+assert.equal(result.projects.compactGrid,true,'A short wide compact panel uses its available height instead of a long overflowing icon row');
 result=allocated({names:['projects','ai'],states:fullStates,axis:'horizontal',crossSize:180,extent:1400,shares:{projects:1,ai:3}});
 assert.equal(result.projects.extent,350);assert.equal(result.projects.state,'expanded');
 
@@ -141,6 +144,14 @@ for(const shares of [null,{},'broken',{apps:1},{apps:1,systems:0},{apps:1,system
 for(const axis of ['vertical','horizontal'])for(const crossSize of [0,70,239,240,320]){
   allocated({names:['apps','systems'],states:fullStates,axis,crossSize,extent:300,shares:{apps:1,systems:1}});
 }
+for(const name of Object.keys(fullStates))for(const extent of [159,160,200])for(const crossSize of [64,119,120,250]){
+  result=allocated({names:[name],states:fullStates,axis:'horizontal',crossSize,extent});
+  assert.equal(result[name].compactGrid,extent>=160&&crossSize>=120,'Every horizontal Area selects a grid only when both dimensions fit');
+}
+result=allocated({names:['systems'],states:{systems:'rail'},axis:'horizontal',crossSize:64,extent:900});
+assert.equal(result.systems.compactGrid,false,'A shallow horizontal rail retains its original icon row');
+result=allocated({names:['systems'],states:fullStates,axis:'horizontal',crossSize:250,extent:900});
+assert.equal(result.systems.compactGrid,false,'Expanded panels never select the Compact grid');
 allocated({names:['apps','apps','systems',null,''],states:fullStates,axis:'vertical',crossSize:300,extent:900,shares:{apps:1,systems:2}});
 allocated({names:['apps','systems'],states:null,axis:'unknown',crossSize:Infinity,extent:NaN,gap:-5,shares:{apps:1,systems:2}});
 assert.deepEqual(Compact.allocate(),{});assert.deepEqual(Compact.allocate(null),{});

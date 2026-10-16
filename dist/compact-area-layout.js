@@ -41,6 +41,8 @@
 
   const thresholds=Object.freeze({
     compactCrossSize:compactWidth,
+    horizontalGridWidth:160,
+    horizontalGridHeight:120,
     compactExtent:Object.freeze({vertical:72,horizontal:64}),
     expandedExtent:Object.freeze({
       vertical:Object.freeze({apps:220,projects:240,systems:240,ai:260}),
@@ -102,7 +104,8 @@
       offset=Math.min(offset,extent);
       const size=index===names.length-1?Math.max(0,extent-offset):Math.min(sizes[index],Math.max(0,extent-offset));
       const state=states[name]==='rail'||size+1e-7<expandedMinimum(axis,name)?'rail':'expanded';
-      const entry=[name,{offset,extent:size,state,compactGrid:axis==='vertical'&&crossSize>=compactWidth&&state==='rail'}];
+      const gridFits=axis==='vertical'?crossSize>=compactWidth:size>=thresholds.horizontalGridWidth&&crossSize>=thresholds.horizontalGridHeight;
+      const entry=[name,{offset,extent:size,state,compactGrid:gridFits&&state==='rail'}];
       offset+=size+(index<names.length-1?gap:0);
       return entry;
     }));
