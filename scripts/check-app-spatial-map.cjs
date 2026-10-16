@@ -121,7 +121,9 @@ const frames={
   'left-bottom':frame(0,300,392,300),'right-bottom':frame(400,300,592,300)
 };
 const descendants=node=>node.children.flatMap(child=>[child,...descendants(child)]);
+const appsArea={dataset:{areaState:'expanded'}};
 const environment={SpatialAppMap:MapModel,document:fakeDocument,appState,
+  areaFor(name){assert.equal(name,'apps');return appsArea;},
   frameFor(name){frameReads.push(name);assert.notEqual(name,'parked','Parked app geometry never enters the open-window map');return frames[name];},
   $(selector,parent){
     if(selector==='#appRack')return rack;
@@ -188,3 +190,37 @@ assert.equal(extra.hidden,true);assert.equal(extra.children.length,0);
 assert.equal(buttons['right-top'].style.gridColumn,'2 / span 1');
 for(const name of names)assert.equal(JSON.stringify(buttons[name].dataset),originalDatasets[name]);
 console.log('Apps spatial adapter: settled geometry, divider-only resize, unchanged button identity and shortcuts, parked isolation, float routing, focus and no-op updates passed.');
+
+// Regression: an early shortcut may be floating. Expanded mode separates that
+// button, but the ordinary rail must still read slot 1, then slot 2 in DOM order.
+names.splice(2,2);
+for(const name of ['left-bottom','right-bottom']){appState[name]='minimized';parkedGroup.append(buttons[name]);}
+frames['left-top'].classes.add('is-floating');
+fakeDocument.activeElement=buttons['left-top'];
+sync();
+assert.deepEqual(tiles.children.map(button=>button.dataset.hotbarSlot),['2']);
+assert.deepEqual(extra.children.map(button=>button.dataset.hotbarSlot),['1']);
+const expandedSignature=group.dataset.spatialLayout;
+appsArea.dataset.areaState='rail';
+sync();
+assert.notEqual(group.dataset.spatialLayout,expandedSignature,'Changing area state invalidates the same-geometry cache');
+assert.deepEqual(tiles.children.map(button=>button.dataset.hotbarSlot),['1','2'],'Rail DOM order follows shortcut order even when slot 1 is floating');
+assert.equal(extra.children.length,0);assert.equal(extra.hidden,true);assert.equal(tiles.hidden,false);
+assert.equal(fakeDocument.activeElement,buttons['left-top'],'Collapsing a focused floating icon preserves focus');
+assert.equal(buttons['left-top'],originalButtons['left-top']);
+assert.equal(buttons['right-top'],originalButtons['right-top']);
+const railMoves=moves,railWrites=styleWrites,railSignature=group.dataset.spatialLayout;
+sync();
+assert.equal(moves,railMoves,'A settled rail avoids redundant DOM reordering');
+assert.equal(styleWrites,railWrites,'A settled rail avoids redundant styles');
+appsArea.dataset.areaState='expanded';
+sync();
+assert.notEqual(group.dataset.spatialLayout,railSignature,'Re-expanding remaps unchanged geometry');
+assert.equal(buttons['left-top'].parentElement,extra,'Expanded mode restores the floating strip after visiting the rail');
+assert.equal(buttons['right-top'].parentElement,tiles);assert.equal(extra.hidden,false);
+assert.equal(fakeDocument.activeElement,buttons['left-top'],'Re-expanding preserves focus on the separated float');
+assert.equal(JSON.stringify(buttons['left-top'].dataset),originalDatasets['left-top']);
+assert.equal(JSON.stringify(buttons['right-top'].dataset),originalDatasets['right-top']);
+const reexpandedMoves=moves,reexpandedWrites=styleWrites;
+sync();assert.equal(moves,reexpandedMoves);assert.equal(styleWrites,reexpandedWrites);
+console.log('Apps spatial rail regression: early floating shortcut order, state-cache invalidation, focus, button identity and stable no-op transitions passed.');

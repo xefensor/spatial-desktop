@@ -7865,6 +7865,7 @@ function syncRackSpatialLayout(names) {
   if(!group)return;
   const tiles=$('.app-map-tiles',group),extra=$('.app-map-extra',group);
   if(!tiles||!extra)return;
+  const state=areaFor('apps')?.dataset.areaState;
   const rectangles=names.filter(name=>appState[name]==='open').map(name=>{
     const frame=frameFor(name),rect=frame?.getBoundingClientRect(),parent=frame?.parentElement?.getBoundingClientRect();
     const value=property=>{const inline=frame?.style[property];return inline?.endsWith('px')?parseFloat(inline):NaN;};
@@ -7874,11 +7875,19 @@ function syncRackSpatialLayout(names) {
       width:Number.isFinite(width)?width:rect?.width,height:Number.isFinite(height)?height:rect?.height,
       floating:Boolean(frame?.classList.contains('is-floating'))};
   });
-  const signature=JSON.stringify(rectangles);
+  const signature=JSON.stringify([state,rectangles]);
   if(group.dataset.spatialLayout===signature)return;
   group.dataset.spatialLayout=signature;
-  const layout=SpatialAppMap.layout(rectangles),cells=new Map(layout.cells.map(cell=>[cell.id,cell]));
   const focused=document.activeElement;
+  if(state!=='expanded'){
+    const buttons=new Map($$('[data-open-app]',group).map(button=>[button.dataset.openApp,button]));
+    const ordered=names.map(name=>buttons.get(name)).filter(Boolean),previous=[...tiles.children];
+    if(ordered.length!==previous.length||ordered.some((button,index)=>button!==previous[index]))ordered.forEach(button=>tiles.append(button));
+    tiles.hidden=false;extra.hidden=true;
+    if(focused&&group.contains(focused)&&document.activeElement!==focused)focused.focus({preventScroll:true});
+    return;
+  }
+  const layout=SpatialAppMap.layout(rectangles),cells=new Map(layout.cells.map(cell=>[cell.id,cell]));
   for(const button of $$('[data-open-app]',group)){
     const cell=cells.get(button.dataset.openApp),target=cell?tiles:extra;
     if(button.parentElement!==target)target.append(button);
