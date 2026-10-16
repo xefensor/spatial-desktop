@@ -84,27 +84,30 @@ body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
   right:calc(var(--workspace-right,0px) + var(--desktop-page-rail-width))!important;
 }
 .desktop-page-rail{
-  position:absolute;left:calc(var(--workspace-left,0px) + 7px);
+  position:absolute;left:calc(var(--workspace-left,0px) + 1px);
   top:calc(50% + (var(--workspace-top,0px) + var(--desktop-context-height,0px) - var(--workspace-bottom,0px)) / 2);
-  transform:translateY(-50%);width:22px;height:max-content;z-index:740;
+  transform:translateY(-50%);width:25px;height:max-content;z-index:740;
   max-height:calc(100% - var(--workspace-top,0px) - var(--desktop-context-height,0px) - var(--workspace-bottom,0px) - 24px);
   display:flex;flex-direction:column;align-items:center;justify-content:safe center;
   gap:10px;padding:2px 0;overflow-x:hidden;overflow-y:auto;
   overscroll-behavior:contain;scrollbar-width:none;
   background:none;border:0;box-shadow:none;backdrop-filter:none;
 }
-.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 7px)}
+.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
 .desktop-page-rail::-webkit-scrollbar{display:none}
 .desktop-page-rail:focus-visible{outline:1px solid var(--desktop-marker-accent);outline-offset:-1px}
+/* Center 21/22px icon groups in 25px so both stroke widths share the exact
+   position of the filled bars centered in the original 6px lines-only rail. */
 .desktop-page-mark{
   --desktop-marker-line:color-mix(in srgb,var(--sd-glass-muted) 50%,transparent);
   --desktop-marker-stroke:2px;
   position:relative;display:flex;flex-direction:column;align-items:center;
-  flex:none;width:22px;min-height:30px;gap:5px;padding:5px 0 5px 1px;
+  flex:none;width:21px;min-height:30px;gap:5px;padding:5px 0 5px 1px;
   border-left:var(--desktop-marker-stroke) solid var(--desktop-marker-line);border-radius:0;
   background:none;box-shadow:none;
 }
 .desktop-page-mark.is-current{
+  width:22px;
   --desktop-marker-line:var(--desktop-marker-accent,var(--sd-glass-text));
   --desktop-marker-stroke:3px;
 }
@@ -120,8 +123,7 @@ body[data-theme="light"] .desktop-page-mark.is-current{--desktop-marker-line:col
 .desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:var(--desktop-marker-stroke) solid var(--desktop-marker-line);padding-left:0;padding-right:1px}
 /* Original filled bars fit inside the existing tile inset, without reserving
    another lane. Their compact rail still receives right-clicks. */
-html[data-desktop-markers="lines"] .desktop-page-rail{left:calc(var(--workspace-left,0px) + 1px);width:6px;gap:6px;padding:12px 0}
-html[data-desktop-markers="lines"] .desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
+html[data-desktop-markers="lines"] .desktop-page-rail{width:6px;gap:6px;padding:12px 0}
 html[data-desktop-markers="lines"] .desktop-page-mark{
   display:block;width:2px;height:22px;min-height:3px;flex-shrink:1;padding:0;gap:0;
   border:0;background:var(--sd-glass-muted);opacity:.5;
