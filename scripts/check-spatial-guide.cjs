@@ -431,7 +431,7 @@ sent=[];syncContext.desktopSyncReady=false;syncContext.broadcastDesktopState();a
 console.log('Production display synchronization passed: isolated practice channels, stale-session rejection, initial owner authority and companion cleanup.');
 
 // New chapters observe owned, persisted content and meaningful state transitions.
-const contextScene={workspace:'general',column:'practice',note:'',items:[],ai:{items:[],draft:'',workingProject:null},areas:{apps:true,systems:true,projects:true,ai:true},activity:[],plans:[],overview:false,section:'apps',filter:'all',query:'',day:'2026-10-10',activityDay:'2026-10-10'};
+const contextScene={workspace:'general',column:'practice',note:'',items:[],ai:{items:[],draft:'',workingProject:null},areas:{apps:true,systems:true,projects:true,ai:true},activity:[],plans:[],overview:false,section:'windows',filter:'all',query:'',day:'2026-10-10',activityDay:'2026-10-10'};
 const stash=at('project-stash');G.observeContext(stash,{...contextScene,column:'workspace'});
 G.observeContext(stash,{...contextScene,column:'another',items:[{id:'a'}]});assert(!stash.ready(),'Another context does not complete workspace Stash practice');
 G.observeContext(stash,{...contextScene,column:'workspace',items:[{id:'a',title:'My idea'}]});assert(!stash.ready(),'Save and inspect are separate actions');
@@ -446,12 +446,13 @@ G.observeContext(projectContext,{...contextScene,ai:{items:[{id:'mine',project:'
 const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
 G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
 G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());
-const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(!nav.ready(),'Returning to Apps alone does not finish window practice');
-const filterAction={kind:'filter',value:'parked',workspace:'general',fromOverview:true,section:'apps'};
+const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(!nav.ready(),'Returning to Windows alone does not finish window practice');
+const filterAction={kind:'filter',value:'parked',workspace:'general',fromOverview:true,section:'windows'};
 assert(!G.observeOverviewAction(nav,filterAction,{...contextScene,overview:true,windowFilter:'all'}),'A stale filter action is not credited');
 assert(!G.observeOverviewAction(nav,{...filterAction,fromOverview:false},{...contextScene,overview:true,windowFilter:'parked'}),'A filter outside Overview is not credited');
+assert(!G.observeOverviewAction(nav,{...filterAction,section:'apps'},{...contextScene,overview:true,section:'apps',windowFilter:'parked'}),'The Apps launcher cannot complete Windows filtering practice');
 assert(G.observeOverviewAction(nav,filterAction,{...contextScene,overview:true,windowFilter:'parked'}));
-const windowAction={kind:'window',name:'terminal--2',workspace:'general',fromOverview:true,section:'apps'};
+const windowAction={kind:'window',name:'terminal--2',workspace:'general',fromOverview:true,section:'windows'};
 assert(!G.observeOverviewAction(nav,windowAction,{...contextScene,open:['notes'],front:'notes'}),'Selecting a closed or different window cannot finish practice');
 assert(!G.observeOverviewAction(nav,windowAction,{...contextScene,workspace:'work',open:['terminal--2'],front:'terminal--2'}),'Another workspace cannot finish practice');
 assert(G.observeOverviewAction(nav,windowAction,{...contextScene,open:['terminal--2'],front:'terminal--2'}));assert(nav.ready());assert(G.create(nav.snapshot()).ready(),'Overview practice survives reload with the actual completed goals');
@@ -481,11 +482,22 @@ practiceTarget.model.state.done.push('overview-filtered');assert.equal(practiceT
 practiceTarget.$=()=>({});assert.equal(practiceTarget.overviewPracticeTarget(),'#overviewWindowGrid');
 practiceTarget.model=at('timeline');practiceTarget.model.state.done=['timeline-activity','timeline-event','timeline-compared'];assert.equal(practiceTarget.overviewPracticeTarget(),'#timelineLatest');
 const resumedOverview=G.create({status:'active',version:7,lessonId:'overview-navigation',done:['overview-away','overview-back']});assert(!resumedOverview.ready());assert.deepEqual(resumedOverview.state.done,['overview-away','overview-back'],'Updating the chapter preserves existing learner progress');
-console.log('Updated Guide passed: Overview filters, actual window return, latest-activity jumps, dynamic targets and existing progress.');
+const lessonNavigation=[];
+const lessonRouting=vm.createContext({model:at('apps'),setUniversalSearchOpen(open){assert.equal(open,true);},SpatialOverviewDesktop:{select(section,animate){assert.equal(animate,false);lessonNavigation.push(section);}},positionGuide(){}});
+vm.runInContext(adapter.slice(adapter.indexOf('  function showLessonOverview('),adapter.indexOf('  function check()')),lessonRouting);
+for(const [id,section] of [['apps','apps'],['overview','apps'],['tiling','apps'],['project-app','apps'],['folders','projects'],['overview-navigation','windows'],['temporary-desktop','windows'],['hide-areas','system'],['timeline-task','timeline']]){
+  lessonRouting.model=at(id);lessonRouting.showLessonOverview(id);assert.equal(lessonNavigation.at(-1),section,'Show me routes '+id+' to '+section);
+}
+lessonRouting.model=at('timeline');lessonRouting.showLessonOverview('timeline');assert.equal(lessonNavigation.at(-1),'apps','Timeline starts by launching a tool');
+lessonRouting.model.mark('timeline-activity');lessonRouting.showLessonOverview('timeline');assert.equal(lessonNavigation.at(-1),'timeline','After making activity the lesson opens Timeline');
+assert.equal(G.goalLabels['overview-back'],'Return to Windows');
+assert(G.goalHints['temporary-back'].includes('Overview → Windows'));
+assert(G.goalHints['workspace-folder'].includes('Projects & Files'));
+console.log('Updated Guide passed: Overview filters, actual window return, latest-activity jumps, context-specific tab routing and existing progress.');
 
 // Run the real capture listeners: window selection closes Overview before validation.
 const captureModel=at('overview-navigation');G.observeContext(captureModel,contextScene);captureModel.mark('overview-away');captureModel.mark('overview-back');
-const captureNodes={'#universalSearch':{classList:{contains:()=>captureScene.overview}},'#overviewWindowFilter':{value:'parked'},'#timelineDay':{value:'2026-10-10'}},captureScene={overview:true,section:'apps'},captureHandlers={},capturePending=[];
+const captureNodes={'#universalSearch':{classList:{contains:()=>captureScene.overview}},'#overviewWindowFilter':{value:'parked'},'#timelineDay':{value:'2026-10-10'}},captureScene={overview:true,section:'windows'},captureHandlers={},capturePending=[];
 const capture=vm.createContext({model:captureModel,guide:{observeOverviewAction:G.observeOverviewAction,save(){}},activeWorkspace:'general',lastSignature:'',frontApp:null,appState:{'terminal--2':'minimized'},isLocalApp:()=>true,
   $:id=>captureNodes[id],SpatialOverviewDesktop:{active:()=>captureScene.section},SpatialTimelineDesktop:{snapshot:()=>({activity:[]})},SpatialTimeline:require('../dist/timeline.js'),
   document:{addEventListener(type,fn,phase){assert.equal(phase,true);captureHandlers[type]=fn;}},setTimeout:fn=>capturePending.push(fn),check(){}});

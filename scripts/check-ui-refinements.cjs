@@ -14,19 +14,26 @@ for (const [value, query, expected] of [
   ['Firefox Internet', 'firefox office', false],
   ['Anything', '   ', false]
 ]) assert.equal(context.matchesSearch(value, query), expected, `${value} / ${query}`);
-const nodes = { '#workspaceContextMeta': {}, '#workspaceContextTitle': {} };
+const nodes = Object.fromEntries(['workspaceContextMeta','workspaceContextTitle','overviewLaunchTarget','overviewCurrentProject','overviewCurrentProjectName','overviewCurrentProjectPath','overviewCurrentProjectMeta'].map(id=>['#'+id,{style:{setProperty(){}}}]));
+let selectedColumn='custom';
 Object.assign(context, {
   $: selector => nodes[selector], activeWorkspace: 'general',
-  workspaceProfiles: { general: { context: 'Everyday desktop', favorites: [1, 2, 3] } },
-  projectSpaces: { custom: { name: 'My custom project' } }, activeProjectName: 'custom'
+  desktopPages:{column:()=>selectedColumn,current:()=>1},
+  workspaceProfiles: { general: { label:'General', context: 'Everyday desktop', favorites: [1, 2, 3] } },
+  projectSpaces: { custom: { name: 'My custom project',root:'/projects/custom',summary:'Useful work' } }, activeProjectName: 'custom'
 });
 vm.runInContext(source.slice(source.indexOf('function refreshWorkspaceContext('), source.indexOf('let activeOverviewView')), context);
 context.refreshWorkspaceContext();
 assert.equal(nodes['#workspaceContextMeta'].textContent, '3 favorite apps · private clipboard');
-assert.equal(nodes['#workspaceContextTitle'].textContent, 'Active project: My custom project');
-context.activeProjectName = null;
+assert.equal(nodes['#workspaceContextTitle'].textContent, 'Everyday desktop','Home keeps the Workspace identity');
+assert.equal(nodes['#overviewCurrentProject'].hidden,false);
+assert.equal(nodes['#overviewCurrentProjectName'].textContent,'My custom project');
+assert.equal(nodes['#overviewCurrentProjectPath'].textContent,'/projects/custom');
+assert.equal(nodes['#overviewLaunchTarget'].textContent,'Opens in General / My custom project / Desktop 2');
+selectedColumn='workspace';
 context.refreshWorkspaceContext();
-assert.equal(nodes['#workspaceContextTitle'].textContent, 'Everyday desktop');
+assert.equal(nodes['#overviewCurrentProject'].hidden,true,'Ordinary Workspace hides the current-project section');
+assert.equal(nodes['#overviewLaunchTarget'].textContent,'Opens in General / Workspace / Desktop 2','A remembered Project cannot mislabel a new app destination');
 // Inspect real page structure: unique control IDs and category parity.
 const html = fs.readFileSync(path.join(__dirname, '../dist/index.html'), 'utf8');
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
@@ -36,7 +43,7 @@ const select = html.match(/<select id="overviewCategory"[\s\S]*?<\/select>/)[0];
 assert.deepEqual([...select.matchAll(/value="([^"]+)"/g)].map(match => match[1]).sort(), categories);
 const libraryStart = html.indexOf('data-overview-panel="apps"');
 assert(libraryStart >= 0, 'Apps are a production Overview section');
-assert(html.indexOf('id="overviewWindowGrid"') > libraryStart, 'Open windows share the Apps lane');
+assert(html.indexOf('id="overviewWindowGrid"') < libraryStart, 'Windows have a destination before the Apps launcher');
 assert(!source.includes('const miniature = name =>'), 'No decorative desktop previews');
 assert(source.includes('!$("#universalResults").hidden && (event.target === $("#universalSearchInput")'), 'Result navigation leaves category select alone');
 for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'material-lab.html']) {
@@ -44,7 +51,7 @@ for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'mat
   assert(contents.includes('ui-refinements.css?v=179'), page + ': shared refinements loaded');
   assert(!contents.includes('href="/"'), page + ': project-relative navigation');
 }
-console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, shared lanes and project-relative navigation.');
+console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, separate window and launcher destinations and project-relative navigation.');
 // Project dialogs must isolate the background and restore its previous role.
 for (const overviewOpen of [true, false]) {
   let focusReturned = false;

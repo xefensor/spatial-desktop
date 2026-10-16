@@ -44,7 +44,7 @@
       snapshot(){return JSON.parse(JSON.stringify(sessions));}
     };
   }
-  const sections=['timeline','apps','projects','system'];
+  const sections=['windows','apps','projects','timeline','system'];
   function neighbour(id,direction,allowed=sections){const index=allowed.indexOf(id);return allowed.length?allowed[(Math.max(0,index)+direction+allowed.length)%allowed.length]:null;}
   function demoExamples({preset,profiles={},projects={},now=Date.now()}={}){
     if(preset!=='demo')return [];

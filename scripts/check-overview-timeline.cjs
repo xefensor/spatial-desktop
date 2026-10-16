@@ -15,7 +15,9 @@ assert.equal(model.list('general').length,3,'Concurrent displays merge without d
 for(let i=0;i<400;i++)model.add(event('bounded-'+i,30000+i*4000,'work'));
 assert.equal(model.list('work').length,T.limit,'History stays bounded');
 assert.equal(model.list('work')[0].id,'bounded-399','Newest events survive trimming');
-assert.equal(T.neighbour('timeline',-1),'system');assert.equal(T.neighbour('system',1),'timeline');
+assert.deepEqual(T.sections,['windows','apps','projects','timeline','system'],'Overview moves from current windows through launching, project files, activity and system controls');
+assert.equal(T.neighbour('windows',-1),'system');assert.equal(T.neighbour('system',1),'windows');
+assert.equal(T.neighbour('timeline',-1),'projects');
 assert.equal(T.neighbour('apps',1,['apps','projects']),'projects');
 const D=require('../dist/demo-examples.js'),exampleProfiles={general:{home:'/home/demo'},school:{},work:{},gaming:{},custom:{custom:true}};
 const examples=T.demoExamples({preset:'demo',profiles:exampleProfiles,projects:D.projects,now:1800000000000});
@@ -77,7 +79,7 @@ assert(dense.activity[1].top-dense.activity[0].top>=58,'Dense actions stay reada
 const nodes=new Map(),make=(key)=>{
   if(nodes.has(key))return nodes.get(key);
   const n={key,closest:()=>null,value:'',hidden:false,inert:false,dataset:{},attrs:{},style:{},textContent:'',innerHTML:'',listeners:{},
-    classList:{add(){},remove(){},toggle(){},contains:()=>false},setAttribute(k,v){this.attrs[k]=v;},addEventListener(k,fn){this.listeners[k]=fn;}};
+    classList:{add(){},remove(){},toggle(){},contains:()=>false},focus(){this.focused=true;},setAttribute(k,v){this.attrs[k]=v;},addEventListener(k,fn){this.listeners[k]=fn;}};
   nodes.set(key,n);return n;
 };
 const panelNodes=T.sections.map(id=>{const n=make(id);n.dataset.overviewPanel=id;n.offsetWidth=800;return n;});
@@ -110,16 +112,18 @@ const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T
 };
 vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../dist/overview-desktop.js'),'utf8'),context);
 const overview=context.SpatialOverviewDesktop,timeline=context.SpatialTimelineDesktop;
-for(const id of ['timeline','system','projects','apps','timeline','apps']){
+assert.equal(overview.active(),'windows','A fresh Overview starts with existing work, not the app catalogue');
+assert.equal(JSON.parse(data.get('spatial-overview-section-v2')).general,'windows','Default selection is stored under the new preference version');
+for(const id of ['timeline','system','projects','windows','apps','timeline','apps']){
   overview.select(id,false);
   const current=panelNodes.find(n=>n.dataset.overviewPanel===id),index=track.children.indexOf(current);
   assert(index>0&&index<track.children.length-1,'Both real neighbours stay visible for '+id);
-  assert.equal(track.children.length,4,'Controls are rotated, not duplicated');
+  assert.equal(track.children.length,5,'All five real panels are rotated without duplicating controls');
   assert.equal(track.scrollLeft,current.offsetLeft+current.offsetWidth/2-track.clientWidth/2,'Selected panel is centred');
   assert.equal(current.inert,false);assert(panelNodes.filter(n=>n!==current).every(n=>n.inert),'Preview controls stay out of keyboard focus');
 }
 overview.select('timeline',true);
-const selectedTimeline=panelNodes[0],finishSnap=pending.at(-1);
+const selectedTimeline=panelNodes.find(n=>n.dataset.overviewPanel==='timeline'),finishSnap=pending.at(-1);
 track.scrollLeft=track.children.indexOf(panelNodes[1])*824;track.listeners.scroll();
 assert.equal(overview.active(),'timeline','Native scroll events cannot replace the requested panel during its transition');
 finishSnap();assert.equal(track.scrollLeft,selectedTimeline.offsetLeft+selectedTimeline.offsetWidth/2-track.clientWidth/2,'The requested snap target is restored after native DOM anchoring');
@@ -133,7 +137,7 @@ const wheelSurface=make('#universalSearch'),blank={closest:()=>null};
 const wheel=(extra={})=>wheelSurface.listeners.wheel({deltaX:0,deltaY:120,deltaMode:0,shiftKey:false,ctrlKey:false,metaKey:false,target:blank,preventDefault(){prevented++;},stopPropagation(){},...extra});
 const releaseWheel=()=>pending.splice(0).forEach(fn=>fn());
 wheel();assert.equal(prevented,1);assert.equal(overview.active(),'projects','Ordinary mouse wheels navigate over content, not only headings');
-releaseWheel();wheel({target:make('#universalSearchInput')});assert.equal(overview.active(),'system','The global Overview header also supports wheel navigation');
+releaseWheel();wheel({target:make('#universalSearchInput')});assert.equal(overview.active(),'timeline','The global Overview header also supports wheel navigation');
 releaseWheel();wheel({deltaY:-120});assert.equal(overview.active(),'projects','Reverse wheels select the previous section');
 releaseWheel();overview.select('apps',false);
 const list={closest:()=>null,overflowY:'auto',scrollHeight:800,clientHeight:200,scrollTop:100,parentElement:wheelSurface};
@@ -164,6 +168,13 @@ wheel({deltaX:80,deltaY:0});assert.equal(overview.active(),'projects','Momentum 
 const before=overview.active();wheel({ctrlKey:true});wheel({metaKey:true});assert.equal(overview.active(),before,'Browser zoom remains available');
 releaseWheel();wheel({target:{closest:()=>({})}});assert.equal(overview.active(),before,'Native select and numeric controls retain their wheel behavior');
 make('#overviewHome').hidden=true;wheel();assert.equal(overview.active(),before,'Search results retain their own scrolling');make('#overviewHome').hidden=false;
+overview.select('windows',false);
+let arrowPrevented=0;
+const arrow=key=>make('#overviewHome').listeners.keydown({key,target:{matches:()=>false},preventDefault(){arrowPrevented++;}});
+arrow('ArrowRight');assert.equal(overview.active(),'apps','Arrow keys reach the separate application launcher');
+arrow('ArrowLeft');assert.equal(overview.active(),'windows');
+arrow('ArrowLeft');assert.equal(overview.active(),'system','Keyboard navigation wraps from Windows to System');
+assert.equal(arrowPrevented,3,'Carousel arrow keys suppress native page scrolling');
 timeline.record('file.open',{app:'dolphin',title:'<unsafe>',path:'/projects/site/notes.md'});
 const stored=JSON.parse(data.get('spatial-workspace-timeline-v1'));assert.equal(stored.general.length,1);
 assert.equal(stored.general[0].project,'site');assert.equal(stored.general[0].page,1);
@@ -194,7 +205,13 @@ assert(JSON.parse(data.get('spatial-workspace-timeline-v1')).work.some(event=>ev
 
 context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};
 context.SpatialGuide.settingUp=true;const beforeGuide=data.get('spatial-workspace-timeline-v1');timeline.record('app.park',{app:'dolphin'});assert.equal(data.get('spatial-workspace-timeline-v1'),beforeGuide,'Guide prerequisite setup is not recorded as learner activity');context.SpatialGuide.settingUp=false;
-overview.refresh();assert.equal(overview.active(),'apps');assert.equal(tabs[0].hidden,true);assert.equal(tabs[2].hidden,true);assert(edges.every(edge=>edge.hidden),'Only introduced sections are navigable');
+overview.refresh();assert.equal(overview.active(),'windows','Guide falls back to Windows when a previously selected section is unavailable');
+assert.deepEqual(tabs.filter(tab=>!tab.hidden).map(tab=>tab.dataset.overviewSection),['windows','apps'],'Windows and launching remain accessible while later sections are gated');
+assert(edges.every(edge=>!edge.hidden),'Both introductory sections retain horizontal navigation');
+overview.select('apps',false);overview.step(1);assert.equal(overview.active(),'windows','Introductory navigation wraps between launching and current windows');
+context.SpatialGuide.model.allows=feature=>feature==='projects';overview.refresh();
+assert.deepEqual(tabs.filter(tab=>!tab.hidden).map(tab=>tab.dataset.overviewSection),['windows','apps','projects'],'Project files appear only once the Guide introduces projects');
+context.SpatialGuide.model.allows=()=>false;
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/overview-desktop.js'),'utf8');
 context.desktopPreset='demo';vm.runInContext(source,context);
 assert(!data.has('spatial-timeline-demo-v1'),'Guide practice never seeds demo history');
@@ -239,7 +256,7 @@ assert.equal(make('#overviewContext').textContent,'General / Website / Desktop 2
 context.activeWorkspace='work';context.SpatialOverviewDesktop.refresh();assert.equal(make('#timelinePlanForm').hidden,true,'A workspace switch closes the old workspace form');
 console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating, labelled examples, interruption-safe snaps and independent calendar/tasks/reminders.');
 
-// Production window filters keep travelling parked windows visible on every desktop.
+// Running windows belong to desktops; parked windows travel with their column.
 const shell=fs.readFileSync(require('node:path').join(__dirname,'../dist/desktop-shell.js'),'utf8');
 const windowNodes=new Map(),windowContext={
   activeWorkspace:'general',desktopHasWindowFocus:false,frontApp:null,
@@ -253,13 +270,24 @@ const windowNodes=new Map(),windowContext={
 };
 vm.createContext(windowContext);vm.runInContext(shell.slice(shell.indexOf('function renderOverviewWindows()'),shell.indexOf('function refreshWorkspaceContext()')),windowContext);
 const checkWindows=(filter,expected)=>{windowContext.$('#overviewWindowFilter').value=filter;windowContext.renderOverviewWindows();assert.deepEqual([...windowContext.$('#overviewWindowGrid').innerHTML.matchAll(/data-overview-open-app="([^"]+)"/g)].map(match=>match[1]),expected);};
-checkWindows('all',['right','left','other','park']);checkWindows('desktop',['right','left','park']);checkWindows('parked',['park']);checkWindows('open',['right','left','other']);
+checkWindows('all',['right','left','other','park']);
+let groupedCards=windowContext.$('#overviewWindowGrid').innerHTML;
+assert.deepEqual([...groupedCards.matchAll(/<h4 class="overview-window-group">([^<]+)<\/h4>/g)].map(match=>match[1]),['This desktop','Other desktops','Parked · Workspace-wide'],'The Windows overview orders current work, other desktops and travelling parked apps');
+checkWindows('desktop',['right','left']);
+checkWindows('parked',['park']);
+let parkedCards=windowContext.$('#overviewWindowGrid').innerHTML;
+assert(parkedCards.includes('Parked · Workspace-wide')&&!parkedCards.includes('Desktop 2'),'A parked window is labelled by its owning Workspace, not its remembered desktop');
+windowContext.desktopPages.column=()=> 'site';checkWindows('parked',['park']);
+assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('Parked · Project-wide'),'Project parking is distinguished from ordinary Workspace parking');
+checkWindows('open',['right','left','other']);
 const cards=windowContext.$('#overviewWindowGrid').innerHTML;
 assert(cards.includes('<small>report &lt;draft&gt;.md</small>'),'The live window title is shown and escaped');
 assert(cards.includes('<small>Detail</small>'),'Windows without a local frame retain their saved detail');
 assert(cards.match(/data-overview-open-app="right"[\s\S]*?class="overview-window-hotkey" aria-hidden="true">1<\/kbd>/),'Current hotbar numbering matches window order');
 assert(!cards.split('data-overview-open-app="other"')[1].split('</button>')[0].includes('overview-window-hotkey'),'A window outside the current hotbar gets no misleading shortcut');
-windowContext.appState.park='closed';checkWindows('parked',[]);assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state without hiding the app launcher');
+windowContext.appState.park='closed';checkWindows('parked',[]);
+assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state');
+assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('data-overview-go="apps"'),'The empty Windows state links directly to the separate app launcher');
 console.log('Overview improvements passed: current context, time jumps, available-day navigation, empty-day Now anchors, window filters and desktop/hotbar order.');
 
 // Contributed sections join the real carousel only while their app is available.
@@ -273,10 +301,10 @@ vm.runInContext(source,context);const contributed=context.SpatialOverviewDesktop
 assert.equal(contributed.registerSection('apps',{available:()=>true}),false,'An app cannot replace a system section');
 assert.equal(contributed.registerSection('absent',{available:()=>true}),false,'An absent panel cannot be registered');
 contributed.registerSection('steam',{label:'Steam',available:()=>context.activeWorkspace==='gaming'&&context.steamOpen!==false});
-contributed.select('steam',false);assert.equal(contributed.active(),'apps');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden);
+contributed.select('steam',false);assert.equal(contributed.active(),'windows');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden);
 context.activeWorkspace='gaming';contributed.refresh();contributed.select('steam',false);assert.equal(contributed.active(),'steam');assert(!steamPanel.hidden&&!steamTab.hidden&&!providerGroup.hidden);assert.equal(steamPanel.inert,false);
-contributed.step(1);assert.equal(contributed.active(),'timeline','The contributed section wraps back to the system sections');contributed.step(-1);assert.equal(contributed.active(),'steam');assert.equal(track.children.length,5,'No interactive controls are cloned');
-context.steamOpen=false;contributed.refresh();assert.equal(contributed.active(),'apps');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden,'Closing the provider removes it from navigation and layout');
+contributed.step(1);assert.equal(contributed.active(),'windows','The contributed section wraps back to the first built-in section');contributed.step(-1);assert.equal(contributed.active(),'steam');assert.equal(track.children.length,6,'The provider joins five built-in panels without cloning controls');
+context.steamOpen=false;contributed.refresh();assert.equal(contributed.active(),'windows');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden,'Closing the provider removes it from navigation and layout');
 context.steamOpen=true;context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};contributed.refresh();assert(steamPanel.hidden&&steamTab.hidden,'Guide practice cannot reveal an untaught provider');
 console.log('Contributed Overview passed: system sections protected, contextual availability, carousel wrap, focus, provider grouping, and removal.');
 
@@ -288,10 +316,33 @@ assert(!contributed.registerSeparateSection('apps',{panel:globalPanel,button:glo
 contributed.select('apps',false);contributed.select('global',false);
 assert.equal(contributed.active(),'global');assert.equal(globalPanel.hidden,false);assert.equal(globalPanel.inert,false);
 assert.equal(make('.overview-carousel-stage').hidden,true);assert(!track.children.includes(globalPanel),'Other workspace content never appears in an edge preview');
-assert(!Object.values(JSON.parse(data.get('spatial-overview-section-v1'))).includes('global'),'Global inspection is never saved as a workspace preference');
+assert(!Object.values(JSON.parse(data.get('spatial-overview-section-v2'))).includes('global'),'Global inspection is never saved as a workspace preference');
 contributed.refresh();assert.equal(contributed.active(),'global');assert(globalRenders>=2);
 contributed.overviewChanged(false);assert.equal(globalPanel.hidden,true);assert.equal(contributed.active(),'apps');assert(globalCloses>0);
 contributed.refresh();assert.equal(contributed.active(),'apps','Reopening restores a local section');
 const queued=[];context.requestAnimationFrame=fn=>queued.push(fn);contributed.refresh();contributed.select('global',false);queued.splice(0).forEach(fn=>fn());assert.equal(contributed.active(),'global','An older local refresh cannot override an explicit global selection');context.requestAnimationFrame=fn=>fn();
 context.activeWorkspace='general';contributed.refresh();assert.notEqual(contributed.active(),'global','Changing Workspace closes global inspection');
 console.log('Separate global Overview passed: explicit selection, isolated panel and scrolling, no neighbour previews, refresh races, no stored preference, close/reopen and workspace-change privacy.');
+
+// Old Apps contained running windows: migrate that preference to the new Windows
+// tab, while preserving deliberate selections in every other workspace.
+context.requestAnimationFrame=fn=>fn();delete context.SpatialGuide;context.desktopPreset='clean';
+function reloadSections({legacy,current,workspace='general'}={}){
+  for(const key of ['spatial-overview-section-v1','spatial-overview-section-v2'])data.delete(key);
+  if(legacy!==undefined)data.set('spatial-overview-section-v1',legacy);
+  if(current!==undefined)data.set('spatial-overview-section-v2',current);
+  context.activeWorkspace=workspace;vm.runInContext(source,context);return context.SpatialOverviewDesktop;
+}
+let restored=reloadSections({legacy:JSON.stringify({general:'apps',work:'timeline',school:'projects',gaming:'steam'})});
+assert.equal(restored.active(),'windows','The old combined Apps destination becomes Windows');
+let migrated=JSON.parse(data.get('spatial-overview-section-v2'));
+assert.equal(migrated.work,'timeline');assert.equal(migrated.school,'projects');assert.equal(migrated.gaming,'steam','Provider preferences survive migration for later registration');
+context.activeWorkspace='work';restored.refresh();assert.equal(restored.active(),'timeline','Other Workspaces retain their selected destination');
+restored=reloadSections({legacy:'{"general":"apps"}',current:'{"general":"apps"}'});
+assert.equal(restored.active(),'apps','A new explicit launcher preference is never migrated a second time');
+restored=reloadSections({current:'{"general":"missing-section"}'});assert.equal(restored.active(),'windows','Unknown current preferences fall back to Windows');
+for(const corrupt of ['null','[]','42','"apps"','{']){
+  restored=reloadSections({current:corrupt});assert.equal(restored.active(),'windows','Invalid current preference maps cannot break Overview: '+corrupt);
+  restored=reloadSections({legacy:corrupt});assert.equal(restored.active(),'windows','Invalid old preference maps cannot break migration: '+corrupt);
+}
+console.log('Overview preferences passed: Windows default, versioned Apps migration, per-Workspace choices, provider retention and invalid storage recovery.');

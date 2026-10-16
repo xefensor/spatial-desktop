@@ -110,7 +110,7 @@
     if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles[model.state.practiceWorkspace].home+'/Downloads'); }
     if(['ai-context','project-app'].includes(model.lesson.id)){globalThis.SpatialAIDesktop?.expand(false);}
     if(['project-stash','ai-context'].includes(model.lesson.id))showArea('projects',false);
-    if(model.lesson.id==='overview-navigation'){ $('#overviewWindowFilter').value='all'; renderOverviewWindows(); globalThis.SpatialOverviewDesktop?.select('apps',false);}
+    if(model.lesson.id==='overview-navigation'){ $('#overviewWindowFilter').value='all'; renderOverviewWindows(); globalThis.SpatialOverviewDesktop?.select('windows',false);}
     if(model.lesson.id==='app-instances')model.state.instanceBaseline=Object.keys(appState);
     if(model.lesson.id==='empty-desktop')model.state.emptyOrigin={page:desktopPages.current(activeWorkspace),column:desktopPages.column(activeWorkspace)};
     if(model.lesson.id==='temporary-desktop')prepareTemporaryDesktop();
@@ -204,7 +204,7 @@
     areaPriority.forEach(name => { areaFor(name).inert = model.active() && !model.allows(name==='projects'?'project-area':name); });
     $('#allAppsToggle').disabled = model.active() && !model.allows('overview');
     $('#universalSearchInput').placeholder = model.active() && !model.allows('all') ? (model.allows('folders') ? 'Search applications, projects and files' : model.allows('projects') ? 'Search applications and projects' : 'Search applications') : 'Search apps, files, settings, actions or the web';
-    $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects and Home';
+    $('#overviewProjectZoneTitle').textContent = model.active() && !model.allows('folders') ? 'Projects' : 'Projects & Files';
     globalThis.SpatialMemoryDesktop?.render();
     filterLauncher();
     globalThis.SpatialOverviewDesktop?.refresh();
@@ -288,7 +288,14 @@
     if (model.mark(goal)) { guide.save(); lastSignature = ''; }
   }
   function practiceProjectForLesson(){return model.state.practiceProject;}
-  function showLessonOverview(id){setUniversalSearchOpen(true);const section=['timeline','timeline-task'].includes(id)?(id==='timeline'&&!model.state.done.includes('timeline-activity')?'apps':'timeline'):id==='hide-areas'?'system':['overview-navigation','temporary-desktop'].includes(id)?'apps':null;if(section)globalThis.SpatialOverviewDesktop?.select(section,false);positionGuide();}
+  function showLessonOverview(id){
+    setUniversalSearchOpen(true);
+    const section=['timeline','timeline-task'].includes(id)?(id==='timeline'&&!model.state.done.includes('timeline-activity')?'apps':'timeline'):
+      id==='hide-areas'?'system':['overview-navigation','temporary-desktop'].includes(id)?'windows':
+      id==='folders'?'projects':['apps','overview','tiling','project-app'].includes(id)?'apps':null;
+    if(section)globalThis.SpatialOverviewDesktop?.select(section,false);
+    positionGuide();
+  }
   function check() {
     if (!model.active() || guide.settingUp || model.state.exitStatus) return;
     const id = model.lesson.id, done = model.state.done, session = tileSession();

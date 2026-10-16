@@ -86,7 +86,7 @@
     if(find('universalSearch').classList.contains('is-open'))overviewChanged(true);
   }
   find('steamReturnGame').addEventListener('click',()=>startGame(false));
-  find('steamReturnDesktop').addEventListener('click',()=>globalThis.SpatialOverviewDesktop?.select('apps',false));
+  find('steamReturnDesktop').addEventListener('click',()=>globalThis.SpatialOverviewDesktop?.select('windows',false));
   document.addEventListener('click',event=>{const button=event.target.closest('[data-steam-action]');if(!button)return;const action=button.dataset.steamAction;if(action==='overview')openTools();else if(['guides','notes','achievements'].includes(action))openTools(action);else if(action==='resume')startGame(false);else if(action==='desktop')showDesktop();});
   globalThis.SpatialSteamOverview={available,overviewChanged,startGame,showDesktop,running,appOpened,workspaceChanged,syncContext};
   loadWorkspace();renderGuide('settlement');

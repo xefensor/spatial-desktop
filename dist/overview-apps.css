@@ -1,110 +1,46 @@
-/* Apps has two clear jobs: return to existing work, or open a new tool. */
-.overview-carousel .overview-apps-section {
-  container-name:overview-apps;
-  container-type:inline-size;
-}
-.overview-apps-body {
-  display:grid;
-  grid-template-columns:minmax(260px,30%) minmax(0,1fr);
-  flex:1;
-  min-width:0;
-  min-height:0;
-  overflow:hidden;
-}
-.universal-search .overview-carousel .overview-apps-body .open-windows-section {
-  height:100%!important;
-  max-height:none!important;
-  min-height:0!important;
-  padding:16px!important;
-  gap:12px!important;
-  border:0!important;
-  border-right:1px solid var(--sd-glass-groove)!important;
-  background:color-mix(in srgb,var(--sd-glass-face-deep) 35%,transparent)!important;
-}
-.overview-apps-body .desktop-stage-heading {
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:stretch!important;
-  justify-content:flex-start!important;
-  gap:10px;
-  padding:0!important;
-  min-height:0!important;
-  background:transparent!important;
-}
-.overview-apps-body .desktop-stage-heading .eyebrow {display:block!important;font-size:10px;letter-spacing:.1em}
-.overview-apps-body .desktop-stage-heading>div:first-child {width:100%}
-.overview-apps-body .desktop-stage-heading h3 {font-size:14px!important;color:var(--sd-glass-text)!important;margin-top:3px}
-.overview-apps-body .desktop-stage-heading>.overview-window-tools {display:flex!important;width:100%;justify-content:space-between;gap:8px;font-size:11px;color:var(--sd-glass-muted)}
-.overview-apps-body .overview-window-tools>span {display:block}
-.overview-apps-body .overview-window-tools select {max-width:145px;min-width:0}
-.overview-apps-body .overview-running-layout {
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  flex:1;
-  min-height:0;
-}
-.overview-apps-body .desktop-column-map {
-  flex:0 1 auto;
-  max-height:42%!important;
-  padding-bottom:10px;
-  border-bottom:1px solid var(--sd-glass-groove);
-}
-.overview-apps-body .desktop-column-card {display:flex;flex-direction:column;gap:5px}
-.overview-apps-body .desktop-column-card>header {padding:0;gap:7px;min-height:24px}
-.overview-apps-body .desktop-column-card>header b {font-size:11px;font-weight:550;color:var(--sd-glass-muted)}
-.overview-apps-body .desktop-column-pages {gap:6px;padding:2px 0 6px}
-.overview-apps-body .desktop-column-page {
-  flex:1 0 100px;
-  min-height:80px;
-  padding:9px 10px;
-  text-align:left;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  align-items:stretch;
-  gap:8px;
-}
-.overview-apps-body .desktop-column-page b {font-size:12px;font-weight:600}
-.overview-apps-body .desktop-column-page small {font-size:10px;margin-top:3px}
-.overview-apps-body .desktop-column-apps {display:flex;gap:4px;min-height:17px;overflow:hidden}
-.overview-apps-body .desktop-column-apps .app-art {width:17px;height:17px;flex:0 0 17px}
-.universal-search .overview-carousel .overview-apps-body .overview-open-windows {
-  flex:1!important;
-  height:auto!important;
-  grid-template-columns:minmax(0,1fr)!important;
-  gap:6px;
-  padding:0 2px 4px;
-}
-.universal-search .overview-carousel .overview-apps-body .overview-window {
-  height:84px!important;
-  min-height:84px!important;
-  background:color-mix(in srgb,var(--overview-app) 5%,transparent)!important;
-  box-shadow:none!important;
-}
-.universal-search .overview-carousel .overview-apps-body .overview-window:hover {
-  background:color-mix(in srgb,var(--overview-app) 12%,transparent)!important;
-}
-.universal-search .overview-carousel .overview-apps-body .overview-window-titlebar {
-  grid-template-columns:34px minmax(0,1fr) auto!important;
-  gap:9px;
-  padding:10px!important;
-  background:transparent!important;
-}
-.overview-apps-body .overview-window-titlebar>.app-art {width:32px!important;height:32px!important}
-.overview-apps-body .overview-window-titlebar b {font-size:12px!important;font-weight:600}
-.overview-apps-body .overview-window-titlebar small {font-size:11px!important;margin-top:3px!important;line-height:1.3}
-.overview-window-state {display:block;margin-top:5px;color:var(--sd-glass-muted);font-size:10px;line-height:1.3}
-.overview-apps-body .overview-window-hotkey {
-  align-self:start;
-  padding:0!important;
-  border:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:var(--sd-glass-muted);
-  font:650 12px/1.3 ui-monospace,monospace;
-}
-.overview-apps-body .desktop-column-hint {font-size:11px;line-height:1.5;color:var(--sd-glass-muted)}
+/* Each horizontal Overview tab has one job; context stays close to the work. */
+.overview-carousel :is(.overview-windows-section,.overview-apps-section){container-type:inline-size}
+.overview-carousel .overview-apps-section{container-name:overview-apps}
+.overview-windows-body,.overview-apps-body{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
+.overview-panel>.overview-section-heading small{display:block;color:var(--sd-glass-muted);font-size:11px;margin-top:3px;line-height:1.4}
+.overview-panel>.overview-section-heading>button{font-size:12px;gap:7px;padding:7px 10px}
+.overview-panel>.overview-section-heading>button svg{width:14px;height:14px}
+.universal-search .overview-carousel .overview-windows-body .open-windows-section{display:flex!important;flex-direction:column!important;flex:1;min-width:0;min-height:0!important;height:100%;padding:16px!important;gap:14px;border:0!important;overflow:hidden!important}
+.overview-windows-body .desktop-stage-heading{display:flex!important;align-items:center!important;justify-content:space-between;gap:12px;padding:0!important;min-height:0!important;background:transparent!important;flex:none}
+.overview-windows-body .desktop-stage-heading .eyebrow{display:block!important;font-size:9px}
+.overview-windows-body .desktop-stage-heading h3{font-size:15px!important;margin-top:3px}
+.overview-windows-body .overview-window-tools{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--sd-glass-muted)}
+.overview-windows-body .overview-window-tools select{min-width:0;max-width:160px}
+.overview-windows-body .overview-running-layout{display:grid!important;grid-template-columns:minmax(200px,30%) minmax(0,1fr);flex:1;min-height:0;gap:20px;overflow:hidden}
+.overview-desktop-map{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--sd-glass-groove);padding-right:18px;gap:12px}
+.overview-desktop-map>header{flex:none}
+.overview-desktop-map h4{font-size:12px;margin:0 0 4px}
+.overview-desktop-map>header small{font-size:10px;color:var(--sd-glass-muted)}
+.overview-windows-body .desktop-column-map{flex:1;max-height:none!important;min-height:0;overflow:auto;padding-right:3px}
+.overview-windows-body .desktop-column-card{display:flex!important;flex-direction:column;gap:7px;padding-block:4px 12px}
+.overview-windows-body .desktop-column-card>header{min-height:24px;gap:7px;padding:0}
+.overview-windows-body .desktop-column-card>header b{font-size:11px;font-weight:550}
+.overview-windows-body .desktop-column-pages{display:flex;gap:6px;overflow-x:auto;padding-block:2px 7px}
+.overview-windows-body .desktop-column-page{display:flex;flex:0 0 106px;min-height:84px;flex-direction:column;align-items:stretch;justify-content:space-between;gap:10px;text-align:left;padding:10px}
+.overview-windows-body .desktop-column-page b{font-size:12px}
+.overview-windows-body .desktop-column-page small{font-size:10px;margin-top:3px}
+.overview-windows-body .desktop-column-apps{display:flex;gap:4px;min-height:17px;overflow:hidden}
+.overview-windows-body .desktop-column-apps .app-art{width:17px;height:17px;flex:0 0 17px}
+.universal-search .overview-carousel .overview-windows-body .overview-open-windows{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr))!important;align-content:start;min-height:0!important;overflow-y:auto!important;gap:10px;height:100%!important;padding:0 4px 12px}
+.overview-window-group{grid-column:1/-1;font-size:11px;letter-spacing:.02em;font-weight:550;color:var(--sd-glass-muted);margin:10px 0 0;padding-bottom:7px;border-bottom:1px solid var(--sd-glass-groove)}
+.overview-window-group:first-child{margin-top:0}
+.universal-search .overview-carousel .overview-windows-body .overview-window{height:110px!important;min-height:110px!important;box-shadow:none!important;background:color-mix(in srgb,var(--overview-app) 6%,transparent)!important}
+.universal-search .overview-carousel .overview-windows-body .overview-window:hover{background:color-mix(in srgb,var(--overview-app) 13%,transparent)!important}
+.universal-search .overview-carousel .overview-windows-body .overview-window-titlebar{display:grid;grid-template-columns:34px minmax(0,1fr) auto!important;gap:10px;padding:12px!important;background:transparent!important}
+.overview-windows-body .overview-window-titlebar>.app-art{width:32px!important;height:32px!important}
+.overview-windows-body .overview-window-titlebar b{font-size:13px!important}
+.overview-windows-body .overview-window-titlebar small{font-size:11px!important;line-height:1.4;margin-top:4px!important}
+.overview-window-state{display:block;margin-top:6px;color:var(--sd-glass-muted);font-size:10px;line-height:1.3}
+.overview-windows-body .overview-window-hotkey{align-self:start;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--sd-glass-muted);font:650 12px/1.3 ui-monospace,monospace}
+.overview-windows-body .desktop-column-hint{font-size:11px;margin:0!important;flex:none}
+.overview-windows-body .workspace-no-windows{grid-column:1/-1}
+.overview-windows-body .workspace-no-windows>button{margin-top:12px}
+.overview-apps-body .overview-launcher-section{flex:1}
 .overview-launcher-section {display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
 .overview-library-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 8px;flex:none}
 .overview-library-heading h4 {margin:0;font-size:14px;font-weight:650}
@@ -186,36 +122,51 @@ body[data-theme="light"] .universal-search .overview-apps-body .launcher-categor
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
 }
-@container overview-apps (max-width:760px) {
-  .overview-apps-body {display:flex;flex-direction:column}
-  .universal-search .overview-carousel .overview-apps-body .open-windows-section {
-    height:190px!important;max-height:38%!important;flex:0 0 190px!important;padding:10px 14px!important;
-    border-right:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;gap:8px!important;
-  }
-  .overview-apps-body .desktop-stage-heading {flex-direction:row!important;align-items:center!important;gap:8px}
-  .overview-apps-body .desktop-stage-heading>div:first-child {width:auto;flex:1;min-width:0}
-  .overview-apps-body .desktop-stage-heading>.overview-window-tools {width:auto;flex:none}
-  .overview-apps-body .desktop-stage-heading .eyebrow {display:none!important}
-  .overview-apps-body .desktop-stage-heading h3 {font-size:12px!important;margin:0}
-  .overview-apps-body .overview-window-tools>span {display:none}
-  .overview-apps-body .overview-running-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;overflow:hidden}
-  .overview-apps-body .desktop-column-map {max-height:none!important;border:0;padding:0}
-  .overview-apps-body .desktop-column-hint {display:none}
-  .overview-launcher-section {flex:1}
-  .overview-carousel .overview-library-heading .overview-category-field {display:flex;min-width:0}
-  .overview-library-heading .overview-category-field select {min-width:0;max-width:180px;min-height:32px}
-  .overview-apps-body .overview-app-library .launcher-categories {display:none!important}
-  .overview-library-heading {padding:10px 14px 4px}
+
+/* Project content starts with the selected Project, then Home and the library. */
+.overview-carousel .overview-project-body{grid-template-rows:auto minmax(0,1fr)!important}
+.overview-carousel .overview-project-body:has(#overviewCurrentProject[hidden]){grid-template-rows:minmax(0,1fr)!important}
+.overview-current-project{flex:none;grid-column:1/-1;display:grid;grid-template-columns:minmax(150px,.8fr) minmax(180px,1.2fr);gap:12px 24px;padding:16px;border-bottom:1px solid var(--sd-glass-groove);border-left:3px solid var(--project-card-accent,var(--workspace-accent));background:color-mix(in srgb,var(--project-card-accent,var(--workspace-accent)) 5%,transparent)}
+.overview-current-project[hidden]{display:none!important}
+.overview-current-project .eyebrow{font-size:9px}
+.overview-current-project h4{margin:5px 0;font-size:17px}
+.overview-current-project p{font-size:11px;line-height:1.4;color:var(--sd-glass-muted);margin:0}
+.overview-project-folder{display:flex;align-items:center;gap:12px;text-align:left;color:var(--sd-glass-text);background:transparent;border:0;padding:4px;min-width:0}
+.overview-project-folder>svg{width:22px;height:22px;flex:none;color:var(--project-card-accent)}
+.overview-project-folder>svg:last-child{width:14px;margin-left:auto}
+.overview-project-folder>span{min-width:0}
+.overview-project-folder b{display:block;font-size:12px}
+.overview-project-folder small{display:block;font-size:11px;margin-top:5px;overflow-wrap:anywhere;color:var(--sd-glass-muted)}
+.overview-current-project-actions{display:flex;grid-column:1/-1;gap:8px;flex-wrap:wrap}
+.overview-current-project-actions>button{font-size:11px;padding:6px 10px;gap:5px}
+.overview-current-project-actions svg{width:13px;height:13px}
+.overview-section-nav{overflow-x:auto;justify-content:safe center;scrollbar-width:none}
+.overview-section-nav::-webkit-scrollbar{display:none}
+.overview-section-tab,.overview-provider-tabs{flex-shrink:0}
+@container overview-apps (max-width:660px){
+  .overview-carousel .overview-library-heading .overview-category-field{display:flex;min-width:0}
+  .overview-apps-body .overview-app-library .launcher-categories{display:none!important}
+  .overview-library-heading .overview-category-field select{min-width:0;max-width:175px}
+  .overview-library-heading{padding:12px 14px 7px}
 }
-@container overview-apps (max-width:440px) {
-  .overview-apps-body .desktop-column-page {flex-basis:88px}
-  .overview-apps-body .overview-window-titlebar>.app-art {display:none}
-  .universal-search .overview-carousel .overview-apps-body .overview-window-titlebar {grid-template-columns:minmax(0,1fr) auto!important;gap:4px;padding:8px!important}
-  .overview-library-heading .overview-category-field {font-size:0}
-  .overview-library-heading .overview-category-field select {max-width:145px;font-size:11px}
-  .universal-search .overview-carousel .overview-apps-body .all-apps-grid {grid-template-columns:repeat(auto-fill,minmax(88px,1fr))!important}
+@media(max-width:1100px){.overview-scroll-hint{display:none}}
+@media(max-width:800px){
+  .overview-windows-body .overview-running-layout{grid-template-columns:1fr!important;grid-template-rows:minmax(105px,34%) minmax(0,1fr)}
+  .overview-desktop-map{border-right:0;border-bottom:1px solid var(--sd-glass-groove);padding:0 0 8px;gap:6px}
+  .overview-windows-body .desktop-column-map{display:flex;gap:16px}
+  .overview-windows-body .desktop-column-card{min-width:190px;flex:1 0 190px}
+  .overview-desktop-map>header small{display:none}
+  .overview-windows-body .desktop-column-hint{display:none}
+  .overview-windows-body .overview-window-tools>span{display:none}
+  .universal-search .overview-carousel .overview-windows-body .open-windows-section{padding:12px!important;gap:10px}
+  .overview-carousel .overview-project-body{grid-template-columns:1fr!important;grid-template-rows:none!important;overflow-y:auto!important}
+  .overview-carousel .overview-project-body:has(#overviewCurrentProject[hidden]){grid-template-rows:none!important}
+  .overview-current-project{display:flex;flex-direction:column;padding:12px;gap:10px}
+  .overview-carousel .overview-project-body>.workspace-home-card,.overview-carousel .overview-project-body>.overview-projects-section{height:auto!important;min-height:260px;overflow:visible!important}
 }
-@media(max-height:650px) {
-  .overview-apps-body .overview-app-library .launcher-categories {display:none!important}
-  .overview-carousel .overview-library-heading .overview-category-field {display:flex}
+@media(max-height:650px){
+  .overview-apps-body .overview-app-library .launcher-categories{display:none!important}
+  .overview-carousel .overview-library-heading .overview-category-field{display:flex}
+  .overview-current-project{padding:10px 14px;gap:7px 16px}
+  .overview-current-project h4{font-size:14px}
 }

@@ -3,23 +3,24 @@
   'use strict';
   const home=$('#overviewHome'),track=$('#overviewSectionTrack');
   const panels=new Map($$('[data-overview-panel]',track).map(panel=>[panel.dataset.overviewPanel,panel]));
-  const labels={timeline:'Timeline',apps:'Apps',projects:'Projects & Home',system:'System'};
+  const labels={windows:'Windows',apps:'Apps',projects:'Projects & Files',timeline:'Timeline',system:'System'};
   const providers=new Map();
   const separate=new Map();let separateActive='',separateWorkspace='';
-  const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v1';
-  const read=key=>{try{return JSON.parse(desktopStorage.getItem(key)||'{}');}catch{return {};}};
+  const historyKey='spatial-workspace-timeline-v1',sectionKey='spatial-overview-section-v2';
+  const read=key=>{try{const value=JSON.parse(desktopStorage.getItem(key)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch{return {};}};
+  const preferences=()=>{try{if(desktopStorage.getItem(sectionKey)!==null)return read(sectionKey);}catch{return {};}return Object.fromEntries(Object.entries(read('spatial-overview-section-v1')).map(([workspace,id])=>[workspace,id==='apps'?'windows':id]));};
   const model=SpatialTimeline.create(read(historyKey));
   const plannerKey='spatial-workspace-planner-v1',planner=SpatialTimeline.createPlanner(read(plannerKey));
-  let preferred=read(sectionKey),active='apps',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
+  let preferred=preferences(),active='windows',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
-  function allowed(){return [...SpatialTimeline.sections,...[...providers].filter(([,provider])=>provider.available()).map(([id])=>id)].filter(id=>!globalThis.SpatialGuide?.model.active()||id==='apps'||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]||'all'));}
+  function allowed(){return [...SpatialTimeline.sections,...[...providers].filter(([,provider])=>provider.available()).map(([id])=>id)].filter(id=>!globalThis.SpatialGuide?.model.active()||['windows','apps'].includes(id)||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]||'all'));}
   function centre(panel){return panel.offsetLeft+panel.offsetWidth/2-track.clientWidth/2;}
   function setCurrent(id){
     active=id;
     const visible=allowed();
     panels.forEach((panel,name)=>{panel.classList.toggle('is-current',name===id);panel.inert=name!==id;});
-    $$('[data-overview-section]',home).forEach(button=>{const name=button.dataset.overviewSection;button.hidden=!visible.includes(name);button.setAttribute('aria-pressed',String(name===id));button.setAttribute('aria-current',name===id?'page':'false');});
+    $$('[data-overview-section]',home).forEach(button=>{const name=button.dataset.overviewSection;button.hidden=!visible.includes(name);button.setAttribute('aria-pressed',String(name===id));button.setAttribute('aria-current',name===id?'page':'false');if(name===id)button.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});});
     $$('[data-overview-provider-group]',home).forEach(group=>{group.hidden=!$$('[data-overview-section]',group).some(button=>!button.hidden);});
     $$('[data-overview-step]',home).forEach(button=>{const name=SpatialTimeline.neighbour(id,Number(button.dataset.overviewStep),visible);button.hidden=visible.length<2;button.setAttribute('aria-label',(Number(button.dataset.overviewStep)<0?'Previous':'Next')+' section: '+labels[name]);$('span',button).textContent=labels[name]||'';});
     $('#overviewSectionStatus').textContent=labels[id]+' section';
@@ -56,7 +57,7 @@
   function select(id,animate=true){
     if(separate.has(id)){selectSeparate(id);return;}
     leaveSeparate();
-    if(!allowed().includes(id))id='apps';
+    if(!allowed().includes(id))id='windows';
     const panel=panels.get(id);if(!panel)return;
     panels.forEach((node,name)=>{node.hidden=!allowed().includes(name);});
     clearTimeout(scrollTimer);
@@ -91,20 +92,25 @@
     $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name||'Workspace',place].join(' / ');
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
+    const visible=allowed();
+    panels.forEach((panel,name)=>{panel.hidden=!visible.includes(name);});
+    $$('[data-overview-section]',home).forEach(button=>{button.hidden=!visible.includes(button.dataset.overviewSection);});
+    $$('[data-overview-provider-group]',home).forEach(group=>{group.hidden=!$$('[data-overview-section]',group).some(button=>!button.hidden);});
     if(separateActive){const provider=separate.get(separateActive);if(provider.available()){$('#overviewContext').textContent=provider.label+' / System-wide activity';$('#overviewSectionStatus').textContent=provider.label+' section';provider.render();return;}leaveSeparate();}
     // Read the preference in the frame: a later explicit navigation wins.
     requestAnimationFrame(()=>{
       if(separateActive)return;
-      let id=preferred[activeWorkspace]||'apps';
-      if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='apps';}
-      if(!allowed().includes(id))id='apps';
+      let id=preferred[activeWorkspace]||'windows';
+      if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='windows';}
+      if(!allowed().includes(id))id='windows';
       if(!scrolling||id!==active)select(id,false);
     });
   }
   function step(direction){const id=SpatialTimeline.neighbour(active,direction,allowed());if(id&&id!==active)select(id);}
   home.addEventListener('click',event=>{
     const special=event.target.closest('[data-overview-separate]');if(special){selectSeparate(special.dataset.overviewSeparate);return;}
-    const tab=event.target.closest('[data-overview-section]'),edge=event.target.closest('[data-overview-step]');
+    const tab=event.target.closest('[data-overview-section]'),go=event.target.closest('[data-overview-go]'),edge=event.target.closest('[data-overview-step]');
+    if(go)select(go.dataset.overviewGo);
     if(tab)select(tab.dataset.overviewSection);if(edge)step(Number(edge.dataset.overviewStep));
   });
   track.addEventListener('scroll',()=>{clearTimeout(scrollTimer);const token=selection;scrollTimer=setTimeout(()=>scrolling?finishSelection(token):settle(),180);},{passive:true});

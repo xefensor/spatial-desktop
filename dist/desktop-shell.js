@@ -4545,6 +4545,15 @@ function prepareProjectSpaces() {
   loadProjectState();
   $("#overviewProjectQuery").addEventListener('input', renderOverviewProjects);
   $("#overviewProjectFilter").addEventListener('change', renderOverviewProjects);
+  $("#overviewCurrentProject").addEventListener("click", event => {
+    const project = projectSpaces[desktopPages.column(activeWorkspace)];
+    if (!project) return;
+    if (event.target.closest("[data-overview-project-folder]")) return openFileLocation(project.root);
+    const action = event.target.closest("[data-overview-current-project]")?.dataset.overviewCurrentProject;
+    if (action === "windows") globalThis.SpatialOverviewDesktop?.select("windows");
+    if (action === "manage") openProjectEditor("manage", {projectName: desktopPages.column(activeWorkspace)});
+    if (action === "pack") openPackageDialog("project", "pack");
+  });
   $("#overviewProjectGrid").addEventListener("click", event => {
     if (event.target.closest('[data-project-filter-reset]')) {
       $("#overviewProjectQuery").value = '';
@@ -4888,28 +4897,34 @@ function renderOverviewWindows() {
   const currentPage = desktopPages.current(activeWorkspace);
   const hotbarOrder = workspaceHotbarNames();
   const selectedBond=desktopPages.selectedFullscreen?.(activeWorkspace);
-  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "minimized" || (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage) : appState[name] === (filter === "parked" ? "minimized" : "open")));
-  visibleNames.sort((a,b) => Number(appState[a] === "minimized") - Number(appState[b] === "minimized") || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b) || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b));
+  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "open" && (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage) : appState[name] === (filter === "parked" ? "minimized" : "open")));
+  visibleNames.sort((a,b) => Number(appState[a] === "minimized") - Number(appState[b] === "minimized") || Number(desktopPages.pageOf(activeWorkspace,a) !== currentPage) - Number(desktopPages.pageOf(activeWorkspace,b) !== currentPage) || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b) || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b));
+  const owner = desktopPages.column?.(activeWorkspace) || "workspace";
+  const scope = owner === "workspace" ? "Workspace" : "Project";
+  let group = "";
   target.innerHTML = visibleNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
     const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
-    const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open")) + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1);
+    const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked · " + scope + "-wide" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open") + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1));
     const frame = frameFor(name);
     const detail = globalThis.SpatialPreviewPrivacy?.hidden(name) ? 'Preview hidden' : (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
-    if (info.borderlessFullscreen && globalThis.SpatialVirtualScreen) return SpatialVirtualScreen.overviewCard(name,{bond,shortcut,detail,minimized});
+    const nextGroup = minimized ? "Parked · " + scope + "-wide" : desktopPages.pageOf(activeWorkspace,name) === currentPage ? "This desktop" : "Other desktops";
+    const heading = nextGroup !== group ? '<h4 class="overview-window-group">' + nextGroup + '</h4>' : '';
+    group = nextGroup;
+    if (info.borderlessFullscreen && globalThis.SpatialVirtualScreen) return heading + SpatialVirtualScreen.overviewCard(name,{bond,shortcut,detail,minimized});
     if (bond) {
       const reason = "Created for " + info.label + "'s borderless fullscreen";
-      return '<article class="overview-temporary-desktop" data-fullscreen-card="' + escapeHtml(name) + '" style="--overview-app:' + info.primary + '">'
+      return heading + '<article class="overview-temporary-desktop" data-fullscreen-card="' + escapeHtml(name) + '" style="--overview-app:' + info.primary + '">'
         + '<button class="temporary-desktop-open" data-overview-open-app="' + escapeHtml(name) + '" aria-label="Enter ' + escapeHtml(info.label) + ' temporary desktop"><span class="temporary-desktop-scene" data-peek-kind="' + escapeHtml(info.base || name) + '"><span class="temporary-desktop-badge">' + icon('i-max') + 'Temporary desktop</span>' + appArt(name) + shortcut + '</span><span class="temporary-desktop-title"><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(reason) + '</small></span></button>'
         + '<p class="temporary-desktop-parent">' + icon('i-monitor') + 'Attached to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display + '</p>'
         + '<p class="temporary-desktop-lifetime">Removed when the app leaves fullscreen or closes.</p>'
         + '<div class="temporary-desktop-actions"><button type="button" data-fullscreen-action="back" data-fullscreen-app="' + escapeHtml(name) + '" title="The app stays fullscreen on its temporary desktop.">Back to Desktop ' + (bond.page + 1) + '</button><button type="button" data-fullscreen-action="restore" data-fullscreen-app="' + escapeHtml(name) + '" title="Return the app as a normal window and remove its temporary desktop.">Restore window</button></div></article>';
     }
-    return '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + (bond ? "is-fullscreen-window " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
-  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or open an app below." : "Open an app below to start on this desktop.") + '</small></div>';
+    return heading + '<button class="overview-window ' + (desktopHasWindowFocus && isLocalApp(name) && name === frontApp && !minimized ? "is-front " : "") + (minimized ? "is-minimized " : "") + (bond ? "is-fullscreen-window " : "") + name + '" data-overview-open-app="' + name + '" title="' + escapeHtml(info.label + ' · ' + detail + ' · ' + stateLabel) + '" style="--overview-app:' + info.primary + '"><span class="overview-window-titlebar">' + appArt(name) + '<span><b>' + escapeHtml(info.label) + '</b><small>' + escapeHtml(detail) + '</small><span class="overview-window-state">' + escapeHtml(stateLabel) + '</span></span>' + shortcut + '</span></button>';
+  }).join("") || '<div class="workspace-no-windows"><span>' + icon("i-monitor") + '</span><b>' + (windowNames.length ? "No matching windows" : "No windows here yet") + '</b><small>' + (windowNames.length ? "Try All windows, or choose Apps to open something." : "Choose Apps to open something on this desktop.") + '</small><button type="button" class="surface-key" data-overview-go="apps">Open an app</button></div>';
 
   refreshWorkspaceContext();
   renderDesktopColumnMap();
@@ -4919,9 +4934,19 @@ function renderOverviewWindows() {
 function refreshWorkspaceContext() {
   const profile = workspaceProfiles[activeWorkspace];
   if (!profile) return;
-  const project = projectSpaces[activeProjectName];
+  const project = projectSpaces[desktopPages.column(activeWorkspace)];
   $("#workspaceContextMeta").textContent = profile.favorites.length + " favorite apps · private clipboard";
-  $("#workspaceContextTitle").textContent = project ? "Active project: " + project.name : profile.context;
+  $("#workspaceContextTitle").textContent = profile.context;
+  const page = desktopPages.current(activeWorkspace) + 1;
+  $("#overviewLaunchTarget").textContent = "Opens in " + profile.label + " / " + (project?.name || "Workspace") + " / Desktop " + page;
+  const current = $("#overviewCurrentProject");
+  current.hidden = !project;
+  if (project) {
+    current.style.setProperty("--project-card-accent", project.accent || profile.accent);
+    $("#overviewCurrentProjectName").textContent = project.name;
+    $("#overviewCurrentProjectPath").textContent = project.root;
+    $("#overviewCurrentProjectMeta").textContent = project.summary || ((project.files?.length || 0) + " files · " + (project.resources?.length || 0) + " linked resources");
+  }
 }
 
 let activeOverviewView = "all";
