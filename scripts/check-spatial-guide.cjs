@@ -188,8 +188,8 @@ const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
 const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
-  areaPriority:['systems','apps','projects'],dockState:{systems:{edge:'right'},apps:{edge:'left'},projects:{edge:'left'}}, dockSizes:{right:300}, areaFor:()=>({classList:{contains:()=>context.dragging}}),
-  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  areaPriority:['systems','apps','projects'],dockState:{systems:{edge:'right'},apps:{edge:'left'},projects:{edge:'left'}}, dockSizes:{right:300,top:250}, areaRect:{width:300,height:500}, areaFor:name=>({getBoundingClientRect:()=>({...context.areaRect}),classList:{contains:token=>token==='is-area-resizing' ? context.dragging || context.resizingArea===name : context.dragging}}),
+  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:selector=>selector==='.area-share-handle.is-active' && context.shareDragging ? [{}] : [], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
   openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{current:()=>0,visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name],fullscreenBond:()=>null},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
@@ -198,6 +198,32 @@ vm.runInContext(checkSource,context); context.check();
 context.dockSizes.right=340; context.dragging=true; context.check();
 assert(!context.model.ready(), 'Resize completes only after releasing the border');
 context.dragging=false; context.check(); assert(context.model.ready());
+// The production polling block credits either dimension, once its gesture ends.
+context.model=at('resize-areas');context.dockSizes.right=300;context.check();
+assert.equal(context.model.state.areaResizeBaseline.extent,500,'Side-dock lessons remember System height');
+context.areaRect.height=523;context.check();assert(!context.model.ready(),'A small shared-space adjustment does not finish the task');
+context.areaRect.height=548;context.shareDragging=true;context.check();assert(!context.model.ready(),'A live sibling separator cannot finish the task before release');
+context.shareDragging=false;context.check();assert(context.model.ready(),'Changing System height through its sibling separator completes resizing without changing dock width');
+assert(G.create(context.model.snapshot()).ready(),'Completed shared-space resizing survives a saved lesson');
+context.model=at('resize-areas');context.check();context.dockSizes.right=340;context.resizingArea='apps';context.check();
+assert(!context.model.ready(),'A shared width drag on a different Area must also finish before credit');
+context.resizingArea=null;context.check();assert(context.model.ready(),'The completed shared width gesture still counts for System');
+context.dockState.systems.edge='top';context.areaRect={width:600,height:250};context.model=at('resize-areas');context.check();
+assert.equal(context.model.state.areaResizeBaseline.extent,600,'Top and bottom docks measure System width');
+context.areaRect.height=310;context.check();assert(!context.model.ready(),'Changing the wrong rect axis does not count as the horizontal share');
+context.areaRect.width=632;context.shareDragging=true;context.check();assert(!context.model.ready(),'Horizontal share previews also wait for release');
+context.shareDragging=false;context.check();assert(context.model.ready(),'A horizontal separator completes the same task');
+context.dockState.systems.edge='right';context.areaRect={width:340,height:500};context.model=at('resize-areas');
+context.model.state.areaResizeBaseline={edge:'right',size:340};context.check();
+assert.equal(context.model.state.areaResizeBaseline.extent,500,'Old saved baselines learn the missing extent on their first poll');
+assert(!context.model.ready(),'Adding the old baseline extent cannot claim a resize that was not observed');
+context.areaRect.height=532;context.check();assert(context.model.ready(),'A migrated baseline can credit a later sibling adjustment');
+context.model=at('resize-areas');context.model.state.areaResizeBaseline={edge:'right',size:300};context.check();
+assert(context.model.ready(),'An old saved width difference remains valid while migrating the baseline');
+context.model=at('resize-areas');context.check();context.dockState.systems.edge='top';context.areaRect.width=700;context.check();
+assert(!context.model.ready(),'Moving System to a different edge alone cannot complete resizing');
+context.dockState.systems.edge='right';
+assert(G.goalHints['area-resized'].includes('separator'),'The resize hint teaches the sibling control too');
 context.areaFor=name=>({hidden:name==='apps',classList:{contains:()=>context.dragging}});
 context.model=at('move-areas');context.check();assert(!context.model.ready());
 context.dockState.apps.edge='bottom';context.check();assert(!context.model.ready(),'Hidden, untaught Areas cannot complete docking practice');

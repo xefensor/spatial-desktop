@@ -193,7 +193,11 @@ const docks = {
   offerPlacementUndo(before) { docks.lastUndo = before;docks.undoOffers=(docks.undoOffers||0)+1; },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
-    createElement: () => ({dataset:{},style:{removeProperty(key){delete this[key];}},classList:{add(){},remove(){}},setAttribute(){}}),
+    createElement: () => ({dataset:{},attributes:{},hiddenWrites:[],get hidden(){return this._hidden;},set hidden(value){this.hiddenWrites.push(value);this._hidden=value;},style:{removeProperty(key){delete this[key];}},
+      classList:{values:new Set(),add(...names){names.forEach(name=>this.values.add(name));},remove(...names){names.forEach(name=>this.values.delete(name));},contains(name){return this.values.has(name);}},
+      listeners:new Map(),addEventListener(type,fn){this.listeners.set(type,fn);},removeEventListener(type){this.listeners.delete(type);},
+      setPointerCapture(){},releasePointerCapture(){},
+      setAttribute(name,value){this.attributes[name]=value;},getAttribute(name){return this.attributes[name];}}),
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
   desktopStorage: sandbox.desktopStorage, isLocalArea: () => true, projectColumnActive: () => true,
   $: (selector, scope) => selector === ".desktop-shell" ? shell : selector === ".system-scroll-region" ? scope?.scrollRegion : scope?.handle,
@@ -515,6 +519,248 @@ docks.areaBoundsBaseline=JSON.parse(areaBoundsBaseline);
 vm.runInContext(`workspaceAreaSessions.general=areaBoundsBaseline;applyAreaSession('general');`,docks);
 assert.equal(JSON.stringify(areaFrames.projects.rect),railRect,'Restoring the baseline keeps its original rail');
 console.log('Area resize limits: all four edges, out-of-screen pointers, opposite preservation, canvas reservation, stored sizes and ten viewport/session repair scenarios passed.');
+
+// Shared dock dividers resize adjacent Areas along the dock, independently of
+// the existing outer-border thickness gesture. Exercise real handles and model.
+const shareBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+const shareAreas=['apps','projects','systems','ai'];
+const sharePointer=(handle,type,vertical,start,delta=0,pointerId=41)=>handle.listeners.get(type)?.({
+  button:0,pointerId,type,clientX:vertical?start.x:start.x+delta,clientY:vertical?start.y+delta:start.y,
+  preventDefault(){},stopPropagation(){},stopImmediatePropagation(){}
+});
+const shareKey=(handle,key,shiftKey=false)=>handle.listeners.get('keydown')({key,shiftKey,preventDefault(){},stopPropagation(){}});
+const configureShareEdge=edge=>{
+  docks.shareEdge=edge;
+  vm.runInContext(`
+    restoreAreaPreferences({});
+    ['apps','projects','systems','ai'].forEach((name,index)=>{
+      areaFor(name).hidden=false;dockState[name]={edge:shareEdge,order:index};areaPreferredStates[name]='expanded';
+    });
+    dockSizes[shareEdge]=shareEdge==='left'||shareEdge==='right'?340:300;
+    layoutDockAreas(false,false);
+  `,docks);
+};
+shell.clientWidth=1800;shell.clientHeight=1600;
+shell.getBoundingClientRect=()=>({left:0,top:0,right:shell.clientWidth,bottom:shell.clientHeight,width:shell.clientWidth,height:shell.clientHeight});
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',crossDimension=vertical?'width':'height';
+  const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks);
+  assert(handle&&!handle.hidden,edge+' has a divider between visible adjacent Areas');
+  assert.equal(handle.getAttribute('role'),'separator');
+  assert.equal(handle.getAttribute('aria-orientation'),vertical?'horizontal':'vertical',edge+' announces the separator orientation');
+  const initial=Object.fromEntries(shareAreas.map(name=>[name,{...areaFrames[name].rect}]));
+  const initialInsets=JSON.stringify(docks.insets),before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),undoBefore=docks.undoOffers;
+  const start={x:initial.apps.x+initial.apps.width,y:initial.apps.y+initial.apps.height};
+  const hiddenWritesBefore=handle.hiddenWrites.length;
+  sharePointer(handle,'pointerdown',vertical,start);
+  sharePointer(handle,'pointermove',vertical,start,60);
+  assert(Math.abs(areaFrames.apps.rect[dimension]-initial.apps[dimension]-60)<1e-6,edge+' gives the first Area the dragged space');
+  assert(Math.abs(areaFrames.projects.rect[dimension]-initial.projects[dimension]+60)<1e-6,edge+' takes that space from the adjacent Area');
+  for(const name of ['systems','ai'])assert.equal(areaFrames[name].rect[dimension],initial[name][dimension],edge+' leaves non-adjacent '+name+' space unchanged');
+  for(const name of shareAreas)assert.equal(areaFrames[name].rect[crossDimension],initial[name][crossDimension],edge+' preserves the shared outer thickness');
+  assert.equal(JSON.stringify(docks.insets),initialInsets,edge+' leaves the application canvas unchanged');
+  assert.equal(vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),handle,edge+' keeps the active captured handle attached during reflow');
+  assert(!handle.hiddenWrites.slice(hiddenWritesBefore).includes(true),edge+' never transiently hides the active separator during layout');
+  sharePointer(handle,'pointerup',vertical,start,60);
+  assert.equal(docks.undoOffers,undoBefore+1,edge+' offers one Undo for the whole pointer gesture');
+  assert.equal(JSON.stringify(docks.lastUndo),before,edge+' Undo starts before manual/share changes');
+  assert.equal(handle.classList.contains('is-active'),false,edge+' removes the active visual after release');
+  assert.equal(docks.window.listenerCount(),0,edge+' releases all global Area gesture hooks');
+  const after=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),rects=JSON.stringify(shareAreas.map(name=>areaFrames[name].rect));
+  vm.runInContext('applyAreaSession("general");',docks);
+  assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(after),edge+' saves and reloads its relative shares');
+  assert.equal(JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),rects,edge+' reload restores all proportional rectangles');
+  docks.restorePlacement(docks.lastUndo);
+  assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(before),edge+' one Undo restores shares, states and thickness');
+}
+
+// Every Area, on every dock orientation, changes presentation under pressure.
+for(const edge of ['left','right','top','bottom'])for(const squeezed of shareAreas){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',index=shareAreas.indexOf(squeezed);
+  const first=shareAreas[index===0?0:index-1],second=shareAreas[index===0?1:index];
+  const handle=vm.runInContext(`areaShareHandles.get('${edge}:${first}:${second}')`,docks),start={x:0,y:0};
+  const delta=(index===0?-1:1)*(areaFrames[squeezed].rect[dimension]-100);
+  sharePointer(handle,'pointerdown',vertical,start);
+  sharePointer(handle,'pointermove',vertical,start,delta);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'rail',edge+' squeezes '+squeezed+' into Compact');
+  assert.equal(vm.runInContext(`areaPreferredStates.${squeezed}`,docks),'expanded',edge+' preserves '+squeezed+' Expanded preference');
+  sharePointer(handle,'pointermove',vertical,start,0);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'expanded',edge+' gives '+squeezed+' expanded content back when it fits');
+  sharePointer(handle,'pointercancel',vertical,start);
+}
+
+configureShareEdge('left');
+let shareHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks);
+const shareStart={x:340,y:400};
+for(const cancellation of ['pointercancel','Escape','lostpointercapture','blur']){
+  const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),undoBefore=docks.undoOffers;
+  sharePointer(shareHandle,'pointerdown',true,shareStart);
+  sharePointer(shareHandle,'pointermove',true,shareStart,300);
+  assert.equal(areaFrames.projects.dataset.areaState,'rail','Pressure switches the squeezed expanded Area to Compact');
+  assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Pressure preserves its Expanded preference');
+  if(cancellation==='Escape')docks.window.dispatchEvent({type:'keydown',key:'Escape',preventDefault(){},stopImmediatePropagation(){}});
+  else if(cancellation==='blur')docks.window.dispatchEvent({type:'blur'});
+  else sharePointer(shareHandle,cancellation,true,shareStart,300);
+  assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(before),cancellation+' restores proportions and presentation preferences');
+  assert.equal(areaFrames.projects.dataset.areaState,'expanded',cancellation+' restores the squeezed Area content');
+  assert.equal(docks.undoOffers,undoBefore,cancellation+' does not offer Undo for an abandoned gesture');
+  assert.equal(docks.window.listenerCount(),0,cancellation+' clears all global Area gesture hooks');
+}
+const wrongPointerBefore=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+sharePointer(shareHandle,'pointerdown',true,shareStart);
+sharePointer(shareHandle,'pointermove',true,shareStart,150,99);
+sharePointer(shareHandle,'pointerup',true,shareStart,150,99);
+assert.equal(vm.runInContext('JSON.stringify(areaDockShares.left)',docks),'{}','Another pointer cannot resize or finish the active split');
+assert(shareHandle.listeners.has('pointermove'),'Wrong-pointer release leaves the real gesture active');
+sharePointer(shareHandle,'pointercancel',true,shareStart);
+assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),wrongPointerBefore,'The original pointer can still cancel safely');
+
+// Compact is a presentation of the actual allocation. Preferred Expanded
+// returns in the same gesture and after a later resize. Deliberate Compact
+// only promotes after growing past its usable footprint plus hysteresis.
+sharePointer(shareHandle,'pointerdown',true,shareStart);
+sharePointer(shareHandle,'pointermove',true,shareStart,300);
+assert.equal(areaFrames.projects.dataset.areaState,'rail');
+sharePointer(shareHandle,'pointermove',true,shareStart,0);
+assert.equal(areaFrames.projects.dataset.areaState,'expanded','Reversing pressure restores Expanded without another command');
+sharePointer(shareHandle,'pointermove',true,shareStart,300);
+sharePointer(shareHandle,'pointerup',true,shareStart,300);
+assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Releasing a squeezed Area keeps the Expanded preference');
+vm.runInContext('applyAreaSession("general");',docks);
+assert.equal(areaFrames.projects.dataset.areaState,'rail','Reload keeps the constrained compact allocation');
+sharePointer(shareHandle,'pointerdown',true,shareStart);
+sharePointer(shareHandle,'pointermove',true,shareStart,-300);
+sharePointer(shareHandle,'pointerup',true,shareStart,-300);
+assert.equal(areaFrames.projects.dataset.areaState,'expanded','A later gesture gives the squeezed Area its expanded content back');
+vm.runInContext(`areaDockShares.left={apps:.45,projects:.05,systems:.25,ai:.25};areaPreferredStates.projects='rail';layoutDockAreas(false,false);`,docks);
+const compactStart=areaFrames.projects.rect.height;
+sharePointer(shareHandle,'pointerdown',true,shareStart);
+sharePointer(shareHandle,'pointermove',true,shareStart,-150);
+assert.equal(areaFrames.projects.dataset.areaState,'rail','Deliberate Compact stays compact below the promotion threshold');
+assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'rail');
+sharePointer(shareHandle,'pointermove',true,shareStart,-(264-compactStart));
+assert.equal(areaFrames.projects.dataset.areaState,'expanded','Giving deliberate Compact enough extra space promotes it to Expanded');
+assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded');
+sharePointer(shareHandle,'pointerup',true,shareStart,-(264-compactStart));
+
+// Explicit Expanded must reclaim useful along-dock space after pressure,
+// instead of selecting a presentation that remains too small to display.
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',crossDimension=vertical?'width':'height';
+  vm.runInContext(`areaDockShares[shareEdge]={apps:.05,projects:.45,systems:.25,ai:.25};layoutDockAreas(false,false);`,docks);
+  const thickness=areaFrames.apps.rect[crossDimension],insets=JSON.stringify(docks.insets);
+  assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' begins with pressure-compacted Apps');
+  vm.runInContext('setAreaState("apps","expanded",false);',docks);
+  assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' Expanded command gives Apps usable space');
+  assert(areaFrames.apps.rect[dimension]>=(vertical?244:324)-1e-6,edge+' Expanded reserves the usable footprint plus recovery margin');
+  assert.equal(areaFrames.apps.rect[crossDimension],thickness,edge+' Expanded recovery keeps this column thickness');
+  assert.equal(JSON.stringify(docks.insets),insets,edge+' Expanded recovery keeps the application canvas');
+  for(const name of shareAreas){
+    const rect=areaFrames[name].rect;
+    assert(rect.x>=0&&rect.y>=0&&rect.x+rect.width<=shell.clientWidth+1e-6&&rect.y+rect.height<=shell.clientHeight+1e-6,edge+' Expanded recovery keeps '+name+' inside the display');
+  }
+}
+configureShareEdge('left');
+shell.clientHeight=500;
+vm.runInContext('areaDockShares.left={apps:.144,projects:.144,systems:.144,ai:.568};layoutDockAreas(false,false);',docks);
+vm.runInContext('setAreaState("apps","expanded",false);',docks);
+assert.equal(areaFrames.apps.dataset.areaState,'expanded','Explicit Expanded reclaims usable space even with two peers already at compact minimum');
+assert(areaFrames.apps.rect.height>=220-1e-6,'Clamping small peers cannot steal the reclaimed usable footprint');
+for(const name of ['projects','systems','ai'])assert(areaFrames[name].rect.height>=72-1e-6,'Expanded recovery preserves '+name+' compact controls');
+shell.clientHeight=1600;
+
+// Keyboard resizing uses the same saved proportions and persistent separator.
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width';
+  const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),size=areaFrames.apps.rect[dimension],undoBefore=docks.undoOffers;
+  shareKey(handle,vertical?'ArrowDown':'ArrowRight');
+  assert(Math.abs(areaFrames.apps.rect[dimension]-size-16)<1e-6,edge+' arrow gives the first Area 16 pixels');
+  shareKey(handle,vertical?'ArrowUp':'ArrowLeft',true);
+  assert(Math.abs(areaFrames.apps.rect[dimension]-size+32)<1e-6,edge+' Shift-arrow uses a 48 pixel step');
+  assert.equal(docks.undoOffers,undoBefore+2,edge+' each keyboard action has one Undo');
+  assert.equal(vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),handle,edge+' keyboard reflow preserves focus target identity');
+  assert.equal(handle.getAttribute('aria-valuenow'),String(Math.round(100*areaFrames.apps.rect[dimension]/(areaFrames.apps.rect[dimension]+areaFrames.projects.rect[dimension]))),edge+' updates the accessible separator value');
+  const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+  shareKey(handle,vertical?'ArrowLeft':'ArrowUp');
+  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' ignores the arrow on the other axis');
+}
+
+configureShareEdge('left');
+vm.runInContext('areaFor("projects").hidden=true;',docks);
+docks.isLocalArea=name=>name!=='systems';
+vm.runInContext('layoutDockAreas(false,false);',docks);
+assert.equal(vm.runInContext('JSON.stringify([...areaShareHandles].filter(([,handle])=>!handle.hidden).map(([key])=>key))',docks),'["left:apps:ai"]','Only visible local adjacent Areas get a divider; hidden and remote peers are skipped');
+assert.equal(vm.runInContext('areaShareHandles.get("left:apps:projects").hidden',docks),true,'Former adjacency divider is hidden');
+docks.isLocalArea=()=>true;
+configureShareEdge('left');
+vm.runInContext(`areaDockShares.left={apps:.25,projects:.25,systems:.25,ai:.25};areaFor('projects').hidden=true;areaFor('systems').hidden=true;layoutDockAreas(false,false);`,docks);
+const hiddenShareHandle=vm.runInContext('areaShareHandles.get("left:apps:ai")',docks);
+shareKey(hiddenShareHandle,'ArrowDown');
+assert.equal(vm.runInContext('areaDockShares.left.projects',docks),.25,'Resizing visible peers retains the hidden Project share');
+assert.equal(vm.runInContext('areaDockShares.left.systems',docks),.25,'Resizing visible peers retains the hidden System share');
+assert.equal(vm.runInContext('areaDockShares.left.apps+areaDockShares.left.ai',docks),.5,'Visible peers retain their combined share mass while hidden peers are absent');
+vm.runInContext(`areaFor('projects').hidden=false;areaFor('systems').hidden=false;layoutDockAreas(false,false);`,docks);
+assert(Math.abs(areaFrames.projects.rect.height-400)<1e-6,'Showing Project restores its original proportion');
+assert(Math.abs(areaFrames.systems.rect.height-400)<1e-6,'Showing System restores its original proportion');
+assert(Math.abs(areaFrames.apps.rect.height-408)<1e-6,'The shared-space edit remains proportional when hidden peers return');
+assert(Math.abs(areaFrames.ai.rect.height-392)<1e-6);
+
+// More along-dock space cannot silently widen a deliberately narrow column.
+configureShareEdge('left');
+vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});dockSizes.left=70;layoutDockAreas(false,false);`,docks);
+const narrowHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks),narrowInsets=JSON.stringify(docks.insets);
+shareKey(narrowHandle,'ArrowDown',true);
+assert.equal(vm.runInContext('areaPreferredStates.apps',docks),'rail','Along-dock growth preserves deliberate Compact when the cross-axis cannot fit Expanded');
+assert.equal(areaFrames.apps.dataset.areaState,'rail');
+assert.equal(areaFrames.apps.rect.width,70,'The sibling gesture does not widen a narrow column');
+assert.equal(JSON.stringify(docks.insets),narrowInsets,'Narrow-column sibling resizing preserves the application canvas');
+
+// A newly shown peer has no share yet. Give it its default allocation while
+// preserving the ratio the user already chose for the established neighbors.
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',extent=vertical?shell.clientHeight:shell.clientWidth;
+  vm.runInContext(`areaFor('projects').hidden=areaFor('ai').hidden=true;areaDockShares[shareEdge]={apps:.8,systems:.2};layoutDockAreas(false,false);`,docks);
+  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-4)<1e-6,edge+' begins with the existing 80/20 split');
+  vm.runInContext('showArea("projects",false);',docks);
+  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-4)<1e-6,edge+' showing an unweighted peer preserves the existing 80/20 ratio');
+  assert(Math.abs(areaFrames.projects.rect[dimension]-extent/3)<1e-6,edge+' the new peer receives its normal default portion');
+  assert.equal(vm.runInContext('JSON.stringify(areaDockShares[shareEdge])',docks),'{"apps":0.8,"systems":0.2}',edge+' default share bootstrap does not mutate persisted user weights');
+  const beforeReload=JSON.stringify(shareAreas.map(name=>areaFrames[name].rect));
+  vm.runInContext('applyAreaSession("general");',docks);
+  assert.equal(JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),beforeReload,edge+' reload restores the bootstrapped new peer and existing ratio');
+}
+configureShareEdge('left');
+shareHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks);
+shareKey(shareHandle,'ArrowDown');
+const generalShares=vm.runInContext('JSON.stringify(areaDockShares)',docks);
+vm.runInContext('activeWorkspace="school";applyAreaSession("school");',docks);
+assert.notEqual(vm.runInContext('JSON.stringify(areaDockShares)',docks),generalShares,'Another Workspace does not inherit the edited dock proportions');
+vm.runInContext('activeWorkspace="general";applyAreaSession("general");',docks);
+assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(areaDockShares)',docks)),JSON.parse(generalShares),'Returning to the Workspace restores its dock proportions');
+
+// The projected drop uses the exact weighted allocator and does not mutate
+// saved proportions or any real panel before the move is committed.
+vm.runInContext(`areaFor('ai').hidden=true;areaFor('projects').hidden=false;
+  dockState.apps={edge:'left',order:0};dockState.projects={edge:'left',order:1};dockState.systems={edge:'right',order:0};
+  areaPreferredStates.apps=areaPreferredStates.projects=areaPreferredStates.systems='expanded';
+  areaDockShares.left={apps:.5,projects:.3,systems:.2};layoutDockAreas(false,false);`,docks);
+const sharePreviewBefore=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),sharePreviewRects=JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),sharePreviewStorage=JSON.stringify([...store]);
+vm.runInContext('renderAreaDockPreview("systems","left",2);',docks);
+const weightedPreview=vm.runInContext('({x:parseFloat(dockPreview.style.left),y:parseFloat(dockPreview.style.top),width:parseFloat(dockPreview.style.width),height:parseFloat(dockPreview.style.height)})',docks);
+assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),sharePreviewBefore,'Weighted preview leaves all shares and placement untouched');
+assert.equal(JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),sharePreviewRects,'Weighted preview leaves real Areas untouched');
+assert.equal(JSON.stringify([...store]),sharePreviewStorage,'Weighted preview does not save speculation');
+vm.runInContext('setDockPosition("systems","left",2,false);',docks);
+for(const key of ['x','y','width','height'])assert.equal(weightedPreview[key],areaFrames.systems.rect[key],'Weighted drop preview matches committed '+key);
+shell.clientWidth=1600;shell.clientHeight=900;shell.getBoundingClientRect=originalShellRect;
+docks.shareBaseline=JSON.parse(shareBaseline);
+vm.runInContext('workspaceAreaSessions.general=shareBaseline;applyAreaSession("general");',docks);
+console.log('Shared Area dividers passed: four edges and Areas, proportional neighbor resize, unchanged canvas/thickness, stable handles, pointer filtering/cancellation, reversible pressure, deliberate Compact promotion, keyboard steps, Undo, Workspace persistence, hidden/remote peers and weighted drop previews.');
 
 vm.runInContext(slice("function hideArea(", "function setDockPosition("), docks);
 vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);

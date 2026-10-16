@@ -2624,6 +2624,8 @@ const dockState = {
 const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
 const areaPreferredStates = Object.create(null);
 const areaExpandedSizes = Object.create(null);
+const areaDockShares = { left: {}, right: {}, top: {}, bottom: {} };
+const areaShareHandles = new Map();
 const dockSizeManual = { left: false, right: false, top: false, bottom: false };
 let dockPreview;
 // Bounded split tiling owns the space BETWEEN Areas, never their geometry.
@@ -2679,6 +2681,7 @@ function snapshotAreaLayout() {
     sizes: { ...dockSizes },
     preferred: { ...areaPreferredStates },
     expanded: cloneDesktopState(areaExpandedSizes),
+    shares: cloneDesktopState(areaDockShares),
     hidden,
     manual: { ...dockSizeManual },
     layoutMode
@@ -2686,6 +2689,10 @@ function snapshotAreaLayout() {
 }
 
 function restoreAreaPreferences(saved) {
+  dockEdges.forEach(edge => {
+    areaDockShares[edge] = Object.fromEntries(areaPriority.filter(name => Number.isFinite(saved?.shares?.[edge]?.[name]) && saved.shares[edge][name] > 0)
+      .map(name => [name, Math.min(1e6, saved.shares[edge][name])]));
+  });
   areaPriority.forEach(name => {
     if (["expanded", "rail"].includes(saved?.preferred?.[name])) areaPreferredStates[name] = saved.preferred[name];
     else delete areaPreferredStates[name];
@@ -3009,6 +3016,54 @@ function boundedDockResize(edge, requested, width, height) {
   if (!Number.isFinite(requested)) return layout.sizes[edge];
   if (areaStateForSize(edge, requested) === "rail" || limit < expanded) return Math.min(rail, limit);
   return Math.min(limit, Math.max(expanded, requested));
+}
+
+function allocateAreaPanels(names, edge, extent, crossSize, states) {
+  const vertical = edge === "left" || edge === "right";
+  if (globalThis.SpatialCompactAreas?.allocate) {
+    const options = {names,states,axis:vertical?"vertical":"horizontal",extent,crossSize};
+    let shares = areaDockShares[edge];
+    const known = names.filter(name => Number.isFinite(shares[name]) && shares[name] > 0);
+    if (known.length && known.length < names.length) {
+      // New neighbours take their default space without erasing the ratio
+      // already chosen between existing neighbours. Projection stays read-only.
+      const defaults = globalThis.SpatialCompactAreas.allocate(options);
+      const missing = names.filter(name => !known.includes(name));
+      const added = missing.reduce((sum,name) => sum+defaults[name].extent,0);
+      const knownWeight = known.reduce((sum,name) => sum+shares[name],0);
+      shares = Object.fromEntries(names.map(name => [name,known.includes(name)
+        ? Math.max(1e-6,extent-added)*shares[name]/knownWeight : Math.max(1e-6,defaults[name].extent)]));
+    }
+    return globalThis.SpatialCompactAreas.allocate({...options,shares});
+  }
+  const legacy = vertical && globalThis.SpatialCompactAreas?.layout({names,states,width:crossSize,height:extent});
+  return Object.fromEntries(names.map((name,index) => [name, {
+    offset: legacy?.[name]?.y ?? index*extent/names.length,
+    extent: legacy?.[name]?.height ?? extent/names.length,
+    state: states[name], compactGrid: Boolean(legacy?.[name]?.compactGrid)
+  }]));
+}
+
+function makeAreaExpansionSpace(name) {
+  const edge = dockState[name].edge,names = dockGroup(edge);
+  if (names.length < 2) return;
+  const shell = $(".desktop-shell"),resolved = resolvedAreaLayout(shell.clientWidth,shell.clientHeight);
+  const vertical = edge === "left" || edge === "right",axis = vertical?"vertical":"horizontal";
+  const extent = vertical?shell.clientHeight:Math.max(0,shell.clientWidth-(dockGroup("left").length?resolved.sizes.left:0)-(dockGroup("right").length?resolved.sizes.right:0));
+  const panels = allocateAreaPanels(names,edge,extent,resolved.sizes[edge],resolved.states);
+  const minimum = globalThis.SpatialCompactAreas?.expandedMinimum?.(axis,name) || (vertical?260:320);
+  if (panels[name].extent >= minimum) return;
+  const compactMinimum = globalThis.SpatialCompactAreas?.thresholds?.compactExtent?.[axis] || (vertical?72:64);
+  const size = Math.min(minimum+24,extent-compactMinimum*(names.length-1));
+  if (size < minimum) return;
+  const peers = names.filter(item => item !== name),rest = Math.max(1e-6,extent-panels[name].extent);
+  const otherPanels = globalThis.SpatialCompactAreas?.allocate?.({
+    names:peers,states:resolved.states,axis,crossSize:resolved.sizes[edge],extent:extent-size,
+    shares:Object.fromEntries(peers.map(item => [item,Math.max(1e-6,panels[item].extent)]))
+  });
+  const mass = names.every(item => Number.isFinite(areaDockShares[edge][item]) && areaDockShares[edge][item] > 0)
+    ? names.reduce((sum,item) => sum+areaDockShares[edge][item],0) : 1;
+  names.forEach(item => { areaDockShares[edge][item] = mass*(item===name?size:otherPanels?.[item]?.extent ?? panels[item].extent*(extent-size)/rest)/extent; });
 }
 
 function resolvedAreaLayout(width, height) {
@@ -3395,6 +3450,18 @@ function layoutDockAreas(save = false, fitWindows = true) {
   if (secondaryCanvasNames.length) {
     secondaryCanvasNames.forEach(name => { resolved.states[name] = "expanded"; });
   }
+  const left = dockGroup("left"), right = dockGroup("right"), top = dockGroup("top"), bottom = dockGroup("bottom");
+  const leftWidth = left.length ? effectiveSizes.left : 0, rightWidth = right.length ? effectiveSizes.right : 0;
+  const topHeight = top.length ? effectiveSizes.top : 0, bottomHeight = bottom.length ? effectiveSizes.bottom : 0;
+  const centerLeft = gap + (left.length ? leftWidth + gap : 0);
+  const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
+  const centerWidth = Math.max(0, centerRight - centerLeft);
+  const panels = {};
+  if (!secondaryCanvasNames.length) dockEdges.forEach(edge => {
+    const vertical = edge === "left" || edge === "right";
+    panels[edge] = allocateAreaPanels(dockGroup(edge),edge,vertical?height:centerWidth,effectiveSizes[edge],resolved.states);
+    Object.entries(panels[edge]).forEach(([name,panel]) => { resolved.states[name] = panel.state; });
+  });
   currentDisplayProfile = resolved.profile;
   document.body.dataset.displayProfile = resolved.profile;
   document.body.dataset.layoutMode = layoutMode;
@@ -3402,7 +3469,8 @@ function layoutDockAreas(save = false, fitWindows = true) {
     const area = areaFor(name);
     if (!area) return;
     const state = resolved.states[name];
-    delete area.dataset.compactLayout;
+    if (panels[dockState[name].edge]?.[name]?.compactGrid) area.dataset.compactLayout = "grid";
+    else delete area.dataset.compactLayout;
     if (name === "systems" && state === "rail" && area.dataset.areaState !== "rail" && !systemRailExpansion) {
       const region = $(".system-scroll-region", area);
       region.scrollTop = 0;
@@ -3415,42 +3483,27 @@ function layoutDockAreas(save = false, fitWindows = true) {
   syncAreaControls(resolved.states);
   syncLayoutModeUI(resolved.profile);
   if (secondaryCanvasNames.length) {
+    syncAreaShareHandles([]);
     applySecondaryAreaCanvas(secondaryCanvasNames, width, height);
     if (save) saveAreaLayout();
     return;
   }
   document.body.classList.remove("secondary-area-canvas");
 
-  const left = dockGroup("left");
-  const right = dockGroup("right");
-  const top = dockGroup("top");
-  const bottom = dockGroup("bottom");
-  const leftWidth = left.length ? effectiveSizes.left : 0;
-  const rightWidth = right.length ? effectiveSizes.right : 0;
-  const topHeight = top.length ? effectiveSizes.top : 0;
-  const bottomHeight = bottom.length ? effectiveSizes.bottom : 0;
-  const centerLeft = gap + (left.length ? leftWidth + gap : 0);
-  const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
-  const centerWidth = Math.max(0, centerRight - centerLeft);
-
   const layoutSide = (names, edge, x, sideWidth) => {
     if (!names.length) return;
-    const panels = globalThis.SpatialCompactAreas?.layout({names,states:resolved.states,width:sideWidth,height:height-gap*2,gap});
-    const panelHeight = (height-gap*2-gap*(names.length-1))/names.length;
     names.forEach((name, index) => {
       const panelWidth = sideWidth;
-      const panel = panels?.[name] || {y:index*(panelHeight+gap),height:panelHeight};
-      if (name === "systems" && panel.compactGrid) areaFor(name).dataset.compactLayout = "grid";
-      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + panel.y, width: panelWidth, height: panel.height, joinEdge: index ? "top" : "none" });
+      const panel = panels[edge][name];
+      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + panel.offset, width: panelWidth, height: panel.extent, joinEdge: index ? "top" : "none" });
     });
   };
   const layoutHorizontal = (names, edge, y, panelHeight) => {
     if (!names.length) return;
-    const availableWidth = centerWidth - gap * (names.length - 1);
-    const panelWidth = availableWidth / names.length;
     names.forEach((name, index) => {
       const thickness = panelHeight;
-      applyDockRect(name, { x: centerLeft + index * (panelWidth + gap), y: edge === "bottom" ? y + panelHeight - thickness : y, width: panelWidth, height: thickness, joinEdge: index ? "left" : "none" });
+      const panel = panels[edge][name];
+      applyDockRect(name, { x: centerLeft + panel.offset, y: edge === "bottom" ? y + panelHeight - thickness : y, width: panel.extent, height: thickness, joinEdge: index ? "left" : "none" });
     });
   };
 
@@ -3458,6 +3511,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
   layoutSide(right, "right", width - gap - rightWidth, rightWidth);
   layoutHorizontal(top, "top", gap, topHeight);
   layoutHorizontal(bottom, "bottom", height - gap - bottomHeight, bottomHeight);
+  syncAreaShareHandles(dockEdges);
   baseWorkspaceInsets = {
     left: centerLeft,
     right: width - centerRight,
@@ -3505,6 +3559,7 @@ function setAreaState(name, state, announce = true) {
     const vertical = edge === "left" || edge === "right";
     const size = state === "expanded" ? (areaStateForSize(edge, dockSizes[edge]) === "expanded" ? dockSizes[edge] : areaExpandedSizes[name]?.[edge] || Math.max(vertical ? 310 : 250, edgeMinimumForState(edge, state))) : null;
     setAreaPresentation(name, state, size);
+    if (state === "expanded") makeAreaExpansionSpace(name);
     dockSizeManual[edge] = true;
   }
   autoSpatialEdgeStates.clear();
@@ -3598,13 +3653,12 @@ function areaDockPreviewRect(name, edge, insertion) {
     const resolved = resolvedAreaLayout(shell.clientWidth,shell.clientHeight),names = dockGroup(edge),index=names.indexOf(name);
     const thickness = resolved.sizes[edge];
     if (edge === "left" || edge === "right") {
-      const panels = globalThis.SpatialCompactAreas?.layout({names,states:resolved.states,width:thickness,height:shell.clientHeight});
-      const panel = panels?.[name] || {y:index*shell.clientHeight/names.length,height:shell.clientHeight/names.length};
-      return {x:edge==="left"?0:shell.clientWidth-thickness,y:panel.y,width:thickness,height:panel.height,joinEdge:index?"top":"none"};
+      const panel = allocateAreaPanels(names,edge,shell.clientHeight,thickness,resolved.states)[name];
+      return {x:edge==="left"?0:shell.clientWidth-thickness,y:panel.offset,width:thickness,height:panel.extent,joinEdge:index?"top":"none"};
     }
     const left = dockGroup("left").length?resolved.sizes.left:0,right = dockGroup("right").length?resolved.sizes.right:0;
-    const width = Math.max(0,shell.clientWidth-left-right)/names.length;
-    return {x:left+index*width,y:edge==="top"?0:shell.clientHeight-thickness,width,height:thickness,joinEdge:index?"left":"none"};
+    const panel = allocateAreaPanels(names,edge,Math.max(0,shell.clientWidth-left-right),thickness,resolved.states)[name];
+    return {x:left+panel.offset,y:edge==="top"?0:shell.clientHeight-thickness,width:panel.extent,height:thickness,joinEdge:index?"left":"none"};
   } finally {
     areaPriority.forEach(item => Object.assign(dockState[item],savedState[item]));
     Object.assign(dockSizes,savedSizes);
@@ -3740,6 +3794,113 @@ function bindDockResize(name, area) {
   });
 }
 
+function areaShareSnapshot(edge) {
+  const vertical = edge === "left" || edge === "right";
+  const names = dockGroup(edge);
+  return {
+    sizes: Object.fromEntries(names.map(name => [name,areaFor(name).getBoundingClientRect()[vertical?"height":"width"]])),
+    preferred: Object.fromEntries(names.map(name => [name,areaPreferredStates[name] || initialAreaStates(currentDisplayProfile)[name]]))
+  };
+}
+function resizeAreaShare(edge, first, second, delta, original) {
+  const names = dockGroup(edge),index = names.indexOf(first);
+  if (index < 0 || names[index+1] !== second || !Number.isFinite(delta)) return false;
+  const vertical = edge === "left" || edge === "right", axis = vertical ? "vertical" : "horizontal";
+  const crossSize = areaFor(first).getBoundingClientRect()[vertical?"width":"height"];
+  const total = original.sizes[first]+original.sizes[second];
+  const minimum = Math.min(globalThis.SpatialCompactAreas?.thresholds?.compactExtent?.[axis] || (vertical?72:64),total/2);
+  const firstSize = Math.min(total-minimum,Math.max(minimum,original.sizes[first]+delta));
+  const sizes = {...original.sizes,[first]:firstSize,[second]:total-firstSize};
+  // Save proportions, not screen pixels. Other visible peers keep their space;
+  // hidden peers keep their remembered share until they are shown again.
+  const sum = names.reduce((value,name) => value+sizes[name],0);
+  const previousWeight = names.every(name => Number.isFinite(areaDockShares[edge][name]) && areaDockShares[edge][name] > 0)
+    ? names.reduce((value,name) => value+areaDockShares[edge][name],0) : 1;
+  names.forEach(name => { areaDockShares[edge][name] = (sum ? sizes[name]/sum : 1/names.length)*previousWeight; });
+  [first,second].forEach(name => {
+    const expandedMinimum = globalThis.SpatialCompactAreas?.expandedMinimum?.(axis,name) || (vertical?260:320);
+    const crossMinimum = vertical ? stateSideMinimum(name,"expanded") : stateHorizontalMinimum(name,"expanded");
+    const promote = original.preferred[name] === "rail" && crossSize >= crossMinimum && sizes[name] > original.sizes[name]+1 && sizes[name] >= expandedMinimum+24;
+    const state = promote ? "expanded" : original.preferred[name];
+    if (areaPreferredStates[name] !== state) setAreaPresentation(name,state);
+  });
+  layoutDockAreas(false,false);
+  return Math.abs(firstSize-original.sizes[first]) > .1;
+}
+function bindAreaShareHandle(handle, edge, first, second) {
+  handle.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    cancelAreaPointerInteraction?.();
+    const before = capturePlacement();
+    event.preventDefault(); event.stopPropagation();
+    overrideAreaColumn(first);
+    layoutDockAreas(false,false);
+    const original = areaShareSnapshot(edge),vertical = edge === "left" || edge === "right";
+    const start = vertical ? event.clientY : event.clientX;
+    dockSizeManual[edge] = true;
+    handle.classList.add("is-active");
+    let moved = false;
+    trackAreaPointer(event,handle,pointer => {
+      moved = resizeAreaShare(edge,first,second,(vertical?pointer.clientY:pointer.clientX)-start,original) || moved;
+    },(pointer,cancelled) => {
+      handle.classList.remove("is-active");
+      if (cancelled) { restorePlacement(before); return; }
+      saveAreaLayout(); refreshIntentAreas();
+      if (moved) offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
+    });
+  });
+  handle.addEventListener("keydown", event => {
+    const vertical = edge === "left" || edge === "right";
+    const direction = (vertical ? {ArrowUp:-1,ArrowDown:1} : {ArrowLeft:-1,ArrowRight:1})[event.key];
+    if (!direction) return;
+    event.preventDefault(); event.stopPropagation();
+    cancelAreaPointerInteraction?.();
+    const before = capturePlacement();
+    overrideAreaColumn(first);
+    layoutDockAreas(false,false);
+    dockSizeManual[edge] = true;
+    resizeAreaShare(edge,first,second,direction*(event.shiftKey?48:16),areaShareSnapshot(edge));
+    saveAreaLayout(); refreshIntentAreas();
+    offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
+  });
+}
+function syncAreaShareHandles(edges) {
+  const visible = new Set();
+  const shell = $(".desktop-shell"),origin = shell.getBoundingClientRect();
+  edges.forEach(edge => {
+    const names = dockGroup(edge),vertical = edge === "left" || edge === "right";
+    names.slice(0,-1).forEach((first,index) => {
+      const second = names[index+1],key = edge+":"+first+":"+second;
+      visible.add(key);
+      let handle = areaShareHandles.get(key);
+      if (!handle) {
+        handle = document.createElement("div");
+        handle.className = "area-share-handle";
+        handle.dataset.axis = vertical ? "vertical" : "horizontal";
+        handle.dataset.areaShare = key;
+        handle.tabIndex = 0;
+        handle.setAttribute("role","separator");
+        handle.setAttribute("aria-orientation",vertical?"horizontal":"vertical");
+        handle.setAttribute("aria-label","Resize "+areaLabel(first)+" and "+areaLabel(second));
+        handle.title = "Drag to share space · Arrow keys adjust · Shift for a larger step";
+        bindAreaShareHandle(handle,edge,first,second);
+        areaShareHandles.set(key,handle);
+        shell.append(handle);
+      }
+      const a = areaFor(first).getBoundingClientRect(),b = areaFor(second).getBoundingClientRect();
+      const size = vertical?a.height:a.width,total = size+(vertical?b.height:b.width);
+      handle.hidden = false;
+      Object.assign(handle.style,vertical
+        ? {left:(a.left-origin.left)+"px",top:(a.bottom-origin.top-4)+"px",width:a.width+"px",height:"8px"}
+        : {left:(a.right-origin.left-4)+"px",top:(a.top-origin.top)+"px",width:"8px",height:a.height+"px"});
+      handle.setAttribute("aria-valuemin","0"); handle.setAttribute("aria-valuemax","100");
+      handle.setAttribute("aria-valuenow",String(Math.round(total?100*size/total:50)));
+      handle.setAttribute("aria-valuetext",areaLabel(first)+" "+Math.round(size)+" pixels, "+areaLabel(second)+" "+Math.round(total-size)+" pixels");
+    });
+  });
+  areaShareHandles.forEach((handle,key) => { if (!visible.has(key)) handle.hidden = true; });
+}
+
 function prepareAreaWindows() {
   // New Workspaces start from the neutral dock layout, never the last one's edits.
   defaultAreaSession = JSON.parse(JSON.stringify(snapshotAreaLayout()));
@@ -3780,6 +3941,7 @@ function prepareAreaWindows() {
       if (areaFor(name)) areaFor(name).hidden = false;
     });
     Object.assign(dockSizes, { left: 310, right: 300, top: 250, bottom: 250 });
+    dockEdges.forEach(edge => { areaDockShares[edge] = {}; });
     areaPriority.forEach(name => { areaPreferredStates[name] = "expanded"; });
     globalThis.SpatialAIDesktop?.setMode("expanded");
     dockEdges.forEach(edge => { dockSizeManual[edge] = false; });
@@ -6663,6 +6825,7 @@ function executeContextAction(action) {
     const before = capturePlacement();
     rememberExpandedAreaSizes();
     areaPreferredStates[context.name] = "expanded";
+    areaDockShares[dockState[context.name].edge] = {};
     if (context.name === "ai") globalThis.SpatialAIDesktop?.setMode("expanded");
     dockSizeManual[dockState[context.name].edge] = false;
     layoutDockAreas(true);

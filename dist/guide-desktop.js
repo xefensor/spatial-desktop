@@ -335,10 +335,14 @@
       if (displayButton) {displayButton.disabled = extendedDesktopActive();displayButton.textContent = extendedDesktopActive() ? 'Second practice display connected' : done.includes('display-linked') ? 'Reconnect second practice display' : 'Open second practice display';}
     }
     if (id === 'resize-areas') {
-      const edge = dockState.systems.edge;
-      if (!model.state.areaResizeBaseline) { model.state.areaResizeBaseline = {edge, size:dockSizes[edge]}; guide.save(); }
+      const edge = dockState.systems.edge, rect = areaFor('systems').getBoundingClientRect();
+      const extent = rect[edge === 'left' || edge === 'right' ? 'height' : 'width'];
+      if (!model.state.areaResizeBaseline) { model.state.areaResizeBaseline = {edge, size:dockSizes[edge], extent}; guide.save(); }
       const baseline = model.state.areaResizeBaseline;
-      if (baseline.edge === edge && Math.abs(dockSizes[edge] - baseline.size) >= 24 && !areaFor('systems').classList.contains('is-area-resizing')) mark('area-resized');
+      // Saved lessons from before shared separators only recorded dock thickness.
+      if (!Number.isFinite(baseline.extent)) { baseline.extent = extent; guide.save(); }
+      const resizing = areaPriority.some(name => areaFor(name).classList.contains('is-area-resizing')) || $$('.area-share-handle.is-active').length > 0;
+      if (baseline.edge === edge && !resizing && (Math.abs(dockSizes[edge] - baseline.size) >= 24 || Math.abs(extent - baseline.extent) >= 24)) mark('area-resized');
     }
     if (id === 'move-areas') {
       const names = areaPriority.filter(name => model.allows(name) && !areaFor(name).hidden);

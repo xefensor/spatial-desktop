@@ -1,30 +1,40 @@
-/* A wide Compact System Area shares a side column with Expanded Areas.
-   It keeps the existing rail controls and popovers in a short icon grid. */
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]{
+/* Wide Compact Areas use the column's available width rather than keeping
+   their narrow-panel layout. Headers stay one row high at every shared size. */
+.area-window[data-area-state="rail"][data-compact-layout="grid"]{
   display:flex;
   flex-direction:column;
+  min-width:0;
   min-height:0;
   padding:5px;
   gap:0!important;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar{
-  flex:0 0 40px;
-  min-height:40px;
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar{
+  flex:0 0 36px!important;
+  min-height:36px!important;
+  max-height:36px;
   width:auto;
-  margin:-5px -5px 5px!important;
-  padding:4px 8px;
+  margin:-5px -5px 4px!important;
+  padding:3px 7px;
+  flex-direction:row;
+  align-items:center;
   justify-content:flex-start;
+  gap:6px;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity{
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity{
+  flex:1;
+  min-width:0;
   flex-direction:row;
   justify-content:flex-start;
   gap:7px;
   width:100%;
 }
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity>span:last-child{display:block;min-width:0;flex:1}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity b{font-size:12px;line-height:1.2}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity small{font-size:9px;line-height:1.25;margin-top:2px}
-.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-icon{width:30px;height:30px;flex:0 0 30px}
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity>span:last-child{display:block;min-width:0;flex:1}
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity :is(b,small){display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity b{font-size:12px;line-height:1.2}
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity small{font-size:9px;line-height:1.25;margin-top:2px}
+.area-window[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-icon{width:28px;height:28px;flex:0 0 28px}
+
+/* System retains its existing action buttons and anchored popovers. */
 .systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.system-scroll-region{
   display:flex!important;
   flex-direction:column!important;
@@ -128,3 +138,163 @@
 }
 .systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings>span,
 .systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-sound>span{font-size:10px}
+
+/* The wrapper has no box in existing layouts. A wide Compact Apps Area gives
+   all three regions one viewport while its header and resize edge stay fixed. */
+.apps-area-body{display:contents}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"]{overflow:hidden!important}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"]>.apps-area-body{
+  display:flex;
+  flex:1 1 0;
+  flex-direction:column;
+  min-width:0;
+  min-height:0;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scroll-padding-block:3px;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .area-window-bar .apps-header-actions{flex-direction:row}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-scroll-region{
+  display:flex;
+  flex:0 0 auto;
+  min-height:min-content;
+  overflow:visible;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-quick-launch{
+  flex:0 0 auto;
+  max-height:none;
+  padding:0 0 5px;
+  overflow:visible;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .apps-quick-launch-grid{
+  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+  gap:3px;
+  overflow:visible;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .app-rack{
+  flex:0 0 auto;
+  min-height:min-content;
+  padding:5px 0 0;
+  overflow:visible;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .app-rack-group{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+  grid-auto-rows:44px;
+  gap:3px;
+  max-height:none;
+  overflow:visible;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .app-rack-group .app-key{
+  width:100%;
+  height:44px;
+  min-height:44px;
+}
+.apps-zone[data-area-state="rail"][data-compact-layout="grid"] .background-apps{
+  display:grid;
+  flex:0 0 auto;
+  grid-template-columns:repeat(auto-fit,minmax(36px,1fr));
+  grid-auto-rows:36px;
+  align-content:start;
+  justify-items:center;
+  gap:3px;
+  max-height:none;
+  margin-top:6px;
+  padding:5px 0 0;
+  overflow:visible;
+}
+
+/* Current material tools and pinned items share a compact grid. The complete
+   grid scrolls, so a short slot never hides Files, More or a pinned item. */
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail{
+  display:grid;
+  flex:1 1 0;
+  grid-template-columns:repeat(auto-fit,minmax(48px,1fr));
+  grid-auto-rows:minmax(44px,auto);
+  align-content:start;
+  gap:4px;
+  padding-bottom:3px;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-context{display:none}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail :is(.project-material-pinned,footer){display:contents}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-pinned-label{display:none}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail :is(.rail-action,.project-material-item){
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  justify-content:center;
+  gap:3px;
+  padding:4px 2px!important;
+}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail .rail-action>span{font-size:10px!important}
+
+/* Assistant keeps its current chat and new-chat action side by side; the
+   existing quick-chat popover retains all of its content and controls. */
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-tools{
+  display:grid;
+  flex:1 1 0;
+  grid-template-columns:minmax(0,1fr) 64px;
+  grid-auto-rows:minmax(48px,auto);
+  align-content:start;
+  gap:5px;
+  padding:0 0 3px;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat{
+  position:relative;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  padding:5px 7px!important;
+  text-align:left;
+}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat-title{-webkit-line-clamp:2;flex:1;font-size:11px;line-height:1.3}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-sources{flex:none;font-size:10px}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat>small:not([hidden]){position:absolute;right:4px;top:2px;font-size:8px}
+.ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-new{justify-content:center;gap:2px;padding:4px 2px!important}
+
+/* The seam belongs to both neighbours. Its eight-pixel pointer target adds
+   no visual gutter or extra material to the shared column or row. */
+.desktop-shell>.area-share-handle{
+  position:absolute;
+  z-index:225;
+  display:block;
+  box-sizing:border-box;
+  touch-action:none;
+  user-select:none;
+  padding:0;
+  margin:0;
+  border:0;
+  border-radius:0;
+  outline:0;
+  background:transparent;
+  box-shadow:none;
+  color:var(--text);
+}
+.desktop-shell>.area-share-handle[data-axis="vertical"]{cursor:row-resize}
+.desktop-shell>.area-share-handle[data-axis="horizontal"]{cursor:col-resize}
+.desktop-shell>.area-share-handle::before,
+.desktop-shell>.area-share-handle::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  background:var(--sd-glass-groove);
+}
+.desktop-shell>.area-share-handle[data-axis="vertical"]::before{left:0;right:0;top:50%;height:1px}
+.desktop-shell>.area-share-handle[data-axis="horizontal"]::before{top:0;bottom:0;left:50%;width:1px}
+.desktop-shell>.area-share-handle::after{left:50%;top:50%;transform:translate(-50%,-50%);background:var(--text);opacity:0}
+.desktop-shell>.area-share-handle[data-axis="vertical"]::after{width:32px;height:2px}
+.desktop-shell>.area-share-handle[data-axis="horizontal"]::after{width:2px;height:32px}
+.desktop-shell>.area-share-handle:is(:hover,:focus-visible,:active,.is-active)::after{opacity:.65}
+.desktop-shell>.area-share-handle:focus-visible::after{background:var(--workspace-accent);opacity:1}
+.desktop-shell>.area-share-handle[hidden],
+.area-window[data-area-state="rail"][data-compact-layout="grid"] [hidden]{display:none!important}
