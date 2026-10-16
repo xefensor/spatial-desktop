@@ -70,9 +70,9 @@
     }
   }
   const originalMini=renderMiniApps;
-  renderMiniApps=function(...args){const result=originalMini(...args);decorateCards();return result;};
+  renderMiniApps=function(...args){const result=originalMini(...args);decorateCards();decorateRail();return result;};
   const originalRack=syncRack;
   syncRack=function(...args){const result=originalRack(...args);decorateRail();return result;};
   root.SpatialTemporaryParkingDesktop={describe};
-  renderMiniApps();decorateRail();
+  renderMiniApps();
 })(globalThis);

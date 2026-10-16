@@ -124,8 +124,14 @@ railButtons.get('note').dispatch('click');assert.equal(opened.at(-1),'note','The
 // Changing privacy or desktop updates descriptions while retaining one badge.
 state.note='minimized';focus('owner0','note',0,1);context.renderMiniApps();context.syncRack();
 assert.match(railButtons.get('note').title,/Firefox/);
-context.SpatialPreviewPrivacy.hidden=()=>true;context.renderMiniApps();context.syncRack();
+// This is the actual PreviewPrivacy refresh contract: its toggle redraws cards
+// without synchronizing the rack, so an already rendered badge must update now.
+const syncsBeforePrivacy=rackSyncs;
+context.SpatialPreviewPrivacy.hidden=()=>true;context.renderMiniApps();
+assert.equal(rackSyncs,syncsBeforePrivacy,'Privacy refresh must not depend on a later rack synchronization');
 assert.match(stack.textContent,/another window/);assert(!stack.textContent.includes('Firefox'));assert(!railButtons.get('note').title.includes('Firefox'));
+assert.match(railButtons.get('note').title,/another window/);assert.match(railButtons.get('note').getAttribute('aria-label'),/another window/);
+assert(!railButtons.get('note').getAttribute('aria-label').includes('Firefox'));
 assert.equal(railButtons.get('note').querySelectorAll('.temporary-park-arrow').length,1);
 pages.select('work','unrelated-project');context.renderMiniApps();context.syncRack();
 assert.equal(stack.children.length,0,'A different Project has no returning cards from the old one');
