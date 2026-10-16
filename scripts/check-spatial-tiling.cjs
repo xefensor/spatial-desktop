@@ -168,6 +168,10 @@ console.log("Desktop adapter: open, live-card parking, focus/restore, closed-app
 // Window activity must never steal dock space or move Areas to another display.
 const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(name => [name, {
   hidden: false, dataset: {}, style: { removeProperty() {} },
+  getBoundingClientRect() {
+    const rect=this.rect||{x:0,y:0,width:0,height:0};
+    return {...rect,left:rect.x,top:rect.y,right:rect.x+rect.width,bottom:rect.y+rect.height};
+  },
   scrollRegion: {scrollTop:0,scrollLeft:0},
   classList: { add() {}, remove() {}, toggle() {} },
   handle: { listeners: new Map(), setPointerCapture() {},
@@ -176,21 +180,25 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
   }
 }]));
 const shell = { clientWidth: 1600, clientHeight: 900,
+  append() {},
   getBoundingClientRect: () => ({ left: 0, top: 0, right: 1600, bottom: 900, width: 1600, height: 900 }) };
 const docks = {
   desktopPages: require("../dist/desktop-pages.js").create(),
+  SpatialCompactAreas: require("../dist/compact-area-layout.js"),
   tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, cancelAreaPointerInteraction:null,
   window: { innerWidth: 1600, innerHeight: 900, ...eventTarget() },
   cloneDesktopState: value => JSON.parse(JSON.stringify(value)),
   capturePlacement: () => vm.runInContext("JSON.parse(JSON.stringify(snapshotAreaLayout()))", docks),
   restorePlacement(before) { docks.beforeCancel=before; vm.runInContext("workspaceAreaSessions[activeWorkspace]=beforeCancel;applyAreaSession(activeWorkspace);",docks); },
-  offerPlacementUndo(before) { docks.lastUndo = before; },
+  offerPlacementUndo(before) { docks.lastUndo = before;docks.undoOffers=(docks.undoOffers||0)+1; },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
+    createElement: () => ({dataset:{},style:{removeProperty(key){delete this[key];}},classList:{add(){},remove(){}},setAttribute(){}}),
     body: { dataset: {}, classList: { add() {}, remove() {}, toggle() {} } } },
   desktopStorage: sandbox.desktopStorage, isLocalArea: () => true, projectColumnActive: () => true,
   $: (selector, scope) => selector === ".desktop-shell" ? shell : selector === ".system-scroll-region" ? scope?.scrollRegion : scope?.handle,
   extendedDesktopActive: () => true, localDisplaySlot: () => 1, otherDisplaySlot: () => 2,
+  displayTransferTarget: () => null,
   applyDockRect(name, rect) { areaFrames[name].rect = rect; },
   captureBaseDockLaneRects() {}, syncAreaControls() {}, syncLayoutModeUI() {},
   applySystemRailExpansion() {}, endSystemRailExpansion() {},
@@ -241,18 +249,29 @@ vm.runInContext(`workspaceAreaSessions.school = {layoutMode: "auto", sizes: {lef
 assert.equal(areaFrames.projects.rect.width, 370, "Another workspace retains its own explicit size");
 vm.runInContext('activeWorkspace = "general"; applyAreaSession("general");', docks);
 assert.equal(JSON.stringify(areaFrames.projects.rect), railRect, "Returning to a workspace restores its manually chosen rail");
-// Areas on the same edge share rail/expanded mode and remembered thickness.
+// Commands choose each Area's presentation; a width drag still resizes its
+// shared column and remembers the user's mixed presentation through the gesture.
 vm.runInContext('setAreaState("projects","expanded",false);',docks);
+assert.equal(areaFrames.projects.dataset.areaState,"expanded");
+assert.equal(areaFrames.apps.dataset.areaState,"rail","Expanding Project leaves Apps compact in the same column");
 projectHandle.listeners.get("pointerdown")({button:0,pointerId:11,preventDefault(){},stopPropagation(){}});
 projectHandle.listeners.get("pointermove")({pointerId:11,clientX:390,clientY:300});
+projectHandle.listeners.get("pointermove")({pointerId:11,clientX:72,clientY:300});
+assert.equal(areaFrames.projects.dataset.areaState,"rail","A narrow width still collapses the whole column");
+assert.equal(areaFrames.apps.dataset.areaState,"rail");
+projectHandle.listeners.get("pointermove")({pointerId:11,clientX:390,clientY:300});
+assert.equal(areaFrames.projects.dataset.areaState,"expanded","Reversing the same resize restores its originally expanded Area");
 projectHandle.listeners.get("pointerup")();
+assert.equal(areaFrames.apps.dataset.areaState,"rail","Widening a mixed column preserves its compact peer");
+vm.runInContext('setAreaState("apps","expanded",false);',docks);
 vm.runInContext('setAreaState("projects","rail",false);',docks);
-assert.equal(areaFrames.apps.dataset.areaState,"rail","Collapsing Project also collapses Apps in the same column");
+assert.equal(areaFrames.projects.dataset.areaState,"rail","Only the commanded Area becomes compact");
+assert.equal(areaFrames.apps.dataset.areaState,"expanded","Collapsing Project leaves Apps expanded in the same column");
 assert.equal(areaFrames.apps.rect.width,areaFrames.projects.rect.width);
-assert.equal(areaFrames.projects.rect.width,68);
+assert.equal(areaFrames.projects.rect.width,390,"An expanded peer retains the shared column width");
 vm.runInContext('setAreaState("projects","expanded",false);',docks);
 assert.equal(areaFrames.projects.rect.width,390,"Expanded restores the column’s last dragged width");
-assert.equal(areaFrames.apps.rect.width,390,"The peer expands to the same width");
+assert.equal(areaFrames.apps.rect.width,390,"Peers still share the column's outer width");
 for(const cancellation of ["pointercancel","Escape","lostpointercapture"]) {
   const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
   projectHandle.listeners.get("pointerdown")({button:0,pointerId:12,preventDefault(){},stopPropagation(){}});
@@ -264,7 +283,7 @@ for(const cancellation of ["pointercancel","Escape","lostpointercapture"]) {
   assert.equal(areaFrames.projects.rect.width,390);
   assert.equal(docks.window.listenerCount(),0,"Area gesture removes global listeners");
 }
-vm.runInContext('setAreaState("projects","rail",false);',docks);
+vm.runInContext('setAreaState("projects","rail",false);setAreaState("apps","rail",false);',docks);
 console.log("Fixed Areas: legacy-state migration, invariant dock/canvas bounds, display stability, explicit rail resize and workspace persistence passed.");
 
 // System and AI collapse together, retain a shared thickness and restore together.
@@ -285,6 +304,13 @@ assert.equal(areaFrames.ai.dataset.areaState,'rail','Collapsing System also coll
 assert.equal(areaFrames.ai.rect.width,70,'AI matches the shared rail thickness');
 vm.runInContext('applyAreaSession("general");',docks);
 assert.equal(areaFrames.systems.rect.width,70,'Reloading the saved Area session preserves the column rail');
+docks.compactColumnBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+systemHandle.listeners.get('pointerdown')({button:0,pointerId:3,preventDefault(){},stopPropagation(){}});
+systemHandle.listeners.get('pointermove')({pointerId:3,clientX:1300,clientY:200});
+systemHandle.listeners.get('pointerup')();
+assert.equal(areaFrames.systems.dataset.areaState,'expanded','Widening an all-compact column expands the Area being resized');
+assert.equal(areaFrames.ai.dataset.areaState,'rail','Widening an all-compact column leaves the other Area compact');
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(compactColumnBaseline);applyAreaSession("general");',docks);
 for(const edge of ['left','right','top','bottom']){
   docks.mixedEdge=edge;
   vm.runInContext(`dockState.systems.edge=mixedEdge;dockState.ai.edge=mixedEdge;
@@ -300,8 +326,10 @@ docks.mixedRailBaseline=mixedRailBaseline;
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(mixedRailBaseline);applyAreaSession("general");',docks);
 console.log('Shared dock rails passed: System/AI resize together, saved session restore and matching four-edge geometry.');
 
-// Context commands, hide/show and joining another column use the same production path.
+// Context commands, hide/show and joining another column preserve the selected
+// Area's presentation rather than adopting or overwriting a peer's preference.
 vm.runInContext(slice('function hideArea(', 'function closestDockEdge('),docks);
+vm.runInContext(slice('function closestDockEdge(', '// One owner for the gesture'),docks);
 const sharedColumnBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
 vm.runInContext('setAreaState("systems","rail",false);hideArea("systems");setAreaState("ai","expanded",false);',docks);
 assert.equal(areaFrames.systems.hidden,true,'Expanding a peer does not reveal a deliberately hidden Area');
@@ -309,12 +337,14 @@ assert.equal(areaFrames.ai.rect.width,300);
 vm.runInContext('showArea("systems",false);',docks);
 assert.equal(areaFrames.systems.hidden,false);
 assert.equal(areaFrames.systems.rect.width,areaFrames.ai.rect.width,'A shown Area rejoins the column width');
-assert.equal(areaFrames.systems.dataset.areaState,areaFrames.ai.dataset.areaState);
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Showing System restores its own compact presentation');
+assert.equal(areaFrames.ai.dataset.areaState,'expanded','Showing System leaves Assistant expanded');
 vm.runInContext('setAreaState("apps","rail",false);setDockPosition("ai","left",null,false);',docks);
-assert.equal(areaFrames.ai.dataset.areaState,'rail','A docked Area joins the destination column mode');
+assert.equal(areaFrames.ai.dataset.areaState,'expanded','A moved Area keeps its own expanded presentation');
+assert.equal(areaFrames.apps.dataset.areaState,'rail','A moved expanded Area leaves its destination peer compact');
 assert.equal(areaFrames.ai.rect.width,areaFrames.apps.rect.width);
 assert.equal(areaFrames.ai.rect.width,areaFrames.projects.rect.width);
-assert.equal(areaFrames.systems.dataset.areaState,'expanded','Docking does not collapse the old column');
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Docking leaves the old column presentation unchanged');
 docks.sharedColumnBaseline=sharedColumnBaseline;
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
 docks.isLocalArea=name=>name!=='ai';
@@ -324,10 +354,100 @@ assert.equal(vm.runInContext('areaPreferredStates.ai',docks),remotePreference,'A
 docks.isLocalArea=()=>true;
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
 vm.runInContext('areaPreferredStates.systems="rail";areaPreferredStates.ai="expanded";dockSizes.right=300;layoutDockAreas();',docks);
-assert.equal(areaFrames.systems.dataset.areaState,'expanded','Old mixed preferences repair to the saved column width');
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Manual mixed preferences remain independent of the saved column width');
+assert.equal(areaFrames.ai.dataset.areaState,'expanded');
 assert.equal(areaFrames.systems.rect.width,areaFrames.ai.rect.width);
+vm.runInContext('saveAreaLayout();applyAreaSession("general");',docks);
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Reload retains the compact Area preference');
+assert.equal(areaFrames.ai.dataset.areaState,'expanded','Reload retains its expanded peer preference');
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
-console.log('Column commands passed: hidden visibility, rejoining width, destination mode, display isolation and legacy mixed-state repair.');
+vm.runInContext(`hideArea('projects');hideArea('ai');setAreaState('apps','expanded',false);
+  setAreaState('systems','rail',false);bindAreaDockDrag('systems',areaFor('systems'));`,docks);
+const dockDragStart={button:0,pointerId:21,clientX:1560,clientY:100,target:{closest:()=>false},preventDefault(){}};
+systemHandle.listeners.get('pointerdown')(dockDragStart);
+systemHandle.listeners.get('pointermove')({pointerId:21,clientX:200,clientY:850});
+assert.equal(vm.runInContext('dockPreview.dataset.edge',docks),'left','Dragging over Apps chooses its edge even near the bottom screen edge');
+assert.equal(vm.runInContext('dockPreview.style.height',docks),'240px','The production drag preview shows the short compact rectangle');
+assert.equal(vm.runInContext('dockPreview.style.top',docks),'660px','The production drag preview shows System below Apps');
+systemHandle.listeners.get('pointerup')({pointerId:21,clientX:200,clientY:850});
+assert.equal(areaFrames.apps.dataset.areaState,'expanded','Apps stays expanded when compact System is docked below it');
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Docking System preserves its compact presentation');
+assert.equal(areaFrames.apps.rect.height,660,'Expanded Apps receives the remaining column height');
+assert.equal(areaFrames.systems.rect.height,240,'Compact System uses a short rectangle rather than half the screen');
+assert.equal(areaFrames.systems.rect.y,660,'Compact System is placed immediately below Apps');
+assert.equal(areaFrames.apps.rect.width,areaFrames.systems.rect.width,'Mixed Areas share one column width');
+assert.equal(docks.insets.right,0,'Moving the only visible right Area frees the right canvas gutter');
+assert.equal(docks.insets.left,areaFrames.apps.rect.width,'The shared Apps/System column reserves its width only once');
+const mixedColumnRects=JSON.stringify([areaFrames.apps.rect,areaFrames.systems.rect]);
+vm.runInContext('applyAreaSession("general");',docks);
+assert.equal(JSON.stringify([areaFrames.apps.rect,areaFrames.systems.rect]),mixedColumnRects,'Reload restores mixed placement and short System geometry');
+vm.runInContext('hideArea("systems");showArea("systems",false);',docks);
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Hide/show preserves System compact mode below Apps');
+assert.equal(JSON.stringify([areaFrames.apps.rect,areaFrames.systems.rect]),mixedColumnRects,'Hide/show restores the compact slot without resizing Apps');
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
+
+// Hidden Areas must not shift a visible drop boundary. The one-click command
+// follows the same placement path and offers one undo for its complete result.
+vm.runInContext(`hideArea('projects');hideArea('ai');dockState.projects.order=0;dockState.apps.order=1;
+  setAreaState('apps','expanded',false);setAreaState('systems','rail',false);layoutDockAreas();`,docks);
+const beforeBelowApps=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+const undoOffersBefore=docks.undoOffers;
+vm.runInContext('compactSystemBelowApps();',docks);
+assert.equal(areaFrames.systems.rect.y,areaFrames.apps.rect.y+areaFrames.apps.rect.height,'The below-Apps command ignores earlier hidden peers when choosing its visible insertion boundary');
+assert.equal(areaFrames.systems.rect.height,240);
+assert.equal(docks.undoOffers,undoOffersBefore+1,'The complete below-Apps command creates one undo');
+assert.equal(JSON.stringify(docks.lastUndo),beforeBelowApps,'That undo captures the original layout before any command step');
+docks.restorePlacement(docks.lastUndo);
+assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),beforeBelowApps,'A single undo restores the complete command');
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
+console.log('Independent Area commands passed: hidden visibility, shared width, retained presentation on move, display isolation, reload and compact System below expanded Apps.');
+
+// A hidden expanded peer cannot prevent the only visible compact Area from
+// expanding when its border is widened.
+vm.runInContext('setAreaState("projects","expanded",false);hideArea("projects");setAreaState("apps","rail",false);bindDockResize("apps",areaFor("apps"));',docks);
+const appHandle=areaFrames.apps.handle;
+appHandle.listeners.get('pointerdown')({button:0,pointerId:22,preventDefault(){},stopPropagation(){}});
+appHandle.listeners.get('pointermove')({pointerId:22,clientX:350,clientY:200});
+appHandle.listeners.get('pointerup')();
+assert.equal(areaFrames.apps.dataset.areaState,'expanded','A hidden expanded peer does not block widening the visible compact Area');
+assert.equal(areaFrames.apps.rect.width,350);
+assert.equal(areaFrames.projects.hidden,true,'Widening never reveals the hidden peer');
+assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Widening preserves the hidden peer preference for later recovery');
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
+
+// Preview follows the same priority and canvas bounds as the final placement,
+// without saving its speculative model or touching the existing Area rectangles.
+shell.clientWidth=1200;
+vm.runInContext(`areaFor('ai').hidden=true;areaFor('projects').hidden=areaFor('apps').hidden=areaFor('systems').hidden=false;
+  dockState.apps={edge:'left',order:0};dockState.projects={edge:'right',order:0};dockState.systems={edge:'right',order:1};
+  areaPreferredStates.apps=areaPreferredStates.projects='expanded';areaPreferredStates.systems='rail';
+  dockSizes.left=450;dockSizes.right=400;layoutDockAreas();`,docks);
+const beforePreview=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+const previewSessions=vm.runInContext('JSON.stringify(workspaceAreaSessions)',docks);
+const previewStorage=JSON.stringify([...store]);
+const beforePreviewRects=JSON.stringify(Object.values(areaFrames).map(area=>area.rect));
+vm.runInContext('renderAreaDockPreview("systems","left",1);',docks);
+const tightPreview=vm.runInContext('({x:parseFloat(dockPreview.style.left),y:parseFloat(dockPreview.style.top),width:parseFloat(dockPreview.style.width),height:parseFloat(dockPreview.style.height)})',docks);
+assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),beforePreview,'Preview restores all speculative Area preferences, placement and sizes');
+assert.equal(vm.runInContext('JSON.stringify(workspaceAreaSessions)',docks),previewSessions,'Preview does not change saved Workspace sessions');
+assert.equal(JSON.stringify([...store]),previewStorage,'Preview performs no persistence writes');
+assert.equal(JSON.stringify(Object.values(areaFrames).map(area=>area.rect)),beforePreviewRects,'Preview does not move the real Areas');
+vm.runInContext('setDockPosition("systems","left",1,false);',docks);
+for(const key of ['x','y','width','height'])assert.equal(tightPreview[key],areaFrames.systems.rect[key],'Tight-viewport preview matches the final System '+key);
+assert.equal(areaFrames.systems.rect.width,360,'Preview respects the opposite Project Area and the usable canvas budget');
+shell.clientWidth=1600;
+vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
+
+// The manual presentation change leaves the legacy Auto allocation policy
+// intact for environments without the bounded tiling engine.
+const boundedTileEngine=docks.tileEngine;
+docks.tileEngine=null;
+vm.runInContext('layoutMode="auto";dockSizes.right=300;',docks);
+assert.equal(vm.runInContext('unifyAreaColumnStates({projects:"rail",apps:"rail",systems:"rail",ai:"expanded"}).systems',docks),'expanded','Legacy Auto still unifies a mixed column using its saved thickness');
+vm.runInContext('intentAreaPlan.rails.systems=true;',docks);
+assert.equal(vm.runInContext('unifyAreaColumnStates({projects:"rail",apps:"rail",systems:"expanded",ai:"expanded"}).ai',docks),'rail','Legacy Auto pressure still collapses a shared column');
+docks.tileEngine=boundedTileEngine;
+vm.runInContext('delete intentAreaPlan.rails.systems;workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
 
 // Area growth is bounded before layout: dragging to an extreme must not
 // squeeze the opposing panel, overlap it, or save an off-screen preference.
@@ -341,6 +461,7 @@ for (const edge of ['left','right','top','bottom']) {
   vm.runInContext(`
     areaFor('apps').hidden = areaFor('ai').hidden = true;
     areaFor('projects').hidden = areaFor('systems').hidden = false;
+    areaPreferredStates.projects = areaPreferredStates.systems = 'expanded';
     dockState.projects.edge = boundsEdge; dockState.systems.edge = boundsOpposite;
     dockSizes[boundsEdge] = ${vertical ? 300 : 280}; dockSizes[boundsOpposite] = ${vertical ? 300 : 190};
     layoutDockAreas();
@@ -360,7 +481,8 @@ for (const edge of ['left','right','top','bottom']) {
   projectHandle.listeners.get('pointerup')();
 }
 shell.clientWidth = 1200;
-vm.runInContext(`dockState.projects.edge='left';dockState.systems.edge='right';dockSizes.left=300;dockSizes.right=400;layoutDockAreas();`,docks);
+vm.runInContext(`dockState.projects.edge='left';dockState.systems.edge='right';
+  areaPreferredStates.projects=areaPreferredStates.systems='expanded';dockSizes.left=300;dockSizes.right=400;layoutDockAreas();`,docks);
 projectHandle.listeners.get('pointerdown')({button:0,pointerId:3,preventDefault(){},stopPropagation(){}});
 projectHandle.listeners.get('pointermove')({clientX:3000,clientY:400});
 assert.equal(areaFrames.projects.rect.width,360,'The opposing panel and usable canvas can impose a tighter cap');

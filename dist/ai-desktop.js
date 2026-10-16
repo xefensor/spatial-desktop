@@ -124,7 +124,7 @@
     const next=JSON.stringify([activeWorkspace,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     $('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
     const expanded=area.dataset.areaState==='expanded'||!quickPanel.hidden;
-    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Put Assistant area on rail':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
+    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Make Assistant area Compact':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
     if(dropPosition)showDropTarget(dropPosition);
     if(next===signature)return;rememberView();signature=next;
     if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Assistant demo · scripted replies · nothing is sent';}

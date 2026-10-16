@@ -2715,12 +2715,20 @@ function overrideAreaColumn(name) {
 }
 function setAreaColumnState(name, state, expandedSize = null) {
   const edge = dockState[name].edge;
-  areaColumnNames(name).forEach(item => {
+  areaColumnNames(name).filter(item => item === name || !areaFor(item)?.hidden).forEach(item => {
     areaPreferredStates[item] = state;
     if (state === "expanded" && Number.isFinite(expandedSize)) (areaExpandedSizes[item] ||= {})[edge] = expandedSize;
     if (item === "ai") globalThis.SpatialAIDesktop?.setMode(state);
   });
   if (state === "expanded" && Number.isFinite(expandedSize)) dockSizes[edge] = expandedSize;
+}
+function setAreaPresentation(name, state, expandedSize = null) {
+  areaPreferredStates[name] = state;
+  if (name === "ai") globalThis.SpatialAIDesktop?.setMode(state);
+  if (state === "expanded" && Number.isFinite(expandedSize)) {
+    (areaExpandedSizes[name] ||= {})[dockState[name].edge] = expandedSize;
+    dockSizes[dockState[name].edge] = expandedSize;
+  }
 }
 
 function persistAreaSessions() {
@@ -2843,6 +2851,8 @@ function areaStateForSize(edge, size) {
 }
 
 function unifyAreaColumnStates(states) {
+  // Compact describes an Area's contents, independently of a shared dock width.
+  if (!areasFollowWindows()) return states;
   dockEdges.forEach(edge => {
     const names = dockGroup(edge);
     if (!names.length) return;
@@ -3035,7 +3045,7 @@ function resolvedAreaLayout(width, height) {
 }
 
 function layoutStateLabel(state) {
-  return state === "rail" ? "On rail" : "Expanded";
+  return state === "rail" ? "Compact" : "Expanded";
 }
 
 function syncAreaControls(states) {
@@ -3392,6 +3402,7 @@ function layoutDockAreas(save = false, fitWindows = true) {
     const area = areaFor(name);
     if (!area) return;
     const state = resolved.states[name];
+    delete area.dataset.compactLayout;
     if (name === "systems" && state === "rail" && area.dataset.areaState !== "rail" && !systemRailExpansion) {
       const region = $(".system-scroll-region", area);
       region.scrollTop = 0;
@@ -3424,11 +3435,13 @@ function layoutDockAreas(save = false, fitWindows = true) {
 
   const layoutSide = (names, edge, x, sideWidth) => {
     if (!names.length) return;
-    const availableHeight = height - gap * 2 - gap * (names.length - 1);
-    const panelHeight = availableHeight / names.length;
+    const panels = globalThis.SpatialCompactAreas?.layout({names,states:resolved.states,width:sideWidth,height:height-gap*2,gap});
+    const panelHeight = (height-gap*2-gap*(names.length-1))/names.length;
     names.forEach((name, index) => {
       const panelWidth = sideWidth;
-      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + index * (panelHeight + gap), width: panelWidth, height: panelHeight, joinEdge: index ? "top" : "none" });
+      const panel = panels?.[name] || {y:index*(panelHeight+gap),height:panelHeight};
+      if (name === "systems" && panel.compactGrid) areaFor(name).dataset.compactLayout = "grid";
+      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + panel.y, width: panelWidth, height: panel.height, joinEdge: index ? "top" : "none" });
     });
   };
   const layoutHorizontal = (names, edge, y, panelHeight) => {
@@ -3483,16 +3496,15 @@ function setAreaState(name, state, announce = true) {
   if (!area || !["expanded", "rail", "hidden"].includes(state)) return;
   const before = capturePlacement();
   rememberExpandedAreaSizes();
-  if (state === "hidden") {
-    if (name === "systems") endSystemRailExpansion(false);
-    manualAreaOverride(name);
-  } else overrideAreaColumn(name);
+  if (name === "systems") endSystemRailExpansion(false);
+  if (name === "projects") globalThis.SpatialMemoryDesktop?.collapse?.(false);
+  manualAreaOverride(name);
   area.hidden = state === "hidden";
   if (state !== "hidden") {
     const edge = dockState[name].edge;
     const vertical = edge === "left" || edge === "right";
     const size = state === "expanded" ? (areaStateForSize(edge, dockSizes[edge]) === "expanded" ? dockSizes[edge] : areaExpandedSizes[name]?.[edge] || Math.max(vertical ? 310 : 250, edgeMinimumForState(edge, state))) : null;
-    setAreaColumnState(name, state, size);
+    setAreaPresentation(name, state, size);
     dockSizeManual[edge] = true;
   }
   autoSpatialEdgeStates.clear();
@@ -3503,27 +3515,32 @@ function setAreaState(name, state, announce = true) {
 }
 function hideArea(name) { setAreaState(name, "hidden"); }
 function showArea(name, announce = true) {
-  const peer = areaColumnNames(name).find(item => item !== name && !areaFor(item)?.hidden);
-  setAreaState(name, peer ? initialAreaStates(currentDisplayProfile)[peer] : areaPreferredStates[name] || "expanded", announce);
+  setAreaState(name, areaPreferredStates[name] || "expanded", announce);
 }
 
+function planAreaDock(name, edge, insertion = null) {
+  const destination = dockGroup(edge).find(item => item !== name);
+  const state = areaPreferredStates[name] || initialAreaStates(currentDisplayProfile)[name];
+  const peers = dockGroup(edge, true).filter(item => item !== name);
+  const visible = peers.filter(item => !areaFor(item)?.hidden);
+  const boundary = insertion === null ? visible.length : Math.max(0,Math.min(insertion,visible.length));
+  const index = insertion === null || !visible.length ? peers.length : boundary < visible.length ? peers.indexOf(visible[boundary]) : peers.indexOf(visible.at(-1))+1;
+  peers.splice(index, 0, name);
+  const minimum = edge === "left" || edge === "right" ? stateSideMinimum(name,state) : stateHorizontalMinimum(name,state);
+  const size = state === "expanded" ? (destination ? Math.max(dockSizes[edge],minimum) : areaExpandedSizes[name]?.[edge] || dockSizes[edge]) : null;
+  return {edge,state,names:peers,size};
+}
 function setDockPosition(name, edge, insertion = null, announce = true) {
   if (!dockEdges.includes(edge)) return;
   const before = capturePlacement();
   rememberExpandedAreaSizes();
   if (name === "systems") endSystemRailExpansion(false);
   manualAreaOverride(name);
-  const previousEdge = dockState[name].edge;
-  const destination = dockGroup(edge).find(item => item !== name);
-  const state = initialAreaStates(currentDisplayProfile)[destination || name];
+  const plan = planAreaDock(name,edge,insertion),previousEdge = dockState[name].edge;
   dockState[name].edge = edge;
   normalizeDockOrder(previousEdge);
-  const peers = dockGroup(edge, true).filter(item => item !== name);
-  const index = insertion === null ? peers.length : Math.max(0, Math.min(insertion, peers.length));
-  peers.splice(index, 0, name);
-  peers.forEach((item, order) => { dockState[item].order = order; });
-  const size = state === "expanded" ? (destination ? dockSizes[edge] : areaExpandedSizes[name]?.[edge] || dockSizes[edge]) : null;
-  setAreaColumnState(name, state, size);
+  plan.names.forEach((item,order) => { dockState[item].order = order; });
+  setAreaPresentation(name, plan.state, plan.size);
   autoSpatialEdgeStates.clear();
   layoutDockAreas(true);
   refreshIntentAreas();
@@ -3541,6 +3558,14 @@ function closestDockEdge(clientX, clientY) {
   };
   return [...dockEdges].sort((a, b) => distances[a] - distances[b])[0];
 }
+function areaDropEdge(name, clientX, clientY) {
+  const peer = areaPriority.find(item => {
+    if (item === name || !isLocalArea(item) || areaFor(item)?.hidden) return false;
+    const rect = areaFor(item).getBoundingClientRect();
+    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+  });
+  return peer ? dockState[peer].edge : closestDockEdge(clientX, clientY);
+}
 
 function ensureDockPreview() {
   if (dockPreview) return dockPreview;
@@ -3553,10 +3578,52 @@ function ensureDockPreview() {
 
 function dockInsertion(edge, clientX, clientY, movingName) {
   const peers = dockGroup(edge).filter(name => name !== movingName);
-  if (!peers.length) return 0;
-  const shell = $(".desktop-shell").getBoundingClientRect();
-  const ratio = edge === "left" || edge === "right" ? (clientY - shell.top) / shell.height : (clientX - shell.left) / shell.width;
-  return Math.max(0, Math.min(peers.length, Math.floor(ratio * (peers.length + 1))));
+  const vertical = edge === "left" || edge === "right";
+  const point = vertical ? clientY : clientX;
+  const index = peers.findIndex(name => {
+    const rect = areaFor(name).getBoundingClientRect();
+    return point < (vertical ? rect.top + rect.height/2 : rect.left + rect.width/2);
+  });
+  return index < 0 ? peers.length : index;
+}
+function areaDockPreviewRect(name, edge, insertion) {
+  const shell = $(".desktop-shell"),plan = planAreaDock(name,edge,insertion);
+  const savedState = Object.fromEntries(areaPriority.map(item => [item,{...dockState[item]}])),savedSizes = {...dockSizes};
+  // Resolve the same constraints as the committed move, without rendering or
+  // saving a projected layout. Restore the model synchronously before returning.
+  try {
+    dockState[name].edge = edge;
+    plan.names.forEach((item,order) => { dockState[item].order=order; });
+    if (Number.isFinite(plan.size)) dockSizes[edge]=plan.size;
+    const resolved = resolvedAreaLayout(shell.clientWidth,shell.clientHeight),names = dockGroup(edge),index=names.indexOf(name);
+    const thickness = resolved.sizes[edge];
+    if (edge === "left" || edge === "right") {
+      const panels = globalThis.SpatialCompactAreas?.layout({names,states:resolved.states,width:thickness,height:shell.clientHeight});
+      const panel = panels?.[name] || {y:index*shell.clientHeight/names.length,height:shell.clientHeight/names.length};
+      return {x:edge==="left"?0:shell.clientWidth-thickness,y:panel.y,width:thickness,height:panel.height,joinEdge:index?"top":"none"};
+    }
+    const left = dockGroup("left").length?resolved.sizes.left:0,right = dockGroup("right").length?resolved.sizes.right:0;
+    const width = Math.max(0,shell.clientWidth-left-right)/names.length;
+    return {x:left+index*width,y:edge==="top"?0:shell.clientHeight-thickness,width,height:thickness,joinEdge:index?"left":"none"};
+  } finally {
+    areaPriority.forEach(item => Object.assign(dockState[item],savedState[item]));
+    Object.assign(dockSizes,savedSizes);
+  }
+}
+function renderAreaDockPreview(name, edge, insertion) {
+  const preview = ensureDockPreview(),rect = areaDockPreviewRect(name,edge,insertion);
+  preview.dataset.edge = edge;
+  Object.assign(preview.style,{left:rect.x+"px",right:"auto",top:rect.y+"px",bottom:"auto",width:rect.width+"px",height:rect.height+"px"});
+}
+function compactSystemBelowApps() {
+  const edge = dockState.apps.edge;
+  if (!isLocalArea("apps") || areaFor("apps")?.hidden || !["left","right"].includes(edge)) return;
+  const before = capturePlacement();
+  setAreaState("apps","expanded",false);
+  setAreaState("systems","rail",false);
+  const peers = dockGroup(edge).filter(name => name !== "systems");
+  setDockPosition("systems",edge,peers.indexOf("apps")+1,false);
+  offerPlacementUndo(before,"Compact System below Apps");
 }
 
 // One owner for the gesture, including Escape, lost capture and browser blur.
@@ -3612,13 +3679,13 @@ function bindAreaDockDrag(name, area) {
     let candidate = dockState[name].edge;
     let moved = false;
     area.classList.add("is-dock-dragging");
-    preview.dataset.edge = candidate;
+    renderAreaDockPreview(name,candidate,dockInsertion(candidate,event.clientX,event.clientY,name));
     preview.classList.add("is-visible");
     trackAreaPointer(event, handle, pointer => {
       if (Math.hypot(pointer.clientX - event.clientX, pointer.clientY - event.clientY) < 6 && !moved) return;
       moved = true;
-      candidate = closestDockEdge(pointer.clientX, pointer.clientY);
-      preview.dataset.edge = candidate;
+      candidate = areaDropEdge(name,pointer.clientX,pointer.clientY);
+      renderAreaDockPreview(name,candidate,dockInsertion(candidate,pointer.clientX,pointer.clientY,name));
     }, (pointer, cancelled) => {
       area.classList.remove("is-dock-dragging");
       preview.classList.remove("is-visible");
@@ -3639,6 +3706,7 @@ function bindDockResize(name, area) {
     event.preventDefault(); event.stopPropagation();
     const resizeEdge = dockState[name].edge;
     rememberExpandedAreaSizes();
+    const originalStates = {...initialAreaStates(currentDisplayProfile)};
     overrideAreaColumn(name);
     dockSizeManual[resizeEdge] = !areasFollowWindows();
     area.classList.add("is-area-resizing");
@@ -3650,8 +3718,13 @@ function bindDockResize(name, area) {
         : edge === "top" ? pointer.clientY - rect.top : rect.bottom - pointer.clientY;
       const size = boundedDockResize(edge, requested, rect.width, rect.height);
       const state = areaStateForSize(edge, size);
-      // The whole column shares its mode and last expanded thickness.
-      setAreaColumnState(name, state, state === "expanded" ? size : null);
+      if (state === "rail" || areasFollowWindows()) setAreaColumnState(name,state,state==="expanded"?size:null);
+      else {
+        const names = areaColumnNames(name).filter(item => item === name || !areaFor(item)?.hidden),hadExpanded = names.some(item => originalStates[item]==="expanded");
+        names.forEach(item => setAreaPresentation(item,hadExpanded?originalStates[item]:item===name?"expanded":"rail",null));
+        names.filter(item => areaPreferredStates[item]==="expanded").forEach(item => { (areaExpandedSizes[item] ||= {})[edge]=size; });
+        dockSizes[edge] = size;
+      }
       if (areasFollowWindows()) autoSpatialEdgeStates.set(edge, state);
       layoutDockAreas(false);
     }, (pointer, cancelled) => {
@@ -6441,9 +6514,10 @@ function contextMenuEntries(context) {
     return entries;
   }
   if (context.kind === "area") return [
-    ...["expanded", "rail"].map(state => ({ action: "area-state:" + state, icon: state === "expanded" ? "i-max" : "i-min", label: state === "expanded" ? "Expanded" : "On rail", checked: !areaFor(context.name)?.hidden && areaFor(context.name)?.dataset.areaState === state })),
+    ...["expanded", "rail"].map(state => ({ action: "area-state:" + state, icon: state === "expanded" ? "i-max" : "i-min", label: layoutStateLabel(state), checked: !areaFor(context.name)?.hidden && areaFor(context.name)?.dataset.areaState === state })),
     { action: "area-hide", icon: "i-close", label: "Hidden", checked: Boolean(areaFor(context.name)?.hidden) },
     separator,
+    context.name === "systems" && isLocalArea("apps") && !areaFor("apps")?.hidden && ["left","right"].includes(dockState.apps.edge) ? { action: "area-below-apps", icon: "i-down", label: "Compact below Apps" } : null,
     { action: "area-move", icon: "i-grid", label: "Move to next edge" },
     extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
     { action: "area-reset", icon: "i-max", label: "Reset Area size" }
@@ -6583,6 +6657,7 @@ function executeContextAction(action) {
     const current = dockState[context.name].edge;
     setDockPosition(context.name, dockEdges[(dockEdges.indexOf(current) + 1) % dockEdges.length]);
   }
+  if (action === "area-below-apps") compactSystemBelowApps();
   if (action === "area-move-display") transferAreaToDisplay(context.name, otherDisplaySlot(), "right");
   if (action === "area-reset") {
     const before = capturePlacement();

@@ -1,0 +1,130 @@
+/* A wide Compact System Area shares a side column with Expanded Areas.
+   It keeps the existing rail controls and popovers in a short icon grid. */
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  padding:5px;
+  gap:0!important;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar{
+  flex:0 0 40px;
+  min-height:40px;
+  width:auto;
+  margin:-5px -5px 5px!important;
+  padding:4px 8px;
+  justify-content:flex-start;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity{
+  flex-direction:row;
+  justify-content:flex-start;
+  gap:7px;
+  width:100%;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity>span:last-child{display:block;min-width:0;flex:1}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity b{font-size:12px;line-height:1.2}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-identity small{font-size:9px;line-height:1.25;margin-top:2px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.area-window-bar .area-window-icon{width:30px;height:30px;flex:0 0 30px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"]>.system-scroll-region{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 0;
+  min-width:0;
+  min-height:0;
+  gap:7px!important;
+  padding:0 2px 4px;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region>.system-local-scopes{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+  grid-auto-rows:minmax(52px,auto);
+  align-content:start;
+  align-items:stretch;
+  gap:4px;
+  flex:0 0 auto;
+  min-width:0;
+  min-height:0;
+  overflow:visible!important;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-desktop:has(.has-system-request),
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-project:not([hidden]),
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-middle{display:contents!important}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action{
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  height:auto;
+  padding:4px 2px;
+  gap:2px;
+  justify-content:center;
+  align-self:stretch;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>svg{width:17px;height:17px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>span{font-size:10px;line-height:1.15}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{max-width:100%;font-size:9px;line-height:1.2}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailTimerValue{font-size:11px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+  grid-auto-rows:minmax(44px,auto);
+  gap:4px;
+  flex:0 0 auto;
+  min-width:0;
+  min-height:0;
+  max-height:none;
+  margin:0!important;
+  padding:6px 0 0;
+  border-top:1px solid var(--sd-glass-groove);
+  overflow:visible;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.system-rail-global{display:contents!important}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-global>.rail-clock{
+  grid-column:span 2;
+  min-width:0;
+  min-height:44px;
+  padding:4px 2px;
+  justify-content:center;
+  gap:3px;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock strong{font-size:17px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock small{font-size:9px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWideAlerts,
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings{grid-column:auto;min-height:44px;padding:4px 2px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  grid-column:span 2;
+  align-items:center;
+  align-content:center;
+  justify-content:center;
+  min-width:0;
+  gap:3px;
+  padding:3px 0;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge{
+  flex:1 1 22px;
+  flex-direction:row;
+  min-width:22px;
+  max-width:none;
+  min-height:32px;
+  padding:4px 2px;
+  gap:2px;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge svg{width:13px;height:13px}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge small{font-size:9px;line-height:1.1}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings{display:contents!important;grid-column:auto}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings .system-rail-sound{
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  height:auto;
+  padding:4px 2px!important;
+  gap:3px;
+}
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings>span,
+.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-sound>span{font-size:10px}
