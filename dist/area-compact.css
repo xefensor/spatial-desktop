@@ -332,3 +332,11 @@
 .desktop-shell>.area-share-handle:focus-visible::after{background:var(--workspace-accent);opacity:1}
 .desktop-shell>.area-share-handle[hidden],
 .area-window[data-area-state="rail"][data-compact-layout="grid"] [hidden]{display:none!important}
+
+/* A visible stop before a deliberate Compact snap, shared by both handles. */
+.desktop-shell>.area-share-handle.is-snap-pressure::after,
+.area-resize-handle.is-snap-pressure::after{
+  background:var(--workspace-accent,var(--blue))!important;
+  opacity:calc(.35 + .65 * var(--area-snap-pressure,0))!important;
+  box-shadow:0 0 5px color-mix(in srgb,var(--workspace-accent,var(--blue)) 45%,transparent);
+}

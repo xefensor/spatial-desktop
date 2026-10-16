@@ -175,6 +175,8 @@ const areaFrames = Object.fromEntries(["projects", "apps", "systems", "ai"].map(
   scrollRegion: {scrollTop:0,scrollLeft:0},
   classList: { add() {}, remove() {}, toggle() {} },
   handle: { listeners: new Map(), setPointerCapture() {},
+    style:{setProperty(key,value){this[key]=value;},removeProperty(key){delete this[key];}},
+    classList:{values:new Set(),add(...names){names.forEach(name=>this.values.add(name));},remove(...names){names.forEach(name=>this.values.delete(name));},contains(name){return this.values.has(name);},toggle(name,force){const add=force===undefined?!this.values.has(name):force;if(add)this.values.add(name);else this.values.delete(name);return add;}},
     addEventListener(type, fn) { this.listeners.set(type, fn); },
     removeEventListener(type) { this.listeners.delete(type); }
   }
@@ -193,8 +195,8 @@ const docks = {
   offerPlacementUndo(before) { docks.lastUndo = before;docks.undoOffers=(docks.undoOffers||0)+1; },
   intentAreaPlan: {moves: {}, rails: {}, overlays: {}, canvas: {}}, refreshIntentAreas() {}, manualAreaOverride() {},
   document: { querySelector: selector => areaFrames[selector.match(/data-area-window="([^"]+)/)?.[1]],
-    createElement: () => ({dataset:{},attributes:{},hiddenWrites:[],get hidden(){return this._hidden;},set hidden(value){this.hiddenWrites.push(value);this._hidden=value;},style:{removeProperty(key){delete this[key];}},
-      classList:{values:new Set(),add(...names){names.forEach(name=>this.values.add(name));},remove(...names){names.forEach(name=>this.values.delete(name));},contains(name){return this.values.has(name);}},
+    createElement: () => ({dataset:{},attributes:{},hiddenWrites:[],get hidden(){return this._hidden;},set hidden(value){this.hiddenWrites.push(value);this._hidden=value;},style:{setProperty(key,value){this[key]=value;},removeProperty(key){delete this[key];}},
+      classList:{values:new Set(),add(...names){names.forEach(name=>this.values.add(name));},remove(...names){names.forEach(name=>this.values.delete(name));},contains(name){return this.values.has(name);},toggle(name,force){const add=force===undefined?!this.values.has(name):force;if(add)this.values.add(name);else this.values.delete(name);return add;}},
       listeners:new Map(),addEventListener(type,fn){this.listeners.set(type,fn);},removeEventListener(type){this.listeners.delete(type);},
       setPointerCapture(){},releasePointerCapture(){},
       setAttribute(name,value){this.attributes[name]=value;},getAttribute(name){return this.attributes[name];}}),
@@ -260,11 +262,13 @@ assert.equal(areaFrames.projects.dataset.areaState,"expanded");
 assert.equal(areaFrames.apps.dataset.areaState,"rail","Expanding Project leaves Apps compact in the same column");
 projectHandle.listeners.get("pointerdown")({button:0,pointerId:11,preventDefault(){},stopPropagation(){}});
 projectHandle.listeners.get("pointermove")({pointerId:11,clientX:390,clientY:300});
+projectHandle.listeners.get("pointermove")({pointerId:11,clientX:460,clientY:300});
 projectHandle.listeners.get("pointermove")({pointerId:11,clientX:72,clientY:300});
 assert.equal(areaFrames.projects.dataset.areaState,"rail","A narrow width still collapses the whole column");
 assert.equal(areaFrames.apps.dataset.areaState,"rail");
 projectHandle.listeners.get("pointermove")({pointerId:11,clientX:390,clientY:300});
 assert.equal(areaFrames.projects.dataset.areaState,"expanded","Reversing the same resize restores its originally expanded Area");
+projectHandle.listeners.get("pointermove")({pointerId:11,clientX:460,clientY:300});
 projectHandle.listeners.get("pointerup")();
 assert.equal(areaFrames.apps.dataset.areaState,"rail","Widening a mixed column preserves its compact peer");
 vm.runInContext('setAreaState("apps","expanded",false);',docks);
@@ -283,7 +287,7 @@ for(const cancellation of ["pointercancel","Escape","lostpointercapture"]) {
   assert.equal(areaFrames.projects.dataset.areaState,"rail");
   if(cancellation==="Escape") docks.window.dispatchEvent({type:"keydown",key:"Escape",preventDefault(){},stopImmediatePropagation(){}});
   else projectHandle.listeners.get(cancellation)({pointerId:12,type:cancellation});
-  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,cancellation+" restores preferences, expanded width and dock size");
+  assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(before),cancellation+" restores preferences, expanded width and dock size");
   assert.equal(areaFrames.projects.rect.width,390);
   assert.equal(docks.window.listenerCount(),0,"Area gesture removes global listeners");
 }
@@ -371,14 +375,14 @@ const dockDragStart={button:0,pointerId:21,clientX:1560,clientY:100,target:{clos
 systemHandle.listeners.get('pointerdown')(dockDragStart);
 systemHandle.listeners.get('pointermove')({pointerId:21,clientX:200,clientY:850});
 assert.equal(vm.runInContext('dockPreview.dataset.edge',docks),'left','Dragging over Apps chooses its edge even near the bottom screen edge');
-assert.equal(vm.runInContext('dockPreview.style.height',docks),'240px','The production drag preview shows the short compact rectangle');
-assert.equal(vm.runInContext('dockPreview.style.top',docks),'660px','The production drag preview shows System below Apps');
+assert.equal(vm.runInContext('dockPreview.style.height',docks),'208px','The production drag preview shows the fixed compact rectangle');
+assert.equal(vm.runInContext('dockPreview.style.top',docks),'692px','The production drag preview shows System below Apps');
 systemHandle.listeners.get('pointerup')({pointerId:21,clientX:200,clientY:850});
 assert.equal(areaFrames.apps.dataset.areaState,'expanded','Apps stays expanded when compact System is docked below it');
 assert.equal(areaFrames.systems.dataset.areaState,'rail','Docking System preserves its compact presentation');
-assert.equal(areaFrames.apps.rect.height,660,'Expanded Apps receives the remaining column height');
-assert.equal(areaFrames.systems.rect.height,240,'Compact System uses a short rectangle rather than half the screen');
-assert.equal(areaFrames.systems.rect.y,660,'Compact System is placed immediately below Apps');
+assert.equal(areaFrames.apps.rect.height,692,'Expanded Apps receives the remaining column height');
+assert.equal(areaFrames.systems.rect.height,208,'Compact System uses its fixed control slot rather than half the screen');
+assert.equal(areaFrames.systems.rect.y,692,'Compact System is placed immediately below Apps');
 assert.equal(areaFrames.apps.rect.width,areaFrames.systems.rect.width,'Mixed Areas share one column width');
 assert.equal(docks.insets.right,0,'Moving the only visible right Area frees the right canvas gutter');
 assert.equal(docks.insets.left,areaFrames.apps.rect.width,'The shared Apps/System column reserves its width only once');
@@ -398,7 +402,7 @@ const beforeBelowApps=vm.runInContext('JSON.stringify(snapshotAreaLayout())',doc
 const undoOffersBefore=docks.undoOffers;
 vm.runInContext('compactSystemBelowApps();',docks);
 assert.equal(areaFrames.systems.rect.y,areaFrames.apps.rect.y+areaFrames.apps.rect.height,'The below-Apps command ignores earlier hidden peers when choosing its visible insertion boundary');
-assert.equal(areaFrames.systems.rect.height,240);
+assert.equal(areaFrames.systems.rect.height,208);
 assert.equal(docks.undoOffers,undoOffersBefore+1,'The complete below-Apps command creates one undo');
 assert.equal(JSON.stringify(docks.lastUndo),beforeBelowApps,'That undo captures the original layout before any command step');
 docks.restorePlacement(docks.lastUndo);
@@ -414,7 +418,7 @@ appHandle.listeners.get('pointerdown')({button:0,pointerId:22,preventDefault(){}
 appHandle.listeners.get('pointermove')({pointerId:22,clientX:350,clientY:200});
 appHandle.listeners.get('pointerup')();
 assert.equal(areaFrames.apps.dataset.areaState,'expanded','A hidden expanded peer does not block widening the visible compact Area');
-assert.equal(areaFrames.apps.rect.width,350);
+assert.equal(areaFrames.apps.rect.width,390,'The Compact pull restores Apps remembered Expanded width');
 assert.equal(areaFrames.projects.hidden,true,'Widening never reveals the hidden peer');
 assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Widening preserves the hidden peer preference for later recovery');
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(sharedColumnBaseline);applyAreaSession("general");',docks);
@@ -520,6 +524,50 @@ vm.runInContext(`workspaceAreaSessions.general=areaBoundsBaseline;applyAreaSessi
 assert.equal(JSON.stringify(areaFrames.projects.rect),railRect,'Restoring the baseline keeps its original rail');
 console.log('Area resize limits: all four edges, out-of-screen pointers, opposite preservation, canvas reservation, stored sizes and ten viewport/session repair scenarios passed.');
 
+// The outer border uses exactly the same 48 pixel stop as a shared divider.
+// Compact thickness is fixed on both sides of the stop, with feedback only
+// while the pointer is pressing against it and no leftover feedback on cancel.
+const outerSnapBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+for(const edge of ['left','right','top','bottom'])for(const name of ['apps','projects','systems','ai']){
+  docks.outerSnapEdge=edge;docks.outerSnapName=name;
+  const vertical=['left','right'].includes(edge),dimension=vertical?'width':'height',initial=vertical?400:320;
+  vm.runInContext(`
+    restoreAreaPreferences({});
+    ['apps','projects','systems','ai'].forEach(item=>{areaFor(item).hidden=item!==outerSnapName;});
+    dockState[outerSnapName]={edge:outerSnapEdge,order:0};dockEdges.forEach(normalizeDockOrder);areaPreferredStates[outerSnapName]='expanded';
+    dockSizes[outerSnapEdge]=${initial};layoutDockAreas(false,false);bindDockResize(outerSnapName,areaFor(outerSnapName));
+  `,docks);
+  const handle=areaFrames[name].handle,minimum=vm.runInContext(`edgeMinimumForState('${edge}','expanded')`,docks),compact=vm.runInContext(`edgeMinimumForState('${edge}','rail')`,docks);
+  const point=size=>({button:0,pointerId:79,clientX:edge==='left'?size:edge==='right'?shell.clientWidth-size:500,clientY:edge==='top'?size:edge==='bottom'?shell.clientHeight-size:500,preventDefault(){},stopPropagation(){}});
+  const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+  handle.listeners.get('pointerdown')(point(initial));
+  handle.listeners.get('pointermove')(point(minimum-47));
+  assert.equal(areaFrames[name].dataset.areaState,'expanded',edge+' outer '+name+' remains Expanded before the pressure threshold');
+  assert.equal(areaFrames[name].rect[dimension],minimum,edge+' outer '+name+' stops at the meaningful minimum');
+  assert.equal(handle.classList.contains('is-snap-pressure'),true,edge+' outer '+name+' shows resistance feedback');
+  assert(Math.abs(Number(handle.style['--area-snap-pressure'])-47/48)<1e-6,edge+' outer pressure reflects distance into the stop');
+  const snap=minimum-48;
+  handle.listeners.get('pointermove')(point(snap));
+  assert.equal(areaFrames[name].dataset.areaState,'rail',edge+' outer '+name+' snaps to Compact after 48 pixels');
+  assert.equal(areaFrames[name].rect[dimension],compact,edge+' outer '+name+' snaps to the fixed thickness');
+  assert.equal(handle.classList.contains('is-snap-pressure'),false,edge+' outer snap clears the resistance feedback');
+  handle.listeners.get('pointermove')(point(snap-80));
+  assert.equal(areaFrames[name].rect[dimension],compact,edge+' outer Compact cannot freely shrink');
+  handle.listeners.get('pointermove')(point(snap+47));
+  assert.equal(areaFrames[name].rect[dimension],compact,edge+' outer Compact cannot freely grow before the reverse threshold');
+  handle.listeners.get('pointermove')(point(snap+48));
+  assert.equal(areaFrames[name].dataset.areaState,'expanded',edge+' outer reverse pressure snaps '+name+' back to Expanded');
+  assert.equal(areaFrames[name].rect[dimension],initial,edge+' outer reverse snap restores the remembered footprint');
+  handle.listeners.get('pointercancel')({...point(snap+48),type:'pointercancel'});
+  assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(before),edge+' outer cancel restores all '+name+' preferences');
+  assert.equal(handle.classList.contains('is-snap-pressure'),false,edge+' outer cancel clears pressure feedback');
+  assert.equal(handle.style['--area-snap-pressure'],'0',edge+' outer cancel resets the pressure amount');
+  assert.equal(docks.window.listenerCount(),0,edge+' outer cancel removes global hooks');
+}
+docks.outerSnapBaseline=JSON.parse(outerSnapBaseline);
+vm.runInContext('workspaceAreaSessions.general=outerSnapBaseline;applyAreaSession("general");',docks);
+console.log('Outer Area snaps: all four Areas and screen edges, meaningful minima, 48 pixel resistance, fixed Compact thickness, reverse snap, feedback and cancellation passed.');
+
 // Shared dock dividers resize adjacent Areas along the dock, independently of
 // the existing outer-border thickness gesture. Exercise real handles and model.
 const shareBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
@@ -575,20 +623,40 @@ for(const edge of ['left','right','top','bottom']){
   assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks)),JSON.parse(before),edge+' one Undo restores shares, states and thickness');
 }
 
-// Every Area, on every dock orientation, changes presentation under pressure.
+// Every Area holds its usable Expanded minimum until the pointer crosses the
+// resistance band. Compact has one fixed slot and the reverse snap also needs
+// deliberate travel, measured from the actual snap rather than the old border.
 for(const edge of ['left','right','top','bottom'])for(const squeezed of shareAreas){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',index=shareAreas.indexOf(squeezed);
+  const axis=vertical?'vertical':'horizontal',minimum=docks.SpatialCompactAreas.expandedMinimum(axis,squeezed),compact=docks.SpatialCompactAreas.compactSize(axis,squeezed);
   const first=shareAreas[index===0?0:index-1],second=shareAreas[index===0?1:index];
   const handle=vm.runInContext(`areaShareHandles.get('${edge}:${first}:${second}')`,docks),start={x:0,y:0};
-  const delta=(index===0?-1:1)*(areaFrames[squeezed].rect[dimension]-100);
+  const sign=index===0?-1:1,initial=areaFrames[squeezed].rect[dimension],atMinimum=sign*(initial-minimum),snap=atMinimum+sign*48;
+  const untouched=Object.fromEntries(shareAreas.filter(name=>name!==first&&name!==second).map(name=>[name,areaFrames[name].rect[dimension]]));
   sharePointer(handle,'pointerdown',vertical,start);
-  sharePointer(handle,'pointermove',vertical,start,delta);
-  assert.equal(areaFrames[squeezed].dataset.areaState,'rail',edge+' squeezes '+squeezed+' into Compact');
-  assert.equal(vm.runInContext(`areaPreferredStates.${squeezed}`,docks),'expanded',edge+' preserves '+squeezed+' Expanded preference');
-  sharePointer(handle,'pointermove',vertical,start,0);
-  assert.equal(areaFrames[squeezed].dataset.areaState,'expanded',edge+' gives '+squeezed+' expanded content back when it fits');
+  sharePointer(handle,'pointermove',vertical,start,atMinimum+sign*47);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'expanded',edge+' holds '+squeezed+' Expanded before 48 pixels of pressure');
+  assert(Math.abs(areaFrames[squeezed].rect[dimension]-minimum)<1e-6,edge+' clamps '+squeezed+' at its usable Expanded minimum');
+  assert.equal(handle.classList.contains('is-snap-pressure'),true,edge+' shared '+squeezed+' exposes the resistance feedback');
+  assert(Math.abs(Number(handle.style['--area-snap-pressure'])-47/48)<1e-6,edge+' shared pressure reflects distance into the stop');
+  sharePointer(handle,'pointermove',vertical,start,snap);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'rail',edge+' snaps '+squeezed+' to Compact at 48 pixels');
+  assert.equal(vm.runInContext(`areaPreferredStates.${squeezed}`,docks),'rail',edge+' persists the explicit '+squeezed+' Compact snap');
+  assert.equal(areaFrames[squeezed].rect[dimension],compact,edge+' uses the fixed '+squeezed+' Compact slot');
+  assert.equal(handle.classList.contains('is-snap-pressure'),false,edge+' shared snap clears resistance feedback');
+  sharePointer(handle,'pointermove',vertical,start,snap+sign*80);
+  assert.equal(areaFrames[squeezed].rect[dimension],compact,edge+' cannot freely shrink the Compact '+squeezed+' slot');
+  sharePointer(handle,'pointermove',vertical,start,snap-sign*47);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'rail',edge+' reverse travel below 48 pixels keeps '+squeezed+' Compact');
+  assert.equal(areaFrames[squeezed].rect[dimension],compact,edge+' cannot freely grow the Compact '+squeezed+' slot');
+  sharePointer(handle,'pointermove',vertical,start,snap-sign*48);
+  assert.equal(areaFrames[squeezed].dataset.areaState,'expanded',edge+' reverse pressure snaps '+squeezed+' back to Expanded');
+  assert(areaFrames[squeezed].rect[dimension]>=minimum-1e-6,edge+' restores a usable '+squeezed+' Expanded size');
+  for(const [name,size] of Object.entries(untouched))assert(Math.abs(areaFrames[name].rect[dimension]-size)<1e-6,edge+' snapping leaves non-adjacent '+name+' space unchanged');
   sharePointer(handle,'pointercancel',vertical,start);
+  assert.equal(handle.classList.contains('is-snap-pressure'),false,edge+' shared cancel clears pressure feedback');
+  assert.equal(handle.style['--area-snap-pressure'],'0',edge+' shared cancel resets pressure amount');
 }
 
 configureShareEdge('left');
@@ -599,7 +667,7 @@ for(const cancellation of ['pointercancel','Escape','lostpointercapture','blur']
   sharePointer(shareHandle,'pointerdown',true,shareStart);
   sharePointer(shareHandle,'pointermove',true,shareStart,300);
   assert.equal(areaFrames.projects.dataset.areaState,'rail','Pressure switches the squeezed expanded Area to Compact');
-  assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Pressure preserves its Expanded preference');
+  assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'rail','The snap records Compact until the gesture is cancelled');
   if(cancellation==='Escape')docks.window.dispatchEvent({type:'keydown',key:'Escape',preventDefault(){},stopImmediatePropagation(){}});
   else if(cancellation==='blur')docks.window.dispatchEvent({type:'blur'});
   else sharePointer(shareHandle,cancellation,true,shareStart,300);
@@ -617,33 +685,34 @@ assert(shareHandle.listeners.has('pointermove'),'Wrong-pointer release leaves th
 sharePointer(shareHandle,'pointercancel',true,shareStart);
 assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),wrongPointerBefore,'The original pointer can still cancel safely');
 
-// Compact is a presentation of the actual allocation. Preferred Expanded
-// returns in the same gesture and after a later resize. Deliberate Compact
-// only promotes after growing past its usable footprint plus hysteresis.
+// A completed snap stays Compact after reload and viewport growth. Starting
+// another gesture still needs 48 pixels to expand, rather than creating a
+// freely resizable tiny panel or automatically filling newly available space.
 sharePointer(shareHandle,'pointerdown',true,shareStart);
 sharePointer(shareHandle,'pointermove',true,shareStart,300);
 assert.equal(areaFrames.projects.dataset.areaState,'rail');
-sharePointer(shareHandle,'pointermove',true,shareStart,0);
-assert.equal(areaFrames.projects.dataset.areaState,'expanded','Reversing pressure restores Expanded without another command');
-sharePointer(shareHandle,'pointermove',true,shareStart,300);
 sharePointer(shareHandle,'pointerup',true,shareStart,300);
-assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded','Releasing a squeezed Area keeps the Expanded preference');
+assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'rail','Releasing a snapped Area saves its Compact preference');
+assert.equal(areaFrames.projects.rect.height,100,'Released Compact keeps its fixed Project slot');
 vm.runInContext('applyAreaSession("general");',docks);
-assert.equal(areaFrames.projects.dataset.areaState,'rail','Reload keeps the constrained compact allocation');
+assert.equal(areaFrames.projects.dataset.areaState,'rail','Reload keeps the snapped Compact allocation');
+assert.equal(areaFrames.projects.rect.height,100,'Reload cannot stretch Compact from saved proportions');
+shell.clientHeight=1800;vm.runInContext('layoutDockAreas(false,false);',docks);
+assert.equal(areaFrames.projects.dataset.areaState,'rail','More viewport space does not undo the user Compact snap');
+assert.equal(areaFrames.projects.rect.height,100,'Viewport growth cannot freely grow Compact');
+shell.clientHeight=1600;vm.runInContext('layoutDockAreas(false,false);',docks);
 sharePointer(shareHandle,'pointerdown',true,shareStart);
-sharePointer(shareHandle,'pointermove',true,shareStart,-300);
-sharePointer(shareHandle,'pointerup',true,shareStart,-300);
-assert.equal(areaFrames.projects.dataset.areaState,'expanded','A later gesture gives the squeezed Area its expanded content back');
-vm.runInContext(`areaDockShares.left={apps:.45,projects:.05,systems:.25,ai:.25};areaPreferredStates.projects='rail';layoutDockAreas(false,false);`,docks);
-const compactStart=areaFrames.projects.rect.height;
-sharePointer(shareHandle,'pointerdown',true,shareStart);
-sharePointer(shareHandle,'pointermove',true,shareStart,-150);
-assert.equal(areaFrames.projects.dataset.areaState,'rail','Deliberate Compact stays compact below the promotion threshold');
+sharePointer(shareHandle,'pointermove',true,shareStart,-47);
+assert.equal(areaFrames.projects.dataset.areaState,'rail','A later gesture holds Compact below the 48 pixel pull');
+assert.equal(areaFrames.projects.rect.height,100,'Small pulls cannot freely grow Compact');
 assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'rail');
-sharePointer(shareHandle,'pointermove',true,shareStart,-(264-compactStart));
-assert.equal(areaFrames.projects.dataset.areaState,'expanded','Giving deliberate Compact enough extra space promotes it to Expanded');
+sharePointer(shareHandle,'pointermove',true,shareStart,-48);
+assert.equal(areaFrames.projects.dataset.areaState,'expanded','A 48 pixel pull snaps Compact back to Expanded');
 assert.equal(vm.runInContext('areaPreferredStates.projects',docks),'expanded');
-sharePointer(shareHandle,'pointerup',true,shareStart,-(264-compactStart));
+assert.equal(areaFrames.projects.rect.height,400,'The expansion restores the remembered Expanded footprint');
+sharePointer(shareHandle,'pointerup',true,shareStart,-48);
+vm.runInContext('applyAreaSession("general");',docks);
+assert.equal(areaFrames.projects.rect.height,400,'Reload preserves the restored Expanded footprint');
 
 // Explicit Expanded must reclaim useful along-dock space after pressure,
 // instead of selecting a presentation that remains too small to display.
@@ -655,7 +724,7 @@ for(const edge of ['left','right','top','bottom']){
   assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' begins with pressure-compacted Apps');
   vm.runInContext('setAreaState("apps","expanded",false);',docks);
   assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' Expanded command gives Apps usable space');
-  assert(areaFrames.apps.rect[dimension]>=(vertical?404:324)-1e-6,edge+' Expanded reserves the usable footprint plus recovery margin');
+  assert(areaFrames.apps.rect[dimension]>=(vertical?380:300)-1e-6,edge+' Expanded reserves its usable footprint');
   assert.equal(areaFrames.apps.rect[crossDimension],thickness,edge+' Expanded recovery keeps this column thickness');
   assert.equal(JSON.stringify(docks.insets),insets,edge+' Expanded recovery keeps the application canvas');
   for(const name of shareAreas){
@@ -664,29 +733,50 @@ for(const edge of ['left','right','top','bottom']){
   }
 }
 configureShareEdge('left');
-shell.clientHeight=700;
+shell.clientHeight=900;
 vm.runInContext('areaDockShares.left={apps:72,projects:72,systems:72,ai:484};layoutDockAreas(false,false);',docks);
 vm.runInContext('setAreaState("apps","expanded",false);',docks);
 assert.equal(areaFrames.apps.dataset.areaState,'expanded','Explicit Expanded reclaims usable space even with two peers already at compact minimum');
 assert(areaFrames.apps.rect.height>=380-1e-6,'Clamping small peers cannot steal the reclaimed usable footprint');
-for(const name of ['projects','systems','ai'])assert(areaFrames[name].rect.height>=72-1e-6,'Expanded recovery preserves '+name+' compact controls');
+for(const name of ['projects','systems','ai'])assert(areaFrames[name].rect.height>=docks.SpatialCompactAreas.compactSize('vertical',name)-1e-6,'Expanded recovery preserves '+name+' fixed Compact controls');
 shell.clientHeight=1600;
 
 // Keyboard resizing uses the same saved proportions and persistent separator.
 for(const edge of ['left','right','top','bottom']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width';
-  const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),size=areaFrames.apps.rect[dimension],undoBefore=docks.undoOffers;
+  const handle=vm.runInContext(`areaShareHandles.get('${edge}:systems:ai')`,docks),size=areaFrames.systems.rect[dimension],undoBefore=docks.undoOffers;
   shareKey(handle,vertical?'ArrowDown':'ArrowRight');
-  assert(Math.abs(areaFrames.apps.rect[dimension]-size-16)<1e-6,edge+' arrow gives the first Area 16 pixels');
+  assert(Math.abs(areaFrames.systems.rect[dimension]-size-16)<1e-6,edge+' arrow gives the first Area 16 pixels');
   shareKey(handle,vertical?'ArrowUp':'ArrowLeft',true);
-  assert(Math.abs(areaFrames.apps.rect[dimension]-size+32)<1e-6,edge+' Shift-arrow uses a 48 pixel step');
+  assert(Math.abs(areaFrames.systems.rect[dimension]-size+32)<1e-6,edge+' Shift-arrow uses a 48 pixel step');
   assert.equal(docks.undoOffers,undoBefore+2,edge+' each keyboard action has one Undo');
-  assert.equal(vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),handle,edge+' keyboard reflow preserves focus target identity');
-  assert.equal(handle.getAttribute('aria-valuenow'),String(Math.round(100*areaFrames.apps.rect[dimension]/(areaFrames.apps.rect[dimension]+areaFrames.projects.rect[dimension]))),edge+' updates the accessible separator value');
+  assert.equal(vm.runInContext(`areaShareHandles.get('${edge}:systems:ai')`,docks),handle,edge+' keyboard reflow preserves focus target identity');
+  assert.equal(handle.getAttribute('aria-valuenow'),String(Math.round(100*areaFrames.systems.rect[dimension]/(areaFrames.systems.rect[dimension]+areaFrames.ai.rect[dimension]))),edge+' updates the accessible separator value');
   const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
   shareKey(handle,vertical?'ArrowLeft':'ArrowUp');
   assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' ignores the arrow on the other axis');
+}
+
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',axis=vertical?'vertical':'horizontal';
+  const minimum=docks.SpatialCompactAreas.expandedMinimum(axis,'projects'),handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),start={x:0,y:0};
+  const delta=areaFrames.projects.rect[dimension]-minimum;
+  sharePointer(handle,'pointerdown',vertical,start);sharePointer(handle,'pointermove',vertical,start,delta);sharePointer(handle,'pointerup',vertical,start,delta);
+  assert.equal(areaFrames.projects.rect[dimension],minimum,edge+' keyboard setup starts at Expanded minimum');
+  shareKey(handle,vertical?'ArrowDown':'ArrowRight');
+  assert.equal(areaFrames.projects.dataset.areaState,'expanded',edge+' a regular 16 pixel key cannot cross the snap resistance');
+  assert.equal(areaFrames.projects.rect[dimension],minimum,edge+' blocked regular key keeps the usable minimum');
+  shareKey(handle,vertical?'ArrowDown':'ArrowRight',true);
+  assert.equal(areaFrames.projects.dataset.areaState,'rail',edge+' Shift 48 pixel key intentionally snaps to Compact');
+  const compact=docks.SpatialCompactAreas.compactSize(axis,'projects');
+  assert.equal(areaFrames.projects.rect[dimension],compact,edge+' keyboard Compact also has the fixed size');
+  shareKey(handle,vertical?'ArrowUp':'ArrowLeft');
+  assert.equal(areaFrames.projects.rect[dimension],compact,edge+' a regular key cannot freely stretch Compact');
+  shareKey(handle,vertical?'ArrowUp':'ArrowLeft',true);
+  assert.equal(areaFrames.projects.dataset.areaState,'expanded',edge+' reverse Shift key snaps Compact back to Expanded');
+  assert(areaFrames.projects.rect[dimension]>=minimum-1e-6,edge+' reverse keyboard snap restores usable Expanded content');
 }
 
 configureShareEdge('left');
@@ -709,27 +799,71 @@ assert(Math.abs(areaFrames.systems.rect.height-400)<1e-6,'Showing System restore
 assert(Math.abs(areaFrames.apps.rect.height-408)<1e-6,'The shared-space edit remains proportional when hidden peers return');
 assert(Math.abs(areaFrames.ai.rect.height-392)<1e-6);
 
-// More along-dock space cannot silently widen a deliberately narrow column.
+// A narrow column also holds its fixed thickness during a small pull. Only
+// the same deliberate snap may reclaim a usable cross-axis size as well.
 configureShareEdge('left');
 vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});dockSizes.left=70;layoutDockAreas(false,false);`,docks);
 const narrowHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks),narrowInsets=JSON.stringify(docks.insets);
-shareKey(narrowHandle,'ArrowDown',true);
-assert.equal(vm.runInContext('areaPreferredStates.apps',docks),'rail','Along-dock growth preserves deliberate Compact when the cross-axis cannot fit Expanded');
+shareKey(narrowHandle,'ArrowDown');
+assert.equal(vm.runInContext('areaPreferredStates.apps',docks),'rail','A small along-dock pull preserves deliberate Compact in a narrow column');
 assert.equal(areaFrames.apps.dataset.areaState,'rail');
-assert.equal(areaFrames.apps.rect.width,70,'The sibling gesture does not widen a narrow column');
-assert.equal(JSON.stringify(docks.insets),narrowInsets,'Narrow-column sibling resizing preserves the application canvas');
+assert.equal(areaFrames.apps.rect.width,70,'A small sibling pull does not freely widen Compact');
+assert.equal(JSON.stringify(docks.insets),narrowInsets,'A blocked small pull preserves the application canvas');
+shareKey(narrowHandle,'ArrowDown',true);
+assert.equal(areaFrames.apps.dataset.areaState,'expanded','A deliberate 48 pixel snap expands the narrow-column Area');
+assert(areaFrames.apps.rect.width>=256,'A deliberate expansion snap reclaims a usable Expanded width');
+assert.equal(areaFrames.projects.dataset.areaState,'rail','Expanding Apps retains its Compact neighbor');
+
+// A column of Compact Areas is a stack of fixed control slots. Empty space
+// belongs to no panel; it can be reclaimed by a deliberate expansion snap.
+for(const edge of ['left','right','top','bottom']){
+  configureShareEdge(edge);
+  const vertical=['left','right'].includes(edge),axis=vertical?'vertical':'horizontal',dimension=vertical?'height':'width';
+  vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});layoutDockAreas(false,false);`,docks);
+  let end=0;
+  for(const name of shareAreas){
+    const rect=areaFrames[name].rect,fixed=docks.SpatialCompactAreas.compactSize(axis,name);
+    assert.equal(rect[dimension],fixed,edge+' all-Compact '+name+' keeps its fixed slot');
+    assert.equal(rect[vertical?'y':'x'],end,edge+' fixed slots remain contiguous');end+=fixed;
+  }
+  assert(end<(vertical?shell.clientHeight:shell.clientWidth),edge+' all-Compact stack leaves unused room instead of stretching its last Area');
+  const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),start={x:0,y:0},before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+  sharePointer(handle,'pointerdown',vertical,start);sharePointer(handle,'pointermove',vertical,start,47);
+  assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' two Compact neighbors hold before the snap threshold');
+  sharePointer(handle,'pointermove',vertical,start,48);
+  assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' an intentional snap can reclaim free room between Compact neighbors');
+  for(const name of ['projects','systems','ai'])assert.equal(areaFrames[name].rect[dimension],docks.SpatialCompactAreas.compactSize(axis,name),edge+' expansion cannot steal another Compact slot');
+  sharePointer(handle,'pointercancel',vertical,start);
+  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' cancelling the free-room expansion restores the complete fixed stack');
+}
+
+configureShareEdge('left');
+vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});layoutDockAreas(false,false);`,docks);
+shell.clientHeight=600;vm.runInContext('layoutDockAreas(false,false);',docks);
+const crampedHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks),crampedStart={x:0,y:0};
+sharePointer(crampedHandle,'pointerdown',true,crampedStart);sharePointer(crampedHandle,'pointermove',true,crampedStart,100);
+assert.equal(areaFrames.apps.dataset.areaState,'rail','An expansion snap is blocked when the usable Expanded minimum and other fixed slots cannot fit');
+assert.equal(areaFrames.apps.rect.height,184,'A blocked expansion leaves Compact at its fixed size');
+sharePointer(crampedHandle,'pointercancel',true,crampedStart);
+shell.clientHeight=300;vm.runInContext('layoutDockAreas(false,false);',docks);
+for(const name of shareAreas){
+  const rect=areaFrames[name].rect;
+  assert(rect.height>0&&rect.height<docks.SpatialCompactAreas.compactSize('vertical',name),'Only a physically short viewport can shrink the fixed '+name+' Compact slot');
+  assert(rect.y+rect.height<=300+1e-6,'Physically constrained Compact '+name+' stays inside the viewport');
+}
+shell.clientHeight=1600;
 
 // A newly shown peer has no share yet. Give it its default allocation while
 // preserving the ratio the user already chose for the established neighbors.
 for(const edge of ['left','right','top','bottom']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',extent=vertical?shell.clientHeight:shell.clientWidth;
-  vm.runInContext(`areaFor('projects').hidden=areaFor('ai').hidden=true;areaDockShares[shareEdge]={apps:.8,systems:.2};layoutDockAreas(false,false);`,docks);
-  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-4)<1e-6,edge+' begins with the existing 80/20 split');
+  vm.runInContext(`areaFor('projects').hidden=areaFor('ai').hidden=true;areaDockShares[shareEdge]={apps:.6,systems:.4};layoutDockAreas(false,false);`,docks);
+  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-1.5)<1e-6,edge+' begins with the existing 60/40 split');
   vm.runInContext('showArea("projects",false);',docks);
-  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-4)<1e-6,edge+' showing an unweighted peer preserves the existing 80/20 ratio');
+  assert(Math.abs(areaFrames.apps.rect[dimension]/areaFrames.systems.rect[dimension]-1.5)<1e-6,edge+' showing an unweighted peer preserves the existing ratio while all Expanded minima fit');
   assert(Math.abs(areaFrames.projects.rect[dimension]-extent/3)<1e-6,edge+' the new peer receives its normal default portion');
-  assert.equal(vm.runInContext('JSON.stringify(areaDockShares[shareEdge])',docks),'{"apps":0.8,"systems":0.2}',edge+' default share bootstrap does not mutate persisted user weights');
+  assert.equal(vm.runInContext('JSON.stringify(areaDockShares[shareEdge])',docks),'{"apps":0.6,"systems":0.4}',edge+' default share bootstrap does not mutate persisted user weights');
   const beforeReload=JSON.stringify(shareAreas.map(name=>areaFrames[name].rect));
   vm.runInContext('applyAreaSession("general");',docks);
   assert.equal(JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),beforeReload,edge+' reload restores the bootstrapped new peer and existing ratio');
@@ -760,7 +894,7 @@ for(const key of ['x','y','width','height'])assert.equal(weightedPreview[key],ar
 shell.clientWidth=1600;shell.clientHeight=900;shell.getBoundingClientRect=originalShellRect;
 docks.shareBaseline=JSON.parse(shareBaseline);
 vm.runInContext('workspaceAreaSessions.general=shareBaseline;applyAreaSession("general");',docks);
-console.log('Shared Area dividers passed: four edges and Areas, proportional neighbor resize, unchanged canvas/thickness, stable handles, pointer filtering/cancellation, reversible pressure, deliberate Compact promotion, keyboard steps, Undo, Workspace persistence, hidden/remote peers and weighted drop previews.');
+console.log('Shared Area dividers passed: four edges and Areas, Expanded minima, 48 pixel stops, fixed Compact slots, reverse hysteresis, remembered restoration, feedback cleanup, free-room expansion, keyboard snaps, cancellation, Undo, Workspace persistence, hidden/remote peers and matching drop previews.');
 
 vm.runInContext(slice("function hideArea(", "function setDockPosition("), docks);
 vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);

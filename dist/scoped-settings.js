@@ -100,7 +100,7 @@
   const areaNote=document.createElement('p');areaNote.id='overviewAreaSettingsScope';areaNote.className='settings-scope-note';$('.overview-areas-widget').prepend(areaNote);
   const updateNotes=()=>{
     const ctx=context();areaNote.textContent='Applies to: '+ctx.workspace+' Workspace · all its desktops and Projects';
-    $$('[data-area-resize]').forEach(button=>{button.title='Drag to resize · applies to '+ctx.workspace+' Workspace';});
+    $$('[data-area-resize]').forEach(button=>{button.title='Drag to resize · push past the stop to snap Compact · pull to expand · applies to '+ctx.workspace+' Workspace';});
     $$('.quick-toggle[data-toggle]').filter(button=>button.textContent.trim()!=='Focus').forEach(button=>{button.title=button.textContent.trim()+' · All Workspaces · Demo control';});
     const theme=$('#themeToggle');if(!theme.title.includes(' · Applies to all Workspaces'))theme.title+=' · Applies to all Workspaces';
     refresh();
