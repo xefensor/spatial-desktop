@@ -77,6 +77,8 @@ function allocated(input){
   const extent=Number.isFinite(input.extent)?Math.max(0,input.extent):0;
   const tolerance=Math.max(1e-7,extent*1e-12),axis=input.axis==='horizontal'?'horizontal':'vertical';
   const gap=names.length>1?Math.min(Number.isFinite(input.gap)?Math.max(0,input.gap):0,extent/(names.length-1)):0;
+  const crossSize=Number.isFinite(input.crossSize)?Math.max(0,input.crossSize):0;
+  const narrowRails=crossSize<(axis==='vertical'?240:120)&&names.every(name=>result[name].state==='rail');
   let edge=0;
   for(const [index,name] of names.entries()){
     const panel=result[name];
@@ -86,13 +88,12 @@ function allocated(input){
     assert(['rail','expanded'].includes(panel.state));
     if(input.states?.[name]==='rail')assert.equal(panel.state,'rail','Explicit Compact preferences stay Compact');
     if(panel.state==='expanded')assert(panel.extent+tolerance>=Compact.expandedMinimum(axis,name),'Expanded panels retain a useful content minimum');
-    if(names.length>1&&panel.state==='rail')assert(panel.extent<=Compact.compactSize(axis,name)+tolerance,'Compact slots never freely grow with saved shares');
-    const crossSize=Number.isFinite(input.crossSize)?Math.max(0,input.crossSize):0;
+    if(names.length>1&&panel.state==='rail'&&!narrowRails)assert(panel.extent<=Compact.compactSize(axis,name)+tolerance,'Embedded Compact slots never freely grow with saved shares');
     const gridFits=axis==='vertical'?crossSize>=240:panel.extent>=160&&crossSize>=120;
     assert.equal(panel.compactGrid,gridFits&&panel.state==='rail');
     edge=panel.offset+panel.extent+(index<names.length-1?gap:0);
   }
-  if(names.some(name=>result[name].state==='expanded')||names.length===1)assert(Math.abs(edge-extent)<tolerance,'Expanded peers consume the remaining dock space');
+  if(narrowRails||names.some(name=>result[name].state==='expanded')||names.length===1)assert(Math.abs(edge-extent)<tolerance,'Expanded peers and whole narrow Compact docks consume the remaining space');
   allocationCount++;return result;
 }
 const allNames=['apps','projects','systems','ai'];
@@ -119,6 +120,15 @@ assert.equal(result.apps.extent,184);assert.equal(result.projects.extent,466,'An
 result=allocated({names:allNames,states:Object.fromEntries(allNames.map(name=>[name,'rail'])),axis:'vertical',crossSize:280,extent:1200,gap:8,shares:{apps:1,projects:5,systems:1,ai:9}});
 assert.deepEqual(allNames.map(name=>result[name].extent),[184,100,208,100]);
 assert.equal(result.ai.offset+result.ai.extent,616,'An all-Compact group leaves unused room rather than stretching tiny panels');
+// A Compact card below Expanded Apps becomes a regular rail when the whole
+// column collapses. Both Areas must still occupy the complete dock, rather
+// than retaining two short card slots with most of the column left empty.
+const screenshotMixed=allocated({names:['apps','systems'],states:{apps:'expanded',systems:'rail'},axis:'vertical',crossSize:300,extent:900});
+const screenshotShares=Object.fromEntries(Object.entries(screenshotMixed).map(([name,panel])=>[name,panel.extent]));
+result=allocated({names:['apps','systems'],states:{apps:'rail',systems:'rail'},axis:'vertical',crossSize:70,extent:900,shares:screenshotShares});
+assert.deepEqual(result,{apps:{offset:0,extent:692,state:'rail',compactGrid:false},systems:{offset:692,extent:208,state:'rail',compactGrid:false}},'Collapsing the whole mixed panel preserves its split as full-length Compact rails');
+result=allocated({names:['apps','systems'],states:{apps:'rail',systems:'rail'},axis:'vertical',crossSize:70,extent:900});
+assert.equal(result.apps.extent,450);assert.equal(result.systems.extent,450,'Narrow Compact rails without saved shares divide the whole lane equally');
 for(const axis of ['vertical','horizontal']){
   for(const name of allNames){
     assert(Compact.compactSize(axis,name)<Compact.expandedMinimum(axis,name),'Every Compact slot is smaller than its Expanded content minimum');
@@ -139,6 +149,25 @@ function permutations(values){
   return values.length?values.flatMap((value,index)=>permutations(values.filter((_,other)=>index!==other)).map(rest=>[value,...rest])):[[]];
 }
 const shares={apps:1,projects:2,systems:3,ai:4};
+for(const names of permutations(allNames))for(const axis of ['vertical','horizontal']){
+  const states=Object.fromEntries(names.map(name=>[name,'rail']));
+  const threshold=axis==='vertical'?240:120;
+  const fixedTotal=names.reduce((sum,name)=>sum+Compact.compactSize(axis,name),0);
+  for(const crossSize of [0,threshold-1,threshold,threshold+1])for(const extent of [0,1,400,1200,2400])for(const gap of [0,8]){
+    result=allocated({names,states,axis,crossSize,extent,gap,shares});
+    const usable=Math.max(0,extent-Math.min(gap,extent/(names.length-1))*(names.length-1));
+    if(crossSize<threshold&&usable>=fixedTotal){
+      for(const name of names)assert(result[name].extent+1e-7>=Compact.compactSize(axis,name),'A narrow rail keeps its controls usable when the physical lane has room');
+      if(extent===2400&&gap===0)for(const name of names)near(result[name].extent,shares[name]/10*extent);
+    }else if(crossSize>=threshold&&usable>=fixedTotal){
+      for(const name of names)assert.equal(result[name].extent,Compact.compactSize(axis,name),'Wide all-Compact cards retain their fixed slots');
+    }
+  }
+  for(const preference of [null,{},Object.fromEntries(names.map(name=>[name,1])),Object.fromEntries(names.map((name,index)=>[name,index?1:1e308]))]){
+    result=allocated({names,states,axis,crossSize:threshold-1,extent:2400,shares:preference});
+    if(preference===null||!Object.keys(preference).length)for(const name of names)near(result[name].extent,600);
+  }
+}
 for(const names of permutations(allNames))for(const axis of ['vertical','horizontal'])for(let mask=0;mask<16;mask++){
   const states=Object.fromEntries(names.map((name,index)=>[name,mask&(1<<index)?'rail':'expanded']));
   for(const extent of [1,450,2400])allocated({names,states,axis,crossSize:300,extent,gap:8,shares});
@@ -163,7 +192,7 @@ assert.equal(Object.getPrototypeOf(result),Object.prototype);assert.equal(Object
 assert.equal(Compact.expandedMinimum('horizontal','__proto__'),300);
 assert.equal(Compact.compactSize('horizontal','__proto__'),196);
 assert.equal(typeof sandbox.SpatialCompactAreas.allocate,'function');
-console.log('Constrained Area allocation: '+allocationCount+' fixed-slot, orientation, permutation, minimum-size, fit/restore, tiny viewport and invalid-state scenarios passed.');
+console.log('Constrained Area allocation: '+allocationCount+' embedded fixed-slot, full narrow rail, orientation, permutation, minimum-size, fit/restore, tiny viewport and invalid-state scenarios passed.');
 
 let resizeCount=0;
 function resized(input){

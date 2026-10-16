@@ -601,8 +601,10 @@ for(const edge of ['left','right','top','bottom'])for(const name of compactOuter
     for(const item of compactOuterAreas){
       assert.equal(areaFrames[item].dataset.areaState,'rail',edge+' outer '+name+' collapse leaves '+item+' Compact');
       assert.equal(areaFrames[item].rect[crossDimension],compactCross,edge+' all-Compact column keeps its fixed thickness');
-      assert.equal(areaFrames[item].rect[mainDimension],docks.SpatialCompactAreas.compactSize(axis,item),edge+' all-Compact '+item+' keeps its fixed main-axis slot');
+      assert(areaFrames[item].rect[mainDimension]>=docks.SpatialCompactAreas.compactSize(axis,item)-1e-6,edge+' narrow Compact '+item+' keeps usable controls');
     }
+    const last=areaFrames.ai.rect;
+    assert(Math.abs(last[vertical?'y':'x']+last[mainDimension]-(vertical?shell.clientHeight:shell.clientWidth))<1e-6,edge+' narrow Compact Areas fill the complete dock');
   };
   expectCompact();
   handle.listeners.get('pointerdown')(point(compactCross));
@@ -657,7 +659,7 @@ for(const edge of ['left','right','top','bottom']){
   for(const name of compactOuterAreas){
     assert.equal(areaFrames[name].dataset.areaState,'rail',edge+' shrinking a broken wide column never expands '+name);
     assert.equal(areaFrames[name].rect[crossDimension],compact,edge+' shrinking repairs the broken column to fixed Compact thickness');
-    assert.equal(areaFrames[name].rect[mainDimension],docks.SpatialCompactAreas.compactSize(axis,name),edge+' repaired '+name+' retains its fixed Compact slot');
+    assert(areaFrames[name].rect[mainDimension]>=docks.SpatialCompactAreas.compactSize(axis,name)-1e-6,edge+' repaired '+name+' retains usable Compact controls');
   }
   assert.equal(vm.runInContext('areaPreferredStates.apps',docks),'rail',edge+' repaired layout clears the stale Expanded preference');
   handle.listeners.get('pointerup')(point(wide-1));
@@ -696,6 +698,15 @@ for(const edge of ['left','right','top','bottom']){
   assert.equal(areaFrames.apps.rect[crossDimension],minimum);
   handle.listeners.get('pointermove')(point(snap));
   assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' Compact peer border can snap the whole column Compact');
+  assert.equal(areaFrames.systems.dataset.areaState,'rail',edge+' whole-column snap also keeps System Compact');
+  const main=vertical?'height':'width',position=vertical?'y':'x',extent=vertical?shell.clientHeight:shell.clientWidth;
+  assert.equal(areaFrames.apps.rect[position],0,edge+' narrow Apps starts at the dock origin');
+  assert.equal(areaFrames.systems.rect[position],areaFrames.apps.rect[main],edge+' both narrow Areas remain joined');
+  assert.equal(areaFrames.systems.rect[position]+areaFrames.systems.rect[main],extent,edge+' whole-panel snap fills its lane instead of retaining tiny embedded cards');
+  for(const item of ['apps','systems']){
+    assert.equal(areaFrames[item].rect[crossDimension],vertical?70:64,edge+' both Areas share the narrow Compact thickness');
+    assert.equal(areaFrames[item].dataset.compactLayout,undefined,edge+' both Areas leave the embedded Compact grid');
+  }
   handle.listeners.get('pointermove')(point(snap+48));
   assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' reverse snap restores the originally Expanded neighbour');
   assert.equal(areaFrames.systems.dataset.areaState,'rail',edge+' reverse snap keeps the grabbed Compact peer Compact');
@@ -978,8 +989,8 @@ assert.equal(areaFrames.apps.dataset.areaState,'expanded','A deliberate 48 pixel
 assert(areaFrames.apps.rect.width>=256,'A deliberate expansion snap reclaims a usable Expanded width');
 assert.equal(areaFrames.projects.dataset.areaState,'rail','Expanding Apps retains its Compact neighbor');
 
-// A column of Compact Areas is a stack of fixed control slots. Empty space
-// belongs to no panel; it can be reclaimed by a deliberate expansion snap.
+// A whole narrow Compact dock fills the screen edge. Fixed tiny slots belong
+// to Compact cards embedded beside Expanded Areas in a wide dock.
 for(const edge of ['left','right','top','bottom']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),axis=vertical?'vertical':'horizontal',dimension=vertical?'height':'width';
@@ -987,10 +998,10 @@ for(const edge of ['left','right','top','bottom']){
   let end=0;
   for(const name of shareAreas){
     const rect=areaFrames[name].rect,fixed=docks.SpatialCompactAreas.compactSize(axis,name);
-    assert.equal(rect[dimension],fixed,edge+' all-Compact '+name+' keeps its fixed slot');
-    assert.equal(rect[vertical?'y':'x'],end,edge+' fixed slots remain contiguous');end+=fixed;
+    assert(rect[dimension]>=fixed,edge+' narrow Compact '+name+' keeps usable controls');
+    assert.equal(rect[vertical?'y':'x'],end,edge+' narrow Areas remain contiguous');end+=rect[dimension];
   }
-  assert(end<(vertical?shell.clientHeight:shell.clientWidth),edge+' all-Compact stack leaves unused room instead of stretching its last Area');
+  assert.equal(end,vertical?shell.clientHeight:shell.clientWidth,edge+' narrow Compact Areas fill the whole screen edge');
   const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),start={x:0,y:0},before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
   sharePointer(handle,'pointerdown',vertical,start);sharePointer(handle,'pointermove',vertical,start,47);
   assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' two Compact neighbors hold before the snap threshold');
@@ -998,16 +1009,17 @@ for(const edge of ['left','right','top','bottom']){
   assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' an intentional snap can reclaim free room between Compact neighbors');
   for(const name of ['projects','systems','ai'])assert.equal(areaFrames[name].rect[dimension],docks.SpatialCompactAreas.compactSize(axis,name),edge+' expansion cannot steal another Compact slot');
   sharePointer(handle,'pointercancel',vertical,start);
-  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' cancelling the free-room expansion restores the complete fixed stack');
+  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' cancelling the expansion restores the complete narrow dock');
 }
 
 configureShareEdge('left');
 vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});layoutDockAreas(false,false);`,docks);
 shell.clientHeight=600;vm.runInContext('layoutDockAreas(false,false);',docks);
 const crampedHandle=vm.runInContext('areaShareHandles.get("left:apps:projects")',docks),crampedStart={x:0,y:0};
+const crampedRects=JSON.stringify(shareAreas.map(name=>areaFrames[name].rect));
 sharePointer(crampedHandle,'pointerdown',true,crampedStart);sharePointer(crampedHandle,'pointermove',true,crampedStart,100);
 assert.equal(areaFrames.apps.dataset.areaState,'rail','An expansion snap is blocked when the usable Expanded minimum and other fixed slots cannot fit');
-assert.equal(areaFrames.apps.rect.height,184,'A blocked expansion leaves Compact at its fixed size');
+assert.equal(JSON.stringify(shareAreas.map(name=>areaFrames[name].rect)),crampedRects,'A blocked expansion leaves the entire narrow Compact layout unchanged');
 sharePointer(crampedHandle,'pointercancel',true,crampedStart);
 shell.clientHeight=300;vm.runInContext('layoutDockAreas(false,false);',docks);
 for(const name of shareAreas){

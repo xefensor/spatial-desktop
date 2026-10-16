@@ -59,7 +59,7 @@
     return Number.isFinite(value)?value:axis==='horizontal'?300:220;
   };
 
-  /* A shared Compact Area is one fixed control slot, rather than a tiny window. */
+  /* Embedded Compact cards keep a fixed slot; a narrow dock divides its lane. */
   const compactSize=(axis,name)=>{
     const value=thresholds.compactSlot[axis==='horizontal'?'horizontal':'vertical'][name];
     return Number.isFinite(value)?value:axis==='horizontal'?196:100;
@@ -86,8 +86,8 @@
   /**
    * Allocate a dock along either axis. Saved shares express relative space, not
    * presentation: an expanded preference returns automatically when it fits.
-   * Shared Compact slots are fixed; only Expanded peers divide spare room.
-   * Saved shares decide fit without allowing a Compact slot to stretch.
+   * Embedded Compact slots are fixed; only Expanded peers divide spare room.
+   * A whole narrow Compact dock instead fills its lane with normal rail shares.
    */
   function allocate(options={}){
     options=options&&typeof options==='object'?options:{};
@@ -127,6 +127,12 @@
         // Physical viewport constraints are the only reason a fixed Compact
         // slot can shrink. A pointer resize never produces this allocation.
         sizes=sizes.map(size=>size/fixedTotal*usable);
+      }else if(compact.size===names.length&&crossSize<(axis==='vertical'?compactWidth:thresholds.horizontalGridHeight)){
+        // Collapsing a mixed dock turns every Area into a narrow rail. Fixed
+        // card slots would strand its controls at the top/left and waste the
+        // rest of the lane. Preserve the saved split, bounded by useful rail
+        // controls, while leaving its preferred states and shares untouched.
+        sizes=sharedExtents(names,weights,usable,name=>compactSize(axis,name));
       }else{
         const expanded=names.filter(name=>!compact.has(name));
         if(expanded.length){
