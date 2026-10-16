@@ -3085,11 +3085,25 @@ function makeAreaExpansionSpace(name, restore = 0) {
   return true;
 }
 
+function fitAreaContents(layout, height) {
+  const states = {...layout.states},sizes = {...layout.sizes};
+  dockEdges.forEach(edge => {
+    const names = dockGroup(edge);
+    if (!names.length) return;
+    const panels = allocateAreaPanels(names,edge,height,sizes[edge],states);
+    names.forEach(name => { states[name] = panels[name].state; });
+    // Content pressure can make an entire column Compact independently of
+    // its preferred width. Keep the stored width for a later roomy viewport.
+    if (names.every(name => states[name] === "rail")) sizes[edge] = Math.min(sizes[edge],edgeMinimumForState(edge,"rail"));
+  });
+  return {...layout,states,sizes};
+}
+
 function resolvedAreaLayout(width, height) {
   const profile = displayProfileFor(width, height);
   const states = initialAreaStates(profile);
   if (!areasFollowWindows()) {
-    return { profile, states, sizes: boundDockLayout(width, height, states, resolvedManualDockSizes(states)), minimumWorkspace: 220 };
+    return fitAreaContents({ profile, states, sizes: boundDockLayout(width, height, states, resolvedManualDockSizes(states)), minimumWorkspace: 220 },height);
   }
   const gap = 0;
   const minimumWorkspace = minimumWorkspaceWidth(profile, width);
@@ -3115,7 +3129,7 @@ function resolvedAreaLayout(width, height) {
     sizes[edge] -= reduction;
     overflow -= reduction;
   });
-  return { profile, states, sizes: boundDockLayout(width, height, states, sizes), minimumWorkspace };
+  return fitAreaContents({ profile, states, sizes: boundDockLayout(width, height, states, sizes), minimumWorkspace },height);
 }
 
 function layoutStateLabel(state) {
@@ -3771,6 +3785,7 @@ function bindDockResize(name, area) {
     const hadExpanded = names.some(item => visibleStates[item] === "expanded");
     const expandedStates = {...originalStates};
     names.forEach(item => { expandedStates[item] = hadExpanded?visibleStates[item]:item===name?"expanded":"rail"; });
+    const resizeStart = JSON.stringify({sizes:dockSizes,preferred:areaPreferredStates,shares:areaDockShares});
     overrideAreaColumn(name);
     const rect = $(".desktop-shell").getBoundingClientRect();
     const current = resolvedAreaLayout(rect.width,rect.height).sizes[edge];
@@ -3820,7 +3835,7 @@ function bindDockResize(name, area) {
       layoutDockAreas(false);
     },(pointer,cancelled) => {
       area.classList.remove("is-area-resizing"); setAreaSnapFeedback(handle);
-      if (cancelled) { restorePlacement(before); return; }
+      if (cancelled || JSON.stringify({sizes:dockSizes,preferred:areaPreferredStates,shares:areaDockShares}) === resizeStart) { restorePlacement(before); return; }
       // The last meaningful Expanded thickness is a restore target, not an
       // intermediate value produced while pressing against the snap stop.
       names.forEach(item => {
@@ -3912,7 +3927,7 @@ function bindAreaShareHandle(handle, edge, first, second) {
       if (result.snapped) { anchor = point; original = areaShareSnapshot(edge); }
     },(pointer,cancelled) => {
       handle.classList.remove("is-active"); setAreaSnapFeedback(handle);
-      if (cancelled) { restorePlacement(before); return; }
+      if (cancelled || !moved) { restorePlacement(before); return; }
       rememberExpandedAreaShares(edge); saveAreaLayout(); refreshIntentAreas();
       if (moved) offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
     });
@@ -3926,7 +3941,7 @@ function bindAreaShareHandle(handle, edge, first, second) {
     overrideAreaColumn(first); layoutDockAreas(false,false); rememberExpandedAreaShares(edge);
     const result = resizeAreaShare(edge,first,second,direction*(event.shiftKey?48:16),areaShareSnapshot(edge));
     setAreaSnapFeedback(handle);
-    if (!result.changed) return;
+    if (!result.changed) { restorePlacement(before); return; }
     dockSizeManual[edge] = true; rememberExpandedAreaShares(edge); saveAreaLayout(); refreshIntentAreas();
     offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
   });

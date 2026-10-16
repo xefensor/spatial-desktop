@@ -148,6 +148,21 @@ for(const axis of ['vertical','horizontal']){
 function permutations(values){
   return values.length?values.flatMap((value,index)=>permutations(values.filter((_,other)=>index!==other)).map(rest=>[value,...rest])):[[]];
 }
+// Without custom proportions, unequal minima must not compact every Area
+// just because its equal split is short. Keep the maximum usable Expanded set.
+for(const names of permutations(allNames))for(const axis of ['vertical','horizontal'])for(let mask=0;mask<16;mask++){
+  const states=Object.fromEntries(names.map((name,index)=>[name,mask&(1<<index)?'rail':'expanded']));
+  for(const extent of [600,700,900,1200,2000]){
+    result=allocated({names,states,axis,crossSize:320,extent});
+    let maximum=0;
+    for(let selected=0;selected<16;selected++){
+      if(names.some((name,index)=>(selected&(1<<index))&&states[name]==='rail'))continue;
+      const needed=names.reduce((sum,name,index)=>sum+((selected&(1<<index))?Compact.expandedMinimum(axis,name):Compact.compactSize(axis,name)),0);
+      if(needed<=extent+1e-7)maximum=Math.max(maximum,names.filter((_,index)=>selected&(1<<index)).length);
+    }
+    assert.equal(names.filter(name=>result[name].state==='expanded').length,maximum,'Default allocation keeps the largest feasible set of usable Expanded Areas');
+  }
+}
 const shares={apps:1,projects:2,systems:3,ai:4};
 for(const names of permutations(allNames))for(const axis of ['vertical','horizontal']){
   const states=Object.fromEntries(names.map(name=>[name,'rail']));

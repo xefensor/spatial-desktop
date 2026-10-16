@@ -164,6 +164,18 @@
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"]) :is(.apps-quick-launch,.app-rack,.app-rack-group,.background-apps){
   flex:0 0 auto;max-height:none;min-height:min-content;overflow:visible;
 }
+/* In a full narrow dock, shared background activity stays at its bottom.
+   Launchers and parked work share the remaining scroll viewport above it. */
+.apps-zone[data-area-state="rail"]:not([data-compact-layout="grid"])>.apps-area-body{
+  overflow:hidden;
+}
+.apps-zone[data-area-state="rail"]:not([data-compact-layout="grid"]) .apps-scroll-region{
+  flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;
+  overscroll-behavior:contain;scrollbar-width:thin;
+}
+.apps-zone[data-area-state="rail"]:not([data-compact-layout="grid"]) .background-apps{
+  min-height:0;max-height:30%;overflow:auto;
+}
 /* Keep an actual launcher row in Expanded Apps; a percentage ceiling alone
    can otherwise shrink its grid to zero above the Compact threshold. */
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .apps-quick-launch{

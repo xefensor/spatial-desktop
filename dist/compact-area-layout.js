@@ -107,18 +107,23 @@
     const compactBudget=names.reduce((total,name)=>total+(preferredCompact.has(name)?compactSize(axis,name):0),0);
     const expandedCount=names.length-preferredCompact.size;
     const desired=names.map((name,index)=>explicit?weights[index]/sum*usable:preferredCompact.has(name)?compactSize(axis,name):Math.max(0,usable-compactBudget)/Math.max(1,expandedCount));
-    const compact=new Set(names.filter((name,index)=>preferredCompact.has(name)||desired[index]+1e-7<expandedMinimum(axis,name)));
+    const compact=new Set(names.filter((name,index)=>preferredCompact.has(name)||explicit&&desired[index]+1e-7<expandedMinimum(axis,name)));
     let sizes;
     if(names.length===1){
       sizes=[usable];
-      if(states[names[0]]!=='rail'&&usable+1e-7>=expandedMinimum(axis,names[0]))compact.delete(names[0]);
+      if(states[names[0]]==='rail'||usable+1e-7<expandedMinimum(axis,names[0]))compact.add(names[0]);
+      else compact.delete(names[0]);
     }else{
       const minimumTotal=()=>names.reduce((total,name)=>total+(compact.has(name)?compactSize(axis,name):expandedMinimum(axis,name)),0);
-      // Compact the least-supported Expanded preference first when fixed slots
-      // and meaningful Expanded minima cannot all coexist in this dock.
+      // Honour custom shares under pressure. Without shares, compact the Area
+      // that releases most space so as many useful Expanded peers as possible fit.
       while(minimumTotal()>usable+1e-7&&compact.size<names.length){
         const candidates=names.map((name,index)=>({name,index,ratio:desired[index]/expandedMinimum(axis,name)})).filter(entry=>!compact.has(entry.name));
-        candidates.sort((first,second)=>first.ratio-second.ratio||second.index-first.index);
+        candidates.sort((first,second)=>{
+          const priority=explicit?first.ratio-second.ratio
+            :(expandedMinimum(axis,second.name)-compactSize(axis,second.name))-(expandedMinimum(axis,first.name)-compactSize(axis,first.name));
+          return priority||second.index-first.index;
+        });
         compact.add(candidates[0].name);
       }
       const fixedTotal=names.reduce((total,name)=>total+(compact.has(name)?compactSize(axis,name):0),0);
