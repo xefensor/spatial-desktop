@@ -1,0 +1,113 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const Pages = require('../dist/desktop-pages.js');
+
+// Run the production adapter, including its DOM insertion and delegated clicks.
+class Element {
+  constructor(tag='div') { this.tagName=tag;this.children=[];this.dataset={};this.attrs={};this.listeners={};this.hidden=false;this.inert=false;this.className='';this.style={setProperty(name,value){this[name]=value;}}; }
+  append(...nodes) { for(const node of nodes){node.parentElement=this;this.children.push(node);} }
+  insertBefore(node,anchor) { const index=this.children.indexOf(anchor);assert(index>=0);this.children.splice(index,0,node);node.parentElement=this; }
+  replaceChildren(...nodes) { this.replacements=(this.replacements||0)+1;for(const node of this.children)node.parentElement=null;this.children=[];this.append(...nodes); }
+  setAttribute(name,value) { this.attrs[name]=String(value); }
+  getAttribute(name) { return this.attrs[name]??null; }
+  contains(node) { for(let at=node;at;at=at.parentElement)if(at===this)return true;return false; }
+  matches(selector) { if(selector==='[data-quick-launch-app]')return Object.hasOwn(this.dataset,'quickLaunchApp');return selector.startsWith('.')&&this.className.split(' ').includes(selector.slice(1)); }
+  closest(selector) { for(let at=this;at;at=at.parentElement)if(at.matches(selector))return at;return null; }
+  querySelectorAll(selector) { return this.children.flatMap(node=>[...(node.matches(selector)?[node]:[]),...node.querySelectorAll(selector)]); }
+  querySelector(selector) { return this.querySelectorAll(selector)[0]||null; }
+  addEventListener(type,fn) { this.listeners[type]=fn; }
+}
+const area=new Element('aside'),region=new Element(),rack=new Element('nav'),shell=new Element('main');
+region.className='apps-scroll-region';region.append(rack);area.append(region);
+const calls=[];
+const context={
+  document:{createElement:tag=>new Element(tag),getElementById:id=>id==='appRack'?rack:null},
+  areaFor:()=>area,$:()=>shell,prepareControlSemantics(){calls.push(['prepare']);},appArt:name=>'<svg data-art="'+name+'"></svg>',
+  activeWorkspace:'general',desktopPages:Pages.create(),
+  workspaceProfiles:{
+    general:{favorites:[['browser','Wrong alias'],['i-mail','Mail'],['notes','Notes'],['browser','Firefox'],['browser--1','Extra'],['steam','Steam']],rack:['notes','browser']},
+    gaming:{favorites:[['steam','Steam'],['game','Fallout 4'],['browser','Firefox']],rack:['steam','game']},
+    custom:{favorites:[['i-mail','Mail'],['missing','Unknown'],['steam','Steam']],rack:['notes','browser','notes','browser--1','missing','steam']},
+    empty:{favorites:[],rack:['i-mail','browser--1']}
+  },
+  appInfo:{browser:{label:'Firefox',primary:'#ff7139'},notes:{label:'Note Editor',primary:'#ffb553'},'browser--1':{base:'browser',label:'Firefox'},steam:{label:'Steam',primary:'#79bfec',singleInstance:true,workspace:'gaming'},game:{label:'Fallout 4',primary:'#b8d59a',singleInstance:true,workspace:'gaming'}},
+  appState:{browser:'closed',notes:'closed',steam:'closed',game:'closed'},desktopNavigationBlocked:()=>false,
+  createAppInstance:name=>calls.push(['new',name]),openApp:name=>calls.push(['open',name]),
+  changeDesktopPage(page,animate,column,fullscreen){calls.push(['go',page,animate,column,fullscreen]);context.desktopPages.select(context.activeWorkspace,column);context.desktopPages.go(context.activeWorkspace,page,column);}
+};
+vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/apps-quick-launch.js'),'utf8'),context);
+const nav=region.children[0],grid=nav.children[1],refresh=context.SpatialAppsQuickLaunch.refresh;
+const buttons=()=>grid.querySelectorAll('[data-quick-launch-app]');
+const ids=()=>buttons().map(button=>button.dataset.quickLaunchApp);
+const button=name=>buttons().find(button=>button.dataset.quickLaunchApp===name);
+const click=(name,shiftKey=false)=>nav.listeners.click({target:button(name).children[0]||button(name),shiftKey});
+assert.equal(nav.id,'appsQuickLaunch');assert.equal(region.children[1],rack,'Launchers precede parked applications');
+assert.equal(nav.children[0].textContent,'Quick launch');
+assert.deepEqual(ids(),['browser','notes'],'Use runnable base favorites, in favorite order; exclude placeholder apps, instances, wrong Workspace and duplicates');
+assert.equal(button('browser').children[0].textContent,'Firefox','Use the current app label rather than a stale favorite alias');
+for(const launcher of buttons()){
+  assert.equal(launcher.type,'button');assert(launcher.className.includes('material-glass-button'));
+  assert(!Object.hasOwn(launcher.dataset,'openApp'));assert(!Object.hasOwn(launcher.dataset,'hotbarSlot'));assert.equal(launcher.getAttribute('aria-pressed'),null);
+  assert(!/is-open|is-active|is-minimized|control-toggle/.test(launcher.className),'Launchers do not impersonate running-window toggles');
+}
+click('browser');assert.deepEqual(calls.pop(),['open','browser'],'A closed app opens in the current desktop');
+click('browser',true);assert.deepEqual(calls.pop(),['new','browser'],'Shift-click always requests an independent ordinary window');
+context.desktopPages.assign('general','browser',0);context.desktopPages.go('general',1);
+context.appState.browser='open';refresh();click('browser');assert.deepEqual(calls.pop(),['new','browser']);
+assert.equal(context.desktopPages.current('general'),1,'An open ordinary app gets a new window here rather than navigating to its existing desktop');
+context.desktopPages.go('general',0);click('browser');assert.deepEqual(calls.pop(),['new','browser'],'A visible ordinary app also opens a new independent window');
+context.appState.browser='minimized';refresh();click('browser');assert.deepEqual(calls.pop(),['open','browser'],'Parked work returns within its existing context');
+context.desktopPages.select('general','project');click('browser');assert.deepEqual(calls.pop(),['new','browser'],'Parked work in another Project keeps its owner');
+const sameButtons=buttons(),sameReplacements=grid.replacements;context.frontApp='notes';context.desktopHasWindowFocus=true;refresh();
+assert.equal(grid.replacements,sameReplacements);assert.equal(button('browser'),sameButtons[0],'Focus updates preserve the actual launcher nodes');
+context.appState.browser='open';refresh();assert.equal(button('browser'),sameButtons[0],'Launch policy changes update a hint without replacing a focused button');
+assert(button('browser').getAttribute('aria-label').includes('New window here'));
+context.activeWorkspace='custom';refresh();assert.deepEqual(ids(),['notes','browser'],'A Workspace without runnable favorites falls back to its runnable base rack');
+context.activeWorkspace='gaming';refresh();assert.deepEqual(ids(),['steam','game','browser']);
+context.desktopPages.assign('gaming','steam',2,'game-project');context.appState.steam='open';context.desktopPages.select('gaming','workspace');refresh();
+click('steam');assert.deepEqual(calls.slice(-2),[['go',2,false,'game-project',null],['open','steam']],'A live singleton returns to its owner before being focused');
+context.desktopPages.assign('gaming','game',0,'game-project');context.desktopPages.addFullscreen('gaming','game');context.appState.game='open';context.desktopPages.select('gaming','workspace');
+click('game',true);assert.deepEqual(calls.slice(-2),[['go',0,false,'game-project','game'],['open','game']],'Shift cannot duplicate a singleton; its fullscreen return target is retained');
+context.appState.steam='closed';click('steam',true);assert.deepEqual(calls.pop(),['open','steam']);
+const unchanged=()=>{const count=calls.length;click('browser');assert.equal(calls.length,count,'Unavailable, hidden or modal-blocked launchers do not launch');};
+shell.inert=true;unchanged();shell.inert=false;
+area.hidden=true;unchanged();area.hidden=false;
+area.inert=true;unchanged();area.inert=false;
+context.desktopNavigationBlocked=()=>true;unchanged();context.desktopNavigationBlocked=()=>false;
+context.SpatialGuide={model:{active:()=>true,allows:()=>false}};unchanged();
+context.SpatialGuide.model.allows=feature=>feature==='apps';click('browser');assert.deepEqual(calls.pop(),['new','browser'],'Guide apps gating permits only the real launch path when taught');
+context.SpatialGuide.model.active=()=>false;
+context.workspaceProfiles.gaming.favorites=[['steam','Steam']];unchanged();refresh();assert.deepEqual(ids(),['steam'],'Removed favorites cannot launch through stale controls');
+context.activeWorkspace='empty';refresh();assert(nav.hidden);assert.deepEqual(ids(),[],'Do not manufacture a generic launcher for an empty profile');
+const outside=new Element();outside.dataset.quickLaunchApp='browser';const count=calls.length;nav.listeners.click({target:outside});assert.equal(calls.length,count,'Only actual launchers inside this nav own its delegated action');
+
+// Exercise the real window shortcut ordering and parked-only rail renderer.
+// Removing open-window icons must not renumber a parked window's shortcut.
+const shellSource=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
+const parkedRack=new Element('nav'),positions={open1:0,open2:300,parked:600};
+const rackContext={
+  activeWorkspace:'general',workspaceProfiles:{general:{rack:['open1','open2','parked']}},
+  appState:{open1:'open',open2:'open',parked:'minimized'},
+  appInfo:{open1:{label:'First'},open2:{label:'Second'},parked:{label:'Parked tool'}},
+  desktopPages:Pages.create(),isLocalApp:()=>true,
+  frameFor:name=>({style:{left:positions[name]+'px',top:'0px'},getBoundingClientRect:()=>({left:positions[name],top:0}),parentElement:{getBoundingClientRect:()=>({left:0,top:0})}}),
+  $:()=>parkedRack,applyAppPrimaryColors(){},escapeHtml:text=>text,appArt:name=>'<svg data-art="'+name+'"></svg>',icon:()=>'<svg></svg>'
+};
+for(const name of Object.keys(rackContext.appState))rackContext.desktopPages.assign('general',name,0);
+vm.createContext(rackContext);
+vm.runInContext(shellSource.slice(shellSource.indexOf('function workspaceHotbarNames()'),shellSource.indexOf('let hotbarOrderFrame=')),rackContext);
+const shortcutNames=()=>Array.from(rackContext.workspaceShortcutNames());
+const parkedMarkup=()=>[...parkedRack.innerHTML.matchAll(/data-open-app="([^"]+)"/g)].map(match=>match[1]);
+assert.deepEqual(shortcutNames(),['open1','open2','parked']);
+rackContext.renderInstanceRack();
+assert(!parkedRack.hidden);assert.deepEqual(parkedMarkup(),['parked'],'The Apps rail renders only parked windows');
+assert(parkedRack.innerHTML.includes('data-hotbar-slot="3"'));
+assert(parkedRack.innerHTML.includes('aria-keyshortcuts="Meta+3"'),'Its slot still counts the two open windows ahead of it');
+assert(!parkedRack.innerHTML.includes('app-rack-open'),'No open-window mirror remains in Apps');
+const firstMarkup=parkedRack.innerHTML;rackContext.renderInstanceRack();assert.equal(parkedRack.innerHTML,firstMarkup,'A repeat render keeps the same parked state');
+assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Rendering icons leaves the shared keyboard ordering untouched');
+rackContext.appState.parked='open';rackContext.renderInstanceRack();
+assert(parkedRack.hidden);assert.equal(parkedRack.innerHTML,'','An entirely unparked desktop has no task icons in the Apps rail');
+assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Open windows retain their shortcut slots without requiring icons');
+console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, Guide/modal guards and parked-only rail rendering without shortcut renumbering.');

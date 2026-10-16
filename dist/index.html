@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="desktop-pages.css?v=30">
   <link rel="stylesheet" href="empty-desktop.css?v=1">
   <link rel="stylesheet" href="material-shapes.css?v=16">
-  <link rel="stylesheet" href="area-rails.css?v=7">
+  <link rel="stylesheet" href="area-rails.css?v=8">
   <link rel="stylesheet" href="app-windows.css?v=5">
   <link rel="stylesheet" href="parked-previews.css?v=1">
   <link rel="stylesheet" href="owned-dialogs.css?v=2">
@@ -50,12 +50,12 @@
   <script src="demo-super-key.js?v=1"></script>
   <script src="desktop-markers.js?v=1"></script>
   <script src="workspace-setup.js?v=10"></script>
-  <script src="spatial-guide.js?v=64"></script>
+  <script src="spatial-guide.js?v=65"></script>
   
   <link rel="stylesheet" href="project-rail.css?v=1">
   <link rel="stylesheet" href="system-rail.css?v=2">
   <link rel="stylesheet" href="area-popovers.css?v=1">
-  <link rel="stylesheet" href="app-spatial-map.css?v=1">
+  <link rel="stylesheet" href="apps-quick-launch.css?v=1">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -137,13 +137,7 @@
         <div class="area-window-identity"><button class="surface-key overview-launch workspace-overview" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open General workspace overview · Desktop 1" title="Overview · General workspace · Desktop 1 · Super"><svg aria-hidden="true"><use href="#i-grid"/></svg><b id="desktopPageNumber" aria-hidden="true">1</b></button><span><b>Apps</b><small id="appsAreaContext">General workspace</small></span></div>
       </header>
       <div class="apps-scroll-region">
-      <nav class="app-rack" id="appRack" aria-label="Visible and parked applications">
-        <button class="app-key is-open is-active" data-open-app="dolphin" data-hotbar-slot="1" aria-label="File Browser · Super+1" aria-keyshortcuts="Meta+1" title="File Browser · Super+1"><kbd class="app-hotkey" aria-hidden="true">1</kbd><svg class="app-art" aria-hidden="true"><use href="#app-dolphin"/></svg><span>File Browser</span><i></i></button>
-        <button class="app-key is-open" data-open-app="elisa" data-hotbar-slot="2" aria-label="Music Player · Super+2" aria-keyshortcuts="Meta+2" title="Music Player · Super+2"><kbd class="app-hotkey" aria-hidden="true">2</kbd><svg class="app-art" aria-hidden="true"><use href="#app-elisa"/></svg><span>Music Player</span><i></i></button>
-        <button class="app-key" data-open-app="browser" data-hotbar-slot="3" aria-label="Firefox · Super+3" aria-keyshortcuts="Meta+3" title="Firefox · Super+3"><kbd class="app-hotkey" aria-hidden="true">3</kbd><svg class="app-art" aria-hidden="true"><use href="#app-browser"/></svg><span>Firefox</span><i></i></button>
-        <button class="app-key" data-open-app="terminal" data-hotbar-slot="4" aria-label="Terminal · Super+4" aria-keyshortcuts="Meta+4" title="Terminal · Super+4"><kbd class="app-hotkey" aria-hidden="true">4</kbd><svg class="app-art" aria-hidden="true"><use href="#app-terminal"/></svg><span>Terminal</span><i></i></button>
-        <button class="app-key" data-open-app="notes" data-hotbar-slot="5" aria-label="Note Editor · Super+5" aria-keyshortcuts="Meta+5" title="Note Editor · Super+5"><kbd class="app-hotkey" aria-hidden="true">5</kbd><svg class="app-art" aria-hidden="true"><use href="#app-notes"/></svg><span>Note Editor</span><i></i></button>
-      </nav>
+      <nav class="app-rack" id="appRack" aria-label="Parked applications" hidden></nav>
       <section class="mini-section" aria-labelledby="minimizedTitle">
         <header class="section-heading"><h2 id="minimizedTitle">Parked</h2><span id="miniCount">0 parked</span></header>
         <div class="mini-stack" id="miniStack" tabindex="0" aria-label="Parked application cards" aria-live="polite"></div>
@@ -679,18 +673,18 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=6"></script>
 <script src="app-names.js?v=3"></script>
-<script src="app-spatial-map.js?v=1"></script>
-<script src="desktop-shell.js?v=304"></script>
+<script src="desktop-shell.js?v=305"></script>
 <script src="parked-previews.js?v=4"></script>
   <script src="owned-dialogs.js?v=2"></script>
 <script src="background-services.js?v=1"></script>
 <script src="background-apps.js?v=5"></script>
 <script src="preview-privacy.js?v=1"></script>
 <script src="empty-desktop.js?v=2"></script>
+<script src="apps-quick-launch.js?v=1"></script>
 <script src="working-memory-desktop.js?v=31"></script>
 <script src="ai-desktop.js?v=21"></script>
 <script src="overview-desktop.js?v=24"></script>
-  <script src="guide-desktop.js?v=42"></script>
+  <script src="guide-desktop.js?v=43"></script>
   <script src="steam-overview.js?v=14"></script>
 <script src="all-workspaces.js?v=4"></script>
 <script src="workspace-notifications.js?v=4"></script>

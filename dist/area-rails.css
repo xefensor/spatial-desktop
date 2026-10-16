@@ -1,11 +1,11 @@
-/* Open windows occupy the start of the Apps rail; parked windows start halfway down.
-   Expanded Areas show parked windows as cards only, with the same shortcut slots. */
+/* Quick launch occupies the start of Apps. Parked windows follow as rail icons
+   or expanded cards, keeping the same per-window shortcut slots. */
 .app-rack-group{display:contents}
 .apps-zone:not([data-area-state="rail"]) .app-rack-parked{display:none}
-.apps-zone:not([data-area-state="rail"]) .app-rack:not(:has(.app-rack-open)){display:none}
+.apps-zone:not([data-area-state="rail"]) .app-rack{display:none}
 .apps-zone[data-area-state="rail"] .app-rack{
-  display:grid;
-  grid-template-rows:repeat(2,minmax(0,1fr));
+  display:flex;
+  flex-direction:column;
   flex:1 1 0;
   min-width:0;
   min-height:0;
@@ -28,8 +28,7 @@
 }
 .apps-zone[data-area-state="rail"] .app-rack-group::-webkit-scrollbar{display:none}
 .apps-zone[data-area-state="rail"] .app-rack-group .app-key{flex:0 0 48px}
-.apps-zone[data-area-state="rail"] .app-rack-open{grid-row:1}
-.apps-zone[data-area-state="rail"] .app-rack-parked{grid-row:2;margin-top:0}
+.apps-zone[data-area-state="rail"] .app-rack-parked{margin-top:0}
 .apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{
   display:flex;
   flex-direction:row;

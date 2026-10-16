@@ -7849,7 +7849,7 @@ function workspaceHotbarNames() {
     ...names.filter(name => appState[name] === 'minimized' && desktopPages.inColumn(activeWorkspace, name))];
 }
 function workspaceShortcutNames() {
-  // Icons and their useful cards share a single slot for each window.
+  // Window titles and parked cards share one shortcut slot per window.
   return workspaceHotbarNames();
 }
 function fullscreenHotbarBond(name) {
@@ -7860,54 +7860,14 @@ function fullscreenHotbarBond(name) {
   if (selected && Math.min(selected.display, activeDisplayRoster().length) === localDisplaySlot()) return null;
   return bond;
 }
-function syncRackSpatialLayout(names) {
-  const group=$('.app-rack-open',$('#appRack'));
-  if(!group)return;
-  const tiles=$('.app-map-tiles',group),extra=$('.app-map-extra',group);
-  if(!tiles||!extra)return;
-  const state=areaFor('apps')?.dataset.areaState;
-  const rectangles=names.filter(name=>appState[name]==='open').map(name=>{
-    const frame=frameFor(name),rect=frame?.getBoundingClientRect(),parent=frame?.parentElement?.getBoundingClientRect();
-    const value=property=>{const inline=frame?.style[property];return inline?.endsWith('px')?parseFloat(inline):NaN;};
-    const x=value('left'),y=value('top'),width=value('width'),height=value('height');
-    return {id:name,x:Number.isFinite(x)&&parent?parent.left+x:rect?.left,
-      y:Number.isFinite(y)&&parent?parent.top+y:rect?.top,
-      width:Number.isFinite(width)?width:rect?.width,height:Number.isFinite(height)?height:rect?.height,
-      floating:Boolean(frame?.classList.contains('is-floating'))};
-  });
-  const signature=JSON.stringify([state,rectangles]);
-  if(group.dataset.spatialLayout===signature)return;
-  group.dataset.spatialLayout=signature;
-  const focused=document.activeElement;
-  if(state!=='expanded'){
-    const buttons=new Map($$('[data-open-app]',group).map(button=>[button.dataset.openApp,button]));
-    const ordered=names.map(name=>buttons.get(name)).filter(Boolean),previous=[...tiles.children];
-    if(ordered.length!==previous.length||ordered.some((button,index)=>button!==previous[index]))ordered.forEach(button=>tiles.append(button));
-    tiles.hidden=false;extra.hidden=true;
-    if(focused&&group.contains(focused)&&document.activeElement!==focused)focused.focus({preventScroll:true});
-    return;
-  }
-  const layout=SpatialAppMap.layout(rectangles),cells=new Map(layout.cells.map(cell=>[cell.id,cell]));
-  for(const button of $$('[data-open-app]',group)){
-    const cell=cells.get(button.dataset.openApp),target=cell?tiles:extra;
-    if(button.parentElement!==target)target.append(button);
-    button.style.gridColumn=cell?cell.column+' / span '+cell.columnSpan:'';
-    button.style.gridRow=cell?cell.row+' / span '+cell.rowSpan:'';
-  }
-  tiles.hidden=!layout.cells.length;extra.hidden=!layout.fallback.length;
-  tiles.style.gridTemplateColumns=layout.columns.map(weight=>'minmax(56px,'+weight+'fr)').join(' ');
-  tiles.style.gridTemplateRows=layout.rows.map(weight=>'minmax(66px,'+weight+'fr)').join(' ');
-  tiles.style.setProperty('--app-map-columns',layout.columns.length);
-  tiles.style.setProperty('--app-map-rows',layout.rows.length);
-  if(focused&&group.contains(focused)&&document.activeElement!==focused)focused.focus({preventScroll:true});
-}
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
-  $('#appRack').hidden = names.length === 0;
+  $('#appRack').hidden = !names.some(name=>appState[name]==='minimized');
   const order=JSON.stringify(names.map(name=>[name,appState[name],fullscreenHotbarBond(name)]));
-  if($('#appRack').dataset.layoutOrder===order){syncRackSpatialLayout(names);applyAppPrimaryColors($('#appRack'));return;}
+  if($('#appRack').dataset.layoutOrder===order){applyAppPrimaryColors($('#appRack'));return;}
   $('#appRack').dataset.layoutOrder=order;
   const buttons = names.map((name, index) => {
+    if(appState[name]!=='minimized')return '';
     const info = appInfo[name];
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit + ' · F2+' + digit : bank === 1 ? 'Super+Shift+' + digit + ' · F2+Shift+' + digit : 'Click · slot ' + slot;
@@ -7915,12 +7875,9 @@ function renderInstanceRack() {
     const detail = bond ? ' · Return to temporary desktop · linked to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
     return '<button class="app-key' + (bond ? ' is-fullscreen-link' : '') + '" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + detail + ' · ' + shortcut + (info.singleInstance ? '' : ' · Shift+click: new window')) + '" aria-label="' + escapeHtml(info.label + detail + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + (bond ? '<span class="fullscreen-hotbar-mark" aria-hidden="true">' + icon('i-max') + '</span>' : '') + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   });
-  const open = buttons.filter((_, index) => appState[names[index]] === 'open').join('');
-  const parked = buttons.filter((_, index) => appState[names[index]] === 'minimized').join('');
-  $('#appRack').innerHTML = (open ? '<div class="app-rack-group app-rack-open" role="group" aria-label="Open applications"><div class="app-map-tiles">' + open + '</div><div class="app-map-extra" role="group" aria-label="Other open windows" hidden></div></div>' : '')
-    + (parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '');
+  const parked = buttons.join('');
+  $('#appRack').innerHTML = parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '';
   applyAppPrimaryColors($('#appRack'));
-  syncRackSpatialLayout(names);
 }
 let hotbarOrderFrame=0;
 function scheduleHotbarOrder() {
@@ -7948,7 +7905,7 @@ function syncWindowHotkeys() {
   });
 }
 const originalSyncRack = syncRack;
-syncRack = function() { renderInstanceRack(); originalSyncRack(); syncWindowHotkeys(); };
+syncRack = function() { renderInstanceRack(); originalSyncRack(); syncWindowHotkeys(); globalThis.SpatialAppsQuickLaunch?.refresh(); };
 hotbarSlotFor = name => { const index = workspaceShortcutNames().indexOf(name); return index < 0 ? null : index + 1; };
 function captureWorkspaceContent() {
   const frames = {};
