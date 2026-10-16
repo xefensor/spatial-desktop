@@ -32,7 +32,8 @@
     }
     const names = Object.keys(appInfo).filter(available).filter(name=>matches(appInfo[name].label));
     const data = resources(), folderRows = data.folders.filter(row=>matches(row.label+' '+row.path+' '+row.detail));
-    const fileRows = data.files.filter(row=>matches(row.label+' '+row.path+' '+row.detail));
+    const fileRows = data.files.filter(row=>matches(row.label+' '+row.path+' '+row.detail))
+      .sort((a,b)=>Number(a.label.startsWith('.'))-Number(b.label.startsWith('.')));
     const key = JSON.stringify([scope,query,allFolders,allFiles,names.map(name=>[name,appInfo[name].label,actionFor(name)]),folderRows,fileRows]);
     if (key === rendered) return;
     rendered = key;
