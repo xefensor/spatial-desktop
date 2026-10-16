@@ -46,11 +46,34 @@ ctx.fileResults('workspace toml');assert.equal(target('#universalFileResults').c
 
 // Search result navigation uses its actual page, project column and fullscreen bond.
 const handlers=[];const controls={addEventListener:(event,handler)=>handlers.push(handler)};
-let navigated,opened;
-const navigation={$:()=>controls,desktopPages:{pageOf:()=>2,columnOf:()=> 'film',fullscreenBond:()=>({name:'fallout'})},activeWorkspace:'gaming',changeDesktopPage:(...args)=>navigated=args,openApp:name=>opened=name,setUniversalSearchOpen(){}};
-vm.createContext(navigation);vm.runInContext(segment(shell,'$("#universalResults").addEventListener("click", event => {','$("#universalResults").addEventListener("click", event => {\n  const result = event.target.closest("[data-search-project]"'),navigation);
+let navigated,opened,created;
+const navigation={$:()=>controls,desktopPages:{pageOf:()=>2,columnOf:()=> 'film',fullscreenBond:()=>({name:'fallout'})},activeWorkspace:'gaming',
+  appInfo:{browser:{},notes:{},fallout:{singleInstance:true}},appState:{browser:'minimized',notes:'closed',fallout:'minimized'},
+  changeDesktopPage:(...args)=>navigated=args,openApp:name=>opened=name,createAppInstance:name=>created=name,setUniversalSearchOpen(){}};
+vm.createContext(navigation);
+vm.runInContext(segment(shell,'function launchAppHere(', 'function workspaceHotbarNames('),navigation);
+vm.runInContext(segment(shell,'$("#universalResults").addEventListener("click", event => {','$("#universalResults").addEventListener("click", event => {\n  const result = event.target.closest("[data-search-project]"'),navigation);
 handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'fallout',searchWindow:'true'}})}});
 assert.deepEqual(navigated,[2,false,'film','fallout']);assert.equal(opened,'fallout');
+created=undefined;opened=undefined;
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'browser',searchNewInstance:'true'}})}});
+assert.equal(created,'browser');assert.equal(opened,undefined,'An application result creates a fresh window instead of restoring its parked one');
+assert.equal(navigation.appState.browser,'minimized','Application search leaves the parked window untouched');
+created=undefined;
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'browser'}})}});
+assert.equal(created,'browser','Guide-limited application search uses the same new-window policy');
+created=undefined;opened=undefined;
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'browser',searchWindow:'true'}})}});
+assert.equal(opened,'browser');assert.equal(created,undefined,'Selecting an actual parked window result still restores that window');
+opened=undefined;
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'notes'}})}});
+assert.equal(opened,'notes','A closed app can use its existing closed identity');
+opened=undefined;created=undefined;
+handlers[0]({shiftKey:true,target:{closest:()=>({dataset:{searchOpenApp:'notes'}})}});
+assert.equal(created,'notes','Shift-clicking an application result requests a new instance');
+created=undefined;opened=undefined;
+handlers[0]({target:{closest:()=>({dataset:{searchOpenApp:'fallout',searchNewInstance:'true'}})}});
+assert.deepEqual(navigated,[2,false,'film','fallout']);assert.equal(opened,'fallout');assert.equal(created,undefined,'A single-instance application returns to its owner instead of attempting to create another copy');
 // File actions must bring an existing File Browser's desktop into view first.
 let fileHandler,fileDirectory,project;
 const fileContext={results:{addEventListener:(_,handler)=>fileHandler=handler},appInfo:{files:{base:'dolphin'}},appState:{files:'open'},activeWorkspace:'work',activateProject:id=>project=id,desktopPages:{inColumn:()=>true,pageOf:()=>1,columnOf:()=> 'film'},changeDesktopPage:(...args)=>navigated=args,openFileLocation:path=>fileDirectory=path,showToast(){}};

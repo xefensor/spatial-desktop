@@ -6,9 +6,8 @@
   const available = name => appInfo[name] && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace);
   function actionFor(name) {
     const live = appState[name] === 'open' || appState[name] === 'minimized';
-    const elsewhere = live && (appState[name] === 'open' || desktopPages.columnOf(activeWorkspace, name) !== desktopPages.column(activeWorkspace));
     if (appInfo[name].singleInstance && live) return 'return';
-    return elsewhere ? 'new' : 'open';
+    return live ? 'new' : 'open';
   }
   function refresh() {
     // Keep the focused button stable through focus-only updates and display sync.
@@ -27,12 +26,7 @@
     if (!button || panel.hidden || $('.desktop-shell').inert || desktopNavigationBlocked()) return;
     const name = button.dataset.emptyApp;
     if (!available(name)) return;
-    if (appInfo[name].singleInstance && actionFor(name) === 'return') {
-      const bond = desktopPages.fullscreenBond(activeWorkspace, name);
-      changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false, desktopPages.columnOf(activeWorkspace, name), bond?.name || null);
-    }
-    if (!appInfo[name].singleInstance && (event.shiftKey || actionFor(name) === 'new')) createAppInstance(name);
-    else openApp(name);
+    launchAppHere(name, event.shiftKey);
   });
   panel.addEventListener('wheel', event => {
     const launcher = event.target.closest('.empty-desktop-launcher');

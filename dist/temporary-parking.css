@@ -9,7 +9,6 @@
 .temporary-park-owner-icon :is(svg,.app-art){width:26px;height:26px}
 .temporary-park-owner-copy{min-width:0}
 .temporary-park-owner-copy h3{margin:0;font-size:12px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
-.temporary-park-owner-copy .temporary-park-location{display:table;max-width:100%;margin-top:6px;padding:3px 6px;border:1px solid color-mix(in srgb,var(--temporary-park-accent) 30%,var(--sd-glass-groove));background:var(--sd-glass-face-deep);font-size:10px;font-weight:650;line-height:1.4;color:var(--text);overflow-wrap:anywhere}
 .temporary-park-heading p{margin:0;font-size:11px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
 .temporary-park-cards{display:grid;align-content:start;gap:12px;min-width:0;padding:9px 7px}
 .temporary-park-ordinary-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;padding:12px 2px 4px;border-top:2px solid var(--sd-glass-groove)}

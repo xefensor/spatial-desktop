@@ -57,8 +57,23 @@ context.desktopPages.assign('general','browser',0);context.desktopPages.go('gene
 context.appState.browser='open';refresh();click('browser');assert.deepEqual(calls.pop(),['new','browser']);
 assert.equal(context.desktopPages.current('general'),1,'An open ordinary app gets a new window here rather than navigating to its existing desktop');
 context.desktopPages.go('general',0);click('browser');assert.deepEqual(calls.pop(),['new','browser'],'A visible ordinary app also opens a new independent window');
-context.appState.browser='minimized';refresh();click('browser');assert.deepEqual(calls.pop(),['open','browser'],'Parked work returns within its existing context');
-context.desktopPages.select('general','project');click('browser');assert.deepEqual(calls.pop(),['new','browser'],'Parked work in another Project keeps its owner');
+context.appState.browser='minimized';refresh();
+assert(button('browser').getAttribute('aria-label').includes('New window here'),'A parked base is described as a new launch, not a restoration');
+for(const [column,page,shiftKey,description] of [
+  ['workspace',0,false,'on its current desktop'],
+  ['workspace',0,true,'with Shift on its current desktop'],
+  ['workspace',1,false,'on another desktop in the same context'],
+  ['project',0,false,'in another Project context']
+]){
+  context.desktopPages.select('general',column);context.desktopPages.go('general',page);refresh();
+  const location=[context.desktopPages.column('general'),context.desktopPages.current('general')],count=calls.length;
+  click('browser',shiftKey);
+  assert.deepEqual(calls.slice(count),[['new','browser']],'A launcher creates an independent window while its base is parked '+description);
+  assert.equal(context.appState.browser,'minimized','The parked base keeps its state '+description);
+  assert.equal(context.desktopPages.columnOf('general','browser'),'workspace','The parked base keeps its original context');
+  assert.equal(context.desktopPages.pageOf('general','browser'),0,'The parked base keeps its original desktop');
+  assert.deepEqual([context.desktopPages.column('general'),context.desktopPages.current('general')],location,'Launching does not navigate to parked work '+description);
+}
 const sameButtons=buttons(),sameReplacements=grid.replacements;context.frontApp='notes';context.desktopHasWindowFocus=true;refresh();
 assert.equal(grid.replacements,sameReplacements);assert.equal(button('browser'),sameButtons[0],'Focus updates preserve the actual launcher nodes');
 context.appState.browser='open';refresh();assert.equal(button('browser'),sameButtons[0],'Launch policy changes update a hint without replacing a focused button');
@@ -67,9 +82,16 @@ context.activeWorkspace='custom';refresh();assert.deepEqual(ids(),['notes','brow
 context.activeWorkspace='gaming';refresh();assert.deepEqual(ids(),['steam','game','browser']);
 context.desktopPages.assign('gaming','steam',2,'game-project');context.appState.steam='open';context.desktopPages.select('gaming','workspace');refresh();
 click('steam');assert.deepEqual(calls.slice(-2),[['go',2,false,'game-project',null],['open','steam']],'A live singleton returns to its owner before being focused');
+context.appState.steam='minimized';context.desktopPages.select('gaming','workspace');refresh();
+click('steam',true);assert.deepEqual(calls.slice(-2),[['go',2,false,'game-project',null],['open','steam']],'A parked singleton still returns to its owner; Shift does not attempt to duplicate it');
 context.desktopPages.assign('gaming','game',0,'game-project');context.desktopPages.addFullscreen('gaming','game');context.appState.game='open';context.desktopPages.select('gaming','workspace');
 click('game',true);assert.deepEqual(calls.slice(-2),[['go',0,false,'game-project','game'],['open','game']],'Shift cannot duplicate a singleton; its fullscreen return target is retained');
 context.appState.steam='closed';click('steam',true);assert.deepEqual(calls.pop(),['open','steam']);
+context.appState.browser='closed';context.appState['browser--1']='open';refresh();
+click('browser');assert.deepEqual(calls.pop(),['open','browser'],'A closed base can supply a fresh window while an independent instance stays open');
+assert.equal(context.appState['browser--1'],'open');
+click('browser',true);assert.deepEqual(calls.pop(),['new','browser'],'Shift creates an independent instance even when the base is closed');
+context.appState.browser='open';refresh();
 const unchanged=()=>{const count=calls.length;click('browser');assert.equal(calls.length,count,'Unavailable, hidden or modal-blocked launchers do not launch');};
 shell.inert=true;unchanged();shell.inert=false;
 area.hidden=true;unchanged();area.hidden=false;

@@ -22,7 +22,8 @@
   function actionFor(name) {
     const state = appState[name], live = state === 'open' || state === 'minimized';
     if (appInfo[name].singleInstance && live) return 'return';
-    return live && (state === 'open' || desktopPages.columnOf(activeWorkspace, name) !== desktopPages.column(activeWorkspace)) ? 'new' : 'open';
+    // A launcher starts new work; only a parked card restores existing work.
+    return live ? 'new' : 'open';
   }
   function refresh() {
     const launchers = names();

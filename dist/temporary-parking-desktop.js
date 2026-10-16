@@ -30,10 +30,10 @@
       group.dataset.temporaryParkSession=entry.sessionKey;group.setAttribute('role','group');
       group.setAttribute('aria-label','While '+description.owner+' is maximized · '+description.location);
       const heading=make('header','temporary-park-heading');
-      heading.append(make('small','temporary-park-kind','Temporarily parked · '+members.length+' window'+(members.length===1?'':'s')));
+      heading.append(make('small','temporary-park-kind','Temporarily parked · from '+description.location));
       const owner=make('div','temporary-park-owner');
       const artwork=make('span','temporary-park-owner-icon');artwork.innerHTML=description.art;artwork.setAttribute('aria-hidden','true');
-      const text=make('div','temporary-park-owner-copy');text.append(make('h3','','While '+description.owner+' is maximized'),make('small','temporary-park-location',description.location));
+      const text=make('div','temporary-park-owner-copy');text.append(make('h3','','While '+description.owner+' is maximized'));
       owner.append(artwork,text);heading.append(owner,make('p','',(members.length===1?'This window returns':'These windows return')+' when you unmaximize '+description.owner+'.'));
       const contents=make('div','temporary-park-cards');group.append(heading,contents);
       for(const card of members){

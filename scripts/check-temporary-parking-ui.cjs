@@ -86,8 +86,12 @@ const groups=stack.children.filter(child=>child.className==='temporary-park-grou
 assert.equal(groups.length,3);assert.equal(heading.hidden,true);
 assert.deepEqual(groups.map(group=>group.dataset.temporaryParkSession),['work:desktop:1:2','work:desktop:1:1','work:desktop:0:1'],'Current desktop comes first, followed by the local display and then other desktops');
 assert.match(groups[0].getAttribute('aria-label'),/While another window is maximized · Desktop 2 · Display 2/);
-assert.match(groups[1].textContent,/While Terminal is maximizedDesktop 2 · Display 1/);
-assert.match(groups[2].textContent,/While Firefox is maximizedDesktop 1 · Display 1/);
+assert.equal(groups[1].querySelector('h3').textContent,'While Terminal is maximized');
+assert.equal(groups[2].querySelector('h3').textContent,'While Firefox is maximized');
+assert.deepEqual(groups.map(group=>group.querySelector('.temporary-park-kind').textContent),[
+  'Temporarily parked · from Desktop 2 · Display 2','Temporarily parked · from Desktop 2 · Display 1','Temporarily parked · from Desktop 1 · Display 1'
+],'The header names the originating desktop and display instead of a window count');
+for(const group of groups){assert(!/\b\d+ windows?\b/.test(group.querySelector('.temporary-park-kind').textContent));assert.equal(group.querySelector('.temporary-park-location'),null,'Origin is not repeated beneath the owner');}
 assert.deepEqual(groups.map(group=>group.style.getPropertyValue('--temporary-park-accent')),['var(--ui-neutral)','#54c791','#e96f32'],'Each public group uses its owning app color; a private owner uses the theme neutral');
 assert(!JSON.stringify(groups.map(group=>group.style.values)).includes('#3512a7'),'The hidden owner color cannot identify its group');
 assert.equal(stack.children[3].className,'temporary-park-ordinary-heading');assert.equal(stack.children[4],originalCards.get('manual').card,'Ordinary cards follow all returning groups');
@@ -132,6 +136,11 @@ railButtons.get('note').dispatch('click');assert.equal(opened.at(-1),'note','The
 // Changing privacy or desktop updates descriptions while retaining one badge.
 state.note='minimized';focus('owner0','note',0,1);context.renderMiniApps();context.syncRack();
 assert.match(railButtons.get('note').title,/Firefox/);
+const sourceSession=sessions['work:desktop:0:1'];sourceSession.focus.parked.push('manual');sourceSession.parked.manual={reason:'Focused Firefox'};
+context.renderMiniApps();
+assert.equal(stack.querySelector('.temporary-park-kind').textContent,'Temporarily parked · from Desktop 1 · Display 1','A multiwindow group still names its origin rather than a plural count');
+assert.equal(stack.querySelector('.temporary-park-cards').children.length,2);
+sourceSession.focus.parked=['note'];delete sourceSession.parked.manual;
 context.appInfo.owner0.primary='#c876e8';context.renderMiniApps();
 assert.equal(stack.querySelector('.temporary-park-group').style.getPropertyValue('--temporary-park-accent'),'#c876e8','A refreshed group follows its app metadata color without a fixed palette');
 assert.equal(originalCards.get('note').card.style.getPropertyValue('--app-primary'),cardColors.note,'Refreshing the owner color preserves the child color');

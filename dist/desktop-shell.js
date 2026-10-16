@@ -5295,8 +5295,10 @@ $("#allAppsToggle").addEventListener("click", () => {
 document.addEventListener("click", event => {
   const button = event.target.closest("[data-open-app]");
   if (!button) return;
-  if (event.shiftKey) createAppInstance(button.dataset.openApp);
-  else openApp(button.dataset.openApp);
+  if (button.closest("#appRack")) {
+    if (event.shiftKey) createAppInstance(button.dataset.openApp);
+    else openApp(button.dataset.openApp);
+  } else launchAppHere(button.dataset.openApp, event.shiftKey);
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 });
 
@@ -5529,8 +5531,7 @@ $("#universalResults").addEventListener("click", event => {
     const name = result.dataset.searchOpenApp;
     changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false, desktopPages.columnOf(activeWorkspace, name), desktopPages.fullscreenBond(activeWorkspace, name)?.name || null);
     openApp(name);
-  } else if (result.dataset.searchNewInstance) createAppInstance(result.dataset.searchOpenApp);
-  else if (result.dataset.searchOpenApp) openApp(result.dataset.searchOpenApp);
+  } else if (result.dataset.searchOpenApp) launchAppHere(result.dataset.searchOpenApp, event.shiftKey || Boolean(result.dataset.searchNewInstance));
   if (result.dataset.searchLaunchApp) {
     if (result.dataset.searchLaunchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
@@ -7821,6 +7822,18 @@ function createAppInstance(name) {
   saveIndependentSessions();
   showToast('New ' + appInfo[base].label + ' window · separate hotbar slot');
   return id;
+}
+function launchAppHere(name, forceNew = false) {
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('apps')) return;
+  const info = appInfo[name];
+  if (!info || (info.workspace && info.workspace !== activeWorkspace)) return;
+  const live = appState[name] === 'open' || appState[name] === 'minimized';
+  if (info.singleInstance && live) {
+    const bond = desktopPages.fullscreenBond?.(activeWorkspace, name);
+    changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false, desktopPages.columnOf(activeWorkspace, name), bond?.name || null);
+  }
+  if (!info.singleInstance && (forceNew || live)) return createAppInstance(name);
+  return openApp(name);
 }
 function workspaceHotbarNames() {
   const names = [...new Set([...workspaceProfiles[activeWorkspace].rack, ...Object.keys(appState)])];
