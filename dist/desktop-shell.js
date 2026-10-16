@@ -3781,15 +3781,19 @@ function bindDockResize(name, area) {
     rememberExpandedAreaSizes();
     const originalStates = {...initialAreaStates(currentDisplayProfile)};
     const names = areaColumnNames(name).filter(item => item === name || !areaFor(item)?.hidden);
-    const hadExpanded = names.some(item => originalStates[item] === "expanded");
+    const visibleStates = Object.fromEntries(names.map(item => [item,areaFor(item)?.dataset.areaState || originalStates[item]]));
+    const hadExpanded = names.some(item => visibleStates[item] === "expanded");
     const expandedStates = {...originalStates};
-    names.forEach(item => { expandedStates[item] = hadExpanded?originalStates[item]:item===name?"expanded":"rail"; });
+    names.forEach(item => { expandedStates[item] = hadExpanded?visibleStates[item]:item===name?"expanded":"rail"; });
     overrideAreaColumn(name);
     const rect = $(".desktop-shell").getBoundingClientRect();
     const current = resolvedAreaLayout(rect.width,rect.height).sizes[edge];
     const rawSize = pointer => edge === "left"?pointer.clientX-rect.left:edge === "right"?rect.right-pointer.clientX:edge === "top"?pointer.clientY-rect.top:rect.bottom-pointer.clientY;
     let anchor = Number.isFinite(rawSize(event))?rawSize(event):current;
-    let stageSize = current,stageState = areaStateForSize(edge,current);
+    // A legacy failed expansion may have left a wide, all-Compact column.
+    // Start at its actual presentation so shrinking cannot expand it again.
+    let stageState = hadExpanded?"expanded":"rail";
+    let stageSize = hadExpanded?current:edgeMinimumForState(edge,"rail");
     const restore = stageState === "expanded"?current:areaExpandedSizes[name]?.[edge] || (vertical?310:250);
     dockSizeManual[edge] = !areasFollowWindows(); area.classList.add("is-area-resizing");
     trackAreaPointer(event,handle,pointer => {
@@ -3804,10 +3808,26 @@ function bindDockResize(name, area) {
       });
       setAreaSnapFeedback(handle,result);
       if (maximum < minimum && result.blocked) { layoutDockAreas(false); return; }
+      const expanding = result.snapped && result.state === "expanded";
+      const previous = expanding?snapshotAreaLayout():null;
       if (result.state === "rail" || areasFollowWindows()) setAreaColumnState(name,result.state,result.state==="expanded"?result.size:null);
       else {
         names.forEach(item => setAreaPresentation(item,expandedStates[item],null));
         dockSizes[edge] = result.size;
+      }
+      if (expanding) {
+        // Width alone cannot reopen an Area whose sibling divider left a
+        // Compact-sized share. Restore usable space along the dock as well.
+        const targets = names.filter(item => expandedStates[item] === "expanded");
+        const fits = targets.every(item => makeAreaExpansionSpace(item,areaShareExpanded[edge][item]));
+        layoutDockAreas(false,false);
+        if (!fits || targets.some(item => areaFor(item).dataset.areaState !== "expanded")) {
+          restoreAreaPreferences(previous); Object.assign(dockSizes,previous.sizes);
+          if (names.includes("ai")) globalThis.SpatialAIDesktop?.setMode(previous.preferred.ai || "rail");
+          setAreaSnapFeedback(handle,{pressure:1});
+          layoutDockAreas(false,false);
+          return;
+        }
       }
       if (result.snapped) { anchor = point; stageSize = result.size; stageState = result.state; }
       if (areasFollowWindows()) autoSpatialEdgeStates.set(edge,result.state);
