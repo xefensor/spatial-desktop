@@ -93,7 +93,7 @@ const materialNode = (selector,parent=null) => {
     classList:{add: (...values)=>values.forEach(value=>classes.add(value)),remove:(...values)=>values.forEach(value=>classes.delete(value)),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
   return node;
 };
-const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.notification-peek'].map(selector=>materialNode(selector));
+const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.background-app-popup','.workspace-notification-popup','.ai-quick-panel','.project-shelf-popup','.system-rail-flyout','.notification-peek'].map(selector=>materialNode(selector));
 const absApp=materialNode('.app-frame');
 const absGuide=materialNode('.guide-window');
 const guideSearch=materialNode('.guide-window .recessed-field',absGuide);
@@ -102,7 +102,7 @@ const appAddress=materialNode('.app-frame .recessed-field',absApp);
 guideSearch.classes.add('material-surface-glass');
 appAddress.classes.add('material-surface-glass');
 const allSurfaces=[...utilitySurfaces,absApp,absGuide,guideSearch,appAddress];
-utilitySurfaces[0].classes.add('material-surface-abs');
+utilitySurfaces.forEach(surface=>surface.classes.add('material-surface-abs'));
 materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>allSurfaces.filter(node=>node.matches(selector))});
 for(const surface of utilitySurfaces){
   const button=materialNode('button',surface),field=materialNode('input',surface);
