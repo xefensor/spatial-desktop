@@ -5327,8 +5327,13 @@ $("#overviewNotificationList").addEventListener("click", event => {
 });
 
 function filterLauncher() {
+  const favorites = workspaceProfiles[activeWorkspace]?.favorites || [];
+  const favoriteIds = new Set(favorites.map(([id]) => id));
+  const favoriteNames = new Set(favorites.filter(([id]) => !appInfo[id]).map(([,label]) => SpatialAppNames.label(label)));
   let visible = 0;
   $$(".launcher-app", $("#allAppsGrid")).forEach(button => {
+    const app = button.dataset.openApp;
+    button.dataset.favorite = String(app ? favoriteIds.has(appInfo[app]?.base || app) : favoriteNames.has(SpatialAppNames.label(button.dataset.launchApp)));
     const matchesCategory = activeLauncherCategory === "all" ||
       (activeLauncherCategory === "favorites" && button.dataset.favorite === "true") ||
       button.dataset.category === activeLauncherCategory;

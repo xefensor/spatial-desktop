@@ -83,6 +83,7 @@
     if(Math.abs(centre(panel)-track.scrollLeft)>1||panel.dataset.overviewPanel!==active)select(panel.dataset.overviewPanel,true);
   }
   function refresh(){
+    filterLauncher();
     if(separateActive&&separateWorkspace!==activeWorkspace)leaveSeparate();
     separate.forEach(provider=>{provider.button.hidden=!provider.available();});
     const column=desktopPages.column(activeWorkspace),project=projectSpaces[column];

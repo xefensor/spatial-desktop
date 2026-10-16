@@ -104,7 +104,7 @@ const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
   requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
   window:{matchMedia:()=>({matches:true}),addEventListener(){},getComputedStyle:node=>({overflowY:node.overflowY||'visible',overflowX:node.overflowX||'visible'})},
-  setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],
+  setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],filterLauncher:()=>calls.push(['launcher',context.activeWorkspace]),
   activateProject:name=>{context.column=name;calls.push(['activate',name]);},changeDesktopColumn:name=>{context.column=name;calls.push(['column',name]);},
   changeDesktopPage:page=>calls.push(['page',page]),createAppInstance:base=>{calls.push(['instance',base]);return base;},
   openApp:app=>calls.push(['open',app]),navigateBrowser:(app,address)=>calls.push(['browser',app,address]),
@@ -114,6 +114,7 @@ vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').j
 const overview=context.SpatialOverviewDesktop,timeline=context.SpatialTimelineDesktop;
 assert.equal(overview.active(),'windows','A fresh Overview starts with existing work, not the app catalogue');
 assert.equal(JSON.parse(data.get('spatial-overview-section-v2')).general,'windows','Default selection is stored under the new preference version');
+assert(calls.some(call=>call[0]==='launcher'&&call[1]==='general'),'Overview refresh applies the current Workspace launcher profile');
 for(const id of ['timeline','system','projects','windows','apps','timeline','apps']){
   overview.select(id,false);
   const current=panelNodes.find(n=>n.dataset.overviewPanel===id),index=track.children.indexOf(current);
@@ -254,6 +255,7 @@ dayButtons[1].listeners.click();assert.notEqual(make('#timelineDay').value,T.day
 dayButtons[0].listeners.click();assert.equal(make('#timelineDay').value,T.dayKey(Date.now()),'Reverse navigation returns to the prior available day');
 assert.equal(make('#overviewContext').textContent,'General / Website / Desktop 2','Overview states the actual workspace, project and desktop');
 context.activeWorkspace='work';context.SpatialOverviewDesktop.refresh();assert.equal(make('#timelinePlanForm').hidden,true,'A workspace switch closes the old workspace form');
+assert.equal(calls.filter(call=>call[0]==='launcher').at(-1)[1],'work','A Workspace switch refreshes launcher favorites alongside the Overview context');
 console.log('Overview and Timeline passed: real circular neighbours, snap centring, focus, wheel/zoom/momentum, workspace history, persistence, bounds, safe text, return actions, Guide gating, labelled examples, interruption-safe snaps and independent calendar/tasks/reminders.');
 
 // Running windows belong to desktops; parked windows travel with their column.
