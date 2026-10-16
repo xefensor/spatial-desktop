@@ -177,6 +177,19 @@
       result.blocked=true;
       return result;
     }
+    if(options.compactDock===true&&states[first]==='rail'&&states[second]==='rail'){
+      // Inside a whole Compact dock, the divider only shares its length.
+      // Reaching a control minimum never changes presentation or dock width.
+      if(total+1e-7<fixed(first)+fixed(second)){
+        result.blocked=true;
+        return result;
+      }
+      const requested=startFirst+delta;
+      sizes[first]=Math.min(total-fixed(second),Math.max(fixed(first),requested));
+      sizes[second]=total-sizes[first];
+      result.blocked=Math.abs(sizes[first]-requested)>1e-7;
+      return result;
+    }
     if(states[growing]==='rail'){
       result.pressure=Math.min(1,travel/thresholds.resistance);result.blocked=true;
       if(travel<thresholds.resistance)return result;

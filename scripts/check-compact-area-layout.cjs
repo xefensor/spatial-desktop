@@ -228,6 +228,28 @@ for(const axis of ['vertical','horizontal'])for(const first of allNames)for(cons
   const blockedSizes={[first]:Compact.compactSize(axis,first),[second]:minSecond,unrelated:173};
   result=resized({...input,sizes:blockedSizes,states:{...states,[first]:'rail'},delta:48});assert.deepEqual(result.sizes,blockedSizes);assert.equal(result.expand,first);assert.equal(result.blocked,true);
 }
+// A whole Compact dock has continuous sibling resizing, with hard control
+// minima. Neither the old48px threshold nor a large overshoot can expand it.
+for(const axis of ['vertical','horizontal'])for(const first of allNames)for(const second of allNames.filter(name=>name!==first)){
+  const minFirst=Compact.compactSize(axis,first),minSecond=Compact.compactSize(axis,second);
+  const sizes={[first]:minFirst+200,[second]:minSecond+200,unrelated:173};
+  const states={[first]:'rail',[second]:'rail',unrelated:'expanded'},total=sizes[first]+sizes[second];
+  for(const delta of [0,1,-1,16,-16,47,-47,48,-48,49,-49,200,-200,10000,-10000]){
+    result=resized({axis,first,second,sizes,states,delta,compactDock:true,crossSize:70});
+    const expected=Math.min(total-minSecond,Math.max(minFirst,sizes[first]+delta));
+    near(result.sizes[first],expected);near(result.sizes[second],total-expected);
+    assert.deepEqual(result.states,states,'Whole Compact dock divider never changes presentation');
+    assert.equal(result.expand,undefined);assert.equal(result.snapped,undefined);assert.equal(result.pressure,0);
+    assert.equal(result.blocked,expected!==sizes[first]+delta);
+    assert(result.sizes[first]>=minFirst&&result.sizes[second]>=minSecond,'Both Compact control minima remain usable');
+  }
+  const constrained={[first]:minFirst/2,[second]:minSecond/2,unrelated:173};
+  for(const delta of [-1000,48,1000]){
+    result=resized({axis,first,second,sizes:constrained,states,delta,compactDock:true,crossSize:70});
+    assert.deepEqual(result.sizes,constrained,'A physically undersized Compact pair cannot create invalid peer geometry');
+    assert.equal(result.expand,undefined);assert.equal(result.snapped,undefined);assert.equal(result.pressure,0);assert.equal(result.blocked,true);
+  }
+}
 for(const state of ['expanded','rail'])for(const axis of ['vertical','horizontal'])for(const name of allNames){
   const minimum=Compact.expandedMinimum(axis,name),compact=Compact.compactSize(axis,name),maximum=1000;
   let thickness=Compact.resizeThickness({state,requested:state==='rail'?compact:minimum,minimum,compact,maximum});
@@ -260,4 +282,4 @@ for(const sizes of [{apps:10,systems:20},{apps:1e308,systems:1e308}]){
 }
 assert.equal(typeof sandbox.SpatialCompactAreas.resizePair,'function');assert.equal(typeof sandbox.SpatialCompactAreas.resizeThickness,'function');
 assert.equal(typeof sandbox.SpatialCompactAreas.compactSize,'function');
-console.log('Area snap resistance: '+resizeCount+' pair proposals across every Area/orientation/direction, fixed Compact slots, remembered restore, cross-axis constraints and matching outer-edge hysteresis passed.');
+console.log('Area snap resistance: '+resizeCount+' pair proposals across every Area/orientation/direction, fixed Compact slots, continuous whole-Compact sharing, remembered restore, cross-axis constraints and matching outer-edge hysteresis passed.');

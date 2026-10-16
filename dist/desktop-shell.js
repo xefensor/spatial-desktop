@@ -3888,14 +3888,16 @@ function resizeAreaShare(edge, first, second, delta, original) {
   const names = dockGroup(edge),index = names.indexOf(first),model = globalThis.SpatialCompactAreas;
   if (index < 0 || names[index+1] !== second || !Number.isFinite(delta) || !model?.resizePair) return {changed:false};
   const vertical = edge === "left" || edge === "right",axis = vertical?"vertical":"horizontal";
+  const crossSize = areaFor(first).getBoundingClientRect()[vertical?"width":"height"];
+  const compactDock = names.every(name => original.states[name] === "rail") && crossSize < (vertical?model.thresholds.compactCrossSize:model.thresholds.horizontalGridHeight);
   const result = model.resizePair({axis,first,second,delta,sizes:original.sizes,states:original.states,
-    expanded:original.expanded,crossSize:areaFor(first).getBoundingClientRect()[vertical?"width":"height"],
+    expanded:original.expanded,crossSize,compactDock,
     crossMinimums:Object.fromEntries(names.map(name => [name,vertical?stateSideMinimum(name,"expanded"):stateHorizontalMinimum(name,"expanded")]))});
   if (result.expand && !result.snapped && expandSharedArea(result.expand)) return {...result,pressure:0,blocked:false,snapped:result.expand,changed:true};
   const changed = [first,second].some(name => Math.abs(result.sizes[name]-original.sizes[name])>.1 || result.states[name] !== original.states[name]);
   if (!changed) return {...result,changed:false};
-  // Fixed Compact slots never receive a fractional size from the pointer.
-  // Their preferred state is explicit after a snap, including after reload.
+  // Embedded Compact slots remain fixed; a whole narrow Compact dock shares
+  // length continuously while leaving its outer thickness unchanged.
   const sum = names.reduce((value,name) => value+result.sizes[name],0);
   const mass = names.every(name => Number.isFinite(areaDockShares[edge][name]) && areaDockShares[edge][name] > 0)
     ? names.reduce((value,name) => value+areaDockShares[edge][name],0) : 1;
@@ -3969,6 +3971,11 @@ function syncAreaShareHandles(edges) {
       }
       const a = areaFor(first).getBoundingClientRect(),b = areaFor(second).getBoundingClientRect();
       const size = vertical?a.height:a.width,total = size+(vertical?b.height:b.width);
+      const model = globalThis.SpatialCompactAreas;
+      const compactDock = names.every(name => areaFor(name).dataset.areaState === "rail") && (vertical?a.width:a.height) < (vertical?model.thresholds.compactCrossSize:model.thresholds.horizontalGridHeight);
+      handle.title = compactDock
+        ? "Drag to share space · Compact Areas stop at their minimum · Use the outside border to expand the panel"
+        : "Drag to share space · Push past the stop to snap Compact · Pull to expand · Shift + arrow snaps at the stop";
       handle.hidden = false;
       Object.assign(handle.style,vertical
         ? {left:(a.left-origin.left)+"px",top:(a.bottom-origin.top-4)+"px",width:a.width+"px",height:"8px"}
