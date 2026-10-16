@@ -2614,7 +2614,7 @@ function prepareZoneResizers() {
 }
 
 const areaPriority = ["projects", "apps", "systems", "ai"];
-const dockEdges = ["left", "right", "top", "bottom"];
+const dockEdges = ["left", "right"];
 const dockState = {
   projects: { edge: "left", order: 1 },
   apps: { edge: "left", order: 0 },
@@ -2764,7 +2764,7 @@ function saveAreaLayout() {
 
 function applyAreaSession(workspaceName) {
   const source = workspaceAreaSessions[workspaceName] || defaultAreaSession || snapshotAreaLayout();
-  const saved = JSON.parse(JSON.stringify(window.innerWidth >= window.innerHeight ? globalThis.SpatialDemoExamples?.migrateAreaLayout(source) || source : source));
+  const saved = JSON.parse(JSON.stringify(globalThis.SpatialDemoExamples?.migrateAreaLayout(source) || source));
   saved.state ||= {};
   areaPriority.forEach(name => { saved.state[name] ||= {...(defaultAreaSession?.state[name] || dockState[name])}; });
   saved.hidden ||= {};
@@ -2988,7 +2988,7 @@ function dockAxisBounds(edge, width, height) {
 }
 
 function boundDockLayout(width, height, states, requestedSizes) {
-  const sizes = { ...requestedSizes };
+  const sizes = { ...requestedSizes, top: 0, bottom: 0 };
   const rail = edge => {
     dockGroup(edge).forEach(name => { states[name] = "rail"; });
     sizes[edge] = edgeMinimumForState(edge, "rail");
@@ -3000,7 +3000,7 @@ function boundDockLayout(width, height, states, requestedSizes) {
     if (maximum < minimum) rail(edge);
     else sizes[edge] = Math.min(maximum, Math.max(minimum, sizes[edge]));
   });
-  for (const pair of [["left", "right"], ["top", "bottom"]]) {
+  for (const pair of [["left", "right"]]) {
     const { extent, workspace } = dockAxisBounds(pair[0], width, height);
     const budget = Math.max(0, extent - workspace);
     let overflow = sizes[pair[0]] + sizes[pair[1]] - budget;
@@ -3469,16 +3469,13 @@ function layoutDockAreas(save = false, fitWindows = true) {
   if (secondaryCanvasNames.length) {
     secondaryCanvasNames.forEach(name => { resolved.states[name] = "expanded"; });
   }
-  const left = dockGroup("left"), right = dockGroup("right"), top = dockGroup("top"), bottom = dockGroup("bottom");
+  const left = dockGroup("left"), right = dockGroup("right");
   const leftWidth = left.length ? effectiveSizes.left : 0, rightWidth = right.length ? effectiveSizes.right : 0;
-  const topHeight = top.length ? effectiveSizes.top : 0, bottomHeight = bottom.length ? effectiveSizes.bottom : 0;
   const centerLeft = gap + (left.length ? leftWidth + gap : 0);
   const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
-  const centerWidth = Math.max(0, centerRight - centerLeft);
   const panels = {};
   if (!secondaryCanvasNames.length) dockEdges.forEach(edge => {
-    const vertical = edge === "left" || edge === "right";
-    panels[edge] = allocateAreaPanels(dockGroup(edge),edge,vertical?height:centerWidth,effectiveSizes[edge],resolved.states);
+    panels[edge] = allocateAreaPanels(dockGroup(edge),edge,height,effectiveSizes[edge],resolved.states);
     Object.entries(panels[edge]).forEach(([name,panel]) => { resolved.states[name] = panel.state; });
   });
   currentDisplayProfile = resolved.profile;
@@ -3517,25 +3514,14 @@ function layoutDockAreas(save = false, fitWindows = true) {
       applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + panel.offset, width: panelWidth, height: panel.extent, joinEdge: index ? "top" : "none" });
     });
   };
-  const layoutHorizontal = (names, edge, y, panelHeight) => {
-    if (!names.length) return;
-    names.forEach((name, index) => {
-      const thickness = panelHeight;
-      const panel = panels[edge][name];
-      applyDockRect(name, { x: centerLeft + panel.offset, y: edge === "bottom" ? y + panelHeight - thickness : y, width: panel.extent, height: thickness, joinEdge: index ? "left" : "none" });
-    });
-  };
-
   layoutSide(left, "left", gap, leftWidth);
   layoutSide(right, "right", width - gap - rightWidth, rightWidth);
-  layoutHorizontal(top, "top", gap, topHeight);
-  layoutHorizontal(bottom, "bottom", height - gap - bottomHeight, bottomHeight);
   syncAreaShareHandles(dockEdges);
   baseWorkspaceInsets = {
     left: centerLeft,
     right: width - centerRight,
-    bottom: bottom.length ? bottomHeight + gap * 2 : gap,
-    top: top.length ? topHeight + gap * 2 : gap
+    bottom: gap,
+    top: gap
   };
   // A revealed edge panel expands over the current scene, without taking
   // more tile space. Its preferred dock size remains unchanged.
@@ -3627,8 +3613,6 @@ function closestDockEdge(clientX, clientY) {
   const distances = {
     left: Math.abs(clientX - rect.left),
     right: Math.abs(rect.right - clientX),
-    top: Math.abs(clientY - rect.top),
-    bottom: Math.abs(rect.bottom - clientY)
   };
   return [...dockEdges].sort((a, b) => distances[a] - distances[b])[0];
 }
@@ -3661,6 +3645,7 @@ function dockInsertion(edge, clientX, clientY, movingName) {
   return index < 0 ? peers.length : index;
 }
 function areaDockPreviewRect(name, edge, insertion) {
+  if (!dockEdges.includes(edge)) return null;
   const shell = $(".desktop-shell"),plan = planAreaDock(name,edge,insertion);
   const savedState = Object.fromEntries(areaPriority.map(item => [item,{...dockState[item]}])),savedSizes = {...dockSizes};
   // Resolve the same constraints as the committed move, without rendering or
@@ -3685,6 +3670,7 @@ function areaDockPreviewRect(name, edge, insertion) {
 }
 function renderAreaDockPreview(name, edge, insertion) {
   const preview = ensureDockPreview(),rect = areaDockPreviewRect(name,edge,insertion);
+  if (!rect) return;
   preview.dataset.edge = edge;
   Object.assign(preview.style,{left:rect.x+"px",right:"auto",top:rect.y+"px",bottom:"auto",width:rect.width+"px",height:rect.height+"px"});
 }
@@ -3994,11 +3980,11 @@ function prepareAreaWindows() {
   let saved = null;
   try {
     const sessions = JSON.parse(desktopStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
-    Object.entries(sessions).forEach(([name, session]) => { workspaceAreaSessions[name] = session; });
+    Object.entries(sessions).forEach(([name, session]) => { workspaceAreaSessions[name] = globalThis.SpatialDemoExamples?.migrateAreaLayout(session) || session; });
     saved = workspaceAreaSessions[activeWorkspace] || null;
     if (!saved && activeWorkspace === "general") saved = JSON.parse(desktopStorage.getItem("spatial-dock-layout-v2") || "null");
   } catch {}
-  if (saved && window.innerWidth >= window.innerHeight) saved = globalThis.SpatialDemoExamples?.migrateAreaLayout(saved) || saved;
+  if (saved) saved = globalThis.SpatialDemoExamples?.migrateAreaLayout(saved) || saved;
   if (saved) workspaceAreaSessions[activeWorkspace] = saved;
   restoreAreaPreferences(saved);
   if (saved?.state) areaPriority.forEach(name => {
@@ -6769,7 +6755,7 @@ function contextMenuEntries(context) {
     { action: "area-hide", icon: "i-close", label: "Hidden", checked: Boolean(areaFor(context.name)?.hidden) },
     separator,
     context.name === "systems" && isLocalArea("apps") && !areaFor("apps")?.hidden && ["left","right"].includes(dockState.apps.edge) ? { action: "area-below-apps", icon: "i-down", label: "Compact below Apps" } : null,
-    { action: "area-move", icon: "i-grid", label: "Move to next edge" },
+    { action: "area-move", icon: "i-grid", label: dockState[context.name].edge === "left" ? "Move to right side" : "Move to left side" },
     extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
     { action: "area-reset", icon: "i-max", label: "Reset Area size" }
   ].filter(Boolean);

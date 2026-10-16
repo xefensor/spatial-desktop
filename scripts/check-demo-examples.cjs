@@ -112,9 +112,39 @@ assert.deepEqual(migratedAreas.hidden, oldAreaLayout.hidden);
 assert.equal(oldAreaLayout.state.ai.edge, 'bottom', 'Incoming layout is not mutated');
 assert.deepEqual(D.migrateAreaLayout(migratedAreas), migratedAreas, 'Orientation migration is idempotent');
 const editedAreas = copy(oldAreaLayout); editedAreas.state.projects.edge = 'top';
-assert.deepEqual(D.migrateAreaLayout(editedAreas).state, editedAreas.state, 'Custom docking survives');
+assert.equal(D.migrateAreaLayout(editedAreas).state.projects.edge,'left','Retired top docking joins the left side');
+assert.equal(D.migrateAreaLayout(editedAreas).state.ai.edge,'right','Retired bottom docking joins the right side');
 const laterEdit = copy(migratedAreas); laterEdit.state.ai = {edge:'bottom',order:0};
-assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later horizontal move survives reload');
+assert.equal(D.migrateAreaLayout(laterEdit).state.ai.edge,'right','Horizontal docking from a later session also migrates');
+
+// Removing top/bottom docking preserves the user's actual side columns and
+// app data, appends retired groups in order, and never transposes width shares.
+const customHorizontal={orientationVersion:1,
+  state:{apps:{edge:'top',order:2},projects:{edge:'left',order:7},systems:{edge:'bottom',order:1},ai:{edge:'bottom',order:0}},
+  sizes:{left:415,right:490,top:300,bottom:290},
+  preferred:{apps:'expanded',projects:'rail',systems:'rail',ai:'expanded'},hidden:{apps:false,projects:true,systems:false,ai:true},
+  shares:{left:{projects:.7},top:{apps:1},bottom:{ai:.6,systems:.4}},
+  expandedMain:{left:{projects:510},top:{apps:1000},bottom:{ai:800,systems:600}},
+  expanded:{apps:{top:300},projects:{left:415},ai:{bottom:290}},
+  contents:{note:'User note',files:['keep.txt']},manual:{left:true,right:false,top:true,bottom:false}};
+const originalHorizontal=copy(customHorizontal),sideLayout=D.migrateSideAreaLayout(customHorizontal);
+assert.deepEqual(customHorizontal,originalHorizontal,'Side migration never mutates the incoming snapshot');
+assert.deepEqual(sideLayout.state,{apps:{edge:'left',order:1},projects:{edge:'left',order:0},systems:{edge:'right',order:1},ai:{edge:'right',order:0}},'Retired groups join their matching side after existing Areas in order');
+assert.equal(sideLayout.sizes.left,415,'An existing side keeps its chosen width');
+assert.equal(sideLayout.sizes.right,300,'An empty side gets a usable vertical default rather than a retired row thickness');
+for(const key of ['preferred','hidden','contents','manual'])assert.deepEqual(sideLayout[key],originalHorizontal[key],key+' survives docking migration');
+assert.deepEqual(sideLayout.shares,{left:{projects:.7}},'Horizontal width ratios never become vertical height ratios');
+assert.deepEqual(sideLayout.expandedMain,{left:{projects:510}},'Existing vertical restore heights survive without importing horizontal widths');
+assert.deepEqual(sideLayout.expanded.apps,{left:415});assert.deepEqual(sideLayout.expanded.ai,{right:300});
+assert.deepEqual(D.migrateAreaLayout(sideLayout),sideLayout,'Migrated side layout is stable after reload');
+assert.equal(D.migrateSideAreaLayout(sideLayout),sideLayout,'A side-only layout does not need cloning or migration');
+for(const edge of ['top','bottom']){
+  const legacy={orientationVersion:1,state:Object.fromEntries(['apps','projects','systems','ai'].map((name,order)=>[name,{edge,order}])),preferred:{apps:'rail'}};
+  const converted=D.migrateAreaLayout(legacy),target=edge==='top'?'left':'right';
+  assert(Object.values(converted.state).every(dock=>dock.edge===target),'A whole retired '+edge+' row joins the '+target+' panel');
+  assert.deepEqual(Object.values(converted.state).map(dock=>dock.order),[0,1,2,3]);
+  assert.deepEqual(converted.preferred,legacy.preferred);
+}
 
 // Refresh only the former shipped General Area layout, once, without reseeding work.
 const formerGeneral=copy(D.scenarios.general.areas);

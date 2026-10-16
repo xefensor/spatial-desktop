@@ -187,6 +187,7 @@ const shell = { clientWidth: 1600, clientHeight: 900,
 const docks = {
   desktopPages: require("../dist/desktop-pages.js").create(),
   SpatialCompactAreas: require("../dist/compact-area-layout.js"),
+  SpatialDemoExamples: require("../dist/demo-examples.js"),
   tileEngine: T, activeWorkspace: "general", systemRailExpansion:null, cancelAreaPointerInteraction:null,
   window: { innerWidth: 1600, innerHeight: 900, ...eventTarget() },
   cloneDesktopState: value => JSON.parse(JSON.stringify(value)),
@@ -319,7 +320,7 @@ systemHandle.listeners.get('pointerup')();
 assert.equal(areaFrames.systems.dataset.areaState,'expanded','Widening an all-compact column expands the Area being resized');
 assert.equal(areaFrames.ai.dataset.areaState,'rail','Widening an all-compact column leaves the other Area compact');
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(compactColumnBaseline);applyAreaSession("general");',docks);
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   docks.mixedEdge=edge;
   vm.runInContext(`dockState.systems.edge=mixedEdge;dockState.ai.edge=mixedEdge;
     dockSizes[mixedEdge]=mixedEdge==='left'||mixedEdge==='right'?70:64;areaPreferredStates.systems="rail";layoutDockAreas();`,docks);
@@ -332,7 +333,7 @@ for(const edge of ['left','right','top','bottom']){
 }
 docks.mixedRailBaseline=mixedRailBaseline;
 vm.runInContext('workspaceAreaSessions.general=JSON.parse(mixedRailBaseline);applyAreaSession("general");',docks);
-console.log('Shared dock rails passed: System/AI resize together, saved session restore and matching four-edge geometry.');
+console.log('Shared dock rails passed: System/AI resize together, saved session restore and matching left/right geometry.');
 
 // Context commands, hide/show and joining another column preserve the selected
 // Area's presentation rather than adopting or overwriting a peer's preference.
@@ -462,7 +463,7 @@ vm.runInContext('delete intentAreaPlan.rails.systems;workspaceAreaSessions.gener
 const areaBoundsBaseline = vm.runInContext('JSON.stringify(snapshotAreaLayout())', docks);
 const originalShellRect = shell.getBoundingClientRect;
 shell.getBoundingClientRect = () => ({left:25,top:30,right:25+shell.clientWidth,bottom:30+shell.clientHeight,width:shell.clientWidth,height:shell.clientHeight});
-for (const edge of ['left','right','top','bottom']) {
+for (const edge of ['left','right']) {
   const opposite = {left:'right',right:'left',top:'bottom',bottom:'top'}[edge];
   const vertical = ['left','right'].includes(edge);
   docks.boundsEdge = edge; docks.boundsOpposite = opposite;
@@ -502,33 +503,60 @@ projectHandle.listeners.get('pointerup')();
 // replacing those preferences when no resize gesture is in progress.
 for (const [width,height] of [[1600,900],[900,650],[600,400],[300,200],[120,100]]) {
   shell.clientWidth=width; shell.clientHeight=height;
-  for (const horizontal of [false,true]) {
-    docks.horizontalBounds=horizontal;
-    vm.runInContext(`
-      dockState.projects.edge=horizontalBounds?'top':'left';dockState.systems.edge=horizontalBounds?'bottom':'right';
-      dockSizes.left=dockSizes.right=dockSizes.top=dockSizes.bottom=100000;
-      layoutDockAreas();
-    `,docks);
-    for(const name of ['projects','systems']) {
-      const r=areaFrames[name].rect;
-      assert(r.x>=0&&r.y>=0&&r.x+r.width<=width&&r.y+r.height<=height,'Areas stay within the resized viewport');
-    }
-    const a=areaFrames.projects.rect,b=areaFrames.systems.rect;
-    assert(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'Opposing Areas never overlap');
-    assert.equal(vm.runInContext('dockSizes.left',docks),100000,'Viewport fitting preserves the preferred layout');
+  vm.runInContext(`
+    dockState.projects.edge='left';dockState.systems.edge='right';
+    dockSizes.left=dockSizes.right=100000;
+    layoutDockAreas();
+  `,docks);
+  for(const name of ['projects','systems']) {
+    const r=areaFrames[name].rect;
+    assert(r.x>=0&&r.y>=0&&r.x+r.width<=width&&r.y+r.height<=height,'Areas stay within the resized viewport');
   }
+  const a=areaFrames.projects.rect,b=areaFrames.systems.rect;
+  assert(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'Opposing Areas never overlap');
+  assert.equal(vm.runInContext('dockSizes.left',docks),100000,'Viewport fitting preserves the preferred layout');
 }
 shell.clientWidth=1600; shell.clientHeight=900; shell.getBoundingClientRect=originalShellRect;
 docks.areaBoundsBaseline=JSON.parse(areaBoundsBaseline);
 vm.runInContext(`workspaceAreaSessions.general=areaBoundsBaseline;applyAreaSession('general');`,docks);
 assert.equal(JSON.stringify(areaFrames.projects.rect),railRect,'Restoring the baseline keeps its original rail');
-console.log('Area resize limits: all four edges, out-of-screen pointers, opposite preservation, canvas reservation, stored sizes and ten viewport/session repair scenarios passed.');
+console.log('Area resize limits: both side edges, out-of-screen pointers, opposite preservation, canvas reservation, stored sizes and five viewport/session repair scenarios passed.');
+
+// Areas expose left/right docks only. Retired row snapshots migrate even on
+// portrait viewports; unsupported drops cannot be previewed or committed.
+const sideOnlyBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
+assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(dockEdges)',docks)),['left','right']);
+for(const edge of ['top','bottom']){
+  const before=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),undoBefore=docks.undoOffers;
+  vm.runInContext(`setDockPosition('apps','${edge}');`,docks);
+  assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,'Retired '+edge+' docking is rejected without changing geometry');
+  assert.equal(docks.undoOffers,undoBefore,'Retired '+edge+' docking never offers Undo');
+  assert.equal(vm.runInContext(`areaDockPreviewRect('apps','${edge}',0)`,docks),null,'Retired '+edge+' cannot produce a drop preview');
+}
+for(const y of [0,450,900]){
+  assert.equal(vm.runInContext(`closestDockEdge(20,${y})`,docks),'left','Even a top/bottom drag on the left chooses a side dock');
+  assert.equal(vm.runInContext(`closestDockEdge(1580,${y})`,docks),'right','Even a top/bottom drag on the right chooses a side dock');
+}
+docks.window.innerWidth=700;docks.window.innerHeight=1000;
+vm.runInContext(`workspaceAreaSessions.general={orientationVersion:1,
+  state:{apps:{edge:'top',order:0},projects:{edge:'left',order:0},systems:{edge:'bottom',order:0},ai:{edge:'right',order:0}},
+  sizes:{left:340,right:320,top:280,bottom:260},preferred:{apps:'expanded',projects:'rail',systems:'rail',ai:'rail'},
+  hidden:{projects:true,ai:true},layoutMode:'manual'};applyAreaSession('general');`,docks);
+assert.equal(vm.runInContext('dockState.apps.edge',docks),'left','Top-docked Apps migrates in portrait as well as landscape');
+assert.equal(vm.runInContext('dockState.systems.edge',docks),'right','Bottom-docked System migrates to the right');
+assert.equal(areaFrames.projects.hidden,true,'Migration preserves hidden neighbours');
+assert.equal(areaFrames.systems.dataset.areaState,'rail','Migration preserves Compact presentation');
+assert.equal(docks.insets.top,0);assert.equal(docks.insets.bottom,0);
+assert(Object.values(JSON.parse(vm.runInContext('JSON.stringify(snapshotAreaLayout().state)',docks))).every(dock=>['left','right'].includes(dock.edge)));
+docks.window.innerWidth=1600;docks.window.innerHeight=900;docks.sideOnlyBaseline=JSON.parse(sideOnlyBaseline);
+vm.runInContext('workspaceAreaSessions.general=sideOnlyBaseline;applyAreaSession("general");',docks);
+console.log('Side-only Areas passed: retired row migration, portrait reload, order/presentation/visibility preservation, side-only drop targets and unsupported placement rejection.');
 
 // The outer border uses exactly the same 48 pixel stop as a shared divider.
 // Compact thickness is fixed on both sides of the stop, with feedback only
 // while the pointer is pressing against it and no leftover feedback on cancel.
 const outerSnapBaseline=vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks);
-for(const edge of ['left','right','top','bottom'])for(const name of ['apps','projects','systems','ai']){
+for(const edge of ['left','right'])for(const name of ['apps','projects','systems','ai']){
   docks.outerSnapEdge=edge;docks.outerSnapName=name;
   const vertical=['left','right'].includes(edge),dimension=vertical?'width':'height',initial=vertical?400:320;
   vm.runInContext(`
@@ -571,7 +599,7 @@ for(const edge of ['left','right','top','bottom'])for(const name of ['apps','pro
 const compactOuterAreas=['apps','projects','systems','ai'];
 const compactOuterRect=shell.getBoundingClientRect;
 shell.getBoundingClientRect=()=>({left:0,top:0,right:shell.clientWidth,bottom:shell.clientHeight,width:shell.clientWidth,height:shell.clientHeight});
-for(const edge of ['left','right','top','bottom'])for(const name of compactOuterAreas){
+for(const edge of ['left','right'])for(const name of compactOuterAreas){
   const vertical=['left','right'].includes(edge),axis=vertical?'vertical':'horizontal';
   const crossDimension=vertical?'width':'height',mainDimension=vertical?'height':'width',restoredCross=vertical?400:320;
   const mainMinimum=docks.SpatialCompactAreas.expandedMinimum(axis,name);
@@ -636,7 +664,7 @@ for(const edge of ['left','right','top','bottom'])for(const name of compactOuter
 // Recover sessions written by the old failed-expansion path: a low Apps share
 // left every Area visibly Compact while its preference kept the column wide.
 // A shrinking gesture must repair that column, never infer Expanded from width.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   const vertical=['left','right'].includes(edge),axis=vertical?'vertical':'horizontal',crossDimension=vertical?'width':'height',mainDimension=vertical?'height':'width',wide=vertical?400:320;
   docks.compactOuterEdge=edge;docks.compactOuterAxis=axis;
   vm.runInContext(`
@@ -676,7 +704,7 @@ for(const edge of ['left','right','top','bottom']){
 
 // The outer border belongs to the whole column. Grabbing a Compact peer must
 // preserve the actually Expanded neighbour through shrinking and reverse snap.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   const vertical=['left','right'].includes(edge),crossDimension=vertical?'width':'height',wide=vertical?400:320;
   docks.compactOuterEdge=edge;
   vm.runInContext(`
@@ -741,7 +769,7 @@ assert.equal(docks.window.listenerCount(),0,'Blocked outer expansion removes ges
 shell.clientHeight=900;shell.getBoundingClientRect=compactOuterRect;
 docks.outerSnapBaseline=JSON.parse(outerSnapBaseline);
 vm.runInContext('workspaceAreaSessions.general=outerSnapBaseline;applyAreaSession("general");',docks);
-console.log('Outer Area snaps: all four Areas and screen edges, meaningful minima, 48 pixel resistance, fixed Compact thickness, low-share shared-column recovery, repeat snaps, capacity rejection, feedback, reload and cancellation passed.');
+console.log('Outer Area snaps: all four Areas and both side edges, meaningful minima, 48 pixel resistance, fixed Compact thickness, low-share shared-column recovery, repeat snaps, capacity rejection, feedback, reload and cancellation passed.');
 
 // Shared dock dividers resize adjacent Areas along the dock, independently of
 // the existing outer-border thickness gesture. Exercise real handles and model.
@@ -765,7 +793,7 @@ const configureShareEdge=edge=>{
 };
 shell.clientWidth=1800;shell.clientHeight=1600;
 shell.getBoundingClientRect=()=>({left:0,top:0,right:shell.clientWidth,bottom:shell.clientHeight,width:shell.clientWidth,height:shell.clientHeight});
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',crossDimension=vertical?'width':'height';
   const handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks);
@@ -801,7 +829,7 @@ for(const edge of ['left','right','top','bottom']){
 // Every Area holds its usable Expanded minimum until the pointer crosses the
 // resistance band. Compact has one fixed slot and the reverse snap also needs
 // deliberate travel, measured from the actual snap rather than the old border.
-for(const edge of ['left','right','top','bottom'])for(const squeezed of shareAreas){
+for(const edge of ['left','right'])for(const squeezed of shareAreas){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',index=shareAreas.indexOf(squeezed);
   const axis=vertical?'vertical':'horizontal',minimum=docks.SpatialCompactAreas.expandedMinimum(axis,squeezed),compact=docks.SpatialCompactAreas.compactSize(axis,squeezed);
@@ -891,7 +919,7 @@ assert.equal(areaFrames.projects.rect.height,400,'Reload preserves the restored 
 
 // Explicit Expanded must reclaim useful along-dock space after pressure,
 // instead of selecting a presentation that remains too small to display.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',crossDimension=vertical?'width':'height';
   vm.runInContext(`areaDockShares[shareEdge]={apps:.05,projects:.45,systems:.25,ai:.25};layoutDockAreas(false,false);`,docks);
@@ -917,7 +945,7 @@ for(const name of ['projects','systems','ai'])assert(areaFrames[name].rect.heigh
 shell.clientHeight=1600;
 
 // Keyboard resizing uses the same saved proportions and persistent separator.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width';
   const handle=vm.runInContext(`areaShareHandles.get('${edge}:systems:ai')`,docks),size=areaFrames.systems.rect[dimension],undoBefore=docks.undoOffers;
@@ -933,7 +961,7 @@ for(const edge of ['left','right','top','bottom']){
   assert.equal(vm.runInContext('JSON.stringify(snapshotAreaLayout())',docks),before,edge+' ignores the arrow on the other axis');
 }
 
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',axis=vertical?'vertical':'horizontal';
   const minimum=docks.SpatialCompactAreas.expandedMinimum(axis,'projects'),handle=vm.runInContext(`areaShareHandles.get('${edge}:apps:projects')`,docks),start={x:0,y:0};
@@ -977,7 +1005,7 @@ assert(Math.abs(areaFrames.ai.rect.height-392)<1e-6);
 // Inside a whole Compact dock, sibling separators share length continuously.
 // Passing the old 48px snap threshold or pushing either minimum must never
 // expand an Area, widen the dock, or steal space from non-adjacent neighbours.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),axis=vertical?'vertical':'horizontal',dimension=vertical?'height':'width',crossDimension=vertical?'width':'height';
   vm.runInContext(`['apps','projects','systems','ai'].forEach(name=>{areaPreferredStates[name]='rail';});layoutDockAreas(false,false);`,docks);
@@ -1059,7 +1087,7 @@ shell.clientHeight=1600;
 
 // A newly shown peer has no share yet. Give it its default allocation while
 // preserving the ratio the user already chose for the established neighbors.
-for(const edge of ['left','right','top','bottom']){
+for(const edge of ['left','right']){
   configureShareEdge(edge);
   const vertical=['left','right'].includes(edge),dimension=vertical?'height':'width',extent=vertical?shell.clientHeight:shell.clientWidth;
   vm.runInContext(`areaFor('projects').hidden=areaFor('ai').hidden=true;areaDockShares[shareEdge]={apps:.6,systems:.4};layoutDockAreas(false,false);`,docks);
@@ -1098,7 +1126,7 @@ for(const key of ['x','y','width','height'])assert.equal(weightedPreview[key],ar
 shell.clientWidth=1600;shell.clientHeight=900;shell.getBoundingClientRect=originalShellRect;
 docks.shareBaseline=JSON.parse(shareBaseline);
 vm.runInContext('workspaceAreaSessions.general=shareBaseline;applyAreaSession("general");',docks);
-console.log('Shared Area dividers passed: four edges and Areas, Expanded minima, 48 pixel stops, fixed Compact slots, reverse hysteresis, remembered restoration, feedback cleanup, free-room expansion, keyboard snaps, cancellation, Undo, Workspace persistence, hidden/remote peers and matching drop previews.');
+console.log('Shared Area dividers passed: both side edges and all Areas, Expanded minima, 48 pixel stops, fixed Compact slots, reverse hysteresis, remembered restoration, feedback cleanup, free-room expansion, keyboard snaps, cancellation, Undo, Workspace persistence, hidden/remote peers and matching drop previews.');
 
 vm.runInContext(slice("function hideArea(", "function setDockPosition("), docks);
 vm.runInContext(slice("function contextMenuEntries(", "function closeDesktopContextMenu("), docks);

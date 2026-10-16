@@ -187,7 +187,7 @@
   };
   // Upgrade only recognisable shipped defaults, retaining edited layouts and sizes.
   function migrateAreaLayout(session) {
-    if (!session || session.orientationVersion === 1) return session;
+    if (!session || session.orientationVersion === 1) return migrateSideAreaLayout(session);
     const next = JSON.parse(JSON.stringify(session));
     const oldDefaults = [
       {apps:["left",0],projects:["left",1],systems:["right",0]},
@@ -201,6 +201,36 @@
       next.state = JSON.parse(JSON.stringify(defaultAreaDocks));
     }
     next.orientationVersion = 1;
+    return migrateSideAreaLayout(next);
+  }
+  // Retired top/bottom docks join the matching side after its existing Areas.
+  // Horizontal lengths are not usable vertical shares or restore heights.
+  function migrateSideAreaLayout(session) {
+    const names = Object.keys(defaultAreaDocks);
+    const moved = names.filter(name => ["top","bottom"].includes(session?.state?.[name]?.edge));
+    if (!moved.length) return session;
+    const next = JSON.parse(JSON.stringify(session));
+    const order = name => Number(next.state[name]?.order) || 0;
+    const sorted = list => list.sort((a,b) => order(a)-order(b) || names.indexOf(a)-names.indexOf(b));
+    for (const [oldEdge,edge,width] of [["top","left",310],["bottom","right",300]]) {
+      const incoming = sorted(moved.filter(name => next.state[name].edge === oldEdge));
+      if (!incoming.length) continue;
+      const existing = sorted(names.filter(name => next.state[name]?.edge === edge));
+      next.sizes = {...next.sizes};
+      if (!existing.length || !Number.isFinite(next.sizes[edge])) next.sizes[edge] = width;
+      [...existing,...incoming].forEach((name,index) => { next.state[name] = {...next.state[name],edge,order:index}; });
+      incoming.forEach(name => {
+        if (next.shares?.[edge]) delete next.shares[edge][name];
+        if (next.expandedMain?.[edge]) delete next.expandedMain[edge][name];
+        if (next.expanded?.[name]) {
+          delete next.expanded[name].top; delete next.expanded[name].bottom;
+          if (!Number.isFinite(next.expanded[name][edge])) next.expanded[name][edge] = next.sizes[edge];
+        }
+      });
+    }
+    for (const key of ["shares","expandedMain"]) if (next[key]) {
+      delete next[key].top; delete next[key].bottom;
+    }
     return next;
   }
   const scene = (project, mode, apps, sizes, tree, extras = {}) => ({
@@ -640,6 +670,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, note, migrateProject, migrateNote };
+  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote };
 });
 
