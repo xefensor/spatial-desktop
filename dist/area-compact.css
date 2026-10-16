@@ -81,7 +81,7 @@
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>svg{width:17px;height:17px}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>span{font-size:10px;line-height:1.15}
-.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{max-width:100%;font-size:9px;line-height:1.2}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{display:block;max-width:100%;font-size:9px;line-height:1.2}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailTimerValue{font-size:11px}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem{
   display:grid!important;
@@ -259,6 +259,7 @@
   padding:4px 2px!important;
 }
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail .rail-action>span{font-size:10px!important}
+.project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-stash>small{display:block}
 
 /* Assistant keeps its current chat and new-chat action side by side; the
    existing quick-chat popover retains all of its content and controls. */
