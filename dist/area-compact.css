@@ -1,3 +1,7 @@
+/* Compact geometry comes from the dock allocator, including narrow stacks.
+   Legacy window minimums must not stretch a fixed slot across its neighbour. */
+.area-window[data-area-state="rail"]{min-height:0;min-width:0}
+
 /* Wide Compact Areas use the column's available width rather than keeping
    their narrow-panel layout. Headers stay one row high at every shared size. */
 .area-window[data-area-state="rail"][data-compact-layout="grid"]{
@@ -150,6 +154,16 @@
 /* The wrapper has no box in existing layouts. A wide Compact Apps Area gives
    all three regions one viewport while its header and resize edge stay fixed. */
 .apps-area-body{display:contents}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.apps-area-body{
+  display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .apps-scroll-region{
+  flex:0 0 auto;min-height:min-content;overflow:visible;
+}
+.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"]) :is(.apps-quick-launch,.app-rack,.app-rack-group,.background-apps){
+  flex:0 0 auto;max-height:none;min-height:min-content;overflow:visible;
+}
 /* Keep an actual launcher row in Expanded Apps; a percentage ceiling alone
    can otherwise shrink its grid to zero above the Compact threshold. */
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .apps-quick-launch{
@@ -237,8 +251,8 @@
 
 /* Current material tools and pinned items share a compact grid. The complete
    grid scrolls, so a short slot never hides Files, More or a pinned item. */
-.project-area[data-area-state="rail"][data-compact-layout="grid"][data-project-rail-ready]>.project-closed-state.project-library,
-.project-area[data-area-state="rail"][data-compact-layout="grid"][data-project-rail-ready]>:is(.project-space-content,.project-switcher,.project-session-bar,.project-rail-tools,.memory-rail-entry){display:none!important}
+.project-area[data-area-state="rail"][data-project-rail-ready]>.project-closed-state.project-library,
+.project-area[data-area-state="rail"][data-project-rail-ready]>:is(.project-space-content,.project-switcher,.project-session-bar,.project-rail-tools,.memory-rail-entry){display:none!important}
 .project-area[data-area-state="rail"][data-compact-layout="grid"] .project-material-rail{
   display:grid;
   flex:1 1 0;
