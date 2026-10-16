@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="semantic-colors.css?v=10">
   <link rel="stylesheet" href="toggle-controls.css?v=5">
   <link rel="stylesheet" href="desktop-pages.css?v=30">
-  <link rel="stylesheet" href="empty-desktop.css?v=1">
+  <link rel="stylesheet" href="empty-desktop.css?v=2">
   <link rel="stylesheet" href="material-shapes.css?v=16">
   <link rel="stylesheet" href="area-rails.css?v=9">
   <link rel="stylesheet" href="app-windows.css?v=5">
@@ -50,7 +50,7 @@
   <script src="demo-super-key.js?v=1"></script>
   <script src="desktop-markers.js?v=1"></script>
   <script src="workspace-setup.js?v=10"></script>
-  <script src="spatial-guide.js?v=68"></script>
+  <script src="spatial-guide.js?v=69"></script>
   
   <link rel="stylesheet" href="project-rail.css?v=1">
   <link rel="stylesheet" href="system-rail.css?v=2">
@@ -163,10 +163,27 @@
       <div class="workspace-depth" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="empty-workspace" id="emptyWorkspace" hidden>
         <section class="empty-desktop-launcher" aria-label="Start on this desktop">
-          <div class="empty-desktop-intro"><strong role="heading" aria-level="2">Open an app</strong><span>Desktop 1</span></div>
-          <div class="empty-desktop-apps" id="emptyDesktopApps" role="group" aria-label="Quick launch applications"></div>
-          <button class="empty-desktop-all" id="emptyDesktopAllApps" type="button"><svg aria-hidden="true"><use href="#i-grid"/></svg>All applications</button>
-          <p>Choose an app to start here, or scroll to another desktop.</p>
+          <div class="empty-desktop-intro"><strong role="heading" aria-level="2">Start here</strong><span>Desktop 1</span></div>
+          <div class="empty-desktop-search" role="search" aria-label="Search this Workspace">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <input id="emptyDesktopSearch" type="search" aria-label="Search apps, folders and files" placeholder="Search apps, folders and files…" autocomplete="off" spellcheck="false">
+            <button id="emptyDesktopClear" type="button" aria-label="Clear search" hidden><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+          </div>
+          <p id="emptyDesktopStatus" class="empty-desktop-status" role="status" aria-live="polite" hidden></p>
+          <section class="empty-desktop-section" id="emptyDesktopAppsSection" aria-labelledby="emptyDesktopAppsTitle">
+            <header class="empty-desktop-section-heading"><h3 id="emptyDesktopAppsTitle">Applications</h3><button class="empty-desktop-all" id="emptyDesktopAllApps" type="button"><svg aria-hidden="true"><use href="#i-grid"/></svg>All applications</button></header>
+            <div class="empty-desktop-apps" id="emptyDesktopApps" role="group" aria-label="Quick launch applications"></div>
+          </section>
+          <section class="empty-desktop-section" id="emptyDesktopFoldersSection" aria-labelledby="emptyDesktopFoldersTitle" hidden>
+            <header class="empty-desktop-section-heading"><h3 id="emptyDesktopFoldersTitle">Folders</h3><button class="empty-desktop-more" id="emptyDesktopMoreFolders" type="button" aria-controls="emptyDesktopFolders" aria-expanded="false" hidden>Show all folders</button></header>
+            <div class="empty-desktop-folders" id="emptyDesktopFolders"></div>
+          </section>
+          <section class="empty-desktop-section" id="emptyDesktopFilesSection" aria-labelledby="emptyDesktopFilesTitle" hidden>
+            <header class="empty-desktop-section-heading"><h3 id="emptyDesktopFilesTitle">Files</h3><button class="empty-desktop-more" id="emptyDesktopMoreFiles" type="button" aria-controls="emptyDesktopFiles" aria-expanded="false" hidden>Show all files</button></header>
+            <div class="empty-desktop-files" id="emptyDesktopFiles"></div>
+            <p class="empty-desktop-files-empty" id="emptyDesktopFilesEmpty">Saved files and Project files appear here.</p>
+          </section>
+          <p>Open something here, or scroll to another desktop.</p>
         </section>
       </div>
       <article class="app-frame is-active" data-app-frame="dolphin" aria-label="File Browser">
@@ -674,15 +691,16 @@
 <script src="ai-demo.js?v=2"></script>
 <script src="timeline.js?v=6"></script>
 <script src="app-names.js?v=3"></script>
-<script src="desktop-shell.js?v=306"></script>
+<script src="desktop-shell.js?v=307"></script>
 <script src="parked-previews.js?v=4"></script>
   <script src="owned-dialogs.js?v=2"></script>
 <script src="background-services.js?v=1"></script>
 <script src="background-apps.js?v=5"></script>
 <script src="preview-privacy.js?v=1"></script>
-<script src="empty-desktop.js?v=3"></script>
+<script src="empty-desktop-resources.js?v=1"></script>
+<script src="empty-desktop.js?v=4"></script>
 <script src="apps-quick-launch.js?v=2"></script>
-<script src="working-memory-desktop.js?v=31"></script>
+<script src="working-memory-desktop.js?v=32"></script>
 <script src="ai-desktop.js?v=21"></script>
 <script src="overview-desktop.js?v=24"></script>
   <script src="guide-desktop.js?v=43"></script>

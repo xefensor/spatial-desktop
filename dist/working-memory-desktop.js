@@ -162,6 +162,7 @@
     const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.map(itemMarkup).join('');itemsSignature=nextItemsSignature;}
     filterShelf(items);
     prepareControlSemantics(host);
+    globalThis.SpatialEmptyDesktop?.refresh();
   }
   function collapse(reflow=true){globalThis.SpatialProjectRail?.close?.();if(!temporaryRail)return;temporaryRail=null;delete area.dataset.memoryRailExpanded;[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','false'));if(reflow)layoutDockAreas(false,false);}
   function applyRailExpansion(width,height){

@@ -6930,7 +6930,7 @@ function updateDesktopPageUi() {
   renderFullscreenPeek();
   $("#desktopPageNumber").textContent = page;
   const empty = $("#emptyWorkspace");
-  $("strong", empty).textContent = "Open an app";
+  $("strong", empty).textContent = "Start here";
   $("span", empty).textContent = context + " · Desktop " + page;
   $$(".desktop-folder").forEach(folder => {
     folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || (folder.dataset.desktopColumn || "workspace") !== column || Number(folder.dataset.desktopPage) !== page - 1;
