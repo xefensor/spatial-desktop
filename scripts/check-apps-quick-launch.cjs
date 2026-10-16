@@ -37,7 +37,7 @@ const context={
   changeDesktopPage(page,animate,column,fullscreen){calls.push(['go',page,animate,column,fullscreen]);context.desktopPages.select(context.activeWorkspace,column);context.desktopPages.go(context.activeWorkspace,page,column);}
 };
 vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/apps-quick-launch.js'),'utf8'),context);
-const nav=region.children[0],grid=nav.children[1],refresh=context.SpatialAppsQuickLaunch.refresh;
+const nav=region.children[0],grid=nav.querySelector('.apps-quick-launch-grid'),refresh=context.SpatialAppsQuickLaunch.refresh;
 const buttons=()=>grid.querySelectorAll('[data-quick-launch-app]');
 const ids=()=>buttons().map(button=>button.dataset.quickLaunchApp);
 const button=name=>buttons().find(button=>button.dataset.quickLaunchApp===name);
@@ -58,7 +58,7 @@ context.appState.browser='open';refresh();click('browser');assert.deepEqual(call
 assert.equal(context.desktopPages.current('general'),1,'An open ordinary app gets a new window here rather than navigating to its existing desktop');
 context.desktopPages.go('general',0);click('browser');assert.deepEqual(calls.pop(),['new','browser'],'A visible ordinary app also opens a new independent window');
 context.appState.browser='minimized';refresh();
-assert(button('browser').getAttribute('aria-label').includes('New window here'),'A parked base is described as a new launch, not a restoration');
+assert(button('browser').getAttribute('aria-label').includes('New window on this desktop'),'A parked base is described as a new launch, not a restoration');
 for(const [column,page,shiftKey,description] of [
   ['workspace',0,false,'on its current desktop'],
   ['workspace',0,true,'with Shift on its current desktop'],
@@ -77,7 +77,7 @@ for(const [column,page,shiftKey,description] of [
 const sameButtons=buttons(),sameReplacements=grid.replacements;context.frontApp='notes';context.desktopHasWindowFocus=true;refresh();
 assert.equal(grid.replacements,sameReplacements);assert.equal(button('browser'),sameButtons[0],'Focus updates preserve the actual launcher nodes');
 context.appState.browser='open';refresh();assert.equal(button('browser'),sameButtons[0],'Launch policy changes update a hint without replacing a focused button');
-assert(button('browser').getAttribute('aria-label').includes('New window here'));
+assert(button('browser').getAttribute('aria-label').includes('New window on this desktop'));
 context.activeWorkspace='custom';refresh();assert.deepEqual(ids(),['notes','browser'],'A Workspace without runnable favorites falls back to its runnable base rack');
 context.activeWorkspace='gaming';refresh();assert.deepEqual(ids(),['steam','game','browser']);
 context.desktopPages.assign('gaming','steam',2,'game-project');context.appState.steam='open';context.desktopPages.select('gaming','workspace');refresh();

@@ -43,10 +43,10 @@
       }
       stack.append(group);grouped++;
     }
-    const header=stack.parentElement?.querySelector('.section-heading');if(header)header.hidden=grouped>0;
+    const header=stack.parentElement?.querySelector('.section-heading');if(header)header.hidden=false;
     if(!grouped)return;
     if(cards.size){
-      const heading=make('div','temporary-park-ordinary-heading');heading.append(make('h3','','Parked'),make('span','',cards.size+' parked'));stack.append(heading);
+      const heading=make('div','temporary-park-ordinary-heading');heading.append(make('h3','','Other parked windows'),make('span','',cards.size+' parked'));stack.append(heading);
       for(const card of cards.values())stack.append(card);
     }
   }

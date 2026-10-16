@@ -1,7 +1,8 @@
 /* Launchers stay at the start; parked work retains the larger scrolling space. */
 .apps-zone .apps-quick-launch{display:flex;flex-direction:column;flex:0 0 auto;min-width:0;min-height:0;max-height:35%;padding:3px 0 8px;overflow:hidden}
 .apps-zone .apps-quick-launch[hidden]{display:none!important}
-.apps-quick-launch>h2{flex:none;margin:0 3px 8px;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
+.apps-quick-launch>h2{flex:none;margin:0 3px 4px;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
+.apps-quick-launch-scope{flex:none;min-width:0;margin:0 3px 8px;color:var(--muted);font-size:10px;line-height:1.4}
 .apps-quick-launch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,58px),1fr));align-content:start;gap:4px;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .apps-zone .apps-quick-launch-key{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:66px;width:100%;padding:7px 3px;color:var(--text);border:0;border-radius:0!important;background:transparent!important;box-shadow:none!important;font:inherit;cursor:pointer}
 .apps-zone .apps-quick-launch-key>.app-art{width:30px;height:30px;flex:none;margin:0}
@@ -11,7 +12,7 @@
 .apps-zone .apps-quick-launch-key:focus-visible{outline:2px solid var(--workspace-accent);outline-offset:-2px}
 .apps-zone .apps-quick-launch-key::after{display:none!important}
 .apps-zone[data-area-state="rail"] .apps-quick-launch{padding:0 0 6px;max-height:35%;border-bottom:1px solid var(--sd-glass-groove)}
-.apps-zone[data-area-state="rail"] .apps-quick-launch>h2,.apps-zone[data-area-state="rail"] .apps-quick-launch-key>span{display:none}
+.apps-zone[data-area-state="rail"] .apps-quick-launch>h2,.apps-zone[data-area-state="rail"] .apps-quick-launch-scope,.apps-zone[data-area-state="rail"] .apps-quick-launch-key>span{display:none}
 .apps-zone[data-area-state="rail"] .apps-quick-launch-grid{grid-template-columns:minmax(0,1fr);gap:3px;scrollbar-width:none}
 .apps-zone[data-area-state="rail"] .apps-quick-launch-key{min-height:43px;height:43px;padding:5px}
 .apps-zone[data-area-state="rail"] .apps-quick-launch-key>.app-art{width:28px;height:28px}

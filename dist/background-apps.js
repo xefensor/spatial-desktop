@@ -27,6 +27,11 @@
   if(typeof module!=='undefined' && module.exports){module.exports=api;return;}
   const row=document.getElementById('backgroundApps'),popup=document.getElementById('backgroundAppPopup');
   if(!row||!popup)return;
+  const scopeLabel='Running across all Workspaces';
+  const heading=document.createElement('header');heading.className='background-apps-heading';
+  const title=document.createElement('h2');title.textContent='Background';
+  const scopeNote=document.createElement('p');scopeNote.textContent=scopeLabel;
+  heading.append(title,scopeNote);row.append(heading);row.setAttribute('aria-label','Background · '+scopeLabel);
   const key='spatial-background-services-v1',clone=value=>JSON.parse(JSON.stringify(value));
   let saved={};try{saved=JSON.parse(desktopStorage.getItem(key)||'{}');}catch{}
   const services=root.SpatialBackgroundServices.create(saved),fingerprints=new Map();
@@ -104,11 +109,11 @@
   function schedule(){if(timer||!downloads().length)return;timer=setTimeout(()=>{timer=0;for(const service of services.items())if(service.model.download)advance(service.model.download,Date.now());for(const [workspace,models] of Object.entries(appWindowStore.snapshot()))for(const [id,model] of Object.entries(models))if(model.download?.active)advance(appWindowStore.get(workspace,id).download,Date.now());saveAppWindows(false);render();},1000);}
   function render(){
     normalize();flush();const items=services.items();row.hidden=!items.length;
-    for(const button of [...row.children])if(!services.get(button.dataset.backgroundOpen))button.remove();
+    for(const button of [...row.children])if(button.dataset.backgroundOpen&&!services.get(button.dataset.backgroundOpen))button.remove();
     for(const service of items){
       let button=[...row.children].find(button=>button.dataset.backgroundOpen===service.id);
       if(!button){button=document.createElement('button');button.type='button';button.className='background-app-icon';button.dataset.backgroundOpen=service.id;button.innerHTML=appArt(service.kind)+'<i aria-hidden="true"></i>';row.append(button);}
-      const label=service.label+' · System-wide background app · '+activity(service)+' · Click for controls · Middle click to force quit';button.title=label;button.setAttribute('aria-label',label);button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',popup.id);button.style.setProperty('--background-accent',appInfo[service.kind]?.primary||'#8aa4b8');button.style.setProperty('--background-progress',service.model.download?.active?Math.floor(service.model.download.received/service.model.download.total*100)+'%':'100%');
+      const label=service.label+' · '+scopeLabel+' · '+activity(service)+' · Click for controls · Middle click to force quit';button.title=label;button.setAttribute('aria-label',label);button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',popup.id);button.style.setProperty('--background-accent',appInfo[service.kind]?.primary||'#8aa4b8');button.style.setProperty('--background-progress',service.model.download?.active?Math.floor(service.model.download.received/service.model.download.total*100)+'%':'100%');
     }
     for(const button of document.querySelectorAll('[data-window-action="close"],[data-mini-close]'))button.title='Left click: close window; needed activity keeps running system-wide. Middle click: force quit and stop its activity.';
     prepareSteam();renderPopup();schedule();const next=JSON.stringify(items.map(item=>[item.id,item.kind]));if(next!==availability){availability=next;root.SpatialSteamOverview?.syncContext();}

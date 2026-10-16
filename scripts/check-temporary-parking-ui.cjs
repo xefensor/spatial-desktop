@@ -83,7 +83,7 @@ const context={SpatialTemporaryParking:Temporary,SpatialPreviewPrivacy:{hidden:i
 vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/temporary-parking-desktop.js'),'utf8'),context);
 assert.equal(renders,1,'Bootstrap decorates exactly one normal render');
 const groups=stack.children.filter(child=>child.className==='temporary-park-group');
-assert.equal(groups.length,3);assert.equal(heading.hidden,true);
+assert.equal(groups.length,3);assert.equal(heading.hidden,false,'The shared Parked heading and scope remain visible above temporary return groups');
 assert.deepEqual(groups.map(group=>group.dataset.temporaryParkSession),['work:desktop:1:2','work:desktop:1:1','work:desktop:0:1'],'Current desktop comes first, followed by the local display and then other desktops');
 assert.match(groups[0].getAttribute('aria-label'),/While another window is maximized · Desktop 2 · Display 2/);
 assert.equal(groups[1].querySelector('h3').textContent,'While Terminal is maximized');

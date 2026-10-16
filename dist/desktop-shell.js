@@ -1713,7 +1713,7 @@ function miniMarkup(name) {
   const shortcut = slot === null ? "" : slot > 20 ? " · Click · slot " + slot : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = parked ? "Parked · still running" : info.detail;
-  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back into the workspace') + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back onto the desktop') + ' · Available across these desktops' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>Evening Light</b><small>Northbound · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -5020,7 +5020,6 @@ function renderWorkspace(name, announce = true) {
   $("#workspaceAgendaMeta").textContent = profile.agenda[2];
   $("#systemAgendaTitle").textContent = profile.agenda[1];
   $("#systemAgendaMeta").textContent = profile.agenda[2];
-  $("#appsAreaContext").textContent = profile.label + " workspace";
   $("#systemAreaContext").textContent = profile.label + " workspace";
   renderWorkspaceExample(name);
   $("#appRack").innerHTML = profile.rack.map((appName, index) => {
@@ -6924,7 +6923,6 @@ function updateDesktopPageUi() {
   workspace.setAttribute("aria-label", context + " · " + (special ? (appInfo[bond.name]?.label||"App")+" · temporary desktop · linked to Desktop "+page : "Desktop "+page));
   $("use", button)?.setAttribute("href", "#" + (project?.icon || workspaceProfiles[activeWorkspace].icon));
   button.style?.setProperty("--desktop-column-accent", project?.accent || workspaceProfiles[activeWorkspace].accent);
-  $("#appsAreaContext").textContent = context + " · Desktop " + page;
   $("#openWindowsTitle").textContent = context;
   button.setAttribute("aria-label", "Open " + context + " overview · Desktop " + page);
   button.title = "Overview · " + context + " · Desktop " + page + " · Super or F2 · F2+scroll: desktops · F2+Shift+scroll: projects";
@@ -7895,11 +7893,11 @@ function renderInstanceRack() {
     const slot = index + 1, bank = Math.floor(index / 10), digit = (index + 1) % 10;
     const shortcut = bank === 0 ? 'Super+' + digit + ' · F2+' + digit : bank === 1 ? 'Super+Shift+' + digit + ' · F2+Shift+' + digit : 'Click · slot ' + slot;
     const bond = fullscreenHotbarBond(name);
-    const detail = bond ? ' · Return to temporary desktop · linked to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '';
+    const detail = ' · Parked · Available across these desktops' + (bond ? ' · Return to temporary desktop · linked to Desktop ' + (bond.page + 1) + ' · Display ' + bond.display : '');
     return '<button class="app-key' + (bond ? ' is-fullscreen-link' : '') + '" data-open-app="' + name + '" data-hotbar-slot="' + slot + '" title="' + escapeHtml(info.label + detail + ' · ' + shortcut + (info.singleInstance ? '' : ' · Shift+click: new window')) + '" aria-label="' + escapeHtml(info.label + detail + ' · ' + shortcut) + '"' + (bank < 2 ? ' aria-keyshortcuts="Meta+' + (bank ? 'Shift+' : '') + digit + '"' : '') + '><kbd class="app-hotkey">' + (bank === 0 ? digit : bank === 1 ? '⇧' + digit : slot) + '</kbd>' + appArt(name) + (bond ? '<span class="fullscreen-hotbar-mark" aria-hidden="true">' + icon('i-max') + '</span>' : '') + '<span>' + escapeHtml(info.label) + '</span><i></i></button>';
   });
   const parked = buttons.join('');
-  $('#appRack').innerHTML = parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '';
+  $('#appRack').innerHTML = parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications · Available across these desktops">' + parked + '</div>' : '';
   applyAppPrimaryColors($('#appRack'));
 }
 let hotbarOrderFrame=0;

@@ -1,5 +1,11 @@
 /* Quick launch occupies the start of Apps. Parked windows follow as rail icons
    or expanded cards, keeping the same per-window shortcut slots. */
+.apps-zone .section-heading{align-items:flex-start;gap:8px}
+.apps-zone .apps-parked-heading{display:flex;flex-direction:column;gap:3px;min-width:0}
+.apps-zone #minimizedTitle{color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
+.apps-zone #parkedScope{margin:0;color:var(--muted);font-size:10px;line-height:1.4}
+.apps-zone .section-heading>#miniCount{flex:none;font-size:10px;line-height:1.4}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .section-heading{height:auto;min-height:0;flex:none}
 .app-rack-group{display:contents}
 .apps-zone:not([data-area-state="rail"]) .app-rack-parked{display:none}
 .apps-zone:not([data-area-state="rail"]) .app-rack{display:none}

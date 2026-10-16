@@ -7,10 +7,14 @@
   const nav = document.createElement('nav');
   nav.id = 'appsQuickLaunch'; nav.className = 'apps-quick-launch';
   nav.setAttribute('aria-labelledby', 'appsQuickLaunchTitle');
+  nav.setAttribute('aria-describedby', 'appsQuickLaunchScope');
+  nav.title = 'Quick launch · Workspace favorites · Open on this desktop';
   const heading = document.createElement('h2');
   heading.id = 'appsQuickLaunchTitle'; heading.textContent = 'Quick launch';
+  const scope = document.createElement('small');
+  scope.id = 'appsQuickLaunchScope'; scope.className = 'apps-quick-launch-scope'; scope.textContent = 'Open on this desktop';
   const grid = document.createElement('div'); grid.className = 'apps-quick-launch-grid';
-  nav.append(heading, grid); region.insertBefore(nav, rack);
+  nav.append(heading, scope, grid); region.insertBefore(nav, rack);
   let signature = '';
   const allowed = () => !root.SpatialGuide?.model.active() || SpatialGuide.model.allows('apps');
   const available = name => Boolean(appInfo[name] && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace));
@@ -44,9 +48,9 @@
     // State changes update the action hint without replacing a focused launcher.
     for (const button of grid.querySelectorAll('[data-quick-launch-app]')) {
       const name = button.dataset.quickLaunchApp, action = actionFor(name);
-      const detail = action === 'return' ? 'Return to app' : action === 'new' ? 'New window here' : 'Open here';
+      const detail = action === 'return' ? 'Return to existing app on its desktop' : action === 'new' ? 'New window on this desktop' : 'Open on this desktop';
       const label = appInfo[name].label + ' · ' + detail + (appInfo[name].singleInstance ? '' : ' · Shift-click for a new window');
-      button.setAttribute('aria-label', label); button.title = label;
+      button.setAttribute('aria-label', label); button.title = label + ' · Workspace favorite';
     }
   }
   nav.addEventListener('click', event => {
