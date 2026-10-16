@@ -69,3 +69,31 @@ html[data-guide-ai="false"] :is(.ai-area,#openAIButton,[data-overview-area="ai"]
 /* The copy destination remains readable over a narrow rail and never catches drops. */
 .ai-drop-hint{position:fixed;z-index:10050;pointer-events:none;box-sizing:border-box;max-width:min(300px,calc(100vw - 16px));padding:11px 14px;border:1px solid var(--sd-glass-groove,var(--line));border-inline-start:3px solid var(--text);border-radius:0;background:var(--shell);color:var(--text);box-shadow:0 8px 28px #0005;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
 .ai-drop-hint[hidden]{display:none!important}.ai-drop-hint b{display:block;font-weight:650}.ai-drop-hint small{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
+
+/* The rail is a named copy destination; quick chat leaves the dock size alone. */
+.ai-rail-tools{display:none;min-width:0;min-height:0;gap:8px}
+.ai-area[data-area-state="rail"]>.area-window-bar{flex:0 0 36px!important}
+.ai-area[data-area-state="rail"] .ai-rail-tools{display:flex;flex:1;flex-direction:column;align-items:stretch;overflow:auto;scrollbar-width:thin;padding-block:8px}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar{flex:0 0 auto!important;min-height:32px;gap:4px}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .area-window-actions{display:none!important}
+.ai-rail-chat,.ai-rail-new{display:flex;flex:none;flex-direction:column;align-items:center;gap:6px;width:100%;min-width:0;padding:9px 3px!important;font-size:10px;line-height:1.35;overflow-wrap:anywhere;text-align:center}
+.ai-rail-chat-title{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;font-weight:600;max-width:100%}
+.ai-rail-sources{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px}
+.ai-rail-sources>svg{width:14px;height:14px;flex:none}
+.ai-rail-chat>small{font-size:9px;color:var(--muted)}
+.ai-rail-new>span{font-size:21px;line-height:1}.ai-rail-new>small{font-size:9px}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]){flex-direction:row;align-items:center;gap:10px;padding:6px 9px}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{width:auto;flex:0 1 auto!important;min-width:36px;max-width:38%;padding:0}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .area-window-actions{display:none!important}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .ai-rail-tools{flex-direction:row;align-items:center;padding:0;overflow:hidden}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .ai-rail-chat{flex:1;flex-direction:row;justify-content:flex-start;padding:7px 9px!important;text-align:left;gap:8px;overflow:hidden}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .ai-rail-chat-title{-webkit-line-clamp:2;flex:1}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .ai-rail-sources{flex:none}
+.ai-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .ai-rail-new{width:44px;padding:5px 2px!important;gap:2px}
+.ai-quick-panel{position:fixed!important;z-index:9250!important;display:flex;flex-direction:column;box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);padding:0!important;border:1px solid var(--line)!important;box-shadow:0 14px 42px #0005;overflow:hidden}
+.ai-quick-panel[hidden]{display:none!important}
+.ai-quick-header{display:flex;align-items:center;gap:6px;min-width:0;flex:none;min-height:48px;padding:9px;border-bottom:1px solid var(--soft-line)}
+.ai-quick-header>span{min-width:0;flex:1}.ai-quick-header b,.ai-quick-header small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ai-quick-header b{font-size:12px}.ai-quick-header small{font-size:10px;color:var(--muted);margin-top:4px}
+.ai-quick-header>button{flex:none;font-size:10px;padding:5px 7px;min-height:30px}.ai-quick-header>button>svg{width:15px;height:15px}
+.ai-quick-body{display:flex;flex:1;min-width:0;min-height:0;padding:9px}.ai-quick-body>.ai-content{width:100%}
+@media(max-width:450px){.ai-quick-header>button{font-size:9px;padding:5px}.ai-quick-header small{max-width:130px}}

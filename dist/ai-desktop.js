@@ -3,13 +3,68 @@
   'use strict';
   const C=SpatialAIContext,D=SpatialAIDemo,F=SpatialStashFiles,key='spatial-ai-context-v1';
   const model=C.create(readDesktopStorage(key,{}),{workspaces:()=>workspaceProfiles,projects:()=>projectSpaces});
-  const area=areaFor('ai'),prompt=$('#aiPrompt'),folder=$('#aiWorkingFolder'),attachments=$('#aiAttachments'),transcript=$('#aiTranscript'),status=$('#aiStatus');
+  const area=areaFor('ai'),content=$('.ai-content',area),prompt=$('#aiPrompt'),folder=$('#aiWorkingFolder'),attachments=$('#aiAttachments'),transcript=$('#aiTranscript'),status=$('#aiStatus');
   let current='',signature='',sourceDrag=null;const views=new Map();
   const chatSelect=$('#aiChatSelect'),chatName=$('#aiChatName'),renameForm=$('#aiRenameForm'),send=$('#aiSend');
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
   const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
   dropHint.className='ai-drop-hint';dropHint.hidden=true;dropHint.setAttribute('role','status');dropHint.append(dropTitle,dropDetail);document.body.append(dropHint);
-  let dropPosition=null;
+  let dropPosition=null,quickWorkspace=null,quickReturnFocus=null;
+  const rail=document.createElement('nav');rail.className='ai-rail-tools';rail.setAttribute('aria-label','Assistant quick actions');
+  rail.innerHTML='<button class="surface-key ai-rail-chat" id="aiRailChat" type="button" aria-controls="aiQuickPanel" aria-expanded="false"><span class="ai-rail-chat-title" id="aiRailChatTitle"></span><span class="ai-rail-sources">'+icon('i-note')+'<span id="aiRailSources"></span></span><small id="aiRailDraft" hidden>Draft</small></button><button class="surface-key ai-rail-new" id="aiRailNewChat" type="button" aria-label="Start a new Assistant chat" title="New chat"><span aria-hidden="true">+</span><small>New chat</small></button>';
+  area.insertBefore(rail,content);
+  const quickPanel=document.createElement('section');quickPanel.className='ai-area ai-quick-panel';quickPanel.id='aiQuickPanel';quickPanel.hidden=true;quickPanel.setAttribute('role','region');quickPanel.setAttribute('aria-label','Assistant quick chat');
+  quickPanel.innerHTML='<header class="ai-quick-header"><span><b id="aiQuickTitle">Assistant</b><small id="aiQuickContext"></small></span><button class="surface-key" id="aiQuickExpand" type="button" title="Keep Assistant expanded">Expand area</button><button class="surface-key" id="aiQuickClose" type="button" aria-label="Close Assistant quick chat">'+icon('i-close')+'</button></header><div class="ai-quick-body" id="aiQuickBody"></div>';
+  document.body.append(quickPanel);
+  const withinAssistant=target=>area.contains(target)||quickPanel.contains(target);
+  const blockedByDialog=()=>Boolean(document.querySelector?.('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]),#universalSearch.is-open,#packageDialog.is-open,#projectEditorDialog.is-open:not(.is-inline),#desktopContextMenu:not([hidden]),#spatialGuideDialog:not([hidden])'));
+  const quickBlocked=()=>Boolean(area.inert||$('.desktop-shell').inert||blockedByDialog());
+  function positionQuick(){
+    if(quickPanel.hidden)return;
+    const rect=area.getBoundingClientRect(),edge=area.dataset.dockEdge||'right',gap=10;
+    const width=Math.min(390,window.innerWidth-24),height=Math.min(620,window.innerHeight-24);
+    const left=edge==='left'?rect.right+gap:edge==='right'?rect.left-width-gap:rect.left;
+    const top=edge==='top'?rect.bottom+gap:edge==='bottom'?rect.top-height-gap:rect.top;
+    quickPanel.style.width=width+'px';quickPanel.style.height=height+'px';
+    quickPanel.style.left=Math.max(12,Math.min(left,window.innerWidth-width-12))+'px';
+    quickPanel.style.top=Math.max(12,Math.min(top,window.innerHeight-height-12))+'px';
+  }
+  function closeQuick(restoreFocus=false){
+    if(quickPanel.hidden)return;
+    model.draft(quickWorkspace,prompt.value);persist();
+    area.insertBefore(content,rail.nextSibling);quickPanel.hidden=true;quickWorkspace=null;
+    $('#aiRailChat').setAttribute('aria-expanded','false');$('#aiAreaToggle').setAttribute('aria-expanded','false');$('#aiAreaToggle').setAttribute('aria-pressed','false');$('#aiAreaToggle').setAttribute('aria-label','Open Assistant quick chat');renderRail(model.session(activeWorkspace));
+    if(restoreFocus&&quickReturnFocus?.isConnected!==false)quickReturnFocus?.focus();quickReturnFocus=null;
+  }
+  function openQuick(focus=true){
+    if(quickBlocked())return;
+    if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
+    if(area.hidden||area.dataset.areaState!=='rail'){expand(focus);return;}
+    if(quickPanel.hidden){window.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'ai'}}));quickReturnFocus=document.activeElement;quickWorkspace=activeWorkspace;$('#aiQuickBody').append(content);quickPanel.hidden=false;}
+    $('#aiRailChat').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-pressed','true');$('#aiAreaToggle').setAttribute('aria-label','Close Assistant quick chat');renderRail(model.session(activeWorkspace));
+    positionQuick();if(focus)prompt.focus();
+  }
+  function renderRail(session){
+    const title=session.title,sources=session.items.length,label=sources+' source'+(sources===1?'':'s');
+    $('#aiRailChatTitle').textContent=title;$('#aiRailSources').textContent=String(sources);$('#aiRailDraft').hidden=!session.draft;
+    $('#aiRailChat').setAttribute('aria-label',(quickPanel.hidden?'Open ':'Close ')+title+' · '+label+(session.draft?' · Unsent draft':''));
+    $('#aiRailChat').title=title+' · '+label+' · Drop sources here or open chat';
+    $('#aiQuickTitle').textContent=title;$('#aiQuickContext').textContent=workspaceLabel(activeWorkspace)+' workspace · Scripted local demo';
+  }
+  $('#aiRailChat').addEventListener('click',()=>quickPanel.hidden?openQuick():closeQuick(true));
+  $('#aiQuickClose').addEventListener('click',()=>closeQuick(true));$('#aiQuickExpand').addEventListener('click',()=>expand());
+  document.addEventListener('pointerdown',event=>{if(!quickPanel.hidden&&!withinAssistant(event.target))closeQuick();},true);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape'||quickPanel.hidden||blockedByDialog()||event.defaultPrevented)return;
+    closeQuick(true);event.preventDefault();event.stopImmediatePropagation();
+  },true);
+  window.addEventListener('resize',positionQuick);
+  window.addEventListener('spatial-rail-open',event=>{if(event.detail?.area!=='ai')closeQuick();});
+  // Overview, modal editors and Guide can open from a shortcut without touching
+  // this Area. A body portal must yield together with the docked shell.
+  const layerObserver=new MutationObserver(()=>{if(!quickPanel.hidden&&quickBlocked())closeQuick();});
+  layerObserver.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','aria-hidden','aria-modal','inert']});
+
   const editableDropTarget=target=>Boolean(target?.closest?.('input,textarea,select,[contenteditable="true"]'));
   const insertsText=event=>editableDropTarget(event.target)&&![...event.dataTransfer.types].some(type=>type==='Files'||type===C.MIME);
   function showDropTarget(event=null){
@@ -52,37 +107,39 @@
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:session.items,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}));
     if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return;}
     model.draft(activeWorkspace,'');prompt.value='';persist();render();
-    const sources=$('.ai-context-sources',area);if(sources)sources.open=false;
-    $('.ai-chat',area).scrollTop=$('.ai-chat',area).scrollHeight;
+    const sources=$('.ai-context-sources',content);if(sources)sources.open=false;
+    $('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;
     status.textContent='Scripted demo · Enter to try · Shift+Enter for a new line';
   }
   function rememberView(){
     if(!current)return;
-    views.set(current,{scroll:$('.ai-chat',area).scrollTop||0,sources:$('.ai-context-sources',area).open,
+    views.set(current,{scroll:$('.ai-chat',content).scrollTop||0,sources:$('.ai-context-sources',content).open,
       expanded:$$('[data-ai-source-detail][open]',attachments).map(node=>node.dataset.aiSourceDetail)});
   }
   function render(){
-    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;seedExamples(session);
+    if(!quickPanel.hidden&&(quickWorkspace!==activeWorkspace||quickBlocked()||area.hidden||area.dataset.areaState!=='rail'||area.classList.contains('is-on-other-display')||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))))closeQuick();
+    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;seedExamples(session);renderRail(session);positionQuick();
     const chats=model.chats(activeWorkspace),project=projectSpaces[session.workingProject];
     const options=[...new Set([session.workingProject,...session.items.map(item=>item.project),activeProjectName].filter(id=>projectSpaces[id]))];
     const next=JSON.stringify([activeWorkspace,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     $('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
-    const expanded=area.dataset.areaState==='expanded';
-    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',expanded?'Put Assistant area on rail':'Expand Assistant area');
+    const expanded=area.dataset.areaState==='expanded'||!quickPanel.hidden;
+    $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Put Assistant area on rail':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
     if(dropPosition)showDropTarget(dropPosition);
     if(next===signature)return;rememberView();signature=next;
     if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Assistant demo · scripted replies · nothing is sent';}
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title+' · '+chat.sources+' source'+(chat.sources===1?'':'s'))+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home)+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root)+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
-    attachments.innerHTML=session.items.map(itemMarkup).join('');transcript.innerHTML=session.turns.map(turnMarkup).join('');$('.ai-empty',area).hidden=session.items.length>0||session.turns.length>0;
-    const sources=$('.ai-context-sources',area),view=views.get(nextKey);sources.hidden=!session.items.length;sources.open=view?.sources??false;sources.querySelector('summary').textContent='Sources · '+session.items.length;
+    attachments.innerHTML=session.items.map(itemMarkup).join('');transcript.innerHTML=session.turns.map(turnMarkup).join('');$('.ai-empty',content).hidden=session.items.length>0||session.turns.length>0;
+    const sources=$('.ai-context-sources',content),view=views.get(nextKey);sources.hidden=!session.items.length;sources.open=view?.sources??false;sources.querySelector('summary').textContent='Sources · '+session.items.length;
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
-    if(switched)$('.ai-chat',area).scrollTop=view?.scroll??$('.ai-chat',area).scrollHeight??0;
-    prepareControlSemantics(area);
+    if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;
+    prepareControlSemantics(area);prepareControlSemantics(quickPanel);
   }
   chatSelect.addEventListener('change',()=>{rememberView();model.select(activeWorkspace,chatSelect.value);persist();render();});
-  $('#aiNewChat').addEventListener('click',()=>{rememberView();model.draft(activeWorkspace,prompt.value);const chat=model.newChat(activeWorkspace);if(!chat){status.textContent='This workspace holds up to 50 chats.';return;}persist();render();prompt.focus();});
+  function newChat(){rememberView();model.draft(activeWorkspace,prompt.value);const chat=model.newChat(activeWorkspace);if(!chat){openQuick();status.textContent='This workspace holds up to 50 chats.';return;}persist();render();openQuick();prompt.focus();}
+  $('#aiNewChat').addEventListener('click',newChat);$('#aiRailNewChat').addEventListener('click',newChat);
   $('#aiRenameChat').addEventListener('click',()=>{chatName.value=model.session(activeWorkspace).title;renameForm.hidden=false;chatName.focus();chatName.select?.();});
   $('#aiCancelRename').addEventListener('click',()=>{renameForm.hidden=true;});
   renameForm.addEventListener('submit',event=>{event.preventDefault();if(model.rename(activeWorkspace,model.session(activeWorkspace).id,chatName.value)){renameForm.hidden=true;persist();render();}else{status.textContent='Give this chat a name first.';chatName.focus();}});
@@ -90,22 +147,23 @@
   function expand(focus=true){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
     if(extendedDesktopActive()&&!isLocalArea('ai')){displayAssignmentsFor().areas.ai=localDisplaySlot();persistDisplayAssignments();}
-    setAreaState('ai','expanded',false);scheduleWindowTiling();if(focus)prompt.focus();
+    closeQuick();setAreaState('ai','expanded',false);scheduleWindowTiling();if(focus)prompt.focus();
   }
   function toggle(){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
-    const next=area.hidden||area.dataset.areaState==='rail'?'expanded':'rail';
+    if(!area.hidden&&area.dataset.areaState==='rail'){if(quickPanel.hidden)openQuick();else closeQuick(true);return;}
+    const next=area.hidden?'expanded':'rail';
     setAreaState('ai',next);if(next==='expanded')prompt.focus();
   }
   function add(item){
     const previous=model.session(activeWorkspace).workingProject,added=model.add(activeWorkspace,item);
     if(!added){status.textContent='This conversation holds up to 24 attachments. Remove one to add another.';return false;}
-    persist();render();expand(false);if(!model.session(activeWorkspace).turns.length)$('.ai-context-sources',area).open=true;
+    persist();render();openQuick(false);if(!model.session(activeWorkspace).turns.length)$('.ai-context-sources',content).open=true;
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · ready for a scripted demo';return true;
   }
   $('#aiAreaToggle').addEventListener('click',toggle);
-  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();status.textContent='Assistant demo · scripted replies · nothing is sent';});
-  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();setAreaState('ai','rail');}});
+  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderRail(model.session(activeWorkspace));status.textContent='Assistant demo · scripted replies · nothing is sent';});
+  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();if(!quickPanel.hidden)closeQuick(true);else setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
@@ -139,12 +197,12 @@
   // Native HTML drops remain available for external files, links and selections.
   function bindContentTransfers(){
     let gesture=null,suppressClick=false;
-    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&area.contains(target)&&!area.hidden;};
+    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&withinAssistant(target)&&!area.hidden;};
     const stashAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target?.closest?.('#workingMemory,.memory-header-key,.memory-rail-entry')&&!editableDropTarget(target);};
     const clear=()=>{gesture=null;showDropTarget();globalThis.SpatialMemoryDesktop?.showDropTarget?.();};
     document.addEventListener('pointerdown',event=>{
       suppressClick=false;
-      if(event.button!==0||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))||(area.contains(event.target)&&!event.target.closest('[data-ai-demo-turn]')))return;
+      if(event.button!==0||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))||(withinAssistant(event.target)&&!event.target.closest('[data-ai-demo-turn]')))return;
       const source=event.target.closest('.app-identity .app-badge,[data-file-name],[data-project-item],[data-memory-id],[data-ai-demo-turn]');
       if(!source||event.target.closest('input,textarea,a,audio,iframe')||event.target.closest('summary:not(.memory-item-summary)')||event.target.closest('[data-memory-item-action]'))return;
       const item=describe(event.target);if(!item?.title)return;
@@ -171,29 +229,29 @@
   }
   bindContentTransfers();
   document.addEventListener('dragstart',event=>{
-    if(area.contains(event.target)&&!event.target.closest('[data-ai-demo-turn]'))return;
+    if(withinAssistant(event.target)&&!event.target.closest('[data-ai-demo-turn]'))return;
     sourceDrag=describe(event.target);
     if(!sourceDrag)return;
     if(sourceDrag.title){event.dataTransfer.setData(C.MIME,JSON.stringify(sourceDrag));event.dataTransfer.setData('text/plain',sourceDrag.text||sourceDrag.address||sourceDrag.title);event.dataTransfer.effectAllowed='copy';}
   });
   function accepts(event){return [...event.dataTransfer.types].some(type=>[C.MIME,'Files','text/plain','text/uri-list'].includes(type));}
-  area.addEventListener('dragover',event=>{if(!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
-  area.addEventListener('dragleave',event=>{if(!area.contains(event.relatedTarget))showDropTarget();});
-  document.addEventListener('dragover',event=>{if(!area.contains(event.target))showDropTarget();});
+  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('dragover',event=>{if(!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
+  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('dragleave',event=>{if(!withinAssistant(event.relatedTarget))showDropTarget();});
+  document.addEventListener('dragover',event=>{if(!withinAssistant(event.target))showDropTarget();});
   document.addEventListener('drop',()=>showDropTarget(),true);
   document.addEventListener('dragend',()=>{sourceDrag=null;showDropTarget();});
-  area.addEventListener('drop',async event=>{
+  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('drop',async event=>{
     showDropTarget();if(!accepts(event)||insertsText(event))return;event.preventDefault();event.stopPropagation();
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
-    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;expand(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);model.add(workspace,{workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text:file.type.startsWith('text/')?(await file.text()).slice(0,12000):''},chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached · ready for a scripted demo';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
+    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);model.add(workspace,{workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text:file.type.startsWith('text/')?(await file.text()).slice(0,12000):''},chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached · ready for a scripted demo';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
     const text=event.dataTransfer.getData('text/plain'),url=event.dataTransfer.getData('text/uri-list').split('\n').find(line=>line&&!line.startsWith('#'));
     if(text||url)add({...source,title:url||text.trim().slice(0,80)||'Dropped content',kind:url?'link':'text',text,address:url||''});
   });
   // Move earlier draft requests into the new Area without discarding them.
   const legacyDrafts=readDesktopStorage('spatial-stash-ai-drafts-v1',{}),drafts=legacyDrafts&&typeof legacyDrafts==='object'?legacyDrafts:{};
   if(!desktopStorage.getItem(key)){Object.keys(workspaceProfiles).forEach(workspace=>{const project=workspaceProjects[workspace];const draft=drafts['project:'+project]||drafts[JSON.stringify([workspace,null])];if(typeof draft==='string'&&draft){model.draft(workspace,draft);model.folder(workspace,project);}});persist();}
-  globalThis.SpatialAIDesktop={render,expand,mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
+  globalThis.SpatialAIDesktop={render,expand,mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){if(!quickPanel.hidden&&quickWorkspace!==activeWorkspace)closeQuick();model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
   layoutDockAreas(false,false);render();
 })();

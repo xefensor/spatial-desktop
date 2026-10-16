@@ -1,0 +1,80 @@
+/* Live controls stay on the rail. Broader settings live behind one disclosure. */
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-scroll-region{display:flex!important;flex-direction:column;gap:8px!important;align-items:stretch;justify-content:flex-start}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-rail-desktop:not(:has(.has-system-request)){display:none!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-rail-project{padding-top:0;border-top:0}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-rail-middle{padding-top:0;border-top:0}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-action{width:100%;min-height:45px;gap:4px;padding:6px 2px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-action>small{font-size:9px;max-width:48px}
+.systems-zone.system-rail-ready[data-area-state="rail"] #systemRailTimerValue{font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--text);display:block!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] #systemRailTimer.is-active{box-shadow:inset 0 -2px var(--role-systems)!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-rail-global>[data-phone-ping]{display:none!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-scope>.quick-settings .quick-toggle:not(.system-rail-sound){display:none!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-scope>.quick-settings .system-rail-sound{width:100%;min-height:44px;padding:6px 2px!important;gap:5px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-rail-sound>span{display:block!important;font-size:10px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .system-scope[data-system-scope="system"]{margin-top:auto!important;gap:5px;padding-top:8px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-clock{padding:8px 0 4px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-clock strong{font-size:15px}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-action[aria-expanded="true"]{background:color-mix(in srgb,var(--role-systems) 14%,transparent);box-shadow:inset 0 -2px var(--role-systems)!important}
+.systems-zone.system-rail-ready[data-area-state="rail"] .rail-action[hidden]{display:none!important}
+.systems-zone.system-rail-ready>.system-rail-quick-panel,.systems-zone.system-rail-ready>.system-rail-media-panel{display:none!important}
+.systems-zone.system-rail-ready[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-scroll-region{flex-direction:row!important;gap:10px!important;align-items:center}
+.systems-zone.system-rail-ready[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-action{width:auto;min-width:48px;max-width:80px;min-height:44px;flex:none}
+.systems-zone.system-rail-ready[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-scope[data-system-scope="system"]{margin:0 0 0 auto!important;padding:0 0 0 8px}
+.systems-zone.system-rail-ready[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .system-scope>.quick-settings{margin:0!important}
+.systems-zone.system-rail-ready[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .rail-clock{padding:0 6px}
+/* The native popover top layer escapes Area clipping without changing its dock
+   rectangle, saved size, or the tiled-window canvas. Original widget nodes keep
+   their IDs, listeners and context while they are borrowed by this panel. */
+.systems-zone.system-rail-ready .system-rail-flyout{
+  position:fixed!important;inset:auto;margin:0!important;padding:0!important;
+  min-width:0!important;min-height:0!important;width:330px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);
+  overflow:auto!important;overscroll-behavior:contain;scrollbar-width:thin;z-index:780;
+  border:1px solid var(--sd-glass-edge,var(--line))!important;border-radius:0!important;
+  color:var(--text);background:var(--sd-glass-face,var(--shell));
+  -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  box-shadow:0 14px 40px rgba(0,0,0,.24),inset 0 1px var(--control-highlight,rgba(255,255,255,.12));
+}
+.systems-zone.system-rail-ready .system-rail-flyout[hidden]{display:none!important}
+.systems-zone.system-rail-ready .system-rail-flyout:not([hidden]){display:block!important}
+.systems-zone.system-rail-ready .system-rail-flyout-heading{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent)}
+.systems-zone.system-rail-ready .system-rail-flyout-heading h2{display:block!important;margin:4px 0 0;font-size:14px;font-weight:650}
+.systems-zone.system-rail-ready .system-rail-flyout-heading small{font-size:10px;color:var(--muted);line-height:1.35}
+.systems-zone.system-rail-ready .system-rail-flyout-heading>button{width:29px;height:29px;padding:6px;flex:none}
+.systems-zone.system-rail-ready .system-rail-flyout-heading>button svg{width:15px;height:15px}
+.systems-zone.system-rail-ready .system-rail-flyout-body{padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.systems-zone.system-rail-ready .system-rail-flyout-body:empty{display:none}
+.systems-zone.system-rail-ready .system-rail-flyout :is(.system-scope:not([hidden]),.system-scope-heading,.system-scope-body,.system-agenda-stack,.static-widget-stack,.system-device-details:not([hidden]),.system-rail-quick-panel,.system-rail-media-panel){display:block!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0;border:0;min-width:0}
+.systems-zone.system-rail-ready .system-rail-flyout .system-scope-heading{margin-bottom:10px!important}
+.systems-zone.system-rail-ready .system-rail-flyout .system-desktop-requests{display:block!important}
+.systems-zone.system-rail-ready .system-rail-flyout .system-widget:not([hidden]){display:block!important;opacity:1;transform:none;min-width:0;max-width:none;width:100%;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.systems-zone.system-rail-ready .system-rail-flyout .system-widget[hidden]{display:none!important}
+.systems-zone.system-rail-ready .system-rail-flyout .widget-heading{position:static;display:flex!important;min-height:24px;height:auto;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.systems-zone.system-rail-ready .system-rail-flyout .widget-heading>div{display:flex;gap:8px}
+.systems-zone.system-rail-ready .system-rail-flyout .widget-heading h2{display:block!important;font-size:12px}
+.systems-zone.system-rail-ready .system-rail-flyout .widget-heading>span{position:static;margin:0;min-width:0;height:auto;background:transparent;color:var(--muted);font-size:11px;box-shadow:none}
+.systems-zone.system-rail-ready .system-rail-flyout #notificationList{display:block!important}
+.systems-zone.system-rail-ready .system-rail-flyout .notification{padding:10px 0!important;gap:9px}
+.systems-zone.system-rail-ready .system-rail-flyout .notification b{font-size:12px;line-height:1.4}
+.systems-zone.system-rail-ready .system-rail-flyout .notification small{font-size:11px;line-height:1.4;white-space:normal}
+.systems-zone.system-rail-ready .system-rail-flyout .timer-face{display:block!important;text-align:center;padding:8px 0 14px}
+.systems-zone.system-rail-ready .system-rail-flyout .timer-face strong{font-size:39px;font-variant-numeric:tabular-nums}
+.systems-zone.system-rail-ready .system-rail-flyout .timer-actions{display:flex!important;gap:8px;justify-content:center}
+.systems-zone.system-rail-ready .system-rail-flyout .timer-actions button{min-height:31px;font-size:12px;padding:6px 14px}
+.systems-zone.system-rail-ready .system-rail-flyout .quick-settings{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0!important;padding:0!important;min-width:0}
+.systems-zone.system-rail-ready .system-rail-flyout .quick-settings .quick-toggle{display:flex!important;flex-direction:column!important;align-items:center;justify-content:center;gap:7px;min-height:55px;height:auto;width:auto;min-width:0;padding:8px 3px!important}
+.systems-zone.system-rail-ready .system-rail-flyout .quick-settings .quick-toggle>span{display:block!important;font-size:10px}
+.systems-zone.system-rail-ready .system-rail-flyout .system-device-details>summary{padding:7px 0;cursor:pointer;font-size:12px}
+.systems-zone.system-rail-ready .system-rail-flyout .system-device-details[open]>.system-device-stack{display:block!important;padding-top:10px!important}
+.systems-zone.system-rail-ready .system-rail-flyout .system-device-details:not([open])>.system-device-stack{display:none!important}
+.systems-zone.system-rail-ready .system-rail-flyout .connect-widget .device-row{display:flex;gap:12px}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-settings{display:flex;align-items:center;gap:8px;min-height:32px;width:100%;padding:7px 10px;font-size:12px}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-settings svg{width:16px;height:16px}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-note{margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-empty{margin:0;padding:0 14px 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-empty[hidden]{display:none!important}
+.systems-zone.system-rail-ready .system-rail-track b{display:block;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.systems-zone.system-rail-ready .system-rail-track small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+.systems-zone.system-rail-ready .system-rail-media-actions{display:flex;justify-content:center;gap:10px;margin:16px 0 12px}
+.systems-zone.system-rail-ready .system-rail-media-actions button{height:36px;min-width:40px;padding:8px}
+.systems-zone.system-rail-ready .system-rail-media-actions svg{width:18px;height:18px}
+.systems-zone.system-rail-ready .system-rail-media-time{display:block;text-align:center;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}

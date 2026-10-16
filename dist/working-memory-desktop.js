@@ -145,7 +145,7 @@
   function render(force=false){
     if(desktopSyncApplying){requestAnimationFrame(()=>render(force));return;}
     if(dropPosition)showDropTarget(dropPosition);
-    const key=scope(),changed=key!==current;host.hidden=!allowed();rail.hidden=!allowed();railEntry.hidden=!allowed();if(!allowed())return;
+    const key=scope(),changed=key!==current;globalThis.SpatialProjectRail?.contextChanged?.(key);host.hidden=!allowed();rail.hidden=!allowed();railEntry.hidden=!allowed();if(!allowed())return;
     if(changed){
       if(current&&!field('.memory-editor').hidden)drafts.set(current,{text:field('[data-memory-text]').value});
       current=key;selected.clear();const draft=drafts.get(key);editing=draft?.editing||null;draftScope=draft?key:'';field('.memory-editor').hidden=!draft;
@@ -153,8 +153,8 @@
       if(draft)field('[data-memory-text]').value=draft.text;
       field('.memory-feedback').textContent='';lastRemoved=null;field('[data-memory-action="undo"]').hidden=true;
     }
-    const target=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState');if(host.parentElement!==target)target.prepend(host);
-    if(projectColumnActive()){if(railEntry!==area.lastElementChild)area.append(railEntry);}else if(railEntry.nextElementSibling!==target)area.insertBefore(railEntry,target);
+    const inlineTarget=projectColumnActive()?$('#projectSpaceContent'):$('#projectClosedState'),target=globalThis.SpatialProjectRail?.stashTarget?.()||inlineTarget;if(host.parentElement!==target)target.prepend(host);
+    if(projectColumnActive()){if(railEntry!==area.lastElementChild)area.append(railEntry);}else if(railEntry.nextElementSibling!==inlineTarget)area.insertBefore(railEntry,inlineTarget);
     syncFolders();const project=projectFor(key),owner=ownerFor(key),items=itemsFor(key);field('[data-memory-action="folder"]').disabled=!owner;field('[data-memory-action="folder"]').title=owner?F.folder(owner):'Stash';field('[data-memory-action="files"]').hidden=!owner;
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature&&itemsSignature===nextSignature)return;signature=nextSignature;
     field('[data-memory-scope]').textContent=(project?'Project: '+project.name:'Workspace: '+workspaceProfiles[JSON.parse(key)[0]]?.label);field('[data-memory-count]').textContent=items.length+' item'+(items.length===1?'':'s');
@@ -163,7 +163,7 @@
     filterShelf(items);
     prepareControlSemantics(host);
   }
-  function collapse(reflow=true){if(!temporaryRail)return;temporaryRail=null;delete area.dataset.memoryRailExpanded;[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','false'));if(reflow)layoutDockAreas(false,false);}
+  function collapse(reflow=true){globalThis.SpatialProjectRail?.close?.();if(!temporaryRail)return;temporaryRail=null;delete area.dataset.memoryRailExpanded;[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','false'));if(reflow)layoutDockAreas(false,false);}
   function applyRailExpansion(width,height){
     if(!temporaryRail)return;
     const edge=dockState.projects.edge;
@@ -173,7 +173,7 @@
     applyDockRect('projects',{x:edge==='right'?width-thickness:parseFloat(area.style.left)||0,y:edge==='bottom'?height-thickness:parseFloat(area.style.top)||0,width:vertical?thickness:parseFloat(area.style.width),height:vertical?parseFloat(area.style.height):thickness,joinEdge:area.dataset.areaJoinEdge});
     area.style.zIndex='230';
   }
-  function reveal(){render();if(!allowed())return;showArea('projects',false);if(area.dataset.areaState==='rail'&&!temporaryRail){temporaryRail={edge:dockState.projects.edge,scope:scope()};layoutDockAreas(false,false);}[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','true'));requestAnimationFrame(()=>host.scrollIntoView({block:'start',behavior:'smooth'}));}
+  function reveal(){render();if(!allowed())return;if(globalThis.SpatialProjectRail?.canReveal?.()){globalThis.SpatialProjectRail.revealStash();return;}showArea('projects',false);if(area.dataset.areaState==='rail'&&!temporaryRail){temporaryRail={edge:dockState.projects.edge,scope:scope()};layoutDockAreas(false,false);}[rail,railEntry].forEach(button=>button.setAttribute('aria-expanded','true'));requestAnimationFrame(()=>host.scrollIntoView({block:'start',behavior:'smooth'}));}
   function editor(item=null){
     reveal();
     resetShelfFilters();
