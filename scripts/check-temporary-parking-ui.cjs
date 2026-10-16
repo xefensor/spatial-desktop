@@ -2,7 +2,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const Temporary=require('../dist/temporary-parking.js'),Pages=require('../dist/desktop-pages.js'),T=require('../dist/spatial-tiling.js');
 const dataKey=name=>name.slice(5).replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase());
 class Element {
-  constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.attrs={};this.className='';this.hidden=false;this.listeners={};this._text='';this._html='';}
+  constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.attrs={};this.className='';this.hidden=false;this.listeners={};this._text='';this._html='';
+    this.style={values:{},setProperty(name,value){this.values[name]=String(value);},getPropertyValue(name){return this.values[name]||'';}};}
   get parentElement(){return this.parent||null;}
   set textContent(value){this.replaceChildren();this._text=String(value);this._html='';}
   get textContent(){return this._text+this.children.map(node=>node.textContent).join('');}
@@ -48,6 +49,7 @@ function focus(owner,peer,page,display){sessions['work:desktop:'+page+':'+displa
 focus('owner0','note',0,1);focus('owner1','terminal',1,1);focus('privateOwner','preview',1,2);
 const state={owner0:'open',note:'minimized',owner1:'open',terminal:'minimized',privateOwner:'open',preview:'minimized',manual:'minimized'};
 const assignments=Object.fromEntries(Object.entries(memberships).map(([id,[,display]])=>[id,display]));
+const cardColors={note:'#f4c155',manual:'#3bb5dd',terminal:'#ac85ef',preview:'#e985a5'};
 const opened=[],closed=[],dragged=[],artCalls=[],originalCards=new Map(),railButtons=new Map();let renders=0,rackSyncs=0;
 for(const id of ['note','terminal','preview','manual','owner0']){
   const button=node('button','app-key');button.dataset.openApp=id;button.dataset.hotbarSlot=String(railButtons.size+1);
@@ -57,14 +59,14 @@ for(const id of ['note','terminal','preview','manual','owner0']){
 const context={SpatialTemporaryParking:Temporary,SpatialPreviewPrivacy:{hidden:id=>id==='privateOwner'},
   document:{getElementById:id=>id==='miniStack'?stack:id==='appRack'?rack:null,createElement:tag=>new Element(tag)},
   tileSessions:sessions,activeWorkspace:'work',desktopPages:pages,appState:state,
-  appInfo:{owner0:{label:'Firefox'},owner1:{label:'Terminal'},privateOwner:{label:'SECRET PROJECT TITLE'}},
+  appInfo:{owner0:{label:'Firefox',primary:'#e96f32'},owner1:{label:'Terminal',primary:'#54c791'},privateOwner:{label:'SECRET PROJECT TITLE',primary:'#3512a7'}},
   displayAssignmentsFor:()=>({apps:assignments}),activeDisplayRoster:()=>[{},{}],localDisplaySlot:()=>2,
   appArt:(id,kind)=>{artCalls.push([id,kind]);return '<svg>'+id+'</svg>';},icon:id=>'<svg>'+id+'</svg>',
   renderMiniApps(){
     renders++;stack.replaceChildren();originalCards.clear();
     for(const id of ['note','manual','terminal','preview']){
       if(state[id]!=='minimized'||!pages.inColumn('work',id))continue;
-      const card=node('article','mini-card');card.dataset.miniCard=id;
+      const card=node('article','mini-card');card.dataset.miniCard=id;card.style.setProperty('--app-primary',cardColors[id]);
       const header=node('header'),key=node('kbd','mini-hotkey',String(originalCards.size+1)),actions=node('div','mini-actions');
       const restore=node('button','mini-control'),close=node('button','mini-control');restore.dataset.miniRestore=id;close.dataset.miniClose=id;
       restore.setAttribute('aria-label','Unpark '+id);close.setAttribute('aria-label','Close '+id);
@@ -86,12 +88,16 @@ assert.deepEqual(groups.map(group=>group.dataset.temporaryParkSession),['work:de
 assert.match(groups[0].getAttribute('aria-label'),/While another window is maximized · Desktop 2 · Display 2/);
 assert.match(groups[1].textContent,/While Terminal is maximizedDesktop 2 · Display 1/);
 assert.match(groups[2].textContent,/While Firefox is maximizedDesktop 1 · Display 1/);
+assert.deepEqual(groups.map(group=>group.style.getPropertyValue('--temporary-park-accent')),['var(--ui-neutral)','#54c791','#e96f32'],'Each public group uses its owning app color; a private owner uses the theme neutral');
+assert(!JSON.stringify(groups.map(group=>group.style.values)).includes('#3512a7'),'The hidden owner color cannot identify its group');
 assert.equal(stack.children[3].className,'temporary-park-ordinary-heading');assert.equal(stack.children[4],originalCards.get('manual').card,'Ordinary cards follow all returning groups');
 assert(!section.textContent.includes('SECRET'));assert(!JSON.stringify(groups.map(group=>group.attrs)).includes('SECRET'));
 assert(!artCalls.some(([id])=>id==='privateOwner'),'A private owner does not request its artwork');
 for(const id of ['note','terminal','preview']){
   const entry=originalCards.get(id),actual=stack.querySelector('[data-mini-card="'+id+'"]');
   assert.equal(actual,entry.card,'Grouping retains the original card node');assert.equal(actual.querySelector('textarea'),entry.field);assert.equal(entry.field.value,'Unsaved '+id);
+  assert.equal(actual.style.getPropertyValue('--app-primary'),cardColors[id],'A group accent never overwrites the parked app identity color');
+  assert.equal(actual.style.getPropertyValue('--temporary-park-accent'),'','The owner tint belongs to the group rather than the card');
   assert.equal(entry.restore.dataset.miniRestore,id);assert.equal(entry.close.dataset.miniClose,id);assert.equal(entry.dialog.dataset.ownedDialogRestore,id);
   assert.match(entry.key.textContent,/^[1-4]$/,'The existing hotbar number survives unchanged');
   assert.equal(entry.header.querySelectorAll('.temporary-park-arrow').length,1);
@@ -99,6 +105,8 @@ for(const id of ['note','terminal','preview']){
 }
 assert.deepEqual(opened,['note','note-dialog','terminal','terminal-dialog','preview','preview-dialog']);assert.deepEqual(closed,['note','terminal','preview']);assert.deepEqual(dragged,['note','terminal','preview']);
 assert.equal(originalCards.get('manual').card.querySelector('.temporary-park-arrow'),null);
+assert.equal(originalCards.get('manual').card.style.getPropertyValue('--app-primary'),cardColors.manual);
+assert.equal(originalCards.get('manual').card.style.getPropertyValue('--temporary-park-accent'),'','Ordinary parking does not receive a return-group tint');
 for(const id of ['note','terminal','preview']){
   const button=railButtons.get(id);assert.equal(button.querySelectorAll('.temporary-park-arrow').length,1);assert.match(button.title,/Returns to Desktop/);assert.match(button.getAttribute('aria-label'),/unmaximized/);
   assert.equal(button.dataset.hotbarSlot,String(['note','terminal','preview','manual','owner0'].indexOf(id)+1));
@@ -124,6 +132,9 @@ railButtons.get('note').dispatch('click');assert.equal(opened.at(-1),'note','The
 // Changing privacy or desktop updates descriptions while retaining one badge.
 state.note='minimized';focus('owner0','note',0,1);context.renderMiniApps();context.syncRack();
 assert.match(railButtons.get('note').title,/Firefox/);
+context.appInfo.owner0.primary='#c876e8';context.renderMiniApps();
+assert.equal(stack.querySelector('.temporary-park-group').style.getPropertyValue('--temporary-park-accent'),'#c876e8','A refreshed group follows its app metadata color without a fixed palette');
+assert.equal(originalCards.get('note').card.style.getPropertyValue('--app-primary'),cardColors.note,'Refreshing the owner color preserves the child color');
 // This is the actual PreviewPrivacy refresh contract: its toggle redraws cards
 // without synchronizing the rack, so an already rendered badge must update now.
 const syncsBeforePrivacy=rackSyncs;
@@ -133,6 +144,9 @@ assert.match(stack.textContent,/another window/);assert(!stack.textContent.inclu
 assert.match(railButtons.get('note').title,/another window/);assert.match(railButtons.get('note').getAttribute('aria-label'),/another window/);
 assert(!railButtons.get('note').getAttribute('aria-label').includes('Firefox'));
 assert.equal(railButtons.get('note').querySelectorAll('.temporary-park-arrow').length,1);
+assert.equal(stack.querySelector('.temporary-park-group').style.getPropertyValue('--temporary-park-accent'),'var(--ui-neutral)','Hiding the owner immediately replaces its identifying group tint');
+assert(!JSON.stringify(stack.querySelector('.temporary-park-group').style.values).includes('#c876e8'));
+assert.equal(originalCards.get('note').card.style.getPropertyValue('--app-primary'),cardColors.note);
 pages.select('work','unrelated-project');context.renderMiniApps();context.syncRack();
 assert.equal(stack.children.length,0,'A different Project has no returning cards from the old one');
 assert.equal(railButtons.get('note').title,'note · Super+1');assert.equal(heading.hidden,false);

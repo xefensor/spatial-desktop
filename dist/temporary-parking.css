@@ -1,20 +1,23 @@
-/* Temporary returns form one glass group, above deliberately parked work. */
-.apps-zone .temporary-park-group{display:flex;flex-direction:column;gap:12px;min-width:0;padding-top:3px}
-.temporary-park-heading{display:flex;flex-direction:column;gap:8px;padding:8px 2px 10px;border-bottom:1px solid var(--sd-glass-groove)}
-.temporary-park-kind{font-size:10px;font-weight:600;color:var(--muted)}
+/* An owner-colored glass enclosure keeps each automatic return set together. */
+.apps-zone .temporary-park-group{display:flex;flex-direction:column;gap:0;min-width:0;border:1px solid color-mix(in srgb,var(--temporary-park-accent) 36%,var(--sd-glass-groove));border-left:3px solid var(--temporary-park-accent);background:color-mix(in srgb,var(--temporary-park-accent) 4%,var(--sd-glass-face));box-shadow:inset 0 1px var(--sd-glass-highlight)}
+.temporary-park-group+.temporary-park-group{margin-top:8px}
+.temporary-park-heading{display:flex;flex-direction:column;gap:9px;padding:10px;border-bottom:1px solid color-mix(in srgb,var(--temporary-park-accent) 24%,var(--sd-glass-groove));background:color-mix(in srgb,var(--temporary-park-accent) 9%,var(--sd-glass-face))}
+.temporary-park-kind{display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.temporary-park-kind::before{content:'↩';margin-right:6px;font-size:15px;line-height:1;color:var(--temporary-park-accent)}
 .temporary-park-owner{display:flex;align-items:center;gap:8px;min-width:0}
-.temporary-park-owner-icon{display:flex;flex:none;align-items:center;justify-content:center;width:25px;height:25px}
-.temporary-park-owner-icon :is(svg,.app-art){width:23px;height:23px}
+.temporary-park-owner-icon{display:flex;flex:none;align-items:center;justify-content:center;width:28px;height:28px}
+.temporary-park-owner-icon :is(svg,.app-art){width:26px;height:26px}
 .temporary-park-owner-copy{min-width:0}
 .temporary-park-owner-copy h3{margin:0;font-size:12px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
-.temporary-park-owner-copy small{display:block;margin-top:3px;font-size:10px;color:var(--muted)}
+.temporary-park-owner-copy .temporary-park-location{display:table;max-width:100%;margin-top:6px;padding:3px 6px;border:1px solid color-mix(in srgb,var(--temporary-park-accent) 30%,var(--sd-glass-groove));background:var(--sd-glass-face-deep);font-size:10px;font-weight:650;line-height:1.4;color:var(--text);overflow-wrap:anywhere}
 .temporary-park-heading p{margin:0;font-size:11px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
-.temporary-park-cards{display:grid;align-content:start;gap:12px;min-width:0}
-.temporary-park-ordinary-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px 0;border-top:1px solid var(--sd-glass-groove)}
-.temporary-park-ordinary-heading h3{margin:0;font-size:13px;font-weight:650}
+.temporary-park-cards{display:grid;align-content:start;gap:12px;min-width:0;padding:9px 7px}
+.temporary-park-ordinary-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;padding:12px 2px 4px;border-top:2px solid var(--sd-glass-groove)}
+.temporary-park-ordinary-heading h3{margin:0;font-size:13px;font-weight:700}
 .temporary-park-ordinary-heading>span{font-size:11px;color:var(--muted)}
 .apps-zone .temporary-park-arrow{display:inline-grid!important;place-items:center;flex:none;width:17px;height:17px;font:700 17px/1 system-ui,sans-serif;color:var(--muted)}
+.apps-zone .temporary-park-group .temporary-park-arrow{color:var(--temporary-park-accent)}
 .apps-zone .app-key>.temporary-park-arrow{position:absolute;right:2px;bottom:2px;width:15px;height:15px;font-size:13px;line-height:1;background:var(--sd-glass-face);border:1px solid var(--sd-glass-groove);pointer-events:none}
 /* Horizontal docks keep each group readable and its full cards reachable. */
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .temporary-park-group{flex:0 0 300px;max-width:100%;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:4px}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .temporary-park-group{flex:0 0 300px;max-width:100%;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .temporary-park-group>:is(.temporary-park-heading,.temporary-park-cards){flex:none}

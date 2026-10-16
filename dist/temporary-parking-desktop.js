@@ -12,7 +12,7 @@
     const privateOwner=root.SpatialPreviewPrivacy?.hidden(entry.owner),info=appInfo[entry.owner];
     const owner=privateOwner?'another window':info?.label||'another window';
     const location='Desktop '+(entry.page+1)+(activeDisplayRoster().length>1?' · Display '+entry.display:'');
-    return {owner,location,art:privateOwner||!info?icon('i-max'):appArt(entry.owner,'app-art-compact'),
+    return {owner,location,accent:privateOwner||!info?'var(--ui-neutral)':info.primary||'var(--ui-neutral)',art:privateOwner||!info?icon('i-max'):appArt(entry.owner,'app-art-compact'),
       hint:'Returns to '+location+' when '+owner+' is unmaximized.'};
   }
   function arrow(hint){
@@ -26,13 +26,14 @@
     for(const entry of groups){
       const members=entry.windows.map(id=>cards.get(id)).filter(Boolean);if(!members.length)continue;
       const description=describe(entry),group=make('section','temporary-park-group');
+      group.style.setProperty('--temporary-park-accent',description.accent);
       group.dataset.temporaryParkSession=entry.sessionKey;group.setAttribute('role','group');
       group.setAttribute('aria-label','While '+description.owner+' is maximized · '+description.location);
       const heading=make('header','temporary-park-heading');
       heading.append(make('small','temporary-park-kind','Temporarily parked · '+members.length+' window'+(members.length===1?'':'s')));
       const owner=make('div','temporary-park-owner');
       const artwork=make('span','temporary-park-owner-icon');artwork.innerHTML=description.art;artwork.setAttribute('aria-hidden','true');
-      const text=make('div','temporary-park-owner-copy');text.append(make('h3','','While '+description.owner+' is maximized'),make('small','',description.location));
+      const text=make('div','temporary-park-owner-copy');text.append(make('h3','','While '+description.owner+' is maximized'),make('small','temporary-park-location',description.location));
       owner.append(artwork,text);heading.append(owner,make('p','',(members.length===1?'This window returns':'These windows return')+' when you unmaximize '+description.owner+'.'));
       const contents=make('div','temporary-park-cards');group.append(heading,contents);
       for(const card of members){
