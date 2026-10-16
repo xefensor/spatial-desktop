@@ -29,11 +29,11 @@ assert.equal(nodes['#workspaceContextTitle'].textContent, 'Everyday desktop','Ho
 assert.equal(nodes['#overviewCurrentProject'].hidden,false);
 assert.equal(nodes['#overviewCurrentProjectName'].textContent,'My custom project');
 assert.equal(nodes['#overviewCurrentProjectPath'].textContent,'/projects/custom');
-assert.equal(nodes['#overviewLaunchTarget'].textContent,'Opens in General / My custom project / Desktop 2');
+assert.equal(nodes['#overviewLaunchTarget'].textContent,'Current context · General / My custom project / Desktop 2');
 selectedColumn='workspace';
 context.refreshWorkspaceContext();
 assert.equal(nodes['#overviewCurrentProject'].hidden,true,'Ordinary Workspace hides the current-project section');
-assert.equal(nodes['#overviewLaunchTarget'].textContent,'Opens in General / Workspace / Desktop 2','A remembered Project cannot mislabel a new app destination');
+assert.equal(nodes['#overviewLaunchTarget'].textContent,'Current context · General / Workspace / Desktop 2','A remembered Project cannot mislabel a new app destination');
 // Inspect real page structure: unique control IDs and category parity.
 const html = fs.readFileSync(path.join(__dirname, '../dist/index.html'), 'utf8');
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);

@@ -4938,7 +4938,7 @@ function refreshWorkspaceContext() {
   $("#workspaceContextMeta").textContent = profile.favorites.length + " favorite apps · private clipboard";
   $("#workspaceContextTitle").textContent = profile.context;
   const page = desktopPages.current(activeWorkspace) + 1;
-  $("#overviewLaunchTarget").textContent = "Opens in " + profile.label + " / " + (project?.name || "Workspace") + " / Desktop " + page;
+  $("#overviewLaunchTarget").textContent = "Current context · " + profile.label + " / " + (project?.name || "Workspace") + " / Desktop " + page;
   const current = $("#overviewCurrentProject");
   current.hidden = !project;
   if (project) {

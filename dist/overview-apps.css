@@ -2,10 +2,11 @@
 .overview-carousel :is(.overview-windows-section,.overview-apps-section){container-type:inline-size}
 .overview-carousel .overview-apps-section{container-name:overview-apps}
 .overview-windows-body,.overview-apps-body{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
+.overview-carousel :is(.overview-windows-section,.overview-apps-section)>.overview-section-heading>div{display:flex!important;align-items:center;gap:10px}
 .overview-panel>.overview-section-heading small{display:block;color:var(--sd-glass-muted);font-size:11px;margin-top:3px;line-height:1.4}
 .overview-panel>.overview-section-heading>button{font-size:12px;gap:7px;padding:7px 10px}
 .overview-panel>.overview-section-heading>button svg{width:14px;height:14px}
-.universal-search .overview-carousel .overview-windows-body .open-windows-section{display:flex!important;flex-direction:column!important;flex:1;min-width:0;min-height:0!important;height:100%;padding:16px!important;gap:14px;border:0!important;overflow:hidden!important}
+.universal-search .overview-carousel .overview-windows-body .open-windows-section{display:flex!important;flex-direction:column!important;flex:1;min-width:0;min-height:0!important;max-height:none!important;height:100%;padding:16px!important;gap:14px;border:0!important;overflow:hidden!important}
 .overview-windows-body .desktop-stage-heading{display:flex!important;align-items:center!important;justify-content:space-between;gap:12px;padding:0!important;min-height:0!important;background:transparent!important;flex:none}
 .overview-windows-body .desktop-stage-heading .eyebrow{display:block!important;font-size:9px}
 .overview-windows-body .desktop-stage-heading h3{font-size:15px!important;margin-top:3px}
@@ -29,7 +30,7 @@
 .universal-search .overview-carousel .overview-windows-body .overview-open-windows{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr))!important;align-content:start;min-height:0!important;overflow-y:auto!important;gap:10px;height:100%!important;padding:0 4px 12px}
 .overview-window-group{grid-column:1/-1;font-size:11px;letter-spacing:.02em;font-weight:550;color:var(--sd-glass-muted);margin:10px 0 0;padding-bottom:7px;border-bottom:1px solid var(--sd-glass-groove)}
 .overview-window-group:first-child{margin-top:0}
-.universal-search .overview-carousel .overview-windows-body .overview-window{height:110px!important;min-height:110px!important;box-shadow:none!important;background:color-mix(in srgb,var(--overview-app) 6%,transparent)!important}
+.universal-search .overview-carousel .overview-windows-body .overview-window{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;height:110px!important;min-height:110px!important;box-shadow:none!important;background:color-mix(in srgb,var(--overview-app) 6%,transparent)!important}
 .universal-search .overview-carousel .overview-windows-body .overview-window:hover{background:color-mix(in srgb,var(--overview-app) 13%,transparent)!important}
 .universal-search .overview-carousel .overview-windows-body .overview-window-titlebar{display:grid;grid-template-columns:34px minmax(0,1fr) auto!important;gap:10px;padding:12px!important;background:transparent!important}
 .overview-windows-body .overview-window-titlebar>.app-art{width:32px!important;height:32px!important}
