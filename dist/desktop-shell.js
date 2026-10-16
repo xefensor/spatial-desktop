@@ -4898,7 +4898,12 @@ function renderOverviewWindows() {
   const hotbarOrder = workspaceHotbarNames();
   const selectedBond=desktopPages.selectedFullscreen?.(activeWorkspace);
   const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "open" && (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage) : appState[name] === (filter === "parked" ? "minimized" : "open")));
-  visibleNames.sort((a,b) => Number(appState[a] === "minimized") - Number(appState[b] === "minimized") || Number(desktopPages.pageOf(activeWorkspace,a) !== currentPage) - Number(desktopPages.pageOf(activeWorkspace,b) !== currentPage) || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b) || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b));
+  visibleNames.sort((a,b) => {
+    const parkedA = appState[a] === "minimized", parkedB = appState[b] === "minimized";
+    return Number(parkedA) - Number(parkedB)
+      || (!parkedA && (Number(desktopPages.pageOf(activeWorkspace,a) !== currentPage) - Number(desktopPages.pageOf(activeWorkspace,b) !== currentPage) || desktopPages.pageOf(activeWorkspace,a) - desktopPages.pageOf(activeWorkspace,b)))
+      || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b);
+  });
   const owner = desktopPages.column?.(activeWorkspace) || "workspace";
   const scope = owner === "workspace" ? "Workspace" : "Project";
   let group = "";
@@ -6805,7 +6810,7 @@ function renderDesktopColumnMap() {
   target.innerHTML = columns.map(column => {
     const project = column === "workspace" ? null : projectSpaces[column];
     const current = desktopPages.column(activeWorkspace) === column;
-    const names = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.columnOf(activeWorkspace, name) === column);
+    const names = Object.keys(appState).filter(name => appState[name] === "open" && desktopPages.columnOf(activeWorkspace, name) === column);
     const selectedBond=desktopPages.selectedFullscreen(activeWorkspace);
     const localBond=selectedBond && Math.min(selectedBond.display,activeDisplayRoster().length)===localDisplaySlot();
     const pageMarkup = entry => {

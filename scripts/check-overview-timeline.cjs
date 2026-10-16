@@ -285,10 +285,51 @@ assert(cards.includes('<small>report &lt;draft&gt;.md</small>'),'The live window
 assert(cards.includes('<small>Detail</small>'),'Windows without a local frame retain their saved detail');
 assert(cards.match(/data-overview-open-app="right"[\s\S]*?class="overview-window-hotkey" aria-hidden="true">1<\/kbd>/),'Current hotbar numbering matches window order');
 assert(!cards.split('data-overview-open-app="other"')[1].split('</button>')[0].includes('overview-window-hotkey'),'A window outside the current hotbar gets no misleading shortcut');
+windowContext.appState.park2='minimized';windowContext.appInfo.park2={label:'Second parked app',primary:'#22bb66',detail:'Parked from this desktop'};
+const originalPageOf=windowContext.desktopPages.pageOf,originalHotbar=windowContext.workspaceHotbarNames;
+windowContext.desktopPages.pageOf=(workspace,name)=>name==='park2'?0:originalPageOf(workspace,name);
+windowContext.workspaceHotbarNames=()=>['right','park','park2','left'];
+checkWindows('parked',['park','park2']);
+assert.deepEqual([...windowContext.$('#overviewWindowGrid').innerHTML.matchAll(/class="overview-window-hotkey" aria-hidden="true">(\d+)<\/kbd>/g)].map(match=>match[1]),['2','3'],'Project-wide parked cards follow hotbar slots rather than old desktop locations');
+delete windowContext.appState.park2;delete windowContext.appInfo.park2;windowContext.desktopPages.pageOf=originalPageOf;windowContext.workspaceHotbarNames=originalHotbar;
 windowContext.appState.park='closed';checkWindows('parked',[]);
 assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('No matching windows'),'A filter has a helpful empty state');
 assert(windowContext.$('#overviewWindowGrid').innerHTML.includes('data-overview-go="apps"'),'The empty Windows state links directly to the separate app launcher');
 console.log('Overview improvements passed: current context, time jumps, available-day navigation, empty-day Now anchors, window filters and desktop/hotbar order.');
+
+// Execute the real desktop map against actual page ownership: a parked window
+// remains accessible in its column without becoming an icon or count on a page.
+const mapPages=require('../dist/desktop-pages.js').create(),mapNodes=new Map();
+const mapStates={workspaceOpen:'open',otherOpen:'open',workspaceParked:'minimized',projectOpen:'open',projectParked:'minimized',closed:'closed',unlisted:'open'};
+for(const [name,page,column] of [['workspaceOpen',0,'workspace'],['otherOpen',1,'workspace'],['workspaceParked',2,'workspace'],['projectOpen',0,'site'],['projectParked',1,'site'],['closed',0,'site'],['unlisted',0,'unlisted']])mapPages.assign('general',name,page,column);
+const mapContext={
+  ...windowContext,appState:mapStates,
+  appInfo:Object.fromEntries(Object.keys(mapStates).map(name=>[name,{label:name,primary:'#22bb66',detail:'Example'}])),
+  desktopPages:mapPages,projectSpaces:{site:{name:'Website',accent:'#22bb66',icon:'i-folder'}},workspaceProfiles:{general:{label:'General',accent:'#22bb66',icon:'i-grid'}},
+  activeDisplayRoster:()=>[{}],localDisplaySlot:()=>1,openProjectNames:()=>['site'],desktopColumnLabel:column=>column==='workspace'?'Workspace':'Website',
+  workspaceHotbarNames:()=>['workspaceOpen','workspaceParked','projectOpen','projectParked'],frameFor:()=>null,
+  $:id=>{if(!mapNodes.has(id))mapNodes.set(id,{innerHTML:'',textContent:'',value:'all'});return mapNodes.get(id);},
+  appArt:name=>'<svg data-map-app="'+name+'"></svg>'
+};
+vm.createContext(mapContext);
+vm.runInContext(shell.slice(shell.indexOf('function renderDesktopColumnMap()'),shell.indexOf('function migrateDesktopColumns()')),mapContext);
+vm.runInContext(shell.slice(shell.indexOf('function renderOverviewWindows()'),shell.indexOf('function refreshWorkspaceContext()')),mapContext);
+const mapIcons=()=>[...mapContext.$('#desktopColumnMap').innerHTML.matchAll(/data-map-app="([^"]+)"/g)].map(match=>match[1]);
+const mapPage=(column,page)=>[...mapContext.$('#desktopColumnMap').innerHTML.matchAll(/<button\b[^>]*data-desktop-column="([^"]+)"[^>]*data-column-page="(\d+)"[^>]*>([\s\S]*?)<\/button>/g)].find(match=>match[1]===column&&Number(match[2])===page)?.[3]||'';
+mapContext.renderOverviewWindows();
+assert.deepEqual(mapIcons(),['workspaceOpen','otherOpen','projectOpen'],'Only open windows in displayed columns contribute desktop-map icons');
+assert(mapPage('workspace',0).includes('1 window')&&mapPage('workspace',1).includes('1 window')&&mapPage('site',0).includes('1 window'),'Each occupied desktop counts its open windows');
+assert(mapPage('workspace',2).includes('Empty')&&mapPage('site',1).includes('Empty'),'Remembered locations containing only parked windows count as empty');
+assert(mapContext.$('#overviewWindowGrid').innerHTML.includes('data-overview-open-app="workspaceParked"')&&mapContext.$('#overviewWindowGrid').innerHTML.includes('Parked · Workspace-wide'),'Workspace-wide parked cards remain available below the map');
+mapPages.select('general','site');mapContext.renderOverviewWindows();
+assert(mapContext.$('#overviewWindowGrid').innerHTML.includes('data-overview-open-app="projectParked"')&&mapContext.$('#overviewWindowGrid').innerHTML.includes('Parked · Project-wide'),'Project-wide parked cards remain available in the selected Project');
+assert.deepEqual(mapIcons(),['workspaceOpen','otherOpen','projectOpen'],'Selecting a Project never puts parked cards back into its page icons');
+mapStates.projectParked='open';mapContext.renderOverviewWindows();
+assert(mapIcons().includes('projectParked')&&mapPage('site',1).includes('1 window'),'Unparking adds the real window to its desktop icon and count');
+mapStates.projectOpen='minimized';mapContext.renderOverviewWindows();
+assert(!mapIcons().includes('projectOpen')&&mapPage('site',0).includes('Empty'),'Parking immediately removes the icon and count from the former desktop');
+assert(mapContext.$('#overviewWindowGrid').innerHTML.includes('data-overview-open-app="projectOpen"'),'The newly parked app remains available in the Project group');
+console.log('Overview map passed: open-window icons/counts, column ownership, parked-only empty pages, persistent scoped parking and park/unpark transitions.');
 
 // Contributed sections join the real carousel only while their app is available.
 const steamPanel=make('steam');steamPanel.dataset.overviewPanel='steam';steamPanel.offsetWidth=800;panelNodes.push(steamPanel);track.children.push(steamPanel);
