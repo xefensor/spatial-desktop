@@ -76,6 +76,7 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 /* Keep space for the icons beside windows, but draw no column surface.
    Only the compact marker group itself is visible and receives input. */
 .desktop-shell{--desktop-page-rail-width:30px}
+html[data-desktop-markers="lines"] .desktop-shell{--desktop-page-rail-width:12px}
 html[data-guide-desktops="false"] .desktop-shell,
 body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-shell>.workspace-zone{
@@ -112,7 +113,8 @@ body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-page-app .app-art{display:block;width:18px;height:18px;min-width:18px;opacity:.78}
 .desktop-page-mark.is-current .app-art{opacity:.95}
 .desktop-page-rail-right .desktop-page-mark{border-left:0;border-right:1px solid var(--desktop-marker-line);padding-left:2px;padding-right:4px}
-/* Lines-only changes the markers, keeping the same window spacing. */
+/* Simple lines need less space; keep their hit target inside the narrower gap. */
+html[data-desktop-markers="lines"] .desktop-page-rail{width:10px}
 html[data-desktop-markers="lines"] .desktop-page-mark{
   width:2px;height:22px;min-height:22px;padding:0;gap:0;
 }

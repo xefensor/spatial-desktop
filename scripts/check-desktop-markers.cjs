@@ -109,4 +109,79 @@ assert.doesNotThrow(() => browser.SpatialDesktopMarkers.setPreference('lines'));
 assert.equal(browser.document.documentElement.dataset.desktopMarkers, 'lines',
   'Browser bootstrap and live toggles tolerate a blocked localStorage property');
 
-console.log('Desktop marker preference, persistence and display sync checks passed');
+// Exercise the production shared context menu from either rail and its children,
+// including the existing keyboard path rather than introducing another popup.
+const shell = fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
+const menuStart = shell.indexOf('let desktopFolderCount = 0;');
+const menuEnd = shell.indexOf('/* Two browser windows',menuStart);
+assert(menuStart>=0&&menuEnd>menuStart);
+const menuPreference=fixture('icons'),documentHandlers=new Map(),windowHandlers=new Map(),menuHandlers=new Map();
+const documentState={activeElement:null,addEventListener(type,handler){if(!documentHandlers.has(type))documentHandlers.set(type,[]);documentHandlers.get(type).push(handler);}};
+function node({parent=null,rail=false,desktop=false,menu=false}={}){
+  return {parent,rail,desktop,menu,dataset:{},style:{},
+    closest(selector){
+      if(selector==='.desktop-page-rail')return this.rail?this:this.parent?.closest(selector)||null;
+      if(selector==='#desktopContextMenu')return this.menu?this:this.parent?.closest(selector)||null;
+      if(selector==='[data-context-action]')return this.dataset.contextAction?this:this.parent?.closest(selector)||null;
+      if(selector==='.workspace-zone')return this.desktop?this:this.parent?.closest(selector)||null;
+      return null;
+    },
+    focus(){documentState.activeElement=this;},
+    getBoundingClientRect(){return {left:14,bottom:220,width:250,height:120};}
+  };
+}
+const menu=node({menu:true}),title={textContent:''},items={buttons:[]};menu.hidden=true;
+const menuClasses=new Set();menu.classList={add:value=>menuClasses.add(value),remove:value=>menuClasses.delete(value),contains:value=>menuClasses.has(value)};
+menu.addEventListener=(type,handler)=>menuHandlers.set(type,handler);
+Object.defineProperty(items,'innerHTML',{get(){return this.markup||'';},set(value){
+  this.markup=value;this.buttons=[];
+  for(const match of value.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)){
+    const button=node({parent:menu}),attributes=Object.fromEntries([...match[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(attr=>[attr[1],attr[2]]));
+    button.dataset.contextAction=attributes['data-context-action'];button.attributes=attributes;this.buttons.push(button);
+  }
+}});
+const left=node({rail:true}),right=node({rail:true}),marker=node({parent:left}),appIcon=node({parent:right}),desktop=node({desktop:true});
+const sandbox={
+  document:documentState,window:{innerWidth:1000,innerHeight:800,addEventListener:(type,handler)=>windowHandlers.set(type,handler)},
+  SpatialDesktopMarkers:menuPreference.markers,appInfo:{},activeProjectName:null,desktopPages:{next:()=>null},activeWorkspace:'work',
+  $:(selector,scope)=>scope===menu?items.buttons[0]||null:selector==='#desktopContextMenu'?menu:selector==='#contextMenuTitle'?title:selector==='#contextMenuItems'?items:null,
+  $$:(selector,scope)=>selector==='.context-menu-item'&&scope===menu?items.buttons:[],
+  icon:()=>'<svg></svg>',escapeHtml:value=>String(value),prepareControlSemantics(){},requestAnimationFrame:callback=>callback()
+};
+vm.createContext(sandbox);vm.runInContext(shell.slice(menuStart,menuEnd),sandbox);
+for(const target of [left,right,marker,appIcon]){
+  const descriptor=sandbox.contextMenuDescriptor(target,40,60);
+  assert.equal(descriptor.kind,'desktop-markers');assert.match(descriptor.title,/System-wide/);
+}
+const ordinary=sandbox.contextMenuDescriptor(desktop,400,300);
+assert.equal(ordinary.kind,'desktop');assert.equal(ordinary.point.x,400);assert.equal(ordinary.point.y,300);
+assert(sandbox.contextMenuEntries(ordinary).some(entry=>entry.action==='desktop-new-folder'),'The ordinary desktop menu keeps its existing actions');
+sandbox.prepareContextMenus();
+const dispatch=(type,event)=>{for(const handler of documentHandlers.get(type)||[])handler(event);};
+const event=target=>({target,clientX:40,clientY:60,prevented:false,preventDefault(){this.prevented=true;}});
+const mouse=event(appIcon);dispatch('contextmenu',mouse);
+assert(mouse.prevented);assert.equal(menu.hidden,false);assert.equal(title.textContent,'Desktop indicators · System-wide');
+assert.equal(items.buttons.length,2,'Indicators use only the two existing preference choices');
+assert.deepEqual(items.buttons.map(button=>[button.dataset.contextAction,button.attributes.role,button.attributes['aria-checked']]),[
+  ['desktop-markers:lines','menuitemradio','false'],['desktop-markers:icons','menuitemradio','true']
+]);
+menuHandlers.get('click')({target:items.buttons[0]});
+assertMode(menuPreference,'lines','A marker-menu choice changes the shared persisted preference');assert.equal(menu.hidden,true);
+assert.deepEqual(menuPreference.writes,[[key,'lines']]);
+left.focus();
+for(const keys of [{key:'ContextMenu'},{key:'F10',shiftKey:true}]){
+  const keyboard={...event(left),...keys};dispatch('keydown',keyboard);
+  assert(keyboard.prevented);assert.equal(menu.hidden,false);assert.equal(documentState.activeElement,items.buttons[0],'Keyboard invocation focuses the existing shared menu');
+  assert.equal(items.buttons[0].attributes['aria-checked'],'true','The next opening checks the current shared choice');
+  const escape={...event(left),key:'Escape'};dispatch('keydown',escape);
+  assert.equal(menu.hidden,true);assert.equal(documentState.activeElement,left,'Escape returns keyboard focus to the marker region');
+}
+dispatch('contextmenu',event(marker));menuHandlers.get('click')({target:items.buttons[1]});
+assertMode(menuPreference,'icons','The menu can restore icons as well as select lines');
+assert.deepEqual(menuPreference.writes.at(-1),[key,'icons']);
+sandbox.openDesktopContextMenu(ordinary,100,100);
+sandbox.executeContextAction('desktop-markers:lines');
+assertMode(menuPreference,'icons','An indicator action cannot change settings through an unrelated menu context');
+assert.equal(sandbox.contextMenuDescriptor(items.buttons[0]),null,'Right-clicking inside the shared menu does not replace its context');
+
+console.log('Desktop markers passed: preference persistence, display sync and production shared menus from both rails, marker/icon targets, radio choices, keyboard focus and ordinary desktop isolation.');

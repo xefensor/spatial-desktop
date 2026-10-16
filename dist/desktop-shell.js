@@ -6307,6 +6307,8 @@ let contextMenuState = null;
 function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
   if (!target?.closest || target.closest("#desktopContextMenu")) return null;
 
+  if (target.closest(".desktop-page-rail")) return { kind: "desktop-markers", title: "Desktop indicators · System-wide" };
+
   const appControl = target.closest("[data-open-app],[data-overview-open-app],[data-search-open-app],[data-mini-card]");
   if (appControl) {
     const name = appControl.dataset.openApp || appControl.dataset.overviewOpenApp || appControl.dataset.searchOpenApp || appControl.dataset.miniCard;
@@ -6372,6 +6374,10 @@ function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
 
 function contextMenuEntries(context) {
   const separator = { separator: true };
+  if (context.kind === "desktop-markers") return [
+    { action: "desktop-markers:lines", icon: "i-menu", label: "Lines only", checked: globalThis.SpatialDesktopMarkers?.preference === "lines" },
+    { action: "desktop-markers:icons", icon: "i-grid", label: "Lines and app icons", checked: globalThis.SpatialDesktopMarkers?.preference !== "lines" }
+  ];
   if (context.kind === "app") {
     const state = appState[context.name];
     const frame = frameFor(context.name);
@@ -6513,6 +6519,10 @@ function createDesktopFolder(point) {
 function executeContextAction(action) {
   const context = contextMenuState;
   if (!context) return;
+  if (action.startsWith("desktop-markers:")) {
+    if (context.kind === "desktop-markers") globalThis.SpatialDesktopMarkers?.setPreference(action.slice("desktop-markers:".length));
+    return;
+  }
   if (action === "app-new-instance") createAppInstance(context.name);
   if (action.startsWith("move-desktop:")) moveWindowToDesktop(context.name, Number(action.split(":")[1]));
   if (action.startsWith("desktop-page:")) {

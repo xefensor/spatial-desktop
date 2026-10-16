@@ -48,6 +48,7 @@ const node={hidden:false,dataset:{areaState:'expanded'}};
 const actionContext={dialog:{addEventListener:(name,handler)=>handlers[name]=handler},projectEditorState:{view:'settings'},areaFor:()=>({...node,hidden}),showArea:(name,announce)=>{hidden=false;visibility.push(['show',name,announce]);},hideArea:name=>{hidden=true;visibility.push(['hide',name]);},refresh:()=>refreshed++,$$:()=>[{textContent:'Wi-Fi',click:()=>globalToggle=['Wi-Fi',false]}],queueDesktopStateBroadcast(){},closeProjectEditor:()=>closed++,setUniversalSearchOpen:value=>overview=value,$:selector=>selector==='#resetAreas'?{click:()=>reset++}:{focus:()=>focused=true},renderProjectEditor(){},SpatialDesktopTheme:{setPreference:value=>themeValue=value}};
 actionContext.root={SpatialDesktopMarkers:{setPreference:value=>markerValue=value}};
 actionContext.renderDesktopPageRail=()=>markerRenders++;
+let markerLayouts=0;actionContext.windowViewportLockReady=true;actionContext.scheduleWindowTiling=()=>markerLayouts++;
 vm.createContext(actionContext);vm.runInContext(segment("  dialog.addEventListener('click',event=>{","  const areaNote="),actionContext);
 const click=(selector,data)=>handlers.click({target:{closest:key=>key===selector?{dataset:data,getAttribute:()=> 'true'}:null}});
 click('[data-settings-area]',{settingsArea:'apps'});assert.equal(hidden,true);click('[data-settings-area]',{settingsArea:'apps'});assert.equal(hidden,false);assert.deepEqual(visibility,[['hide','apps'],['show','apps',false]]);
@@ -55,6 +56,8 @@ click('[data-settings-toggle]',{settingsToggle:'Wi-Fi'});assert.deepEqual(global
 handlers.change({target:{matches:selector=>selector==='[data-settings-theme]',value:'oled'}});assert.equal(themeValue,'oled');
 handlers.change({target:{matches:selector=>selector==='[data-settings-desktop-markers]',value:'lines'}});assert.equal(markerValue,'lines');assert.equal(themeValue,'oled','Changing markers does not change the color theme');
 actionContext.root.SpatialDesktopMarkers.onChange();assert.equal(markerRenders,1,'Local and remote preference changes refresh the real desktop markers');
+assert.equal(markerLayouts,1,'Local and remote marker changes refit windows to the new canvas width');
+actionContext.windowViewportLockReady=false;actionContext.root.SpatialDesktopMarkers.onChange();assert.equal(markerLayouts,1,'Early marker changes do not fit windows before layout is ready');
 click('[data-setting-action]',{settingAction:'reset-areas'});assert.equal(reset,1);
 click('[data-setting-action]',{settingAction:'desktop'});assert.equal(closed,1);assert.equal(overview,false);assert(focused);
 assert(refreshed>=5);
