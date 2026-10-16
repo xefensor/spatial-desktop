@@ -101,8 +101,8 @@ assert.equal(result.apps.extent,600);assert.equal(result.systems.extent,300,'Exp
 assert.equal(result.systems.state,'rail','A saved Compact preference stays Compact even when allocated more space');
 result=allocated({names:['apps','systems'],states:fullStates,axis:'vertical',crossSize:280,extent:800,shares:{apps:1,systems:9}});
 assert.equal(result.apps.extent,80);assert.equal(result.apps.state,'rail');assert.equal(result.systems.extent,720);assert.equal(result.systems.state,'expanded');
-result=allocated({names:['apps','systems'],states:fullStates,axis:'vertical',crossSize:280,extent:2400,shares:{apps:1,systems:9}});
-near(result.apps.extent,240);assert.equal(result.apps.state,'expanded','A panel automatically returns to its preferred Expanded state when the same shares fit');
+result=allocated({names:['apps','systems'],states:fullStates,axis:'vertical',crossSize:280,extent:4000,shares:{apps:1,systems:9}});
+near(result.apps.extent,400);assert.equal(result.apps.state,'expanded','Apps automatically returns to its preferred Expanded state when the same shares fit its launchers and parked/background sections');
 result=allocated({names:['projects','ai'],states:fullStates,axis:'horizontal',crossSize:180,extent:1000,shares:{projects:1,ai:3}});
 assert.equal(result.projects.extent,250);assert.equal(result.projects.state,'rail');assert.equal(result.ai.extent,750);assert.equal(result.ai.state,'expanded');
 assert.equal(result.projects.compactGrid,true,'A short wide compact panel uses its available height instead of a long overflowing icon row');

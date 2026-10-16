@@ -655,7 +655,7 @@ for(const edge of ['left','right','top','bottom']){
   assert.equal(areaFrames.apps.dataset.areaState,'rail',edge+' begins with pressure-compacted Apps');
   vm.runInContext('setAreaState("apps","expanded",false);',docks);
   assert.equal(areaFrames.apps.dataset.areaState,'expanded',edge+' Expanded command gives Apps usable space');
-  assert(areaFrames.apps.rect[dimension]>=(vertical?244:324)-1e-6,edge+' Expanded reserves the usable footprint plus recovery margin');
+  assert(areaFrames.apps.rect[dimension]>=(vertical?404:324)-1e-6,edge+' Expanded reserves the usable footprint plus recovery margin');
   assert.equal(areaFrames.apps.rect[crossDimension],thickness,edge+' Expanded recovery keeps this column thickness');
   assert.equal(JSON.stringify(docks.insets),insets,edge+' Expanded recovery keeps the application canvas');
   for(const name of shareAreas){
@@ -664,11 +664,11 @@ for(const edge of ['left','right','top','bottom']){
   }
 }
 configureShareEdge('left');
-shell.clientHeight=500;
-vm.runInContext('areaDockShares.left={apps:.144,projects:.144,systems:.144,ai:.568};layoutDockAreas(false,false);',docks);
+shell.clientHeight=700;
+vm.runInContext('areaDockShares.left={apps:72,projects:72,systems:72,ai:484};layoutDockAreas(false,false);',docks);
 vm.runInContext('setAreaState("apps","expanded",false);',docks);
 assert.equal(areaFrames.apps.dataset.areaState,'expanded','Explicit Expanded reclaims usable space even with two peers already at compact minimum');
-assert(areaFrames.apps.rect.height>=220-1e-6,'Clamping small peers cannot steal the reclaimed usable footprint');
+assert(areaFrames.apps.rect.height>=380-1e-6,'Clamping small peers cannot steal the reclaimed usable footprint');
 for(const name of ['projects','systems','ai'])assert(areaFrames[name].rect.height>=72-1e-6,'Expanded recovery preserves '+name+' compact controls');
 shell.clientHeight=1600;
 

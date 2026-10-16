@@ -45,7 +45,7 @@
     horizontalGridHeight:120,
     compactExtent:Object.freeze({vertical:72,horizontal:64}),
     expandedExtent:Object.freeze({
-      vertical:Object.freeze({apps:220,projects:240,systems:240,ai:260}),
+      vertical:Object.freeze({apps:380,projects:240,systems:240,ai:260}),
       horizontal:Object.freeze({apps:300,projects:320,systems:300,ai:320})
     })
   });

@@ -150,6 +150,12 @@
 /* The wrapper has no box in existing layouts. A wide Compact Apps Area gives
    all three regions one viewport while its header and resize edge stay fixed. */
 .apps-area-body{display:contents}
+/* Keep an actual launcher row in Expanded Apps; a percentage ceiling alone
+   can otherwise shrink its grid to zero above the Compact threshold. */
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .apps-quick-launch{
+  min-height:112px;
+  max-height:max(112px,35%);
+}
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"]{overflow:hidden!important}
 .apps-zone[data-area-state="rail"][data-compact-layout="grid"]>.apps-area-body{
   display:flex;
