@@ -52,10 +52,10 @@ slot=1;ctx.toggleAppFullscreen('game');assert(!ctx.tileSession().fullscreen);ass
 assert.equal(ctx.createBondedFullscreen('game'),null,'The legacy entry point cannot create a child');
 // A genuine fullscreen canvas bypasses tile minimums even when Areas occupy
 // nearly all of the ordinary canvas. It cannot be parked by the fitter.
-ctx.toggleAppFullscreen('game');const previousRenderer=ctx.renderTileLayout;let fullscreenRendered=0;
-Object.assign(ctx,{tileRendering:false,manualWindowInteraction:false,renderFloatingWindows(){},renderTileDividers(){},renderFullscreenWindow(name){assert.equal(name,'game');fullscreenRendered++;},scheduleWindowVisibility(){},parkFullscreenPeers(){},reconcileTileTree(){throw Error('Fullscreen must bypass ordinary tile fitting');}});
+ctx.toggleAppFullscreen('game');const previousRenderer=ctx.renderTileLayout;let fullscreenRendered=0,hotbarRefreshed=0;
+Object.assign(ctx,{tileRendering:false,manualWindowInteraction:false,renderFloatingWindows(){},renderTileDividers(){},renderFullscreenWindow(name){assert.equal(name,'game');fullscreenRendered++;},scheduleHotbarOrder(){hotbarRefreshed++;},scheduleWindowVisibility(){},parkFullscreenPeers(){},reconcileTileTree(){throw Error('Fullscreen must bypass ordinary tile fitting');}});
 vm.runInContext(slice('function renderTileLayout(','function tileOpenWindows('),ctx);
-ctx.renderTileLayout('game');assert.equal(fullscreenRendered,1);assert.equal(ctx.appState.game,'open');ctx.renderTileLayout=previousRenderer;ctx.toggleAppFullscreen('game');
+ctx.renderTileLayout('game');assert.equal(fullscreenRendered,1);assert.equal(hotbarRefreshed,1,'Borderless fullscreen refreshes the spatial hotbar even while bypassing tile geometry');assert.equal(ctx.appState.game,'open');ctx.renderTileLayout=previousRenderer;ctx.toggleAppFullscreen('game');
 // Fullscreen parks only covered local peers and restores its own parked peers.
 // An app that was already parked or explicitly closed must stay that way.
 ctx.autoWindowAvoidance=new Set();ctx.moveCoveredApps=()=>{};

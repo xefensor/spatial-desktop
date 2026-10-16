@@ -854,7 +854,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
       // size or dock bounds used for ordinary tiled windows.
       parkFullscreenPeers(tileSession());
       renderFloatingWindows(tileSession());renderTileDividers([]);renderFullscreenWindow(fullscreen.name);
-      saveTileSessions();return;
+      saveTileSessions();scheduleHotbarOrder();return;
     }
     parkFullscreenPeers(tileSession());
     const session = reconcileTileTree(preferredName);
@@ -7860,11 +7860,43 @@ function fullscreenHotbarBond(name) {
   if (selected && Math.min(selected.display, activeDisplayRoster().length) === localDisplaySlot()) return null;
   return bond;
 }
+function syncRackSpatialLayout(names) {
+  const group=$('.app-rack-open',$('#appRack'));
+  if(!group)return;
+  const tiles=$('.app-map-tiles',group),extra=$('.app-map-extra',group);
+  if(!tiles||!extra)return;
+  const rectangles=names.filter(name=>appState[name]==='open').map(name=>{
+    const frame=frameFor(name),rect=frame?.getBoundingClientRect(),parent=frame?.parentElement?.getBoundingClientRect();
+    const value=property=>{const inline=frame?.style[property];return inline?.endsWith('px')?parseFloat(inline):NaN;};
+    const x=value('left'),y=value('top'),width=value('width'),height=value('height');
+    return {id:name,x:Number.isFinite(x)&&parent?parent.left+x:rect?.left,
+      y:Number.isFinite(y)&&parent?parent.top+y:rect?.top,
+      width:Number.isFinite(width)?width:rect?.width,height:Number.isFinite(height)?height:rect?.height,
+      floating:Boolean(frame?.classList.contains('is-floating'))};
+  });
+  const signature=JSON.stringify(rectangles);
+  if(group.dataset.spatialLayout===signature)return;
+  group.dataset.spatialLayout=signature;
+  const layout=SpatialAppMap.layout(rectangles),cells=new Map(layout.cells.map(cell=>[cell.id,cell]));
+  const focused=document.activeElement;
+  for(const button of $$('[data-open-app]',group)){
+    const cell=cells.get(button.dataset.openApp),target=cell?tiles:extra;
+    if(button.parentElement!==target)target.append(button);
+    button.style.gridColumn=cell?cell.column+' / span '+cell.columnSpan:'';
+    button.style.gridRow=cell?cell.row+' / span '+cell.rowSpan:'';
+  }
+  tiles.hidden=!layout.cells.length;extra.hidden=!layout.fallback.length;
+  tiles.style.gridTemplateColumns=layout.columns.map(weight=>'minmax(56px,'+weight+'fr)').join(' ');
+  tiles.style.gridTemplateRows=layout.rows.map(weight=>'minmax(66px,'+weight+'fr)').join(' ');
+  tiles.style.setProperty('--app-map-columns',layout.columns.length);
+  tiles.style.setProperty('--app-map-rows',layout.rows.length);
+  if(focused&&group.contains(focused)&&document.activeElement!==focused)focused.focus({preventScroll:true});
+}
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
   $('#appRack').hidden = names.length === 0;
   const order=JSON.stringify(names.map(name=>[name,appState[name],fullscreenHotbarBond(name)]));
-  if($('#appRack').dataset.layoutOrder===order){applyAppPrimaryColors($('#appRack'));return;}
+  if($('#appRack').dataset.layoutOrder===order){syncRackSpatialLayout(names);applyAppPrimaryColors($('#appRack'));return;}
   $('#appRack').dataset.layoutOrder=order;
   const buttons = names.map((name, index) => {
     const info = appInfo[name];
@@ -7876,9 +7908,10 @@ function renderInstanceRack() {
   });
   const open = buttons.filter((_, index) => appState[names[index]] === 'open').join('');
   const parked = buttons.filter((_, index) => appState[names[index]] === 'minimized').join('');
-  $('#appRack').innerHTML = (open ? '<div class="app-rack-group app-rack-open" role="group" aria-label="Open applications">' + open + '</div>' : '')
+  $('#appRack').innerHTML = (open ? '<div class="app-rack-group app-rack-open" role="group" aria-label="Open applications"><div class="app-map-tiles">' + open + '</div><div class="app-map-extra" role="group" aria-label="Other open windows" hidden></div></div>' : '')
     + (parked ? '<div class="app-rack-group app-rack-parked" role="group" aria-label="Parked applications">' + parked + '</div>' : '');
   applyAppPrimaryColors($('#appRack'));
+  syncRackSpatialLayout(names);
 }
 let hotbarOrderFrame=0;
 function scheduleHotbarOrder() {

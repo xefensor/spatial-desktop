@@ -1,0 +1,38 @@
+/* Expanded Apps mirrors desktop tile positions; the same buttons and shortcut
+   slots remain a simple list on a rail. Empty seams need no miniature frame. */
+.app-map-tiles,.app-map-extra{display:contents}
+.app-map-tiles[hidden],.app-map-extra[hidden]{display:none!important}
+.apps-zone[data-area-state="expanded"] .app-rack{
+  display:block!important;
+  height:auto;
+  min-height:0;
+  overflow:auto!important;
+}
+.apps-zone[data-area-state="expanded"] .app-rack-open{display:block;min-width:0}
+.apps-zone[data-area-state="expanded"] .app-map-tiles{
+  display:grid;
+  gap:6px;
+  width:100%;
+  min-width:calc(var(--app-map-columns)*56px + (var(--app-map-columns) - 1)*6px);
+  height:calc(var(--app-map-rows)*72px + (var(--app-map-rows) - 1)*6px);
+}
+.apps-zone[data-area-state="expanded"] .app-map-tiles>.app-key{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:66px;
+  margin:0;
+  box-sizing:border-box;
+}
+/* Keep overlapping/floating windows individually reachable. */
+.apps-zone[data-area-state="expanded"] .app-map-extra{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  padding-top:8px;
+  margin-top:8px;
+  border-top:1px solid var(--sd-glass-groove);
+}
+.apps-zone[data-area-state="expanded"] .app-map-extra>.app-key{flex:0 0 66px;width:66px}
+.apps-zone[data-area-state="expanded"] .app-map-tiles[hidden]+.app-map-extra{margin-top:0;padding-top:0;border-top:0}
+.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack{max-height:100%}
