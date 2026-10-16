@@ -88,7 +88,10 @@ const sceneAreas = freshScene.read('spatial-workspace-area-layouts-v1');
 const sceneProjects = freshScene.read('spatial-workspace-project-states-v1');
 assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin', 'notes']);
 assert.equal(sceneProjects.general.project, null);
-assert.equal(sceneAreas.general.hidden.projects, false);
+assert.deepEqual(sceneAreas.general.hidden, {projects:true,apps:false,systems:false,ai:true});
+assert.equal(sceneAreas.general.sizes.left,280);assert.equal(sceneAreas.general.sizes.right,70);
+assert.equal(sceneAreas.general.preferred.apps,'expanded');assert.equal(sceneAreas.general.preferred.systems,'rail');
+assert.equal(sceneAreas.general.layoutMode,'manual');
 assert.equal(sceneProjects.school.project, 'research');
 assert.equal(sceneAreas.school.state.apps.edge, 'left');
 assert.equal(sceneAreas.work.state.projects.edge, 'left');
@@ -112,6 +115,36 @@ const editedAreas = copy(oldAreaLayout); editedAreas.state.projects.edge = 'top'
 assert.deepEqual(D.migrateAreaLayout(editedAreas).state, editedAreas.state, 'Custom docking survives');
 const laterEdit = copy(migratedAreas); laterEdit.state.ai = {edge:'bottom',order:0};
 assert.deepEqual(D.migrateAreaLayout(laterEdit), laterEdit, 'A deliberate later horizontal move survives reload');
+
+// Refresh only the former shipped General Area layout, once, without reseeding work.
+const formerGeneral=copy(D.scenarios.general.areas);
+Object.assign(formerGeneral.sizes,{left:68,right:280});
+Object.assign(formerGeneral.hidden,{projects:false,ai:false});
+formerGeneral.preferred={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
+formerGeneral.expanded={systems:{right:280},ai:{right:280}};
+function oldGeneralScene(general=formerGeneral,assignments={areas:{apps:1,systems:1,projects:1,ai:1}}){return sceneStore({
+  'spatial-demo-scenes-v1':'4','spatial-demo-steam-v1':'1','spatial-demo-gaming-parent-v1':'1','spatial-demo-window-order-v1':'1',
+  'spatial-workspace-area-layouts-v1':JSON.stringify({general:copy(general),work:copy(D.scenarios.work.areas)}),
+  'spatial-workspace-display-assignments-v1':JSON.stringify({general:assignments}),
+  'spatial-workspace-app-states-v1':JSON.stringify({general:{notes:'open'}})
+});}
+const generalUpgrade=oldGeneralScene();D.seedWorkspaces(generalUpgrade.storage);
+assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas);
+assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1').work,D.scenarios.work.areas);
+assert.deepEqual(generalUpgrade.read('spatial-workspace-app-states-v1'),{general:{notes:'open'}});
+const fittedGeneral=copy(formerGeneral);fittedGeneral.sizes.right=300;fittedGeneral.expanded={systems:{right:300},ai:{right:300}};
+const fittedUpgrade=oldGeneralScene(fittedGeneral);D.seedWorkspaces(fittedUpgrade.storage);
+assert.deepEqual(fittedUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas,'The former fitted default migrates too');
+const laterGeneral=generalUpgrade.read('spatial-workspace-area-layouts-v1');laterGeneral.general.sizes.left=360;
+generalUpgrade.storage.setItem('spatial-workspace-area-layouts-v1',JSON.stringify(laterGeneral));D.seedWorkspaces(generalUpgrade.storage);
+assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1'),laterGeneral,'Later resizing survives reload');
+for(const customize of [value=>value.sizes.left=340,value=>value.state.apps.edge='top',value=>value.hidden.projects=true,
+  value=>value.preferred.apps='expanded',value=>value.expanded.apps={left:400},value=>value.layoutMode='auto']){
+  const custom=copy(formerGeneral);customize(custom);const store=oldGeneralScene(custom);D.seedWorkspaces(store.storage);
+  assert.deepEqual(store.read('spatial-workspace-area-layouts-v1').general,custom,'Customized General Areas survive');
+}
+const extendedGeneral=oldGeneralScene(formerGeneral,{areas:{apps:2}});D.seedWorkspaces(extendedGeneral.storage);
+assert.deepEqual(extendedGeneral.read('spatial-workspace-area-layouts-v1').general,formerGeneral,'Explicit display placement survives');
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');

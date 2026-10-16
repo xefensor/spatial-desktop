@@ -20,6 +20,7 @@
     sessionKeys.forEach(key=>storage.removeItem(key));
     storage.removeItem('spatial-demo-steam-v1');
     storage.removeItem('spatial-demo-gaming-parent-v1');
+    storage.removeItem('spatial-demo-general-areas-v1');
     storage.setItem(presetKey,preset); storage.setItem('spatial-active-workspace','general');
     return true;
   }

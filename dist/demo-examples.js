@@ -278,6 +278,9 @@
     example.apps = {...closedApps};
     example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
   }
+  Object.assign(scenarios.general.areas.sizes,{left:280,right:70});
+  Object.assign(scenarios.general.areas.hidden,{projects:true,ai:true});
+  scenarios.general.areas.preferred={apps:'expanded',projects:'expanded',systems:'rail',ai:'rail'};
   scenarios.school.areas.sizes = {left:280,right:280,top:250,bottom:250};
   scenarios.work.areas.sizes = {left:280,right:280,top:250,bottom:250};
   scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
@@ -307,7 +310,7 @@
 
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); seedGamingParent(storage); return false; }
+    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); seedGamingParent(storage); seedGeneralAreas(storage); return false; }
     const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
@@ -379,7 +382,31 @@
     storage.setItem(versionKey,"4");
     seedGamingOverlay(storage);
     seedGamingParent(storage);
+    seedGeneralAreas(storage);
     return true;
+  }
+
+  // Adopt the new General opening layout once, retaining deliberate edits.
+  function seedGeneralAreas(storage) {
+    const marker='spatial-demo-general-areas-v1',key='spatial-workspace-area-layouts-v1';
+    if(storage.getItem(marker))return false;
+    const layouts=JSON.parse(storage.getItem(key)||'{}'),saved=layouts.general;
+    const previousSizes={left:68,right:280,top:250,bottom:250};
+    const previousStates={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
+    const assignments=JSON.parse(storage.getItem('spatial-workspace-display-assignments-v1')||'{}').general?.areas||{};
+    const original=!saved || saved.layoutMode==='manual'
+      && Object.entries(defaultAreaDocks).every(([name,dock])=>saved.state?.[name]?.edge===dock.edge&&saved.state[name].order===dock.order&&!saved.hidden?.[name])
+      && Object.entries(previousSizes).every(([edge,size])=>(saved.sizes?.[edge]===size||edge==='right'&&saved.sizes?.right===300)&&saved.manual?.[edge]===true)
+      && Object.entries(saved.preferred||{}).every(([name,state])=>previousStates[name]===state)
+      // The Assistant's minimum width fitted the former 280px dock to 300px.
+      && Object.values(saved.expanded||{}).every(edges=>Object.entries(edges).every(([edge,size])=>edge==='right'&&[280,300].includes(size)));
+    const adopt=original&&Object.values(assignments).every(display=>display===1);
+    if(adopt){
+      layouts.general=JSON.parse(JSON.stringify(scenarios.general.areas));
+      storage.setItem(key,JSON.stringify(layouts));
+    }
+    storage.setItem(marker,'1');
+    return Boolean(adopt);
   }
 
   // Change only the shipped opening view once. User-chosen later pages,
