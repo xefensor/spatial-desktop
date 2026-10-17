@@ -9,12 +9,11 @@
   host.hidden=true;
   host.setAttribute('aria-label','Display workspace');
   host.innerHTML=`
-    <header class="display-workbench-bar material-surface-glass">
-      <svg aria-hidden="true"><use href="#i-monitor"/></svg>
-      <div class="display-workbench-identity"><b data-display-title></b><small data-display-scope></small></div>
-      <button type="button" class="surface-key" data-display-action="settings" aria-label="Open Display settings"><svg aria-hidden="true"><use href="#i-settings"/></svg><span>Display settings</span></button>
-    </header>
     <aside class="display-workbench-panel material-surface-glass" aria-label="Supporting display tools">
+      <div class="display-workbench-context">
+        <div><b data-display-title></b><small data-display-scope></small></div>
+        <button type="button" class="surface-key" data-display-action="settings" aria-label="Open Display settings" title="Display settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button>
+      </div>
       <div class="display-side-tools" data-display-side>
         <section class="display-workbench-section">
           <h2>Folders</h2>

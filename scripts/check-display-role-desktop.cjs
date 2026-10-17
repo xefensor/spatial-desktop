@@ -32,7 +32,7 @@ function fixture(count=2){
     persistDisplayAssignments(){},saveDesktopPages(){},saveTileSessions(){},saveIndependentSessions(){},
     refreshIntentAreas(){},layoutDockAreas(){},renderTileLayout(preferred){c.renderedPreferred=preferred;},queueDesktopStateBroadcast(){},
     syncApps(){c.visible=Object.keys(c.appState).filter(id=>c.appState[id]==='open'&&c.isLocalApp(id));},
-    tileBounds:()=>({x:8,y:8,width:1424,height:884}),
+    tileBounds:()=>({x:8,y:8,width:Math.max(1,c.window.innerWidth-16),height:Math.max(1,c.window.innerHeight-16)}),
     isLocalArea:name=>Number(assignments[c.activeWorkspace].areas[name]||1)===c.localSlot,
     changeDesktopPage:delta=>c.desktopPages.go(c.activeWorkspace,c.desktopPages.current(c.activeWorkspace)+delta),
     updateDesktopPageUi(){},rebalanceAreaDisplays(){return true;},updateDesktopSyncPresence(){},localDisplayRoleLabel:()=>c.localSlot===1?'Main display':'Display '+c.localSlot,
@@ -63,6 +63,26 @@ function fixture(count=2){
   vm.runInContext(slice('function intentContextPrefix() {','function screenWindowRect(frame) {'),c);
   vm.runInContext(source,c);
   return {c,assignments,listeners,storage,packets,transfers,areaTransfers,removedProjects,released};
+}
+
+// Supporting-display tools always occupy a vertical side panel. They cannot
+// leave a ghost header or turn into a bottom strip on smaller viewports.
+for(const [viewport,panel] of [[1440,240],[900,240],[899,200],[600,200],[599,160],[320,160]]){
+  const {c}=fixture();
+  c.window.innerWidth=viewport;
+  const normal={x:8,y:8,width:viewport-16,height:884};
+  assert.deepEqual(clone(c.tileBounds()),normal,'Main display keeps its normal tiling bounds at '+viewport+'px');
+  c.localSlot=2;
+  assert.deepEqual(clone(c.tileBounds()),normal,'Extended display keeps its normal tiling bounds at '+viewport+'px');
+  for(const role of ['side','assistant']){
+    c.SpatialDisplayRoleBridge.setRole(2,role);
+    const actual=clone(c.tileBounds());
+    assert.deepEqual(actual,{...normal,x:8+panel,width:Math.max(1,normal.width-panel)},role+': the '+viewport+'px canvas reserves only its '+panel+'px side panel');
+    assert.equal(actual.y,8,role+': no top-header space remains');
+    assert.equal(actual.height,normal.height,role+': windows retain the entire canvas height');
+  }
+  c.SpatialDisplayRoleBridge.setRole(2,'extended');
+  assert.deepEqual(clone(c.tileBounds()),normal,'Returning to Extended releases the supporting-display panel');
 }
 
 {
@@ -236,4 +256,4 @@ function fixture(count=2){
   assert.equal(c.SpatialDisplayRoleBridge.openWindow('unknown-app'),false);
 }
 
-console.log('Display-role integration: helper visibility, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');
+console.log('Display-role integration: full-height side-panel geometry, helper visibility, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');

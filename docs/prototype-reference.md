@@ -204,6 +204,8 @@ The Project editor also names the Project affected by its download preference. S
 
 ## Display roles
 
+Supporting displays omit the desktop context header. Side space and Assistant keep a full-height tools panel flush against the left screen edge, with Display settings inside the panel. Narrower windows keep this vertical layout; the panel becomes narrower instead of moving below the apps. Tiled windows use the remaining space without a top-bar reservation.
+
 Open **Settings → Displays** and select a display in the arrangement preview embedded in the app. **Use this display as** describes how its space behaves:
 
 | Role | Behaviour |

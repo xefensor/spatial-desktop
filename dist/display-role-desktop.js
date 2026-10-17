@@ -112,8 +112,8 @@
   const originalTileBounds=tileBounds;
   tileBounds=function(){
     const bounds=originalTileBounds();if(!special(role()))return bounds;
-    const side=window.innerWidth>=900;
-    return {...bounds,x:bounds.x+(side?240:0),y:bounds.y+48,width:Math.max(1,bounds.width-(side?240:0)),height:Math.max(1,bounds.height-48-(side?0:160))};
+    const panel=window.innerWidth>=900?240:window.innerWidth>=600?200:160;
+    return {...bounds,x:bounds.x+panel,width:Math.max(1,bounds.width-panel)};
   };
   const originalPage=changeDesktopPage;
   changeDesktopPage=function(...args){if(special(role()))return false;return originalPage(...args);};

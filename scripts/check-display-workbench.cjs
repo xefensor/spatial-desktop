@@ -8,7 +8,7 @@ const source=fs.readFileSync(path.join(__dirname,'../dist/display-workbench.js')
 // Exercise the production workbench with the real persisted role model. DOM
 // and timers are controlled here so stale callbacks can be delivered on purpose.
 function harness(){
-  const elements=new Map(),timers=new Map(),listeners={},opened=[],folders=[],writes=[],restored=[];
+  const elements=new Map(),timers=new Map(),listeners={},opened=[],folders=[],writes=[],restored=[],displaySettings=[];
   let serial=0,workspace='work',localSlot=2,failLaunch=false,parkedWindows=[];
   let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
   const model=Roles.create();model.connect(roster);model.setRole(2,'assistant');
@@ -24,7 +24,8 @@ function harness(){
     updateSpace(patch){writes.push({workspace,slot:localSlot,patch});model.updateSpace(workspace,localSlot,patch);browser.SpatialDisplayWorkbench?.refresh();},
     launchNote(title,text){if(failLaunch)return null;const id='note--'+(opened.length+1);opened.push({id,title,text,workspace,slot:localSlot});model.pinWindow(workspace,localSlot,id);browser.SpatialDisplayWorkbench.refresh();return id;},
     openFolder(folder){folders.push({workspace,slot:localSlot,path:folder});},
-    openWindow(id){restored.push({workspace,slot:localSlot,id});parkedWindows=parkedWindows.filter(window=>window.id!==id);browser.SpatialDisplayWorkbench.refresh();},openDisplays(){}}};
+    openWindow(id){restored.push({workspace,slot:localSlot,id});parkedWindows=parkedWindows.filter(window=>window.id!==id);browser.SpatialDisplayWorkbench.refresh();},
+    openDisplays(){displaySettings.push({workspace,slot:localSlot});}}};
   let hostCreated=false;
   const document={activeElement:null,querySelector:()=>zone,createElement(){if(!hostCreated){hostCreated=true;return host;}return element();}};
   const context=vm.createContext({window:browser,document,prepareControlSemantics(){},Date,
@@ -33,7 +34,7 @@ function harness(){
   const refresh=()=>browser.SpatialDisplayWorkbench.refresh();
   function click(attribute,value){host.events.click({target:{closest(selector){return selector==='['+attribute+']'?{dataset:{[{'data-display-action':'displayAction','data-display-folder':'displayFolder','data-display-window':'displayWindow'}[attribute]]:value}}:null;}}});}
   function tick(){const next=timers.entries().next().value;assert(next,'Expected a pending demo timer');timers.delete(next[0]);next[1]();}
-  return {model,host,document,elements,timers,opened,folders,writes,restored,state,refresh,tick,
+  return {model,host,document,elements,timers,opened,folders,writes,restored,displaySettings,state,refresh,tick,
     action:name=>click('data-display-action',name),folder:name=>click('data-display-folder',name),
     restore:id=>click('data-display-window',id),
     park(windows){parkedWindows=windows;for(const window of windows)model.pinWindow(workspace,localSlot,window.id);refresh();},
@@ -43,6 +44,26 @@ function harness(){
     moveDisplay(next){localSlot=next;refresh();},
     changeSetup(){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'assistant');refresh();},
     failLaunch(value){failLaunch=value;},listeners};
+}
+
+{
+  const h=harness();
+  assert.doesNotMatch(h.host.innerHTML,/display-workbench-bar/,'The supporting display has no horizontal role header');
+  const panel=h.host.innerHTML.match(/<aside\b[^>]*class="display-workbench-panel[^>]*>([\s\S]*?)<\/aside>/)?.[1];
+  assert(panel,'The supporting-display tools retain a dedicated side panel');
+  for(const control of ['data-display-title','data-display-scope','data-display-action="settings"']){
+    assert(panel.includes(control),'The side panel contains '+control+' after removing the header');
+  }
+  for(const role of ['side','assistant']){
+    h.role(role);
+    assert.equal(h.host.hidden,false);
+    assert.equal(h.elements.get('[data-display-title]').textContent,role==='assistant'?'Assistant display':'Side space');
+    assert.match(h.elements.get('[data-display-scope]').textContent,/Work.*Display 2/,'The relocated identity still names its Workspace and display');
+    h.action('settings');
+    assert.deepEqual(h.displaySettings.at(-1),{workspace:'work',slot:2},role+': Display settings remains reachable from the panel');
+  }
+  h.role('extended');assert.equal(h.host.hidden,true,'Ordinary Extended displays have no supporting tools panel');
+  h.moveDisplay(1);assert.equal(h.host.hidden,true,'The Main display has no supporting tools panel');
 }
 
 {
@@ -116,4 +137,4 @@ for(const role of ['side','assistant']){
   assert.equal(h.elements.get('[data-display-parked]').hidden,true,role+': restoring removes the parked entry');
   assert.equal(h.state().localWindows[0].id,'notes--1',role+': a pressure-parked window is recoverable on its owning helper display');
 }
-console.log('Display workbench passed: scripted output, pause/resume, takeover, stale callback cancellation, context isolation, output failure, Side note/folder ownership and parked-window recovery.');
+console.log('Display workbench passed: header-free panel navigation, scripted output, pause/resume, takeover, stale callback cancellation, context isolation, output failure, Side note/folder ownership and parked-window recovery.');
