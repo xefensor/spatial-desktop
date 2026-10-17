@@ -40,6 +40,7 @@
       '<div class="scoped-area-heading"><div><b>Areas</b><small>Position, size and visibility apply to all desktops and Projects in '+escapeHtml(ctx.workspace)+'.'+(canEditAreas?'':' Area controls appear later in the Guide.')+'</small></div>'+(canEditAreas?action('reset-areas','Reset Areas'):'')+'</div><div class="scoped-area-list">'+areas+'</div>');
     const toggles=['Wi-Fi','Bluetooth','Sound'].map(label=>'<button type="button" class="scoped-system-toggle surface-key" data-settings-toggle="'+label+'" aria-pressed="false"><b>'+label+'</b><small></small></button>').join('');
     content+=section('system','System-wide',names.system,
+      row('Displays','Choose a Main workspace, extend your desktop, or give another display to Assistant or Side space.',action('displays','Displays'))+
       row('Color theme','Shared by every Workspace. Auto follows your system’s appearance.','<select data-settings-theme aria-label="Color theme for all Workspaces"><option value="auto">Auto</option><option value="oled">OLED</option><option value="graphite">Graphite</option><option value="light">Light</option></select>')+
       row('Desktop indicators','Shared by every Workspace and display. Right-click the desktop indicators for the same choices. Lines only leaves more room for windows.','<select data-settings-desktop-markers aria-label="Desktop indicators for all Workspaces"><option value="lines">Lines only</option><option value="icons">Lines and app icons</option></select>')+
       '<div class="scoped-device-heading"><b>Connection & sound</b><small>Demo controls · these switches do not change native hardware.</small></div><div class="scoped-system-toggles">'+toggles+'</div>');
@@ -87,6 +88,7 @@
     if(toggle){const label=toggle.dataset.settingsToggle,source=$$('.quick-toggle[data-toggle]').find(node=>node.textContent.trim()===label);source?.click();queueDesktopStateBroadcast(0);refresh();}
     if(button){
       const action=button.dataset.settingAction;
+      if(action==='displays'){closeProjectEditor();root.SpatialDisplaySettings?.open();}
       if(action==='desktop'){closeProjectEditor();setUniversalSearchOpen(false);$('.workspace-zone').focus({preventScroll:true});}
       if(action==='project'){projectEditorState.view='manage';renderProjectEditor();$('#closeProjectEditor').focus();}
       if(action==='reset-areas'){$('#resetAreas').click();refresh();}

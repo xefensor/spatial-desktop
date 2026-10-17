@@ -1,6 +1,6 @@
 # Prototype reference
 
-Current implementation reference; the Stash, Assistant evidence and Timeline sections were updated on 17 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
+Current implementation reference; Files, Assistant, Timeline and display-role sections were updated on 17 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
 
 ## Context and ownership
 
@@ -45,7 +45,7 @@ The current fourteen chapters contain 32 steps, including the welcome and finish
 | 11 | Arrange your Areas | Resize, dock, hide and recover Areas |
 | 12 | Try it on your own | Combine actions without target highlights |
 | 13 | Gamescope | Tile the fixed game display, then show its outer window fullscreen on the same desktop |
-| 14 | Two displays | Optional practice with a second browser window |
+| 14 | Two displays | Optional second-window practice, followed by a walkthrough of display roles |
 
 Tasks use generic app names and let learners choose compatible tools. Each task can be skipped; the next task prepares missing prerequisites. Examples and extra explanations are expandable. Only introduced Overview sections are exposed during practice. The Guide supports expanded/compact presentation and contextual recovery when a window is closed, parked or in the wrong context.
 
@@ -187,7 +187,31 @@ Open **Settings** from the System Area gear, the System Settings application or 
 - **Workspace** names the active Workspace and its Home. Area visibility and **Reset** use the existing Area actions. Their scope is **all desktops and Projects in this Workspace**. Existing Area controls also name this scope, so changing an Area while viewing a Project does not imply a Project-only layout.
 - **System-wide** applies to all Workspaces. **Desktop indicators** selects **Lines only** or **Lines and app icons** for both sides of every desktop; it saves automatically. Right-clicking either indicator strip offers the same choices. Lines only narrows the gap beside windows and immediately refits the tiles. The shared color-theme preference offers **Auto**, **OLED**, **Graphite** and **Light**; Auto follows the host's preferred color scheme. Wi-Fi, Bluetooth and Sound retain their shared simulated toggle state. These demo controls do not configure native networking or audio.
 
-The Project editor also identifies the Project affected by its download preference. Settings does not add a wallpaper chooser, app-default picker, notification policy or native monitor configuration. Existing windows and sessions remain intact while settings change; values continue to save locally and synchronize through the existing display session.
+The Project editor also identifies the Project affected by its download preference. Settings also offers **Displays**, described below. It does not add a wallpaper chooser, app-default picker, notification policy or native monitor configuration. Existing windows and sessions remain intact while settings change; values continue to save locally and synchronize through the existing display session.
+
+## Display roles
+
+Open **Settings → Displays** and select a display in the arrangement preview. **Use this display as** describes how its space behaves:
+
+| Role | Behaviour |
+| --- | --- |
+| **Main workspace** | The primary working display, with the active desktop and Project. At least one connected display always has this role. Choosing another Main workspace changes the previous one to Extended workspace. |
+| **Extended workspace** | Continues the current desktop. It follows desktop and Project navigation and supports the existing tiled-window and Area transfers. |
+| **Side space** | A stable Workspace-owned surface for tiled windows, folders and useful material. It stays in place when the main display changes desktop or Project. Switching Workspace shows that Workspace’s own Side space. |
+| **Assistant** | A separate visible workbench for Assistant, scoped to the active Workspace. Its **Run demo task** example shows a task and result, with **Pause**, **Resume** and **Take over** controls. It does not operate native apps or run an autonomous OS agent. |
+
+With one connected demo display, Main workspace is implicit and there is no role picker. Choose **Open second demo display** to try the other roles. The second display is another same-origin browser tab or window in the same profile; put it on a second physical monitor or place the windows side by side. The prototype does not discover physical monitors or change their resolution.
+
+For a quick change, **right-click the desktop → Display role** offers the same choices for that display. Display roles are shared preferences for the connected display setup, while Side space and Assistant contents remain separate for each Workspace. The choice of main monitor does not merge Workspace data.
+
+Try this sequence:
+
+1. Open **Settings → Displays**, choose **Open second demo display** and leave it as **Extended workspace**. Move a window there through **its title-bar menu → Move to… → Displays**. Switch desktop to see the two displays follow the same context.
+2. Change the second display to **Side space** and move a reference window there. Switch desktop, then Project, on the main display: the reference stays visible. Switch Workspace to see its separate side space, then return to recover the original.
+3. Change the second display to **Assistant**. Choose **Run demo task** and inspect its task and result. Try **Pause**, **Resume** or **Take over** when you need the space. This is an explicit simulation, not a connected AI provider.
+4. Return the second display to **Extended workspace**, or choose **Main workspace** to exchange which screen is the primary working display.
+
+Desktop Guide’s optional **Two displays** chapter retains its existing transfer, Maximize and Fullscreen exercises on an Extended workspace. Its expandable explanation introduces these roles after the transfer exercise, so experimenting with a stable Side space does not obscure what desktop-following means.
 
 ## Workspace Home and downloads
 
@@ -383,7 +407,7 @@ The workspace-coloured wallpaper is one fixed background beneath the desktop and
 | Scripted Assistant replies, saved source evidence and derived-output links | Connected AI providers and actual inference |
 | Stash origin, stable item identity, readable versions, references and copies | Tracking external native file changes, source recovery and full filesystem backups |
 | Local plans, reminders and explicit activity history with expandable sessions | External calendar/task services and OS-level activity integrations |
-| Two browser windows with synchronized display assignments | Native monitor discovery, hot-plug and window/display control |
+| Two browser windows with synchronized display assignments and Main, Extended, Side space and scripted Assistant roles | Native monitor discovery, hot-plug, independent agent input and window/display control |
 | Project-only ZIP copies with saved demo bytes, gathered linked resources and import | Native filesystem traversal and app-internal resource discovery |
 
 Design goals should be evaluated separately from the implemented demonstration. The [audit record](documentation-audit-2026-10-12.md) links the current documentation claims to source and regression checks. Dated research/testing reports retain their historical scope.

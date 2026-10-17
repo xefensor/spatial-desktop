@@ -7002,6 +7002,15 @@ const DESKTOP_SYNC_STORAGE_KEY = "spatial-desktop-live-message-v2";
 const desktopSyncSource = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 const desktopSyncStartedAt = (() => {
   try {
+    // window.open copies the opener's sessionStorage. Give a new companion
+    // its own ordering timestamp, then keep that identity across reloads.
+    const token = new URL(location.href).searchParams.get('display');
+    if (token && sessionStorage.getItem('spatial-demo-display-token') !== token) {
+      const created = Date.now() + Math.random();
+      sessionStorage.setItem('spatial-demo-display-token', token);
+      sessionStorage.setItem('spatial-display-opened-at', String(created));
+      return created;
+    }
     const saved = Number(sessionStorage.getItem("spatial-display-opened-at"));
     if (Number.isFinite(saved) && saved > 0) return saved;
     const created = Date.now() + Math.random();
@@ -7037,7 +7046,9 @@ function localDisplayDescriptor() {
     screenX: Number(window.screenX ?? window.screenLeft ?? 0),
     screenY: Number(window.screenY ?? window.screenTop ?? 0),
     width: window.innerWidth,
-    height: window.innerHeight
+    height: window.innerHeight,
+    screenWidth: window.screen?.width || 0,
+    screenHeight: window.screen?.height || 0
   };
 }
 
