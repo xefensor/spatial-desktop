@@ -9,7 +9,7 @@
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
   const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
   dropHint.className='ai-drop-hint';dropHint.hidden=true;dropHint.setAttribute('role','status');dropHint.append(dropTitle,dropDetail);document.body.append(dropHint);
-  let dropPosition=null,quickWorkspace=null,quickReturnFocus=null;
+  let dropPosition=null,quickWorkspace=null,quickReturnFocus=null,inputPanel=null,inputOwner='',inputReturnFocus=null;
   const rail=document.createElement('nav');rail.className='ai-rail-tools';rail.setAttribute('aria-label','Assistant quick actions');
   rail.innerHTML='<button class="surface-key ai-rail-chat" id="aiRailChat" type="button" aria-controls="aiQuickPanel" aria-expanded="false"><span class="ai-rail-chat-title" id="aiRailChatTitle"></span><span class="ai-rail-sources">'+icon('i-note')+'<span id="aiRailSources"></span></span><small id="aiRailDraft" hidden>Draft</small></button><button class="surface-key ai-rail-new" id="aiRailNewChat" type="button" aria-label="Start a new Assistant chat" title="New chat"><span aria-hidden="true">+</span><small>New chat</small></button>';
   area.insertBefore(rail,content);
@@ -53,8 +53,9 @@
   }
   $('#aiRailChat').addEventListener('click',()=>quickPanel.hidden?openQuick():closeQuick(true));
   $('#aiQuickClose').addEventListener('click',()=>closeQuick(true));$('#aiQuickExpand').addEventListener('click',()=>expand());
-  document.addEventListener('pointerdown',event=>{if(!quickPanel.hidden&&!withinAssistant(event.target))closeQuick();},true);
+  document.addEventListener('pointerdown',event=>{if(inputPanel&&!inputPanel.hidden&&inputPanel.contains(event.target))return;if(!quickPanel.hidden&&!withinAssistant(event.target))closeQuick();if(inputPanel&&!inputPanel.hidden&&!event.target.closest?.('[data-ai-inspect],[data-ai-input]'))closeInput();},true);
   document.addEventListener('keydown',event=>{
+    if(inputPanel&&!inputPanel.hidden)return;
     if(event.key!=='Escape'||quickPanel.hidden||blockedByDialog()||event.defaultPrevented)return;
     closeQuick(true);event.preventDefault();event.stopImmediatePropagation();
   },true);
@@ -62,7 +63,7 @@
   window.addEventListener('spatial-rail-open',event=>{if(event.detail?.area!=='ai')closeQuick();});
   // Overview, modal editors and Guide can open from a shortcut without touching
   // this Area. A body portal must yield together with the docked shell.
-  const layerObserver=new MutationObserver(()=>{if(!quickPanel.hidden&&quickBlocked())closeQuick();});
+  const layerObserver=new MutationObserver(()=>{if(!quickPanel.hidden&&quickBlocked())closeQuick();if(inputPanel&&!inputPanel.hidden&&quickBlocked())closeInput();});
   layerObserver.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','aria-hidden','aria-modal','inert']});
 
   const editableDropTarget=target=>Boolean(target?.closest?.('input,textarea,select,[contenteditable="true"]'));
@@ -78,6 +79,39 @@
     dropHint.style.top=Math.max(8,Math.min(event.clientY+18,window.innerHeight-rect.height-8))+'px';
   }
   function persist(){try{desktopStorage.setItem(key,JSON.stringify(model.snapshot()));queueDesktopStateBroadcast(0);return true;}catch{status.textContent='Changes are visible here but could not be saved. Keep this tab open.';return false;}}
+  function captureInput(item,workspace=activeWorkspace){
+    const normalized=model.normalize(item,workspace),canonical=item.itemId||item.fileId||item.id||normalized.id,history=globalThis.SpatialItemHistoryDesktop;
+    // Stash's virtual saved-file location is an attachment locator, not a new
+    // content version. Reuse an existing exact version, including older inputs.
+    const existing=history?.get?.(canonical),contentAddress=item.storageScope?normalized.source.address:normalized.source.address||normalized.address;
+    const fileKey=value=>value?.key||value?.src||'';
+    const matching=existing?.versions?.slice().reverse().find(version=>version.title===normalized.title&&version.text===normalized.text&&version.address===contentAddress&&fileKey(version.attachment)===fileKey(normalized.attachment));
+    const tracked=history?.capture({...normalized,fileId:canonical,address:contentAddress},{workspace,project:normalized.project||null,action:'attach',force:!matching});
+    const versionId=matching?.id||tracked?.currentVersion||item.versionId||'';
+    return {...normalized,itemId:tracked?.id||canonical,fileId:item.fileId||tracked?.id||'',versionId,versionNumber:tracked?.versions?.findIndex(version=>version.id===versionId)+1||normalized.versionNumber,capturedAt:Date.now()};
+  }
+  function recordInputs(turn,chatId){
+    const history=globalThis.SpatialItemHistoryDesktop;
+    turn.sources.forEach(item=>history?.record(item.itemId||item.fileId||item.id,'use',{workspace:turn.workspace,project:turn.project,versionId:item.versionId,app:'assistant',detail:'Used in Assistant · '+turn.request.slice(0,120)}));
+    globalThis.SpatialTimelineDesktop?.record?.('assistant.use',{workspace:turn.workspace,project:turn.project,chatId,turnId:turn.id,itemId:turn.sources[0]?.itemId||'',itemVersion:turn.sources[0]?.versionId||'',sourceIds:turn.sources.map(item=>item.itemId||item.fileId||item.id),title:'Assistant · '+turn.title,detail:turn.request.slice(0,180)});
+  }
+  function closeInput(restoreFocus=false){if(!inputPanel||inputPanel.hidden)return;inputPanel.hidden=true;inputOwner='';if(restoreFocus&&inputReturnFocus?.isConnected!==false)inputReturnFocus?.focus();inputReturnFocus=null;}
+  function inspectInput(item,label){
+    if(!item)return;
+    if(!inputPanel){
+      inputPanel=document.createElement('section');inputPanel.className='ai-input-panel material-surface-glass';inputPanel.hidden=true;inputPanel.setAttribute('role','dialog');inputPanel.setAttribute('aria-modal','false');inputPanel.setAttribute('aria-label','Saved Assistant input');document.body.append(inputPanel);
+      inputPanel.addEventListener('click',event=>{if(event.target.closest('[data-ai-input-close]'))closeInput(true);const journey=event.target.closest('[data-ai-input-history]');if(journey){const id=journey.dataset.aiInputHistory,versionId=journey.dataset.aiInputVersion;closeInput(true);globalThis.SpatialItemHistoryDesktop?.open(id,{versionId,workspace:activeWorkspace});}});
+    }
+    inputReturnFocus=document.activeElement;inputOwner=activeWorkspace+':'+model.session(activeWorkspace).id;
+    const origin=item.source||{},originContext=[origin.project&&('Project: '+(projectSpaces[origin.project]?.name||origin.project)),origin.workspace&&('Workspace: '+workspaceLabel(origin.workspace))].filter(Boolean).join(' · ');
+    const exact=item.text?'<pre class="ai-input-text">'+escapeHtml(item.text)+'</pre>':'<p class="ai-input-empty">No document text was attached. This saved input contains only its link and metadata; the demo did not read the page, file, pixels or audio.</p>';
+    const version=item.versionNumber?' · Version '+item.versionNumber:'';
+    const help=label==='Attached input'?'This attached snapshot will be kept with your next request. Reattach the source to use a newer version.':'This is the input kept with this request. Later edits or removal of the source do not change it.';
+    const itemId=item.itemId||item.fileId||item.id,journey=globalThis.SpatialItemHistoryDesktop?.get?.(itemId)?'<button class="surface-key ai-inspect-input" data-ai-input-history="'+escapeHtml(itemId)+'" data-ai-input-version="'+escapeHtml(item.versionId||'')+'">Item history</button>':'';
+    inputPanel.innerHTML='<header><span><small>'+escapeHtml(label)+'</small><b>'+escapeHtml(item.title)+'</b></span><button class="surface-key" data-ai-input-close aria-label="Close saved input">'+icon('i-close')+'</button></header><div class="ai-input-body"><p class="ai-input-version">Saved input snapshot'+escapeHtml(version)+' · '+escapeHtml(C.representation(item))+(item.contentTruncated?' · First 12,000 characters':'')+'</p><p class="ai-input-help">'+help+'</p>'+exact+'<dl><dt>Captured through</dt><dd>'+escapeHtml(origin.label||appInfo[origin.app]?.label||origin.app||'Unknown source')+'</dd>'+(origin.address?'<dt>Source address</dt><dd>'+escapeHtml(origin.address)+'</dd>':'')+(originContext?'<dt>Origin context</dt><dd>'+escapeHtml(originContext)+'</dd>':'')+(item.address?'<dt>Attached location</dt><dd>'+escapeHtml(item.address)+'</dd>':'')+'</dl>'+journey+'<small class="ai-input-local">Scripted local demo · No provider calls. Only the saved text and metadata above are available to its reply rules.</small></div>';
+    inputPanel.hidden=false;prepareControlSemantics(inputPanel);$('[data-ai-input-close]',inputPanel)?.focus();
+  }
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&inputPanel&&!inputPanel.hidden&&!blockedByDialog()){closeInput(true);event.preventDefault();event.stopImmediatePropagation();}},true);
   function itemMarkup(item){
     const project=item.project&&projectSpaces[item.project];
     const kind=item.kind==='image'?'i-image':item.kind==='audio'?'i-music':item.kind==='folder'?'i-folder':item.kind==='browser'||/^https?:/.test(item.address)?'i-web':'i-note';
@@ -85,17 +119,17 @@
     const origin=item.source||{},different=origin.workspace&&(origin.workspace!==item.workspace||origin.project!==item.project);
     const originTags=different?'<span class="ai-tag">Source workspace: '+escapeHtml(workspaceLabel(origin.workspace))+'</span>'+(origin.project?'<span class="ai-tag ai-tag-project">Source project: '+escapeHtml(projectSpaces[origin.project]?.name||origin.project)+'</span>':''):'';
     const reference=origin.address?'<a class="ai-source-link" href="'+escapeHtml(origin.address)+'" data-ai-source="'+escapeHtml(item.id)+'">'+escapeHtml(origin.address)+'</a>':'';
-    return '<article class="ai-attachment" data-ai-attachment="'+escapeHtml(item.id)+'"><details class="ai-source-detail" data-ai-source-detail="'+escapeHtml(item.id)+'"><summary>'+icon(kind)+'<span><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(project?.name||workspaceLabel(item.workspace))+'</small></span></summary><div class="ai-attachment-main"><p title="'+escapeHtml(item.address||item.text)+'">'+escapeHtml(item.address||item.text.slice(0,240)||item.filename||'Attached source')+'</p><div class="ai-tags">'+tags+originTags+'</div>'+reference+'</div></details><button class="ai-remove" data-ai-remove="'+escapeHtml(item.id)+'" aria-label="Remove '+escapeHtml(item.title)+'">'+icon('i-close')+'</button></article>';
+    return '<article class="ai-attachment" data-ai-attachment="'+escapeHtml(item.id)+'"><details class="ai-source-detail" data-ai-source-detail="'+escapeHtml(item.id)+'"><summary>'+icon(kind)+'<span><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(C.representation(item)+' · '+(project?.name||workspaceLabel(item.workspace)))+'</small></span></summary><div class="ai-attachment-main"><p title="'+escapeHtml(item.address||item.text)+'">'+escapeHtml(item.address||item.text.slice(0,240)||item.filename||'Attached source')+'</p><div class="ai-tags">'+tags+originTags+'</div>'+reference+'<button class="surface-key ai-inspect-input" data-ai-inspect="'+escapeHtml(item.id)+'">Inspect attached input</button></div></details><button class="ai-remove" data-ai-remove="'+escapeHtml(item.id)+'" aria-label="Remove '+escapeHtml(item.title)+'">'+icon('i-close')+'</button></article>';
   }
   function turnMarkup(turn){
-    const references=turn.sources.map(item=>'<li><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml((item.project?'Project: '+(projectSpaces[item.project]?.name||item.project)+' · ':'')+'Workspace: '+workspaceLabel(item.workspace))+'</small></li>').join('');
-    return '<section class="ai-turn"><div class="ai-request"><small>'+(turn.example?'Example request':'You')+'</small><p>'+escapeHtml(turn.request)+'</p></div><article class="ai-demo-output" draggable="true" tabindex="0" data-ai-demo-turn="'+escapeHtml(turn.id)+'" aria-label="Demo reply: '+escapeHtml(turn.title)+'"><header>'+icon('i-ai')+'<span>Demo reply · scripted</span></header><b>'+escapeHtml(turn.title)+'</b><p>'+escapeHtml(turn.text)+'</p><small class="ai-output-hint">Drag this draft into Stash</small></article><details class="ai-turn-sources"><summary>Context · '+turn.sources.length+' source'+(turn.sources.length===1?'':'s')+'</summary><small class="ai-turn-folder">Working folder: '+escapeHtml(turn.folder)+'</small>'+(references?'<ul>'+references+'</ul>':'')+'</details></section>';
+    const references=turn.sources.map((item,index)=>'<li><button class="ai-input-citation" data-ai-input="'+index+'" data-ai-input-turn="'+escapeHtml(turn.id)+'"><span>['+(index+1)+']</span><span><b>'+escapeHtml(item.title)+'</b><small>Saved input · '+escapeHtml(C.representation(item))+'</small></span>'+icon('i-note')+'</button></li>').join('');
+    return '<section class="ai-turn"><div class="ai-request"><small>'+(turn.example?'Example request':'You')+'</small><p>'+escapeHtml(turn.request)+'</p></div><article class="ai-demo-output" draggable="true" tabindex="0" data-ai-demo-turn="'+escapeHtml(turn.id)+'" aria-label="Demo reply: '+escapeHtml(turn.title)+'"><header>'+icon('i-ai')+'<span>Demo reply · scripted</span></header><b>'+escapeHtml(turn.title)+'</b><p>'+escapeHtml(turn.text)+'</p><small class="ai-output-hint">Drag this draft into Stash · keeps links to its inputs</small></article><button class="surface-key ai-save-output" data-ai-save-output="'+escapeHtml(turn.id)+'">Save to Stash</button><details class="ai-turn-sources"><summary>Saved inputs · '+turn.sources.length+' source'+(turn.sources.length===1?'':'s')+'</summary><small class="ai-turn-folder">Working folder: '+escapeHtml(turn.folder)+'</small>'+(references?'<ul>'+references+'</ul>':'')+'</details></section>';
   }
   function seedExamples(session){
     if(session.examplesSeen||session.turns.length||desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;
     const candidate=session.workingProject||activeProjectName,project=projectSpaces[candidate],isDemo=project&&SpatialDemoExamples.projects[candidate]?.name===project.name;
     const projectId=isDemo?candidate:null,workingFolder=isDemo?project.root:workspaceProfiles[activeWorkspace].home;
-    const items=isDemo?[model.normalize({id:'example-project-note:'+candidate,title:'Project note',text:project.note||project.summary,workspace:project.originWorkspace||activeWorkspace,project:candidate,source:{workspace:project.originWorkspace||activeWorkspace,project:candidate}},activeWorkspace)]:[];
+    const items=isDemo?[model.normalize(captureInput({id:'example-project-note:'+candidate,title:'Project note',text:project.note||project.summary,workspace:project.originWorkspace||activeWorkspace,project:candidate,source:{workspace:project.originWorkspace||activeWorkspace,project:candidate}}),activeWorkspace)]:[];
     const context={folder:workingFolder,project:projectId,sources:items,example:true},name=isDemo?project.name:'';
     const requests=isDemo?['Summarize the attached project note.','Turn it into a checklist for the next review.']:['Help me plan a focused work session.','Draft a note I can keep in this workspace.'];
     requests.forEach(request=>model.exchange(activeWorkspace,request,D.reply(request,{items,folder:workingFolder,project:name}),context));
@@ -106,6 +140,7 @@
     const session=model.session(activeWorkspace),workingFolder=model.workingFolder(activeWorkspace),project=projectSpaces[session.workingProject];
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:session.items,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}));
     if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return;}
+    recordInputs(turn,session.id);
     model.draft(activeWorkspace,'');prompt.value='';persist();render();
     const sources=$('.ai-context-sources',content);if(sources)sources.open=false;
     $('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;
@@ -118,7 +153,7 @@
   }
   function render(){
     if(!quickPanel.hidden&&(quickWorkspace!==activeWorkspace||quickBlocked()||area.hidden||area.dataset.areaState!=='rail'||area.classList.contains('is-on-other-display')||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))))closeQuick();
-    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;seedExamples(session);renderRail(session);positionQuick();
+    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||area.hidden))closeInput();seedExamples(session);renderRail(session);positionQuick();
     const chats=model.chats(activeWorkspace),project=projectSpaces[session.workingProject];
     const options=[...new Set([session.workingProject,...session.items.map(item=>item.project),activeProjectName].filter(id=>projectSpaces[id]))];
     const next=JSON.stringify([activeWorkspace,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
@@ -156,7 +191,7 @@
     setAreaState('ai',next);if(next==='expanded')prompt.focus();
   }
   function add(item){
-    const previous=model.session(activeWorkspace).workingProject,added=model.add(activeWorkspace,item);
+    const previous=model.session(activeWorkspace).workingProject,added=model.add(activeWorkspace,captureInput(item));
     if(!added){status.textContent='This conversation holds up to 24 attachments. Remove one to add another.';return false;}
     persist();render();openQuick(false);if(!model.session(activeWorkspace).turns.length)$('.ai-context-sources',content).open=true;
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · ready for a scripted demo';return true;
@@ -166,7 +201,8 @@
   prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();if(!quickPanel.hidden)closeQuick(true);else setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
-  attachments.addEventListener('click',event=>{const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
+  attachments.addEventListener('click',event=>{const inspect=event.target.closest('[data-ai-inspect]');if(inspect){inspectInput(model.session(activeWorkspace).items.find(item=>item.id===inspect.dataset.aiInspect),'Attached input');return;}const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
+  transcript.addEventListener('click',async event=>{const save=event.target.closest('[data-ai-save-output]');if(save){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===save.dataset.aiSaveOutput);if(!turn||!globalThis.SpatialMemoryDesktop)return;const workspace=activeWorkspace,key=JSON.stringify([workspace,turn.project&&projectSpaces[turn.project]?turn.project:null]);save.disabled=true;const kept=await SpatialMemoryDesktop.keepContext(outputContext(turn),key);save.disabled=false;if(activeWorkspace===workspace)status.textContent=kept?'Saved to Stash with its input versions.':'Could not save this draft. Check the Stash and try again.';return;}const citation=event.target.closest('[data-ai-input]');if(!citation)return;const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===citation.dataset.aiInputTurn);inspectInput(turn?.sources[Number(citation.dataset.aiInput)],'Request input · '+(turn?.title||'Reply'));});
   document.addEventListener('keydown',event=>{if((globalThis.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;toggle();}},true);
 
   function baseSource(target){
@@ -176,7 +212,7 @@
   }
   function describe(target){
     const output=target.closest('[data-ai-demo-turn]');
-    if(output){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===output.dataset.aiDemoTurn);return turn?{id:'demo-reply:'+turn.id,title:turn.title,kind:'note',text:turn.text,workspace:turn.workspace,project:turn.project,app:'ai-demo',source:{workspace:turn.workspace,project:turn.project,app:'ai-demo',label:'Assistant demo · scripted reply'}}:null;}
+    if(output){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===output.dataset.aiDemoTurn);return turn?outputContext(turn):null;}
     // The working-material shelf is a body portal, so its owner is captured
     // from the active column at gesture start instead of an Area ancestor.
     const shelfFile=target.closest('[data-project-shelf-path]');
@@ -196,6 +232,7 @@
     if(selection||link)return {...source,id:'selection-'+crypto.randomUUID(),title:(selection||link.textContent||address).slice(0,60),kind:link?'link':'text',text:selection||'',address,source:{...source,address,label:appInfo[frame.dataset.appFrame]?.label||'App',desktop:desktopPages.pageOf(activeWorkspace,frame.dataset.appFrame)}};
     return source;
   }
+  function outputContext(turn){const derivedFrom=turn.sources.map(item=>({itemId:item.itemId||item.fileId||item.id,versionId:item.versionId,relation:'derivedFrom'}));return {id:'demo-reply:'+turn.id,title:turn.title,kind:'note',text:turn.text,workspace:turn.workspace,project:turn.project,app:'ai-demo',derivedFrom,relations:derivedFrom,chatId:model.session(activeWorkspace).id,turnId:turn.id,source:{workspace:turn.workspace,project:turn.project,app:'ai-demo',label:'Assistant demo · scripted reply'}};}
   function prepareSources(root=document){$$('.app-identity .app-badge,[data-file-name],[data-project-item],[data-project-shelf-path],[data-project-shelf-item]',root).forEach(element=>{element.draggable=true;if(element.matches('.app-badge'))element.title='Drag into Assistant to attach this app with its context';});}
   prepareSources();
   const observer=new MutationObserver(changes=>{changes.forEach(change=>change.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches('.app-identity .app-badge,[data-file-name],[data-project-item],[data-project-shelf-path],[data-project-shelf-item]'))node.draggable=true;prepareSources(node);}}));});observer.observe($('.desktop-shell'),{childList:true,subtree:true});
@@ -251,13 +288,14 @@
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
-    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);model.add(workspace,{workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text:file.type.startsWith('text/')?(await file.text()).slice(0,12000):''},chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached · ready for a scripted demo';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
+    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);const text=file.type.startsWith('text/')?await file.text():'';model.add(workspace,captureInput({workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text,attachment:{kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',key:fileKey,filename:file.name,mime:file.type,size:file.size},source:{workspace,label:'File upload'}},workspace),chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached · ready for a scripted demo';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
     const text=event.dataTransfer.getData('text/plain'),url=event.dataTransfer.getData('text/uri-list').split('\n').find(line=>line&&!line.startsWith('#'));
     if(text||url)add({...source,title:url||text.trim().slice(0,80)||'Dropped content',kind:url?'link':'text',text,address:url||''});
   });
   // Move earlier draft requests into the new Area without discarding them.
   const legacyDrafts=readDesktopStorage('spatial-stash-ai-drafts-v1',{}),drafts=legacyDrafts&&typeof legacyDrafts==='object'?legacyDrafts:{};
   if(!desktopStorage.getItem(key)){Object.keys(workspaceProfiles).forEach(workspace=>{const project=workspaceProjects[workspace];const draft=drafts['project:'+project]||drafts[JSON.stringify([workspace,null])];if(typeof draft==='string'&&draft){model.draft(workspace,draft);model.folder(workspace,project);}});persist();}
-  globalThis.SpatialAIDesktop={render,expand,mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){if(!quickPanel.hidden&&quickWorkspace!==activeWorkspace)closeQuick();model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
+  function revealChat(chatId,{turnId}={}){if(quickBlocked()||!model.select(activeWorkspace,chatId))return false;closeInput();persist();render();expand(false);if(turnId)$$('[data-ai-demo-turn]',transcript).find(node=>node.dataset.aiDemoTurn===turnId)?.scrollIntoView?.({block:'center'});return true;}
+  globalThis.SpatialAIDesktop={render,expand,revealChat,mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){if(!quickPanel.hidden&&quickWorkspace!==activeWorkspace)closeQuick();model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
   layoutDockAreas(false,false);render();
 })();

@@ -11,6 +11,8 @@
   const preferences=()=>{try{if(desktopStorage.getItem(sectionKey)!==null)return read(sectionKey);}catch{return {};}return Object.fromEntries(Object.entries(read('spatial-overview-section-v1')).map(([workspace,id])=>[workspace,id==='apps'?'windows':id]));};
   const model=SpatialTimeline.create(read(historyKey));
   const plannerKey='spatial-workspace-planner-v1',planner=SpatialTimeline.createPlanner(read(plannerKey));
+  const sessionNotesKey='spatial-timeline-session-notes-v1',sessionNotes=SpatialTimeline.createSessionNotes(read(sessionNotesKey)),groupingKey='spatial-timeline-grouping-v1';
+  const expandedSessions=new Set();let groupActivity=read(groupingKey).mode!=='events';
   let preferred=preferences(),active='windows',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
@@ -160,12 +162,14 @@
     const project=data.project===undefined?(owner==='workspace'?'':owner):(data.project||'');
     const event=model.add({id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),time:Date.now(),workspace:data.workspace||activeWorkspace,type,
       title:data.title||appInfo[app]?.label||'',app,base:appInfo[app]?.base||app,project,projectName:projectSpaces[project]?.name||data.projectName||'',
-      page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||'',stashId:data.stashId||'',detail:data.detail||''});
+      page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||'',stashId:data.stashId||'',itemId:data.itemId||'',itemVersion:data.itemVersion||'',outputId:data.outputId||'',chatId:data.chatId||'',turnId:data.turnId||'',sourceIds:data.sourceIds||[],detail:data.detail||''});
     if(event){save();if($('#universalSearch').classList.contains('is-open'))renderTimeline();}
   }
-  const descriptions={'stash.save':'Saved to Stash','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
+  const descriptions={'stash.save':'Saved to Stash','assistant.use':'Used in Assistant','assistant.output':'Saved Assistant output','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
   function actionFor(event){
     if(event.type==='session'||event.type==='workspace')return '';
+    if(event.type.startsWith('assistant.')&&event.chatId)return 'Open chat';
+    if(event.itemId)return 'View item';
     if(event.project&&!projectSpaces[event.project])return '';
     if(event.type==='stash.save')return 'Open Stash';
     if(event.type.startsWith('file.'))return 'Open';
@@ -174,12 +178,19 @@
     if(event.base&&['dolphin','browser','notes','elisa','terminal'].includes(event.base))return 'Open';
     return '';
   }
+  function timelineActivity(){const events=new Map(sessionNotes.activity(activeWorkspace).map(event=>[event.id,event]));for(const event of model.list(activeWorkspace))events.set(event.id,event);return [...events.values()];}
+  function saveSessionNotes(){sessionNotes.merge(read(sessionNotesKey));try{desktopStorage.setItem(sessionNotesKey,JSON.stringify(sessionNotes.snapshot()));}catch{}}
+  // Keep this control beside the existing day/type/search controls. It changes
+  // only the activity lane; plans continue to use their real start/end times.
+  if(typeof document!=='undefined'&&!document.getElementById('timelineGrouping'))$('.timeline-toolbar',home)?.insertAdjacentHTML('beforeend','<button class="surface-key timeline-grouping" id="timelineGrouping" type="button" aria-pressed="true" title="Group nearby activity in the same Project or Workspace; expand to see every event">Sessions</button>');
+  $('#timelineGrouping')?.addEventListener('click',()=>{groupActivity=!groupActivity;try{desktopStorage.setItem(groupingKey,JSON.stringify({mode:groupActivity?'sessions':'events'}));}catch{}renderTimeline();});
   let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='',timelineView=null;
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const now=Date.now(),today=SpatialTimeline.dayKey(now);
     if(timelineDayWorkspace!==activeWorkspace){timelineDayWorkspace=activeWorkspace;timelineDay=today;}
-    const view=SpatialTimeline.lanes(model.list(activeWorkspace),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value});
+    const view=SpatialTimeline.lanes(timelineActivity(),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value,groupActivity,expandedSessions:[...expandedSessions]});
+    const groupingButton=$('#timelineGrouping');if(groupingButton){groupingButton.textContent=groupActivity?'Sessions':'Events';groupingButton.setAttribute('aria-pressed',String(groupActivity));groupingButton.setAttribute('aria-label',groupActivity?'Sessions shown. Show individual events':'Individual events shown. Group into sessions');}
     $('#timelineDay').innerHTML=view.days.map(day=>'<option value="'+day+'"'+(day===timelineDay?' selected':'')+'>'+escapeHtml(day===today?'Today':new Date(day+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</option>').join('');
     $('#timelineDay').value=timelineDay;
     timelineView=view;
@@ -191,14 +202,20 @@
       const info=appInfo[event.app]||appInfo[event.base],symbol=event.type==='calendar.event'?'i-calendar':event.type.startsWith('task.')?'i-note':event.type==='reminder.due'?'i-bell':event.type==='stash.save'?'i-note':event.type.startsWith('file.')?'i-folder':event.type==='browser.visit'?'i-web':event.type.startsWith('project.')?'i-folder':event.type==='desktop.switch'?'i-monitor':'i-clock';
       const image=info?appArt(event.app in appInfo?event.app:event.base):icon(symbol),project=projectSpaces[event.project],accent=/^#[\da-f]{6}$/i.test(project?.accent||'')?project.accent:'';
       const overdue=planned&&!event.done&&event.type!=='calendar.event'&&event.time<now;
-      const source=planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):(event.type==='stash.save'?'Saved to Stash · ':'')+'Desktop '+(event.page+1);
+      const source=planned?(event.done?'Completed':overdue?'Overdue':event.endTime>now&&event.time<=now?'Happening now':event.type==='calendar.event'?'Calendar':event.type==='task.due'?'Task':'Reminder'):([descriptions[event.type], 'Desktop '+(event.page+1)].filter(Boolean).join(' · '));
       const name=event.type.startsWith('app.') ? SpatialAppNames.label(event.title||info?.label||'') : event.title||descriptions[event.type]||'',detail=event.path||event.address||event.detail||'',action=planned?'':actionFor(event);
       const completion=planned&&event.type!=='calendar.event'?'<label class="timeline-completion"><input type="checkbox" data-timeline-complete="'+escapeHtml(event.id)+'"'+(event.done?' checked':'')+' aria-label="'+escapeHtml((event.type==='task.due'?'Complete ':'Dismiss reminder ')+name)+'"><span>'+(event.type==='task.due'?'Done':'Dismissed')+'</span></label>':'';
       const context=(event.projectName?'<span class="timeline-project-tag"'+(accent?' style="--timeline-project:'+accent+'"':'')+'>'+escapeHtml(event.projectName)+'</span> · ':'')+source;
       return '<span class="timeline-entry-icon">'+image+'</span><div class="timeline-entry-body"><h4>'+escapeHtml(name)+(event.example?'<span class="timeline-example-label">Example</span>':'')+'</h4><p><time datetime="'+new Date(event.time).toISOString()+'">'+escapeHtml(clock(event.time))+(event.endTime?'–'+escapeHtml(clock(event.endTime)):'')+'</time> · '+context+'</p>'+(planned&&detail?'<p class="timeline-plan-detail">'+escapeHtml(detail)+'</p>':'')+(event.dueTime?'<p class="timeline-plan-detail">Originally due '+escapeHtml(new Date(event.dueTime).toLocaleString())+'</p>':'')+completion+'</div>'+(action?'<button class="timeline-entry-action" data-timeline-open="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml(action+' '+name)+'">'+action+icon('i-right')+'</button>':'');
     }
     const ticks=view.ticks.map(t=>'<div class="timeline-time-rule" style="top:'+t.top+'px"><time>'+escapeHtml(clock(t.time))+'</time></div>').join('');
-    const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+group.events.map(e=>'<article class="timeline-entry" role="listitem" title="'+escapeHtml([descriptions[e.type],e.path||e.address].filter(Boolean).join(' · '))+'">'+card(e)+'</article>').join('')+'</div>').join('');
+    function eventCards(events){return events.map(e=>'<article class="timeline-entry" role="listitem" title="'+escapeHtml([descriptions[e.type],e.path||e.address].filter(Boolean).join(' · '))+'">'+card(e)+'</article>').join('');}
+    function sessionCard(session){
+      const open=expandedSessions.has(session.id),note=sessionNotes.get(session.id,activeWorkspace),label=session.projectName||((workspaceProfiles[activeWorkspace]?.label||activeWorkspace)+' activity');
+      const counts=[session.materials?session.materials+' material'+(session.materials===1?'':'s'):'',session.outputs?session.outputs+' output'+(session.outputs===1?'':'s'):'',session.total+' event'+(session.total===1?'':'s')].filter(Boolean).join(' · '),matched=session.matched!==session.total?' · '+session.matched+' matching':'';
+      return '<section class="timeline-work-session'+(open?' is-expanded':'')+'" data-session-card="'+escapeHtml(session.id)+'"><button class="timeline-session-toggle" data-timeline-session="'+escapeHtml(session.id)+'" aria-expanded="'+open+'"><span class="timeline-session-mark">'+icon(session.project?'i-folder':'i-clock')+'</span><span><b>'+escapeHtml(label)+(session.example?'<span class="timeline-example-label">Example</span>':'')+'</b><span><time>'+escapeHtml(clock(session.time))+'–'+escapeHtml(clock(session.endTime))+'</time> · '+escapeHtml(counts+matched)+'</span><small>'+escapeHtml(open?'Hide events':'Show events')+(note?.text?' · Note saved':'')+'</small></span>'+icon('i-down')+'</button>'+(open?'<div class="timeline-session-events" role="list" aria-label="Exact session events">'+eventCards(session.events)+'</div><label class="timeline-session-note">Note about this session<textarea data-timeline-session-note="'+escapeHtml(session.id)+'" maxlength="2000" rows="2" placeholder="What mattered, or where to continue…">'+escapeHtml(note?.text||'')+'</textarea><small>Saved locally with this session’s events.</small></label>':'')+'</section>';
+    }
+    const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+(group.session?sessionCard(group.session):eventCards(group.events))+'</div>').join('');
     const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" data-timeline-plan="'+escapeHtml(e.id)+'" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
     const nowLine=timelineDay===today&&view.nowTop>=0&&view.nowTop<=view.height?'<div class="timeline-now" style="top:'+view.nowTop+'px"><span>Now</span></div>':'';
     $('#timelineEntries').innerHTML='<div class="timeline-lane-headings"><span>Time</span><h4>Desktop activity</h4><h4>Calendar & tasks</h4></div><div class="timeline-day-grid" style="height:'+(view.height+30)+'px">'+ticks+'<div class="timeline-activity-lane" role="list" aria-label="Desktop activity">'+activity+'</div><div class="timeline-planned-lane" role="list" aria-label="Calendar, tasks and reminders">'+plans+'</div>'+nowLine+(!activity&&!plans?'<p class="timeline-empty"><b>No items on this day</b>Choose another day, change the filter or add an event.</p>':'')+'</div>';
@@ -239,7 +256,9 @@
   }));
   $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();});
   function reopen(id){
-    const event=model.list(activeWorkspace).find(event=>event.id===id);if(!event||!actionFor(event))return;
+    const event=timelineActivity().find(event=>event.id===id);if(!event||!actionFor(event))return;
+    if(event.type.startsWith('assistant.')&&event.chatId&&globalThis.SpatialAIDesktop?.revealChat){setUniversalSearchOpen(false);SpatialAIDesktop.revealChat(event.chatId,{turnId:event.turnId});return;}
+    if(event.itemId&&globalThis.SpatialItemHistoryDesktop?.open){SpatialItemHistoryDesktop.open(event.itemId,{versionId:event.itemVersion,workspace:event.workspace});return;}
     setUniversalSearchOpen(false);
     let column=event.project||'workspace';
     if(event.app&&appInfo[event.app]&&Object.hasOwn(windowMembership[activeWorkspace]||{},event.app)&&['open','minimized'].includes(appState[event.app]))column=desktopPages.columnOf(activeWorkspace,event.app);
@@ -270,7 +289,12 @@
     };
     finish();
   }
-  $('#timelineEntries').addEventListener('click',event=>{const action=event.target.closest('[data-timeline-open]');if(action)reopen(action.dataset.timelineOpen);});
+  $('#timelineEntries').addEventListener('click',event=>{const toggle=event.target.closest('[data-timeline-session]');if(toggle?.dataset.timelineSession){const id=toggle.dataset.timelineSession;if(expandedSessions.has(id))expandedSessions.delete(id);else expandedSessions.add(id);renderTimeline();return;}const action=event.target.closest('[data-timeline-open]');if(action)reopen(action.dataset.timelineOpen);});
+  $('#timelineEntries').addEventListener('input',event=>{
+    const input=event.target.closest('[data-timeline-session-note]');if(!input?.dataset.timelineSessionNote)return;
+    const session=SpatialTimeline.workSessions(timelineActivity()).find(session=>session.id===input.dataset.timelineSessionNote);if(!session)return;
+    sessionNotes.put(session,input.value);saveSessionNotes();
+  });
   $('#timelineEntries').addEventListener('change',event=>{
     const input=event.target.closest('[data-timeline-complete]');if(!input)return;
     planner.merge(read(plannerKey));const item=planner.complete(activeWorkspace,input.dataset.timelineComplete,input.checked);if(!item)return;
@@ -292,8 +316,8 @@
   });
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
   window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
-  window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}});
-  window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden)renderTimeline();else syncAgenda();},60000);
+  window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}if(event.key===sessionNotesKey){sessionNotes.merge(read(sessionNotesKey));renderTimeline();}});
+  window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden&&!(typeof document!=='undefined'&&document.activeElement?.matches('[data-timeline-session-note]')))renderTimeline();else syncAgenda();},60000);
   function registerSection(id,provider){
     if(SpatialTimeline.sections.includes(id)||!panels.has(id)||typeof provider?.available!=='function')return false;
     providers.set(id,provider);labels[id]=provider.label||id;refresh();return true;

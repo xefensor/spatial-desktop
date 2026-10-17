@@ -212,8 +212,9 @@
   }
   function lessonContentMarkup(lesson, explanation = lesson.text) {
     const details=lesson.details?'<details class="guide-more"><summary>More details</summary><p>'+escapeHtml(lesson.details)+'</p></details>':'';
+    const sections=(lesson.referenceSections||[]).map(section=>'<details class="guide-more"><summary>'+escapeHtml(section.title)+'</summary><p>'+escapeHtml(section.text)+'</p></details>').join('');
     const example=lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'';
-    return '<p class="guide-explanation">'+escapeHtml(explanation)+'</p>'+details+example;
+    return '<p class="guide-explanation">'+escapeHtml(explanation)+'</p>'+details+sections+example;
   }
   function chapterLabel(lesson=model.lesson) {
     const chapter=guide.chapters.find(chapter=>chapter.id===lesson.chapter);

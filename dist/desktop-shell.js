@@ -7826,6 +7826,7 @@ function captureDesktopSyncState() {
   return {
     schema: 5,
     workingMemory: globalThis.SpatialMemoryDesktop?.snapshot(),
+    itemHistory: globalThis.SpatialItemHistoryDesktop?.snapshot(),
     aiContext: globalThis.SpatialAIDesktop?.snapshot(),
     desktopPages: desktopPages.snapshot(),
     downloads: workspaceDownloads.snapshot(),
@@ -7863,6 +7864,7 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if (state.itemHistory) globalThis.SpatialItemHistoryDesktop?.merge(state.itemHistory);
   if (state.workingMemory) globalThis.SpatialMemoryDesktop?.merge(state.workingMemory);
   if (state.aiContext) globalThis.SpatialAIDesktop?.merge(state.aiContext);
   if (state.downloads) { workspaceDownloads.load(state.downloads); persistDownloads(); }

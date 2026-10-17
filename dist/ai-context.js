@@ -6,6 +6,19 @@
   const clean=(value,max=2000)=>typeof value==='string'?value.slice(0,max):'';
   const address=value=>/^(https?:\/\/|\/)/i.test(clean(value))?clean(value):'';
   const inside=(path,folder)=>Boolean(folder&&(path===folder||path.startsWith(folder.replace(/\/$/,'')+'/')));
+  // These labels describe the actual input available to the local demo. A link
+  // is never described as downloaded page content, or a picture as parsed text.
+  function representation(item={}){
+    if(clean(item.text,12000).trim())return ['image','audio'].includes(item.kind)?'Saved caption / text only':'Saved text';
+    return address(item.address||item.source?.address)?'Link and metadata only':'Metadata only';
+  }
+  function parents(values){return (Array.isArray(values)?values:[]).slice(0,24).filter(value=>value&&typeof value==='object'&&clean(value.itemId,180)).map(value=>({itemId:clean(value.itemId,180),versionId:clean(value.versionId,180),relation:'derivedFrom'}));}
+  function attachment(value){
+    const local=M.attachment(value);if(local)return local;
+    const src=clean(value?.src,500),types={image:/\.(svg|png|jpe?g|webp)$/i,audio:/\.(wav|mp3|ogg)$/i,document:/\.html$/i};
+    if(!types[value?.kind]?.test(src)||!/^media\/stash\/[\w./-]+$/.test(src)||src.split('/').includes('..'))return undefined;
+    return {kind:value.kind,src,filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100),...(value.credit?{credit:clean(value.credit,200)}:{})};
+  }
   function create(value={},environment){
     const records=Object.create(null);let clock=0;
     const tick=()=>clock=Math.max(Date.now(),clock+1);
@@ -17,7 +30,9 @@
       const sourceWorkspace=Object.hasOwn(profiles(),item.workspace)?item.workspace:workspace;
       const path=address(item.address),project=Object.hasOwn(projects(),item.project)?item.project:projectAt(path)||null;
       const fileKey=/^stash-[\w-]{1,160}$/.test(item.fileKey||'')?item.fileKey:'';
-      return {id:clean(item.id,160)||'context-'+Math.random().toString(36).slice(2),title:clean(item.title,120)||'Dropped content',kind:clean(item.kind,30)||'text',text:clean(item.text,12000),why:clean(item.why,1000),source:M.source(item.source),savedAt:Math.max(0,Number(item.savedAt)||0),attachment:M.attachment(item.attachment),address:path,workspace:sourceWorkspace,project,app:clean(item.app,120),fileKey,filename:clean(item.filename,160)};
+      const id=clean(item.id,160)||'context-'+Math.random().toString(36).slice(2);
+      const result={id,title:clean(item.title,120)||'Dropped content',kind:clean(item.kind,30)||'text',text:clean(item.text,12000),why:clean(item.why,1000),source:M.source(item.source),savedAt:Math.max(0,Number(item.savedAt)||0),attachment:attachment(item.attachment),address:path,workspace:sourceWorkspace,project,app:clean(item.app,120),fileKey,filename:clean(item.filename,160),itemId:clean(item.itemId||item.fileId||id,180),fileId:clean(item.fileId,180),versionId:clean(item.versionId,180),versionNumber:Math.max(0,Math.min(99999,Math.floor(Number(item.versionNumber)||0))),capturedAt:Math.max(0,Number(item.capturedAt||item.savedAt)||0),contentTruncated:item.contentTruncated===true||String(item.text||'').length>12000,derivedFrom:parents(item.derivedFrom||item.relations)};
+      result.representation=representation(result);return result;
     }
     function normalizeTurn(turn,workspace){
       if(!turn||typeof turn!=='object'||!clean(turn.request,4000).trim())return null;
@@ -92,5 +107,5 @@
 
     };
   }
-  return {MIME,create,inside};
+  return {MIME,create,inside,representation};
 });

@@ -1,6 +1,6 @@
 # Prototype reference
 
-Reviewed against source and retrieved project decisions on 12 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
+Current implementation reference; the Stash, Assistant evidence and Timeline sections were updated on 17 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
 
 ## Context and ownership
 
@@ -236,6 +236,8 @@ Global search follows **This desktop → Project → Workspace → System-wide**
 
 Timeline records explicit app, file, browser, Project, desktop and Stash actions per Workspace. Return actions reopen the relevant context or stored item. The shared time axis aligns activity with calendar, task and reminder lanes; calendar events show durations and overlaps. **Now**, **Latest activity** and day navigation help find a moment. The System calendar opens this view and shows the next planned item.
 
+**Sessions** groups related recorded actions into expandable activity cards; **Events** keeps individual rows. Expanding a session reveals its recorded events and return actions. Grouping changes the activity presentation, while calendar, task and reminder lanes retain their scheduled times and controls. A session is a readable history group, not a command to restore every window to an earlier state. Timeline is a Workspace view of recent activity; the item’s own **History** is the place to follow its provenance, versions and journey.
+
 Create local events with start/end, tasks and reminders. Completion and dismissal persist through reload and between demo displays. Plans can appear even without a recorded app interaction. Demo plans are labelled examples; clean and newly created Workspaces start without them. No external calendar account is connected. Timeline is explicit prototype activity history, not a keylogger, clipboard recorder or passive screen capture.
 
 ## Project ZIP packing and importing
@@ -243,6 +245,8 @@ Create local events with start/end, tasks and reminders. Completion and dismissa
 Pack and Import apply only to Projects. **Pack** in the Project Area's context menu creates a standard ZIP containing a copy of the Project folder, its editable settings, note, Stash files and linked local resources. External files are gathered under **Linked resources/**, with relative references inside the copied Project; repeated sources are copied once and colliding names receive suffixes. Web links stay web links. Original folders, references and source bytes are unchanged. The old Workspace packaging, Template/Portable/Handoff choices and Workspace import preview are removed.
 
 The dialog shows the actual included linked files and unavailable sources. Missing local sources block a complete ZIP until the user supplies their bytes with **Provide this file**. Project application requirements are recorded without bundling or installing applications or their accounts. **Import project** lives beside New project in **Overview → Projects & Files**, reviews a chosen ZIP and a new destination folder in the opened Workspace, names unavailable apps, and creates an independent Project copy. Imported file references rebase to that destination. Existing folders are not overwritten. A downloaded copy can be reviewed directly from the packing dialog.
+
+Project ZIPs also include a scoped `.spatial-item-history.json` manifest for their Stash items and user tags. Import creates independent identities while retaining the captured origin, readable text versions and internal source relationships. Unrelated source records and activity from other Workspaces are excluded. Only file bytes actually included in the ZIP can be previewed after import; unavailable older binary versions retain their metadata.
 
 This is a real browser-local archive round trip for the prototype filesystem. Saved media and notes retain actual bytes, imported binary files persist in IndexedDB and open through the File Browser, and ZIPs use inspectable Project JSON/TOML settings. Listed-only demo files have no original native contents; their archived files explicitly contain labeled sample text, and the packing/import previews identify them. Native filesystem traversal and application-internal dependency discovery remain future work. Browser import currently accepts the stored/uncompressed ZIPs created by this demo, up to 40 MB and 1,000 files; arbitrary externally compressed archives are not supported yet.
 
@@ -274,11 +278,11 @@ The Workspace & Projects Area shows the current context’s Stash. Ordinary work
 
 In Compact, **Stash** shows the current context's item count and opens a temporary shelf with the existing editor, search and item controls. **Note** starts a new note directly. Pinned Stash items stay accessible as individual Compact shortcuts; their list scrolls when needed. **Files** opens the selected Project's file list or the ordinary Workspace's Home folders, with **Open folder** for the file browser. File rows and pinned items can be dragged to Stash or Assistant with their source. **More** holds Manage project, Pack project and Close project; outside a Project it offers New project and Project library. The shelf preserves the saved Compact state and window geometry. Escape, close, outside interaction or a context change dismisses it. **Expand area** is the explicit layout change. Drops onto Stash keep their source and name the receiving context.
 
-Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to Assistant. Source identity stays separate from the destination when copying between Stashes.
+Drop or paste content, or use **Add note or source**. A title is optional; drops save immediately. Items start collapsed and retain expansion state. Expand to inspect the source, rename, edit text or change a media caption. Edits autosave. Pin items, remove and undo, drag them into another app or attach them to Assistant. **Tags** supplies user-written labels separately from recorded origin.
 
 While dragging over Stash, a destination label names the Project or Workspace Stash and its folder. It follows the current context and disappears when the drag ends or is cancelled.
 
-**Find in Stash** searches the current shelf’s titles, text, source labels and addresses, and filenames. **Pinned** isolates important items. Each Stash remembers its own filter during the session. Filtering hides existing disclosures without rebuilding media previews. An empty result offers **Show all items**; saving a new item or returning directly to one clears the receiving shelf’s filter so the item remains visible.
+**Find in Stash** searches the current shelf’s titles, text, source labels and addresses, and filenames. **Filters** adds **Origin app**, **Type** and **Captured date**; date options are **Any time**, **Today** and **Last 7 days**. **Pinned** isolates important items. Each Stash remembers its own filter during the session. Filtering hides existing disclosures without rebuilding media previews. An empty result offers **Show all items**; saving a new item or returning directly to one clears the receiving shelf’s filter so the item remains visible.
 
 Each capture records a Timeline return link keyed to the saved item, surviving later insertion and renaming. Search uses local word matching, with date terms such as `today` / `yesterday` and `dnes` / `vcera`; it is not semantic AI retrieval.
 
@@ -286,17 +290,48 @@ Notes are represented as Markdown files, web sources as `.url` files and media k
 
 Older Quick notes migrate to pinned Stash notes, and existing next-step text becomes an ordinary note. There is no separate Quick Note panel or manual save-place control. Per-item merge/deletion markers support synchronization between demo displays. Clean/demo reset and Guide practice use their own storage handling.
 
+### Item origin, identity and journey
+
+Stash, Timeline return links and Assistant source attachments share stable item identity. A title or placement can change without rewriting the origin. The known source app and page describe how material was captured, not which applications can open it or who authored it. Capture context names the Workspace and Project at that moment; current locations describe where the item is kept now. Later uses are separate journey events. Unknown details stay unknown: the demo does not infer a file’s origin from whichever app happened to be focused.
+
+An expanded item’s **History** opens these subpanels:
+
+| Panel | Meaning |
+| --- | --- |
+| Origin | The known source and capture context |
+| Current locations | Stashes currently containing this item |
+| Sources | Parent material for a copy or derived output |
+| Versions | Readable snapshots retained by the demo; no Restore command |
+| Journey | Recorded captures, edits, placements and uses |
+
+In an expanded item’s **More** menu, **Add to another Stash…** offers destinations in the current Workspace. The choices have different semantics:
+
+| Choice | Result |
+| --- | --- |
+| Add reference | The same item appears in another Stash. Content edits apply to that shared item. |
+| Independent copy | A new item starts with the copied contents and a link to its source. Later content edits are independent. |
+| Move item | Its Stash placement changes while identity and origin remain. |
+| Remove from Stash | Only that placement is removed; this does not delete the original source file. |
+
+Imported files copy bytes into browser storage. A web link remains a link unless content was separately captured; it does not promise an offline copy of the page, images or video. A history record explains an action, a version retains content, and a screenshot would retain appearance. These are different things. This prototype has readable captured versions, not system-wide backups, passive screen capture or a native file-version restore service.
+
+**Try it:** keep a note in Stash, expand it, add a user tag and open **History**. Edit the note and inspect **Versions**. Use **Add to another Stash…** to add a reference or independent copy to a Project in the same Workspace, then compare **Current locations** and **Sources**. Attach the item to Assistant, send a request, and keep the scripted reply in Stash. Its History can follow the output’s parent sources; the reply’s own evidence stays tied to the request that produced it. These actions are also explained under the Guide’s Stash, Assistant and Overview & Timeline chapters without resetting existing lesson progress.
+
+The item journal and saved snapshots are distinct from Timeline’s recent activity list. Search indexes and grouped views are projections of the saved records. Native applications, external renames and filesystem changes outside this web demo are not monitored. Stable demo IDs do not imply that the browser can track arbitrary files on the computer.
+
 ## Assistant Area
 
 Assistant is the digital assistant in its own fourth docked Area, also available without a Project. Compact shows the current chat title, source count and an unsent-draft indicator, plus **New chat**. Clicking the chat, its header or **Super+A / F2+A** opens a temporary quick chat beside the Compact Area. The same conversation, sources and composer are available there; this does not resize the dock or move tiled windows. **Expand area** keeps the full Area open. Escape, the close button or clicking outside closes quick chat while preserving its draft. Hidden Assistant can still be recalled with the shortcut. Enter submits a request; Shift+Enter adds a line. There are no preset prompt buttons and no real model/provider connection. Fixed local rules return explicitly labelled scripted examples.
 
-Attach a Stash item, file, app title-bar icon, selected text or link. Tags identify origin Workspace, Project and app. The first Project attachment selects that Project’s root as the working folder; another Project never silently replaces it. Choose Workspace Home or an attached Project explicitly. When a saved Stash item came from another Project, its storage owner supplies the working folder and its original source remains visible separately.
+Attach a Stash item, file, app title-bar icon, selected text or link. Source metadata identifies the known origin Workspace, Project and app, separately from user tags. The first Project attachment selects that Project’s root as the working folder; another Project never silently replaces it. Choose Workspace Home or an attached Project explicitly. When a saved Stash item came from another Project, its storage owner supplies the working folder and its original source remains visible separately. Attaching a source does not move the original file.
 
 The drag destination names the current chat and Workspace before release. Dropping on Compact Assistant attaches to that conversation and opens quick chat for review without changing its Compact presentation. Ordinary text dropped into an editable field remains text; file and explicit source drops attach to the chat, including when dropped over the composer.
 
 Each Workspace keeps a list of chats. **New chat** starts an empty conversation; the Chat selector returns to earlier conversations and **Rename** gives one an explicit name. Otherwise the first request supplies its title. Every chat has its own draft, attachments, working folder and replies, preserved through Project switches and reloads. Existing single conversations migrate into the list without discarding their content.
 
 Sources occupy a bounded, collapsible tray above the messages. Each source starts collapsed; expand it to inspect text, location and provenance, or remove it from the current context. Later drops do not expand the whole tray over a conversation. Dropping the same source again refreshes its current contents while earlier replies retain their own immutable source/folder snapshots. File batches remain assigned to the chat and Workspace in which the drop started, even if the user switches while storage is pending. Chat records merge independently across demo displays; another display cannot redirect the current chat’s input.
+
+Each reply exposes the source snapshot used for that request and a source-history action when it has a linked saved item. Updating or reattaching the source later does not rewrite an earlier reply’s evidence. The snapshot records the material attached in this prototype; it does not claim that a model or native application read the whole underlying file. Keeping a reply in Stash creates a separate Assistant output with **derived-from** links to the request’s parent sources, including multiple inputs. Its captured source versions remain distinct from the sources’ current contents.
 
 Replies can be dragged into Stash. Imported attachments are copied into browser storage; desktop attachments reference prototype files. Requests and replies are local and are not sent to a model. The scripted demo retains up to 60 replies and 24 sources per chat and 50 chats per Workspace. At the reply limit it keeps the draft and earlier history and asks for a new chat, rather than removing old replies. Legacy snapshots retain the active-chat projection needed by the Guide and display adapter.
 
@@ -321,8 +356,9 @@ The workspace-coloured wallpaper is one fixed background beneath the desktop and
 | Browser-local window geometry, contexts and app state | Managing real KWin/application windows |
 | Simulated Workspace Home and Project folders; stored uploads | Native filesystem integration and permission handling |
 | Workspace-owned mock browser/media sessions | Separate real browser profiles, native media sessions and app environments |
-| Scripted Assistant replies and explicit source tags | Connected AI providers and actual inference |
-| Local plans, reminders and explicit activity history | External calendar/task services and OS-level activity integrations |
+| Scripted Assistant replies, saved source evidence and derived-output links | Connected AI providers and actual inference |
+| Stash origin, stable item identity, readable versions, references and copies | Tracking external native file changes, source recovery and full filesystem backups |
+| Local plans, reminders and explicit activity history with expandable sessions | External calendar/task services and OS-level activity integrations |
 | Two browser windows with synchronized display assignments | Native monitor discovery, hot-plug and window/display control |
 | Project-only ZIP copies with saved demo bytes, gathered linked resources and import | Native filesystem traversal and app-internal resource discovery |
 

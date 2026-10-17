@@ -11,6 +11,11 @@
     for(const file of workspaceDownloads.snapshot().files){if(file.directory.startsWith(prefix)||file.directory===project.root){const path=(file.directory+'/'+file.name).slice(prefix.length);files.push({path,data:file.content||'',kind:'text'});}}
     for(const [path,file]of Object.entries(project.archiveFiles||{})){const blob=await F.get(file.key);if(!blob)throw Error('An imported file is no longer available: '+path);const at=files.findIndex(f=>f.path===path);if(at>=0)files.splice(at,1);files.push({path,data:new Uint8Array(await blob.arrayBuffer()),kind:file.kind||'file',mime:file.mime||blob.type});}
     const snapshot=clone(project);
+    const itemHistory=globalThis.SpatialItemHistoryDesktop,historyPackage=globalThis.SpatialItemHistoryPackage;
+    if(itemHistory&&historyPackage){
+      const bundle=historyPackage.exportProject(itemHistory.snapshot(),globalThis.SpatialMemoryDesktop?.allItems?.()||[],project.originWorkspace||activeWorkspace,id);
+      if(Object.keys(bundle.records).length){const path='.spatial-item-history.json',old=files.findIndex(file=>file.path===path);if(old>=0)files.splice(old,1);files.push({path,data:JSON.stringify(bundle,null,2),kind:'text',mime:'application/json'});}
+    }
     // Notes already materialized in Stash remain actual files in the archive.
     const stash=F.list(snapshot);
     return A.build(snapshot,{home:workspaceProfiles[project.originWorkspace||activeWorkspace]?.home||'',files,stash,replacements,
@@ -71,7 +76,8 @@
     if(Object.values(projectSpaces).some(project=>project.root===target)||workspaceDownloads.snapshot().directories.includes(target)){node('importStatus').textContent='That folder already exists. Choose a new Project folder.';return;}
     node('importProject').disabled=true;node('importStatus').textContent='Importing the Project copy…';
     try{
-      const {manifest,files}=current.review,p=cleanedProject(manifest.project),id=uniqueProjectId(p.name),keys=new Map();
+      const {manifest,files}=current.review,p=cleanedProject(manifest.project),id=uniqueProjectId(p.name),keys=new Map(),attachmentMap={};
+      const historyBytes=files.get('.spatial-item-history.json'),historyBundle=historyBytes?JSON.parse(A.decode(historyBytes)):null;
       p.root=target;p.originWorkspace=current.workspace;p.requirements=manifest.requirements||[];p.archiveFiles={};delete p.stash;
       if(Object.values(projectSpaces).some(project=>project.name===p.name))p.name+=' (copy)';
       const fileData=new Map(manifest.files.map(file=>[file.path,file]));
@@ -83,15 +89,18 @@
         }
       }
       p.resources=p.resources.map(entry=>{
-        const meta=entry[4]||{},next={...meta};
+        const meta=entry[4]||{},next={...meta,historySourceId:meta.itemId||meta.fileId};
         if(meta.address?.startsWith('./'))next.address=target+'/'+meta.address.slice(2);
         if(meta.source?.address?.startsWith('./'))next.source={label:'Imported Project file',address:target+'/'+meta.source.address.slice(2)};
-        if(meta.attachment){const path=meta.attachment.packagePath,key=keys.get(path);if(!key)throw Error('Attached file bytes are missing.');next.attachment={...meta.attachment,key};delete next.attachment.packagePath;delete next.attachment.src;next.fileId=key;}
+        if(meta.attachment){const path=meta.attachment.packagePath,key=keys.get(path);if(!key)throw Error('Attached file bytes are missing.');next.attachment={...meta.attachment,key};delete next.attachment.packagePath;delete next.attachment.src;next.fileId=key;const source=historyBundle?.records?.[meta.itemId||meta.fileId]?.versions?.at(-1)?.attachment;if(source?.key||source?.src)attachmentMap[source.key||source.src]=key;}
         return [String(entry[0]).slice(0,120),String(entry[1]||'').replace(/Linked · \.\//,'Linked · '+target+'/').slice(0,12000),['web','file','document','audio','image','video','folder'].includes(entry[2])?entry[2]:'file',/^i-[a-z-]+$/.test(entry[3]||'')?entry[3]:'i-link',next];
       });
+      const importedHistory=historyBundle&&globalThis.SpatialItemHistoryPackage?.importProject(historyBundle,{workspace:current.workspace,project:id,idPrefix:'project-import-'+crypto.randomUUID(),attachmentMap});
+      p.resources=p.resources.map(entry=>{const meta=entry[4]||{},canonical=meta.historySourceId||meta.itemId||meta.fileId,next={...meta};delete next.historySourceId;delete next.itemId;delete next.reference;if(importedHistory?.idMap[canonical]){next.itemId=importedHistory.idMap[canonical];next.updated=0;}if(!next.attachment)next.fileId='stash-import-'+crypto.randomUUID();return [...entry.slice(0,4),next];});
       const pendingFiles=[...files].filter(([path])=>!path.startsWith('.spatial-project.')).map(([path,data])=>({path,content:p.archiveFiles[path]?'Imported binary file · '+size(data.length):A.decode(data)}));
       // Validate all settings and text before adding the new Project or changing folders.
       const normalized=normalizeProject(p,id);if(!normalized)throw Error('Invalid Project settings.');
+      if(importedHistory)globalThis.SpatialItemHistoryDesktop?.merge(importedHistory);
       projectSpaces[id]=normalized;workspaceDownloads.ensure(target);
       for(const {path,content}of pendingFiles){const slash=path.lastIndexOf('/'),directory=slash<0?target:target+'/'+path.slice(0,slash),name=path.slice(slash+1);workspaceDownloads.ensure(directory);workspaceDownloads.add(directory,name,{workspace:current.workspace,project:id,content});const first=path.split('/')[0];if(path.includes('/')&&!normalized.files.some(row=>row[0]===first))normalized.files.push([first,'Imported files','folder']);}
       persistDownloads();persistProjectState();renderOverviewProjects();queueDesktopStateBroadcast(0);closePackageDialog();
