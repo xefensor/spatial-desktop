@@ -66,8 +66,8 @@
     model.state.workspaceWindow = name; model.state.preferredApp = appInfo[name].base || name;
     return name;
   }
-  function prepareTemporaryDesktop() {
-    // The stable lesson ID now practices a virtual screen on its ordinary
+  async function prepareTemporaryDesktop() {
+    // The stable lesson ID now practices a Gamescope window on its ordinary
     // desktop. A decorated Firefox fullscreen does not qualify.
     if(model.state.temporaryWindow!=='game'){model.state.done=[];delete model.state.temporaryDesktop;}
     workspaceProfiles.gaming ||= cloneDesktopState(gamingWorkspaceProfile);
@@ -76,7 +76,10 @@
     workspaceProjects.gaming ||= null;windowMembership.gaming ||= {};
     workspaceAreaContents.gaming ||= {...defaultAreaContent,noteDraft:'',notifications:[],notificationsHtml:''};
     workspaceContent.gaming ||= {note:'',apps:{}};
-    renderWorkspaceTabs();renderWorkspace('gaming',false);changeDesktopPage(0,false,'workspace');
+    renderWorkspaceTabs();renderWorkspace('gaming',false);
+    await waitForScene();
+    changeDesktopPage(0,false,'workspace');
+    await waitForScene();
     const name='game';openApp(name);
     model.state.temporaryWindow=name;
     globalThis.SpatialVirtualScreen?.showFullscreen(name);
@@ -113,7 +116,7 @@
     if(model.lesson.id==='overview-navigation'){ $('#overviewWindowFilter').value='all'; renderOverviewWindows(); globalThis.SpatialOverviewDesktop?.select('windows',false);}
     if(model.lesson.id==='app-instances')model.state.instanceBaseline=Object.keys(appState);
     if(model.lesson.id==='empty-desktop')model.state.emptyOrigin={page:desktopPages.current(activeWorkspace),column:desktopPages.column(activeWorkspace)};
-    if(model.lesson.id==='temporary-desktop')prepareTemporaryDesktop();
+    if(model.lesson.id==='temporary-desktop')await prepareTemporaryDesktop();
     focusDesktop(false); captureCurrentWorkspaceSession(); saveAppWindows(false); saveIndependentSessions(); saveDesktopPages();
     model.state.initialized = true; guide.save(); guide.settingUp = false;
   }
@@ -142,7 +145,7 @@
     }
     if (action === 'temporary-retry') {
       model.state.done=[];delete model.state.temporaryDesktop;
-      prepareTemporaryDesktop();
+      await prepareTemporaryDesktop();
     }
     guide.save(); guide.settingUp = false; lastSignature = ''; check();
   }
