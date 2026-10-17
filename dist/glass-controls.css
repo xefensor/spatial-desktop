@@ -82,6 +82,10 @@ body[data-theme] .workspace-notification-badge.has-unread{
   box-shadow:var(--glass-action-shadow)!important;
 }
 body[data-theme] .workspace-notification-badge:hover:not(:focus-visible){outline:none}
+body[data-theme="light"] .workspace-notification-badge.has-unread{
+  color:color-mix(in srgb,var(--notification-workspace-accent) 60%,var(--sd-glass-text))!important;
+  --glass-action-shadow:inset 0 -2px currentColor;
+}
 
 /* Overview uses the same quiet row actions, with a seam between real groups
    rather than a second full pane around every widget or search scope. */
