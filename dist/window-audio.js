@@ -30,6 +30,7 @@
     if(!appWindowsReady||appWindowsHydrating)return;
     const frame=frameFor(id),header=frame?.querySelector('.app-titlebar');if(!header)return;
     let control=header.querySelector('.window-audio');
+    if(appInfo[id]?.audio===false){control?.remove();return;}
     if(!control){
       control=document.createElement('div');control.className='window-audio';control.setAttribute('role','group');
       control.innerHTML='<button type="button" class="surface-key window-key window-audio-mute" data-window-mute aria-pressed="false"></button><input type="range" min="0" max="100" step="1" data-window-volume><output aria-hidden="true"></output>';

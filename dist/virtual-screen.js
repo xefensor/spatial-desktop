@@ -117,7 +117,7 @@
   document.addEventListener('keydown',event=>{
     const superHeld=root.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS');
     if(!superHeld||!['KeyD','KeyF'].includes(event.code)||event.repeat||event.ctrlKey||event.altKey||event.shiftKey||event.isComposing)return;
-    if(document.querySelector('#packageDialog.is-open,#projectEditorDialog.is-open,#universalSearch.is-open,#spatialDesktopMap:not([hidden]),#displaySettingsDialog[open]'))return;
+    if(document.querySelector('#packageDialog.is-open,#projectEditorDialog.is-open,#universalSearch.is-open,#spatialDesktopMap:not([hidden])'))return;
     const activeFullscreen=tileSession().fullscreen?.name;
     // D only reveals the desktop. F toggles the focused Gamescope container
     // in both directions; ordinary apps and other displays keep their keys.

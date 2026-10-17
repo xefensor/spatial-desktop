@@ -212,8 +212,6 @@
     if(action.startsWith('display-role:')){closeDesktopContextMenu();setRole(localDisplaySlot(),action.slice(13));return;}
     return originalExecute(action);
   };
-  const originalBlocked=desktopNavigationBlocked;
-  desktopNavigationBlocked=function(){return Boolean($('#displaySettingsDialog')?.open)||originalBlocked();};
   root.SpatialDisplayRoleBridge={state,setRole,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:'+role(slot)+':'+slot:null;},
@@ -239,11 +237,6 @@
     }
   },true);
   root.addEventListener('resize',()=>notify());
-  root.addEventListener('keydown',event=>{
-    if(!$('#displaySettingsDialog')?.open)return;
-    if(event.key==='Escape'){event.preventDefault();root.SpatialDisplaySettings.close();}
-    event.stopPropagation();
-  },true);
   root.addEventListener('storage',event=>{if(event.key===key){model.load(readDesktopStorage(key,{}));connect();notify();}});
   root.SpatialDisplayRoleDesktop={refresh:notify,snapshot:()=>model.snapshot()};
   notify();settle();

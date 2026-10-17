@@ -218,6 +218,7 @@ function observeMaterialInheritance() {
 }
 
 const appInfo = {
+  settings: { label: "Settings", icon: "i-settings", tone: "violet", primary: "#a483ff", detail: "Preferences", singleInstance: true, parkingWidget: false, audio: false },
   dolphin: { label: SpatialAppNames.label("Dolphin"), icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
   elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
   browser: { label: SpatialAppNames.label("Web"), icon: "i-web", tone: "amber", primary: "#ff7139", detail: "New Tab", parkingWidget: false },
@@ -227,8 +228,8 @@ const appInfo = {
   game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true }
 };
 
-const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
-const appMaximizedState = { dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
+const appState = desktopPreset === 'demo' ? { settings: 'closed', ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
+const appMaximizedState = { settings: false, dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
 const autoTiledWindows = new Set();
 const maximizeRestore = new Map();
@@ -430,6 +431,7 @@ function frameFor(name) {
    switches to a compact internal layout at this footprint, while keeping its
    primary controls and content usable. */
 const windowUsableSizes = {
+  settings: { width: 480, height: 340 },
   dolphin: { width: 440, height: 340 },
   elisa: { width: 460, height: 360 },
   browser: { width: 420, height: 320 },
@@ -1523,7 +1525,7 @@ function syncApps() {
 }
 
 function openApp(name, dropPoint = null) {
-  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('apps')) return;
+  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name === 'settings' ? 'systems' : 'apps')) return;
   if (!appInfo[name]) return;
   // Restoring a live card is an explicit request to leave exclusive fullscreen.
   if (tileSession().fullscreen && tileSession().fullscreen.name !== name) leaveAppFullscreen();
@@ -5158,7 +5160,7 @@ let activeWorkspace = (() => {
   try { return desktopStorage.getItem("spatial-active-workspace") || "general"; }
   catch { return "general"; }
 })();
-const workspaceAppStates = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, desktopPreset === 'demo' && SpatialDemoExamples.scenarios[name] ? {...SpatialDemoExamples.scenarios[name].apps} : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']))]));
+const workspaceAppStates = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, desktopPreset === 'demo' && SpatialDemoExamples.scenarios[name] ? {settings:'closed', ...SpatialDemoExamples.scenarios[name].apps} : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']))]));
 
 function persistWorkspaceAppStates() {
   if (!workspaceProfiles[activeWorkspace]) return;
@@ -8291,6 +8293,9 @@ hotbarSlotFor = name => { const index = workspaceShortcutNames().indexOf(name); 
 function captureWorkspaceContent() {
   const frames = {};
   Object.keys(appInfo).forEach(name => {
+    // Settings owns its navigation; shared preference fields are live views,
+    // not document content to restore by their position in a form.
+    if ((appInfo[name].base || name) === 'settings') return;
     const frame = frameFor(name);
     if (!frame) return;
     frames[name] = [...frame.querySelectorAll('input:not([data-window-volume]),textarea,select,[contenteditable]')].map(field => ({value: field.isContentEditable ? field.innerHTML : field.value, checked: field.checked}));
@@ -8311,6 +8316,7 @@ function renderWorkspaceHistory() {
 function restoreWorkspaceContent(name) {
   const saved = workspaceContent[name];
   Object.keys(appInfo).forEach(id => {
+    if ((appInfo[id].base || id) === 'settings') return;
     const frame = frameFor(id), base = appInfo[id].base || id;
     if (!frame) return;
     const defaults = [...pristineFrames[base].querySelectorAll('input:not([data-window-volume]),textarea,select,[contenteditable]')];
