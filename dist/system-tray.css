@@ -2,9 +2,11 @@
    clock at the very bottom. Wide embedded cards retain their grouped layout. */
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]){padding:5px}
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"])>.area-window-bar{
-  min-height:38px;flex:0 0 38px;padding:2px;margin-bottom:4px!important;
+  min-height:40px;flex:0 0 40px;padding:0;margin-bottom:4px!important;
   border-bottom:0;background:transparent;box-shadow:none;
 }
+.systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) .area-window-identity::after{content:none!important;display:none!important}
+.systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) .area-window-identity>span:last-child{display:none!important}
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) .area-window-icon{
   width:36px;height:36px;border-color:transparent!important;background:transparent!important;box-shadow:none!important;
 }
@@ -18,8 +20,8 @@
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) .rail-action,
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) #systemScopeSystem>.quick-settings .system-rail-sound{
   position:relative;display:flex;align-items:center;justify-content:center;
-  width:100%;min-width:0;max-width:none;height:44px;min-height:44px;flex:0 0 44px;
-  padding:7px!important;gap:0;border-color:transparent!important;
+  width:100%;min-width:0;max-width:none;height:40px;min-height:40px;flex:0 0 40px;
+  padding:6px!important;gap:0;border-color:transparent!important;
   background:transparent!important;box-shadow:none!important;
 }
 .systems-zone.system-rail-ready[data-area-state="rail"]:not([data-compact-layout="grid"]) :is(.rail-action,.system-rail-sound,.area-window-icon)>svg{width:26px;height:26px;flex:none}
