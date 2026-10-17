@@ -90,3 +90,18 @@
 .ai-area .ai-direct-context .ai-context-chip>span{min-width:0}
 .ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-chat{min-height:48px}
 .ai-area[data-area-state="rail"][data-compact-layout="grid"] .ai-rail-new{min-height:48px}
+
+/* A short Expanded Assistant keeps input inspection legible rather than
+   squeezing an open source sheet down to a sliver above the composer. */
+.ai-area[data-area-state="expanded"]{container-name:assistant-area;container-type:size}
+@container assistant-area (max-height:340px){
+  .ai-content{gap:4px}
+  .ai-content .ai-chat-toolbar{row-gap:4px}
+  .ai-content .ai-chat-toolbar>select{height:30px}
+  .ai-content .ai-chat-toolbar>button{min-height:30px;padding-block:4px}
+  .ai-content>.ai-input-details{flex:0 0 52px;min-height:52px;max-height:52px}
+  .ai-content .ai-direct-context{padding-block:2px}
+  .ai-content .ai-direct-context .ai-context-chip{min-height:30px;padding:4px 7px}
+  .ai-content .ai-composer textarea{height:44px;min-height:44px;padding:5px 8px;font-size:12px;line-height:1.35}
+  .ai-content .ai-composer small{font-size:10px;margin-top:3px}
+}
