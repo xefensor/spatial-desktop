@@ -24,6 +24,7 @@
     if(owner!==activeWorkspace){close(false);return;}
     const source=data(),next=JSON.stringify({...source,session:source.columns.flatMap(c=>source.displays.flatMap(d=>Array.from({length:c.pages},(_,page)=>source.session(c.id,page,d.slot))))});
     if(!force&&signature===next)return;signature=next;rendering=true;
+    try{
     const focused=document.activeElement?.closest('[data-map-page]'),focus=focused?{column:focused.dataset.mapColumn,page:Number(focused.dataset.mapPage)}:null;
     const scroll={x:world.scrollLeft,y:world.scrollTop};columns=D.build(source);
     panel.querySelector('#desktopMapWorkspace').textContent=workspaceProfiles[activeWorkspace].label+' Workspace';
@@ -31,7 +32,8 @@
     prepareControlSemantics(panel);
     world.scrollLeft=scroll.x;world.scrollTop=scroll.y;
     for(const column of columns)for(const page of column.pages)for(const display of page.displays)for(const w of display.windows)paint(w);
-    if(focus)focusPage(focus.column,focus.page);rendering=false;
+    if(focus)focusPage(focus.column,focus.page);
+    }finally{rendering=false;}
   }
   function paint(w){
     if(w.privatePreview)return;
@@ -39,7 +41,7 @@
     if(!frame||!host||!globalThis.SpatialParkedPreviews)return;
     const clone=SpatialParkedPreviews.cloneWindow(frame);
     clone.querySelectorAll('iframe,audio,video,script,.parked-preview-surface').forEach(node=>node.remove());
-    const rect=frame.getBoundingClientRect(),saved=geometry.get(w.id),width=Math.max(320,rect.width||saved?.width||960),height=Math.max(200,rect.height||saved?.height||640);
+    const rect=frame.getBoundingClientRect(),saved=windowGeometry.get(w.id),width=Math.max(320,rect.width||saved?.width||960),height=Math.max(200,rect.height||saved?.height||640);
     const computed=getComputedStyle(frame);for(const property of computed)if(property.startsWith('--'))clone.style.setProperty(property,computed.getPropertyValue(property));
     clone.style.setProperty('width',width+'px','important');clone.style.setProperty('height',height+'px','important');
     const box=host.getBoundingClientRect(),scale=Math.min(box.width/width,box.height/height);clone.style.setProperty('transform','scale('+scale+')','important');host.append(clone);
