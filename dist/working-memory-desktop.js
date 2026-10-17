@@ -288,7 +288,18 @@
 
   document.addEventListener('click',event=>{const result=event.target.closest('[data-memory-result]');if(!result)return;const item=itemFor(result.dataset.memoryResult);if(!item)return;const [,project]=JSON.parse(item.scope);setUniversalSearchOpen(false);if(project&&projectSpaces[project])activateProject(project,false);else changeDesktopPage(desktopPages.current(activeWorkspace),false,'workspace');render(true);reveal();resetShelfFilters();const row=$('[data-memory-id="'+CSS.escape(item.id)+'"]',host);if(row)row.open=true;row?.scrollIntoView({block:'center'});row?.setAttribute('tabindex','-1');row?.focus();});
   function search(query){const searchable=M.create(model.snapshot());Object.entries(projectSpaces).forEach(([id,project])=>{if(project.originWorkspace===activeWorkspace||openProjectNames().includes(id)){const key=M.scope(activeWorkspace,id);itemsFor(key).map(item=>({...item,scope:key})).forEach(item=>searchable.merge({version:1,records:{[item.id]:item}}));}});const results=allowed()?searchable.search(query,activeWorkspace).filter(item=>!JSON.parse(item.scope)[1]||projectSpaces[JSON.parse(item.scope)[1]]):[];$('#universalMemoryResults').innerHTML=results.map(item=>'<button class="universal-result" data-memory-result="'+escapeHtml(item.id)+'"><span class="universal-symbol">'+icon('i-note')+'</span><span><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(label(item.scope)+' · '+(item.source.label||'Your note')+(item.updated?' · '+sessionAge(item.updated):''))+'</small><small>'+escapeHtml((item.text||item.source.address).slice(0,120))+'</small></span></button>').join('');prepareControlSemantics(searchGroup);return results.length;}
-  function seed(){if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;Object.entries(projectSpaces).forEach(([id,project])=>{if(!SpatialDemoExamples.projects[id]||project.name!==SpatialDemoExamples.projects[id].name)return;const workspace=project.originWorkspace;if(!workspaceProfiles[workspace])return;const key=M.scope(workspace,id);if(model.seeded(key))return;model.markSeeded(key);model.add(key,{title:'Questions for the next review',text:'What is ready to share?\nWhat still needs testing?\nNext: review the project starting point before opening another task.',source:{}});});save();}
+  function seed(){
+    if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;
+    Object.entries(projectSpaces).forEach(([id,project])=>{
+      const definition=SpatialDemoExamples.projects[id];if(!definition||project.name!==definition.name||project.root!==definition.root)return;
+      const workspace=project.originWorkspace||Object.keys(SpatialDemoExamples.scenarios||{}).find(name=>SpatialDemoExamples.scenarios[name].windows.some(column=>column.column===id));
+      if(!workspaceProfiles[workspace])return;
+      const key=M.scope(workspace,id),review=SpatialDemoExamples.reviewNotes?.[id];
+      const previous=model.items(key).find(item=>item.title==='Questions for the next review'&&item.text==='What is ready to share?\nWhat still needs testing?\nNext: review the project starting point before opening another task.');
+      if(previous&&review)editItem(previous.id,review);
+      if(model.seeded(key))return;model.markSeeded(key);if(review)model.add(key,{...review,source:{}});
+    });save();
+  }
   function ownerAtFolder(path){
     const pair=Object.entries(projectSpaces).find(([,project])=>F.folder(project)===path);
     if(pair)return {owner:pair[1],key:M.scope(pair[1].originWorkspace||activeWorkspace,pair[0])};

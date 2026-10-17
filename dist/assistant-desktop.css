@@ -26,3 +26,5 @@
 .memory-item[open]>.memory-item-summary .memory-summary-preview{display:none}
 .memory-info-details{margin:10px 0;font-size:11px}.memory-info-details>summary{padding:5px 0;color:var(--muted);cursor:pointer}.memory-metadata{padding:4px 0 10px}.memory-metadata .memory-tags{margin:6px 0}.memory-metadata .memory-user-tags{margin:9px 0}
 .memory-row-actions .memory-item-details>summary{font-size:18px;line-height:1;padding:3px 8px;cursor:pointer}
+
+.ai-example-recipe{padding:10px 0;border-bottom:1px solid var(--sd-glass-groove);font-size:11px;line-height:1.6}.ai-example-recipe>b{font-size:12px}.ai-example-recipe ol{padding-left:19px;margin:7px 0}.ai-example-recipe li{margin:5px 0}.ai-example-prompt{padding:8px;border-left:2px solid var(--workspace-accent,var(--blue));background:color-mix(in srgb,var(--sd-glass-face) 28%,transparent);user-select:text}.ai-example-note{font-size:10px;line-height:1.6;color:var(--muted)}.ai-earlier-examples{margin-top:10px}.ai-earlier-examples>summary{font-size:11px;color:var(--muted);cursor:pointer}

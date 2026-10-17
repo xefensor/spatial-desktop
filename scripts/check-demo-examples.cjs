@@ -445,13 +445,13 @@ for (const id of ['terminal','dolphin','elisa']) contentCtx.appInfo[id] = {label
 vm.runInContext(slice('function renderDemoAppExample(', 'function renderWorkspaceExample('),contentCtx);
 for (const column of D.scenarios.work.windows) for (const spec of column.windows) contentCtx.renderDemoAppExample(spec.id,spec.content);
 assert.match(demoFrames['notes--demo-film-cut'].fields[0].value,/station transition/);
-assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/contact form/);
+assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/keyboard navigation/);
 assert.equal(demoFrames['dolphin--demo-film-footage'].fields[0].value,D.projects.retold.root);
 assert.match(demoFrames['browser--demo-site-preview'].parts['.start-page'].innerHTML,/Northstar Studio/);
 vm.runInContext(slice('function restoreWorkspaceContent(', 'const originalCaptureWorkspace'),contentCtx);
 contentCtx.restoreWorkspaceContent('work');
 assert.equal(demoFrames['notes--demo-film-cut'].fields[0].value,'My edited film note');
-assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/contact form/,'Unsaved example fields retain their specific initial content');
+assert.match(demoFrames['notes--demo-site-checklist'].fields[0].value,/keyboard navigation/,'Unsaved example fields retain their specific initial content');
 assert.equal(demoFrames.notes.fields[0].value,'My studio planning');
 console.log('Column examples passed: multiple open projects, distinct identities/content, two desktops, minimized soundtrack, native ownership, backups and edited note restoration.');
 // Upgrade only untouched public resource rows, including School's research project.
@@ -481,3 +481,15 @@ console.log('Typed examples passed: public migration, edited/deleted rows preser
   assert.deepEqual(edited.read('spatial-split-layouts-v1')[key].root,customRoot);
   console.log('Demo window order migration passed: shipped pairs become vertical halves; user splits survive.');
 }
+
+// The walkthrough and its source materials must describe the same task/data.
+assert.match(D.scenarios.work.browser.intro,/compact keyboard/);
+assert.match(D.projectWindows.plasma.find(w=>w.base==='notes').content.note,/Explore the keyboard/);
+const studyNote=D.projectWindows.research.find(w=>w.base==='notes').content.note;
+for(const sample of ['Riverside A: 75% shade, 8 species','Riverside B: 60% shade, 7 species','Courtyard A: 20% shade, 4 species','Courtyard B: 35% shade, 5 species'])assert(studyNote.includes(sample));
+assert.match(studyNote,/does not establish/);
+assert.notEqual(D.reviewNotes.plasma.text,D.reviewNotes.research.text);
+const priorSite=JSON.parse(JSON.stringify(D.projects.plasma));priorSite.note='Review the homepage copy, check the mobile layout, then share the preview for feedback.';
+assert.equal(D.migrateProject('plasma',priorSite).note,D.projects.plasma.note);
+priorSite.note='My own review plan';assert.equal(D.migrateProject('plasma',priorSite).note,'My own review plan');
+console.log('Current workflows passed: keyboard materials agree, four survey plots agree, specific review notes, recipes without fake activity and edited note preservation.');

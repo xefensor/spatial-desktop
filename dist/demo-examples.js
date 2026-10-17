@@ -148,7 +148,7 @@
     name: "Urban Ecology", accent: "#e6b84f", icon: "i-graduation",
     summary: "Compare field observations and prepare a class report",
     root: "/home/demo/Workspaces/School/Projects/urban-ecology", originWorkspace: "school",
-    files: [["field-observations.csv", "Three survey sites", "document"], ["report-outline.md", "Draft structure", "document"], ["Photos", "Field visit photographs", "folder"]],
+    files: [["field-observations.csv", "Four plots across two sites", "document"], ["report-outline.md", "Draft structure", "document"], ["Photos", "Field visit photographs", "folder"]],
     note: "Research question: how does shade affect plant diversity?\n\nCompare the riverside and courtyard samples. Cite the field guide before writing the conclusion.",
     resources: [["Field guide.pdf", "Linked · School/Documents/Biology", "document", "i-note"], ["Survey map", "Linked · School/Pictures", "document", "i-web"]],
     activeMode: "study", modes: { study: { label: "Research", icon: "i-graduation", apps: ["browser"], layout: "canvas" } }
@@ -179,6 +179,45 @@
   projects.retold.summary = "Organise footage, review sound and collect cut feedback";
   projects.retold.note = "Rough cut: 02:48. Check the station transition at 01:12 and reduce the music under dialogue. Keep review feedback on Desktop 2.";
   projects.retold.files = [["Footage", "Source clips", "folder"], ["rough-cut.mp4", "Review copy · 02:48", "document"], ["edit-notes.md", "Cut feedback", "document"]];
+  const priorWorkflowProjects = JSON.parse(JSON.stringify(projects));
+  projects.plasma.note = "Homepage review\n\nKeep one clear action: Explore the keyboard.\nCheck the product photo crop on a phone.\nTest keyboard navigation before sharing the preview.";
+  projects.research.note = "Field observations · four equal 1 m² plots\n\nRiverside A: 75% shade, 8 species.\nRiverside B: 60% shade, 7 species.\nCourtyard A: 20% shade, 4 species.\nCourtyard B: 35% shade, 5 species.\n\nRecord watering and ground cover. This small fictional sample does not establish that shade caused the difference.";
+  projects.research.files[0][1] = "Four plots across two sites";
+  const reviewNotes = {
+    plasma: {title:"Before sharing the homepage", text:"Check the headline and primary action on a phone.\nReview the crop of Product photo.\nTest the contact link and keyboard focus.\nKeep review feedback in this Project’s Stash."},
+    retold: {title:"Next cut review", text:"00:24 — hold the opening shot longer.\n01:12 — soften the station transition.\n02:06 — lower the music under dialogue.\nCompare the Closing theme sketch with the cut; the demo Assistant cannot listen to the audio."},
+    research: {title:"Before writing the conclusion", text:"Compare all four equal-size plots in Field observations.\nCheck watering, ground cover and time of day.\nDescribe an observed association rather than claiming that shade caused it.\nKeep the sample’s limitations beside the conclusion."}
+  };
+  // Instructions use the same controls and supported operations as the live demo.
+  // They are recipes, not fabricated completed conversations or file operations.
+  const assistantWorkflows = {
+    plasma: [
+      {title:"Review the homepage copy", steps:["On Desktop 1, highlight the homepage paragraph in Firefox.","Right-click → Ask Assistant, or hold F2 and press A. Ask for a checklist.","Review the reply, then choose Save to Stash. Its Details keeps the selected input."], prompt:"Make a review checklist from this text."},
+      {title:"Prepare an image for the web", steps:["In Stash, open its folder in File Browser and select Product photo.jpg.","Choose Ask Assistant and send the request below. Review Save in, then choose Convert.","Use Open or Show in folder. Output History is in Details; the original stays in Stash."], prompt:"Convert selected files to WebP in Images/Web"}
+    ],
+    retold: [
+      {title:"Prepare the next cut review", steps:["On Desktop 1, highlight the timestamped feedback in Edit notes.","Choose Ask Assistant and request a checklist. Review the result before saving it to Stash.","On Desktop 2, compare the written feedback with the parked soundtrack. Audio analysis and video editing are not connected in this demo."], prompt:"Make a checklist from these edit notes."},
+      {title:"Export a readable copy of a note", steps:["Open this Project’s Stash folder and select Project note.md.","Ask for the conversion below, review Save in and choose Convert.","Open the HTML copy. Details → History follows its original note."], prompt:"Convert selected files to HTML in Review"}
+    ],
+    research: [
+      {title:"Summarize the observations", steps:["On Desktop 1, select the four plot observations and the limitations in Note Editor.","Choose Ask Assistant and request a summary. Check it against the saved Field observations document.","Keep the useful reply in Stash. Details → History lets you follow the input later."], prompt:"Summarize these observations and their limitations."},
+      {title:"Keep a readable report note", steps:["Open the Project’s Stash folder and select Project note.md.","Ask for an HTML copy, review its destination and choose Convert.","Show in folder reveals the copy. This does not submit the assignment or change the original note."], prompt:"Convert selected files to HTML in Report"}
+    ],
+    general: [
+      {title:"Plan the next trip", steps:["Go to Desktop 2 and highlight the train-ticket and photo-backup reminders in Personal notes.","Choose Ask Assistant and ask for a checklist.","Review the reply and Save to Stash. It stays in General across its desktops."], prompt:"Make a checklist from these reminders."},
+      {title:"Convert a saved note", steps:["Keep a note in Stash, then open its folder in File Browser and select the Markdown file.","Choose Ask Assistant and request an HTML copy in Documents/Converted.","Review Save in and choose Convert. Open the result or Show in folder."], prompt:"Convert selected files to HTML in Documents/Converted"}
+    ],
+    work: [
+      {title:"Separate studio planning from project work", steps:["On Desktop 2, select the meeting reminders in Studio planning and choose Ask Assistant.","Ask for a checklist and save the useful result in this Workspace’s Stash.","Switch to Website Launch or Short Film for that Project’s materials. The chat stays in Work; check the input chip before sending another request."], prompt:"Make a checklist from these meeting reminders."}
+    ],
+    school: [
+      {title:"Prepare for the seminar", steps:["On Desktop 2, select the reminders in Class planning and choose Ask Assistant.","Ask for a checklist and keep it in the School Workspace’s Stash.","Switch to Urban Ecology for the four-plot observations and Project-specific examples."], prompt:"Make a checklist from these class reminders."}
+    ],
+    gaming: [
+      {title:"Get ready for co-op", steps:["Go to Desktop 2, highlight the Game night note and choose Ask Assistant.","Ask for a checklist and keep it in Gaming’s Stash.","Return to Desktop 1. F2+D tiles the Fallout virtual screen; F2 alone opens Overview while the game stays available."], prompt:"Make a checklist from this game-night plan."},
+      {title:"Find the result later", steps:["Open Overview → Timeline in Gaming and find the recent Assistant activity.","Expand Details to see individual actions; Open chat returns to the request.","For a saved reply’s own journey, open Stash → item → Details → History. Other Workspaces keep their activity separate."]}
+    ]
+  };
   const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed", steam: "closed", game: "closed" };
   const leaf = name => ({ kind: "window", name });
   const defaultAreaDocks = {
@@ -249,16 +288,16 @@
       }),
     school: scene("research", "study", { browser: "open" },
       { left: 280, right: 280, bottom: 96 }, leaf("browser"), {
-        note: "Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.",
+        note: "Field observations\n\nRiverside A: 75% shade, 8 species.\nRiverside B: 60% shade, 7 species.\nCourtyard A: 20% shade, 4 species.\nCourtyard B: 35% shade, 5 species.\nCheck watering and ground cover before attributing differences to shade.",
         folder: "Documents/Biology", files: [["Field guide.pdf", "4.2 MiB", "document"], ["Course notes", "12 files", "folder"], ["Reading list.md", "3 KiB", "document"]],
         browser: { title: "Urban habitats & biodiversity", subtitle: "Biology · course reading", intro: "Habitat structure, shade and soil moisture influence the species found in urban green spaces. Compare sites using the same survey method, then record the limits of your sample.", links: ["Course reading", "Sampling methods", "Citation guide", "Assignment brief"] },
         notifications: [["Feedback available", "Biology · your field survey outline", "amber", "i-graduation"]], focus: { running: false, seconds: 1500, visible: true }, hiddenWidgets: [false, true]
       }),
     work: scene("plasma", "prototype", { browser: "open", terminal: "open", dolphin: "minimized" },
       { left: 68, right: 300, bottom: 96 }, { kind: "split", axis: "y", ratio: .58, a: leaf("browser"), b: leaf("terminal") }, {
-        note: "Launch checklist\n\nConfirm the contact form.\nCheck keyboard navigation.\nSend the staging link for review.",
+        note: projects.plasma.note,
         folder: "Projects/website-launch", files: [["src", "24 files", "folder"], ["public", "18 files", "folder"], ["package.json", "2 KiB", "document"], ["README.md", "4 KiB", "document"]],
-        browser: { title: "Northstar Studio", subtitle: "Website Launch · local preview", intro: "Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.", links: ["Our projects", "About the studio", "Contact", "Preview checklist"] },
+        browser: { title: "Northstar Studio", subtitle: "Website Launch · local preview", intro: "A compact keyboard for everyday work. A comfortable layout, readable legends and one quiet place for every key. Explore the keyboard and find the layout that fits your desk.", links: ["Explore the keyboard", "Layouts & specifications", "Contact", "Preview checklist"] },
         notifications: [["Review in 15 minutes", "Website Launch · bring the staging preview", "violet", "i-calendar"]], hiddenWidgets: [false, true]
       }),
     gaming: scene(null, null, { browser: "open", elisa: "minimized" },
@@ -278,7 +317,7 @@
       windowSpec("browser--demo-site-preview", "browser", 0, {shortTitle:"Preview", browser: scenarios.work.browser, address:"http://localhost:5173/"}),
       windowSpec("terminal--demo-site-server", "terminal", 0, {shortTitle:"Dev server", terminal:{path:projects.plasma.root, command:"npm run dev", output:"Northstar Studio · development preview\nBuild completed · no errors\nLocal: http://localhost:5173/\nWatching source files for changes…"}}),
       windowSpec("dolphin--demo-site-files", "dolphin", 1, {shortTitle:"Source files", folder:projects.plasma.root, files:scenarios.work.files}),
-      windowSpec("notes--demo-site-checklist", "notes", 1, {shortTitle:"Launch checklist", note:scenarios.work.note})
+      windowSpec("notes--demo-site-checklist", "notes", 1, {shortTitle:"Launch checklist", note:projects.plasma.note})
     ],
     retold: [
       windowSpec("dolphin--demo-film-footage", "dolphin", 0, {shortTitle:"Footage", folder:projects.retold.root, files:projects.retold.files}),
@@ -288,7 +327,7 @@
     ],
     research: [
       windowSpec("browser--demo-study-reading", "browser", 0, {shortTitle:"Field guide", address:"Biology · field guide", browser:scenarios.school.browser}),
-      windowSpec("notes--demo-study-observations", "notes", 0, {shortTitle:"Observations", note:scenarios.school.note}),
+      windowSpec("notes--demo-study-observations", "notes", 0, {shortTitle:"Observations", note:projects.research.note}),
       windowSpec("dolphin--demo-study-evidence", "dolphin", 1, {shortTitle:"Survey evidence", folder:projects.research.root, files:projects.research.files})
     ]
   };
@@ -639,7 +678,7 @@
       if (id === "plasma" && next.originWorkspace === "general") next.originWorkspace = "work";
     }
     for (const field of ["icon", "summary", "note"]) {
-      if (same(next[field], before[field])) next[field] = after[field];
+      if (same(next[field], before[field]) || same(next[field], priorWorkflowProjects[id]?.[field])) next[field] = after[field];
     }
     // Replace individual default rows while keeping additions, removals and edits.
     for (const field of ["files", "resources"]) {
@@ -670,6 +709,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote };
+  return { projects, assistantWorkflows, reviewNotes, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote };
 });
 

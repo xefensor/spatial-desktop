@@ -125,15 +125,14 @@
     const references=turn.sources.map((item,index)=>'<li><button class="ai-input-citation" data-ai-input="'+index+'" data-ai-input-turn="'+escapeHtml(turn.id)+'"><span>['+(index+1)+']</span><span><b>'+escapeHtml(item.filename||item.title)+'</b><small>'+escapeHtml(C.representation(item))+'</small></span>'+icon('i-note')+'</button></li>').join('');
     return '<section class="ai-turn'+(turn.action?' ai-file-turn':'')+'"><div class="ai-request"><small>'+(turn.example?'Example request':'You')+'</small><p>'+escapeHtml(turn.request)+'</p></div><article class="ai-demo-output" draggable="true" tabindex="0" data-ai-demo-turn="'+escapeHtml(turn.id)+'" aria-label="Demo reply: '+escapeHtml(turn.title)+'"'+(turn.action?' hidden':'')+'><header>'+icon('i-ai')+'<span>Assistant</span></header><b>'+escapeHtml(turn.title)+'</b><p>'+escapeHtml(turn.text)+'</p></article><div class="ai-turn-actions"><button class="surface-key ai-save-output" data-ai-save-output="'+escapeHtml(turn.id)+'">Save to Stash</button><details class="ai-turn-sources"><summary>Details</summary><small>Scripted local reply · '+turn.sources.length+' saved input'+(turn.sources.length===1?'':'s')+'</small><small class="ai-turn-folder">Working folder: '+escapeHtml(turn.folder)+'</small>'+(references?'<ul>'+references+'</ul>':'')+'<small>Drag the reply into Stash to keep it with its input history.</small></details></div></section>';
   }
-  function seedExamples(session){
-    if(session.examplesSeen||session.turns.length||desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return;
-    const candidate=session.workingProject||activeProjectName,project=projectSpaces[candidate],isDemo=project&&SpatialDemoExamples.projects[candidate]?.name===project.name;
-    const projectId=isDemo?candidate:null,workingFolder=isDemo?project.root:workspaceProfiles[activeWorkspace].home;
-    const items=isDemo?[model.normalize(captureInput({id:'example-project-note:'+candidate,title:'Project note',text:project.note||project.summary,workspace:project.originWorkspace||activeWorkspace,project:candidate,source:{workspace:project.originWorkspace||activeWorkspace,project:candidate}}),activeWorkspace)]:[];
-    const context={folder:workingFolder,project:projectId,sources:items,example:true},name=isDemo?project.name:'';
-    const requests=isDemo?['Summarize the attached project note.','Turn it into a checklist for the next review.']:['Help me plan a focused work session.','Draft a note I can keep in this workspace.'];
-    requests.forEach(request=>model.exchange(activeWorkspace,request,D.reply(request,{items,folder:workingFolder,project:name}),context));
-    model.examplesSeen(activeWorkspace);persist();
+  function exampleMarkup(examples){
+    if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return examples.length?'<details class="ai-examples"><summary>Earlier sample replies</summary>'+examples.map(turnMarkup).join('')+'</details>':'';
+    const builtIn=SpatialDemoExamples.projects[activeProjectName],project=projectSpaces[activeProjectName];
+    const context=builtIn&&project?.name===builtIn.name&&project?.root===builtIn.root?activeProjectName:activeProjectName?null:activeWorkspace;
+    const workflows=SpatialDemoExamples.assistantWorkflows?.[context]||[];
+    const recipes=workflows.map(recipe=>'<section class="ai-example-recipe"><b>'+escapeHtml(recipe.title)+'</b><ol>'+recipe.steps.map(step=>'<li>'+escapeHtml(step)+'</li>').join('')+'</ol>'+(recipe.prompt?'<p class="ai-example-prompt">'+escapeHtml(recipe.prompt)+'</p>':'')+'</section>').join('');
+    const earlier=examples.length?'<details class="ai-earlier-examples"><summary>Earlier sample replies</summary>'+examples.map(turnMarkup).join('')+'</details>':'';
+    return recipes||earlier?'<details class="ai-examples"><summary>Examples</summary>'+recipes+(recipes?'<p class="ai-example-note">Try these with your selection. Replies are scripted locally; supported file conversions create real copies in the demo.</p>':'')+earlier+'</details>':'';
   }
   function submitRequest(){
     const request=prompt.value.trim();if(!request){status.textContent='Assistant demo · write a request first';return;}
@@ -153,10 +152,10 @@
   }
   function render(){
     if(!quickPanel.hidden&&(quickWorkspace!==activeWorkspace||quickBlocked()||area.hidden||area.dataset.areaState!=='rail'||area.classList.contains('is-on-other-display')||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))))closeQuick();
-    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||area.hidden))closeInput();seedExamples(session);renderRail(session);positionQuick();
+    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||area.hidden))closeInput();renderRail(session);positionQuick();
     const chats=model.chats(activeWorkspace),project=projectSpaces[session.workingProject];
     const options=[...new Set([session.workingProject,...session.items.map(item=>item.project),activeProjectName].filter(id=>projectSpaces[id]))];
-    const next=JSON.stringify([activeWorkspace,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
+    const next=JSON.stringify([activeWorkspace,activeProjectName,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     $('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
     const expanded=area.dataset.areaState==='expanded'||!quickPanel.hidden;
     $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Make Assistant area Compact':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
@@ -166,7 +165,7 @@
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title)+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home)+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root)+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
-    attachments.innerHTML=session.items.map(itemMarkup).join('');const examples=session.turns.filter(turn=>turn.example),replies=session.turns.filter(turn=>!turn.example);transcript.innerHTML=(examples.length?'<details class="ai-examples"><summary>Examples</summary>'+examples.map(turnMarkup).join('')+'</details>':'')+replies.map(turnMarkup).join('');$('.ai-empty',content).hidden=session.items.length>0||session.turns.length>0;
+    attachments.innerHTML=session.items.map(itemMarkup).join('');const examples=session.turns.filter(turn=>turn.example),replies=session.turns.filter(turn=>!turn.example);transcript.innerHTML=exampleMarkup(examples)+replies.map(turnMarkup).join('');$('.ai-empty',content).hidden=session.items.length>0||session.turns.length>0;
     const sources=$('.ai-context-sources',content),view=views.get(nextKey);sources.open=view?.sources??false;sources.hidden=!session.items.length||!sources.open;sources.querySelector('summary').textContent='Details';
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
     if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;
