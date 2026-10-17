@@ -71,7 +71,7 @@
     root.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'systems'}}));
     return flyout.open({key,label,scope,nodes,origin,empty,context:context()});
   }
-  const quick=action('systemRailQuickSettings','i-settings','Quick'),media=action('systemRailMedia','i-music','Media');
+  const quick=action('systemRailQuickSettings','i-right','Quick'),media=action('systemRailMedia','i-music','Media');
   quick.title='Quick settings · network, Bluetooth, appearance and devices';quick.setAttribute('aria-label','Show quick settings');
   media.setAttribute('aria-label','Show current media controls');
   $('.system-rail-global').append(quick);$('.system-rail-middle').append(media);
