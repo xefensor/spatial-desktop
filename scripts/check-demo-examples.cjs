@@ -493,3 +493,6 @@ const priorSite=JSON.parse(JSON.stringify(D.projects.plasma));priorSite.note='Re
 assert.equal(D.migrateProject('plasma',priorSite).note,D.projects.plasma.note);
 priorSite.note='My own review plan';assert.equal(D.migrateProject('plasma',priorSite).note,'My own review plan');
 console.log('Current workflows passed: keyboard materials agree, four survey plots agree, specific review notes, recipes without fake activity and edited note preservation.');
+
+const cachedPage={address:'http://localhost:5173/',title:'Northstar Studio',intro:'Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.',detail:'Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.',links:['Our projects','About the studio','Contact','Preview checklist'],bookmarked:true};
+const updatedPage=D.migrateBrowserPage(cachedPage);assert.match(updatedPage.intro,/compact keyboard/);assert(updatedPage.bookmarked);assert.match(cachedPage.intro,/architecture studio/,'Migration does not mutate older retained snapshots');assert.equal(D.migrateBrowserPage({...cachedPage,intro:'My own text'}).intro,'My own text');assert.equal(D.migrateBrowserPage(updatedPage),updatedPage,'Content migration is idempotent');

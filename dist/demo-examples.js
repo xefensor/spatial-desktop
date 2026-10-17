@@ -700,6 +700,13 @@
     return next;
   }
 
+  function migrateBrowserPage(page) {
+    const oldIntro='Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.';
+    if(!page||page.address!=='http://localhost:5173/'||page.title!=='Northstar Studio'||page.intro!==oldIntro||page.detail!==oldIntro||JSON.stringify(page.links)!==JSON.stringify(['Our projects','About the studio','Contact','Preview checklist']))return page;
+    const current=scenarios.work.browser;
+    return {...page,intro:current.intro,detail:current.intro,links:[...current.links]};
+  }
+
   function migrateNote(value) {
     const renamedDefaults = {
       "Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology column.": workspaceWindows.school.find(window => window.base === "notes").content.note,
@@ -709,6 +716,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, assistantWorkflows, reviewNotes, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote };
+  return { projects, assistantWorkflows, reviewNotes, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote, migrateBrowserPage };
 });
 

@@ -28,7 +28,10 @@ function appWindowModel(id) {
     });
     return {kind, tracks, index: 0, position: id === 'elisa' ? musicPosition : 0, playing: id === 'elisa' && appState[id] !== 'closed' ? musicPlaying : false, volume: Number($('.volume-range', frame)?.value || 72), muted: false};
   });
-  if(kind==='browser')SpatialAppTools.browserTabs(model);
+  if(kind==='browser'){
+    SpatialAppTools.browserTabs(model);
+    if(desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateBrowserPage)for(const tab of model.tabs)tab.navigation.items=tab.navigation.items.map(SpatialDemoExamples.migrateBrowserPage);
+  }
   return model;
 }
 function appActionButton(action, glyph, label, attributes = '') {
