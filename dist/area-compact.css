@@ -61,7 +61,7 @@
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-middle{display:contents!important}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action{
   width:100%;min-width:0;max-width:none;min-height:48px;height:auto;
-  padding:5px 3px;gap:3px;justify-content:center;align-self:stretch;
+  padding:3px 2px;gap:2px;justify-content:center;align-self:stretch;
   border-color:transparent;background:transparent;box-shadow:none;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>svg{width:18px;height:18px}
@@ -69,16 +69,15 @@
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action>small{display:block;max-width:100%;font-size:10px;line-height:1.2}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailTimerValue{font-size:11px}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem{
-  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));
   align-items:stretch;gap:5px;flex:0 0 auto;min-width:0;min-height:0;max-height:none;
   margin:0!important;padding:7px 0 0;border-top:1px solid var(--sd-glass-groove);border-left:0;overflow:visible;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.system-rail-global{
-  display:grid!important;grid-column:1/-1;grid-template-columns:minmax(72px,.8fr) minmax(0,1.4fr);
-  align-items:center;gap:5px;min-width:0;
+  display:contents!important;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .system-rail-global>.rail-clock{
-  grid-column:1;grid-row:1;align-items:flex-start;min-width:0;min-height:40px;
+  grid-column:1 / span 2;grid-row:1;align-items:flex-start;min-width:0;min-height:40px;
   padding:2px 6px;justify-content:center;gap:3px;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-clock strong{font-size:20px;font-weight:550;letter-spacing:-.03em}
@@ -87,7 +86,7 @@
   grid-column:1/-1;min-height:36px;flex-direction:row;gap:7px;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications{
-  display:flex;grid-column:2;grid-row:1;flex-direction:row;flex-wrap:wrap;align-items:center;
+  display:flex;grid-column:3 / span 2;grid-row:1;flex-direction:row;flex-wrap:wrap;align-items:center;
   align-content:center;justify-content:flex-end;min-width:0;gap:3px;padding:2px;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge{
@@ -97,11 +96,11 @@
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge svg{width:15px;height:15px}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailWorkspaceNotifications .workspace-notification-badge small{font-size:10px;line-height:1.1}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings{
-  display:flex!important;grid-column:2;align-self:stretch;min-width:0;width:100%;margin:0!important;
+  display:flex!important;grid-column:3 / span 2;align-self:stretch;min-width:0;width:100%;margin:0!important;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings,
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemScopeSystem>.quick-settings .system-rail-sound{
-  display:flex;flex-direction:row;grid-column:1;align-items:center;justify-content:center;
+  display:flex;flex-direction:row;grid-column:1 / span 2;align-items:center;justify-content:center;
   width:100%;min-width:0;max-width:none;min-height:36px;height:auto;padding:5px 8px!important;gap:7px;
 }
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region #systemRailQuickSettings>span,
@@ -112,7 +111,9 @@
   box-shadow:0 0 8px color-mix(in srgb,var(--notification-workspace-accent) 19%,transparent),inset 0 -2px var(--notification-workspace-accent);
 }
 /* Subtle resting controls, visible hover and a clear keyboard/expanded state. */
-.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region :is(.rail-action,.workspace-notification-badge):hover{background:var(--sd-glass-hover)}
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region .rail-action:not([aria-expanded="true"]):not(.is-active):not(.has-system-request){border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+
+.area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region :is(.rail-action,.workspace-notification-badge):hover{background:var(--sd-glass-hover)!important}
 .area-window.systems-zone[data-area-state="rail"][data-compact-layout="grid"] .system-scroll-region :is(.rail-action,.workspace-notification-badge):focus-visible{outline:2px solid var(--role-systems);outline-offset:-2px}
 
 /* The wrapper has no box in existing layouts. A wide Compact Apps Area gives
