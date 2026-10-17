@@ -16,7 +16,7 @@ const A=require('../dist/project-archive.js');
  assert(plan.entries.some(e=>e.path==='Linked resources/reference.txt'));assert(plan.entries.some(e=>e.path==='Linked resources/reference (2).txt'));
  const resources=plan.manifest.project.resources;assert.equal(resources[0][4].address,'./Linked resources/reference.txt');assert.equal(resources[2][4].address,resources[0][4].address);assert.equal(resources[3][4].address,'https://example.test/');
  assert(resources.some(e=>e[0]==='Free note'&&e[4].text==='Remember me'),'Free Stash notes remain accessible resources after import');
- assert(plan.samples.includes('readme.md'));assert(plan.entries.some(e=>e.path==='Stash/Free note.md'));
+ assert(plan.samples.includes('readme.md'));assert(plan.entries.some(e=>e.path==='Free note.md'));
  const zip=A.zip(plan.entries),review=A.inspect(zip);assert.equal(review.manifest.project.root,'.');assert.equal(A.decode(review.files.get('notes.txt')),'Saved notes č');assert.deepEqual(review.manifest.requirements,['editor','missing-app']);
  fs.writeFileSync('/tmp/spatial-project-archive-check.zip',zip);
  const damaged=zip.slice();damaged[35]^=1;assert.throws(()=>A.inspect(damaged));assert.throws(()=>A.inspect(zip.slice(0,-8)),/complete/);

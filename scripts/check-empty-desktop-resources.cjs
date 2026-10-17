@@ -37,16 +37,16 @@ const downloads=frozen({directories:[home+'/Downloads',home+'/Documents/Reports'
 const stashCalls=[];
 const stashRows=directory=>{
   stashCalls.push(directory);
-  if(directory===home+'/Stash')return frozen([['My note.md','Saved note','document'],['Image.png','Image','image']]);
-  if(directory===projects.launch.root+'/Stash')return frozen([['Review.pdf','Document','document']]);
+  if(directory===home+'')return frozen([['My note.md','Saved note','document'],['Image.png','Image','image']]);
+  if(directory===projects.launch.root+'')return frozen([['Review.pdf','Document','document']]);
   throw new Error('Never request a foreign Stash');
 };
 const input={workspace:'work',column:'launch',profiles,projects,downloads,stashRows};
 const before=JSON.stringify({profiles,projects,downloads});
 const result=collect(input);
 assert.equal(JSON.stringify({profiles,projects,downloads}),before,'The collector never mutates any source data');
-assert.deepEqual(stashCalls,[home+'/Stash',projects.launch.root+'/Stash']);
-assert.deepEqual(result.folders.filter(entry=>!entry.searchOnly).slice(0,7).map(entry=>entry.label),['Launch <review>','Work Home','Documents','Downloads','Desktop','Projects','Stash'],'Default folders keep the current Project followed by Home working folders');
+assert.deepEqual(stashCalls,[home+'',projects.launch.root+'']);
+assert.deepEqual(result.folders.filter(entry=>!entry.searchOnly).slice(0,7).map(entry=>entry.label),['Launch <review>','Work Home','Documents','Downloads','Desktop','Projects','Clips'],'Default folders keep the current Project followed by Home working folders');
 assert(result.folders.find(entry=>entry.label==='Pictures').searchOnly,'Other standard Home folders are available for local search without crowding default folders');
 assert(result.folders.some(entry=>entry.path===home+'/References <draft>'),'Configured Home extras retain literal names');
 assert(result.folders.some(entry=>entry.path==='/mnt/film/Clips'&&entry.owner==='launch'),'Explicit Project folder targets preserve their real path');
@@ -61,8 +61,8 @@ assert.equal(linked.sourcePath,'/mnt/reference/Real notes.md','The linked target
 assert.equal(result.files.filter(entry=>entry.path===projects.launch.root+'/index.html').length,1,'Saved and configured entries for one file deduplicate');
 assert.equal(result.files.filter(entry=>entry.name==='.spatial-project.toml').length,1,'The generated Project config does not duplicate its configured row');
 assert(result.files.some(entry=>entry.name==='.spatial-workspace.toml'&&entry.directory===home),'Workspace config appears only when it is actually listed');
-assert(result.files.some(entry=>entry.path===home+'/Stash/My note.md'&&entry.owner==='workspace'));
-assert(result.files.some(entry=>entry.path===projects.launch.root+'/Stash/Review.pdf'&&entry.owner==='launch'));
+assert(result.files.some(entry=>entry.path===home+'/My note.md'&&entry.owner==='workspace'));
+assert(result.files.some(entry=>entry.path===projects.launch.root+'/Review.pdf'&&entry.owner==='launch'));
 assert(result.files.some(entry=>entry.path==='/mnt/explicit-work-files/External save.txt'),'Explicitly Workspace-owned saved files may live in a custom directory');
 assert.equal(result.files.find(entry=>entry.name==='review.txt').savedAt,123);
 assert(result.files.some(entry=>entry.label==='R&D "notes".txt'),'User filenames stay literal data, without HTML parsing');
@@ -73,7 +73,7 @@ assert.equal(new Set([...result.folders,...result.files].map(entry=>entry.key)).
 const again=collect(input);assert.deepEqual(again,result,'Stable input produces stable keys and ordering');
 result.files[0].label='Changed output';assert.notEqual(projects.launch.files[0][0],'Changed output','Output entries are fresh metadata objects');
 
-const ordinary=collect({...input,column:'workspace',stashRows:directory=>directory===home+'/Stash'?[['Workspace note.md','Saved note','document']]:assert.fail('An ordinary Workspace never inspects a Project Stash')});
+const ordinary=collect({...input,column:'workspace',stashRows:directory=>directory===home+''?[['Workspace note.md','Saved note','document']]:assert.fail('An ordinary Workspace never inspects a Project Stash')});
 assert(!ordinary.files.some(entry=>entry.owner!=='workspace'),'Ordinary Workspace files exclude every Project’s saved files');
 assert(!ordinary.files.some(entry=>entry.name==='.spatial-project.toml'));
 const foreign=collect({...input,column:'foreign',stashRows:()=>[]});

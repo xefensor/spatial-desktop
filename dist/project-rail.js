@@ -18,7 +18,7 @@
   if(!area||!memory||!host)return;
   const make=(tag,classes,text='')=>{const node=document.createElement(tag);node.className=classes;node.textContent=text;return node;};
   const rail=make('nav','project-material-rail');rail.setAttribute('aria-label','Current working material');
-  rail.innerHTML='<small class="project-material-context"></small><button type="button" class="rail-action memory-rail-entry project-material-stash" data-project-shelf="stash">'+icon('i-note')+'<span>Stash</span><small></small></button><button type="button" class="rail-action" data-project-shelf="note">'+icon('i-add')+'<span>Note</span></button><div class="project-material-pinned" aria-label="Pinned Stash items"></div><footer><button type="button" class="rail-action" data-project-shelf="files">'+icon('i-folder')+'<span>Files</span></button><button type="button" class="rail-action" data-project-shelf="more" aria-label="Workspace and Project actions">'+icon('i-settings')+'<span>More</span></button></footer>';
+  rail.innerHTML='<small class="project-material-context"></small><button type="button" class="rail-action memory-rail-entry project-material-stash" data-project-shelf="stash">'+icon('i-note')+'<span>Files</span><small></small></button><button type="button" class="rail-action" data-project-shelf="note">'+icon('i-add')+'<span>Note</span></button><div class="project-material-pinned" aria-label="Pinned files"></div><footer><button type="button" class="rail-action" data-project-shelf="files">'+icon('i-folder')+'<span>Files</span></button><button type="button" class="rail-action" data-project-shelf="more" aria-label="Workspace and Project actions">'+icon('i-settings')+'<span>More</span></button></footer>';
   area.append(rail);area.dataset.projectRailReady='true';
   const popup=make('section','project-shelf-popup material-surface-glass');popup.id='projectShelfPopup';popup.hidden=true;popup.inert=true;popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','false');popup.setAttribute('aria-labelledby','projectShelfTitle');
   popup.innerHTML='<header><div><small id="projectShelfContext"></small><h2 id="projectShelfTitle"></h2></div><button type="button" class="surface-key" data-project-shelf-expand>Expand area</button><button type="button" class="surface-key" data-project-shelf-close aria-label="Close working-material shelf">×</button></header><div class="project-shelf-body"></div>';
@@ -57,7 +57,7 @@
       button.innerHTML=icon(entry.folder?'i-folder':'i-note');const text=make('span',''),name=make('b','',entry.name),detail=make('small','',entry.detail);text.append(name,detail);button.append(text);list.append(button);
     }
     if(!entries.length)list.append(make('p','project-shelf-empty','This folder is empty.'));
-    body.append(list,make('p','project-shelf-hint','Drag a file to Stash or Assistant to keep its source.'));
+    body.append(list,make('p','project-shelf-hint','Select a file or drag it into Assistant.'));
   }
   function renderMore(state){
     const menu=make('div','project-shelf-menu');menu.setAttribute('role','menu');menu.setAttribute('aria-label',state.project?'Project actions':'Workspace actions');
@@ -66,6 +66,7 @@
   }
   function open(next,focus=true){
     if(!canReveal())return false;
+    if(next==='files'&&root.SpatialFolderDesktop)next='stash';
     if(next==='files'&&!allowed('folders')||next==='more'&&!allowed('projects'))return false;
     root.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'projects'}}));
     const state=context();returnFocus=document.activeElement;
@@ -73,7 +74,7 @@
     popup.hidden=false;popup.inert=false;popup.dataset.shelfView=next;
     popup.style.setProperty('--project-accent',state.project?.accent||state.profile.accent);popup.style.setProperty('--workspace-accent',state.profile.accent);
     popup.querySelector('#projectShelfContext').textContent=state.label+' · '+(state.project?'Project':'Workspace');
-    popup.querySelector('#projectShelfTitle').textContent=next==='stash'?'Stash':next==='files'?'Files':'Actions';
+    popup.querySelector('#projectShelfTitle').textContent=next==='stash'?'Files':next==='files'?'Files':'Actions';
     if(next==='stash'){if(host.parentElement!==body)body.replaceChildren(host);memory.render();}else{body.replaceChildren();if(next==='files')renderFiles(state);else renderMore(state);}
     rail.querySelectorAll('[data-project-shelf]').forEach(button=>button.setAttribute('aria-expanded',String(button.dataset.projectShelf===next||next==='stash'&&button.dataset.projectShelf==='note')));
     prepareMaterialSurfaces(popup);prepareControlSemantics(popup);place();
@@ -82,10 +83,10 @@
   }
   function render(){
     const state=context();if(view&&(!canReveal()||openedScope!==state.key||document.body.classList.contains('universal-search-open')||document.body.classList.contains('project-editor-open')||document.body.classList.contains('package-open')))close();
-    rail.hidden=!allowed('stash');rail.querySelector('[data-project-shelf="files"]').hidden=!allowed('folders');rail.querySelector('[data-project-shelf="more"]').hidden=!allowed('projects');
+    rail.hidden=!allowed('stash');rail.querySelector('[data-project-shelf="files"]').hidden=Boolean(root.SpatialFolderDesktop)||!allowed('folders');rail.querySelector('[data-project-shelf="more"]').hidden=!allowed('projects');
     rail.querySelector('.project-material-context').textContent=state.label;rail.querySelector('.project-material-context').title=state.label+' · '+(state.project?'Project':'Workspace');
-    const items=memory.items(),pins=items.filter(item=>item.pinned);rail.querySelector('.project-material-stash small').textContent=String(items.length);
-    rail.querySelector('[data-project-shelf="stash"]').setAttribute('aria-label','Open '+state.label+' Stash · '+items.length+' items');
+    const items=memory.items(),pins=items.filter(item=>item.pinned).concat(root.SpatialFolderDesktop?.pinnedItems()||[]),folderCount=root.SpatialFolderDesktop?.rows().length??items.length;rail.querySelector('.project-material-stash small').textContent=String(folderCount);
+    rail.querySelector('[data-project-shelf="stash"]').setAttribute('aria-label','Open '+state.label+' files · '+folderCount+' items');
     const next=JSON.stringify([state.key,pins.map(item=>[item.id,item.title,item.updated,item.source?.address,item.attachment?.kind])]);
     if(signature!==next){signature=next;pinned.replaceChildren();
       if(pins.length)pinned.append(make('small','project-material-pinned-label','Pinned'));
@@ -95,7 +96,7 @@
   }
   function schedule(){if(!pending)pending=requestAnimationFrame(()=>{pending=0;render();});}
   rail.addEventListener('click',event=>{
-    const item=event.target.closest('[data-project-shelf-item]');if(item){memory.revealItem(item.dataset.projectShelfItem,scope());return;}
+    const item=event.target.closest('[data-project-shelf-item]');if(item){if(item.dataset.projectShelfItem.startsWith('folder-file:'))root.SpatialFolderDesktop?.revealFile(item.dataset.projectShelfItem.slice(12));else memory.revealItem(item.dataset.projectShelfItem,scope());return;}
     const button=event.target.closest('[data-project-shelf]');if(!button)return;
     const next=button.dataset.projectShelf;if(next==='note'){if(open('stash'))host.querySelector('[data-memory-action="add"]').click();return;}
     if(view===next)close(true);else open(next);
@@ -115,8 +116,8 @@
   });
   function startDrag(event){
     const pinnedItem=event.target.closest('[data-project-shelf-item]'),file=event.target.closest('[data-project-shelf-path]');if(!event.dataTransfer||!pinnedItem&&!file)return;
-    const state=context(),item=pinnedItem&&memory.itemFor(pinnedItem.dataset.projectShelfItem);
-    const value=item?memory.contextFor(item):{title:file.dataset.projectShelfFile,address:file.dataset.projectShelfPath,workspace:activeWorkspace,project:state.project?desktopPages.column(activeWorkspace):null,kind:file.dataset.projectShelfFolder==='true'?'folder':'file',source:{label:state.project?'Project files':'Workspace files',address:file.dataset.projectShelfPath,workspace:activeWorkspace,project:state.project?desktopPages.column(activeWorkspace):null}};
+    const state=context(),item=pinnedItem&&(pinnedItem.dataset.projectShelfItem.startsWith('folder-file:')?root.SpatialFolderDesktop?.fileContext(pinnedItem.dataset.projectShelfItem.slice(12)):memory.itemFor(pinnedItem.dataset.projectShelfItem));
+    const value=item?(item.scope?memory.contextFor(item):item):{title:file.dataset.projectShelfFile,address:file.dataset.projectShelfPath,workspace:activeWorkspace,project:state.project?desktopPages.column(activeWorkspace):null,kind:file.dataset.projectShelfFolder==='true'?'folder':'file',source:{label:state.project?'Project files':'Workspace files',address:file.dataset.projectShelfPath,workspace:activeWorkspace,project:state.project?desktopPages.column(activeWorkspace):null}};
     event.dataTransfer.effectAllowed='copy';event.dataTransfer.setData(SpatialAIContext.MIME,JSON.stringify(value));event.dataTransfer.setData('text/plain',value.address||value.text||value.title);if(/^https?:/i.test(value.address||''))event.dataTransfer.setData('text/uri-list',value.address);
   }
   rail.addEventListener('dragstart',startDrag);popup.addEventListener('dragstart',startDrag);

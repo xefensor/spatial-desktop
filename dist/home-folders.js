@@ -42,7 +42,8 @@
       return {...file, path: join(directory, name)};
     }
     load(saved);
-    return {load, ensure, list, add, snapshot: () => ({directories: [...directories], files: files.map(file => ({...file}))})};
+    function update(directory,name,patch={}) { const file=files.find(file=>file.directory===directory&&file.name===name);if(!file)return null;if(typeof patch.content==='string')file.content=patch.content.slice(0,12000);return {...file}; }
+    return {load, ensure, list, add, update, snapshot: () => ({directories: [...directories], files: files.map(file => ({...file}))})};
   }
   const api = {standard, home, folder, downloadDestination, create};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

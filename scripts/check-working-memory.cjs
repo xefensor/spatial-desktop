@@ -78,8 +78,8 @@ const section=(from,to)=>source.slice(source.indexOf(from),source.indexOf(to,sou
   const context={host,rail,railEntry,area:{hidden:false},allowed:()=>true,scope:()=>destination,ownerFor:()=>({root:'/home/work/Launch'}),F:{folder:owner=>owner.root+'/Stash'},projectSpaces:{launch:{name:'Launch <review>'}},workspaceProfiles:{work:{label:'Work'}},dropHint:hint,dropTitle:title,dropDetail:detail,dropPosition:null,SpatialAIContext:require('../dist/ai-context.js'),window:{innerWidth:1200,innerHeight:800,addEventListener(type,fn){listen(globalEvents,type,fn);}},document:{addEventListener(type,fn){listen(globalEvents,type,fn);}}};
   vm.createContext(context);vm.runInContext(section('function label(','  function feedback('),context);vm.runInContext(section('  const acceptsDrop=','  async function keepContext('),context);
   let prevented=false;const event={target:host,clientX:1190,clientY:780,preventDefault(){prevented=true;},dataTransfer:{types:['text/plain'],dropEffect:''}};
-  events.dragover[0](event);assert(prevented);assert.equal(title.textContent,'Save to Launch <review> Stash');assert.equal(title.innerHTML,undefined,'Project names are plain text');assert.equal(detail.textContent,'/home/work/Launch/Stash');assert.equal(hint.style.left,'912px');
-  destination=M.scope('work');events.dragover[0](event);assert.equal(title.textContent,'Save to Work workspace Stash');
+  events.dragover[0](event);assert(prevented);assert.equal(title.textContent,'Copy into Launch <review> folder');assert.equal(title.innerHTML,undefined,'Project names are plain text');assert.equal(detail.textContent,'/home/work/Launch/Stash');assert.equal(hint.style.left,'912px');
+  destination=M.scope('work');events.dragover[0](event);assert.equal(title.textContent,'Copy into Work workspace folder');
   events.dragleave[0]({relatedTarget:{}});assert(hint.hidden);assert(!rail.classes.has('is-drop-target'));
   for(const [type,event] of [['dragover',{target:{}}],['drop',{}],['dragend',{}],['pointercancel',{}],['blur',{}],['keydown',{key:'Escape'}]]){context.showDropTarget({clientX:50,clientY:50});globalEvents[type].forEach(fn=>fn(event));assert(hint.hidden,type+' clears the Stash hint');}
   prevented=false;events.dragover[0]({...event,target:{closest:()=>({})}});assert.equal(prevented,false);assert(hint.hidden,'Dropping over a Stash editor does not offer to create an attachment');
@@ -121,8 +121,8 @@ const noteFile={id:'saved-note',scope:project,kind:'item',title:'Review',text:'K
 const linkFile={id:'saved-link',title:'Reference',resourceType:'web',text:'Navigation reference',source:{address:'https://example.org/page?x=1#intro'}};
 const audioFile={id:'saved-audio',title:'Theme',text:'Music study',source:{},attachment};
 assert.equal(F.materialize(stashProject,[noteFile,linkFile,audioFile]),true);
-assert.equal(F.folder(stashProject),'/home/demo/Projects/My project/Stash');
-assert.deepEqual(stashProject.files,[['Stash','Saved notes, files and media','folder']]);
+assert.equal(F.folder(stashProject),'/home/demo/Projects/My project');
+assert.deepEqual(stashProject.files,[],'Saved materials are files in the project folder');
 assert.equal(F.list(stashProject).find(file=>file.id==='saved-note').content,noteFile.text);
 assert.match(F.list(stashProject).find(file=>file.id==='saved-link').content,/\[InternetShortcut\]\nURL=https:\/\/example.org\/page\?x=1#intro/);
 const projectRoundtrip=JSON.parse(JSON.stringify(stashProject));assert.deepEqual(projectRoundtrip,stashProject);
@@ -155,11 +155,11 @@ vm.runInContext(section('function ownerAtFolder(','  function openSavedFile('),o
 owners.key=workspace;
 const workOwner=vm.runInContext('ownerFor(key)',owners);
 F.materialize(workOwner,mediaReload.items(workspace));
-assert.equal(F.folder(workOwner),'/home/demo/Workspaces/work/Stash');
+assert.equal(F.folder(workOwner),'/home/demo/Workspaces/work');
 owners.item=mediaReload.get(image.id);
-assert.equal(vm.runInContext('savedItem(item).path',owners),'/home/demo/Workspaces/work/Stash/My image.png');
+assert.equal(vm.runInContext('savedItem(item).path',owners),'/home/demo/Workspaces/work/My image.png');
 assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/work/Stash')[0][0]",owners),'My image.png');
-assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/work').at(-1)[0]",owners),'Stash');
+assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/work').at(-1)[0]",owners),'My image.png');
 assert.equal(vm.runInContext("fileRows('/home/demo/Workspaces/school/Stash').length",owners),0);
 mediaReload.remove(image.id);F.materialize(workOwner,mediaReload.items(workspace));
 assert.equal(F.list(workOwner).length,0);
@@ -169,7 +169,7 @@ const appFiles=fs.readFileSync(require('node:path').join(__dirname,'../dist/app-
 const fileContext={workspaceProfiles:owners.workspaceProfiles,projectSpaces:owners.projectSpaces,frameFor:()=>({}),SpatialHomeFolders:require('../dist/home-folders.js'),SpatialMemoryDesktop:{fileRows:path=>owners.fileRows(path)},workspaceDownloads:{snapshot:()=>({directories:[]})},fileLocationRows:()=>[]};
 vm.createContext(fileContext);
 vm.runInContext(appFiles.slice(appFiles.indexOf('function appFileRows('),appFiles.indexOf('function ',appFiles.indexOf('function appFileRows(')+10)),fileContext);
-assert(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work').some(row=>row[0]==='Stash')",fileContext),'The enhanced Dolphin Home renderer includes workspace Stash');
+assert(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work').some(row=>row[0]==='My image.png')",fileContext),'The enhanced Dolphin Home renderer includes workspace Stash');
 assert.equal(vm.runInContext("appFileRows('files','/home/demo/Workspaces/work/Stash')[0][0]",fileContext),'My image.png');
 
 // A file upload can complete after the user switches workspace. The captured

@@ -6,7 +6,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const standard=['Desktop','Documents','Downloads','Music','Pictures','Videos','Templates','Public'];
-  const primary=new Set(['Documents','Downloads','Desktop','Projects','Stash']);
+  const primary=new Set(['Documents','Downloads','Desktop','Projects']);
   const text=value=>typeof value==='string'?value:'';
   function path(value){
     if(typeof value!=='string'||!value.startsWith('/')||/[\x00-\x1f]/.test(value))return '';
@@ -55,7 +55,7 @@
     }
     if(project)add({label:project.name||column,detail:'Project folder',target:projectRoot,folder:true,owner});
     add({label:(profile.label||workspace)+' Home',detail:'Workspace Home',target:home,folder:true});
-    for(const name of ['Documents','Downloads','Desktop','Projects','Stash'])add({label:name,detail:'Workspace folder',target:join(home,name),folder:true});
+    for(const name of ['Documents','Downloads','Desktop','Projects'])add({label:name,detail:'Workspace folder',target:join(home,name),folder:true});
     for(const name of standard.filter(name=>!primary.has(name)))add({label:name,detail:'Workspace folder',target:join(home,name),folder:true,searchOnly:true});
     if(project){
       row(['.spatial-project.toml','Project settings','config'],projectRoot,owner);
@@ -87,7 +87,7 @@
     }
     if(typeof stashRows==='function'){
       for(const [base,entryOwner] of [[home,'workspace'],...(project?[[projectRoot,owner]]:[])]){
-        const directory=join(base,'Stash');let entries;
+        const directory=base;let entries;
         try{entries=stashRows(directory);}catch{continue;}
         for(const entry of Array.isArray(entries)?entries:[])row(entry,directory,entryOwner);
       }

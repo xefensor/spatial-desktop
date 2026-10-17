@@ -88,7 +88,7 @@ const shelf=name=>nav.querySelector('[data-project-shelf="'+name+'"]');
 const clickAction=action=>popup.querySelector('[data-project-shelf-action="'+action+'"]').click();
 const scope=()=>context.SpatialWorkingMemory.scope(context.activeWorkspace,context.projectSpaces[context.column]?context.column:null);
 assert(rail&&nav&&popup.hidden&&popup.inert);assert.equal(nav.querySelector('.project-material-context').textContent,'Website');
-assert.equal(nav.querySelectorAll('[data-project-shelf-item]').length,1);assert.equal(shelf('stash').getAttribute('aria-label'),'Open Website Stash · 2 items');
+assert.equal(nav.querySelectorAll('[data-project-shelf-item]').length,1);assert.equal(shelf('stash').getAttribute('aria-label'),'Open Website files · 2 items');
 const dockSnapshot=JSON.stringify(context.dockState),areaSnapshot=JSON.stringify(area.dataset);
 assert(rail.open('stash'));flush();assert.equal(host.parentElement,popupBody);assert.equal(rail.stashTarget(),popupBody);assert.equal(doc.activeElement,addButton);assert(!popup.hidden&&!popup.inert);
 assert.equal(JSON.stringify(context.dockState),dockSnapshot);assert.equal(JSON.stringify(area.dataset),areaSnapshot,'Opening Stash keeps rail and dock geometry unchanged');

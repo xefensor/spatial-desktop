@@ -1,0 +1,40 @@
+/* The same acrylic folder holds ordinary files, notes, sources and previews. */
+[data-area-window="projects"] .project-root-module,[data-area-window="projects"] #projectLibraryList{display:none!important}
+[data-area-window="projects"] #projectSpaceContent,[data-area-window="projects"] #projectClosedState{padding:0;gap:0}
+.interactive-folder{min-width:0;width:100%;padding:0}
+.interactive-folder .memory-shelf{border:0;padding:12px;box-shadow:none;background:transparent}
+.interactive-folder .memory-scope{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:10px/1.5 ui-monospace,monospace;opacity:.7;margin:5px 0}
+.folder-navigation{display:flex;align-items:center;gap:5px;margin:7px 0 10px;min-width:0}
+.folder-navigation>button{flex:0 0 26px;width:26px;height:26px;padding:5px}
+.folder-navigation>div{display:flex;align-items:center;gap:5px;overflow-x:auto;min-width:0;scrollbar-width:thin}
+.folder-navigation>div button{flex:0 0 auto;border:0;background:transparent;color:var(--text);font:inherit;font-size:11px;padding:4px 2px;cursor:pointer}
+.folder-navigation>div button[aria-current]{color:var(--project-accent,var(--workspace-accent));font-weight:650}
+.folder-navigation svg{width:15px;height:15px}
+.interactive-folder .memory-toolbar{flex-wrap:wrap;gap:8px;margin-block:8px 12px}
+.interactive-folder .memory-browse{display:flex;gap:6px;min-width:0}
+.interactive-folder .memory-browse label{flex:1 1 0;min-width:0}
+.interactive-folder .memory-browse input{width:100%;min-width:0}
+.interactive-folder .memory-browse select{flex:0 0 auto;max-width:90px}
+.interactive-folder .memory-items{gap:15px}
+.folder-group{display:flex;flex-direction:column;gap:5px;min-width:0}
+.folder-group>h3{margin:8px 0 3px;font:600 10px/1.4 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim)}
+.folder-group:first-child>h3{margin-top:4px}
+.folder-entry{min-width:0}
+.folder-directory>button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 8px;text-align:left;color:var(--text);background:#ffffff04;border:0;border-bottom:1px solid #ffffff0d;cursor:pointer}
+.folder-directory>button:hover{background:#ffffff0c}
+.folder-directory>button>svg{width:20px;height:20px;flex:0 0 20px;color:var(--project-accent,var(--workspace-accent))}
+.folder-directory>button>svg:last-child{width:13px;height:13px;flex-basis:13px;opacity:.5}
+.folder-directory>button>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.folder-directory b{font-size:12px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder-directory small,.folder-file small{font-size:10px;color:var(--text-dim)}
+.interactive-folder .memory-item-summary b{overflow-wrap:anywhere;font-size:12px;line-height:1.4}
+.folder-file-actions{display:flex;flex-wrap:wrap;gap:10px;padding-top:8px}
+.folder-preview{font-size:11px;color:var(--text-dim)}
+.folder-preview pre{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:var(--text);font:11px/1.6 ui-monospace,monospace}
+.folder-preview img{max-width:100%;max-height:250px;object-fit:contain}
+.folder-preview audio{width:100%}
+.folder-preview iframe{width:100%;height:260px;border:0;background:#fff}
+.folder-preview textarea{box-sizing:border-box;width:100%;min-height:120px;margin:8px 0}
+.interactive-folder .memory-item-body{min-width:0}
+.folder-navigation button:focus-visible,.folder-entry button:focus-visible{outline:2px solid var(--workspace-accent);outline-offset:1px}
+.folder-group[hidden],.folder-entry[hidden]{display:none!important}

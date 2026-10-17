@@ -58,7 +58,7 @@ const context={document:doc,SpatialEmptyDesktopResources:Resources,SpatialHomeFo
   activeWorkspace:'work',appInfo:{browser:{label:'Firefox',primary:'#f73'},notes:{label:'Žlutý poznámkovník',primary:'#fb5'},dolphin:{label:'File Browser',primary:'#39f'},'parked-files':{base:'dolphin',label:'File Browser · parked'},steam:{label:'Steam',workspace:'gaming',singleInstance:true}},
   appState:{browser:'closed',notes:'closed',dolphin:'closed','parked-files':'minimized',steam:'closed'},
   SpatialGuide:{model:{active:()=>guideActive,allows:feature=>feature!=='folders'||guideFolders}},SpatialDemoSuper:{held:()=>superHeld},
-  SpatialMemoryDesktop:{openFile:()=>false,fileRows:path=>path==='/home/work/Stash'?[['workspace-note.md','Saved workspace note','document']]:path==='/projects/site/Stash'?[['project-note.md','Saved project note','document']]:null},
+  SpatialMemoryDesktop:{openFile:()=>false,fileRows:path=>path==='/home/work'?[['workspace-note.md','Saved workspace note','document']]:path==='/projects/site'?[['project-note.md','Saved project note','document']]:null},
   $:(selector,scope)=>scope?scope.querySelector(selector):nodes[selector]||null,$$:()=>[],frameFor,appWindowModel:id=>models.get(id),
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;'),icon:id=>'<svg>'+id+'</svg>',appArt:id=>'<svg>'+id+'</svg>',
   desktopNavigationBlocked:()=>blocked,launchAppHere:(id,shift)=>launched.push([id,shift]),

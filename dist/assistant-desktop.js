@@ -72,7 +72,7 @@
   strip.addEventListener('click',event=>{if(event.target.closest('[data-direct-remove]')){A.removeInputs(A.current().items.map(i=>i.id));drawStrip();return;}A.toggleInputs();drawStrip();});
   function folders(workspace){
     const home=workspaceProfiles[workspace].home;
-    return [...new Set([home,...SpatialHomeFolders.standard.map(f=>home+'/'+f),home+'/Stash',...Object.values(projectSpaces).filter(p=>p.originWorkspace===workspace).flatMap(p=>[p.root,p.root+'/Stash',...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces));
+    return [...new Set([home,...SpatialHomeFolders.standard.map(f=>home+'/'+f),...Object.values(projectSpaces).filter(p=>p.originWorkspace===workspace).flatMap(p=>[p.root,...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces));
   }
   function cwd(){return local(lastFrame)&&(appInfo[lastFrame.dataset.appFrame].base||lastFrame.dataset.appFrame)==='dolphin'?lastFrame.dataset.fileLocation:A.workingFolder();}
   function resolveFolder(value,base,workspace){const raw=String(value),first=raw.split('/')[0];if(SpatialHomeFolders.standard.includes(first))base=workspaceProfiles[workspace].home;const result=T.chooseFolder(value,base,folders(workspace));if(!T.allowed(result,workspace,workspaceProfiles,projectSpaces))throw Error('Choose a folder in the current Workspace. Other Workspaces stay separate.');return result;}
