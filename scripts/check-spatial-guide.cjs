@@ -564,3 +564,8 @@ assert(practiceMeeting.title.includes('Guide example'));assert.equal(meetingSave
 assert.equal(meetingCtx.addPracticeMeeting(1760000000000).id,practiceMeeting.id);assert.equal(meetingSaves,1,'A reload does not duplicate the meeting');
 meetingCtx.SpatialGuide.model.leave('completed');assert.equal(meetingCtx.addPracticeMeeting(1760000000001),null,'Normal desktop calendars never receive a guide meeting');
 console.log('Mission Guide passed: short copy, chapter order, one current action, own-item feedback, legacy progress and practice-only Timeline example.');
+
+// Fresh practice prepares immediately while parsing scripts. Its presentation
+// adapter must exist before Guide bootstrap can request fullscreen.
+const bootHtml=fs.readFileSync(require.resolve("../dist/index.html"),"utf8");
+assert(bootHtml.indexOf('src="virtual-screen.js')<bootHtml.indexOf('src="guide-desktop.js'),"Gamescope loads before Guide practice initializes");
