@@ -60,7 +60,11 @@
       });
       /* Settings owns window shortcuts. Keep radio arrows and other native
          field navigation from reaching the desktop shortcut handler. */
-      host.addEventListener('keydown',event=>event.stopPropagation());
+      host.addEventListener('keydown',event=>{
+        // Find belongs to the enclosing Settings app on every category page.
+        if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='f')return;
+        event.stopPropagation();
+      });
     }
     mounted.add(editor);
     if(slot!==undefined&&slot!==null)editor.selectedSlot=slot;

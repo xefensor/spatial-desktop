@@ -34,6 +34,10 @@ async function displayChecks(){
   const h=displayHarness(),first=h.host(),second=h.host();
   h.api.mount(first,2);h.api.mount(first,2);h.api.mount(second,1);
   assert.equal(first.events.click.length,1);assert.equal(first.events.change.length,1,'Repeated refresh never doubles role actions');
+  let blocked=false;first.events.keydown[0]({key:'f',ctrlKey:true,stopPropagation(){blocked=true;}});
+  assert.equal(blocked,false,'Find can reach the enclosing Settings search from Displays');
+  first.events.keydown[0]({key:'ArrowRight',stopPropagation(){blocked=true;}});
+  assert.equal(blocked,true,'Radio arrows stay inside the embedded display editor');
   assert.equal(first.querySelector('legend').textContent,'Use Display 2 as');assert.equal(second.querySelector('legend').textContent,'Use Display 1 as');
   assert.match(first.querySelector('.display-role-options').innerHTML,/aria-label="Assistant on Display 2"/);
   assert.match(second.querySelector('.display-role-options').innerHTML,/value="side"[^>]* disabled/,'The Main workspace keeps one user work display');
