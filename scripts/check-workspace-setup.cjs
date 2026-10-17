@@ -9,7 +9,13 @@ const Home = require('../dist/home-folders.js');
 const source = fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
 const profiles={general:{home:'/home/demo'}};
 assert.equal(Setup.createProfile('  ',profiles),null);
+const originalFavorites=[['notes','My notes'],['browser','Browser']];
+const previous={favorites:originalFavorites};Setup.includeSettingsFavorite(previous);Setup.includeSettingsFavorite(previous);
+assert.equal(previous.favorites,originalFavorites,'Adding Settings preserves the existing favorite list');
+assert.deepEqual(previous.favorites,[['notes','My notes'],['browser','Browser'],['settings','Settings']],'Migration appends Settings once without reordering or replacing favorites');
+assert.deepEqual(Setup.includeSettingsFavorite({}).favorites,[['settings','Settings']]);
 const first=Setup.createProfile('My study / Práce',profiles);profiles[first.id]=first.profile;
+assert(first.profile.favorites.some(([id])=>id==='settings'),'New Workspaces expose Settings in Quick launch');
 const second=Setup.createProfile('My study / Práce',profiles);assert.notEqual(first.id,second.id);assert.notEqual(first.profile.home,second.profile.home);
 const reserved=Setup.createProfile('__proto__',profiles);assert(reserved.id.startsWith('workspace-'));assert.equal(Object.getPrototypeOf(profiles),Object.prototype);
 for (const name of Home.standard) assert(first.profile.folders.some(([folder])=>folder===name),name);
@@ -23,10 +29,15 @@ vm.runInContext(source.slice(source.indexOf('function createWorkspaceFromEditor(
 const id=created.createWorkspaceFromEditor('My music');assert.equal(created.activeWorkspace,id);
 assert.equal(states[id].notes,'closed');assert.equal(states[id].dolphin,'closed');assert.equal(openProjects[id].length,0);assert.equal(contents[id].note,'');
 assert.equal(JSON.parse(saved[Setup.profilesKey])[id].label,'My music');
+const storedProfiles=JSON.parse(saved[Setup.profilesKey]);storedProfiles[id].favorites=[['notes','Saved notes'],['dolphin','Files']];saved[Setup.profilesKey]=JSON.stringify(storedProfiles);
 // Load the production profile initializer after a reload, rather than testing only the helper.
 const reloaded=vm.createContext({desktopPreset:'clean',workspaceProfiles:{general:{home:'/home/demo'},school:{}},SpatialWorkspaceSetup:Setup,desktopStorage:{getItem:()=>saved[Setup.profilesKey]}});
 vm.runInContext(source.slice(source.indexOf("if (desktopPreset === 'clean') Object.keys(workspaceProfiles)"),source.indexOf('function renderWorkspaceTabs(')),reloaded);
 assert.equal(reloaded.workspaceProfiles[id].home,profiles[id].home);assert.equal(reloaded.workspaceProfiles[id].accent,profiles[id].accent);assert(!reloaded.workspaceProfiles.school);
+assert.deepEqual(Array.from(reloaded.workspaceProfiles[id].favorites,row=>Array.from(row)),[['notes','Saved notes'],['dolphin','Files']],'Reload preserves saved favorite content and order');
+const migration=vm.createContext({workspaceProfiles:{old:{folders:[['Documents','Files','folder']],favorites:[['notes','Existing note favorite']]}},SpatialWorkspaceSetup:Setup,SpatialHomeFolders:Home});
+vm.runInContext(source.slice(source.indexOf('Object.values(workspaceProfiles).forEach(profile => {'),source.indexOf('const workspaceDownloads =')),migration);
+assert.deepEqual(Array.from(migration.workspaceProfiles.old.favorites,row=>Array.from(row)),[['notes','Existing note favorite'],['settings','Settings']],'Existing demo and saved profiles receive the same Settings favorite migration');
 // Real project editor path: creation is in the Area, without inerting the desktop or trapping focus.
 const classes=new Set(),attributes={};let parent,expanded=false,focused=false;
 const dialog={hidden:true,inert:true,classList:{add:v=>classes.add(v),remove:v=>classes.delete(v),contains:v=>classes.has(v),toggle:(v,on)=>on?classes.add(v):classes.delete(v)},setAttribute:(key,value)=>{attributes[key]=value;}};

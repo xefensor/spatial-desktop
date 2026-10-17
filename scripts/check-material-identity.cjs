@@ -9,7 +9,8 @@ assert.equal(A.label('Elisa · 2'), 'Music Player · 2');
 assert.equal(A.label('File Browser Dolphin · 2'), 'File Browser · 2');
 assert.equal(A.label('My research note'), 'My research note', 'User documents retain their titles');
 const html = read('index.html');
-const primary = {dolphin:'Dolphin',elisa:'Elisa',browser:'Firefox',terminal:'Konsole',notes:'Notes'};
+assert.equal(A.label('System Settings'), 'Settings', 'The previous Settings name follows the actual app');
+const primary = {settings:'Settings',dolphin:'Dolphin',elisa:'Elisa',browser:'Firefox',terminal:'Konsole',notes:'Notes'};
 const launchers = [...html.matchAll(/<button class="launcher-app"[^>]*data-(open|launch)-app="([^"]+)"[\s\S]*?<span>([^<>]+)<\/span><\/button>/g)];
 assert.equal(launchers.length,35,'Every catalog application is checked');
 for (const [,action,id,label] of launchers) {

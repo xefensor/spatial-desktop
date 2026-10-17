@@ -16,7 +16,7 @@
   const grid = document.createElement('div'); grid.className = 'apps-quick-launch-grid';
   nav.append(heading, scope, grid); region.insertBefore(nav, rack);
   let signature = '';
-  const allowed = () => !root.SpatialGuide?.model.active() || SpatialGuide.model.allows('apps');
+  const allowed = name => !root.SpatialGuide?.model.active() || SpatialGuide.model.allows(name === 'settings' ? 'systems' : 'apps');
   const available = name => Boolean(appInfo[name] && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace));
   function names() {
     const profile = workspaceProfiles[activeWorkspace];
@@ -24,6 +24,7 @@
     return [...new Set(favorites.length ? favorites : (profile?.rack || []).filter(available))];
   }
   function actionFor(name) {
+    if (name === 'settings') return 'open';
     const state = appState[name], live = state === 'open' || state === 'minimized';
     if (appInfo[name].singleInstance && live) return 'return';
     // A launcher starts new work; only a parked card restores existing work.
@@ -55,9 +56,11 @@
   }
   nav.addEventListener('click', event => {
     const button = event.target.closest('[data-quick-launch-app]');
-    if (!button || !nav.contains(button) || nav.hidden || area.hidden || area.inert || $('.desktop-shell').inert || desktopNavigationBlocked() || !allowed()) return;
+    if (!button || !nav.contains(button) || nav.hidden || area.hidden || area.inert || $('.desktop-shell').inert || desktopNavigationBlocked()) return;
     const name = button.dataset.quickLaunchApp;
-    if (!available(name) || !names().includes(name)) return;
+    if (!available(name) || !names().includes(name) || !allowed(name)) return;
+    // Settings keeps one window per Workspace and brings it to this desktop.
+    if (name === 'settings') { launchAppHere(name); return; }
     const action = actionFor(name);
     if (appInfo[name].singleInstance && action === 'return') {
       const bond = desktopPages.fullscreenBond?.(activeWorkspace, name);

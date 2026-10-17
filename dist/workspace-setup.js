@@ -3,6 +3,12 @@
   'use strict';
   const presetKey = 'spatial-desktop-preset-v1', profilesKey = 'spatial-custom-workspaces-v1';
   const sessionKeys = ['spatial-active-project-v1','spatial-active-workspace','spatial-desktop-layout-v3','spatial-desktop-pages-v1','spatial-dock-layout-v2','spatial-downloads-v1','spatial-layout-mode-v1','spatial-note-draft-v1','spatial-open-projects-v1','spatial-project-content-v1','spatial-project-spaces-v2','spatial-project-window-sessions-v1','spatial-split-layouts-v1','spatial-workspace-app-states-v1','spatial-workspace-area-contents-v1','spatial-workspace-area-layouts-v1','spatial-workspace-display-assignments-v1','spatial-workspace-project-states-v1','spatial-workspace-window-layouts-v1','spatial-zone-layout-v1','spatial-independent-sessions-v1','spatial-app-windows-v1','spatial-background-services-v1','spatial-demo-scenes-v1','spatial-working-memory-v1','spatial-item-history-v1','spatial-item-history-ui-v1','spatial-timeline-session-notes-v1','spatial-timeline-grouping-v1','spatial-workspace-timeline-v1','spatial-timeline-demo-v1','spatial-workspace-planner-v1','spatial-timeline-planner-demo-v1','spatial-overview-section-v1','spatial-overview-section-v2','spatial-workspace-notifications-v1',profilesKey];
+  function includeSettingsFavorite(profile) {
+    const favorites = Array.isArray(profile.favorites) ? profile.favorites : [];
+    if (!favorites.some(row => Array.isArray(row) && row[0] === 'settings')) favorites.push(['settings','Settings']);
+    profile.favorites = favorites;
+    return profile;
+  }
   function createProfile(name, profiles) {
     const label = String(name || '').trim().slice(0,48);
     if (!label) return null;
@@ -13,7 +19,7 @@
     return {id,profile:{custom:true,label,subtitle:'Your workspace',icon:'i-grid',accent,home:'/home/demo/Workspaces/'+id,
       context:label+' files and tools',meta:'Separate windows and Home folders',
       folders:['Desktop','Documents','Downloads','Pictures','Videos','Music','Templates','Public','Projects'].map(folder=>[folder,'Workspace folder','folder']).concat([['.spatial-workspace.toml','Editable workspace settings','config']]),
-      rack:['dolphin','elisa','browser','terminal','notes'],favorites:[['dolphin','Dolphin'],['browser','Firefox'],['notes','Notes']],agenda:[label,'No upcoming events','Your calendar']}};
+      rack:['dolphin','elisa','browser','terminal','notes'],favorites:[['dolphin','Dolphin'],['browser','Firefox'],['notes','Notes'],['settings','Settings']],agenda:[label,'No upcoming events','Your calendar']}};
   }
   function reset(storage,preset) {
     if (!['clean','demo'].includes(preset)) return false;
@@ -24,6 +30,6 @@
     storage.setItem(presetKey,preset); storage.setItem('spatial-active-workspace','general');
     return true;
   }
-  const api={presetKey,profilesKey,sessionKeys,createProfile,reset};
+  const api={presetKey,profilesKey,sessionKeys,includeSettingsFavorite,createProfile,reset};
   if(typeof module !== 'undefined' && module.exports) module.exports=api; else root.SpatialWorkspaceSetup=api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

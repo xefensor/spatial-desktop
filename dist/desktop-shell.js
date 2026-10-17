@@ -4999,7 +4999,8 @@ try {
   Object.entries(saved).forEach(([id, profile]) => {
     if (!/^workspace-[a-z0-9-]+$/.test(id) || !profile?.custom || typeof profile.label !== 'string') return;
     const created = SpatialWorkspaceSetup.createProfile(profile.label, {});
-    workspaceProfiles[id] = {...created.profile, accent:/^#[a-f0-9]{6}$/i.test(profile.accent) ? profile.accent : created.profile.accent, home:'/home/demo/Workspaces/'+id};
+    const favorites = Array.isArray(profile.favorites) ? profile.favorites.filter(row => Array.isArray(row) && typeof row[0] === 'string' && typeof row[1] === 'string').map(row => row.slice(0,2)) : created.profile.favorites;
+    workspaceProfiles[id] = {...created.profile, favorites, accent:/^#[a-f0-9]{6}$/i.test(profile.accent) ? profile.accent : created.profile.accent, home:'/home/demo/Workspaces/'+id};
   });
 } catch {}
 
@@ -5030,8 +5031,10 @@ function setWorkspaceCreateOpen(open) {
   if (open) { form.reset(); requestAnimationFrame(()=>$('#workspaceName').focus()); }
 }
 
+// Existing and new Workspaces expose Settings alongside their own favorites.
 // Every workspace exposes the same standard Home folders, alongside its extras.
 Object.values(workspaceProfiles).forEach(profile => {
+  SpatialWorkspaceSetup.includeSettingsFavorite(profile);
   const extras = profile.folders.filter(([name]) => !SpatialHomeFolders.standard.includes(name));
   profile.folders = [...SpatialHomeFolders.standard.map(name => [name, "Workspace folder", "folder"]), ...extras];
 });

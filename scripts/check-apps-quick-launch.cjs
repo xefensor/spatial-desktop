@@ -29,11 +29,12 @@ const context={
     general:{favorites:[['browser','Wrong alias'],['i-mail','Mail'],['notes','Notes'],['browser','Firefox'],['browser--1','Extra'],['steam','Steam']],rack:['notes','browser']},
     gaming:{favorites:[['steam','Steam'],['game','Fallout 4'],['browser','Firefox']],rack:['steam','game']},
     custom:{favorites:[['i-mail','Mail'],['missing','Unknown'],['steam','Steam']],rack:['notes','browser','notes','browser--1','missing','steam']},
+    preferences:{favorites:[['settings','System Settings']],rack:[]},
     empty:{favorites:[],rack:['i-mail','browser--1']}
   },
-  appInfo:{browser:{label:'Firefox',primary:'#ff7139'},notes:{label:'Note Editor',primary:'#ffb553'},'browser--1':{base:'browser',label:'Firefox'},steam:{label:'Steam',primary:'#79bfec',singleInstance:true,workspace:'gaming'},game:{label:'Fallout 4',primary:'#b8d59a',singleInstance:true,workspace:'gaming'}},
-  appState:{browser:'closed',notes:'closed',steam:'closed',game:'closed'},desktopNavigationBlocked:()=>false,
-  createAppInstance:name=>calls.push(['new',name]),openApp:name=>calls.push(['open',name]),
+  appInfo:{settings:{label:'Settings',primary:'#a483ff',singleInstance:true},browser:{label:'Firefox',primary:'#ff7139'},notes:{label:'Note Editor',primary:'#ffb553'},'browser--1':{base:'browser',label:'Firefox'},steam:{label:'Steam',primary:'#79bfec',singleInstance:true,workspace:'gaming'},game:{label:'Fallout 4',primary:'#b8d59a',singleInstance:true,workspace:'gaming'}},
+  appState:{settings:'closed',browser:'closed',notes:'closed',steam:'closed',game:'closed'},desktopNavigationBlocked:()=>false,
+  createAppInstance:name=>calls.push(['new',name]),openApp:name=>calls.push(['open',name]),launchAppHere:name=>calls.push(['launch-here',name]),
   changeDesktopPage(page,animate,column,fullscreen){calls.push(['go',page,animate,column,fullscreen]);context.desktopPages.select(context.activeWorkspace,column);context.desktopPages.go(context.activeWorkspace,page,column);}
 };
 vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/apps-quick-launch.js'),'utf8'),context);
@@ -101,6 +102,14 @@ context.SpatialGuide={model:{active:()=>true,allows:()=>false}};unchanged();
 context.SpatialGuide.model.allows=feature=>feature==='apps';click('browser');assert.deepEqual(calls.pop(),['new','browser'],'Guide apps gating permits only the real launch path when taught');
 context.SpatialGuide.model.active=()=>false;
 context.workspaceProfiles.gaming.favorites=[['steam','Steam']];unchanged();refresh();assert.deepEqual(ids(),['steam'],'Removed favorites cannot launch through stale controls');
+context.activeWorkspace='preferences';context.desktopPages.assign('preferences','settings',2,'old-project');context.desktopPages.select('preferences','workspace');context.appState.settings='minimized';refresh();
+assert.deepEqual(ids(),['settings'],'Settings is a runnable favorite in its own right');
+assert(button('settings').getAttribute('aria-label').includes('Open on this desktop'),'Settings describes its actual current-desktop behavior');
+let countBefore=calls.length;click('settings',true);assert.deepEqual(calls.slice(countBefore),[['launch-here','settings']],'Settings uses the ordinary current-desktop launch adapter without pre-navigation or duplicates');
+assert.equal(context.desktopPages.column('preferences'),'workspace');assert.equal(context.desktopPages.current('preferences'),0,'Opening Settings does not jump to its previous desktop');
+context.SpatialGuide={model:{active:()=>true,allows:feature=>feature==='apps'}};countBefore=calls.length;click('settings');assert.equal(calls.length,countBefore,'Settings follows the Guide system controls gate');
+context.SpatialGuide.model.allows=feature=>feature==='systems';click('settings');assert.deepEqual(calls.pop(),['launch-here','settings'],'The system lesson can open Settings through Apps');
+delete context.SpatialGuide;
 context.activeWorkspace='empty';refresh();assert(nav.hidden);assert.deepEqual(ids(),[],'Do not manufacture a generic launcher for an empty profile');
 const outside=new Element();outside.dataset.quickLaunchApp='browser';const count=calls.length;nav.listeners.click({target:outside});assert.equal(calls.length,count,'Only actual launchers inside this nav own its delegated action');
 
@@ -132,4 +141,4 @@ assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Rendering icons lea
 rackContext.appState.parked='open';rackContext.renderInstanceRack();
 assert(parkedRack.hidden);assert.equal(parkedRack.innerHTML,'','An entirely unparked desktop has no task icons in the Apps rail');
 assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Open windows retain their shortcut slots without requiring icons');
-console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, Guide/modal guards and parked-only rail rendering without shortcut renumbering.');
+console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, current-desktop Settings, Guide/modal guards and parked-only rail rendering without shortcut renumbering.');
