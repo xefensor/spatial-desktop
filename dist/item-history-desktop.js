@@ -43,8 +43,10 @@
   function tags(id){return Array.isArray(metadata[id]?.tags)?metadata[id].tags.filter(tag=>typeof tag==='string').slice(0,16):[];}
   function saveTags(id,value){
     const next=[...new Set(String(value).split(',').map(tag=>tag.trim().slice(0,40)).filter(Boolean))].slice(0,16);
+    if(JSON.stringify(next)===JSON.stringify(tags(id)))return;
     metadata[id]={tags:next,updated:Date.now()};try{desktopStorage.setItem(uiKey,JSON.stringify(metadata));queueDesktopStateBroadcast(0);}catch{showToast('Tags could not be saved.');}record(id,'tagged',{detail:next.length?'Tags: '+next.join(', '):'Tags cleared'});
   }
+  function flushTags(id){const input=document.querySelector('#workingMemory [data-item-tags="'+CSS.escape(id)+'"]');if(input)saveTags(id,input.value);}
   const sheet=document.createElement('dialog');sheet.className='item-history-dialog material-surface-glass';sheet.setAttribute('aria-label','Item history');document.body.append(sheet);
   let dialogItem='',returnFocus=null,dialogWorkspace='',objectUrls=[];
   function close(){sheet.close();objectUrls.forEach(url=>URL.revokeObjectURL(url));objectUrls=[];returnFocus?.isConnected&&returnFocus.focus({preventScroll:true});}
@@ -59,7 +61,7 @@
   const eventLabel={'capture':'Saved','indexed':'Existing item indexed','reference':'Added reference','version':'Content changed','edit':'Edited','copiedFrom':'Copied from source','removed-from-stash':'Removed from Stash','moved':'Moved','used-in-assistant':'Used in Assistant','assistant.use':'Used in Assistant','use':'Used in Assistant','tagged':'Tags changed','opened':'Opened','note':'Note'};
   function open(id,{versionId='',workspace=activeWorkspace}={}){
     if(workspace!==activeWorkspace||!accessible(id,workspace)){showToast('This item is outside the current Workspace.');return false;}
-    const item=model.get(id);if(!item)return false;dialogItem=id;
+    flushTags(id);const item=model.get(id);if(!item)return false;dialogItem=id;
     const entries=locations(id),parents=item.relations||[],versions=item.versions||[];
     display('<div class="history-body"><p class="history-kind">'+html(item.attachment?'Saved '+item.attachment.kind:item.text?'Saved text':item.address?'Source link · content not captured':'Saved item')+'</p>'+
       '<details open><summary>Origin</summary>'+facts(item.origin||item.source||{})+'</details>'+
@@ -126,7 +128,7 @@
   }
   facets.addEventListener('change',filter);facets.addEventListener('click',event=>{if(!event.target.closest('[data-history-reset]'))return;['app','type','date'].forEach(name=>facets.querySelector('[data-history-'+name+']').value='');filter();});
   host.addEventListener('input',event=>{if(event.target.matches('[data-memory-query]'))filter();});
-  host.addEventListener('focusout',event=>{if(event.target.matches('[data-item-tags]'))requestAnimationFrame(()=>SpatialMemoryDesktop.render(true));});
+  host.addEventListener('focusout',event=>{if(event.target.matches('[data-item-tags]')){saveTags(event.target.dataset.itemTags,event.target.value);requestAnimationFrame(()=>SpatialMemoryDesktop.render(true));}});
   host.addEventListener('change',event=>{if(event.target.matches('[data-item-tags]')){saveTags(event.target.dataset.itemTags,event.target.value);filter();}if(event.target.matches('[data-memory-filter]'))filter();});
   host.addEventListener('click',event=>{if(event.target.closest('[data-memory-action="clear-filter"]')){['app','type','date'].forEach(name=>facets.querySelector('[data-history-'+name+']').value='');filter();}});
   globalThis.SpatialItemHistoryDesktop={canonical,capture,hydrate,record,get,open,transfer,persist,snapshot:()=>({history:model.snapshot(),metadata}),merge(value){if(!value)return;syncing=true;model.merge(value.history||value);for(const [id,meta]of Object.entries(value.metadata||{})){if(Number(meta.updated)>Number(metadata[id]?.updated||0))metadata[id]=meta;}try{desktopStorage.setItem(uiKey,JSON.stringify(metadata));}catch{}persist();syncing=false;decorate();}};

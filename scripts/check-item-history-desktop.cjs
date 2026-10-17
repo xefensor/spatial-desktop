@@ -16,10 +16,11 @@ function historyHarness(savedStorage=storage){
   let submit;
   const form={elements:{method:{value:'copy'},destination:{value:M.scope('work','second')}},querySelector:selector=>selector.includes('status')?form.status:form.button,status:{textContent:''},button:{disabled:false},addEventListener(type,callback){if(type==='submit')submit=callback;}};
   const heading={},sheet={querySelector:selector=>selector==='form'?form:heading};
-  const context={SpatialItemHistory:{...H,create:saved=>H.create(saved,()=>time.value,'history-test')},readDesktopStorage:(key,fallback)=>savedStorage.has(key)?JSON.parse(savedStorage.get(key)):fallback,desktopStorage:{setItem:(key,value)=>savedStorage.set(key,value)},queueMicrotask:fn=>queued.push(fn),queueDesktopStateBroadcast(){},showToast:message=>messages.push(message),activeWorkspace:'work',projectSpaces:projects,workspaceProfiles:profiles,desktopPages:{column:()=> 'first'},appInfo:{browser:{label:'Firefox'},editor:{label:'Editor'}},escapeHtml:value=>String(value),SpatialMemoryDesktop:{allItems:()=>[]},sheet,dialogItem:'',dialogWorkspace:'work',open(){},decorate(){},openProjectNames:()=>['first','second'],display(){context.dialogWorkspace=context.activeWorkspace;},close(){context.closed=true;}};
+  const context={SpatialItemHistory:{...H,create:saved=>H.create(saved,()=>time.value,'history-test')},readDesktopStorage:(key,fallback)=>savedStorage.has(key)?JSON.parse(savedStorage.get(key)):fallback,desktopStorage:{setItem:(key,value)=>savedStorage.set(key,value)},queueMicrotask:fn=>queued.push(fn),queueDesktopStateBroadcast(){},showToast:message=>messages.push(message),activeWorkspace:'work',projectSpaces:projects,workspaceProfiles:profiles,desktopPages:{column:()=> 'first'},appInfo:{browser:{label:'Firefox'},editor:{label:'Editor'}},escapeHtml:value=>String(value),SpatialMemoryDesktop:{allItems:()=>[]},sheet,dialogItem:'',dialogWorkspace:'work',document:{querySelector:()=>null},CSS:{escape:value=>value},renderVersion(){},decorate(){},openProjectNames:()=>['first','second'],display(body){context.dialogWorkspace=context.activeWorkspace;context.lastDisplay=body;},close(){context.closed=true;}};
   vm.createContext(context);
   vm.runInContext(section(historySource,'  const H=','  const sheet='),context);
   vm.runInContext(section(historySource,'  function transfer(item){',"  sheet.addEventListener('click'"),context);
+  vm.runInContext(section(historySource,'  function facts(source){','  async function renderVersion('),context);
   vm.runInContext(section(historySource,'  globalThis.SpatialItemHistoryDesktop={','  allEntries().forEach'),context);
   vm.runInContext('globalThis.testHelpers={canonical,capture,hydrate,record,get,locations,tags,saveTags,persist};',context);
   return {context,api:context.SpatialItemHistoryDesktop,helpers:context.testHelpers,form,submit:()=>submit({preventDefault(){},currentTarget:form})};
@@ -36,7 +37,7 @@ vm.runInContext(section(memorySource,'  async function keepContext(','  function
 // same capture, hydration and transfer helpers used by browser interactions.
 vm.runInContext('function '+section(memorySource,'allItems(){',',removeEntry('),memoryContext);
 vm.runInContext('function '+section(memorySource,'removeEntry(id,key){',',itemFor,'),memoryContext);
-vm.runInContext('globalThis.testHelpers={itemsFor,itemFor,editItem,addItem,resourceItems,contextFor,keepContext,allItems,removeEntry};',memoryContext);
+vm.runInContext('globalThis.testHelpers={itemsFor,itemFor,editItem,addItem,resourceItems,contextFor,keepContext,allItems,removeEntry,savedItem};',memoryContext);
 const memory=memoryContext.testHelpers;
 history.context.SpatialMemoryDesktop=memory;
 function advance(){time.value+=1000;}
@@ -44,14 +45,14 @@ function rawNote(key,value){return memoryModel.add(key,value);}
 function latest(id){return history.api.get(id);}
 function switchWorkspace(workspace){history.context.activeWorkspace=workspace;memoryContext.activeWorkspace=workspace;}
 function verifyFocusedTags(){
-  const callbacks={},frames=[],fields=new Map(),key=M.scope('work');
+  const callbacks={},frames=[],fields=new Map(),committedTags=[],key=M.scope('work');
   let replacements=0,filterCalls=0;
-  const tagsInput={value:'important, typing',isConnected:true,matches:selector=>selector.includes('[data-item-tags]')};
+  const tagsInput={dataset:{itemTags:'render-item'},value:'important, typing',isConnected:true,matches:selector=>selector.includes('[data-item-tags]')};
   const target={prepend(){}},railEntry={},items=[{id:'render-item',scope:key,title:'Updated item',text:'Text just edited',source:{},updated:2}];
   const field=selector=>{if(!fields.has(selector))fields.set(selector,{});return fields.get(selector);};
   Object.defineProperty(field('.memory-items'),'innerHTML',{set(value){replacements++;tagsInput.isConnected=false;this.markup=value;}});
   const host={parentElement:target,contains:node=>node===tagsInput,querySelectorAll:()=>[],addEventListener(type,callback){callbacks[type]=callback;}};
-  const context={desktopSyncApplying:false,requestAnimationFrame:fn=>frames.push(fn),dropPosition:null,scope:()=>key,current:key,allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry},field,selected:new Set(),drafts:new Map(),shelfViews:new Map(),signature:'old',itemsSignature:'old',projectColumnActive:()=>true,$:()=>target,syncFolders(){},projectFor:()=>null,ownerFor:()=>({root:'/work'}),itemsFor:()=>items,F,workspaceProfiles:profiles,filterShelf(){filterCalls++;},itemMarkup:item=>item.title,prepareControlSemantics(){},document:{activeElement:tagsInput}};
+  const context={desktopSyncApplying:false,requestAnimationFrame:fn=>frames.push(fn),dropPosition:null,scope:()=>key,current:key,allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry},field,selected:new Set(),drafts:new Map(),shelfViews:new Map(),signature:'old',itemsSignature:'old',projectColumnActive:()=>true,$:()=>target,syncFolders(){},projectFor:()=>null,ownerFor:()=>({root:'/work'}),itemsFor:()=>items,F,workspaceProfiles:profiles,filterShelf(){filterCalls++;},saveTags(id,value){committedTags.push([id,value]);},itemMarkup:item=>item.title,prepareControlSemantics(){},document:{activeElement:tagsInput}};
   const publicRenders=[];
   context.SpatialMemoryDesktop={render(force){publicRenders.push(force);context.render(force);}};
   vm.createContext(context);
@@ -65,12 +66,38 @@ function verifyFocusedTags(){
   vm.runInContext(focusout,context);
   context.document.activeElement=null;
   callbacks.focusout({target:tagsInput});
+  assert.deepEqual(committedTags,[['render-item','important, typing']],'Tags blur saves its value synchronously before any row refresh');
   assert.equal(frames.length,1,'Leaving Tags schedules the deferred public refresh');
   assert.equal(replacements,0,'Blur does not rebuild the input during the focus event');
   frames.shift()();
   assert.deepEqual(publicRenders,[true],'Tags blur calls the public render boundary so history decoration runs too');
   assert.equal(replacements,1,'The postponed content update is applied once editing has finished');
   assert.equal(filterCalls,1);
+}
+function verifyRapidInline(id,key){
+  const callbacks={},frames=[],timers=new Map(),opened=[],transferred=[];
+  let timerId=0;
+  const summary={querySelector:selector=>selector==='b'?{}:{title:'Note'},setAttribute(){}};
+  const row={dataset:{memoryId:id,memoryOwner:key},querySelector:()=>summary};
+  const input={dataset:{memoryInline:'text'},value:'Rapid text before blur',isConnected:true,closest:()=>row,matches:selector=>selector.includes('[data-memory-inline]')};
+  const context={host:{addEventListener(type,callback){callbacks[type]=callback;}},window:{addEventListener(){}},setTimeout(callback){const id=++timerId;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id),requestAnimationFrame:callback=>frames.push(callback),expandedItems:new Set(),itemFor:memory.itemFor,editItem:memory.editItem,save:()=>true,feedback(){},render(){},SpatialItemHistoryDesktop:{...history.api,open(itemId){opened.push(latest(itemId).text);return history.api.open(itemId);},transfer:item=>transferred.push(item.title)}};
+  vm.createContext(context);
+  vm.runInContext(section(memorySource,'  let inlineTimer=',"  host.addEventListener('toggle'"),context);
+  vm.runInContext('globalThis.inlineTest={queueInline,flushInline};',context);
+  advance();context.inlineTest.queueInline(input);
+  assert.equal(timers.size,1);assert.notEqual(latest(id).text,input.value,'Input remains queued until its explicit commit boundary');
+  callbacks.focusout({target:input});
+  assert.equal(latest(id).text,input.value,'Inline blur commits pending text synchronously before deferred rendering');
+  assert.equal(timers.size,0);assert.equal(frames.length,1);
+  advance();input.value='Rapid text before History';context.inlineTest.queueInline(input);
+  const button={dataset:{memoryItemAction:'history'},closest:()=>row};
+  callbacks.click({target:{closest:()=>button}});
+  assert.deepEqual(opened,['Rapid text before History'],'History sees the current text even before the debounce timer or blur runs');
+  assert.equal(timers.size,0);
+  advance();input.dataset.memoryInline='title';input.value='Rapidly renamed before transfer';context.inlineTest.queueInline(input);
+  button.dataset.memoryItemAction='transfer';callbacks.click({target:{closest:()=>button}});
+  assert.deepEqual(transferred,['Rapidly renamed before transfer'],'A Stash action resolves its item after flushing pending edits');
+  assert.equal(timers.size,0);
 }
 
 (async()=>{
@@ -200,6 +227,15 @@ function verifyFocusedTags(){
   assert.deepEqual(copy(history.helpers.tags(initial.id)),['important','typing']);
   assert.equal(latest(initial.id).events.at(-1).type,'tagged','A committed Tags edit is present in the item journey');
   assert.equal(tagFilters,1);
+  const uncommittedTags={value:'fast, confirmed'};
+  history.context.document.querySelector=selector=>selector.includes(initial.id)?uncommittedTags:null;
+  const taggedBefore=latest(initial.id).events.filter(event=>event.type==='tagged').length;
+  assert.equal(history.api.open(initial.id),true);
+  assert.deepEqual(copy(history.helpers.tags(initial.id)),['fast','confirmed'],'Opening History flushes the current Tags field before reading the item');
+  assert(history.context.lastDisplay.includes('Tags: fast, confirmed'),'The immediately opened journey includes the newly committed tags');
+  history.api.open(initial.id);history.helpers.saveTags(initial.id,'fast, confirmed');
+  assert.equal(latest(initial.id).events.filter(event=>event.type==='tagged').length,taggedBefore+1,'Blur, change and History flushes cannot duplicate an unchanged tag event');
+  history.context.document.querySelector=()=>null;
 
   // Execute production merge, then reconstruct the adapter from its actual
   // storage keys: imported tags must survive a new tab/reload.
@@ -211,6 +247,7 @@ function verifyFocusedTags(){
   assert.equal(reloadedHistory.api.get(initial.id).text,'Source changed after copy');
   assert.equal(reloadedHistory.api.get(initial.id).origin.workspace,'school');
   assert.equal(reloadedHistory.api.get(copiedRecord.id).relations[0].versionId,parentVersion);
+  verifyRapidInline(initial.id,scope);
   verifyFocusedTags();
-  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation, metadata reload and focused Tags edit preservation.');
+  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation, metadata reload, focused Tags preservation and rapid-action edit flushes.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
