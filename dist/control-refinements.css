@@ -1,18 +1,26 @@
-/* Lighter tactile controls and a hotbar that responds to its own Area width. */
+/* Raised ABS caps and a hotbar that responds to its own Area width. */
 .app-frame {
-  --control-top:color-mix(in srgb,var(--app-content-raised) 85%,var(--text) 15%);
-  --control-bottom:color-mix(in srgb,var(--app-content-raised) 96%,var(--text) 4%);
-  --control-contact:rgba(0,8,18,.22);
-  --control-highlight:rgba(237,249,255,.13);
+  --control-top:color-mix(in srgb,var(--app-content-raised) 74%,var(--text) 26%);
+  --control-bottom:color-mix(in srgb,var(--app-content-raised) 86%,#000 14%);
+  --control-contact:rgba(0,8,18,.42);
+  --control-highlight:rgba(237,249,255,.24);
+  --abs-key-side:rgba(0,8,18,.60);
+  --abs-key-bevel:rgba(0,8,18,.28);
 }
 body[data-theme="light"] .app-frame {
-  --control-top:#f8fbfd;
-  --control-bottom:#e5edf2;
-  --control-contact:rgba(27,50,68,.12);
-  --control-highlight:rgba(255,255,255,.90);
+  --control-top:#fbfdff;
+  --control-bottom:#bfccd5;
+  --control-contact:rgba(27,50,68,.28);
+  --control-highlight:rgba(255,255,255,.95);
+  --abs-key-side:#718692;
+  --abs-key-bevel:rgba(51,75,91,.24);
 }
+/* A defined lower sidewall, contact shadow and opposed inset highlights make
+   the cap visibly solid even at rest. Navigation rows are part of the page;
+   Firefox and Steam keep their own app-authored controls below this layer. */
 body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice) {
-  box-shadow:0 1px 2px var(--control-contact),inset 0 1px var(--control-highlight);
+  box-shadow:0 2px 0 var(--abs-key-side),0 3px 5px var(--control-contact),
+    inset 0 1px var(--control-highlight),inset 0 -1px var(--abs-key-bevel);
   border-color:color-mix(in srgb,var(--app-primary) 12%,var(--control-edge))!important;
   font-weight:550;
 }
@@ -21,16 +29,21 @@ body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-cho
     color-mix(in srgb,var(--app-primary) 6%,var(--control-top)),
     color-mix(in srgb,var(--app-primary) 4%,var(--control-bottom)))!important;
 }
-body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):hover {
+body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):not(:disabled):hover {
   border-color:color-mix(in srgb,var(--app-primary) 35%,var(--control-edge))!important;
   filter:brightness(1.045);
 }
-body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):is(
+body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):not(:disabled):is(
     :active,.control-toggle.is-active,.control-toggle[aria-pressed="true"],.control-toggle[aria-selected="true"]) {
   background:linear-gradient(180deg,
     color-mix(in srgb,var(--app-primary) 10%,var(--control-bottom)),
     color-mix(in srgb,var(--app-primary) 5%,var(--control-bottom)))!important;
-  box-shadow:inset 0 1px 3px var(--control-contact),inset 0 1px rgba(255,255,255,.035);
+  box-shadow:inset 0 2px 4px var(--control-contact),inset 0 -1px var(--control-highlight);
+  transform:translateY(var(--control-held));
+}
+body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):not(:disabled):active {
+  transform:translateY(var(--control-press)) scaleY(.985);
+  transition-duration:var(--button-press-time);
 }
 /* Navigation belongs to the reading surface, with one shared selection line. */
 body[data-theme] .app-frame .nav-choice.material-abs-button {
