@@ -152,7 +152,7 @@
     find('[data-display-side]').hidden=assistant;
     find('[data-display-assistant]').hidden=!assistant;
     find('[data-display-empty-title]').textContent=assistant?'Room for Assistant to work':'Keep things alongside your work';
-    find('[data-display-empty-text]').textContent=assistant?'Run the demo task to open a briefing here. You can also move a window here from the Desktop map.':'Move windows here from the Desktop map. They stay while you switch desktops and Projects.';
+    find('[data-display-empty-text]').textContent=assistant?'Run the demo task to open a briefing here. To move an existing window here, use its title-bar menu → Move to… → Displays.':'Move a window here using its title-bar menu → Move to… → Displays. It stays while you switch desktops and Projects.';
     find('.display-workbench-empty').hidden=Boolean(state.localWindows?.length);
     const note=find('#displaySideNote');
     if((changed||document.activeElement!==note)&&note.value!==(state.space?.note||''))note.value=state.space?.note||'';

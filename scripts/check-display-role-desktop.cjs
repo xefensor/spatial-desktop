@@ -44,9 +44,16 @@ function fixture(count=2){
     applyDesktopSyncState(packet){if(!packet)return;packets.push(clone(packet));c.activeWorkspace=packet.activeWorkspace;if(packet.frontApp!==undefined)c.frontApp=packet.frontApp;if(packet.desktopHasWindowFocus!==undefined)c.desktopHasWindowFocus=packet.desktopHasWindowFocus;c.syncApps();},
     capturePlacement:()=>({workspace:c.activeWorkspace,assignments:clone(assignments[c.activeWorkspace]),pages:c.desktopPages.snapshot()}),
     restorePlacement(saved){Object.assign(assignments[c.activeWorkspace],clone(saved.assignments));c.desktopPages.load(saved.pages);},
-    contextMenuEntries:context=>context.kind==='area'?[{action:'area-move-display',label:'Move to other display'},{action:'area-hide',label:'Hide'}]:[{action:'desktop-settings',label:'Settings'}],executeContextAction(){},closeDesktopContextMenu(){},desktopNavigationBlocked:()=>false,
+    contextMenuEntries(context){
+      if(context.kind==='area')return [{action:'area-move-display',label:'Move to other display'},{action:'area-hide',label:'Hide'}];
+      if(context.kind==='app')return [{info:'Editor · Desktop 1'},{action:'app-open',label:'Open'}];
+      // scoped-actions.js nests Settings; no direct desktop-settings entry survives.
+      return [{info:'Desktop 1 · Work'},{action:'desktop-page:next',label:'Next desktop'},{action:'desktop-new-folder',label:'New folder'},{action:'desktop-paste',label:'Paste'},
+        {label:'Project · Website',children:[{action:'project-close',label:'Close Project'}]},
+        {action:'desktop-wallpaper',label:'Wallpaper'},{label:'System-wide',children:[{action:'desktop-settings',label:'Settings'}]}];
+    },executeContextAction(){},closeDesktopContextMenu(){},desktopNavigationBlocked:()=>false,
     showToast(message){c.toast=message;},
-    SpatialDisplaySettings:{refresh(){},open(){}},SpatialDisplayWorkbench:{refresh(){}},
+    SpatialDisplaySettings:{refresh(){},open(){c.settingsOpened=true;}},SpatialDisplayWorkbench:{refresh(){}},
   };
   for(const workspace of ['work','gaming'])for(const id of Object.keys(c.appInfo))c.desktopPages.assign(workspace,id,0,'workspace');
   vm.createContext(c);
@@ -177,6 +184,37 @@ function fixture(count=2){
   c.SpatialDisplayRoleBridge.setRole(2,'extended');
   assert.equal(c.contextMenuEntries({kind:'area',name:'apps'}).some(entry=>entry.action==='area-move-display'),true);
   assert.equal(c.transferAreaToDisplay('apps',2),true);assert.equal(assignments.work.areas.apps,2);assert.equal(areaTransfers.length,2);
+}
+
+{
+  const {c}=fixture();
+  const normal=c.contextMenuEntries({kind:'desktop'}),roleMenu=normal.find(entry=>entry.label==='Display role');
+  assert(roleMenu,'Display role remains reachable after scoped Settings are nested under System-wide');
+  assert(normal.indexOf(roleMenu)<normal.findIndex(entry=>entry.label==='System-wide'),'Display role is placed beside the other system settings');
+  assert.equal(roleMenu.children.find(entry=>entry.action==='display-role:main').checked,true);
+  assert.equal(roleMenu.children.find(entry=>entry.action==='display-role:side').disabled,true,'The current main cannot silently give away the user’s only working surface');
+  assert(roleMenu.children.some(entry=>entry.action==='display-settings'&&entry.label==='Open Displays'));
+  assert(normal.some(entry=>entry.action==='desktop-page:next'),'Normal displays retain desktop navigation');
+  c.executeContextAction('display-settings');assert.equal(c.settingsOpened,true,'The menu’s Open Displays action reaches Settings');
+  c.SpatialDisplayRoleBridge.setRole(2,'side');c.localSlot=2;
+  const side=c.contextMenuEntries({kind:'desktop'}),sideRoles=side.find(entry=>entry.label==='Display role');
+  assert.equal(sideRoles.children.find(entry=>entry.action==='display-role:side').checked,true);
+  assert.equal(sideRoles.children.find(entry=>entry.action==='display-role:main').checked,false);
+  assert.equal(sideRoles.children.find(entry=>entry.action==='display-role:main').disabled,false);
+  assert.equal(side.some(entry=>entry.action?.startsWith('desktop-page:')),false);
+  assert.equal(side.some(entry=>['desktop-new-folder','desktop-paste'].includes(entry.action)),false);
+  assert.equal(side.some(entry=>entry.label?.startsWith('Project · ')),false,'Side space does not offer actions for a Project it does not follow');
+  assert(side.some(entry=>entry.action==='desktop-wallpaper'),'Independent display actions remain available');
+  assert.match(side.find(entry=>entry.info).info,/Side space · Display 2 · Work Workspace · all desktops and Projects/);
+  c.SpatialDisplayRoleBridge.setRole(2,'assistant');
+  const assistant=c.contextMenuEntries({kind:'desktop'});
+  assert.match(assistant.find(entry=>entry.info).info,/Assistant · Display 2 · Work Workspace/);
+  assert.equal(assistant.find(entry=>entry.label==='Display role').children.find(entry=>entry.action==='display-role:assistant').checked,true);
+  assert.equal(assistant.some(entry=>entry.action==='desktop-page:next'||entry.label?.startsWith('Project · ')),false);
+  c.roster=[c.roster[0]];c.localSlot=1;c.updateDesktopSyncPresence();
+  const single=c.contextMenuEntries({kind:'desktop'}).find(entry=>entry.label==='Display role');
+  assert(single.children.some(entry=>entry.info?.includes('only display')));
+  assert(single.children.some(entry=>entry.action==='display-settings'),'A sole display can still open setup and add a companion');
 }
 
 console.log('Display-role integration: helper visibility, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');

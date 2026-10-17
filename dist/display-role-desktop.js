@@ -186,14 +186,22 @@
   restorePlacement=function(saved){if(saved.workspace===activeWorkspace&&saved.displayRoles){model.load(saved.displayRoles);connect();persist();}const result=originalRestore(saved);notify();return result;};
   const originalContext=contextMenuEntries;
   contextMenuEntries=function(context){
-    const entries=originalContext(context).filter(entry=>!(context.kind==='area'&&entry.action==='area-move-display'&&special(role(otherDisplaySlot()))));
+    let entries=originalContext(context).filter(entry=>!(context.kind==='area'&&entry.action==='area-move-display'&&special(role(otherDisplaySlot()))));
     if(context.kind==='app'&&pinned(context.name)){
+      const info=entries.find(item=>item.info);if(info)info.info=appInfo[context.name].label+' · '+labels[role(pinned(context.name))]+' · Display '+pinned(context.name)+' · '+workspaceProfiles[activeWorkspace].label+' Workspace';
       const entry=entries.find(item=>item.action==='app-open');
       if(entry){entry.label=pinned(context.name)===localDisplaySlot()?'Focus':'Bring here from '+labels[role(pinned(context.name))];entry.detail='Display '+pinned(context.name)+' · '+workspaceProfiles[activeWorkspace].label+' Workspace';}
     }
     if(context.kind!=='desktop')return entries;
-    const index=entries.findIndex(entry=>entry.action==='desktop-settings');
-    if(index>=0)entries.splice(index,0,{label:'Display role',icon:'i-monitor',children:extendedDesktopActive()?Object.entries(labels).map(([id,label])=>({action:'display-role:'+id,icon:id==='assistant'?'i-spark':'i-monitor',label,checked:role()===id,disabled:role()==='main'&&id!=='main',detail:role()==='main'&&id!=='main'?'Choose another display as Main workspace first':''})):[{info:'This is your only display. Add a second demo display in Displays.'},{action:'display-settings',label:'Open Displays',icon:'i-monitor'}]});
+    if(root.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('systems'))return entries;
+    if(special(role())){
+      entries=entries.filter(entry=>!entry.action?.startsWith('desktop-page:')&&!['desktop-new-folder','desktop-paste'].includes(entry.action)&&!entry.label?.startsWith('Project · '));
+      const info=entries.find(entry=>entry.info);if(info)info.info=labels[role()]+' · Display '+localDisplaySlot()+' · '+workspaceProfiles[activeWorkspace].label+' Workspace · all desktops and Projects';
+    }
+    const direct=entries.findIndex(entry=>entry.action==='desktop-settings'),shared=entries.findIndex(entry=>entry.label==='System-wide');
+    const choices=extendedDesktopActive()?Object.entries(labels).map(([id,label])=>({action:'display-role:'+id,icon:'i-monitor',label,checked:role()===id,disabled:role()==='main'&&id!=='main',detail:role()==='main'&&id!=='main'?'Choose another display as Main workspace first':''})):[{info:'This is your only display. Add a second demo display in Displays.'}];
+    choices.push({separator:true},{action:'display-settings',label:'Open Displays',icon:'i-settings'});
+    entries.splice(direct>=0?direct:shared>=0?shared:entries.length,0,{label:'Display role',icon:'i-monitor',children:choices});
     return entries;
   };
   const originalExecute=executeContextAction;
