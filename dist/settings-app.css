@@ -57,7 +57,7 @@
 .settings-home-context b{display:block;font-size:12px;font-weight:600}
 .settings-home-context p{font-size:11px;color:var(--muted);margin:3px 0 0}
 .settings-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
-.settings-app-content .settings-category-card{min-width:0;display:flex;align-items:center;gap:12px;padding:17px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent!important;box-shadow:none!important;transform:none!important;text-align:left;color:var(--text);font:inherit}
+.settings-app-content .settings-category-card{min-width:0;height:auto!important;max-height:none!important;min-height:84px;display:flex;align-items:center;gap:12px;padding:17px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent!important;box-shadow:none!important;transform:none!important;text-align:left;white-space:normal;color:var(--text);font:inherit}
 .settings-category-card>svg:first-child{width:21px;height:21px;color:var(--settings-accent);flex:none}
 .settings-category-card>svg:last-child{width:13px;height:13px;color:var(--muted);flex:none;margin-left:auto}
 .settings-category-card>span{min-width:0}
@@ -75,7 +75,7 @@
 .settings-about p{font-size:12px;line-height:1.6;color:var(--muted);margin:4px 0}
 .settings-about .settings-demo-note{margin-top:12px;font-size:10px}
 .settings-search-results{display:flex;flex-direction:column}
-.settings-app-content .settings-search-result{display:flex;align-items:center;gap:13px;min-width:0;width:100%;padding:15px 0;border:0;border-bottom:1px solid var(--line);background:transparent!important;box-shadow:none!important;transform:none!important;border-radius:0;text-align:left;color:var(--text)}
+.settings-app-content .settings-search-result{display:flex;align-items:center;gap:13px;flex:none;min-width:0;width:100%;height:auto!important;max-height:none!important;min-height:88px;padding:15px 0;border:0;border-bottom:1px solid var(--line);background:transparent!important;box-shadow:none!important;transform:none!important;border-radius:0;text-align:left;white-space:normal;color:var(--text)}
 .settings-search-result>svg{width:20px;height:20px;color:var(--settings-accent);flex:none}
 .settings-search-result>svg:last-child{width:13px;height:13px;color:var(--muted);margin-left:auto}
 .settings-search-result>span{min-width:0;display:flex;flex-direction:column;gap:3px}
@@ -91,3 +91,7 @@ body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content butt
 body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content button.settings-nav{border:0!important;border-radius:9px!important}
 body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content button.nav-choice:hover{background:color-mix(in srgb,var(--app-primary) 7%,transparent)!important}
 body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content button.settings-nav.is-active{background:color-mix(in srgb,var(--app-primary) 10%,transparent)!important;box-shadow:inset 2px 0 var(--app-primary)!important;color:var(--app-primary)}
+/* Shared navigation rows have a fixed one-line height and toggle engraving.
+   Settings cards contain descriptions; let their text define the height.
+   Category selection already has one inset edge, so it needs no second rail. */
+body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content button.nav-choice::after{content:none!important;display:none!important}
