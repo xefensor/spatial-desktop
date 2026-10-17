@@ -9,8 +9,8 @@
     const parts=[];for(const part of (raw.startsWith('/')?raw:base+'/'+raw).split('/')){if(part==='..')parts.pop();else if(part&&part!=='.')parts.push(part);}return '/'+parts.join('/');
   }
   const inside=(value,root)=>value===root||value.startsWith(root.replace(/\/$/,'')+'/');
-  function allowed(value,workspace,profiles,projects){
-    const owners=[...Object.entries(profiles).map(([id,p])=>({root:p.home,workspace:id})),...Object.values(projects).filter(p=>p.originWorkspace).map(p=>({root:p.root,workspace:p.originWorkspace}))].filter(p=>inside(value,p.root)).sort((a,b)=>b.root.length-a.root.length);
+  function allowed(value,workspace,profiles,projects,accessibleProjects=[]){
+    const owners=[...Object.entries(profiles).map(([id,p])=>({root:p.home,workspace:id})),...Object.entries(projects).filter(([id,p])=>p.originWorkspace||accessibleProjects.includes(id)).map(([id,p])=>({root:p.root,workspace:accessibleProjects.includes(id)?workspace:p.originWorkspace}))].filter(p=>inside(value,p.root)).sort((a,b)=>b.root.length-a.root.length);
     return owners[0]?.workspace===workspace;
   }
   function parse(request){

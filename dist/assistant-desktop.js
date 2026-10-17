@@ -25,7 +25,7 @@
     return {...at,id:'selection-'+crypto.randomUUID(),title:'Selected text · '+appInfo[id].label,kind:'text',text,address,source:{...at,label:appInfo[id].label,address,desktop:desktopPages.pageOf(activeWorkspace,id)}};
   }
   function fileContext(path,workspace=activeWorkspace){
-    if(!T.allowed(path,workspace,workspaceProfiles,projectSpaces))return null;
+    if(!T.allowed(path,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]))return null;
     const saved=globalThis.SpatialMemoryDesktop?.contextAtFile(path);if(saved)return {...saved,address:path,filename:path.split('/').at(-1)};
     const directory=path.slice(0,path.lastIndexOf('/')),name=path.split('/').at(-1),file=workspaceDownloads.list(directory).find(f=>f.name===name&&(!f.workspace||f.workspace===workspace));
     if(file)return {id:file.itemId||'file:'+workspace+':'+path,itemId:file.itemId||'file:'+workspace+':'+path,title:name,filename:name,kind:file.attachment?.kind||'file',text:file.content,address:path,attachment:file.attachment,workspace,project:file.project||projectAt(path),source:{workspace,project:file.project||projectAt(path),address:path,label:'File Browser'}};
@@ -72,10 +72,10 @@
   strip.addEventListener('click',event=>{if(event.target.closest('[data-direct-remove]')){A.removeInputs(A.current().items.map(i=>i.id));drawStrip();return;}A.toggleInputs();drawStrip();});
   function folders(workspace){
     const home=workspaceProfiles[workspace].home;
-    return [...new Set([home,...SpatialHomeFolders.standard.map(f=>home+'/'+f),...Object.values(projectSpaces).filter(p=>p.originWorkspace===workspace).flatMap(p=>[p.root,...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces));
+    return [...new Set([home,...SpatialHomeFolders.standard.map(f=>home+'/'+f),...Object.entries(projectSpaces).filter(([id,p])=>p.originWorkspace===workspace||(typeof openProjectNames==='function'&&openProjectNames(workspace).includes(id))).flatMap(([,p])=>[p.root,...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]));
   }
   function cwd(){return local(lastFrame)&&(appInfo[lastFrame.dataset.appFrame].base||lastFrame.dataset.appFrame)==='dolphin'?lastFrame.dataset.fileLocation:A.workingFolder();}
-  function resolveFolder(value,base,workspace){const raw=String(value),first=raw.split('/')[0];if(SpatialHomeFolders.standard.includes(first))base=workspaceProfiles[workspace].home;const result=T.chooseFolder(value,base,folders(workspace));if(!T.allowed(result,workspace,workspaceProfiles,projectSpaces))throw Error('Choose a folder in the current Workspace. Other Workspaces stay separate.');return result;}
+  function resolveFolder(value,base,workspace){const raw=String(value),first=raw.split('/')[0];if(SpatialHomeFolders.standard.includes(first))base=workspaceProfiles[workspace].home;const result=T.chooseFolder(value,base,folders(workspace));if(!T.allowed(result,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]))throw Error('Choose a folder in the current Workspace. Other Workspaces stay separate.');return result;}
   function filesIn(directory,workspace){
     const paths=new Set(workspaceDownloads.list(directory).filter(f=>!f.workspace||f.workspace===workspace).map(f=>directory+'/'+f.name));
     const frame=Object.keys(appInfo).map(frameFor).find(frame=>frame&&frame.dataset.appKind==='dolphin');

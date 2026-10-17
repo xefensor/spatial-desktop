@@ -16,7 +16,7 @@
   }
   if(typeof module!=='undefined'&&module.exports){module.exports={inside,parent,mergeRows,projectRows};return;}
   const memory=root.SpatialMemoryDesktop,F=SpatialStashFiles,host=document.getElementById('workingMemory');if(!memory||!host)return;
-  const html=escapeHtml,paths=new Map(),storage='spatial-folder-views-v1',previewUrls=new Map();
+  const html=escapeHtml,paths=new Map(),storage='spatial-folder-views-v1',previewUrls=new Map(),openFiles=new Set();
   let state=readDesktopStorage(storage,{pins:{}}),serial=0,queued=0;
   state.pins||={};
   const key=()=>SpatialWorkingMemory.scope(activeWorkspace,projectSpaces[desktopPages.column(activeWorkspace)]?desktopPages.column(activeWorkspace):null);
@@ -45,7 +45,7 @@
   function fileMarkup(row,scope){
     const [name,detail,type,target]=row,address=target||full(name,scope),isFolder=type==='folder',isPinned=pinned(address),glyph=isFolder?'i-folder':type==='image'?'i-image':type==='audio'?'i-music':'i-note';
     if(isFolder)return '<div class="folder-entry folder-directory" data-folder-entry="'+html(address)+'" data-folder-search="'+html(name+' '+detail)+'" data-folder-kind="'+html(type==='document'&&/\.(txt|md|csv|json)$/i.test(name)?'text':type)+'" data-folder-created="'+(workspaceDownloads.list(parent(address)).find(file=>file.name===name)?.savedAt||0)+'" data-folder-pinned="'+isPinned+'"><button type="button" data-folder-go="'+html(address)+'" draggable="true" data-folder-drag="'+html(address)+'">'+icon(glyph)+'<span><b>'+html(name)+'</b><small>'+html(detail)+'</small></span>'+icon('i-right')+'</button></div>';
-    return '<details class="folder-entry folder-file memory-item" data-folder-entry="'+html(address)+'" data-folder-search="'+html(name+' '+detail)+'" data-folder-kind="'+html(type==='document'&&/\.(txt|md|csv|json)$/i.test(name)?'text':type)+'" data-folder-created="'+(workspaceDownloads.list(parent(address)).find(file=>file.name===name)?.savedAt||0)+'" data-folder-pinned="'+isPinned+'" draggable="true" data-folder-drag="'+html(address)+'"><summary class="memory-item-summary" aria-label="'+html(name+' · File')+'"><span class="memory-type-icon">'+icon(glyph)+'</span><span class="memory-select"><b>'+html(name)+'</b><small>'+html(detail)+'</small></span>'+(isPinned?'<small class="memory-pinned">Pinned</small>':'')+'</summary><div class="memory-item-body"><div class="folder-preview" data-folder-preview="'+html(address)+'"></div><div class="folder-file-actions"><button class="memory-text-action" type="button" data-folder-open="'+html(address)+'">Open file</button><button class="memory-text-action" type="button" data-folder-pin="'+html(address)+'" aria-pressed="'+isPinned+'">'+(isPinned?'Unpin':'Pin')+'</button><button class="memory-text-action" type="button" data-folder-assistant="'+html(address)+'">Ask Assistant</button></div></div></details>';
+    return '<details class="folder-entry folder-file memory-item" data-folder-entry="'+html(address)+'" data-folder-search="'+html(name+' '+detail)+'" data-folder-kind="'+html(type==='document'&&/\.(txt|md|csv|json)$/i.test(name)?'text':type)+'" data-folder-created="'+(workspaceDownloads.list(parent(address)).find(file=>file.name===name)?.savedAt||0)+'" data-folder-pinned="'+isPinned+'" draggable="true" data-folder-drag="'+html(address)+'"'+(openFiles.has(address)?' open':'')+'><summary class="memory-item-summary" aria-label="'+html(name+' · File')+'"><span class="memory-type-icon">'+icon(glyph)+'</span><span class="memory-select"><b>'+html(name)+'</b><small>'+html(detail)+'</small></span>'+(isPinned?'<small class="memory-pinned">Pinned</small>':'')+'</summary><div class="memory-item-body"><div class="folder-preview" data-folder-preview="'+html(address)+'"></div><div class="folder-file-actions"><button class="memory-text-action" type="button" data-folder-open="'+html(address)+'">Open file</button><button class="memory-text-action" type="button" data-folder-pin="'+html(address)+'" aria-pressed="'+isPinned+'">'+(isPinned?'Unpin':'Pin')+'</button><button class="memory-text-action" type="button" data-folder-assistant="'+html(address)+'">Ask Assistant</button></div></div></details>';
   }
   function markup({key:scope,owner:current,items,itemMarkup}){
     const at=path(scope),saved=F.list(current).filter(file=>F.directory(current,file)===at),byId=new Map(saved.map(file=>[file.id,file]));
@@ -85,7 +85,7 @@
       row.hidden=!show;if(show)count++;
     }
     for(const group of target.querySelectorAll('[data-folder-group]'))group.hidden=![...group.querySelectorAll('[data-folder-entry]')].some(row=>!row.hidden);
-    target.querySelector('[data-memory-count]').textContent=(count===total?total:count+' of '+total)+' items';target.querySelector('.memory-empty').hidden=count>0;
+    target.querySelector('[data-memory-count]').textContent=(count===total?total:count+' of '+total)+(total===1?' item':' items');target.querySelector('.memory-empty').hidden=count>0;
     target.querySelector('[data-memory-empty-title]').textContent=total?'No matching files':'This folder is empty';target.querySelector('[data-memory-empty-detail]').textContent=total?'Try another search or show all items.':'Create a note, add files or drop something here.';
     target.querySelector('[data-memory-action="clear-filter"]').hidden=!query&&!onlyPinned&&!Object.values(values).some(Boolean);
   }
@@ -115,7 +115,7 @@
     if(button.dataset.folderAssistant){const context=fileContext(button.dataset.folderAssistant);root.SpatialAIDesktop.attach([context]);return;}
     if(button.dataset.folderSave){const address=button.dataset.folderSave,value=button.closest('details').querySelector('textarea').value;workspaceDownloads.update(parent(address),address.split('/').at(-1),{content:value});persistDownloads();const file=fileContext(address);if(file.itemId)root.SpatialItemHistoryDesktop?.capture({id:file.itemId,itemId:file.itemId,scope:key(),kind:'item',title:file.title,text:value,source:file.source},{force:true,action:'edit'});serial++;memory.render(true);}
   },true);
-  host.addEventListener('toggle',event=>{if(event.target.matches('.folder-file')&&event.target.open)preview(event.target);},true);
+  host.addEventListener('toggle',event=>{if(event.target.matches('.folder-file')){if(event.target.open){openFiles.add(event.target.dataset.folderEntry);preview(event.target);}else openFiles.delete(event.target.dataset.folderEntry);}},true);
   host.addEventListener('dragstart',event=>{const row=event.target.closest('[data-folder-drag]');if(!row||!event.dataTransfer)return;const address=row.dataset.folderDrag,context=fileContext(address);if(row.matches('[data-folder-go]'))context.kind='folder';event.dataTransfer.effectAllowed='copy';event.dataTransfer.setData(SpatialAIContext.MIME,JSON.stringify(context));event.dataTransfer.setData('text/plain',address);});
   const originalFolderAction=host.querySelector('[data-memory-action="folder"]');originalFolderAction.addEventListener('click',event=>{event.stopImmediatePropagation();openFileLocation(path());},true);
   const originalSave=persistDownloads;persistDownloads=function(...args){const result=originalSave(...args);serial++;schedule();return result;};

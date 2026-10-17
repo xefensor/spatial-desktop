@@ -17,6 +17,10 @@ assert.equal(new Set(F.list(project).map(file=>F.path(project,file))).size,3);
 assert(UI.inside('/projects/launch/Research','/projects/launch'));assert(!UI.inside('/projects/launcher','/projects/launch'));
 const paths=UI.projectRows({path:'/projects/launch',base:'/projects/launch',rows:[['Review.md','Original','document']],directories:['/projects/launch/Research','/projects/launch/Research/Notes'],downloads:[{directory:'/projects/launch',name:'Review.md'},{directory:'/projects/launch',name:'Result.html'}],files:[{directory:'/projects/launch/Research',name:'Review.md'}],archive:{'Images/frame.svg':{kind:'image'}}});
 assert.equal(paths.filter(row=>row[0]==='Review.md').length,1);assert(paths.some(row=>row[0]==='Research'&&row[2]==='folder'));assert(paths.some(row=>row[0]==='Images'&&row[2]==='folder'));assert(paths.some(row=>row[0]==='Result.html'));
+const Assistant=require('../dist/assistant-files.js');
+assert(!Assistant.allowed('/mnt/film/Research/Review.md','work',{work:{home:'/home/work'}},{film:{root:'/mnt/film',originWorkspace:null}}));
+assert(Assistant.allowed('/mnt/film/Research/Review.md','work',{work:{home:'/home/work'}},{film:{root:'/mnt/film',originWorkspace:null}},['film']),'Explicitly opened custom-folder projects are available to Assistant');
+assert(!Assistant.allowed('/home/school/private.txt','work',{work:{home:'/home/work'},school:{home:'/home/school'}},{film:{root:'/mnt/film',originWorkspace:null}},['film']),'Opening a Project does not expose other Workspace Home folders');
 const downloads=H.create();downloads.add('/projects/launch','Result.txt',{workspace:'work',project:'launch',content:'Before',itemId:'result-identity'});
 downloads.update('/projects/launch','Result.txt',{content:'After'});assert.equal(downloads.list('/projects/launch').length,1);assert.equal(downloads.list('/projects/launch')[0].itemId,'result-identity');assert.equal(downloads.list('/projects/launch')[0].content,'After');
 

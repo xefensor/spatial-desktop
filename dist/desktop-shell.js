@@ -2671,7 +2671,7 @@ function areaCanBeHidden(name) {
 }
 
 function areaLabel(name) {
-  return name === "projects" ? "Workspace & Projects" : name === "apps" ? "Apps" : name === "ai" ? "Assistant" : "System";
+  return name === "projects" ? "Files" : name === "apps" ? "Apps" : name === "ai" ? "Assistant" : "System";
 }
 
 function dockGroup(edge, includeHidden = false) {
@@ -4324,7 +4324,7 @@ function setProjectClosedState(closed) {
   $$(".project-pack-key").forEach(button => { button.disabled = closed; });
   if (closed) {
     renderAvailableProjectLibrary();
-    $("#projectAreaName").textContent = "Workspace & Projects";
+    $("#projectAreaName").textContent = "Files";
     $("#projectAreaContext").removeAttribute("title");
     const count = Object.keys(projectSpaces).length;
     $("#projectAreaContext").textContent = workspaceProfiles[activeWorkspace].label + " · " + count + (count === 1 ? " project available" : " projects available");
@@ -4343,7 +4343,7 @@ function syncProjectAreaView() {
   if (!area) return;
   if (area.dataset.projectLibraryOpen !== String(!project)) setProjectClosedState(!project);
   if (project) {
-    $("#projectAreaName").textContent = "Workspace & Projects";
+    $("#projectAreaName").textContent = "Files";
     $("#projectRailName").textContent = project.name;
     refreshProjectSessionUi();
   }
@@ -4358,7 +4358,7 @@ function renderProjectSpace(name) {
   workspaceProjects[activeWorkspace] = name;
   rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
-  $("#projectAreaName").textContent = "Workspace & Projects";
+  $("#projectAreaName").textContent = "Files";
   $("#projectRailName").textContent = project.name;
   $("#projectRailName").title = project.name;
   $("#projectRailResourceCount").textContent = project.resources.length;

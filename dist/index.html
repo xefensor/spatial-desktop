@@ -290,13 +290,13 @@
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize Assistant area" title="Drag this border to resize"></button>
     </aside>
-    <aside class="zone project-area area-window" data-area-window="projects" aria-label="Workspace &amp; Projects area">
+    <aside class="zone project-area area-window" data-area-window="projects" aria-label="Files area">
       <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon violet" id="manageProjectButton" aria-label="Manage current project" title="Manage project"><svg aria-hidden="true"><use href="#i-folder"/></svg></button><span><b id="projectAreaName">Workspace &amp; Projects</b><small id="projectAreaContext">Website Launch · Project</small></span></div>
+        <div class="area-window-identity"><button class="surface-key area-window-icon violet" id="manageProjectButton" aria-label="Manage current project" title="Manage project"><svg aria-hidden="true"><use href="#i-folder"/></svg></button><span><b id="projectAreaName">Files</b><small id="projectAreaContext">Website Launch · Project</small></span></div>
         <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button></div>
       </header>
       <nav class="project-switcher project-mode-switcher" id="projectModeSwitcher" hidden aria-hidden="true"></nav>
-      <div class="project-space-content" id="projectSpaceContent" tabindex="0" aria-label="Project modules">
+      <div class="project-space-content" id="projectSpaceContent" tabindex="0" aria-label="Folder contents">
         <section class="project-module project-root-module">
           <header><span><svg><use href="#i-folder"/></svg><b>Project folder</b></span><button class="surface-key project-small-key" data-toast="Project folder opened">Open</button></header>
           <button class="project-path" data-toast="Project folder opened"><svg><use href="#i-folder"/></svg><span id="projectRootPath">/home/demo/Projects/website-launch</span></button>
@@ -334,7 +334,7 @@
           <button class="surface-key project-rail-tool rail-action" id="projectRailClose" aria-label="Close current project" title="Close current project"><svg aria-hidden="true"><use href="#i-close"/></svg><span>Close</span></button>
         </section>
       </nav>
-      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Workspace &amp; Projects area" title="Drag this border to resize"></button>
+      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Files area" title="Drag this border to resize"></button>
     </aside>
   </main>
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true" inert>
@@ -519,9 +519,9 @@
             <div class="overview-quick-grid"><button class="quick-toggle is-active" data-toggle aria-label="Wi-Fi" aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-label="Bluetooth" aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-label="Sound" aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" data-toggle aria-label="Focus" aria-pressed="false"><svg><use href="#i-bell"/></svg><span>Focus</span></button></div>
           </section>
           <section class="overview-widget overview-areas-widget" aria-labelledby="overviewAreasTitle">
-            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Apps · Workspace &amp; Projects · System · Assistant</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
+            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Apps · Files · System · Assistant</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
             <div class="overview-area-list">
-              <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Workspace &amp; Projects</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="projects" aria-label="Hide Workspace &amp; Projects">Hide</button></div>
+              <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Files</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="projects" aria-label="Hide Files">Hide</button></div>
               <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="apps" aria-label="Hide Apps">Hide</button></div>
               <div class="overview-area-row" data-overview-area="ai"><span class="area-list-icon"><svg><use href="#i-ai"/></svg></span><span><b>Assistant</b><small>Compact</small></span><button class="surface-key" data-overview-area-visibility="ai" aria-label="Hide Assistant">Hide</button></div>
               <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="systems" aria-label="Hide System">Hide</button></div>
@@ -570,7 +570,7 @@
         <section class="universal-group" data-universal-group="settings">
           <h3>System and actions</h3>
           <div class="universal-result-grid">
-            <button class="universal-result" data-area-show="projects" data-universal-search="show workspace projects area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Workspace &amp; Projects</b><small>Desktop area</small></span></button>
+            <button class="universal-result" data-area-show="projects" data-universal-search="show workspace projects area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Files</b><small>Desktop area</small></span></button>
             <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
             <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
             <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>Workspace focus timer</small></span></button>
@@ -696,7 +696,7 @@
   <script src="desktop-pages.js?v=4"></script>
   <script src="home-folders.js?v=3"></script>
   <script src="app-tools.js?v=2"></script>
-  <script src="assistant-files.js?v=1"></script>
+  <script src="assistant-files.js?v=2"></script>
   <script src="project-archive.js?v=4"></script>
   <script src="app-windows.js?v=25"></script>
 <script src="item-history.js?v=1"></script>
@@ -708,7 +708,7 @@
 <script src="timeline.js?v=8"></script>
 <script src="app-names.js?v=3"></script>
 <script src="compact-area-layout.js?v=8"></script>
-<script src="desktop-shell.js?v=321"></script>
+<script src="desktop-shell.js?v=322"></script>
 <script src="parked-previews.js?v=4"></script>
   <script src="owned-dialogs.js?v=3"></script>
 <script src="background-services.js?v=1"></script>
@@ -717,7 +717,7 @@
 <script src="empty-desktop-resources.js?v=2"></script>
 <script src="empty-desktop.js?v=5"></script>
 <script src="apps-quick-launch.js?v=3"></script>
-<script src="working-memory-desktop.js?v=40"></script>
+<script src="working-memory-desktop.js?v=41"></script>
 <script src="item-history-desktop.js?v=7"></script>
 <script src="ai-desktop.js?v=28"></script>
 <script src="overview-desktop.js?v=26"></script>
@@ -737,11 +737,11 @@
 <script src="system-rail.js?v=3"></script>
 <script src="temporary-parking.js?v=1"></script>
 <script src="temporary-parking-desktop.js?v=5"></script>
-<script src="assistant-desktop.js?v=4"></script>
+<script src="assistant-desktop.js?v=5"></script>
 <script src="desktop-map.js?v=1"></script>
 <script src="desktop-map-desktop.js?v=5"></script>
 <script src="window-audio.js?v=1"></script>
-<script src="folder-files.js?v=1"></script>
+<script src="folder-files.js?v=2"></script>
 </body>
 </html>
 

@@ -83,7 +83,7 @@
     if(workspaceChanged)refreshStashBrowsers();
     if(changed){persistProjectState();refreshStashBrowsers();}
   }
-  function refreshStashBrowsers(){Object.keys(appInfo).forEach(id=>{const frame=frameFor(id);if(frame&&(appInfo[id].base||id)==='dolphin'&&[...Object.values(projectSpaces),...workspaceStashes.values()].some(owner=>frame.dataset.fileLocation===owner.root||frame.dataset.fileLocation===F.folder(owner)))renderFileLocation(id,frame.dataset.fileLocation);});}
+  function refreshStashBrowsers(){Object.keys(appInfo).forEach(id=>{const frame=frameFor(id);if(!frame||(appInfo[id].base||id)!=='dolphin')return;const owners=[...Object.values(projectSpaces),...workspaceStashes.values()],legacy=owners.find(owner=>frame.dataset.fileLocation===F.folder(owner)+'/Stash');if(legacy)renderFileLocation(id,F.folder(legacy));else if(owners.some(owner=>frame.dataset.fileLocation===owner.root||frame.dataset.fileLocation===F.folder(owner)))renderFileLocation(id,frame.dataset.fileLocation);});}
   function cacheMedia(key,file){
     const token=key+':'+file.id;if(copying.has(token))return;copying.add(token);
     F.copyAsset(ownerFor(key),file).then(blob=>{
