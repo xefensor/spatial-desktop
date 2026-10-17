@@ -315,6 +315,8 @@ In an expanded item’s **More** menu, **Add to another Stash…** offers destin
 
 Imported files copy bytes into browser storage. A web link remains a link unless content was separately captured; it does not promise an offline copy of the page, images or video. A history record explains an action, a version retains content, and a screenshot would retain appearance. These are different things. This prototype has readable captured versions, not system-wide backups, passive screen capture or a native file-version restore service.
 
+![Item History: captured origin, the exact parent source version, readable versions and the recorded journey](images/item-history-2026-10-17.jpg)
+
 **Try it:** keep a note in Stash, expand it, add a user tag and open **History**. Edit the note and inspect **Versions**. Use **Add to another Stash…** to add a reference or independent copy to a Project in the same Workspace, then compare **Current locations** and **Sources**. Attach the item to Assistant, send a request, and keep the scripted reply in Stash. Its History can follow the output’s parent sources; the reply’s own evidence stays tied to the request that produced it. These actions are also explained under the Guide’s Stash, Assistant and Overview & Timeline chapters without resetting existing lesson progress.
 
 The item journal and saved snapshots are distinct from Timeline’s recent activity list. Search indexes and grouped views are projections of the saved records. Native applications, external renames and filesystem changes outside this web demo are not monitored. Stable demo IDs do not imply that the browser can track arbitrary files on the computer.

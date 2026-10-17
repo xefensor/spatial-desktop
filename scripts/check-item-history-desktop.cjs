@@ -99,6 +99,28 @@ function verifyRapidInline(id,key){
   assert.deepEqual(transferred,['Rapidly renamed before transfer'],'A Stash action resolves its item after flushing pending edits');
   assert.equal(timers.size,0);
 }
+function verifyNestedDisclosures(){
+  const names=['memory-edit-details','memory-item-details','memory-document'];
+  const makeRow=(id,open=[])=>{const details=Object.fromEntries(names.map(name=>[name,{open:open.includes(name)}]));return {dataset:{memoryId:id},querySelector:selector=>details[selector.slice(1)],details};};
+  let key=M.scope('work'),items=[{id:'same-id',scope:key,title:'Changed text'},{id:'second-id',scope:key,title:'Second item'}];
+  let rows=[makeRow('same-id',['memory-edit-details','memory-document']),makeRow('second-id',['memory-item-details'])],replacements=0,pauses=0;
+  const previous=rows,fields=new Map(),field=selector=>{if(!fields.has(selector))fields.set(selector,{});return fields.get(selector);};
+  field('.memory-editor').hidden=true;
+  Object.defineProperty(field('.memory-items'),'innerHTML',{set(){replacements++;rows=items.map(item=>makeRow(item.id));}});
+  const target={prepend(){}},railEntry={},host={parentElement:target,contains:()=>false,querySelectorAll:selector=>selector==='[data-memory-id]'?rows:selector==='audio'?[{pause(){pauses++;}}]:[]};
+  const context={desktopSyncApplying:false,requestAnimationFrame(){},dropPosition:null,scope:()=>key,current:key,allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry},field,selected:new Set(),drafts:new Map(),draftScope:'',editing:null,lastRemoved:null,shelfViews:new Map(),signature:'old',itemsSignature:'old',projectColumnActive:()=>true,$:()=>target,syncFolders(){},projectFor:()=>null,ownerFor:()=>({root:'/work'}),itemsFor:()=>items,F,workspaceProfiles:profiles,filterShelf(){},itemMarkup:item=>item.id,prepareControlSemantics(){},document:{activeElement:null}};
+  vm.createContext(context);vm.runInContext(section(memorySource,'  function render(force=false){','  function collapse('),context);
+  context.render(true);
+  assert.equal(replacements,1);assert.notEqual(rows[0],previous[0],'The production render really replaced the row');
+  assert.equal(rows[0].details['memory-edit-details'].open,true,'An open editor survives a same-Stash row rebuild');
+  assert.equal(rows[0].details['memory-document'].open,true,'An open document preview survives a same-Stash row rebuild');
+  assert.equal(rows[0].details['memory-item-details'].open,false,'Closed menus stay closed');
+  assert.equal(rows[1].details['memory-item-details'].open,true,'Each row restores its own More disclosure');
+  assert.equal(rows[1].details['memory-edit-details'].open,false,'One item cannot inherit another item’s editor state');
+  key=M.scope('personal');items=items.map(item=>({...item,scope:key}));context.render(true);
+  assert.equal(replacements,2);assert.equal(pauses,2);
+  assert(rows.every(row=>names.every(name=>row.details[name].open===false)),'A different Stash never inherits nested disclosure state, even if item IDs match');
+}
 
 (async()=>{
   const scope=M.scope('work'),other=M.scope('work','second');
@@ -249,5 +271,6 @@ function verifyRapidInline(id,key){
   assert.equal(reloadedHistory.api.get(copiedRecord.id).relations[0].versionId,parentVersion);
   verifyRapidInline(initial.id,scope);
   verifyFocusedTags();
-  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation, metadata reload, focused Tags preservation and rapid-action edit flushes.');
+  verifyNestedDisclosures();
+  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation, metadata reload, focused Tags preservation, rapid-action edit flushes and nested disclosure retention.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

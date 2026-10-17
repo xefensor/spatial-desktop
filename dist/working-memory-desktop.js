@@ -160,7 +160,12 @@
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature&&itemsSignature===nextSignature)return;signature=nextSignature;
     field('[data-memory-scope]').textContent=(project?'Project: '+project.name:'Workspace: '+workspaceProfiles[JSON.parse(key)[0]]?.label);field('[data-memory-count]').textContent=items.length+' item'+(items.length===1?'':'s');
     if(!changed&&document.activeElement?.matches('[data-memory-inline],[data-item-tags]')&&host.contains(document.activeElement))return;
-    const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.map(itemMarkup).join('');itemsSignature=nextItemsSignature;}
+    const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){
+      const disclosures=new Map(!changed?[...host.querySelectorAll('[data-memory-id]')].map(row=>[row.dataset.memoryId,['memory-edit-details','memory-item-details','memory-document'].filter(name=>row.querySelector('.'+name)?.open)]):[]);
+      host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.map(itemMarkup).join('');
+      host.querySelectorAll('[data-memory-id]').forEach(row=>{for(const name of disclosures.get(row.dataset.memoryId)||[]){const disclosure=row.querySelector('.'+name);if(disclosure)disclosure.open=true;}});
+      itemsSignature=nextItemsSignature;
+    }
     filterShelf(items);
     prepareControlSemantics(host);
     globalThis.SpatialEmptyDesktop?.refresh();
