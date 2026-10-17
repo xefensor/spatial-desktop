@@ -1,0 +1,150 @@
+/* One glass sheet, with controls revealed by interaction rather than a grid
+   of permanent keycaps. Material classes keep authored app content and ABS
+   window controls outside this treatment, including inside glass popups. */
+body[data-theme] .material-surface-glass button.material-glass-button:not(.material-abs-button,.desktop-map-window-target,.overview-window):is(.control-push,.control-toggle,.material-glass-button){
+  --glass-action-tone:var(--state-tone,var(--control-accent,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:var(--glass-action-shadow,none)!important;
+  filter:none!important;
+  transform:none!important;
+  transition:background var(--glass-action-duration,90ms) ease,color var(--glass-action-duration,90ms) ease!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:not(.material-abs-button,.desktop-map-window-target,.overview-window):is(.control-push,.control-toggle,.material-glass-button):enabled:hover{
+  border-color:transparent!important;
+  background:var(--sd-glass-hover)!important;
+  box-shadow:var(--glass-action-shadow,none)!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:not(.material-abs-button,.desktop-map-window-target,.overview-window):is(.control-push,.control-toggle,.material-glass-button):enabled:active{
+  background:var(--sd-glass-down)!important;
+  box-shadow:var(--glass-action-shadow,none)!important;
+  transition-duration:var(--glass-press-duration,16ms)!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:not(.material-abs-button,.desktop-map-window-target,.overview-window).control-toggle:is([aria-pressed="true"],[aria-selected="true"],[aria-checked="true"],.is-open){
+  border-color:transparent!important;
+  background:color-mix(in srgb,var(--glass-action-tone) 6%,transparent)!important;
+  box-shadow:var(--glass-action-shadow,none)!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:not(.material-abs-button,.desktop-map-window-target,.overview-window):focus-visible{
+  outline:2px solid var(--glass-action-tone,var(--workspace-accent,var(--blue)))!important;
+  outline-offset:-2px!important;
+}
+/* State lines remain visible even for controls without toggle semantics. */
+body[data-theme] .material-glass-button.has-system-request{--glass-action-shadow:inset 0 -2px var(--amber)}
+body[data-theme] .material-glass-button.has-unread{--glass-action-shadow:inset 0 -2px var(--notification-workspace-accent,var(--workspace-accent))}
+body[data-theme] .material-glass-button.rail-action[aria-expanded="true"]{--glass-action-shadow:inset 0 -2px var(--control-accent,var(--role-systems))}
+body[data-theme] .material-glass-button.project-material-item{--glass-action-shadow:inset 2px 0 var(--project-accent,var(--workspace-accent))}
+
+/* A restrained accent distinguishes a commit action from navigation. Field
+   wells, disabled states and destructive icon/text colours are left intact. */
+body[data-theme] .material-surface-glass button.material-glass-button:is(#aiSend,#aiRenameForm [type="submit"],[data-folder-save],[data-task-run],.package-primary,.desktop-glass-dialog [type="submit"],#workspaceCreateForm [type="submit"],#timelinePlanForm [type="submit"]){
+  border-color:color-mix(in srgb,var(--glass-action-tone) 32%,transparent)!important;
+  background:color-mix(in srgb,var(--glass-action-tone) 12%,transparent)!important;
+  box-shadow:none!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:is(#aiSend,#aiRenameForm [type="submit"],[data-folder-save],[data-task-run],.package-primary,.desktop-glass-dialog [type="submit"],#workspaceCreateForm [type="submit"],#timelinePlanForm [type="submit"]):enabled:hover{
+  border-color:color-mix(in srgb,var(--glass-action-tone) 45%,transparent)!important;
+  background:color-mix(in srgb,var(--glass-action-tone) 18%,var(--sd-glass-hover))!important;
+}
+body[data-theme] .material-surface-glass button.material-glass-button:is(#aiSend,#aiRenameForm [type="submit"],[data-folder-save],[data-task-run],.package-primary,.desktop-glass-dialog [type="submit"],#workspaceCreateForm [type="submit"],#timelinePlanForm [type="submit"]):enabled:active{
+  background:color-mix(in srgb,var(--glass-action-tone) 15%,var(--sd-glass-down))!important;
+}
+
+/* Decorative glyphs belong to their heading, without another glass tile. */
+body[data-theme] :is(.area-window-icon,.workspace-glyph,.overview-zone-mark,.overview-project-icon).material-glass-element{
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* System: scope headings and whitespace do the grouping. Keep the pinned
+   machine footer and Compact sizing/scrolling rules, including short docks. */
+.systems-zone:not([data-area-state="rail"]) .system-local-scopes>.system-scope{padding-block:12px}
+.systems-zone:not([data-area-state="rail"]) .system-scope-body{gap:12px}
+.systems-zone:not([data-area-state="rail"]) .system-scope>.quick-settings{gap:6px;margin-top:12px!important}
+.systems-zone:not([data-area-state="rail"]) .system-scope>.quick-settings .quick-toggle{min-height:44px}
+.systems-zone:not([data-area-state="rail"]) .system-scope .dynamic-widget-stack{gap:12px}
+.systems-zone:not([data-area-state="rail"]) .notification-list{gap:8px}
+body[data-theme] :is(.systems-zone,.system-rail-flyout) :is(.notification,.next-event,.device-row,.timer-face){
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body[data-theme] :is(.systems-zone,.system-rail-flyout) :is(.notification,.next-event,.device-row):hover{background:var(--sd-glass-hover)!important}
+body[data-theme] :is(.systems-zone,.system-rail-flyout) .system-widget{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body[data-theme] .workspace-notification-badge{border-color:transparent!important}
+body[data-theme] .workspace-notification-badge.has-unread{
+  --glass-action-shadow:inset 0 -2px var(--notification-workspace-accent);
+  box-shadow:var(--glass-action-shadow)!important;
+}
+body[data-theme] .workspace-notification-badge:hover:not(:focus-visible){outline:none}
+
+/* Overview uses the same quiet row actions, with a seam between real groups
+   rather than a second full pane around every widget or search scope. */
+body[data-theme] .universal-search .overview-carousel .overview-widget{
+  border:0!important;
+  border-top:1px solid var(--sd-glass-groove)!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body[data-theme] .universal-search .overview-system-scoped .overview-system-scope-body>.overview-widget{
+  border:0!important;
+  padding:10px 2px!important;
+}
+body[data-theme] .universal-search :is(.overview-system-request,.overview-project-plan){
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body[data-theme] .universal-search :is(.overview-system-request,.overview-project-plan):hover{background:var(--sd-glass-hover)!important;outline:none}
+body[data-theme] .universal-search :is(.overview-system-request,.overview-project-plan):focus-visible{outline:2px solid var(--overview-system-accent,var(--workspace-accent));outline-offset:-2px}
+body[data-theme] .universal-search .search-scope{
+  border:0;
+  border-inline-start:2px solid var(--workspace-accent,var(--accent));
+  background:transparent;
+}
+body[data-theme] .universal-search .search-scope[data-search-scope="system"]{border-inline-start-color:var(--muted);background:transparent}
+
+/* Files and Assistant keep content readable without boxes inside boxes. */
+body[data-theme] .material-surface-glass .ai-direct-context{gap:4px;background:transparent}
+body[data-theme] .material-surface-glass .ai-direct-context :is(.ai-context-chip,.ai-context-remove){border-color:transparent!important;box-shadow:none!important}
+body[data-theme] .material-surface-glass .ai-file-task{
+  border:0;
+  border-inline-start:2px solid var(--workspace-accent,var(--blue));
+  border-bottom:1px solid var(--sd-glass-groove);
+  background:transparent;
+}
+body[data-theme] .material-surface-glass .ai-input-details{border:0;border-bottom:1px solid var(--sd-glass-groove)}
+body[data-theme] .material-surface-glass .folder-directory>button{background:transparent!important}
+body[data-theme] .material-surface-glass .folder-directory>button:hover{background:var(--sd-glass-hover)!important}
+
+/* Floating sheets share the Area material; only a floating sheet needs an
+   outer depth shadow. Docked Areas deliberately keep their existing edges. */
+body[data-theme] :is(.ai-input-panel,.item-history-dialog,.ai-quick-panel,.project-shelf-popup,.system-rail-flyout,.background-app-popup,.workspace-notification-popup,.desktop-glass-dialog).material-surface-glass{
+  border:1px solid var(--sd-glass-edge)!important;
+  color:var(--sd-glass-text)!important;
+  background:linear-gradient(128deg,rgba(255,255,255,.075),transparent 19% 76%,rgba(255,255,255,.025)),var(--sd-glass-face)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.24),inset 0 1px var(--sd-glass-highlight),inset 1px 0 var(--sd-glass-edge-soft)!important;
+  -webkit-backdrop-filter:blur(23px) saturate(1.08)!important;
+  backdrop-filter:blur(23px) saturate(1.08)!important;
+}
+body[data-theme="light"] :is(.ai-input-panel,.item-history-dialog,.ai-quick-panel,.project-shelf-popup,.system-rail-flyout,.background-app-popup,.workspace-notification-popup,.desktop-glass-dialog).material-surface-glass{
+  background:linear-gradient(128deg,rgba(255,255,255,.16),transparent 19% 76%,rgba(255,255,255,.05)),var(--sd-glass-face)!important;
+}
+body[data-theme] .workspace-notification-popup.material-surface-glass{border-top:3px solid var(--notification-workspace-accent)!important}
+
+@media(prefers-reduced-transparency:reduce){
+  body[data-theme] :is(.ai-input-panel,.item-history-dialog,.ai-quick-panel,.project-shelf-popup,.system-rail-flyout,.background-app-popup,.workspace-notification-popup,.desktop-glass-dialog).material-surface-glass{
+    background:#142332!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+  body[data-theme="light"] :is(.ai-input-panel,.item-history-dialog,.ai-quick-panel,.project-shelf-popup,.system-rail-flyout,.background-app-popup,.workspace-notification-popup,.desktop-glass-dialog).material-surface-glass{background:#eff5fa!important}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-theme]{--glass-action-duration:0ms;--glass-press-duration:0ms}
+}
