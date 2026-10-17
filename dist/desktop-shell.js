@@ -8282,7 +8282,7 @@ function captureWorkspaceContent() {
   Object.keys(appInfo).forEach(name => {
     const frame = frameFor(name);
     if (!frame) return;
-    frames[name] = [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].map(field => ({value: field.isContentEditable ? field.innerHTML : field.value, checked: field.checked}));
+    frames[name] = [...frame.querySelectorAll('input:not([data-window-volume]),textarea,select,[contenteditable]')].map(field => ({value: field.isContentEditable ? field.innerHTML : field.value, checked: field.checked}));
   });
   workspaceContent[activeWorkspace] = {frames, systemFields: [...areaFor('systems')?.querySelectorAll('input,select') || []].map(field => field.value), focusSeconds, music: {playing: musicPlaying, position: musicPosition}, note: noteDraft, terminal: terminalPreview, history: workspaceContent[activeWorkspace]?.history || []};
   workspaceProjects[activeWorkspace] = activeProjectName;
@@ -8302,8 +8302,8 @@ function restoreWorkspaceContent(name) {
   Object.keys(appInfo).forEach(id => {
     const frame = frameFor(id), base = appInfo[id].base || id;
     if (!frame) return;
-    const defaults = [...pristineFrames[base].querySelectorAll('input,textarea,select,[contenteditable]')];
-    [...frame.querySelectorAll('input,textarea,select,[contenteditable]')].forEach((field, index) => {
+    const defaults = [...pristineFrames[base].querySelectorAll('input:not([data-window-volume]),textarea,select,[contenteditable]')];
+    [...frame.querySelectorAll('input:not([data-window-volume]),textarea,select,[contenteditable]')].forEach((field, index) => {
       const value = saved?.frames?.[id]?.[index]?.value ?? (frame.dataset.demoExample ? field.value : defaults[index]?.value ?? '');
       if (field.isContentEditable) field.innerHTML = saved?.frames?.[id]?.[index]?.value || '';
       else field.value = field.tagName === 'TEXTAREA' ? SpatialDemoExamples.migrateNote(value) : value;

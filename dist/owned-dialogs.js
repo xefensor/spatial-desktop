@@ -141,7 +141,7 @@
     if(!state(id))return;
     if(event.key==='Escape') {event.preventDefault();event.stopImmediatePropagation();dismiss(id);}
     if(event.key==='Tab'){
-      const controls=[...frame.querySelectorAll('.app-titlebar button,[data-owned-dialog] input,[data-owned-dialog] select,[data-owned-dialog] button')].filter(node=>!node.disabled && !node.hidden);
+      const controls=[...frame.querySelectorAll('.app-titlebar button,.app-titlebar input,[data-owned-dialog] input,[data-owned-dialog] select,[data-owned-dialog] button')].filter(node=>!node.disabled && !node.hidden);
       const at=controls.indexOf(document.activeElement),next=event.shiftKey?at-1:at+1;
       if(at<0 || next<0 || next>=controls.length){event.preventDefault();event.stopImmediatePropagation();controls[event.shiftKey?controls.length-1:0]?.focus();}
     }

@@ -1,0 +1,25 @@
+/* The volume key uses the same ABS control as the other window buttons. */
+.app-titlebar>.app-identity{flex:1 1 0;min-width:0}
+.app-titlebar>.window-actions{flex:0 0 auto}
+.app-titlebar>.window-audio{display:flex;align-items:center;gap:5px;flex:0 1 132px;min-width:82px;max-width:132px;touch-action:none}
+.app-titlebar .window-audio-mute{flex:0 0 25px;width:25px;min-width:25px;height:26px;padding:5px}
+.app-titlebar .window-audio-mute svg{display:block;width:15px;height:15px}
+.app-titlebar .window-audio input{
+  appearance:none;-webkit-appearance:none;flex:1 1 0;min-width:28px;width:64px;height:6px;margin:0;padding:0;
+  border:1px solid var(--abs-edge-dark,#10171c);border-radius:999px;cursor:pointer;
+  background:linear-gradient(to right,var(--app-primary,var(--blue)) 0 var(--window-volume-fill),var(--abs-body,#1b272e) var(--window-volume-fill) 100%);
+  box-shadow:inset 0 1px 2px #0007,0 1px #ffffff14;
+}
+.app-titlebar .window-audio input::-webkit-slider-thumb{
+  appearance:none;-webkit-appearance:none;width:10px;height:15px;border:1px solid var(--abs-edge-dark,#10171c);border-radius:4px;
+  background:linear-gradient(var(--abs-body-hi,#65747c),var(--abs-body,#36464f));box-shadow:inset 0 1px #ffffff60,0 1px 3px #0008;
+}
+.app-titlebar .window-audio input::-moz-range-thumb{
+  width:8px;height:13px;border:1px solid var(--abs-edge-dark,#10171c);border-radius:4px;
+  background:linear-gradient(var(--abs-body-hi,#65747c),var(--abs-body,#36464f));box-shadow:inset 0 1px #ffffff60,0 1px 3px #0008;
+}
+.app-titlebar .window-audio input:focus-visible{outline:2px solid var(--app-primary,var(--text));outline-offset:4px}
+.app-titlebar .window-audio output{flex:0 0 28px;font:10px/1.2 system-ui,sans-serif;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
+.app-titlebar .window-audio.is-muted input{filter:saturate(0);opacity:.65}
+@container (max-width:520px){.app-titlebar>.window-audio{flex-basis:92px;max-width:92px;min-width:72px}.app-titlebar .window-audio output{display:none}}
+@container (max-width:390px){.app-titlebar>.window-audio{flex-basis:74px;max-width:74px;min-width:64px}.app-titlebar .window-audio{gap:4px}}
