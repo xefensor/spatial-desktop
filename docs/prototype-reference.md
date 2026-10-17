@@ -321,6 +321,16 @@ Imported files copy bytes into browser storage. A web link remains a link unless
 
 The item journal and saved snapshots are distinct from Timeline’s recent activity list. Search indexes and grouped views are projections of the saved records. Native applications, external renames and filesystem changes outside this web demo are not monitored. Stable demo IDs do not imply that the browser can track arbitrary files on the computer.
 
+## Desktop map
+
+**Meta+Tab** opens a separate fullscreen acrylic map of the current Workspace. **F2+Tab** is its browser alternative: hold F2, press Tab, then release. The map stays open after releasing the keys; the same shortcut or Escape closes it. The desktop indicator in the top navigation and the Desktop map button in Overview → Windows also open it. The ordinary Overview keeps its existing horizontal tabs.
+
+The ordinary Workspace and its open Projects are columns across the screen. Each column stacks its desktops vertically, including the spare empty desktop. Open windows appear inside the corresponding desktop preview with their stored tiling proportions or floating positions. Multiple connected demo displays appear as separately labelled surfaces within each desktop. The current desktop has the Project accent outline. The map scrolls vertically and horizontally when needed.
+
+Click a window to return to its desktop; click a desktop heading or its background to visit that desktop. Left/Right changes Project columns and Up/Down changes desktops; Enter opens the focused desktop. Tab reaches individual windows and the close button, with focus kept inside the map. Parked windows stay in a separate **Across these desktops** group under their owning column; clicking one restores it on that column’s selected desktop. System-wide background services retain their existing Apps controls.
+
+Opening, browsing and canceling the map does not park windows, rearrange tiles or leave fullscreen. Window previews use sanitized, inert copies; Hide preview replaces their content with app identity and Preview hidden. Native media/iframes are omitted from these copies. Selecting an open window on another display preserves its monitor assignment and identifies that display; actual OS-level focus across monitors remains outside this browser prototype. Other Workspaces’ windows are excluded, and blocking dialogs or locked Guide lessons retain priority.
+
 ## Assistant Area
 
 Assistant is the digital assistant in its own fourth docked Area, also available without a Project. Compact shows the current chat title, source count and an unsent-draft indicator, plus **New chat**. Clicking the chat, its header or **Super+A / F2+A** opens a temporary quick chat beside the Compact Area. The same conversation, sources and composer are available there; this does not resize the dock or move tiled windows. **Expand area** keeps the full Area open. Escape, the close button or clicking outside closes quick chat while preserving its draft. Hidden Assistant can still be recalled with the shortcut. Enter submits a request; Shift+Enter adds a line. There are no preset prompt buttons and no real model/provider connection. Fixed local rules return explicitly labelled scripted examples.
