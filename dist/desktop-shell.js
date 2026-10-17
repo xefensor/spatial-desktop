@@ -715,11 +715,12 @@ function releaseBorrowedApp(name) {
   Object.values(tileSessions).forEach(session=>[session.focus,session.fullscreen].forEach(mode=>{if(mode?.transferred) delete mode.transferred[name];}));
 }
 
-function returnCoveredApps(session, mode) {
+function returnCoveredApps(session, mode, context = null) {
   if (!mode) return;
-  const assignments = displayAssignmentsFor(), prefix = intentContextPrefix();
+  const assignments = displayAssignmentsFor(), prefix = context?.prefix || intentContextPrefix();
+  const owns = context?.owns || (name => desktopPages.visible(activeWorkspace,name));
   Object.entries(mode.transferred || {}).forEach(([name,record])=>{
-    if (appState[name] !== "open" || !desktopPages.visible(activeWorkspace,name) || Number(assignments.apps[name]) !== record.target) return;
+    if (appState[name] !== "open" || !owns(name,record.target) || Number(assignments.apps[name]) !== record.target) return;
     const peer = tileSessions[prefix+record.target];
     if (peer) {peer.root=tileEngine.remove(peer.root,name);delete peer.floating?.[name];}
     assignments.apps[name]=record.source;
@@ -728,13 +729,13 @@ function returnCoveredApps(session, mode) {
   if (Object.keys(mode.transferred || {}).length) persistDisplayAssignments();
 }
 
-function leaveTileFocus(session, restoreParked = false) {
+function leaveTileFocus(session, restoreParked = false, context = null) {
   const focus = session.focus;
   if (!focus) return;
   session.focus = null;
-  returnCoveredApps(session,focus);
+  returnCoveredApps(session,focus,context);
   if (restoreParked) focus.parked.forEach(name=>{
-    if(appState[name] !== "minimized" || !isLocalApp(name)) return;
+    if(appState[name] !== "minimized" || !(context?.owns ? context.owns(name) : isLocalApp(name))) return;
     appState[name]="open";delete session.parked[name];
   });
 }
@@ -754,21 +755,21 @@ function parkFullscreenPeers(session) {
   });
 }
 
-function leaveAppFullscreen(session = tileSession()) {
+function leaveAppFullscreen(session = tileSession(), context = null) {
   const fullscreen = session.fullscreen;
   if (!fullscreen) return;
   if (fullscreen.bonded) { leaveBondedFullscreen(fullscreen.name); return; }
   session.fullscreen = null;
-  returnCoveredApps(session, fullscreen);
+  returnCoveredApps(session, fullscreen, context);
   (fullscreen.parked || []).forEach(name => {
     // Only revive windows parked by this fullscreen, never closed apps or
     // cards the user subsequently moved to another monitor/session.
-    if (appState[name] !== "minimized" || !isLocalApp(name) || session.parked[name]?.fullscreen !== fullscreen.name) return;
+    if (appState[name] !== "minimized" || !(context?.owns ? context.owns(name) : isLocalApp(name)) || session.parked[name]?.fullscreen !== fullscreen.name) return;
     appState[name] = "open";
     delete session.parked[name];
   });
   if (fullscreen.root) session.root = tileEngine.normalize(fullscreen.root,
-    Object.keys(appState).filter(name => appState[name] === "open" && isLocalApp(name) && !session.floating[name]));
+    Object.keys(appState).filter(name => appState[name] === "open" && (context?.owns ? context.owns(name) : isLocalApp(name)) && !session.floating[name]));
   const frame = frameFor(fullscreen.name);
   frame?.classList.remove("is-fullscreen", "is-maximized");
   if (frame) delete frame.dataset.maximized;
@@ -1996,10 +1997,19 @@ let cancelWindowPointerInteraction = null;
 
 function detachDraggedDesktopWindow(name, page, column = desktopPages.column(activeWorkspace)) {
   const prefix = desktopPages.context(activeWorkspace, page, column);
-  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
+  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([key, session]) => {
+    const display = Number(key.slice(prefix.length)), assignments = displayAssignmentsFor().apps;
+    const context = {prefix, owns: (id, slot = display) => desktopPages.columnOf(activeWorkspace,id) === column && desktopPages.pageOf(activeWorkspace,id) === page && Math.min(activeDisplayRoster().length,Number(assignments[id])||1) === slot};
+    if (session.fullscreen?.name === name) leaveAppFullscreen(session,context);
+    if (session.focus?.name === name) leaveTileFocus(session,true,context);
     session.root = tileEngine.remove(session.root, name);
-    if (session.focus?.name === name) leaveTileFocus(session);
-    if (session.focus?.root) session.focus.root = tileEngine.remove(session.focus.root, name);
+    // The moved identity cannot reappear when another maximized/fullscreen
+    // window later restores its saved tree or automatically borrowed peers.
+    for (const mode of [session.focus,session.fullscreen]) if(mode) {
+      if(mode.root)mode.root = tileEngine.remove(mode.root,name);
+      if(mode.parked)mode.parked = mode.parked.filter(id=>id!==name);
+      if(mode.transferred)delete mode.transferred[name];
+    }
     delete session.floating?.[name];
     delete session.parked?.[name];
   });
@@ -7100,27 +7110,35 @@ function changeDesktopColumn(column, announce = true) {
 
 function moveWindowToColumn(name, column, follow = true, destinationPage = null) {
   if (!appInfo[name] || appState[name] === "closed" || (column !== "workspace" && !openProjectNames().includes(column))) return false;
-  const previous = desktopPages.columnOf(activeWorkspace, name);
-  if (previous === column) return false;
-  const page = desktopPages.pageOf(activeWorkspace, name);
-  const floating = tileSessions[desktopPages.context(activeWorkspace, page, previous) + localDisplaySlot()]?.floating?.[name];
-  removeWindowFromSavedProjects(name);
+  const previous = desktopPages.columnOf(activeWorkspace, name), page = desktopPages.pageOf(activeWorkspace, name);
+  const destination = Number.isSafeInteger(destinationPage) && destinationPage >= 0 ? destinationPage : desktopPages.current(activeWorkspace, column);
+  if (previous === column && page === destination) return false;
+  const display = Math.min(activeDisplayRoster().length,Number(displayAssignmentsFor().apps[name])||1);
+  const source = tileSessions[desktopPages.context(activeWorkspace, page, previous) + display];
+  const floating = source?.floating?.[name] || (source?.focus?.name === name ? source.focus.returnFloating : null);
+  releaseBorrowedApp(name);
+  if (previous !== column) removeWindowFromSavedProjects(name);
   detachDraggedDesktopWindow(name, page, previous);
-  desktopPages.assign(activeWorkspace, name, Number.isSafeInteger(destinationPage) && destinationPage >= 0 ? destinationPage : desktopPages.current(activeWorkspace, column), column);
+  desktopPages.assign(activeWorkspace, name, destination, column);
   windowMembership[activeWorkspace] ||= {};
   windowMembership[activeWorkspace][name] = column === "workspace" ? null : column;
   if (floating) {
-    const target = tileSessions[desktopPages.context(activeWorkspace, undefined, column) + localDisplaySlot()] ||= {root: null, parked: {}, floating: {}};
+    const target = tileSessions[desktopPages.context(activeWorkspace, destination, column) + display] ||= {root: null, parked: {}, floating: {}};
     target.floating ||= {};
-    target.floating[name] = floating;
+    target.floating[name] = cloneDesktopState(floating);
   }
-  if (follow) changeDesktopColumn(column, false);
+  appMaximizedState[name] = false;
+  const frame = frameFor(name);
+  frame?.classList.remove("is-fullscreen", "is-maximized", "is-front");
+  if(frame)delete frame.dataset.maximized;
+  autoTiledWindows.delete(name);
+  if (follow) changeDesktopPage(destination, false, column);
   syncApps();
-  renderTileLayout(name);
-  if (follow && appState[name] === "open") bringToFront(name);
+  renderTileLayout(follow ? name : frontApp);
+  if (follow && appState[name] === "open" && isLocalApp(name)) bringToFront(name);
   saveDesktopPages(); saveTileSessions(); saveIndependentSessions(); persistProjectState();
   queueDesktopStateBroadcast(0);
-  showToast(appInfo[name].label + " moved to " + desktopColumnLabel(column));
+  showToast(appInfo[name].label + " moved to " + desktopColumnLabel(column) + " · Desktop " + (destination + 1));
   return true;
 }
 

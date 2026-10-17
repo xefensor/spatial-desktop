@@ -68,7 +68,7 @@ const ctx=vm.createContext({
   window:{matchMedia:()=>({matches:true})},document:{body:{dataset:{},style:{setProperty(){},removeProperty(){}}}},
   $:key=>node(key),$$:selector=>selector==='[data-app-frame]'?Object.values(frames):[],frameFor:name=>frames[name],
   areaFor:name=>node('area:'+name),
-  localDisplaySlot:()=>1,extendedDesktopActive:()=>false,displayAssignmentsFor:()=>({apps:{}}),
+  activeDisplayRoster:()=>[{}],releaseBorrowedApp(){},autoTiledWindows:new Set(),appMaximizedState:{},leaveTileFocus(){},localDisplaySlot:()=>1,extendedDesktopActive:()=>false,displayAssignmentsFor:()=>({apps:{}}),
   intentAreaPlan:{moves:{}},syncProjectWindowScopes(){},syncRack(){},originalSyncRack(){},renderMiniApps(){},renderOverviewWindows(){},scheduleWindowVisibility(){},persistWorkspaceAppStates(){},
   captureWorkspaceContent(){},saveLayout(){},saveTileSessions(){},saveDesktopPages(){},saveIndependentSessions(){},persistProjectState(){},
   refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},endSystemRailExpansion(){},showToast(){},removeWindowFromSavedProjects(){},cloneDesktopState:copy,

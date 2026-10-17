@@ -3,9 +3,9 @@
   'use strict';
   const D=SpatialDesktopMap,html=escapeHtml;
   const panel=document.createElement('section');panel.id='spatialDesktopMap';panel.className='desktop-map-overlay material-surface-glass';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','desktopMapTitle');
-  panel.innerHTML='<header class="desktop-map-heading"><div><small id="desktopMapWorkspace"></small><h1 id="desktopMapTitle">Desktop map</h1><p>Projects across · Desktops down · Choose a window to return</p></div><button type="button" class="surface-key" data-map-close aria-label="Close desktop map">'+icon('i-close')+'</button></header><div class="desktop-map-world" tabindex="-1" aria-label="Projects and desktops"></div><footer><span><kbd>Meta + Tab</kbd> / <kbd>F2 + Tab</kbd> Desktop map</span><span><kbd>← ↑ ↓ →</kbd> Choose desktop · <kbd>Enter</kbd> Open · <kbd>Esc</kbd> Close</span></footer>';
+  panel.innerHTML='<header class="desktop-map-heading"><div><small id="desktopMapWorkspace"></small><h1 id="desktopMapTitle">Desktop map</h1><p>Projects across · Desktops down · Click to open · Drag a window to another desktop</p></div><button type="button" class="surface-key" data-map-close aria-label="Close desktop map">'+icon('i-close')+'</button></header><div class="desktop-map-world" tabindex="-1" aria-label="Projects and desktops"></div><footer><span id="desktopMapStatus" role="status" aria-live="polite">Drag between desktops or open Projects.</span><button type="button" class="surface-key" data-map-undo hidden>Undo move</button><span><kbd>Meta + Tab</kbd> / <kbd>F2 + Tab</kbd> Desktop map</span><span><kbd>← ↑ ↓ →</kbd> Choose desktop · <kbd>Enter</kbd> Open · <kbd>Esc</kbd> Close</span></footer>';
   document.body.append(panel);
-  const world=panel.querySelector('.desktop-map-world');let origin=null,owner='',inert=[],timer=0,columns=[],signature='',rendering=false;
+  const world=panel.querySelector('.desktop-map-world');let origin=null,owner='',inert=[],timer=0,columns=[],signature='',rendering=false,drag=null,scrollFrame=0,suppressClickUntil=0,undoMove=null;
   const isOpen=()=>!panel.hidden;
   function data(){
     const roster=activeDisplayRoster(),count=roster.length,assignments=displayAssignmentsFor().apps;
@@ -22,13 +22,14 @@
   function render(force=false){
     if(!isOpen()||rendering)return;
     if(owner!==activeWorkspace){close(false);return;}
+    if(drag)return;
     const source=data(),next=JSON.stringify({...source,session:source.columns.flatMap(c=>source.displays.flatMap(d=>Array.from({length:c.pages},(_,page)=>source.session(c.id,page,d.slot))))});
     if(!force&&signature===next)return;signature=next;rendering=true;
     try{
     const focused=document.activeElement?.closest('[data-map-page]'),focus=focused?{column:focused.dataset.mapColumn,page:Number(focused.dataset.mapPage)}:null;
     const scroll={x:world.scrollLeft,y:world.scrollTop};columns=D.build(source);
     panel.querySelector('#desktopMapWorkspace').textContent=workspaceProfiles[activeWorkspace].label+' Workspace';
-    world.innerHTML=columns.map(column=>'<section class="desktop-map-column" data-map-column-id="'+html(column.id)+'" style="--map-accent:'+html(/^#[\da-f]{3,8}$/i.test(column.accent||'')?column.accent:'#5cbcff')+'"><header>'+icon(column.icon||'i-folder')+'<div><h2>'+html(column.label)+'</h2><small>'+(column.id==='workspace'?'Workspace desktops':'Project desktops')+'</small></div></header><div class="desktop-map-pages">'+column.pages.map(page=>'<section class="desktop-map-page'+(page.current?' is-current':'')+'"><button type="button" class="desktop-map-page-heading" data-map-page="'+page.page+'" data-map-column="'+html(column.id)+'" aria-current="'+(page.current?'page':'false')+'" aria-label="'+html(column.label+' · Desktop '+(page.page+1))+'"><span>Desktop '+(page.page+1)+'</span><small>'+(page.current?'Current':page.displays.every(d=>!d.windows.length)?'Empty':'')+'</small></button><div class="desktop-map-displays">'+page.displays.map(display=>'<div class="desktop-map-display" style="aspect-ratio:'+display.width+'/'+display.height+'" aria-label="Display '+display.slot+'"><button type="button" class="desktop-map-background" tabindex="-1" data-map-page="'+page.page+'" data-map-column="'+html(column.id)+'" aria-label="'+html('Open '+column.label+' · Desktop '+(page.page+1))+'">'+(!display.windows.length?'<span>Empty desktop</span>':'')+'</button>'+display.windows.map(windowMarkup).join('')+(source.displays.length>1?'<span class="desktop-map-display-label">Display '+display.slot+'</span>':'')+'</div>').join('')+'</div></section>').join('')+'</div>'+(column.parked.length?'<section class="desktop-map-parked"><h3>Parked <small>Across these desktops</small></h3><div>'+column.parked.map(w=>'<button type="button" data-map-parked="'+html(w.id)+'" title="'+html(w.label+' · '+w.detail)+'" aria-label="'+html('Restore '+w.label+' here')+'">'+appArt(w.id)+'<span>'+html(w.label)+'</span></button>').join('')+'</div></section>':'')+'</section>').join('');
+    world.innerHTML=columns.map(column=>'<section class="desktop-map-column" data-map-column-id="'+html(column.id)+'" style="--map-accent:'+html(/^#[\da-f]{3,8}$/i.test(column.accent||'')?column.accent:'#5cbcff')+'"><header>'+icon(column.icon||'i-folder')+'<div><h2>'+html(column.label)+'</h2><small>'+(column.id==='workspace'?'Workspace desktops':'Project desktops')+'</small></div></header><div class="desktop-map-pages">'+column.pages.map(page=>'<section class="desktop-map-page'+(page.current?' is-current':'')+'" data-map-drop-column="'+html(column.id)+'" data-map-drop-page="'+page.page+'"><button type="button" class="desktop-map-page-heading" data-map-page="'+page.page+'" data-map-column="'+html(column.id)+'" aria-current="'+(page.current?'page':'false')+'" aria-label="'+html(column.label+' · Desktop '+(page.page+1))+'"><span>Desktop '+(page.page+1)+'</span><small>'+(page.current?'Current':page.displays.every(d=>!d.windows.length)?'Empty':'')+'</small></button><div class="desktop-map-displays">'+page.displays.map(display=>'<div class="desktop-map-display" style="aspect-ratio:'+display.width+'/'+display.height+'" aria-label="Display '+display.slot+'"><button type="button" class="desktop-map-background" tabindex="-1" data-map-page="'+page.page+'" data-map-column="'+html(column.id)+'" aria-label="'+html('Open '+column.label+' · Desktop '+(page.page+1))+'">'+(!display.windows.length?'<span>Empty desktop</span>':'')+'</button>'+display.windows.map(windowMarkup).join('')+(source.displays.length>1?'<span class="desktop-map-display-label">Display '+display.slot+'</span>':'')+'</div>').join('')+'</div></section>').join('')+'</div>'+(column.parked.length?'<section class="desktop-map-parked"><h3>Parked <small>Across these desktops</small></h3><div>'+column.parked.map(w=>'<button type="button" data-map-parked="'+html(w.id)+'" title="'+html(w.label+' · '+w.detail)+'" aria-label="'+html('Restore '+w.label+' here')+'">'+appArt(w.id)+'<span>'+html(w.label)+'</span></button>').join('')+'</div></section>':'')+'</section>').join('');
     prepareControlSemantics(panel);
     world.scrollLeft=scroll.x;world.scrollTop=scroll.y;
     for(const column of columns)for(const page of column.pages)for(const display of page.displays)for(const w of display.windows)paint(w);
@@ -47,15 +48,87 @@
     const scale=box.width/width;clone.style.setProperty('transform','scale('+scale+')','important');host.append(clone);
   }
   function focusPage(column,page){const button=[...world.querySelectorAll('.desktop-map-page-heading')].find(n=>n.dataset.mapColumn===column&&Number(n.dataset.mapPage)===page);button?.focus({preventScroll:true});button?.scrollIntoView({block:'nearest',inline:'center'});}
+  function status(message){panel.querySelector('#desktopMapStatus').textContent=message;}
+  function validDrop(column,page){return Number.isSafeInteger(page)&&page>=0&&columns.some(c=>c.id===column&&c.pages.some(p=>p.page===page))&&(column==='workspace'||openProjectNames().includes(column));}
+  function dropAt(x,y){
+    const node=document.elementFromPoint(x,y)?.closest('[data-map-drop-column]');
+    if(!node||!world.contains(node))return null;
+    const column=node.dataset.mapDropColumn,page=Number(node.dataset.mapDropPage);
+    return validDrop(column,page)&&!(column===drag.column&&page===drag.page)?{column,page,node}:null;
+  }
+  function updateDrop(){
+    if(!drag?.active)return;
+    drag.target?.node.classList.remove('is-drop-target');drag.target=dropAt(drag.x,drag.y);
+    drag.target?.node.classList.add('is-drop-target');
+    drag.ghost.style.transform='translate('+(drag.x+14)+'px,'+(drag.y+14)+'px)';
+    status(drag.target?'Move '+drag.label+' to '+desktopColumnLabel(drag.target.column)+' · Desktop '+(drag.target.page+1)+(activeDisplayRoster().length>1?' · Display '+drag.display:''):'Drop on another desktop · Esc cancels');
+  }
+  function scrollDrag(){
+    scrollFrame=0;if(!drag?.active)return;
+    const r=world.getBoundingClientRect(),{x,y}=drag;
+    const speed=(value,start,end)=>value<start+44?-Math.ceil((start+44-value)/4):value>end-44?Math.ceil((value-end+44)/4):0;
+    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){world.scrollLeft+=speed(x,r.left,r.right);world.scrollTop+=speed(y,r.top,r.bottom);updateDrop();}
+    scrollFrame=requestAnimationFrame(scrollDrag);
+  }
+  function cancelDrag(message='Move canceled'){
+    if(!drag)return null;const previous=drag;drag=null;
+    cancelAnimationFrame(scrollFrame);scrollFrame=0;
+    previous.target?.node.classList.remove('is-drop-target');previous.source.classList.remove('is-drag-source');previous.ghost?.remove();panel.classList.remove('is-map-dragging');
+    if(panel.hasPointerCapture(previous.pointer))panel.releasePointerCapture(previous.pointer);
+    if(previous.active){suppressClickUntil=performance.now()+450;status(message);}
+    return previous;
+  }
+  function beginDrag(event){
+    if(event.button!==0||event.isPrimary===false||drag)return;
+    const button=event.target.closest('[data-map-window]');if(!button)return;
+    const id=button.dataset.mapWindow;if(appState[id]!=='open')return;
+    drag={id,label:appInfo[id].label,column:desktopPages.columnOf(activeWorkspace,id),page:desktopPages.pageOf(activeWorkspace,id),display:Math.min(activeDisplayRoster().length,Number(displayAssignmentsFor().apps[id])||1),workspace:activeWorkspace,pointer:event.pointerId,startX:event.clientX,startY:event.clientY,x:event.clientX,y:event.clientY,source:button.closest('[data-map-preview]'),active:false,target:null};
+    // Capture only after the threshold, so a normal click keeps its window target.
+  }
+  function moveDrag(event){
+    if(!drag||event.pointerId!==drag.pointer)return;
+    drag.x=event.clientX;drag.y=event.clientY;
+    if(!drag.active&&Math.hypot(drag.x-drag.startX,drag.y-drag.startY)<6)return;
+    event.preventDefault();
+    if(!drag.active){
+      drag.active=true;panel.setPointerCapture(drag.pointer);panel.classList.add('is-map-dragging');drag.source.classList.add('is-drag-source');
+      drag.ghost=document.createElement('div');drag.ghost.className='desktop-map-drag-ghost material-surface-glass';drag.ghost.setAttribute('aria-hidden','true');drag.ghost.innerHTML=appArt(drag.id)+'<span>'+html(drag.label)+'</span>';panel.append(drag.ghost);
+      scrollFrame=requestAnimationFrame(scrollDrag);
+    }
+    updateDrop();
+  }
+  function finishDrag(event){
+    if(!drag||event.pointerId!==drag.pointer)return;
+    if(!drag.active){cancelDrag();return;}
+    drag.x=event.clientX;drag.y=event.clientY;updateDrop();event.preventDefault();event.stopPropagation();
+    const move=cancelDrag('Move canceled'),target=move.target;
+    if(!target||owner!==activeWorkspace||move.workspace!==activeWorkspace||appState[move.id]!=='open'||desktopPages.columnOf(activeWorkspace,move.id)!==move.column||desktopPages.pageOf(activeWorkspace,move.id)!==move.page||!validDrop(target.column,target.page)){render(true);return;}
+    const before=capturePlacement();
+    if(!moveWindowToColumn(move.id,target.column,false,target.page)){render(true);return;}
+    undoMove={before,expected:placementFingerprint(capturePlacement())};panel.querySelector('[data-map-undo]').hidden=false;
+    render(true);focusPage(target.column,target.page);status(move.label+' moved to '+desktopColumnLabel(target.column)+' · Desktop '+(target.page+1));
+  }
+  function undoLastMove(){
+    const saved=undoMove;undoMove=null;panel.querySelector('[data-map-undo]').hidden=true;
+    if(!saved||saved.expected!==placementFingerprint(capturePlacement())){status('Layout changed since then · Undo is no longer available');return;}
+    if(restorePlacement(saved.before)){render(true);status('Previous layout restored');}
+  }
+  panel.addEventListener('pointerdown',beginDrag);
+  panel.addEventListener('pointermove',moveDrag);
+  panel.addEventListener('pointerup',finishDrag);
+  panel.addEventListener('pointercancel',()=>cancelDrag());
+  panel.addEventListener('lostpointercapture',()=>cancelDrag());
+  panel.addEventListener('dragstart',event=>{if(event.target.closest('[data-map-window]'))event.preventDefault();});
+  window.addEventListener('blur',()=>cancelDrag());
   function blocked(){return document.querySelector('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]):not(#universalSearch):not(#spatialDesktopMap)')||tileInteraction||manualWindowInteraction||desktopPageAnimating||globalThis.SpatialGuide?.model.active()&&(!SpatialGuide.model.allows('projects')||!SpatialGuide.model.allows('desktops'));}
   function open(){
     if(isOpen()||blocked())return false;
-    origin=document.activeElement;owner=activeWorkspace;setUniversalSearchOpen(false);closeDesktopContextMenu();
+    origin=document.activeElement;owner=activeWorkspace;undoMove=null;panel.querySelector('[data-map-undo]').hidden=true;status('Drag between desktops or open Projects.');setUniversalSearchOpen(false);closeDesktopContextMenu();
     inert=[...document.body.children].filter(node=>node!==panel&&!['SCRIPT','STYLE','LINK'].includes(node.tagName)).map(node=>[node,node.inert]);inert.forEach(([node])=>node.inert=true);
     panel.hidden=false;panel.inert=false;render(true);focusPage(desktopPages.column(activeWorkspace),desktopPages.current(activeWorkspace));
     timer=setInterval(()=>render(),1000);return true;
   }
-  function close(restore=true){if(!isOpen())return;panel.hidden=true;clearInterval(timer);world.replaceChildren();signature='';inert.forEach(([node,value])=>node.inert=value);inert=[];if(restore&&origin?.isConnected&&!origin.closest('[hidden]'))origin.focus({preventScroll:true});}
+  function close(restore=true){if(!isOpen())return;cancelDrag();panel.hidden=true;clearInterval(timer);world.replaceChildren();signature='';inert.forEach(([node,value])=>node.inert=value);inert=[];if(restore&&origin?.isConnected&&!origin.closest('[hidden]'))origin.focus({preventScroll:true});}
   function visit(column,page,id,parked=false){
     if(column!=='workspace'&&!openProjectNames().includes(column))return;
     close(false);changeDesktopPage(page,false,column);
@@ -65,6 +138,8 @@
     }else focusDesktop();
   }
   panel.addEventListener('click',event=>{
+    if(performance.now()<suppressClickUntil){event.preventDefault();event.stopPropagation();return;}
+    if(event.target.closest('[data-map-undo]'))return undoLastMove();
     if(event.target.closest('[data-map-close]'))return close();
     const app=event.target.closest('[data-map-window],[data-map-parked]');if(app){const id=app.dataset.mapWindow||app.dataset.mapParked,parked=Boolean(app.dataset.mapParked);return visit(desktopPages.columnOf(activeWorkspace,id),parked?desktopPages.current(activeWorkspace,desktopPages.columnOf(activeWorkspace,id)):desktopPages.pageOf(activeWorkspace,id),id,parked);}
     const page=event.target.closest('[data-map-page]');if(page)visit(page.dataset.mapColumn,Number(page.dataset.mapPage));
@@ -74,12 +149,13 @@
     if(event.key==='Tab'&&held&&!event.ctrlKey&&!event.altKey){event.preventDefault();event.stopImmediatePropagation();superKeyAlone=false;if(!event.repeat)isOpen()?close():open();return;}
     if(!isOpen())return;
     if(['Meta','OS','F2'].includes(event.key)){superKeyAlone=false;return;}
-    if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();return close();}
+    if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();return drag?cancelDrag():close();}
+    if(drag){event.preventDefault();event.stopImmediatePropagation();return;}
     if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)){
       event.preventDefault();event.stopImmediatePropagation();const page=document.activeElement.closest('[data-map-page]')||document.activeElement.closest('.desktop-map-page')?.querySelector('.desktop-map-page-heading');const next=D.move(columns,page?.dataset.mapColumn||desktopPages.column(activeWorkspace),Number(page?.dataset.mapPage??desktopPages.current(activeWorkspace)),event.key);focusPage(next.column,next.page);return;
     }
     if(event.key==='Tab'){
-      const buttons=[...panel.querySelectorAll('button:not([tabindex="-1"])')],at=buttons.indexOf(document.activeElement),next=at+(event.shiftKey?-1:1);if(next<0||next>=buttons.length){event.preventDefault();buttons[(next+buttons.length)%buttons.length].focus();}
+      const buttons=[...panel.querySelectorAll('button:not([tabindex="-1"]):not([hidden])')],at=buttons.indexOf(document.activeElement),next=at+(event.shiftKey?-1:1);if(next<0||next>=buttons.length){event.preventDefault();buttons[(next+buttons.length)%buttons.length].focus();}
     }
     event.stopPropagation();
   },true);
