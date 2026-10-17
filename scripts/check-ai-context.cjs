@@ -10,6 +10,7 @@ const env={workspaces:()=>workspaces,projects:()=>projects};
   chat.folder('general','website');
   const response=D.reply('Summarize the sources',{items:chat.session('general').items,folder:chat.workingFolder('general'),project:'Website'});
   assert(response.text.includes('Keep navigation clear.'));
+  const observations=require('../dist/demo-examples.js').projects.research.note;const survey=D.reply('Summarize these observations and their limitations.',{items:[{title:'Observations',text:observations}]});for(const detail of ['Riverside A','Riverside B','Courtyard A','Courtyard B','does not establish'])assert(survey.text.includes(detail),'Short selected notes retain every plot and the stated limitation');
   assert.equal(D.reply('Summarize the attached project note',{items:chat.session('general').items}).title,'Source summary');
   const turn=chat.exchange('general','Summarize the sources',response);
   assert.equal(turn.folder,projects.website.root);assert.equal(turn.sources[0].workspace,'work');

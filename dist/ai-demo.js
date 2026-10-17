@@ -2,7 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SpatialAIDemo=api;})(globalThis,function(){
   'use strict';
   const normalize=text=>String(text||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const excerpt=item=>String(item.text||'').split(/\n+/).map(line=>line.trim()).filter(Boolean).slice(0,3).join(' ').slice(0,280);
+  const excerpt=item=>String(item.text||'').split(/\n+/).map(line=>line.trim()).filter(Boolean).slice(0,12).join(' ').slice(0,1600);
   function reply(request,{items=[],folder='',project=''}={}){
     const query=normalize(request),sources=items.slice(0,24),readable=sources.filter(item=>excerpt(item)),name=project||'this workspace';
     const summary=readable.map(item=>item.title+': '+excerpt(item));

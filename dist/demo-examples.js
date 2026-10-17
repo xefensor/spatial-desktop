@@ -684,6 +684,7 @@
     for (const field of ["files", "resources"]) {
       if (!Array.isArray(next[field])) continue;
       next[field] = next[field].map(row => {
+        if(id==='research'&&field==='files'&&same(row,['field-observations.csv','Three survey sites','document']))return JSON.parse(JSON.stringify(after.files[0]));
         let index = before[field].findIndex(original => same(row, original));
         if (index < 0) index = previousPublicProjects[id]?.[field]?.findIndex(original => same(row, original)) ?? -1;
         return index < 0 ? row : JSON.parse(JSON.stringify(after[field][index]));

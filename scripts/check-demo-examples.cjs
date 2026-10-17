@@ -499,3 +499,5 @@ const updatedPage=D.migrateBrowserPage(cachedPage);assert.match(updatedPage.intr
 
 assert.equal(D.migrateNote('Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.'),D.projects.research.note);
 assert.equal(D.migrateNote('My own field observations'),'My own field observations');
+
+const oldSurvey=JSON.parse(JSON.stringify(D.projects.research));oldSurvey.files[0][1]='Three survey sites';assert.equal(D.migrateProject('research',oldSurvey).files[0][1],'Four plots across two sites');oldSurvey.files[0][1]='My own survey description';assert.equal(D.migrateProject('research',oldSurvey).files[0][1],'My own survey description');
