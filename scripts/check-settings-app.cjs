@@ -122,7 +122,10 @@ function settingsChecks(){
   h.click('[data-setting-action="reset-areas"]');assert.equal(h.calls.reset,1);
   h.api.navigate('connections');h.click('[data-settings-toggle="Wi-Fi"]');assert.deepEqual(h.calls.system.at(-1),['Wi-Fi',true]);assert.equal(h.find('[data-settings-toggle="Wi-Fi"]').getAttribute('aria-pressed'),'true');
   h.click('[data-settings-toggle="Wi-Fi"]');assert.deepEqual(h.calls.system.at(-1),['Wi-Fi',false]);
-  h.api.navigate('home');h.api.navigate('appearance');h.api.navigate('displays',{slot:2});assert.equal(h.calls.mounts.at(-1).slot,2,'Displays opens inside the Settings page on the requested monitor');
+  h.api.navigate('home');h.api.navigate('appearance');
+  assert.equal(h.find('[data-settings-category="home"]').getAttribute('aria-pressed'),'false','The previous category releases its shared ABS pressed state');
+  assert.equal(h.find('[data-settings-category="appearance"]').getAttribute('aria-pressed'),'true','The selected category owns the shared ABS pressed state');
+  h.api.navigate('displays',{slot:2});assert.equal(h.calls.mounts.at(-1).slot,2,'Displays opens inside the Settings page on the requested monitor');
   h.click('[data-settings-back]');assert.equal(h.api.category(),'appearance','Back restores the previous category');
   h.query('second monitor');assert.match(h.page().innerHTML,/Open second demo display/);h.click('[data-settings-result="second-display"]');
   assert.equal(h.api.category(),'displays','A search result opens its actual category');

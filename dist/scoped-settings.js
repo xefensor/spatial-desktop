@@ -122,7 +122,7 @@
       page.innerHTML='<header class="settings-page-heading"><h2 tabindex="-1">'+category.label+'</h2><p>'+category.detail+'</p></header>'+scopeBanner(category,ctx)+'<div class="settings-page-body">'+pageContent(category.id,ctx)+'</div>';
       if(category.id==='displays')root.SpatialDisplaySettings?.mount(page.querySelector('[data-settings-displays]'),state.options.slot);
     }
-    host.querySelectorAll('[data-settings-category]').forEach(button=>{if(!button.classList.contains('settings-nav'))return;const active=!state.query&&button.dataset.settingsCategory===state.category;button.classList.toggle('is-active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+    host.querySelectorAll('[data-settings-category]').forEach(button=>{if(!button.classList.contains('settings-nav'))return;const active=!state.query&&button.dataset.settingsCategory===state.category;button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     host.querySelector('[data-settings-back]').disabled=!state.query&&!state.history.length;
     page.scrollTop=0;
     prepareMaterialSurfaces(host);prepareControlSemantics(host);refreshControls();
