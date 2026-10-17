@@ -132,13 +132,15 @@
   document.addEventListener('submit',event=>{if(event.target.id==='aiComposer')return intercept(event);},true);
   document.addEventListener('keydown',event=>{if(event.target===prompt&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing)return intercept(event);},true);
   function drawCards(){
+    const chat=content?.querySelector('.ai-chat'),atEnd=!chat||chat.scrollHeight-chat.scrollTop-chat.clientHeight<60;let changed=false;
     drawStrip();for(const turn of A.current().turns){if(!turn.action)continue;if(turn.action.status==='running'&&!running.has(turn.id)){A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'failed',error:'Interrupted. Review the output folder before retrying.'});return;}const output=transcript.querySelector('[data-ai-demo-turn="'+CSS.escape(turn.id)+'"]');if(!output)continue;
-      const at=turn.action,signature=JSON.stringify(at);let card=output.parentElement.querySelector('.ai-file-task');if(card?.dataset.signature===signature)continue;
+      const at=turn.action,signature=JSON.stringify(at);let card=output.parentElement.querySelector('.ai-file-task');if(card?.dataset.signature===signature)continue;changed=true;
       if(!card){card=document.createElement('section');card.className='ai-file-task';output.after(card);}card.dataset.turn=turn.id;card.dataset.signature=signature;card.setAttribute('aria-label','File conversion');
       const done=at.status==='complete',locked=done||at.status==='cancelled'||at.status==='running'||running.has(turn.id);
       card.innerHTML='<header><b>'+html(done?'Conversion complete':at.status==='cancelled'?'Conversion cancelled':'Local file conversion')+'</b><small>'+html(at.format.toUpperCase())+' · '+turn.sources.length+' input'+(turn.sources.length===1?'':'s')+'</small></header><ul>'+turn.sources.map(i=>'<li>'+html(i.filename||i.title)+'</li>').join('')+'</ul><label>Output folder<input data-task-destination aria-label="Conversion output folder" value="'+html(at.destination)+'"'+(locked?' readonly':'')+'></label><small>Create converted copies · Original files stay unchanged</small>'+(at.error?'<p class="ai-file-error" role="status">'+html(at.error)+'</p>':'')+(done?'<ul>'+at.outputs.map(o=>'<li><span>'+html(o.path.split('/').at(-1))+'</span><button type="button" class="surface-key" data-task-history="'+html(o.itemId)+'">History</button></li>').join('')+'</ul><button type="button" class="surface-key" data-task-open>Open output folder</button>':!locked?'<div class="ai-file-actions"><button type="button" class="surface-key" data-task-run>Run conversion</button><button type="button" class="surface-key" data-task-cancel>Cancel</button></div>':at.status==='running'?'<p role="status">Converting…</p>':'');
       prepareControlSemantics(card);
     }
+    if(changed&&atEnd&&chat)chat.scrollTop=chat.scrollHeight;
   }
   async function run(turn,destination){
     if(running.has(turn.id)||turn.action.status==='complete')return;

@@ -8,7 +8,7 @@
   const owner=item=>{try{const [workspace,project]=JSON.parse(item.scope||item.storageScope);return {workspace,project};}catch{return {workspace:item.workspace||activeWorkspace,project:item.project||null};}};
   const context=()=>({workspace:activeWorkspace,project:projectSpaces[desktopPages.column(activeWorkspace)]?desktopPages.column(activeWorkspace):null});
   const scopeLabel=ref=>ref.project?(projectSpaces[ref.project]?.name||ref.project)+' · '+(workspaceProfiles[ref.workspace]?.label||ref.workspace):(workspaceProfiles[ref.workspace]?.label||ref.workspace)+' workspace';
-  const appLabel=id=>id==='ai-demo'?'Assistant demo':appInfo[id]?.label||appInfo[String(id).split('--')[0]]?.label||id;
+  const appLabel=id=>id==='ai-demo'?'Assistant demo':id==='assistant'?'Assistant':appInfo[id]?.label||appInfo[String(id).split('--')[0]]?.label||id;
   const date=time=>time?new Date(time).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}):'Time unknown';
   const html=escapeHtml;
   let saveQueued=false;
@@ -58,7 +58,7 @@
   function facts(source){
     return '<dl class="history-facts"><div><dt>Page / source</dt><dd>'+html(source.address||'Unknown')+'</dd></div><div><dt>Captured via</dt><dd>'+html(source.app?appLabel(source.app):'App unknown')+'</dd></div><div><dt>Project at capture</dt><dd>'+html(source.project?projectSpaces[source.project]?.name||source.project:'No project recorded')+'</dd></div><div><dt>Workspace at capture</dt><dd>'+html(source.workspace?workspaceProfiles[source.workspace]?.label||source.workspace:'Unknown')+'</dd></div></dl>';
   }
-  const eventLabel={'capture':'Saved','indexed':'Existing item indexed','reference':'Added reference','version':'Content changed','edit':'Edited','copiedFrom':'Copied from source','removed-from-stash':'Removed from Stash','moved':'Moved','used-in-assistant':'Used in Assistant','assistant.use':'Used in Assistant','use':'Used in Assistant','tagged':'Tags changed','opened':'Opened','note':'Note'};
+  const eventLabel={'converted':'Converted copy','capture':'Saved','indexed':'Existing item indexed','reference':'Added reference','version':'Content changed','edit':'Edited','copiedFrom':'Copied from source','removed-from-stash':'Removed from Stash','moved':'Moved','used-in-assistant':'Used in Assistant','assistant.use':'Used in Assistant','use':'Used in Assistant','tagged':'Tags changed','opened':'Opened','note':'Note'};
   function open(id,{versionId='',workspace=activeWorkspace}={}){
     if(workspace!==activeWorkspace||!accessible(id,workspace)){showToast('This item is outside the current Workspace.');return false;}
     flushTags(id);const item=model.get(id);if(!item)return false;dialogItem=id;

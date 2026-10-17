@@ -42,6 +42,14 @@ const files=H.create();files.add('/mnt/Web/Converted','Note.html',{workspace:'wo
 const second=files.add('/mnt/Web/Converted','Note.html',{workspace:'work',content:html});assert.equal(second.name,'Note (2).html');
 assert.equal(H.create(files.snapshot()).list('/mnt/Web/Converted')[0].attachment.key,'stash-test');
 
+// The File Browser must classify generated media even when its legacy file
+// projection already supplied a generic document row for the same path.
+const appSource=fs.readFileSync(require.resolve('../dist/app-windows.js'),'utf8');
+const mediaFiles=H.create();mediaFiles.add('/mnt/Web/Converted','photo.webp',{workspace:'work',attachment:{kind:'image',key:'stash-image'}});
+const mediaEnv={frameFor:()=>({}),workspaceProfiles:profiles,projectSpaces:projects,SpatialHomeFolders:H,workspaceDownloads:mediaFiles,fileLocationRows:()=>[['photo.webp','Saved file','document']]};
+vm.createContext(mediaEnv);vm.runInContext(appSource.slice(appSource.indexOf('function appFileRows('),appSource.indexOf('function appFileBreadcrumbs(')),mediaEnv);
+assert.equal(vm.runInContext("appFileRows('files','/mnt/Web/Converted')[0][2]",mediaEnv),'image');
+
 // Exercise the production selection adapter and file-request capture without
 // exposing a DOM selection to an unrelated Workspace or collecting it passively.
 const events={},nodes=new Map(),sent=[],session=C.create({}, {workspaces:()=>profiles,projects:()=>projects});let frame,field,sequence=0;const blobs=new Map(),outputs=[],activity=[];let failPut=false;
