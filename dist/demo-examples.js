@@ -709,6 +709,10 @@
 
   function migrateNote(value) {
     const renamedDefaults = {
+      "Review the homepage copy, check the mobile layout, then share the preview for feedback.": projects.plasma.note,
+      "Research question: how does shade affect plant diversity?\n\nCompare the riverside and courtyard samples. Cite the field guide before writing the conclusion.": projects.research.note,
+      "Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.": projects.research.note,
+      "Launch checklist\n\nConfirm the contact form.\nCheck keyboard navigation.\nSend the staging link for review.": projects.plasma.note,
       "Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology column.": workspaceWindows.school.find(window => window.base === "notes").content.note,
       "Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their project columns.": workspaceWindows.work.find(window => window.base === "notes").content.note
     };

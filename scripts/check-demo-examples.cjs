@@ -496,3 +496,6 @@ console.log('Current workflows passed: keyboard materials agree, four survey plo
 
 const cachedPage={address:'http://localhost:5173/',title:'Northstar Studio',intro:'Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.',detail:'Thoughtful spaces for everyday life. A small architecture studio creating useful, welcoming places — from the first sketch to the last detail.',links:['Our projects','About the studio','Contact','Preview checklist'],bookmarked:true};
 const updatedPage=D.migrateBrowserPage(cachedPage);assert.match(updatedPage.intro,/compact keyboard/);assert(updatedPage.bookmarked);assert.match(cachedPage.intro,/architecture studio/,'Migration does not mutate older retained snapshots');assert.equal(D.migrateBrowserPage({...cachedPage,intro:'My own text'}).intro,'My own text');assert.equal(D.migrateBrowserPage(updatedPage),updatedPage,'Content migration is idempotent');
+
+assert.equal(D.migrateNote('Field observations\n\nRiverside: 14 plant species, mostly shaded.\nCourtyard: 8 species, direct sunlight.\nCheck whether sampling effort was equal.'),D.projects.research.note);
+assert.equal(D.migrateNote('My own field observations'),'My own field observations');

@@ -295,6 +295,7 @@
       const workspace=project.originWorkspace||Object.keys(SpatialDemoExamples.scenarios||{}).find(name=>SpatialDemoExamples.scenarios[name].windows.some(column=>column.column===id));
       if(!workspaceProfiles[workspace])return;
       const key=M.scope(workspace,id),review=SpatialDemoExamples.reviewNotes?.[id];
+      for(const item of model.items(key)){if(item.title!=='Project note')continue;const text=SpatialDemoExamples.migrateNote(item.text);if(text!==item.text)editItem(item.id,{text});}
       const previous=model.items(key).find(item=>item.title==='Questions for the next review'&&item.text==='What is ready to share?\nWhat still needs testing?\nNext: review the project starting point before opening another task.');
       if(previous&&review)editItem(previous.id,review);
       if(model.seeded(key))return;model.markSeeded(key);if(review)model.add(key,{...review,source:{}});

@@ -28,6 +28,7 @@ function appWindowModel(id) {
     });
     return {kind, tracks, index: 0, position: id === 'elisa' ? musicPosition : 0, playing: id === 'elisa' && appState[id] !== 'closed' ? musicPlaying : false, volume: Number($('.volume-range', frame)?.value || 72), muted: false};
   });
+  if(kind==='notes'&&desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateNote)for(const note of model.notes)note.text=SpatialDemoExamples.migrateNote(note.text);
   if(kind==='browser'){
     SpatialAppTools.browserTabs(model);
     if(desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateBrowserPage)for(const tab of model.tabs)tab.navigation.items=tab.navigation.items.map(SpatialDemoExamples.migrateBrowserPage);
