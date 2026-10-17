@@ -50,7 +50,7 @@
   <script src="demo-super-key.js?v=1"></script>
   <script src="desktop-markers.js?v=1"></script>
   <script src="workspace-setup.js?v=12"></script>
-  <script src="spatial-guide.js?v=83"></script>
+  <script src="spatial-guide.js?v=84"></script>
   
   <link rel="stylesheet" href="project-rail.css?v=1">
   <link rel="stylesheet" href="system-rail.css?v=2">
@@ -61,7 +61,7 @@
   <link rel="stylesheet" href="item-history.css?v=2">
   <link rel="stylesheet" href="assistant-sources.css?v=1">
   <link rel="stylesheet" href="timeline-sessions.css?v=1">
-  <link rel="stylesheet" href="assistant-desktop.css?v=1">
+  <link rel="stylesheet" href="assistant-desktop.css?v=2">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=1"></script>
@@ -275,12 +275,12 @@
         <div class="area-window-actions"><button class="surface-key area-window-key" data-area-hide="ai" aria-label="Hide Assistant area" title="Hide Assistant area"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
       </header>
       <div class="ai-content">
-        <div class="ai-chat-toolbar"><label class="sr-only" for="aiChatSelect">Chat</label><select id="aiChatSelect" aria-label="Chat"></select><button class="surface-key" id="aiNewChat" type="button">New chat</button><button class="surface-key" id="aiRenameChat" type="button" aria-label="Rename current chat">Rename</button></div>
+        <div class="ai-chat-toolbar"><label class="sr-only" for="aiChatSelect">Chat</label><select id="aiChatSelect" aria-label="Chat"></select><button class="surface-key" id="aiNewChat" type="button">New chat</button><details class="ai-chat-settings"><summary aria-label="Chat options" title="Chat options">⋯</summary><div class="ai-chat-settings-body"><button class="surface-key" id="aiRenameChat" type="button" aria-label="Rename current chat">Rename chat</button><div class="ai-folder"><label for="aiWorkingFolder">Default save location</label><select id="aiWorkingFolder" aria-label="Assistant working folder"></select></div></div></details></div>
         <form id="aiRenameForm" class="ai-rename-form" hidden><label class="sr-only" for="aiChatName">Chat name</label><input id="aiChatName" aria-label="Chat name" maxlength="80" required><button class="surface-key" type="submit">Save</button><button class="surface-key" id="aiCancelRename" type="button">Cancel</button></form>
-        <div class="ai-folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><label for="aiWorkingFolder">Working folder</label><select id="aiWorkingFolder" aria-label="Assistant working folder"></select></div>
+
         <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
-        <div class="ai-chat" aria-label="Assistant conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Bring something into the conversation.<small>Drop a file, a Stash item, an app icon or selected text. Its origin stays attached.</small></span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask about your sources…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiStatus" role="status">Assistant demo · scripted replies · nothing is sent</small></form>
+        <div class="ai-chat" aria-label="Assistant conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>What would you like to do?<small>Select text or files and choose Ask Assistant. You can also drop something here.</small></span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiStatus" maxlength="4000" rows="2" placeholder="Ask Assistant…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiStatus" role="status">Local demo · scripted replies</small></form>
       </div>
       <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize Assistant area" title="Drag this border to resize"></button>
     </aside>
@@ -711,10 +711,10 @@
 <script src="empty-desktop-resources.js?v=1"></script>
 <script src="empty-desktop.js?v=5"></script>
 <script src="apps-quick-launch.js?v=3"></script>
-<script src="working-memory-desktop.js?v=36"></script>
-<script src="item-history-desktop.js?v=5"></script>
-<script src="ai-desktop.js?v=25"></script>
-<script src="overview-desktop.js?v=25"></script>
+<script src="working-memory-desktop.js?v=37"></script>
+<script src="item-history-desktop.js?v=6"></script>
+<script src="ai-desktop.js?v=26"></script>
+<script src="overview-desktop.js?v=26"></script>
   <script src="guide-desktop.js?v=45"></script>
   <script src="steam-overview.js?v=14"></script>
 <script src="all-workspaces.js?v=4"></script>
@@ -731,7 +731,7 @@
 <script src="system-rail.js?v=2"></script>
 <script src="temporary-parking.js?v=1"></script>
 <script src="temporary-parking-desktop.js?v=5"></script>
-<script src="assistant-desktop.js?v=2"></script>
+<script src="assistant-desktop.js?v=3"></script>
 </body>
 </html>
 

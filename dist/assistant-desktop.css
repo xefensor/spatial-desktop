@@ -5,3 +5,24 @@
 .ai-file-task header{display:flex;flex-direction:column;gap:3px}.ai-file-task small{display:block;color:var(--muted);font-size:10px}.ai-file-task ul{margin:8px 0;padding-left:18px;max-height:150px;overflow:auto}.ai-file-task li{padding:2px 0}.ai-file-task li button{margin-left:8px;font-size:10px;padding:3px 6px}
 .ai-file-task label{display:block;margin:10px 0 6px;font-size:11px}.ai-file-task input{width:100%;box-sizing:border-box;min-width:0;margin-top:4px;padding:8px;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--glass-field,transparent);color:var(--text);font:inherit}.ai-file-task input[readonly]{opacity:.8}
 .ai-file-actions{display:flex;gap:8px;margin-top:10px}.ai-file-task button{padding:7px 10px;font:inherit}.ai-file-error{color:var(--text);border-inline-start:2px solid var(--amber);padding-left:8px}
+
+/* Content first; provenance and configuration open only when requested. */
+.ai-direct-context{padding:5px 0;border:0;background:none;gap:0}
+.ai-direct-context .ai-context-chip{display:flex;align-items:center;gap:10px;min-width:0;flex:1;padding:7px 9px;border:1px solid var(--sd-glass-groove);border-right:0;border-radius:0;background:transparent;color:var(--text);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.ai-context-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.ai-context-chip>small{font-size:10px;color:var(--muted);flex:none}
+.ai-context-remove{align-self:stretch;padding:7px;border:1px solid var(--sd-glass-groove);background:transparent;color:var(--muted);cursor:pointer}.ai-context-remove svg{height:14px;width:14px}
+.ai-content>.ai-input-details{max-height:230px;overflow:auto;margin:0;padding:0 8px;border:1px solid var(--sd-glass-groove)}
+.ai-input-details>summary{display:none}.ai-input-details .ai-tags{gap:3px}.ai-input-details .ai-source-detail{min-width:0}
+.ai-turn-actions{display:flex;align-items:start;gap:12px;flex-wrap:wrap;margin:6px 0 14px}.ai-turn-actions>.ai-turn-sources{flex:1;min-width:70px;margin:0}.ai-turn-sources>summary{font-size:11px;padding:7px 0;cursor:pointer;color:var(--muted)}
+.ai-file-turn>.ai-turn-actions{display:none}.ai-file-turn>.ai-demo-output[hidden]{display:none!important}
+.ai-examples>summary{cursor:pointer;font-size:11px;color:var(--muted);padding:5px 0 10px}.ai-examples[open]{border-bottom:1px solid var(--sd-glass-groove);margin-bottom:12px}
+.ai-chat-settings{flex:none;position:relative}.ai-chat-settings>summary{list-style:none;cursor:pointer;font-size:21px;line-height:30px;padding:0 7px}.ai-chat-settings>summary::-webkit-details-marker{display:none}
+.ai-chat-settings-body{position:absolute;z-index:5;right:0;top:100%;width:240px;box-sizing:border-box;padding:12px;border:1px solid var(--sd-glass-groove);background:var(--sd-glass-face);backdrop-filter:blur(24px);box-shadow:0 8px 24px #0004}
+.ai-chat-settings .ai-folder{flex-direction:column;align-items:stretch;margin-top:12px}.ai-chat-settings .ai-folder select{width:100%;box-sizing:border-box}
+.ai-save-location{font-size:11px;margin:7px 0 10px;color:var(--muted)}.ai-save-location button{border:0;border-bottom:1px solid var(--sd-glass-groove);padding:2px 0;background:none;color:var(--text);cursor:pointer;font:inherit;font-size:11px}
+.ai-task-details{margin-top:8px}.ai-task-details>summary{cursor:pointer;font-size:11px;color:var(--muted);padding:5px 0}.ai-task-details[open]{border-top:1px solid var(--sd-glass-groove);margin-top:12px}.ai-task-details p{font-size:11px;color:var(--muted)}.ai-task-details .ai-input-citation{padding:3px 0;display:block;width:100%;border:0;background:none;font:inherit;text-align:left;color:var(--text);cursor:pointer}
+.ai-file-task .ai-file-actions{margin-top:10px;flex-wrap:wrap}.ai-file-task>header b{font-size:13px;line-height:1.5}.ai-file-task>header{margin-bottom:3px}
+.memory-summary-preview{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.4;color:var(--muted);margin-top:3px;font-weight:400}
+.memory-item[open]>.memory-item-summary .memory-summary-preview{display:none}
+.memory-info-details{margin:10px 0;font-size:11px}.memory-info-details>summary{padding:5px 0;color:var(--muted);cursor:pointer}.memory-metadata{padding:4px 0 10px}.memory-metadata .memory-tags{margin:6px 0}.memory-metadata .memory-user-tags{margin:9px 0}
+.memory-row-actions .memory-item-details>summary{font-size:18px;line-height:1;padding:3px 8px;cursor:pointer}
