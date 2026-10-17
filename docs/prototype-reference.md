@@ -204,6 +204,8 @@ With one connected demo display, Main workspace is implicit and there is no role
 
 For a quick change, **right-click the desktop → Display role** offers the same choices for that display. Display roles are shared preferences for the connected display setup, while Side space and Assistant contents remain separate for each Workspace. The choice of main monitor does not merge Workspace data.
 
+Both supporting-display panels include **Parked here** when one of their windows has been parked. Choose its **Restore** action to bring it back on that display, including an Assistant result that made room for another window. Windows moved into these spaces become Workspace-owned, so closing their previous Project does not close them.
+
 Try this sequence:
 
 1. Open **Settings → Displays**, choose **Open second demo display** and leave it as **Extended workspace**. Move a window there through **its title-bar menu → Move to… → Displays**. Switch desktop to see the two displays follow the same context.

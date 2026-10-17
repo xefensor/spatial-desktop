@@ -49,6 +49,10 @@
         <p class="display-role-explanation">Scripted local demo. Assistant opens a real demo Note Editor here. Your mouse and keyboard stay under your control.</p>
         <p class="display-role-explanation">Each Workspace has its own Assistant space. Tasks pause when you leave this display role or Workspace.</p>
       </div>
+      <section class="display-workbench-section display-parked-windows" data-display-parked hidden>
+        <h2>Parked here</h2>
+        <div class="display-parked-list" data-display-parked-list></div>
+      </section>
     </aside>
     <div class="display-workbench-empty" aria-hidden="true"><svg><use href="#i-monitor"/></svg><b data-display-empty-title></b><p data-display-empty-text></p></div>`;
   zone.append(host);
@@ -57,7 +61,21 @@
   const bridge=()=>root.SpatialDisplayRoleBridge;
   const context=state=>[state.setupKey,state.workspaceId,state.localSlot,state.role].join('|');
   const special=state=>state&&(state.role==='side'||state.role==='assistant');
-  let currentKey='',job=null,clockTimer=0,updating=false;
+  let currentKey='',job=null,clockTimer=0,updating=false,parkedKey='';
+  function renderParked(state){
+    const windows=state.parkedWindows||[],key=JSON.stringify(windows.map(window=>[window.id,window.label,window.title]));
+    find('[data-display-parked]').hidden=!windows.length;
+    if(key===parkedKey)return;
+    parkedKey=key;
+    const buttons=windows.map(window=>{
+      const button=document.createElement('button');
+      button.type='button';button.className='surface-key display-parked-restore';
+      button.dataset.displayWindow=window.id;
+      button.textContent='Restore '+(window.title||window.label||window.id);
+      return button;
+    });
+    find('[data-display-parked-list]').replaceChildren(...buttons);
+  }
   function time(){
     const now=new Date();
     find('[data-display-clock]').textContent=now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
@@ -97,7 +115,7 @@
         if(!bridge().launchNote('Workspace briefing',briefing))throw new Error('Note Editor could not open');
         if(!stateMatches(jobState))return;
         job=null;
-        writeAssistant({status:'done',result:'Workspace briefing is open here in Note Editor. You can review and edit it.'});
+        writeAssistant({status:'done',result:'Workspace briefing is ready in Note Editor. You can review and edit it.'});
       }catch(error){
         jobState.paused=true;
         writeAssistant({status:'needs-you',result:'The briefing could not open. Resume to try again.'});
@@ -151,6 +169,7 @@
     find('[data-display-scope]').textContent=state.workspace+' · '+(state.displays?.find(display=>display.slot===state.localSlot)?.label||'Supporting display');
     find('[data-display-side]').hidden=assistant;
     find('[data-display-assistant]').hidden=!assistant;
+    renderParked(state);
     find('[data-display-empty-title]').textContent=assistant?'Room for Assistant to work':'Keep things alongside your work';
     find('[data-display-empty-text]').textContent=assistant?'Run the demo task to open a briefing here. To move an existing window here, use its title-bar menu → Move to… → Displays.':'Move a window here using its title-bar menu → Move to… → Displays. It stays while you switch desktops and Projects.';
     find('.display-workbench-empty').hidden=Boolean(state.localWindows?.length);
@@ -168,6 +187,8 @@
     if(typeof prepareControlSemantics==='function')prepareControlSemantics(host);
   }
   host.addEventListener('click',event=>{
+    const parked=event.target.closest('[data-display-window]');
+    if(parked){bridge()?.openWindow(parked.dataset.displayWindow);return;}
     const folder=event.target.closest('[data-display-folder]');
     if(folder){
       const state=bridge()?.state(),home=state?.home;

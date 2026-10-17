@@ -21,7 +21,8 @@
     const setup=connect(),local=localDisplaySlot();
     return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,home:workspaceProfiles[activeWorkspace].home,
       displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),local:display.slot===local})),
-      space:model.space(activeWorkspace,local),localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id}))};
+      space:model.space(activeWorkspace,local),localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
+      parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
   function notify(){
     if(refreshing)return;
@@ -154,7 +155,7 @@
     const slot=model.windowDisplay(activeWorkspace,id);
     if(special(role())){
       if(appInfo[id].workspace&&appInfo[id].workspace!==activeWorkspace)return;
-      pin(id,localDisplaySlot());appState[id]='open';settle();bringToFront(id);return id;
+      pin(id,localDisplaySlot());appState[id]='open';frontApp=id;settle();bringToFront(id);return id;
     }
     if(slot){
       // Choosing an existing side window explicitly brings it to this desktop.
@@ -196,6 +197,7 @@
     if(root.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('systems'))return entries;
     if(special(role())){
       entries=entries.filter(entry=>!entry.action?.startsWith('desktop-page:')&&!['desktop-new-folder','desktop-paste'].includes(entry.action)&&!entry.label?.startsWith('Project · '));
+      entries=entries.filter((entry,index,all)=>!entry.separator||(index>0&&!all[index-1].separator));
       const info=entries.find(entry=>entry.info);if(info)info.info=labels[role()]+' · Display '+localDisplaySlot()+' · '+workspaceProfiles[activeWorkspace].label+' Workspace · all desktops and Projects';
     }
     const direct=entries.findIndex(entry=>entry.action==='desktop-settings'),shared=entries.findIndex(entry=>entry.label==='System-wide');
@@ -213,6 +215,7 @@
   const originalBlocked=desktopNavigationBlocked;
   desktopNavigationBlocked=function(){return Boolean($('#displaySettingsDialog')?.open)||originalBlocked();};
   root.SpatialDisplayRoleBridge={state,setRole,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+    openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:'+role(slot)+':'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},
     openCompanion(){

@@ -30,7 +30,7 @@ function fixture(count=2){
     leaveTileFocus(session){session.focus=null;},leaveAppFullscreen(session){session.fullscreen=null;},
     frameFor:id=>frames[id]||(frames[id]={classList:{remove(){}},dataset:{}}),
     persistDisplayAssignments(){},saveDesktopPages(){},saveTileSessions(){},saveIndependentSessions(){},
-    refreshIntentAreas(){},layoutDockAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},
+    refreshIntentAreas(){},layoutDockAreas(){},renderTileLayout(preferred){c.renderedPreferred=preferred;},queueDesktopStateBroadcast(){},
     syncApps(){c.visible=Object.keys(c.appState).filter(id=>c.appState[id]==='open'&&c.isLocalApp(id));},
     tileBounds:()=>({x:8,y:8,width:1424,height:884}),
     isLocalArea:name=>Number(assignments[c.activeWorkspace].areas[name]||1)===c.localSlot,
@@ -215,6 +215,25 @@ function fixture(count=2){
   const single=c.contextMenuEntries({kind:'desktop'}).find(entry=>entry.label==='Display role');
   assert(single.children.some(entry=>entry.info?.includes('only display')));
   assert(single.children.some(entry=>entry.action==='display-settings'),'A sole display can still open setup and add a companion');
+}
+
+{
+  const {c}=fixture();c.SpatialDisplayRoleBridge.setRole(2,'side');c.localSlot=2;
+  c.frameFor('editor').querySelector=selector=>selector==='.app-identity small'?{textContent:'Website launch notes'}:null;
+  c.appState.editor='minimized';
+  assert.deepEqual(clone(c.SpatialDisplayRoleBridge.state().parkedWindows),[{id:'editor',label:'Editor',title:'Website launch notes'}],'A helper’s parked list retains the actual document title');
+  c.frontApp='browser';c.renderedPreferred=null;
+  assert.equal(c.SpatialDisplayRoleBridge.openWindow('editor'),true);
+  assert.equal(c.appState.editor,'open');assert.equal(c.isLocalApp('editor'),true);assert.equal(c.frontApp,'editor');
+  assert.equal(c.renderedPreferred,'editor','The restored helper window gets priority while fitting the tile layout');
+  assert.deepEqual(clone(c.SpatialDisplayRoleBridge.state().parkedWindows),[]);
+  c.appState.editor='minimized';c.localSlot=1;
+  assert.equal(c.SpatialDisplayRoleBridge.openWindow('editor'),false,'Main display cannot restore a helper’s parked button');
+  assert.equal(c.appState.editor,'minimized');c.localSlot=2;c.activeWorkspace='gaming';
+  assert.equal(c.SpatialDisplayRoleBridge.openWindow('editor'),false,'A parked button from another Workspace cannot restore its app');
+  c.activeWorkspace='work';c.appState.editor='closed';
+  assert.equal(c.SpatialDisplayRoleBridge.openWindow('editor'),false,'Closed apps cannot be reopened by stale parked controls');
+  assert.equal(c.SpatialDisplayRoleBridge.openWindow('unknown-app'),false);
 }
 
 console.log('Display-role integration: helper visibility, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');

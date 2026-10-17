@@ -43,6 +43,9 @@ body:is([data-display-role="side"],[data-display-role="assistant"]) :is(#emptyWo
 .display-workbench[data-assistant-status="done"] .display-assistant-status i{background:var(--green,#64d782)}
 .display-assistant-progress{min-height:58px}
 .display-assistant-actions{display:flex;gap:5px;flex-wrap:wrap}
+.display-parked-windows{border-top:1px solid var(--sd-glass-groove);padding-top:14px;margin-top:20px}
+.display-parked-list{display:grid;gap:4px}
+.display-workbench .display-parked-restore{justify-content:flex-start!important;text-align:left;overflow-wrap:anywhere;width:100%}
 body[data-theme] .display-workbench.material-surface-glass button.display-role-primary,body[data-theme] .display-workbench .material-surface-glass button.display-role-primary{background:color-mix(in srgb,var(--display-role-accent) 12%,transparent)!important;border-color:color-mix(in srgb,var(--display-role-accent) 30%,transparent)!important}
 body[data-theme="light"] .display-workbench-empty{text-shadow:0 1px 8px rgba(255,255,255,.6)}
 @media(max-width:899px){

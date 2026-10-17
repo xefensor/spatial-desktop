@@ -8,31 +8,35 @@ const source=fs.readFileSync(path.join(__dirname,'../dist/display-workbench.js')
 // Exercise the production workbench with the real persisted role model. DOM
 // and timers are controlled here so stale callbacks can be delivered on purpose.
 function harness(){
-  const elements=new Map(),timers=new Map(),listeners={},opened=[],folders=[],writes=[];
-  let serial=0,workspace='work',localSlot=2,failLaunch=false;
+  const elements=new Map(),timers=new Map(),listeners={},opened=[],folders=[],writes=[],restored=[];
+  let serial=0,workspace='work',localSlot=2,failLaunch=false,parkedWindows=[];
   let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
   const model=Roles.create();model.connect(roster);model.setRole(2,'assistant');
-  function element(){return {hidden:false,value:'',textContent:'',dataset:{},events:{},setAttribute(){},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
+  function element(){return {hidden:false,value:'',textContent:'',dataset:{},events:{},children:[],replaceChildren(...children){this.children=children;},setAttribute(){},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
   const host=element(),zone={append(node){assert.equal(node,host);}};
   function state(){
     const setup=model.setup();
     return {setupKey:setup.signature,workspaceId:workspace,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,
       displays:setup.displays.map(display=>({...display,label:'Display '+display.slot})),space:model.space(workspace,localSlot),
-      localWindows:model.space(workspace,localSlot).windows.map(id=>({id,label:'Note Editor'}))};
+      localWindows:model.space(workspace,localSlot).windows.filter(id=>!parkedWindows.some(window=>window.id===id)).map(id=>({id,label:'Note Editor'})),parkedWindows};
   }
   const browser={addEventListener(type,fn){listeners[type]=fn;},SpatialDisplayRoleBridge:{state,
     updateSpace(patch){writes.push({workspace,slot:localSlot,patch});model.updateSpace(workspace,localSlot,patch);browser.SpatialDisplayWorkbench?.refresh();},
     launchNote(title,text){if(failLaunch)return null;const id='note--'+(opened.length+1);opened.push({id,title,text,workspace,slot:localSlot});model.pinWindow(workspace,localSlot,id);browser.SpatialDisplayWorkbench.refresh();return id;},
-    openFolder(folder){folders.push({workspace,slot:localSlot,path:folder});},openDisplays(){}}};
-  const document={activeElement:null,querySelector:()=>zone,createElement:()=>host};
+    openFolder(folder){folders.push({workspace,slot:localSlot,path:folder});},
+    openWindow(id){restored.push({workspace,slot:localSlot,id});parkedWindows=parkedWindows.filter(window=>window.id!==id);browser.SpatialDisplayWorkbench.refresh();},openDisplays(){}}};
+  let hostCreated=false;
+  const document={activeElement:null,querySelector:()=>zone,createElement(){if(!hostCreated){hostCreated=true;return host;}return element();}};
   const context=vm.createContext({window:browser,document,prepareControlSemantics(){},Date,
     setTimeout(fn){const id=++serial;timers.set(id,fn);return id;},clearTimeout(id){timers.delete(id);},setInterval:()=>1,clearInterval(){}});
   vm.runInContext(source,context);
   const refresh=()=>browser.SpatialDisplayWorkbench.refresh();
-  function click(attribute,value){host.events.click({target:{closest(selector){return selector==='['+attribute+']'?{dataset:{[attribute==='data-display-action'?'displayAction':'displayFolder']:value}}:null;}}});}
+  function click(attribute,value){host.events.click({target:{closest(selector){return selector==='['+attribute+']'?{dataset:{[{'data-display-action':'displayAction','data-display-folder':'displayFolder','data-display-window':'displayWindow'}[attribute]]:value}}:null;}}});}
   function tick(){const next=timers.entries().next().value;assert(next,'Expected a pending demo timer');timers.delete(next[0]);next[1]();}
-  return {model,host,document,elements,timers,opened,folders,writes,state,refresh,tick,
+  return {model,host,document,elements,timers,opened,folders,writes,restored,state,refresh,tick,
     action:name=>click('data-display-action',name),folder:name=>click('data-display-folder',name),
+    restore:id=>click('data-display-window',id),
+    park(windows){parkedWindows=windows;for(const window of windows)model.pinWindow(workspace,localSlot,window.id);refresh();},
     note(value){const note=elements.get('#displaySideNote');note.value=value;note.events.input({target:note});return note;},
     switchWorkspace(next){workspace=next;refresh();},
     role(next){assert(model.setRole(localSlot,next).ok);refresh();},
@@ -101,4 +105,15 @@ for(const transition of ['workspace','role','setup','display']){
   h.role('assistant');h.note('Hidden control event');assert.equal(h.model.space('work',2).note.length,8000,'A hidden Side note cannot write from another role');
   h.action('run');h.listeners.pagehide();assert.equal(h.timers.size,0,'Leaving the browser cancels pending work');
 }
-console.log('Display workbench passed: scripted output, pause/resume, takeover, stale callback cancellation, context isolation, output failure and Side note/folder ownership.');
+for(const role of ['side','assistant']){
+  const h=harness();h.role(role);
+  assert.equal(h.elements.get('[data-display-parked]').hidden,true);
+  h.park([{id:'notes--1',label:'Note Editor',title:'Workspace briefing'}]);
+  assert.equal(h.elements.get('[data-display-parked]').hidden,false);
+  const button=h.elements.get('[data-display-parked-list]').children[0];
+  assert.equal(button.textContent,'Restore Workspace briefing');assert.equal(button.dataset.displayWindow,'notes--1');
+  h.restore('notes--1');assert.equal(h.restored[0].id,'notes--1');assert.equal(h.restored[0].slot,2);
+  assert.equal(h.elements.get('[data-display-parked]').hidden,true,role+': restoring removes the parked entry');
+  assert.equal(h.state().localWindows[0].id,'notes--1',role+': a pressure-parked window is recoverable on its owning helper display');
+}
+console.log('Display workbench passed: scripted output, pause/resume, takeover, stale callback cancellation, context isolation, output failure, Side note/folder ownership and parked-window recovery.');
