@@ -17,7 +17,7 @@
   }
   function windowMarkup(w){
     const position='left:'+w.x*100+'%;top:'+w.y*100+'%;width:'+w.width*100+'%;height:'+w.height*100+'%;';
-    return '<div class="desktop-map-window'+(w.top?' is-top':'')+(w.virtual?' is-virtual':'')+'" style="'+position+'" data-map-preview="'+html(w.id)+'"><div class="desktop-map-snapshot" aria-hidden="true"></div><button type="button" class="desktop-map-window-target" data-map-window="'+html(w.id)+'" aria-label="'+html('Return to '+w.label+' · '+w.detail+' · Display '+w.display)+'">'+appArt(w.id)+'<span>'+html(w.label)+(w.privatePreview?'<small>Preview hidden</small>':w.virtual?'<small>Virtual screen</small>':'')+'</span></button></div>';
+    return '<div class="desktop-map-window'+(w.top?' is-top':'')+(w.virtual?' is-virtual':'')+'" style="'+position+'" data-map-preview="'+html(w.id)+'"><div class="desktop-map-snapshot" aria-hidden="true"></div><button type="button" class="desktop-map-window-target" data-map-window="'+html(w.id)+'" aria-label="'+html('Return to '+w.label+' · '+w.detail+' · Display '+w.display)+'">'+appArt(w.id)+'<span>'+html(w.label)+(w.privatePreview?'<small>Preview hidden</small>':w.virtual?'<small>Gamescope</small>':'')+'</span></button></div>';
   }
   function render(force=false){
     if(!isOpen()||rendering)return;

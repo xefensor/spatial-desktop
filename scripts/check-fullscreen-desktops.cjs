@@ -26,7 +26,7 @@ const ctx={desktopPages:Pages.create(),activeWorkspace:'gaming',appInfo:Object.f
  workspaceProfiles:{gaming:{label:'Gaming',accent:'#5af',rack:['game','steam']}},projectSpaces:{},openProjectNames:()=>[],appArt:name=>'<i>'+name+'</i>',icon:()=>'<svg></svg>',escapeHtml:String,prepareControlSemantics(){},applyAppPrimaryColors(){}
 };
 vm.createContext(ctx);
-ctx.appInfo.game.borderlessFullscreen=true;
+ctx.appInfo.game.borderlessFullscreen=true;ctx.appInfo.game.gamescope=true;
 vm.runInContext(slice('function tileContextKey(','function tileBounds('),ctx);
 vm.runInContext(slice('function leaveAppFullscreen(','// Subtract opaque'),ctx);
 vm.runInContext(slice('function createBondedFullscreen(','function updateFloatingYield('),ctx);
@@ -138,4 +138,18 @@ dialogOpen=true;event=pressD();assert(!event.defaultPrevented);assert(ctx.Spatia
 ctx.SpatialVirtualScreen.showTiled('game');event=pressD();assert(!event.defaultPrevented,'Without a borderless fullscreen app, the shortcut does nothing');
 ctx.toggleAppFullscreen('browser');event=pressD();assert(!event.defaultPrevented);assert.equal(ctx.tileSession().fullscreen.name,'browser','Ordinary fullscreen is unaffected');ctx.toggleAppFullscreen('browser');
 slot=2;event=pressD();assert(!event.defaultPrevented,'The peer display cannot tile another display\'s game');
+// Gamescope toggles its one outer window, never the game canvas or desktop.
+slot=1;ctx.frontApp='game';ctx.desktopHasWindowFocus=true;
+const beforeF=JSON.stringify(ctx.desktopPages.snapshot());
+event=pressD({code:'KeyF'});assert(event.defaultPrevented);assert(ctx.SpatialVirtualScreen.fullscreen('game'));
+event=pressD({code:'KeyF'});assert(event.defaultPrevented);assert(!ctx.SpatialVirtualScreen.fullscreen('game'));
+assert.equal(JSON.stringify(ctx.desktopPages.snapshot()),beforeF);assert.equal(ctx.appState.game,'open');
+ctx.SpatialDemoSuper={held:()=>true};event=pressD({code:'KeyF',metaKey:false});assert(event.defaultPrevented);assert(ctx.SpatialVirtualScreen.fullscreen('game'));delete ctx.SpatialDemoSuper;
+ctx.SpatialVirtualScreen.showTiled('game');
+for(const extra of [{repeat:true},{ctrlKey:true},{shiftKey:true},{altKey:true},{isComposing:true},{target:{closest:()=>({})}}]){event=pressD({code:'KeyF',...extra});assert(!event.defaultPrevented);}
+ctx.desktopHasWindowFocus=false;event=pressD({code:'KeyF'});assert(!event.defaultPrevented);assert.equal(ctx.appState.game,'open','Losing focus does not park the tiled game');
+ctx.desktopHasWindowFocus=true;ctx.frontApp='browser';event=pressD({code:'KeyF'});assert(!event.defaultPrevented,'Ordinary apps retain their shortcut');
+ctx.frontApp='game';dialogOpen=true;event=pressD({code:'KeyF'});assert(!event.defaultPrevented,'Overlays retain priority');dialogOpen=false;
+slot=2;event=pressD({code:'KeyF'});assert(!event.defaultPrevented,'Cannot toggle a game on another display');slot=1;
+
 console.log('Fullscreen presentation passed: original desktop identity, direct canvas, ordinary navigation, peer displays, legacy/reload recovery, demo migration, Park/close, remembered virtual-screen modes and Win/F2+D with modifier/dialog/ordinary-window guards.');

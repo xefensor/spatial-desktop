@@ -52,7 +52,7 @@
     loadWorkspace();
     for(const id of Object.keys(appState).filter(id=>id==='steam'||appInfo[id]?.base==='steam')){const workspaceLabel=frameFor(id)?.querySelector('[data-steam-workspace-label]');if(workspaceLabel)workspaceLabel.textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;}
     const gameOpen=appState.game && appState.game!=='closed';
-    find('steamGameState').textContent=running()?'VIRTUAL SCREEN · FULLSCREEN':gameOpen?'VIRTUAL SCREEN · TILED':'READY TO PLAY';
+    find('steamGameState').textContent=running()?'GAMESCOPE · FULLSCREEN':appState.game==='minimized'?'GAMESCOPE · PARKED':gameOpen?'GAMESCOPE · TILED':'READY TO PLAY';
     find('steamReturnGame').querySelector('span').textContent=gameOpen?'Return to game':'Launch game';
     globalThis.SpatialOverviewDesktop?.refresh();
     globalThis.SpatialVirtualScreen?.refresh();

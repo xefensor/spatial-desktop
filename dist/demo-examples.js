@@ -214,7 +214,7 @@
       {title:"Prepare for the seminar", steps:["On Desktop 2, select the reminders in Class planning and choose Ask Assistant.","Ask for a checklist and keep it in the School Workspace’s Stash.","Switch to Urban Ecology for the four-plot observations and Project-specific examples."], prompt:"Make a checklist from these class reminders."}
     ],
     gaming: [
-      {title:"Get ready for co-op", steps:["Go to Desktop 2, highlight the Game night note and choose Ask Assistant.","Ask for a checklist and keep it in Gaming’s Stash.","Return to Desktop 1. F2+D tiles the Fallout virtual screen; F2 alone opens Overview while the game stays available."], prompt:"Make a checklist from this game-night plan."},
+      {title:"Get ready for co-op", steps:["Go to Desktop 2, highlight the Game night note and choose Ask Assistant.","Ask for a checklist and keep it in Gaming’s Stash.","Return to Desktop 1. F2+F switches Fallout’s Gamescope window between fullscreen and tiling; F2 alone opens Overview while the game stays available."], prompt:"Make a checklist from this game-night plan."},
       {title:"Find the result later", steps:["Open Overview → Timeline in Gaming and find the recent Assistant activity.","Expand Details to see individual actions; Open chat returns to the request.","For a saved reply’s own journey, open Stash → item → Details → History. Other Workspaces keep their activity separate."]}
     ]
   };

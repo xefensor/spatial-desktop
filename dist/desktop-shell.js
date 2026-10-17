@@ -224,7 +224,7 @@ const appInfo = {
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
   steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", singleInstance: true, parkingWidget: false },
-  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true }
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true }
 };
 
 const appState = desktopPreset === 'demo' ? { ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
@@ -850,7 +850,7 @@ function renderTileLayout(preferredName = frontApp, announce = false, animate = 
   try {
     const fullscreen=tileSession().fullscreen;
     if((fullscreen?.bonded || appInfo[fullscreen?.name]?.borderlessFullscreen) && appState[fullscreen.name]==="open" && isLocalApp(fullscreen.name)) {
-      // Exclusive fullscreen owns the viewport, independent of the minimum
+      // The fullscreen Gamescope container owns the viewport, independent of the minimum
       // size or dock bounds used for ordinary tiled windows.
       parkFullscreenPeers(tileSession());
       renderFloatingWindows(tileSession());renderTileDividers([]);renderFullscreenWindow(fullscreen.name);
