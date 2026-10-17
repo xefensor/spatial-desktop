@@ -10,6 +10,8 @@ Spatial Desktop is a browser prototype exploring a desktop built around Workspac
 
 *Actual browser capture, 12 October 2026. Work workspace / Website Launch / Desktop 1. All four Areas are visible; Terminal is parked as a useful app card.*
 
+Assistant accepts highlighted app text and selected files through **Ask Assistant** or **F2+A**, with reviewed browser-local text/image conversions into a chosen folder and retained input/output history.
+
 ## The idea
 
 - Windows tile automatically and share numbered shortcuts with the Apps hotbar. Each title bar shows its number; new windows open left to right, then top to bottom, with four preferring a 2×2 grid when they fit.

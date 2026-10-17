@@ -37,7 +37,7 @@
       const extension = dot > 0 ? safe.slice(dot) : '';
       let name = safe, suffix = 2;
       while (files.some(file => file.directory === directory && file.name === name)) name = stem + ' (' + suffix++ + ')' + extension;
-      const file = {directory, name, workspace: context.workspace, project: context.project || null, source: context.source || '', content: context.content || '', savedAt: Date.now()};
+      const file = {directory, name, workspace: context.workspace, project: context.project || null, source: context.source || '', content: context.content || '', savedAt: Date.now(),...(context.itemId?{itemId:context.itemId}:{}),...(context.attachment?{attachment:context.attachment}:{}),...(context.operationId?{operationId:context.operationId}:{})};
       files.push(file);
       return {...file, path: join(directory, name)};
     }

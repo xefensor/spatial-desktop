@@ -75,6 +75,7 @@ function appFileRows(id, path) {
   const otherProjects = Object.entries(workspaceProfiles).find(([,profile])=>profile.home+'/Projects'===path);
   const stashRows = globalThis.SpatialMemoryDesktop?.fileRows(path);
   const rows = stashRows || (otherHome ? [...otherHome[1].folders] : otherProjects ? Object.values(projectSpaces).filter(project=>project.originWorkspace===otherProjects[0]).map(project=>[project.name,'Project','folder',project.root]) : fileLocationRows(frame, path));
+  for(const file of workspaceDownloads.list?.(path)||[]){if(!rows.some(row=>row[0]===file.name))rows.push([file.name,'Saved file',file.attachment?.kind||'document']);}
   const seen = new Set(rows.map(row => row[0]));
   const targets=new Set(rows.map(([name,,,target])=>target||path.replace(/\/$/,'')+'/'+name));
   const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects',profile.home+'/Stash']),...Object.values(projectSpaces).flatMap(project=>[project.root,...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
@@ -100,7 +101,7 @@ function renderAppFiles(id, path, {history = true} = {}) {
   const frame = frameFor(id), model = appWindowModel(id);
   const previousPath=frame.dataset.fileLocation,previousQuery=frame.dataset.fileQuery;
   if (history && path !== SpatialAppTools.current(model.navigation)) {
-    SpatialAppTools.visit(model.navigation, path); model.query = ''; model.selected = null;
+    SpatialAppTools.visit(model.navigation, path); model.query = ''; model.selected = null; model.selections = [];
     globalThis.SpatialTimelineDesktop?.record('file.folder',{app:id,title:path.split('/').at(-1)||'Filesystem',path});
   }
   frame.dataset.fileLocation = path; frame.dataset.fileWorkspace = activeWorkspace;
@@ -125,8 +126,10 @@ function renderAppFiles(id, path, {history = true} = {}) {
   if(previousPath!==path||previousQuery!==model.query)$('.file-preview', frame).hidden = true;
   frame.dataset.fileQuery=model.query;
   const rows = appFileRows(id, path).filter(([label]) => label.toLocaleLowerCase().includes(model.query.toLocaleLowerCase())).sort((a,b) => (model.sort === 'type' ? Number(b[2] === 'folder') - Number(a[2] === 'folder') : 0) || a[0].localeCompare(b[0], undefined, {numeric: true}));
+  model.selections=(model.selections||[model.selected]).filter(name=>rows.some(row=>row[0]===name));
+  $('.file-list',frame).setAttribute('aria-multiselectable','true');
   $('.file-head', frame).innerHTML = '<span>Name</span><span>Details</span><span>Kind</span>';
-  $('.file-list', frame).innerHTML = rows.map(([label, detail, type, target]) => '<button class="content-row' + (model.selected === label ? ' is-selected' : '') + '" role="option" aria-selected="' + (model.selected === label) + '" draggable="true" data-file-name="' + escapeHtml(label) + '"' + (type === 'folder' ? ' data-file-folder="' + escapeHtml(target || path.replace(/\/$/,'') + '/' + label) + '"' : '') + ' title="' + escapeHtml(label) + '"><span><svg class="file-entry-icon"><use href="#' + (type === 'folder' ? 'i-folder' : type === 'config' ? 'i-code' : type==='image'?'i-image':type==='audio'?'i-music':'i-note') + '"/></svg><b>' + escapeHtml(label) + '</b></span><small>' + escapeHtml(detail) + '</small><small>' + (type === 'folder' ? 'Folder' : type === 'config' ? 'Config' : type==='image'?'Image':type==='audio'?'Audio':'File') + '</small></button>').join('') || '<p class="file-folder-empty">' + icon(model.query ? 'i-search' : 'i-folder') + '<b>' + (model.query ? 'No matching files' : 'This folder is empty') + '</b><span>' + (model.query ? 'Try a different name.' : 'Create a folder or save a demo download here.') + '</span></p>';
+  $('.file-list', frame).innerHTML = rows.map(([label, detail, type, target]) => '<button class="content-row' + (model.selections.includes(label) ? ' is-selected' : '') + '" role="option" aria-selected="' + (model.selections.includes(label)) + '" draggable="true" data-file-name="' + escapeHtml(label) + '"' + (type === 'folder' ? ' data-file-folder="' + escapeHtml(target || path.replace(/\/$/,'') + '/' + label) + '"' : '') + ' title="' + escapeHtml(label) + '"><span><svg class="file-entry-icon"><use href="#' + (type === 'folder' ? 'i-folder' : type === 'config' ? 'i-code' : type==='image'?'i-image':type==='audio'?'i-music':'i-note') + '"/></svg><b>' + escapeHtml(label) + '</b></span><small>' + escapeHtml(detail) + '</small><small>' + (type === 'folder' ? 'Folder' : type === 'config' ? 'Config' : type==='image'?'Image':type==='audio'?'Audio':'File') + '</small></button>').join('') || '<p class="file-folder-empty">' + icon(model.query ? 'i-search' : 'i-folder') + '<b>' + (model.query ? 'No matching files' : 'This folder is empty') + '</b><span>' + (model.query ? 'Try a different name.' : 'Create a folder or save a demo download here.') + '</span></p>';
   const status = $('.app-status', frame);
   status.innerHTML = '<span>' + rows.length + (rows.length === 1 ? ' item' : ' items') + (model.selected ? ' · ' + escapeHtml(model.selected) : '') + '</span><span>Double-click to open</span>';
   $('[data-app-action="file-back"]', frame).disabled = model.navigation.index === 0;
@@ -524,7 +527,7 @@ function appWindowClick(event) {
   if(action){performAppAction(id,action.dataset.appAction,action.dataset.browserTab);if(surface.dataset.miniCard){renderMiniApps();renderAllAppMusic();}}
   if(place){renderFileLocation(id,SpatialHomeFolders.folder(workspaceProfiles,activeWorkspace,place.dataset.homeFolder));saveAppWindows();}
   if(path){renderFileLocation(id,path.dataset.filePath);saveAppWindows();}
-  if(row){model.selected=row.dataset.fileName;$$('[data-file-name]',frame).forEach(item=>{item.classList.toggle('is-selected',item===row);item.setAttribute('aria-selected',String(item===row));});$('.app-status span',frame).textContent=appFileRows(id,frame.dataset.fileLocation).length+' items · '+model.selected;saveAppWindows(false);}
+  if(row){model.selections=SpatialAssistantFiles.select($$('[data-file-name]',frame).map(item=>item.dataset.fileName),model.selections||[model.selected].filter(Boolean),row.dataset.fileName,{ctrl:event.ctrlKey||event.metaKey,shift:event.shiftKey});model.selected=row.dataset.fileName;$$('[data-file-name]',frame).forEach(item=>{const picked=model.selections.includes(item.dataset.fileName);item.classList.toggle('is-selected',picked);item.setAttribute('aria-selected',String(picked));});$('.app-status span',frame).textContent=appFileRows(id,frame.dataset.fileLocation).length+' items · '+model.selections.length+' selected';saveAppWindows(false);}
   if(miniFile){openApp(id);openAppFile(id,miniFile.dataset.appMiniFile);}
   if(note){model.active=note.dataset.noteId;renderNotes(id);saveAppWindows();}
   if(link)navigateBrowser(id,link.dataset.demoLink);
