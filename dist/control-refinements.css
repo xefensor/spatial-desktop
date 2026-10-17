@@ -4,30 +4,24 @@
   --control-bottom:color-mix(in srgb,var(--app-content-raised) 86%,#000 14%);
   --control-contact:rgba(0,8,18,.42);
   --control-highlight:rgba(237,249,255,.24);
-  --abs-key-side:rgba(0,8,18,.60);
-  --abs-key-bevel:rgba(0,8,18,.28);
 }
 body[data-theme="light"] .app-frame {
   --control-top:#fbfdff;
   --control-bottom:#bfccd5;
   --control-contact:rgba(27,50,68,.28);
   --control-highlight:rgba(255,255,255,.95);
-  --abs-key-side:#718692;
-  --abs-key-bevel:rgba(51,75,91,.24);
 }
-/* A defined lower sidewall, contact shadow and opposed inset highlights make
-   the cap visibly solid even at rest. Navigation rows are part of the page;
-   Firefox and Steam keep their own app-authored controls below this layer. */
+/* Use the close button's existing ABS cap for every discrete app action.
+   Its gradient, edge and shadow are shared, rather than a second cap design.
+   Navigation rows stay flush; app-authored Firefox/Steam controls retain
+   their own component rules below this layer. */
 body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice) {
-  box-shadow:0 2px 0 var(--abs-key-side),0 3px 5px var(--control-contact),
-    inset 0 1px var(--control-highlight),inset 0 -1px var(--abs-key-bevel);
-  border-color:color-mix(in srgb,var(--app-primary) 12%,var(--control-edge))!important;
+  box-shadow:0 2px 3px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.28);
+  border-color:var(--control-edge)!important;
   font-weight:550;
 }
 body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice,.danger) {
-  background:linear-gradient(180deg,
-    color-mix(in srgb,var(--app-primary) 6%,var(--control-top)),
-    color-mix(in srgb,var(--app-primary) 4%,var(--control-bottom)))!important;
+  background:linear-gradient(var(--control-top),var(--control-bottom))!important;
 }
 body[data-theme] .app-frame button.material-abs-button:not(.content-row,.nav-choice):not(:disabled):hover {
   border-color:color-mix(in srgb,var(--app-primary) 35%,var(--control-edge))!important;
