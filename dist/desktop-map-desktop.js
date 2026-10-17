@@ -41,10 +41,10 @@
     if(!frame||!host||!globalThis.SpatialParkedPreviews)return;
     const clone=SpatialParkedPreviews.cloneWindow(frame);
     clone.querySelectorAll('iframe,audio,video,script,.parked-preview-surface').forEach(node=>node.remove());
-    const rect=frame.getBoundingClientRect(),saved=windowGeometry.get(w.id),width=Math.max(320,rect.width||saved?.width||960),height=Math.max(200,rect.height||saved?.height||640);
+    const box=host.getBoundingClientRect(),rect=frame.getBoundingClientRect(),saved=windowGeometry.get(w.id),width=Math.max(320,rect.width||saved?.width||960),height=width*Math.max(1,box.height)/Math.max(1,box.width);
     const computed=getComputedStyle(frame);for(const property of computed)if(property.startsWith('--'))clone.style.setProperty(property,computed.getPropertyValue(property));
     clone.style.setProperty('width',width+'px','important');clone.style.setProperty('height',height+'px','important');
-    const box=host.getBoundingClientRect(),scale=Math.min(box.width/width,box.height/height);clone.style.setProperty('transform','scale('+scale+')','important');host.append(clone);
+    const scale=box.width/width;clone.style.setProperty('transform','scale('+scale+')','important');host.append(clone);
   }
   function focusPage(column,page){const button=[...world.querySelectorAll('.desktop-map-page-heading')].find(n=>n.dataset.mapColumn===column&&Number(n.dataset.mapPage)===page);button?.focus({preventScroll:true});button?.scrollIntoView({block:'nearest',inline:'center'});}
   function blocked(){return document.querySelector('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]):not(#universalSearch):not(#spatialDesktopMap)')||tileInteraction||manualWindowInteraction||desktopPageAnimating||globalThis.SpatialGuide?.model.active()&&(!SpatialGuide.model.allows('projects')||!SpatialGuide.model.allows('desktops'));}
