@@ -159,7 +159,7 @@
     syncFolders();const project=projectFor(key),owner=ownerFor(key),items=itemsFor(key);field('[data-memory-action="folder"]').disabled=!owner;field('[data-memory-action="folder"]').title=owner?F.folder(owner):'Stash';field('[data-memory-action="files"]').hidden=!owner;
     const nextSignature=JSON.stringify([key,items]);if(!force&&!changed&&signature===nextSignature&&itemsSignature===nextSignature)return;signature=nextSignature;
     field('[data-memory-scope]').textContent=(project?'Project: '+project.name:'Workspace: '+workspaceProfiles[JSON.parse(key)[0]]?.label);field('[data-memory-count]').textContent=items.length+' item'+(items.length===1?'':'s');
-    if(!changed&&document.activeElement?.matches('[data-memory-inline]')&&host.contains(document.activeElement))return;
+    if(!changed&&document.activeElement?.matches('[data-memory-inline],[data-item-tags]')&&host.contains(document.activeElement))return;
     const nextItemsSignature=JSON.stringify([key,items]);if(itemsSignature!==nextItemsSignature){host.querySelectorAll('audio').forEach(audio=>audio.pause());field('.memory-items').innerHTML=items.map(itemMarkup).join('');itemsSignature=nextItemsSignature;}
     filterShelf(items);
     prepareControlSemantics(host);

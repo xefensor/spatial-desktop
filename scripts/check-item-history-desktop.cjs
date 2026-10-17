@@ -43,6 +43,35 @@ function advance(){time.value+=1000;}
 function rawNote(key,value){return memoryModel.add(key,value);}
 function latest(id){return history.api.get(id);}
 function switchWorkspace(workspace){history.context.activeWorkspace=workspace;memoryContext.activeWorkspace=workspace;}
+function verifyFocusedTags(){
+  const callbacks={},frames=[],fields=new Map(),key=M.scope('work');
+  let replacements=0,filterCalls=0;
+  const tagsInput={value:'important, typing',isConnected:true,matches:selector=>selector.includes('[data-item-tags]')};
+  const target={prepend(){}},railEntry={},items=[{id:'render-item',scope:key,title:'Updated item',text:'Text just edited',source:{},updated:2}];
+  const field=selector=>{if(!fields.has(selector))fields.set(selector,{});return fields.get(selector);};
+  Object.defineProperty(field('.memory-items'),'innerHTML',{set(value){replacements++;tagsInput.isConnected=false;this.markup=value;}});
+  const host={parentElement:target,contains:node=>node===tagsInput,querySelectorAll:()=>[],addEventListener(type,callback){callbacks[type]=callback;}};
+  const context={desktopSyncApplying:false,requestAnimationFrame:fn=>frames.push(fn),dropPosition:null,scope:()=>key,current:key,allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry},field,selected:new Set(),drafts:new Map(),shelfViews:new Map(),signature:'old',itemsSignature:'old',projectColumnActive:()=>true,$:()=>target,syncFolders(){},projectFor:()=>null,ownerFor:()=>({root:'/work'}),itemsFor:()=>items,F,workspaceProfiles:profiles,filterShelf(){filterCalls++;},itemMarkup:item=>item.title,prepareControlSemantics(){},document:{activeElement:tagsInput}};
+  const publicRenders=[];
+  context.SpatialMemoryDesktop={render(force){publicRenders.push(force);context.render(force);}};
+  vm.createContext(context);
+  vm.runInContext(section(memorySource,'  function render(force=false){','  function collapse('),context);
+  context.render(true);
+  assert.equal(replacements,0,'A deferred content refresh cannot replace a row while its Tags input is focused');
+  assert.equal(tagsInput.value,'important, typing');assert.equal(tagsInput.isConnected,true,'Typing stays attached to the existing input');
+  assert.equal(filterCalls,0,'Deferred content is refreshed after the editor is left');
+  const focusout=historySource.split('\n').find(line=>line.includes("host.addEventListener('focusout'"));
+  assert(focusout,'Production Tags editor has a blur refresh listener');
+  vm.runInContext(focusout,context);
+  context.document.activeElement=null;
+  callbacks.focusout({target:tagsInput});
+  assert.equal(frames.length,1,'Leaving Tags schedules the deferred public refresh');
+  assert.equal(replacements,0,'Blur does not rebuild the input during the focus event');
+  frames.shift()();
+  assert.deepEqual(publicRenders,[true],'Tags blur calls the public render boundary so history decoration runs too');
+  assert.equal(replacements,1,'The postponed content update is applied once editing has finished');
+  assert.equal(filterCalls,1);
+}
 
 (async()=>{
   const scope=M.scope('work'),other=M.scope('work','second');
@@ -88,6 +117,29 @@ function switchWorkspace(workspace){history.context.activeWorkspace=workspace;me
   const savedProject=copy(projects.first),reloadedNotes=M.create(memoryModel.snapshot());
   assert.equal(reloadedNotes.get(reference.id).itemId,initial.id);assert.equal(reloadedNotes.get(reference.id).reference,true,'Reference metadata survives working-memory reload');
   assert.equal(savedProject.resources[0][4].itemId,initial.id);assert.equal(savedProject.resources[0][4].reference,true,'Project-file metadata retains canonical identity through JSON export');
+
+  // A reference may store a bundled image under a new IndexedDB blob key. Its
+  // newer local timestamp and storage locator are not edits to the source.
+  advance();
+  const bundled={id:'bundled-image',scope,title:'Bundled image',text:'Source caption',source:{app:'browser'},attachment:{kind:'image',src:'media/stash/chart.svg',filename:'Chart.svg'},updated:time.value};
+  history.api.capture(bundled);const bundledVersion=latest(bundled.id).currentVersion,bundledEvents=latest(bundled.id).events.length;
+  advance();
+  const storedReference=rawNote(other,{title:bundled.title,text:'Stale local caption',source:bundled.source,attachment:{kind:'image',key:'stash-reference-copy',filename:'Chart.svg'},itemId:bundled.id,reference:true});
+  assert(storedReference.updated>latest(bundled.id).updated);
+  const referenceView=history.api.hydrate(storedReference);
+  assert.equal(referenceView.text,'Source caption','A newly saved reference cannot write its local content into the source');
+  assert.equal(referenceView.attachment.src,'media/stash/chart.svg');
+  assert.equal(latest(bundled.id).currentVersion,bundledVersion,'Reference storage conversion creates no content version');
+  assert.equal(latest(bundled.id).versions.length,1);
+  assert.equal(latest(bundled.id).events.length,bundledEvents+1);
+  assert.equal(latest(bundled.id).events.at(-1).type,'reference');
+  assert.equal(latest(bundled.id).events.at(-1).workspace,'work');assert.equal(latest(bundled.id).events.at(-1).project,'second');
+  history.api.capture(storedReference,{force:true,action:'reference'});
+  assert.equal(latest(bundled.id).currentVersion,bundledVersion,'Explicit reference capture is also storage-only');
+  advance();memory.editItem(storedReference.id,{text:'Deliberately edited caption'});
+  assert.equal(latest(bundled.id).text,'Deliberately edited caption','Explicit edits from a reference still update shared content');
+  assert.equal(latest(bundled.id).attachment?.src,'media/stash/chart.svg','A caption edit retains the authoritative bundled image');
+  assert.equal(latest(bundled.id).versions.length,2);
 
   // Missing origin information remains unknown, even with a front app and an
   // explicit destination. A known partial source is preserved as given.
@@ -137,9 +189,21 @@ function switchWorkspace(workspace){history.context.activeWorkspace=workspace;me
   switchWorkspace('school');assert.equal(history.api.get(initial.id),null,'The recorded origin workspace alone does not expose the item');
   switchWorkspace('work');
 
+  // Use the production change listener and saveTags implementation, so the
+  // edit preserved by the focus guard really reaches storage and the journey.
+  let tagsChanged,tagFilters=0;
+  history.context.host={addEventListener(type,callback){if(type==='change')tagsChanged=callback;}};
+  history.context.filter=()=>{tagFilters++;};
+  const tagsChange=historySource.split('\n').find(line=>line.includes("host.addEventListener('change',event=>"));
+  assert(tagsChange);vm.runInContext(tagsChange,history.context);
+  tagsChanged({target:{dataset:{itemTags:initial.id},value:'important, typing',matches:selector=>selector.includes('[data-item-tags]')}});
+  assert.deepEqual(copy(history.helpers.tags(initial.id)),['important','typing']);
+  assert.equal(latest(initial.id).events.at(-1).type,'tagged','A committed Tags edit is present in the item journey');
+  assert.equal(tagFilters,1);
+
   // Execute production merge, then reconstruct the adapter from its actual
   // storage keys: imported tags must survive a new tab/reload.
-  history.api.merge({history:history.api.snapshot().history,metadata:{[initial.id]:{tags:['taxes','verify'],updated:time.value+10000}}});
+  history.api.merge({history:history.api.snapshot().history,metadata:{[initial.id]:{tags:['taxes','verify'],updated:Date.now()+60000}}});
   assert.deepEqual(copy(history.helpers.tags(initial.id)),['taxes','verify']);
   history.api.persist();
   const reloadedHistory=historyHarness(storage);
@@ -147,5 +211,6 @@ function switchWorkspace(workspace){history.context.activeWorkspace=workspace;me
   assert.equal(reloadedHistory.api.get(initial.id).text,'Source changed after copy');
   assert.equal(reloadedHistory.api.get(initial.id).origin.workspace,'school');
   assert.equal(reloadedHistory.api.get(copiedRecord.id).relations[0].versionId,parentVersion);
-  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation and metadata reload.');
+  verifyFocusedTags();
+  console.log('Item history desktop passed: production capture/hydration, shared edits, stable file identity, exact copy version, origin facts, current locations, workspace isolation, metadata reload and focused Tags edit preservation.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

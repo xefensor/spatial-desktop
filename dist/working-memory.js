@@ -11,9 +11,14 @@
   }
   // Workspace uploads are stored by local blob key; remote preview URLs are never retained.
   function attachment(value){
-    if(!value||!['image','audio','document','file'].includes(value.kind)||!/^stash-[\w-]{1,160}$/.test(value.key||''))return undefined;
-    return {kind:value.kind,key:value.key,filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100),...(value.credit?{credit:clean(value.credit,200)}:{})};
+    if(!value||!['image','audio','document','file'].includes(value.kind))return undefined;
+    const key=/^stash-[\w-]{1,160}$/.test(value.key||'')?value.key:'',src=String(value.src||'');
+    const extensions={image:/\.(?:svg|png|jpe?g|webp)$/i,audio:/\.(?:wav|mp3|ogg)$/i,document:/\.html$/i};
+    const bundled=/^(?:media\/stash\/|images\/philosophy\/)[a-zA-Z0-9_./-]+$/.test(src)&&!src.split('/').includes('..')&&extensions[value.kind]?.test(src);
+    if(!key&&!bundled)return undefined;
+    return {kind:value.kind,...(key?{key}:{src}),filename:clean(value.filename,160),mime:clean(value.mime,100),size:Math.max(0,Number(value.size)||0),format:clean(value.format,100),...(value.credit?{credit:clean(value.credit,200)}:{})};
   }
+
   function create(saved={},clock=()=>Date.now(),writer=Math.random().toString(36).slice(2)) {
     let state={version:1,records:Object.create(null)};let sequence=0;
     function merge(incoming){

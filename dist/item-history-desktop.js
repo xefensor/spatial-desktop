@@ -23,7 +23,8 @@
     const id=canonical(item),before=model.get(id),at={...owner(item),...options};
     // A stale local reference must never overwrite a newer edit from another Stash.
     if(!before&&Number(item.created)>0&&Number(item.created)<Date.now()-60000&&!options.action){at.action='indexed';at.detail='Indexed an existing Stash entry. Its known saved date is preserved.';}
-    const changed=!before||options.force||Number(item.updated)>before.updated;
+    const referenceOnly=before&&item.reference&&(!options.force||options.action==='reference');
+    const changed=!referenceOnly&&(!before||options.force||Number(item.updated)>before.updated);
     let result=before;
     if(changed)result=model.upsert({...item,id,fileId:undefined,address:item.source?.address||item.address||'',source:item.source||{}},at);
     else if(!before.references.some(ref=>ref.active&&ref.workspace===at.workspace&&(ref.project||null)===(at.project||null)))result=model.record(id,'reference',at)||before;
@@ -120,11 +121,12 @@
     let visible=0;host.querySelectorAll('[data-memory-id]').forEach(row=>{const item=byId.get(row.dataset.memoryId);if(!item)return;const record=model.get(canonical(item)),text=[item.title,item.text,item.source?.address,item.source?.label,item.source?.app,appLabel(item.source?.app),...tags(canonical(item))].join(' '),captured=record?.created||item.created||0;
       const show=(!pinned||item.pinned)&&(!query||matchesSearch(text,query))&&(!values.app||(item.source?.app||'unknown')===values.app)&&(!values.type||itemType(item)===values.type)&&(!values.date||captured>=(values.date==='today'?today.getTime():Date.now()-7*86400000));row.hidden=!show;if(show)visible++;});
     facets.querySelector('[data-facet-count]').textContent=Object.values(values).filter(Boolean).length?'· '+Object.values(values).filter(Boolean).length+' active':'';
-    host.querySelector('[data-memory-count]').textContent=(visible===items.length?items.length:visible+' of '+items.length)+' items';
+    host.querySelector('[data-memory-count]').textContent=(visible===items.length?items.length:visible+' of '+items.length)+(items.length===1?' item':' items');
     const empty=host.querySelector('.memory-empty');empty.hidden=visible>0;host.querySelector('[data-memory-empty-title]').textContent=items.length?'No matching items':'Nothing saved yet';host.querySelector('[data-memory-empty-detail]').textContent=items.length?'Adjust the filters or clear them to show all items.':'Add a note, choose files or drop something here.';host.querySelector('[data-memory-action="clear-filter"]').hidden=!(query||pinned||Object.values(values).some(Boolean));
   }
   facets.addEventListener('change',filter);facets.addEventListener('click',event=>{if(!event.target.closest('[data-history-reset]'))return;['app','type','date'].forEach(name=>facets.querySelector('[data-history-'+name+']').value='');filter();});
   host.addEventListener('input',event=>{if(event.target.matches('[data-memory-query]'))filter();});
+  host.addEventListener('focusout',event=>{if(event.target.matches('[data-item-tags]'))requestAnimationFrame(()=>SpatialMemoryDesktop.render(true));});
   host.addEventListener('change',event=>{if(event.target.matches('[data-item-tags]')){saveTags(event.target.dataset.itemTags,event.target.value);filter();}if(event.target.matches('[data-memory-filter]'))filter();});
   host.addEventListener('click',event=>{if(event.target.closest('[data-memory-action="clear-filter"]')){['app','type','date'].forEach(name=>facets.querySelector('[data-history-'+name+']').value='');filter();}});
   globalThis.SpatialItemHistoryDesktop={canonical,capture,hydrate,record,get,open,transfer,persist,snapshot:()=>({history:model.snapshot(),metadata}),merge(value){if(!value)return;syncing=true;model.merge(value.history||value);for(const [id,meta]of Object.entries(value.metadata||{})){if(Number(meta.updated)>Number(metadata[id]?.updated||0))metadata[id]=meta;}try{desktopStorage.setItem(uiKey,JSON.stringify(metadata));}catch{}persist();syncing=false;decorate();}};
