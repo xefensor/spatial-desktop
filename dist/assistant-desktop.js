@@ -169,13 +169,23 @@
     }catch(error){A.setAction(workspace,chatId,turn.id,{...action,status:'failed',error:error.message});A.notify('Conversion failed: '+error.message);}
     finally{running.delete(turn.id);drawCards();}
   }
+  function openOutputLocation(path,file=false){
+    const bridge=globalThis.SpatialDisplayRoleBridge,role=bridge?.state?.()?.role;
+    if(role==='assistant'||role==='side'){
+      try{return bridge.openReference({kind:file?'file':'folder',path});}
+      catch(error){A.notify(error.message||'This output could not open.');return null;}
+    }
+    const directory=file?path.slice(0,path.lastIndexOf('/')):path;
+    openFileLocation(directory);
+    if(file){const id=Object.keys(appInfo).find(id=>appState[id]==='open'&&(appInfo[id].base||id)==='dolphin'&&desktopPages.inColumn(activeWorkspace,id)&&frameFor(id)?.dataset.fileLocation===directory);if(id)openAppFile(id,path.split('/').at(-1));}
+  }
   transcript.addEventListener('click',event=>{
     const card=event.target.closest('.ai-file-task');if(!card)return;const turn=A.current().turns.find(t=>t.id===card.dataset.turn);if(!turn)return;
     if(event.target.closest('[data-task-run]')){const destination=card.querySelector('[data-task-destination]').value;return run(turn,destination).catch(error=>A.notify(error.message));}
     if(event.target.closest('[data-task-cancel]')){A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'cancelled'});drawCards();}
-    if(event.target.closest('[data-task-open]'))openFileLocation(turn.action.destination);
+    if(event.target.closest('[data-task-open]'))openOutputLocation(turn.action.destination);
     if(event.target.closest('[data-task-location]')){card.querySelector('.ai-task-details').open=true;const input=card.querySelector('[data-task-destination]');input.focus();input.select();}
-    const file=event.target.closest('[data-task-file-open]');if(file){const path=file.dataset.taskFileOpen,dir=path.slice(0,path.lastIndexOf('/'));openFileLocation(dir);const id=Object.keys(appInfo).find(id=>appState[id]==='open'&&(appInfo[id].base||id)==='dolphin'&&desktopPages.inColumn(activeWorkspace,id)&&frameFor(id)?.dataset.fileLocation===dir);if(id)openAppFile(id,path.split('/').at(-1));}
+    const file=event.target.closest('[data-task-file-open]');if(file)openOutputLocation(file.dataset.taskFileOpen,true);
 
     const history=event.target.closest('[data-task-history]');if(history)SpatialItemHistoryDesktop.open(history.dataset.taskHistory);
   });

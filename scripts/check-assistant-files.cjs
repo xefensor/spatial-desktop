@@ -77,5 +77,19 @@ node('aiPrompt').value='Convert selected files to HTML in Converted';
   function clickRun(turnId){const card={dataset:{turn:turnId},querySelector:()=>({value:'/mnt/Web/Converted'})};return events['aiTranscript:click'][0]({target:{closest:selector=>selector==='.ai-file-task'?card:selector==='[data-task-run]'?{}:null}});}
   await clickRun(sent[0].id);const written=boot.workspaceDownloads.list('/mnt/Web/Converted');assert.equal(written.length,2);assert.equal(outputs.length,2);assert(written.every(file=>file.content.includes('<!doctype html>')));assert(written.every(file=>file.attachment.key&&blobs.has(file.attachment.key)));assert(outputs.every(record=>record.options.related[0].versionId==='captured-version'));assert.equal(activity[0][0],'assistant.output');assert.equal(activity[0][1].sourceIds.length,2);assert.equal(session.session('work').turns[0].action.status,'complete');
   await clickRun(sent[0].id);assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,2,'A completed action cannot run twice');
+  // Conversion outputs on a helper display must use new local windows. The
+  // normal File Browser lookup can otherwise pull a main-display window away.
+  const normalFolders=[],normalFiles=[],helperReferences=[],outputPath='/mnt/Web/Converted/'+written[0].name;let outputRole='main',failReference=false;
+  boot.openFileLocation=directory=>{normalFolders.push(directory);frame.dataset.fileLocation=directory;};
+  boot.openAppFile=(id,name)=>normalFiles.push({id,name});
+  boot.SpatialDisplayRoleBridge={state:()=>({role:outputRole}),openReference(reference){if(failReference)throw Error('Output is unavailable.');helperReferences.push({...reference});return 'helper-file';}};
+  function clickOutput(attribute,path){const card={dataset:{turn:sent[0].id}};return events['aiTranscript:click'][0]({target:{closest(selector){if(selector==='.ai-file-task')return card;if(selector===attribute)return path?{dataset:{taskFileOpen:path}}:{};return null;}}});}
+  clickOutput('[data-task-open]');clickOutput('[data-task-file-open]',outputPath);
+  assert.deepEqual(normalFolders,['/mnt/Web/Converted','/mnt/Web/Converted'],'Main keeps the ordinary folder-opening behavior');
+  assert.deepEqual(normalFiles,[{id:'files',name:written[0].name}],'Main keeps its existing file preview behavior');
+  for(const role of ['assistant','side']){outputRole=role;clickOutput('[data-task-open]');clickOutput('[data-task-file-open]',outputPath);}
+  assert.deepEqual(helperReferences,[{kind:'folder',path:'/mnt/Web/Converted'},{kind:'file',path:outputPath},{kind:'folder',path:'/mnt/Web/Converted'},{kind:'file',path:outputPath}]);
+  assert.equal(normalFolders.length,2,'Helper output actions never invoke the cross-display File Browser lookup');assert.equal(normalFiles.length,1);
+  failReference=true;clickOutput('[data-task-file-open]',outputPath);assert.equal(boot.status,'Output is unavailable.','Failed helper outputs show the error without taking over a main window');
   const failed=session.exchange('work','Convert again',{title:'Conversion',text:'Review',action:{format:'html',destination:'/mnt/Web/Converted',status:'review'}},{sources:sent[0].sources});failPut=true;await clickRun(failed.id);assert.equal(session.session('work').turns.at(-1).action.status,'failed');assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,2,'A failed save leaves the folder unchanged');
   console.log('Assistant files passed: real text formats, CSV quoting, safe HTML, Workspace paths, copy collisions, persisted action/source versions, production selection and exact multi-file request capture.');})().catch(error=>{console.error(error);process.exitCode=1;});

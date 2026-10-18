@@ -73,6 +73,7 @@
     }catch(error){find('[data-display-feedback]').textContent=error.message||'This action could not complete.';}
   });
   root.addEventListener('spatial-display-role-change',refresh);
-  root.addEventListener('pagehide',()=>{clearInterval(clockTimer);root.SpatialAIDesktop?.unmountDisplay();});
+  root.addEventListener('pagehide',()=>{clearInterval(clockTimer);clockTimer=0;root.SpatialAIDesktop?.unmountDisplay();chatMounted=false;selection=null;});
+  root.addEventListener('pageshow',refresh);
   root.SpatialDisplayWorkbench={refresh};refresh();
 })(window);

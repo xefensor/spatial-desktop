@@ -74,7 +74,10 @@ for(const role of ['side','assistant']){
   h.park([{id:'notes--1',label:'Note Editor',title:'Workspace briefing'}]);assert.equal(h.elements.get('[data-display-parked]').hidden,false);assert.equal(h.elements.get('[data-display-parked-count]').textContent,'1');
   const button=h.elements.get('[data-display-parked-list]').children[0];assert.equal(button.textContent,'Restore Workspace briefing');assert.equal(button.dataset.displayWindow,'notes--1');
   h.restore('notes--1');assert.deepEqual(h.restored[0],{workspace:'work',slot:2,id:'notes--1'});assert.equal(h.elements.get('[data-display-parked]').hidden,true);assert.equal(h.state().localWindows[0].id,'notes--1');
+  const mounts=h.chat.mounts.length;
   h.listeners.pagehide();assert.equal(h.intervals.size,0);assert(h.chat.unmounts>=1,'Page exit returns the shared chat node');
+  h.listeners.pageshow();assert.equal(h.chat.mounts.length,mounts+(role==='assistant'?1:0),'Returning from the browser page cache remounts Assistant chat');
+  if(role==='side')assert.equal(h.intervals.size,1,'Returning to Side space restarts its clock');
 }
 // A pinned helper window deliberately does not share the active Project/page.
 // Exercise the actual selection predicates so the chat can use its contents
