@@ -28,7 +28,7 @@ function appWindowModel(id) {
     });
     return {kind, tracks, index: 0, position: id === 'elisa' ? musicPosition : 0, playing: id === 'elisa' && appState[id] !== 'closed' ? musicPlaying : false, volume: Number($('.volume-range', frame)?.value || 72), muted: false};
   });
-  if(kind==='notes'&&desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateNote)for(const note of model.notes)note.text=SpatialDemoExamples.migrateNote(note.text);
+  if(kind==='notes'&&desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateNote)for(const note of model.notes)if(!note.file)note.text=SpatialDemoExamples.migrateNote(note.text);
   if(kind==='browser'){
     SpatialAppTools.browserTabs(model);
     if(desktopPreset==='demo'&&globalThis.SpatialDemoExamples?.migrateBrowserPage)for(const tab of model.tabs)tab.navigation.items=tab.navigation.items.map(SpatialDemoExamples.migrateBrowserPage);
@@ -52,8 +52,8 @@ function hydrateAppWindow(id, force = false) {
       const editor = document.createElement('section'); editor.className = 'note-editor';
       const text = $('.notes-layout textarea', frame);
       text.before(editor); editor.append(text);
-      editor.insertAdjacentHTML('afterbegin', '<header class="note-toolbar"><input data-note-title aria-label="Note title" maxlength="80" placeholder="Untitled note"><span data-note-save-state>Saved</span></header>');
-      editor.insertAdjacentHTML('beforeend', '<footer class="note-status"><span data-note-count></span><span>Autosaved · Ctrl+S</span></footer>');
+      editor.insertAdjacentHTML('afterbegin', '<header class="note-toolbar"><input data-note-title aria-label="Note title" maxlength="80" placeholder="Untitled note"><span data-note-save-state aria-live="polite">Saved</span></header><p class="note-file-location" data-note-file-location hidden></p>');
+      editor.insertAdjacentHTML('beforeend', '<footer class="note-status"><span data-note-count></span><span data-note-save-help>Autosaved · Ctrl+S</span></footer>');
       text.placeholder = 'Start writing…';
     }
     renderNotes(id);
@@ -178,9 +178,14 @@ function newAppFolder(id) {
 }
 function renderNotes(id) {
   const frame = frameFor(id), model = appWindowModel(id), note = SpatialAppTools.activeNote(model);
+  refreshBoundNote(note);
   $('.notes-layout nav', frame).innerHTML = '<span class="small-heading">NOTES</span>' + model.notes.map(item=>'<button class="nav-choice' + (item.id===note.id?' is-active':'') + '" data-note-id="' + escapeHtml(item.id) + '" aria-pressed="' + (item.id===note.id) + '" title="' + escapeHtml(item.title || 'Untitled') + '">' + icon('i-note') + '<span>' + escapeHtml(item.title || 'Untitled') + '</span></button>').join('') + '<button class="surface-key note-new" data-app-action="note-new">' + icon('i-add') + '<span>New note</span></button>';
   $('.notes-layout textarea',frame).value = note.text;
   $('[data-note-title]', frame).value = note.title;
+  $('[data-note-title]', frame).readOnly = Boolean(note.file);
+  if(note.file)$('.notes-layout textarea',frame).maxLength=12000;
+  else $('.notes-layout textarea',frame).removeAttribute('maxlength');
+  $('.notes-layout textarea',frame).readOnly = Boolean(note.file && noteFileContext(note).error);
   $('.app-identity small',frame).textContent = note.title || 'Untitled';
   appInfo[id].detail=note.title || 'Untitled';
   updateNoteStatus(id); prepareControlSemantics(frame);
@@ -188,8 +193,99 @@ function renderNotes(id) {
 function updateNoteStatus(id) {
   const frame = frameFor(id), note = SpatialAppTools.activeNote(appWindowModel(id));
   $('[data-note-count]',frame).textContent = SpatialAppTools.words(note.text) + ' words · ' + note.text.length + ' characters';
-  $('[data-note-save-state]',frame).textContent = 'Saved';
+  const state=$('[data-note-save-state]',frame),location=$('[data-note-file-location]',frame),help=$('[data-note-save-help]',frame);
+  state.textContent = note.file ? (note.fileError || note.fileDirty ? 'Not saved to file' : 'Saved to file') : 'Saved';
+  state.title = note.fileError || (note.file ? 'Edits update this saved file.' : 'Saved with this Note Editor window.');
+  if(location){location.hidden=!note.file;location.textContent=note.file ? (note.fileError ? note.fileError + ' · ' : '') + note.file.path : '';location.title=location.textContent;}
+  if(help)help.textContent=note.file ? 'Markdown file · Ctrl+S' : 'Autosaved · Ctrl+S';
 }
+// A file-backed note is a view of one existing saved Markdown file, not a new
+// document with a similar title. The binding travels with the window session.
+function noteFileContext(note) {
+  const binding=note.file;
+  if(!binding)return {error:'This note is not linked to a file.'};
+  const path=binding.path;
+  if(typeof path!=='string'||path.length>1000||/[\x00-\x1f\\]/.test(path)||!path.startsWith('/')||SpatialAppTools.resolvePath(path,'/','/')!==path||!/\.(?:md|markdown|txt)$/i.test(path)||typeof binding.itemId!=='string'||!binding.itemId||binding.itemId.length>320)return {error:'The saved file link is invalid.'};
+  if(binding.workspace!==activeWorkspace||!workspaceProfiles[binding.workspace])return {error:'This file belongs to another Workspace.'};
+  const project=binding.project||null;
+  if(project&&!projectSpaces[project])return {error:'The Project for this file is no longer available.'};
+  if(project&&typeof openProjectNames==='function'&&!openProjectNames(binding.workspace).includes(project))return {error:'Reopen this Project to edit its saved file.'};
+  if(!SpatialAssistantFiles.allowed(path,binding.workspace,workspaceProfiles,projectSpaces,project?[project]:[]))return {error:'This file is outside its Workspace or Project.'};
+  const directory=path.slice(0,path.lastIndexOf('/'))||'/',name=path.slice(path.lastIndexOf('/')+1);
+  const file=workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId);
+  if(!file)return {error:'The saved file is no longer available.'};
+  if(file.workspace!==binding.workspace||(file.project||null)!==project)return {error:'The file ownership no longer matches this note.'};
+  if(project&&!SpatialAssistantFiles.inside(path,projectSpaces[project].root))return {error:'The saved file is outside its Project folder.'};
+  return {binding,file,directory,name,project};
+}
+function refreshBoundNote(note) {
+  if(!note.file)return;
+  const context=noteFileContext(note);
+  if(context.error){note.fileError=context.error;return;}
+  if(note.fileDirty){
+    if(context.file.content!==note.fileText)note.fileError='The file changed elsewhere. Copy your unsaved text before reopening it.';
+    return;
+  }
+  note.title=context.file.name;note.text=String(context.file.content||'');note.fileText=note.text;note.fileError='';
+}
+const pendingNoteFileHistory=new Map();
+function flushBoundNoteHistory(id) {
+  for(const [key,pending]of pendingNoteFileHistory){
+    if(id&&pending.id!==id)continue;
+    clearTimeout(pending.timer);pendingNoteFileHistory.delete(key);
+    const {binding,text,title}=pending;
+    if(!workspaceProfiles[binding.workspace]||(binding.project&&!projectSpaces[binding.project]))continue;
+    const directory=binding.path.slice(0,binding.path.lastIndexOf('/'))||'/',name=binding.path.slice(binding.path.lastIndexOf('/')+1);
+    const file=workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId&&file.workspace===binding.workspace&&(file.project||null)===(binding.project||null));
+    if(!file||file.content!==text)continue;
+    // A burst of typing is one edit to this same item, rather than a trail of
+    // phantom files or one history version for every individual keypress.
+    globalThis.SpatialItemHistoryDesktop?.capture({id:binding.itemId,itemId:binding.itemId,title,text,address:binding.path,workspace:binding.workspace,project:binding.project,source:{workspace:binding.workspace,project:binding.project,app:'notes',label:'Note Editor',address:binding.path}},{workspace:binding.workspace,project:binding.project,force:true,action:'edit',detail:'Edited the saved Markdown file in Note Editor'});
+    globalThis.SpatialItemHistoryDesktop?.persist();
+  }
+}
+function queueBoundNoteHistory(id,context,note,defer) {
+  const key=JSON.stringify([context.binding.workspace,context.binding.itemId]),previous=pendingNoteFileHistory.get(key);
+  if(previous)clearTimeout(previous.timer);
+  const pending={id,binding:{...context.binding},text:note.text,title:context.name};
+  pendingNoteFileHistory.set(key,pending);
+  if(defer)pending.timer=setTimeout(()=>flushBoundNoteHistory(id),650);
+  else flushBoundNoteHistory(id);
+}
+function saveBoundNote(id,{deferHistory=false}={}) {
+  const note=SpatialAppTools.activeNote(appWindowModel(id));
+  if(!note.file)return true;
+  const context=noteFileContext(note);
+  if(context.error){note.fileError=context.error;return false;}
+  if(note.text.length>12000){note.fileError='This demo saves Markdown files up to 12,000 characters. Your draft is kept in this window.';return false;}
+  if(context.file.content!==note.fileText&&context.file.content!==note.text){note.fileError='The file changed elsewhere. Copy your unsaved text before reopening it.';return false;}
+  if(context.file.content===note.text){note.fileText=note.text;note.fileDirty=false;note.fileError='';if(!deferHistory)flushBoundNoteHistory(id);return true;}
+  const before=workspaceDownloads.snapshot();
+  try{
+    const updated=workspaceDownloads.update(context.directory,context.name,{content:note.text});
+    if(!updated||updated.content!==note.text)throw Error('The full text could not be saved.');
+    desktopStorage.setItem('spatial-downloads-v1',JSON.stringify(workspaceDownloads.snapshot()));
+  }catch{
+    workspaceDownloads.load(before);note.fileError='Saving failed. Your draft is kept in this window; use Ctrl+S to retry.';return false;
+  }
+  note.fileText=note.text;note.fileDirty=false;note.fileError='';
+  queueBoundNoteHistory(id,context,note,deferHistory);
+  if(typeof persistDownloads==='function')persistDownloads();
+  if(typeof refreshDownloadUi==='function')refreshDownloadUi();
+  return true;
+}
+globalThis.SpatialNoteFiles={
+  bind(id,file){
+    if(!file||!appInfo[id]||(appInfo[id].base||id)!=='notes')return false;
+    const note=SpatialAppTools.activeNote(appWindowModel(id)),binding={path:file.path,itemId:file.itemId,workspace:file.workspace,project:file.project||null};
+    const candidate={file:binding};
+    if(noteFileContext(candidate).error)return false;
+    note.file=binding;note.fileDirty=false;refreshBoundNote(note);return true;
+  },
+  save:saveBoundNote,
+  flush:flushBoundNoteHistory,
+  refresh(id){const note=SpatialAppTools.activeNote(appWindowModel(id));refreshBoundNote(note);renderNotes(id);return !note.fileError;}
+};
 function readBrowserPage(frame) {
   const page = $('.demo-reading-page', frame);
   if(!page)return firefoxNewTab();
@@ -334,7 +430,10 @@ function appMiniMarkup(id, original) {
     const path=SpatialAppTools.current(model.navigation);
     return header+'<div class="mini-location"><b>' + escapeHtml(path.split('/').at(-1)||'Filesystem') + '</b><small>' + appFileRows(id,path).length + ' items</small></div><div class="mini-file-list">'+appFileRows(id,path).slice(0,3).map(([name,,type])=>'<button data-app-mini-file="'+escapeHtml(name)+'"><span>'+icon(type==='folder'?'i-folder':'i-note')+escapeHtml(name)+'</span></button>').join('')+'</div><div class="mini-quick-row"><button class="surface-key mini-tool" data-app-action="file-new-folder">'+icon('i-add')+'<span>New folder</span></button><button class="surface-key mini-tool" data-app-action="file-search">'+icon('i-search')+'<span>Find</span></button></div></article>';
   }
-  if(model.kind==='notes')return header+'<textarea class="mini-note-field" data-app-mini-note aria-label="Edit '+escapeHtml(SpatialAppTools.activeNote(model).title)+'">'+escapeHtml(SpatialAppTools.activeNote(model).text)+'</textarea></article>';
+  if(model.kind==='notes'){
+    const note=SpatialAppTools.activeNote(model);refreshBoundNote(note);
+    return header+'<textarea class="mini-note-field" data-app-mini-note aria-label="Edit '+escapeHtml(note.title)+'"'+(note.file?' maxlength="12000" title="'+escapeHtml(note.fileError||note.file.path)+'"'+(noteFileContext(note).error?' readonly':''):'')+'>'+escapeHtml(note.text)+'</textarea></article>';
+  }
   if(model.kind==='browser')return header+'<form class="mini-browser-search" data-app-mini-browser><input name="query" placeholder="Address or local page" aria-label="Mini browser address"><button class="surface-key mini-control" aria-label="Open page">'+icon('i-right')+'</button></form><div class="mini-location"><b>'+escapeHtml(SpatialAppTools.current(model.navigation).title)+'</b></div></article>';
   if(model.kind==='terminal')return header+'<div class="mini-terminal-output"><b>'+escapeHtml(model.cwd)+'</b><span>'+escapeHtml(model.lines.at(-1)||'Type help for commands')+'</span></div><form class="mini-command" data-app-mini-terminal><span>$</span><input name="command" autocomplete="off" aria-label="Quick terminal command" placeholder="Run a demo command"><button class="surface-key mini-control" aria-label="Run command">'+icon('i-right')+'</button></form></article>';
   if(model.kind==='elisa')return header+'<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>'+escapeHtml(model.tracks[model.index]?.title||'Music')+'</b><small>Demo library</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track">'+icon('i-prev')+'</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="Play">'+icon('i-play')+'</button><button class="surface-key mini-control" data-music="next" aria-label="Next track">'+icon('i-next')+'</button><input class="track-range" type="range" min="0" max="218" aria-label="Track position"></div></div></article>';
@@ -439,7 +538,9 @@ function prepareAppWindows() {
   const originalExample=renderDemoAppExample;
   renderDemoAppExample=function(id,example){originalExample(id,example);hydrateAppWindow(id,true);};
   const originalCapture=captureWorkspaceContent;
-  captureWorkspaceContent=function(){saveAppWindows(false);originalCapture();};
+  captureWorkspaceContent=function(){flushBoundNoteHistory();saveAppWindows(false);originalCapture();};
+  const originalClose=closeApp;
+  closeApp=function(id){flushBoundNoteHistory(id);return originalClose(id);};
   const originalMove=moveAppWorkspace;
   moveAppWorkspace=function(id,destination,page=null){const origin=activeWorkspace;const result=originalMove(id,destination,page);if(result){appWindowStore.copy(origin,id,destination,result.id);saveAppWindows();}return result;};
   const originalSnapshot=captureDesktopSyncState;
@@ -506,6 +607,8 @@ function prepareAppWindows() {
   document.addEventListener('click',appWindowClick,true);
   document.addEventListener('dblclick',event=>{const frame=event.target.closest('[data-app-frame]'),row=event.target.closest('[data-file-name]');if(frame&&row){event.preventDefault();event.stopImmediatePropagation();openAppFile(frame.dataset.appFrame,row.dataset.fileName);}},true);
   document.addEventListener('input',appWindowInput,true);
+  document.addEventListener('focusout',event=>{const surface=event.target.closest('[data-app-frame],[data-mini-card]');if(surface&&event.target.matches('.notes-layout textarea,[data-app-mini-note],[data-note-title]'))flushBoundNoteHistory(surface.dataset.appFrame||surface.dataset.miniCard);},true);
+  globalThis.addEventListener('pagehide',()=>flushBoundNoteHistory());
   document.addEventListener('change',event=>{const frame=event.target.closest('[data-app-frame]');if(frame&&event.target.matches('[data-file-sort]')){event.stopImmediatePropagation();const id=frame.dataset.appFrame;appWindowModel(id).sort=event.target.value;renderFileLocation(id,frame.dataset.fileLocation,{history:false});saveAppWindows();}},true);
   document.addEventListener('keydown',appWindowKey,true);
   document.addEventListener('submit',event=>{const search=event.target.closest('[data-firefox-search]');if(search){event.preventDefault();event.stopImmediatePropagation();const value=search.querySelector('input').value.trim();if(value)navigateBrowser(search.closest('[data-app-frame]').dataset.appFrame,value);return;}const form=event.target.closest('[data-app-mini-browser],[data-app-mini-terminal]');if(!form)return;event.preventDefault();event.stopImmediatePropagation();const id=form.closest('[data-mini-card]').dataset.miniCard;const value=form.querySelector('input').value.trim();if(value){if(form.matches('[data-app-mini-browser]'))navigateBrowser(id,value);else runAppCommand(id,value);form.querySelector('input').value='';}},true);
@@ -554,8 +657,9 @@ function appWindowInput(event) {
   }
   if(event.target.matches('.notes-layout textarea,[data-app-mini-note],[data-note-title]')){
     const note=SpatialAppTools.activeNote(model);
-    if(event.target.matches('[data-note-title]')){note.title=event.target.value;const label=$$('[data-note-id]',frame).find(button=>button.dataset.noteId===note.id);$('span',label).textContent=note.title||'Untitled';$('.app-identity small',frame).textContent=note.title||'Untitled';appInfo[id].detail=note.title||'Untitled';label.title=note.title||'Untitled';}
-    else {note.text=event.target.value;$('.notes-layout textarea',frame).value=note.text;if(id==='notes'){noteDraft=note.text;persistWorkspaceNote();}}
+    if(note.file)event.stopImmediatePropagation();
+    if(event.target.matches('[data-note-title]')){if(note.file){event.target.value=note.title;return;}note.title=event.target.value;const label=$$('[data-note-id]',frame).find(button=>button.dataset.noteId===note.id);$('span',label).textContent=note.title||'Untitled';$('.app-identity small',frame).textContent=note.title||'Untitled';appInfo[id].detail=note.title||'Untitled';label.title=note.title||'Untitled';}
+    else {note.text=event.target.value;$('.notes-layout textarea',frame).value=note.text;if(note.file){note.fileDirty=true;saveBoundNote(id,{deferHistory:true});}else if(id==='notes'){noteDraft=note.text;persistWorkspaceNote();}}
     updateNoteStatus(id);saveAppWindows();
   }
   if(event.target.matches('.track-range,.volume-range')){event.stopImmediatePropagation();if(event.target.matches('.track-range'))model.position=Number(event.target.value);else model.volume=Number(event.target.value);renderAppMusic(id);saveAppWindows(false);}
@@ -587,6 +691,6 @@ function appWindowKey(event) {
       event.target.value=model.history[model.historyIndex]??model.draft;handled=true;
     }
     if(event.ctrlKey&&event.key.toLowerCase()==='l'){model.lines=[];renderTerminal(id);saveAppWindows();handled=true;}
-  } else if(model.kind==='notes'&&event.ctrlKey&&event.key.toLowerCase()==='s'){saveAppWindows();updateNoteStatus(id);handled=true;}
+  } else if(model.kind==='notes'&&event.ctrlKey&&event.key.toLowerCase()==='s'){saveBoundNote(id);saveAppWindows();updateNoteStatus(id);handled=true;}
   if(handled){event.preventDefault();event.stopImmediatePropagation();}
 }

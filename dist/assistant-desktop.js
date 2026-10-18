@@ -138,7 +138,7 @@
     check();
     const exact=A.attach(sources,{focus:false});if(exact.length!==sources.length)throw Error('There is no room for these sources. Remove unused attachments first.');
     const project=projectAt(destination),action={format:parsed.format,destination,status:'review',outputs:[]};
-    const turn=A.createTurn(request,{title:'Convert files · '+parsed.format.toUpperCase(),text:'Review '+sources.length+' input'+(sources.length===1?'':'s')+' and the destination below. Run conversion creates local copies; originals stay unchanged.',action},{sources:exact,folder:base,project});
+    const turn=A.createTurn(bound.assistantOnly?'':request,{title:'Convert files · '+parsed.format.toUpperCase(),text:'Review '+sources.length+' input'+(sources.length===1?'':'s')+' and the destination below. Run conversion creates local copies; originals stay unchanged.',assistantOnly:bound.assistantOnly===true,action},{sources:exact,folder:base,project});
     if(!turn)throw Error('Start a new chat before converting more files.');drawCards();A.notify('Review the inputs and output folder, then run the local conversion.');return turn;
   }
   async function proposeExampleConversion(options={}){
@@ -146,20 +146,21 @@
     if(typeof request!=='string'||!request.trim()||!Array.isArray(items)||!folder||!workspace||!chatId)throw Error('Start an example chat with its saved inputs and working folder first.');
     chatCheck(workspace,chatId,isCurrent);
     const parsed=T.parse(request)||{};
-    return propose(request,{...parsed,format:options.format||parsed.format,destination:options.destination||parsed.destination||folder},{items,folder,workspace,chatId,isCurrent});
+    return propose(request,{...parsed,format:options.format||parsed.format,destination:options.destination||parsed.destination||folder},{items,folder,workspace,chatId,isCurrent,assistantOnly:options.assistantOnly===true});
   }
   async function intercept(event){
-    const request=prompt.value.trim();let parsed;
+    if(A.taskActive?.())return;
+    const sentDraft=prompt.value,request=sentDraft.trim(),workspace=activeWorkspace,chatId=A.current().id;let parsed;
     try{parsed=T.parse(request);}catch(error){event.preventDefault();event.stopImmediatePropagation();A.notify(error.message);return;}
     if(!parsed)return;
     event.preventDefault();event.stopImmediatePropagation();if(busy||!allowed())return;
-    busy=true;try{await propose(request,parsed);}catch(error){A.notify(error.message);}finally{busy=false;}
+    busy=true;try{await propose(request,parsed);A.consumeDraft?.(sentDraft,{workspace,chatId});}catch(error){A.notify(error.message);}finally{busy=false;}
   }
   document.addEventListener('submit',event=>{if(event.target.id==='aiComposer')return intercept(event);},true);
   document.addEventListener('keydown',event=>{if(event.target===prompt&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing)return intercept(event);},true);
   function drawCards(){
     const chat=content?.querySelector('.ai-chat'),atEnd=!chat||chat.scrollHeight-chat.scrollTop-chat.clientHeight<60;let changed=false;
-    drawStrip();for(const turn of A.current().turns){if(!turn.action)continue;if(turn.action.status==='running'&&!running.has(turn.id)){A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'failed',error:'Interrupted. Review the output folder before retrying.'});return;}const output=transcript.querySelector('[data-ai-demo-turn="'+CSS.escape(turn.id)+'"]');if(!output)continue;
+    drawStrip();for(const turn of A.current().turns){if(!turn.action)continue;if(turn.action.status==='running'&&!running.has(turn.id)){A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'failed',error:'Interrupted. Review the output folder before retrying.'});return;}const output=transcript.querySelector('[data-ai-turn-output="'+CSS.escape(turn.id)+'"]')||transcript.querySelector('[data-ai-demo-turn="'+CSS.escape(turn.id)+'"]');if(!output)continue;
       const at=turn.action,signature=JSON.stringify(at);let card=output.parentElement.querySelector('.ai-file-task');if(card?.dataset.signature===signature)continue;changed=true;
       if(!card){card=document.createElement('section');card.className='ai-file-task';output.after(card);}card.dataset.turn=turn.id;card.dataset.signature=signature;card.setAttribute('aria-label','File conversion');
       const done=at.status==='complete',locked=done||at.status==='cancelled'||at.status==='running'||running.has(turn.id);

@@ -9,7 +9,7 @@ function fixture(count=2){
   const listeners={},elements={},frames={},storage=new Map(),roster=Array.from({length:count},(_,index)=>({slot:index+1,source:'browser-'+index,width:1440,height:900}));
   for(const selector of ['#emptyWorkspace','.workspace-zone','.desktop-context-page'])elements[selector]={hidden:false,textContent:'',setAttribute(name,value){this[name]=value;}};
   const assignments={work:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}},gaming:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}}};
-  const removedProjects=[],released=[],packets=[],transfers=[],areaTransfers=[],created=[],fileLocations=[],openedFiles=[],browserLocations=[],notes={};
+  const removedProjects=[],released=[],packets=[],transfers=[],areaTransfers=[],created=[],fileLocations=[],openedFiles=[],browserLocations=[],notes={},boundNotes={};
   const c={
     SpatialDisplayRoles:Roles,SpatialAssistantFiles:AssistantFiles,URL,activeWorkspace:'work',localSlot:1,roster,projectSpaces:{},openProjectNames:()=>[],
     workspaceProfiles:{work:{label:'Work',home:'/Work'},gaming:{label:'Gaming',home:'/Gaming'}},
@@ -39,7 +39,7 @@ function fixture(count=2){
     transferAppToDisplay(id,target){transfers.push({id,target});assignments[c.activeWorkspace].apps[id]=target;},
     transferAreaToDisplay(name,target){areaTransfers.push({name,target});assignments[c.activeWorkspace].areas[name]=target;return true;},
     openApp(id){assignments[c.activeWorkspace].apps[id]=c.localSlot;c.appState[id]='open';c.frontApp=id;c.desktopHasWindowFocus=true;c.syncApps();return id;},
-    closeApp(id){c.appState[id]='closed';c.syncApps();},bringToFront(id){c.frontApp=id;c.desktopHasWindowFocus=true;},
+    closeApp(id){c.appState[id]='closed';c.syncApps();},minimizeApp(id){if(c.appState[id]==='open')c.appState[id]='minimized';c.syncApps();},bringToFront(id){c.frontApp=id;c.desktopHasWindowFocus=true;},
     captureDesktopSyncState:()=>({schema:5,activeWorkspace:c.activeWorkspace,frontApp:c.frontApp,desktopHasWindowFocus:c.desktopHasWindowFocus}),
     applyDesktopSyncState(packet){if(!packet)return;packets.push(clone(packet));c.activeWorkspace=packet.activeWorkspace;if(packet.frontApp!==undefined)c.frontApp=packet.frontApp;if(packet.desktopHasWindowFocus!==undefined)c.desktopHasWindowFocus=packet.desktopHasWindowFocus;c.syncApps();},
     capturePlacement:()=>({workspace:c.activeWorkspace,assignments:clone(assignments[c.activeWorkspace]),pages:c.desktopPages.snapshot()}),
@@ -57,6 +57,7 @@ function fixture(count=2){
     createAppInstance(kind){const id=kind+'--'+(created.length+1);created.push({id,kind});c.appInfo[id]={label:kind,base:kind};c.appState[id]='closed';c.openApp(id);return id;},
     renderFileLocation(id,path){fileLocations.push({id,path});},appFileRows:()=>[['brief.md','Saved file','document']],openAppFile(id,name){openedFiles.push({id,name});},
     navigateBrowser(id,url){browserLocations.push({id,url});},captureWorkspaceContent(){},
+    SpatialNoteFiles:{bind(id,file){const saved=c.workspaceDownloads?.list(file.path.slice(0,file.path.lastIndexOf('/'))).find(row=>row.path===file.path||row.name===file.path.split('/').at(-1));if(!saved||saved.itemId!==file.itemId||file.workspace!==c.activeWorkspace)return false;boundNotes[id]=clone(file);notes[id].file=clone(file);notes[id].text=saved.content;return true;}},
     SpatialAppTools:{activeNote:model=>model},appWindowModel:id=>notes[id]||=({title:'',text:''}),renderNotes(){},saveAppWindows(){},
   };
   for(const workspace of ['work','gaming'])for(const id of Object.keys(c.appInfo))c.desktopPages.assign(workspace,id,0,'workspace');
@@ -66,7 +67,7 @@ function fixture(count=2){
   vm.runInContext(slice('function tileContextKey() {','function tileSession() {'),c);
   vm.runInContext(slice('function intentContextPrefix() {','function screenWindowRect(frame) {'),c);
   vm.runInContext(source,c);
-  return {c,assignments,listeners,storage,packets,transfers,areaTransfers,removedProjects,released,created,fileLocations,openedFiles,browserLocations,notes};
+  return {c,assignments,listeners,storage,packets,transfers,areaTransfers,removedProjects,released,created,fileLocations,openedFiles,browserLocations,notes,boundNotes};
 }
 
 // Supporting-display tools always occupy a vertical side panel. They cannot

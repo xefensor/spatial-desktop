@@ -22,9 +22,9 @@ function fixture(){
     startChat(title){const chat={chatId:'chat-'+(++sequence),title};chats.push(chat);return chat;},
     save(name,text,options={}){const file=files.add(tools.folder,name,{workspace:tools.workspace,content:text,attachment:options.attachment,itemId:'file-'+(++sequence)});return {id:file.itemId,itemId:file.itemId,title:file.name,filename:file.name,text:file.content,address:file.path,attachment:file.attachment,related:options.related};},
     attach(items){return items.map(item=>({...item,versionId:'retained-'+item.id}));},
-    note(title,text){notes.push({title,text});return 'notes-'+notes.length;},
+    note(title,text,options){notes.push({title,text,...options});return 'notes-'+notes.length;},
     turn(request,response,details){const turn={id:'turn-'+(++sequence),request,...response,...details};turns.push(turn);return turn;},
-    showFile(item){previews.push(item);return 'preview-'+previews.length;},
+    showFile(item,options={}){previews.push({...item,reuseId:options.reuseId});return options.reuseId||'preview-'+previews.length;},
     async proposeConversion(options){conversions.push(options);return {id:'review-'+conversions.length};}
   };
   return {tools,files,notes,chats,turns,conversions,previews,steps,questions,stale:()=>{current=false;}};
@@ -33,12 +33,13 @@ function fixture(){
 (async()=>{
   const f=fixture();
   const first=await Examples.run('checklist',f.tools);
-  assert.equal(first.status,'done');assert.equal(first.outputs.length,2);assert.equal(f.chats.length,1);assert.equal(f.notes.length,2);
+  assert.equal(first.status,'done');assert.equal(first.outputs.length,2);assert.equal(f.chats.length,1);assert.equal(f.notes.length,1);assert.equal(f.previews.length,1,'Sources open as ordinary read-only file previews');
   const saved=f.files.list(f.tools.folder),source=saved.find(file=>file.name==='Example launch brief.md'),checklist=saved.find(file=>file.name==='Example launch checklist.md');
   assert(source&&checklist);assert.equal(source.content,Examples.fixtures.brief);assert.equal(checklist.content,Examples.checklistFromBrief(source.content));
   assert.equal(f.turns.at(-1).sources[0].text,source.content,'The chat cites the actual retained source text');
-  assert.equal(f.notes[1].text,checklist.content,'The editable output and saved output start from the same computed text');
-  assert(f.turns.at(-1).text.includes(f.tools.folder+'/'+checklist.name));
+  assert.equal(f.notes[0].text,checklist.content,'The editable output and saved output start from the same computed text');
+  assert.equal(f.turns.at(-1).outputs[0].path,f.tools.folder+'/'+checklist.name);assert.equal(f.notes[0].file.path,f.turns.at(-1).outputs[0].path);assert.equal(f.notes[0].file.itemId,checklist.itemId,'The editor binds the same saved file identity');
+  assert.equal(f.turns[0].presentation,'plan');assert(f.turns[0].text.includes('open the sample'),'The original plan remains in the conversation');assert.equal(f.turns[1].presentation,'question');assert.equal(f.turns[1].assistantOnly,true);assert.equal(f.turns[1].sources[0].text,source.content,'The durable question retains its exact source');assert.equal(f.turns.at(-1).presentation,'result');
   await Examples.run('checklist',f.tools);
   assert.equal(f.chats.length,2,'Every run opens a new chat');assert.equal(f.files.list(f.tools.folder).length,4,'A second run retains the earlier source and output');
   assert(f.files.list(f.tools.folder).some(file=>file.name==='Example launch checklist (2).md'));
@@ -50,11 +51,12 @@ function fixture(){
   await Examples.run('checklist',grouped.tools);
   const groupedText=grouped.files.list(grouped.tools.folder).find(file=>file.name.includes('checklist')).content;
   assert(groupedText.includes('## Prepare the page'));assert(groupedText.includes('## Check and share'));assert.equal((groupedText.match(/- \[ \]/g)||[]).length,5);
-  assert.equal(grouped.turns.length,2,'The saved conversation contains the actual initial request and the selected answer, not invented prompts per operation');
-  assert.equal(grouped.turns[1].request,'Group by stage');
+  assert.equal(grouped.turns.length,3,'Plan and question stay in the conversation alongside the actual selected answer');
+  assert.equal(grouped.turns[1].request,'');assert.equal(grouped.turns[1].assistantOnly,true);
+  assert.equal(grouped.turns[2].request,'Group by stage');
 
   const c=fixture(),comparison=await Examples.run('compare',c.tools);
-  assert.equal(comparison.status,'done');assert.equal(c.notes.length,3);
+  assert.equal(comparison.status,'done');assert.equal(c.notes.length,1);assert.equal(c.previews.length,2);assert.equal(c.previews[1].reuseId,'preview-1','The comparison reuses one source File Browser');assert.equal(comparison.outputs.length,2);
   const compared=c.files.list(c.tools.folder),before=compared.find(file=>file.name.includes('before')),after=compared.find(file=>file.name.includes('after')),report=compared.find(file=>file.name.includes('comparison'));
   assert.equal(report.content,Examples.comparisonText(Examples.compareLines(before.content,after.content)));
   assert.equal(c.turns.at(-1).sources.length,2);assert(c.turns.at(-1).sources.every(source=>source.versionId));
@@ -77,7 +79,7 @@ function fixture(){
   assert.equal(image.previews[0].attachment.key,'stash-fixture-photo');assert.equal(image.conversions.length,1);
   const proposal=image.conversions[0];assert.equal(proposal.format,'webp');assert.equal(proposal.destination,image.tools.folder);assert.equal(proposal.folder,image.tools.folder);assert.equal(proposal.workspace,'work');assert.equal(proposal.chatId,review.chatId);assert(proposal.items[0].versionId);
   assert.equal(proposal.items[0].address,image.previews[0].address,'The real saved original is both shown and passed to conversion');
-  assert.equal(proposal.isCurrent(),true);
+  assert.equal(proposal.isCurrent(),true);assert.equal(proposal.assistantOnly,true,'The image review does not repeat the original user request');assert.equal(image.turns[0].presentation,'plan','Image work has a durable plan from the start');
 
   const stale=fixture();stale.tools.prepareImage=async()=>{stale.stale();return {kind:'image',key:'stash-photo'};};
   await assert.rejects(Examples.run('image',stale.tools),/Context changed/);

@@ -58,14 +58,37 @@ function fixture(){
   };
   c.appFileRows=(id,directory)=>c.workspaceDownloads.list(directory).map(file=>[file.name,'Saved file',file.attachment?.kind||'document']);
   c.fetch=async()=>({ok:true,blob:async()=>new Blob(['retained photograph bytes'],{type:'image/jpeg'})});
-  c.SpatialAssistantDesktop={proposeExampleConversion:async options=>c.SpatialAIDesktop.createTurn(options.request,{title:'Convert WebP',text:'Review',action:{format:'webp',destination:options.folder,status:'review'}},{sources:options.items,folder:options.folder})};
+  c.SpatialAssistantDesktop={proposeExampleConversion:async options=>c.SpatialAIDesktop.createTurn(options.assistantOnly?'':options.request,{title:'Convert WebP',text:'Review',assistantOnly:options.assistantOnly,action:{format:'webp',destination:options.folder,status:'review'}},{sources:options.items,folder:options.folder})};
   B.setRole(2,'assistant');c.localSlot=2;
   return {...f,chats,history,bytes,B,timers,microtasks,advance,until,start,complete};
 }
 
+function savedResult(chat,file,sources){
+  const plan=chat.turns.find(turn=>turn.presentation==='plan');
+  const question=chat.turns.find(turn=>turn.presentation==='question');
+  const result=chat.turns.find(turn=>turn.presentation==='result');
+  assert(plan&&!plan.assistantOnly&&plan.request,'The original request keeps a durable public plan');
+  assert.equal(plan.sources.length,0,'The public plan cannot imply the source was read before opening it');
+  assert(question?.assistantOnly,'The Assistant question is a separate message, not an invented user request');
+  assert.equal(question.request,'');
+  assert.equal(result?.assistantOnly,false,'The chosen option remains the real user reply');
+  const path=file.directory+'/'+file.name;
+  assert.deepEqual(clone(result.outputs),[{path,title:file.name,kind:'note'}],'The handoff links the exact saved file instead of publishing another copy of its text');
+  assert(!result.text.includes(file.content),'The chat handoff does not repeat the complete editable document');
+  assert.equal(result.folder,file.directory);
+  for(const [index,source] of sources.entries()){
+    assert.equal(question.sources[index].text,source.content);
+    assert.equal(result.sources[index].text,source.content);
+    assert.equal(result.sources[index].itemId,source.itemId);
+    assert.equal(result.sources[index].versionId,question.sources[index].versionId,'The answer uses the exact source version shown with the question');
+    assert(result.sources[index].versionId);
+  }
+  return {plan,question,result};
+}
+
 (async()=>{
   {
-    const f=fixture(),{c,B,chats,history,notes,start,complete,until,advance}=f,originalId=chats.session('work').id;
+    const f=fixture(),{c,B,chats,history,notes,boundNotes,created,openedFiles,start,complete,until,advance}=f,originalId=chats.session('work').id;
     chats.draft('work','An existing unsent request');
     chats.add('work',{id:'existing-source',workspace:'work',title:'Existing source',text:'Existing source content'});
     const previous=clone(chats.session('work'));
@@ -82,6 +105,12 @@ function fixture(){
     assert(waiting.activity.entries.length>=2,'Completed distinct steps remain visible');
     assert.notEqual(waiting.activity.label,first.label);
     assert.equal(beforeAnswer.files.filter(file=>file.name!=='EXAMPLE LAUNCH BRIEF.md').length,1,'Only the actual source is written before choosing the output structure');
+    const initialPlan=clone(chats.session('work').turns.find(turn=>turn.presentation==='plan'));
+    assert(initialPlan,'The plan is already in the conversation before the user answers');
+    assert.equal(Object.keys(notes).length,0,'The source opens in the read-only file preview, not a detached editable Note');
+    assert.equal(created.filter(window=>window.kind==='dolphin').length,1);
+    assert.equal(openedFiles.at(-1).name,'Example launch brief (2).md');
+    chats.draft('work','Keep this draft while the example finishes');
     for(let i=0;i<4;i++)await advance();
     assert.deepEqual(clone(c.workspaceDownloads.snapshot()),beforeAnswer,'Waiting for an answer cannot publish an output');
     assert.deepEqual(clone(notes),openBefore);assert.deepEqual(clone(chats.session('work').turns),turnsBefore);
@@ -95,11 +124,22 @@ function fixture(){
     assert.equal(history.get(output.itemId).relations[0].itemId,input.itemId);assert(history.get(output.itemId).relations[0].versionId);
     assert(chats.session('work').turns.some(turn=>turn.sources.some(source=>source.text===input.content)));
     assert(Object.values(notes).some(note=>note.text===output.content),'An actual helper Note contains the same computed checklist');
-    assert(chats.session('work').turns.some(turn=>turn.text.includes('/Work/Assistant/'+output.name)));
+    const handoff=savedResult(chats.session('work'),output,[input]);
+    assert.deepEqual(clone(handoff.plan),initialPlan,'The question and result do not overwrite the original public plan');
+    assert.equal(chats.session('work').draft,'Keep this draft while the example finishes','Scripted steps preserve an unsent request in the running chat');
+    assert.equal(created.filter(window=>window.kind==='notes').length,1,'The final document is the only editable Note');
+    assert.equal(Object.values(boundNotes).filter(note=>note.path===output.directory+'/'+output.name&&note.itemId===output.itemId).length,1,'The result editor is bound to the exact saved Markdown identity');
     assert(chats.session('work').turns.some(turn=>/simple|straight|list/i.test(turn.request)),'The real user answer remains in the conversation');
     for(const id of result.outputs)assert(c.isLocalApp(id),'Every result window belongs to the assigned helper');
     assert.equal(c.appState.browser,'open');assert.equal(c.isLocalApp('browser'),false,'The main window is neither moved nor controlled');
+    const editor=Object.keys(boundNotes).find(id=>boundNotes[id].path===output.directory+'/'+output.name),windowCount=created.length;
+    c.minimizeApp(editor);
+    assert.equal(B.openReference({kind:'file',path:output.directory+'/'+output.name}),editor,'Opening the saved handoff restores its bound local editor');
+    assert.equal(c.appState[editor],'open');assert.equal(created.length,windowCount,'Reopening the result cannot create a detached duplicate');
+    const unrelated=c.createAppInstance('browser');
     await complete(start('checklist'),'grouped');
+    for(const id of result.outputs)assert.equal(c.appState[id],'minimized','Starting another example parks only the preceding task windows');
+    assert.equal(c.appState[unrelated],'open','An unrelated helper window stays open when another example starts');
     const repeated=c.workspaceDownloads.list('/Work/Assistant');
     assert.equal(repeated.find(file=>file.name===output.name).content,output.content);
     const grouped=repeated.find(file=>file.name==='Example launch checklist (2).md');assert(grouped);
@@ -107,16 +147,48 @@ function fixture(){
     for(const item of input.content.split('\n').filter(line=>line.startsWith('- ')))assert(grouped.content.includes(item.slice(2)),'Grouping keeps each source deliverable');
   }
   {
-    const {c,start,complete,chats,history,notes}=fixture(),result=await complete(start('compare'),'full');
+    const {c,start,complete,chats,history,notes,boundNotes,created,openedFiles}=fixture(),result=await complete(start('compare'),'full');
     assert.equal(result.status,'done');const files=c.workspaceDownloads.list('/Work/Assistant');
     const before=files.find(file=>file.name==='Example release notes before.md'),after=files.find(file=>file.name==='Example release notes after.md'),report=files.find(file=>file.name==='Example release comparison.md');
     assert.equal(report.content,Examples.comparisonText(Examples.compareLines(before.content,after.content)));
     assert.equal(history.get(report.itemId).relations.length,2);assert(history.get(report.itemId).relations.every(parent=>parent.versionId));
     assert(Object.values(notes).some(note=>note.text===report.content));assert(chats.session('work').turns.some(turn=>turn.sources.length===2));
+    savedResult(chats.session('work'),report,[before,after]);
+    assert.equal(created.filter(window=>window.kind==='dolphin').length,1,'Comparing versions reuses one read-only source window');
+    assert.deepEqual(openedFiles.map(file=>file.name),[before.name,after.name]);
+    assert.equal(new Set(openedFiles.map(file=>file.id)).size,1,'Both supplied versions can be reviewed in the same File Browser');
+    assert.equal(created.filter(window=>window.kind==='notes').length,1);
+    assert.equal(Object.values(boundNotes).filter(note=>note.path===report.directory+'/'+report.name&&note.itemId===report.itemId).length,1);
     await complete(start('compare'),'additions');
     const additions=c.workspaceDownloads.list('/Work/Assistant').find(file=>file.name==='Example release comparison (2).md');
     assert.notEqual(additions.content,report.content,'The comparison answer controls the saved report');
     assert(!additions.content.includes('## Removed from the first version'));
+  }
+  {
+    const {c,start,complete,boundNotes}=fixture(),result=await complete(start('checklist'),'simple');
+    const editor=Object.keys(boundNotes)[0],source=result.outputs.find(id=>id!==editor);
+    c.transferAppToDisplay(editor,1);
+    assert.equal(c.isLocalApp(editor),false);
+    await complete(start('compare'),'full');
+    assert.equal(c.appState[editor],'open','A previous result explicitly moved back to Main is not parked by a new helper task');
+    assert.equal(c.isLocalApp(editor),false,'Starting a task does not reclaim a moved result window');
+    assert.equal(c.appState[source],'minimized','The remaining previous task source is parked on its original helper');
+  }
+  {
+    const {c,B,start,until,complete,chats,history}=fixture(),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'a retained source before a user edit');
+    const source=c.workspaceDownloads.list('/Work/Assistant')[0],snapshot=clone(chats.session('work').items[0]),question=clone(chats.session('work').turns.find(turn=>turn.presentation==='question'));
+    B.assistantControl('takeover');
+    c.workspaceDownloads.update(source.directory,source.name,{content:'# Later source edit\n\n- A different task added after capture.\n'});
+    history.upsert({...snapshot,text:'# Later source edit\n\n- A different task added after capture.\n'},{workspace:'work',force:true,action:'edit'});
+    assert.notEqual(history.get(source.itemId).currentVersion,snapshot.versionId,'The original can acquire a later version while Assistant waits');
+    B.assistantControl('resume');await complete(task,'simple');
+    const output=c.workspaceDownloads.list('/Work/Assistant').find(file=>file.name==='Example launch checklist.md');
+    assert.equal(output.content,Examples.checklistFromBrief(snapshot.text),'The result uses the attached source snapshot, not later source edits');
+    assert.equal(history.get(output.itemId).relations[0].versionId,snapshot.versionId);
+    const result=chats.session('work').turns.find(turn=>turn.presentation==='result');
+    assert.deepEqual(clone(result.sources),question.sources,'The final result retains the exact question inputs and version identities');
+    assert.equal(c.workspaceDownloads.list(source.directory).find(file=>file.name===source.name).content,'# Later source edit\n\n- A different task added after capture.\n','Assistant never rewrites the user\'s later source edit');
   }
   {
     const {c,B,chats,start,complete}=fixture();
@@ -138,13 +210,17 @@ function fixture(){
     assert.deepEqual(reloaded.list('/Work/Projects/Site/Assistant'),c.workspaceDownloads.list('/Work/Projects/Site/Assistant'),'Assistant results are ordinary persisted folder files');
   }
   {
-    const {c,start,complete,chats,bytes}=fixture(),result=await complete(start('image'));
+    const {c,start,complete,chats,bytes,created}=fixture(),result=await complete(start('image'));
     assert.equal(result.status,'needs-you');const input=c.workspaceDownloads.list('/Work/Assistant')[0];
     assert.equal(await bytes.get(input.attachment.key).text(),'retained photograph bytes');
     const turn=chats.session('work').turns.find(turn=>turn.action);
     assert.equal(turn.sources[0].attachment.key,input.attachment.key);
     assert.equal(turn.action.status,'review','Image example proposes a conversion instead of inventing a completed output');
     assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,1,'Only the original exists until the user runs conversion');
+    const plan=chats.session('work').turns.find(turn=>turn.presentation==='plan');
+    assert(plan&&plan.request&&plan.text,'Image conversion keeps the initial request and plan visible');
+    assert(turn.assistantOnly,'The conversion review does not repeat the same invented user request');
+    assert.equal(created.filter(window=>window.kind==='dolphin').length,1);assert.equal(created.filter(window=>window.kind==='notes').length,0);
   }
   for(const change of ['chat','workspace','role','setup','stop']){
     const {c,B,chats,bytes,created,start,until,advance}=fixture(),task=start('checklist');
@@ -321,9 +397,9 @@ function fixture(){
     assert.equal(history.list('work').length,0,'A rejected file publication does not create phantom history');
   }
   {
-    const {c,B,start,complete,created}=fixture(),create=c.createAppInstance;let notes=0;
-    c.createAppInstance=kind=>kind==='notes'&&++notes===2?null:create(kind);
-    await assert.rejects(complete(start('checklist')),/Note Editor could not open/);
+    const {c,B,start,complete,created}=fixture(),create=c.createAppInstance;
+    c.createAppInstance=kind=>kind==='notes'?null:create(kind);
+    await assert.rejects(complete(start('checklist')),/Note Editor|saved result could not open/);
     assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,2,'A later window failure preserves already saved source and result files');
     assert.equal(created.length,1);assert.equal(B.state().space.assistant.status,'error');
     assert.equal(B.state().space.assistant.outputs.length,1,'The task records its actual partial window result');
@@ -336,5 +412,5 @@ function fixture(){
     await assert.rejects(complete(start('checklist')),/this Workspace/);
     assert.equal(c.workspaceDownloads.snapshot().files.length,0);assert.equal(created.length,0);
   }
-  console.log('Assistant example integration passed: paced real work, answer-bound outputs, ordinary scoped Assistant folders, preserved inputs/versions/collisions, delegated windows, byte retention, pause/stop/context safety, scoped cleanup and partial failures.');
+  console.log('Assistant example integration passed: durable plans/questions, concise saved-file handoffs, exact bound editors, read-only source reuse, captured versions after user edits, selective canvas parking, preserved drafts/collisions, byte retention, pause/stop/context safety, scoped cleanup and partial failures.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

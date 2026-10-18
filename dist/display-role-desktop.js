@@ -82,11 +82,22 @@
     const path=root.SpatialAssistantFiles.path(reference.path,workspaceProfiles[activeWorkspace].home);
     if(!root.SpatialAssistantFiles.allowed(path,activeWorkspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a location in this Workspace or one of its open Projects.');
     const directory=reference.kind==='file'?path.slice(0,path.lastIndexOf('/'))||'/':path;
-    const id=createAppInstance('dolphin');if(!id)throw Error('File Browser could not open.');
+    // Saved results reopen their existing editor on this display. A result
+    // action must not create another detached view every time it is pressed.
+    if(reference.kind==='file'&&reference.reuse!==false){
+      const existing=Object.keys(appInfo).find(id=>{
+        if((appInfo[id].base||id)!=='notes'||appState[id]==='closed'||pinned(id)!==localDisplaySlot()||!isLocalApp(id))return false;
+        const note=SpatialAppTools.activeNote(appWindowModel(id));return note?.file?.path===path&&note.file.workspace===activeWorkspace;
+      });
+      if(existing){root.SpatialNoteFiles?.refresh?.(existing);openApp(existing);return existing;}
+    }
+    const reused=reference.reuseId&&appInfo[reference.reuseId]&&(appInfo[reference.reuseId].base||reference.reuseId)==='dolphin'&&appState[reference.reuseId]!=='closed'&&pinned(reference.reuseId)===localDisplaySlot()&&isLocalApp(reference.reuseId)?reference.reuseId:null;
+    const id=reused||createAppInstance('dolphin');if(!id)throw Error('File Browser could not open.');
+    if(reused)openApp(id);
     renderFileLocation(id,directory);
     if(reference.kind==='file'){
       const name=path.split('/').at(-1);
-      if(!appFileRows(id,directory).some(row=>row[0]===name)){closeApp(id);throw Error('This file is no longer available in the demo.');}
+      if(!appFileRows(id,directory).some(row=>row[0]===name)){if(!reused)closeApp(id);throw Error('This file is no longer available in the demo.');}
       openAppFile(id,name);
     }
     captureWorkspaceContent();queueDesktopStateBroadcast(0);return id;
@@ -411,7 +422,19 @@
           const key='stash-example-'+crypto.randomUUID();preparedImageKey=key;await root.SpatialStashFiles.put(key,blob);await checkpoint();
           return {kind:'image',key,filename:'Example keyboard photo.jpg',mime:blob.type,size:blob.size,format:'JPEG'};
         },
-        startChat(title){check();session.startingChat=true;try{const chat=A.startExample({title,workspace:context.workspace,folder:context.folder,items:[]});chatId=chat.chatId;session.chatId=chatId;context.chatId=chatId;progress({});return chat;}finally{session.startingChat=false;}},
+        startChat(title){
+          check();session.startingChat=true;
+          try{
+            const chat=A.startExample({title,workspace:context.workspace,folder:context.folder,items:[]});chatId=chat.chatId;session.chatId=chatId;context.chatId=chatId;
+            // Starting a new task clears the canvas by parking only windows
+            // created by the previous task here. Their files, edits and chats
+            // remain available; moved and unrelated windows are untouched.
+            if(previous.context?.workspace===context.workspace&&previous.context?.slot===context.slot)for(const id of previous.outputs||[]){
+              if(appState[id]==='open'&&pinned(id)===context.slot&&isLocalApp(id)&&typeof minimizeApp==='function')minimizeApp(id,true);
+            }
+            progress({});return chat;
+          }finally{session.startingChat=false;}
+        },
         async step(details){await checkpoint();progress({...details,question:null});await delay();await checkpoint();},
         completed(details){const current=model.space(context.workspace,context.slot).assistant;progress({entries:[...(current.activity?.entries||[]),details]});},
         async ask(question){
@@ -424,8 +447,8 @@
         save,
         attach(items){check();const attached=A.attach(items,{focus:false});if(attached.length!==items.length)throw Error('The sample inputs could not be attached.');return attached;},
         turn(request,response,details){check();const turn=A.createTurn(request,response,{...details,folder:context.folder,project});if(!turn)throw Error('The sample conversation could not be saved.');return turn;},
-        note(title,text){check();const id=root.SpatialDisplayRoleBridge.launchNote(title,text);if(id)opened.push(id);return id;},
-        showFile(item){check();const id=openReference({kind:'file',path:item.address});if(id)opened.push(id);return id;},
+        note(title,text,options){check();const id=root.SpatialDisplayRoleBridge.launchNote(title,text,options);if(id&&!opened.includes(id))opened.push(id);return id;},
+        showFile(item,options={}){check();const id=openReference({kind:'file',path:item.address,reuseId:options.reuseId,reuse:false});if(id&&!opened.includes(id))opened.push(id);return id;},
         proposeConversion(options){check();if(!root.SpatialAssistantDesktop?.proposeExampleConversion)throw Error('The local file converter is unavailable.');return root.SpatialAssistantDesktop.proposeExampleConversion(options);}
       });
       check();
@@ -503,9 +526,10 @@
       const child=root.open(url.href,'spatial-demo-display-'+Date.now());if(!child)throw new Error('Allow the demo to open its second browser window, then try again.');return true;
     },
     openFolder(path){const id=createAppInstance('dolphin');if(id){renderFileLocation(id,path);captureWorkspaceContent();queueDesktopStateBroadcast(0);}return id;},
-    launchNote(title,text){
+    launchNote(title,text,options={}){
       const id=createAppInstance('notes');if(!id)return null;
       const note=SpatialAppTools.activeNote(appWindowModel(id));note.title=title;note.text=text;
+      if(options.file&&!root.SpatialNoteFiles?.bind(id,options.file)){closeApp(id);throw Error('This saved result could not be opened for editing. Its file is unchanged.');}
       renderNotes(id);saveAppWindows(false);
       captureWorkspaceContent();saveIndependentSessions();queueDesktopStateBroadcast(0);return id;
     }
