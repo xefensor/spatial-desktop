@@ -75,25 +75,39 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
 
 /* Keep space for the icons beside windows, but draw no column surface.
    Only the compact marker group itself is visible and receives input. */
-.desktop-shell{--desktop-page-rail-width:24px}
+.desktop-shell{
+  --desktop-page-rail-width:24px;
+  --desktop-page-rail-left-width:var(--desktop-page-rail-width);
+  --desktop-page-rail-right-width:var(--desktop-page-rail-width);
+}
+/* Each edge follows its visible docked Areas on this display. A vacant edge
+   has neither a marker strip nor reserved icon space beside the windows. */
+.desktop-shell:not(:has(>[data-area-window][data-dock-edge="left"]:not([hidden],.is-on-other-display,.is-intent-hidden,.is-intent-overlay,.is-auto-yielding))){
+  --desktop-page-rail-left-width:0px;
+  --desktop-page-rail-left-display:none;
+}
+.desktop-shell:not(:has(>[data-area-window][data-dock-edge="right"]:not([hidden],.is-on-other-display,.is-intent-hidden,.is-intent-overlay,.is-auto-yielding))){
+  --desktop-page-rail-right-width:0px;
+  --desktop-page-rail-right-display:none;
+}
 html[data-desktop-markers="lines"] .desktop-shell{--desktop-page-rail-width:0px}
 html[data-guide-desktops="false"] .desktop-shell,
 body.secondary-area-canvas .desktop-shell{--desktop-page-rail-width:0px}
 .desktop-shell>.workspace-zone{
-  left:calc(var(--workspace-left,0px) + var(--desktop-page-rail-width))!important;
-  right:calc(var(--workspace-right,0px) + var(--desktop-page-rail-width))!important;
+  left:calc(var(--workspace-left,0px) + var(--desktop-page-rail-left-width))!important;
+  right:calc(var(--workspace-right,0px) + var(--desktop-page-rail-right-width))!important;
 }
 .desktop-page-rail{
   position:absolute;left:calc(var(--workspace-left,0px) + 1px);
   top:calc(50% + (var(--workspace-top,0px) + var(--desktop-context-height,0px) - var(--workspace-bottom,0px)) / 2);
   transform:translateY(-50%);width:25px;height:max-content;z-index:740;
   max-height:calc(100% - var(--workspace-top,0px) - var(--desktop-context-height,0px) - var(--workspace-bottom,0px) - 24px);
-  display:flex;flex-direction:column;align-items:center;justify-content:safe center;
+  display:var(--desktop-page-rail-left-display,flex);flex-direction:column;align-items:center;justify-content:safe center;
   gap:10px;padding:2px 0;overflow-x:hidden;overflow-y:auto;
   overscroll-behavior:contain;scrollbar-width:none;
   background:none;border:0;box-shadow:none;backdrop-filter:none;
 }
-.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px)}
+.desktop-page-rail-right{left:auto;right:calc(var(--workspace-right,0px) + 1px);display:var(--desktop-page-rail-right-display,flex)}
 .desktop-page-rail::-webkit-scrollbar{display:none}
 .desktop-page-rail:focus-visible{outline:1px solid var(--desktop-marker-accent);outline-offset:-1px}
 /* Center 21/22px icon groups in 25px so both stroke widths share the exact
