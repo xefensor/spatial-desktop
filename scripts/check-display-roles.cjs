@@ -138,6 +138,21 @@ assert.equal(controlReload.space('work',2).assistant.control,'user','Legacy paus
 assert.equal(controlReload.space('work',2).assistant.kind,'');assert.equal(controlReload.space('work',2).assistant.context,null);
 assert.deepEqual(controlReload.space('work',2).assistant.outputs,['notes--2']);
 
+// Activity is bounded public UI data; it cannot restore closures or arbitrary
+// nested state, and questions are only exposed in the matching question stage.
+const activity={stage:'question',label:'Your choice',detail:'Choose an arrangement.',step:2,total:4,entries:[{label:'Opened brief',detail:'Actual retained source.'}],question:{id:'question-1',prompt:'How should it be arranged?',options:[{id:'simple',label:'One list',description:'Original order.'},{id:'grouped',label:'By stage',description:'Two sections.'}]}};
+controlReload.setAssistant('work',2,{status:'needs-you',activity});activity.question.options[0].label='Mutated';
+const activityRevision=controlReload.space('work',2).assistant.revision;
+assert(Number.isSafeInteger(activityRevision)&&activityRevision>0);
+assert.equal(Displays.create(controlReload.snapshot()).space('work',2).assistant.revision,activityRevision,'Reloading saved state preserves its edit revision');
+const questionState=controlReload.space('work',2).assistant.activity;
+assert.equal(questionState.question.options[0].label,'One list');assert.equal(questionState.step,2);
+controlReload.setAssistant('work',2,{activity:{...questionState,stage:'complete'}});
+assert(controlReload.space('work',2).assistant.revision>activityRevision,'Consecutive edits advance the revision even in the same millisecond');
+assert.equal(controlReload.space('work',2).assistant.activity.question,null,'Completed jobs do not retain actionable questions');
+controlReload.setAssistant('work',2,{activity:{stage:'private-thoughts',label:'Invalid'}});
+assert.equal(controlReload.space('work',2).assistant.activity,null,'Only public lifecycle stages are accepted');
+
 // Malformed storage is repaired to one main and safe, independent content.
 const corrupt=Displays.create({setups:{[Displays.signature(pair)]:{roles:{1:'main',2:'main',8:'nonsense'}}},workspaces:{work:{displays:{1:{windows:['same','same',null,42],assistant:{status:'anything',task:7},widgets:[null,'',{},false]},2:{windows:['same','other'],folders:[{path:'/Documents'}]}}},broken:null}});
 corrupt.connect(pair);

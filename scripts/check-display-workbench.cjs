@@ -5,8 +5,8 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 // Exercise production workbench handlers with the real role model. The chat
 // and shelf adapters record mount identity, preserving their own live state.
 function harness(initialRole='assistant'){
-  const elements=new Map(),listeners={},opened=[],folders=[],restored=[],settings=[],controls=[],tasks=[],examples=[],modeChanges=[],chat={mounts:[],unmounts:0,renders:0,attachments:[],notices:[]},side={mounts:[],states:[]},intervals=new Set();
-  let serial=0,workspace='work',localSlot=2,parkedWindows=[],captureItems=[],failLaunch=false,workingFolder='';
+  const elements=new Map(),listeners={},opened=[],folders=[],restored=[],settings=[],controls=[],tasks=[],examples=[],answers=[],stops=[],modeChanges=[],chat={mounts:[],unmounts:0,renders:0,attachments:[],notices:[]},side={mounts:[],states:[]},intervals=new Set();
+  let serial=0,workspace='work',localSlot=2,parkedWindows=[],captureItems=[],failLaunch=false,blockedFolder=false,workingFolder='',currentChat='chat-1';
   let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
   const model=Roles.create();model.connect(roster);model.setRole(2,initialRole);
   const document={activeElement:null};
@@ -20,29 +20,31 @@ function harness(initialRole='assistant'){
     assistantControl(action){controls.push({workspace,slot:localSlot,action});model.setAssistant(workspace,localSlot,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});browser.SpatialDisplayWorkbench.refresh();},
     assistantExamples(){return [{id:'checklist',title:'Turn a brief into a checklist',prompt:'Make a launch checklist from this brief.',input:'A short sample launch brief',outcome:'Source note, editable checklist and saved Markdown copy'},{id:'image',title:'Convert an image for the web',prompt:'Convert this image to WebP.',input:'A bundled keyboard photograph',outcome:'Image preview and a conversion to review'},{id:'compare',title:'Compare two text versions',prompt:'Compare these release notes.',input:'Two sample versions',outcome:'An exact line comparison'}];},
     runAssistantExample(id){examples.push({workspace,slot:localSlot,id});return true;},
+    answerAssistantExample(choiceId,tokens){answers.push({choiceId,...tokens});return true;},
+    stopAssistantExample(){stops.push({workspace,slot:localSlot});return true;},
     runAssistantTask(kind){tasks.push({workspace,slot:localSlot,kind});return true;},
     openFolder(path){folders.push({workspace,slot:localSlot,path});return 'dolphin--1';},
     launchNote(title,text){if(failLaunch)throw Error('Note Editor could not open.');const id='notes--'+(opened.length+1);opened.push({id,title,text,workspace,slot:localSlot});model.pinWindow(workspace,localSlot,id);browser.SpatialDisplayWorkbench.refresh();return id;},
     openWindow(id){restored.push({workspace,slot:localSlot,id});parkedWindows=parkedWindows.filter(window=>window.id!==id);browser.SpatialDisplayWorkbench.refresh();},
     openDisplays(slot){settings.push({workspace,slot});}},
-    SpatialAIDesktop:{mountDisplay(host){chat.mounts.push(host);return true;},unmountDisplay(){chat.unmounts++;},render(){chat.renders++;},attach(items){chat.attachments.push(clone(items));},notify(text){chat.notices.push(text);},workingFolder:()=>workingFolder},
+    SpatialAIDesktop:{validateWorkingFolder(path){if(blockedFolder)throw Error('Assistant already names a file. Rename it before using this working folder.');return path;},current:()=>({id:currentChat}),mountDisplay(host){chat.mounts.push(host);return true;},unmountDisplay(){chat.unmounts++;},render(){chat.renders++;},attach(items){chat.attachments.push(clone(items));},notify(text){chat.notices.push(text);},workingFolder:()=>workingFolder},
     SpatialAssistantDesktop:{capture(){return clone(captureItems);}},SpatialDisplaySideTools:{mount(host){side.mounts.push(host);},refresh(state){side.states.push(clone(state));}}};
   let created=false;
   document.querySelector=()=>zone;document.createElement=()=>{if(!created){created=true;return host;}return element();};
   vm.runInNewContext(source,{window:browser,document,prepareControlSemantics(){},Date,setTimeout(){throw Error('No pretend Assistant task timers.');},clearTimeout(){},setInterval(){const id=++serial;intervals.add(id);return id;},clearInterval(id){intervals.delete(id);}});
   const refresh=()=>browser.SpatialDisplayWorkbench.refresh();
-  function event(attribute,value,{inChat=false}={}){return {target:{closest(selector){
-    if(selector==='['+attribute+']'||selector==='['+attribute+'="'+value+'"]')return {dataset:{[{'data-display-action':'displayAction','data-display-window':'displayWindow','data-display-example':'displayExample'}[attribute]]:value}};
+  function event(attribute,value,{inChat=false,dataset={}}={}){return {target:{closest(selector){
+    if(selector==='['+attribute+']'||selector==='['+attribute+'="'+value+'"]')return {dataset:{[{'data-display-action':'displayAction','data-display-window':'displayWindow','data-display-example':'displayExample','data-display-example-answer':'displayExampleAnswer'}[attribute]]:value,...dataset}};
     if(selector==='[data-display-assistant]')return inChat?elements.get('[data-display-assistant]'):null;
     return null;
   }}};}
-  return {model,host,elements,listeners,opened,folders,restored,settings,controls,tasks,examples,modeChanges,chat,side,intervals,state,refresh,document,
-    action:(name,options)=>host.events.click(event('data-display-action',name,options)),example:id=>host.events.click(event('data-display-example',id)),selectionDown:()=>host.events.pointerdown(event('data-display-action','selection',{inChat:true})),capture(items){captureItems=items;},restore:id=>host.events.click(event('data-display-window',id)),
+  return {model,host,elements,listeners,opened,folders,restored,settings,controls,tasks,examples,answers,stops,modeChanges,chat,side,intervals,state,refresh,document,
+    action:(name,options)=>host.events.click(event('data-display-action',name,options)),example:id=>host.events.click(event('data-display-example',id)),answer:(id,tokens={})=>host.events.click(event('data-display-example-answer',id,{inChat:true,dataset:{displayQuestion:tokens.questionId,displayOperation:tokens.operationId}})),selectionDown:()=>host.events.pointerdown(event('data-display-action','selection',{inChat:true})),capture(items){captureItems=items;},restore:id=>host.events.click(event('data-display-window',id)),
     tabKey(key){let prevented=false;host.events.keydown({key,target:{closest:selector=>selector==='[role="tab"]'?{}:null},preventDefault(){prevented=true;},stopPropagation(){}});return prevented;},
     reveal(detail={}){listeners['spatial-assistant-display-reveal']({detail});},
     park(windows){parkedWindows=windows;for(const window of windows)model.pinWindow(workspace,localSlot,window.id);refresh();},
     switchWorkspace(next,render=true){workspace=next;if(render)refresh();},role(next,render=true){assert(model.setRole(localSlot,next).ok);if(render)refresh();},
-    moveDisplay(next,render=true){localSlot=next;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'assistant');if(render)refresh();},failLaunch(value){failLaunch=value;},folder(path){workingFolder=path;}};
+    moveDisplay(next,render=true){localSlot=next;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'assistant');if(render)refresh();},failLaunch(value){failLaunch=value;},folder(path){workingFolder=path;},blockFolder(value){blockedFolder=value;},chatId(id){currentChat=id;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:id}});}};
 }
 {
   const h=harness();
@@ -68,7 +70,7 @@ for(const role of ['side','assistant']){
   assert.equal(h.elements.get('[data-display-title]').textContent,role==='assistant'?'Assistant':'Side space');assert.match(h.elements.get('[data-display-scope]').textContent,/Work.*Display 2/);
   h.action('settings');assert.deepEqual(h.settings.at(-1),{workspace:'work',slot:2});
   h.action('files');assert.deepEqual(h.folders.at(-1),{workspace:'work',slot:2,path:'/home/demo/work'});
-  h.action('chat');h.folder('/home/demo/work/Projects/Website Launch');h.action('files',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Projects/Website Launch','Chat opens its selected working folder');h.folder('');
+  h.action('chat');h.folder('/home/demo/work/Projects/Website Launch');h.action('files',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Projects/Website Launch','Chat opens its selected working folder');h.folder('/home/demo/work/Projects/Website Launch/Assistant');h.refresh();h.action('working-folder',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Projects/Website Launch/Assistant');assert.equal(h.elements.get('[data-display-folder-name]').textContent,'Assistant');assert.equal(h.elements.get('[data-display-action="working-folder"]').title,'/home/demo/work/Projects/Website Launch/Assistant');h.folder('');
   h.action('note');assert.deepEqual(h.opened.at(-1),{id:'notes--1',title:'Untitled note',text:'',workspace:'work',slot:2});
   h.action('briefing');assert.equal(h.opened.length,2,'A manual briefing opens immediately in an actual editor');assert.equal(h.opened.at(-1).title,'Workspace briefing');assert.match(h.opened.at(-1).text,/Work — Workspace briefing/);assert.match(h.opened.at(-1).text,/Workspace Home: \/home\/demo\/work/);
   assert.equal(h.elements.get('.display-workbench-empty').hidden,true);assert.deepEqual(h.model.space('work',1).windows,[],'Canvas outputs stay off the main display');
@@ -144,6 +146,28 @@ for(const transition of ['workspace','role','setup','display']){
   const h=harness();h.action('examples');
   if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('side',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
   h.example('checklist');assert.equal(h.examples.length,0,transition+': stale example controls cannot act in a changed context');
+}
+{
+  const h=harness();h.folder('/home/demo/work/Assistant');h.blockFolder(true);h.action('working-folder',{inChat:true});assert.equal(h.folders.length,0,'An existing file named Assistant cannot be opened as a new folder');assert.match(h.elements.get('[data-display-feedback]').textContent,/already names a file/);h.blockFolder(false);h.action('working-folder',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Assistant');
+}
+// Public progress is part of this chat's live work, not a second transcript.
+// Answers bind both the question and operation; stale or hidden controls cannot
+// answer a later question, and Stop remains available after taking over.
+{
+  const h=harness(),chat=h.chat.mounts[0],context={workspace:'work',setup:h.state().setupKey,slot:2,folder:'/home/demo/work/Assistant',chatId:'chat-1',operationId:'operation-1'};
+  const question={id:'format-1',prompt:'How should I arrange the checklist?',options:[{id:'grouped',label:'Group by task',description:'Keep related tasks together.'},{id:'simple',label:'One list',description:'Use the brief’s original order.'}]};
+  h.model.setAssistant('work',2,{status:'needs-you',task:'Turn a brief into a checklist',context,activity:{stage:'question',label:'Choose a checklist format',detail:'The source is saved. I need your preference before creating the result.',step:2,total:4,entries:[{label:'Opened the brief',detail:'A work copy is in Assistant.'}],question}});h.refresh();
+  assert.equal(h.elements.get('[data-display-activity]').hidden,false);assert.equal(h.elements.get('[data-display-activity-label]').textContent,'Choose a checklist format');assert.equal(h.elements.get('[data-display-activity-step]').textContent,'2 / 4');assert.equal(h.elements.get('[data-display-task-summary]').hidden,true,'The activity replaces a duplicate header summary');
+  const options=h.elements.get('[data-display-activity-options]').children;assert.equal(options.length,2);assert.equal(options[0].children[0].textContent,'Group by task');assert.equal(options[0].dataset.displayQuestion,'format-1');assert.equal(h.chat.mounts[0],chat,'Progress does not replace or remount chat');
+  h.refresh();assert.equal(h.elements.get('[data-display-activity-options]').children[0],options[0],'Routine refresh keeps choice node focus intact');
+  h.answer('grouped',{questionId:'old-question',operationId:'operation-1'});h.answer('grouped',{questionId:'format-1',operationId:'old-operation'});h.answer('missing',{questionId:'format-1',operationId:'operation-1'});assert.equal(h.answers.length,0,'Stale tokens and unknown choices are ignored');
+  h.answer('grouped',{questionId:'format-1',operationId:'operation-1'});assert.deepEqual(h.answers,[{choiceId:'grouped',questionId:'format-1',operationId:'operation-1'}]);
+  h.action('references');h.answer('simple',{questionId:'format-1',operationId:'operation-1'});assert.equal(h.answers.length,1,'Hidden chat cannot answer');h.action('chat');
+  h.action('takeover');assert.equal(h.elements.get('[data-display-activity-options]').children[0].disabled,true);assert.equal(h.elements.get('[data-display-action="example-stop"]').disabled,false);h.answer('simple',{questionId:'format-1',operationId:'operation-1'});assert.equal(h.answers.length,1,'Taking over pauses the question');
+  h.action('example-stop',{inChat:true,dataset:{displayOperation:'old-operation'}});assert.equal(h.stops.length,0);h.action('example-stop',{inChat:true,dataset:{displayOperation:'operation-1'}});assert.equal(h.stops.length,1,'A paused task can be abandoned without handing control back');
+  h.chatId('chat-2');assert.equal(h.elements.get('[data-display-activity]').hidden,true,'Another chat never inherits a live question');h.answer('simple',{questionId:'format-1',operationId:'operation-1'});assert.equal(h.answers.length,1);h.action('example-stop',{inChat:true,dataset:{displayOperation:'operation-1'}});assert.equal(h.stops.length,1,'A hidden old-chat task control cannot act');
+  h.chatId('chat-1');h.action('resume');h.action('examples');h.example('image');assert.equal(h.examples.length,0,'A pending question must finish or stop before another example starts');h.action('examples-back');
+  h.model.setAssistant('work',2,{status:'needs-you',activity:{stage:'review',label:'Review the conversion',detail:'Choose Convert in the chat.',step:4,total:4,entries:[],question:null}});h.refresh();assert.equal(h.elements.get('[data-display-action="example-stop"]').hidden,true,'Reviewed conversions retain their own Cancel control');assert.equal(h.elements.get('[data-display-activity-question]').hidden,true);
 }
 // A pinned helper window deliberately does not share the active Project/page.
 // Exercise the actual selection predicates so the chat can use its contents

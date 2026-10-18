@@ -64,7 +64,7 @@
     for(const entry of Array.isArray(profile.folders)?profile.folders:[]){
       if(!Array.isArray(entry))continue;
       if(entry[2]==='folder')row(entry,home,'workspace',{searchOnly:standard.includes(entry[0])&&!primary.has(entry[0])});
-      else if(entry[0]==='.spatial-workspace.toml')row(entry,home,'workspace');
+      else row(entry,home,'workspace');
     }
     function localDirectory(value){
       if(!value||foreignHome(value))return false;
@@ -91,6 +91,10 @@
         try{entries=stashRows(directory);}catch{continue;}
         for(const entry of Array.isArray(entries)?entries:[])row(entry,directory,entryOwner);
       }
+    }
+    for(const [base,entryOwner,detail]of [...(project?[[projectRoot,owner,'Project']]:[]),[home,'workspace','Workspace']]){
+      const target=join(base,'Assistant');
+      if(!files.some(file=>file.path===target))add({label:'Assistant',detail:'Assistant working files · '+detail,target,folder:true,owner:entryOwner});
     }
     return {folders,files};
   }

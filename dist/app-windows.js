@@ -82,7 +82,7 @@ function appFileRows(id, path) {
   for(const file of workspaceDownloads.list?.(path)||[]){const row=rows.find(row=>row[0]===file.name);if(row&&file.attachment?.kind)row[2]=file.attachment.kind;else if(!row)rows.push([file.name,'Saved file',file.attachment?.kind||'document']);}
   const seen = new Set(rows.map(row => row[0]));
   const targets=new Set(rows.map(([name,,,target])=>target||path.replace(/\/$/,'')+'/'+name));
-  const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects']),...Object.values(projectSpaces).flatMap(project=>[project.root,...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
+  const directories=[...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name),profile.home+'/Projects',profile.home+'/Assistant']),...Object.values(projectSpaces).flatMap(project=>[project.root,project.root+'/Assistant',...project.files.filter(([, ,type])=>type==='folder').map(([name])=>project.root+'/'+name)]),...workspaceDownloads.snapshot().directories];
   directories.forEach(directory => {
     const prefix=path==='/'?'/':path.replace(/\/$/,'')+'/';
     if(!directory.startsWith(prefix))return;
@@ -234,7 +234,8 @@ function navigateBrowser(id, address) {
 }
 function terminalAppContext(id) {
   const frame=frameFor(id), home=workspaceProfiles[activeWorkspace].home;
-  const paths=new Set([home,'/',...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,profile.home+'/Projects',...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name)]),...Object.values(projectSpaces).map(project=>project.root),...workspaceDownloads.snapshot().directories]);
+  const assistantFolders=[...Object.values(workspaceProfiles).map(profile=>profile.home),...Object.values(projectSpaces).map(project=>project.root)].filter(base=>appFileRows(id,base).some(row=>row[0]==='Assistant'&&row[2]==='folder')).map(base=>base+'/Assistant');
+  const paths=new Set([home,'/',...Object.values(workspaceProfiles).flatMap(profile=>[profile.home,profile.home+'/Projects',...SpatialHomeFolders.standard.map(name=>profile.home+'/'+name)]),...Object.values(projectSpaces).map(project=>project.root),...assistantFolders,...workspaceDownloads.snapshot().directories]);
   // Sample subfolders are navigable, without claiming access to native files.
   Object.values(projectSpaces).forEach(project=>project.files.filter(([, , type])=>type==='folder').forEach(([name])=>paths.add(project.root+'/'+name)));
   [...paths].forEach(path=>{let parent=path.slice(0,path.lastIndexOf('/'));while(parent){paths.add(parent);parent=parent.slice(0,parent.lastIndexOf('/'));}});

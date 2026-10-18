@@ -16,11 +16,13 @@
         <p class="display-control-summary" data-display-task-summary></p>
         <button type="button" class="surface-key display-examples-launch" data-display-action="examples">Try an example <span aria-hidden="true">→</span></button>
       </section>
-      <section class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">See a task move from chat to real windows and files on this display. Each example starts a separate chat with sample material.</p><p class="display-examples-local">Scripted local demo · no AI service is connected.</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Let Assistant work here</button></div><div class="display-examples-list" data-display-examples-list></div></section>
+      <section class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">See a task move from chat to real windows and files on this display. Each example starts a separate chat, works through visible steps and asks for your choice before continuing.</p><p class="display-examples-local">Scripted local demo · no AI service is connected.</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Let Assistant work here</button></div><div class="display-examples-list" data-display-examples-list></div></section>
       <nav class="display-tool-tabs" role="tablist" aria-label="Display tools"><button type="button" class="nav-choice" role="tab" data-display-action="chat" id="displayChatTab" aria-controls="displayChatTools">Chat</button><button type="button" class="nav-choice" role="tab" data-display-action="references" id="displayReferencesTab" aria-controls="displayReferenceTools">References</button></nav>
       <div class="display-side-tools" data-display-side id="displayReferenceTools" role="tabpanel" aria-labelledby="displayReferencesTab"></div>
       <div class="display-assistant-tools" data-display-assistant id="displayChatTools" role="tabpanel" aria-labelledby="displayChatTab" hidden>
-        <nav class="display-canvas-actions" aria-label="Assistant workspace tools"><button type="button" class="surface-key" data-display-action="files">Open files</button><button type="button" class="surface-key" data-display-action="note">New note</button><button type="button" class="surface-key" data-display-action="selection" title="Attach selected text or files from a window here">Use selection</button><button type="button" class="surface-key" data-display-action="examples">Examples</button></nav>
+        <nav class="display-canvas-actions" aria-label="Assistant workspace tools"><button type="button" class="surface-key" data-display-action="note">New note</button><button type="button" class="surface-key" data-display-action="selection" title="Attach selected text or files from a window here">Use selection</button><button type="button" class="surface-key" data-display-action="examples">Examples</button></nav>
+        <button type="button" class="surface-key display-working-folder" data-display-action="working-folder" aria-label="Open working folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><span><small data-display-folder-scope>Working folder</small><b data-display-folder-name>Assistant</b></span><span aria-hidden="true">↗</span></button>
+        <section class="display-example-activity" data-display-activity hidden aria-label="Assistant example progress"><div class="display-activity-heading"><b data-display-activity-label></b><small data-display-activity-step></small><button type="button" class="surface-key" data-display-action="example-stop">Stop</button></div><p data-display-activity-detail role="status" aria-live="polite"></p><progress data-display-activity-progress aria-label="Example progress"></progress><details class="display-activity-history" data-display-activity-history><summary>Steps so far</summary><ol data-display-activity-entries></ol></details><div class="display-activity-question" data-display-activity-question hidden role="group" aria-labelledby="displayExampleQuestion"><b id="displayExampleQuestion" data-display-activity-prompt></b><div data-display-activity-options></div></div><p class="display-activity-paused" data-display-activity-paused hidden>Paused. Choose Continue when you’re ready.</p></section>
         <div class="display-assistant-chat" role="region" aria-label="Assistant chat"></div>
       </div>
       <details class="display-workbench-section display-parked-windows" data-display-parked hidden><summary>Parked here <span data-display-parked-count></span></summary><div class="display-parked-list" data-display-parked-list></div></details>
@@ -34,7 +36,7 @@
   const spaceKey=state=>[state?.setupKey,state?.workspaceId,state?.localSlot].join('|');
   const special=state=>state&&(state.role==='side'||state.role==='assistant');
   const tools=new Map();
-  let currentKey='',parkedKey='',clockTimer=0,chatMounted=false,sideMounted=false,selection=null,visibleTool='',examplesOpen=false,examplesKey='',examplesListKey='';
+  let currentKey='',parkedKey='',clockTimer=0,chatMounted=false,sideMounted=false,selection=null,visibleTool='',examplesOpen=false,examplesKey='',examplesListKey='',activityEntriesKey='',activityQuestionKey='';
   function tool(state){return tools.get(spaceKey(state))||(state.role==='assistant'?'chat':'references');}
   function selectTool(name,{focus=false}={}){
     const state=bridge()?.state();if(!special(state)||context(state)!==currentKey||!['chat','references'].includes(name))return false;
@@ -47,6 +49,30 @@
     if(key===parkedKey)return;parkedKey=key;
     find('[data-display-parked-list]').replaceChildren(...windows.map(window=>{const button=document.createElement('button');button.type='button';button.className='surface-key display-parked-restore';button.dataset.displayWindow=window.id;button.textContent='Restore '+(window.title||window.label||window.id);return button;}));
   }
+  function currentActivity(state){
+    const task=state.space?.assistant||{},chatId=root.SpatialAIDesktop?.current?.()?.id;
+    return state.role==='assistant'&&task.activity&&(!task.context?.chatId||!chatId||task.context.chatId===chatId)?task.activity:null;
+  }
+  function renderActivity(state){
+    const task=state.space?.assistant||{},activity=currentActivity(state),panel=find('[data-display-activity]');panel.hidden=!activity;
+    const folder=root.SpatialAIDesktop?.workingFolder?.()||state.home,name=folder.split('/').filter(Boolean).pop()||folder;
+    const folderButton=find('[data-display-action="working-folder"]');folderButton.title=folder;folderButton.setAttribute('aria-label','Open working folder: '+folder);
+    find('[data-display-folder-scope]').textContent='Working folder';find('[data-display-folder-name]').textContent=name;
+    if(!activity){activityEntriesKey='';activityQuestionKey='';return;}
+    const paused=task.control==='user'||task.status==='paused',ongoing=['plan','source','question','output'].includes(activity.stage),question=activity.stage==='question'?activity.question:null;
+    panel.dataset.stage=activity.stage;find('[data-display-activity-label]').textContent=activity.label||task.task||'Assistant example';
+    find('[data-display-activity-step]').textContent=activity.total?String(activity.step||0)+' / '+activity.total:'';
+    find('[data-display-activity-detail]').textContent=activity.detail||'';find('[data-display-activity-detail]').hidden=!activity.detail;
+    const progress=find('[data-display-activity-progress]');progress.max=Math.max(1,Number(activity.total)||1);progress.value=Math.max(0,Number(activity.step)||0);progress.hidden=!ongoing;
+    const stop=find('[data-display-action="example-stop"]');stop.hidden=!ongoing;stop.disabled=false;stop.dataset.displayOperation=task.context?.operationId||'';
+    find('[data-display-activity-paused]').hidden=!paused||!ongoing;
+    const entries=activity.entries||[],entriesKey=JSON.stringify(entries);find('[data-display-activity-history]').hidden=!entries.length;
+    if(entriesKey!==activityEntriesKey){activityEntriesKey=entriesKey;find('[data-display-activity-entries]').replaceChildren(...entries.map(entry=>{const item=document.createElement('li'),label=document.createElement('b'),detail=document.createElement('span');label.textContent=entry.label||'';detail.textContent=entry.detail||'';detail.hidden=!entry.detail;item.append(label,detail);return item;}));}
+    find('[data-display-activity-question]').hidden=!question;
+    if(question)find('[data-display-activity-prompt]').textContent=question.prompt||'';
+    const questionKey=JSON.stringify([question,task.context?.operationId,paused]);
+    if(questionKey!==activityQuestionKey){activityQuestionKey=questionKey;find('[data-display-activity-options]').replaceChildren(...(question?.options||[]).map(option=>{const button=document.createElement('button'),label=document.createElement('b'),description=document.createElement('span');button.type='button';button.className='surface-key display-example-choice';button.dataset.displayExampleAnswer=option.id;button.dataset.displayQuestion=question.id;button.dataset.displayOperation=task.context?.operationId||'';button.disabled=paused;label.textContent=option.label;description.textContent=option.description||'';description.hidden=!option.description;button.append(label,description);return button;}));}
+  }
   function renderControl(state){
     const assistant=state.role==='assistant',task=state.space?.assistant||{},user=task.control==='user'||task.status==='paused';
     find('[data-display-mode-description]').textContent=assistant?'Assistant may work with every window on this display.':'You control this space. Keep references here or hand it to Assistant.';
@@ -57,13 +83,13 @@
     find('[data-display-control]').dataset.control=user?'user':task.status==='working'?'working':'assistant';
     find('[data-display-action="takeover"]').hidden=user;find('[data-display-action="resume"]').hidden=!user;
     for(const name of ['task-briefing','task-image']){const button=find('[data-display-action="'+name+'"]');if(button)button.disabled=user||task.status==='working';}
-    const summary=find('[data-display-task-summary]');summary.textContent=user?'Assistant will wait until you choose Continue.':task.result||task.task||'';summary.hidden=!summary.textContent;
+    const summary=find('[data-display-task-summary]');summary.textContent=user?'Assistant will wait until you choose Continue.':task.result||task.task||'';summary.hidden=!summary.textContent||Boolean(currentActivity(state));
   }
   function renderExamples(state){
     const key=context(state);if(examplesKey!==key){examplesOpen=false;examplesKey=key;}
     host.dataset.displayExamples=examplesOpen?'open':'closed';find('[data-display-examples]').hidden=!examplesOpen;
     if(!examplesOpen)return;
-    const task=state.space?.assistant||{},paused=task.control==='user'||task.status==='paused',working=task.status==='working';
+    const task=state.space?.assistant||{},paused=task.control==='user'||task.status==='paused',working=task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage);
     const allowed=state.role==='assistant'&&!paused&&!working,access=find('[data-display-examples-access]');
     access.hidden=allowed;find('[data-display-examples-access-text]').textContent=state.role!=='assistant'?'Hand this display to Assistant before running an example. Your existing windows and references stay in place.':paused?'You’re in control. Choose Continue to let Assistant run an example.':'Assistant is working. Wait for this task to finish before starting another example.';
     find('[data-display-action="examples-delegate"]').hidden=state.role==='assistant';
@@ -97,7 +123,7 @@
     else if(changed)root.SpatialAIDesktop?.render();
     if(!sideMounted&&root.SpatialDisplaySideTools){root.SpatialDisplaySideTools.mount(find('[data-display-side]'));sideMounted=true;}
     root.SpatialDisplaySideTools?.refresh(state);
-    renderControl(state);renderParked(state);renderExamples(state);
+    renderControl(state);renderParked(state);renderActivity(state);renderExamples(state);
     find('[data-display-empty-title]').textContent=state.role==='assistant'?'Assistant’s working space':'Keep your references in view';
     find('[data-display-empty-text]').textContent=state.role==='assistant'?'Give Assistant a task in chat, or try a worked example. Open files and notes here; take over whenever you want to work with a window yourself.':'Open a pinned reference or start a note. Windows stay here as you switch desktops and Projects. You can hand this same space to Assistant.';
     find('.display-workbench-empty').hidden=Boolean(state.localWindows?.length);
@@ -116,15 +142,21 @@
   host.addEventListener('click',event=>{
     const state=bridge()?.state();if(host.hidden||!special(state)||context(state)!==currentKey)return;
     const parked=event.target.closest('[data-display-window]');if(parked){bridge()?.openWindow(parked.dataset.displayWindow);return;}
+    const answer=event.target.closest('[data-display-example-answer]');
+    if(answer){
+      const task=state.space?.assistant||{},activity=currentActivity(state),question=activity?.question;
+      if(visibleTool!=='chat'||examplesOpen||task.control==='user'||task.status==='paused'||activity?.stage!=='question'||question?.id!==answer.dataset.displayQuestion||task.context?.operationId!==answer.dataset.displayOperation||!question.options?.some(option=>option.id===answer.dataset.displayExampleAnswer))return;
+      try{bridge().answerAssistantExample?.(answer.dataset.displayExampleAnswer,{questionId:question.id,operationId:task.context.operationId});}catch(error){find('[data-display-feedback]').textContent=error.message||'The answer could not be used.';}return;
+    }
     const example=event.target.closest('[data-display-example]');
     if(example){
-      const task=state.space?.assistant||{};if(!examplesOpen||state.role!=='assistant'||task.control==='user'||task.status==='paused'||task.status==='working')return;
+      const task=state.space?.assistant||{};if(!examplesOpen||state.role!=='assistant'||task.control==='user'||task.status==='paused'||task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage))return;
       const id=example.dataset.displayExample;if(!(bridge().assistantExamples?.()||[]).some(item=>item.id===id))return;
       const key=context(state);selectTool('chat');
       try{Promise.resolve(bridge().runAssistantExample(id)).catch(error=>{if(context(bridge()?.state())===key)find('[data-display-feedback]').textContent=error.message||'This example could not complete.';});}catch(error){find('[data-display-feedback]').textContent=error.message||'This example could not complete.';}return;
     }
     const action=event.target.closest('[data-display-action]')?.dataset.displayAction;if(!action)return;
-    if(['files','note','selection'].includes(action)&&event.target.closest('[data-display-assistant]')&&visibleTool!=='chat')return;
+    if(['files','note','selection','working-folder','example-stop'].includes(action)&&event.target.closest('[data-display-assistant]')&&visibleTool!=='chat')return;
     try{
       if(action==='examples'){examplesOpen=true;renderExamples(state);find('[data-display-action="examples-back"]').focus?.({preventScroll:true});return;}
       if(action==='examples-back'){selectTool('chat');find('[data-display-assistant] [data-display-action="examples"]').focus?.({preventScroll:true});return;}
@@ -134,6 +166,11 @@
       if(action==='mode'){bridge().setRole(state.localSlot,state.role==='assistant'?'side':'assistant');return;}
       if(action==='takeover'||action==='resume'){if(state.role==='assistant')bridge().assistantControl(action==='takeover'?'takeover':'resume');return;}
       if(action==='task-briefing'||action==='task-image'){if(state.role==='assistant')bridge().runAssistantTask(action==='task-image'?'image':'briefing');return;}
+      if(action==='example-stop'){
+        const task=state.space?.assistant||{},activity=currentActivity(state),operation=event.target.closest('[data-display-action]')?.dataset.displayOperation;
+        if(state.role==='assistant'&&visibleTool==='chat'&&!examplesOpen&&['plan','source','question','output'].includes(activity?.stage)&&task.context?.operationId===operation)bridge().stopAssistantExample?.();return;
+      }
+      if(action==='working-folder'&&visibleTool==='chat'){const folder=root.SpatialAIDesktop?.workingFolder?.()||state.home;root.SpatialAIDesktop?.validateWorkingFolder?.(folder,state.workspaceId);bridge().openFolder(folder);}
       if(action==='files')bridge().openFolder(visibleTool==='chat'?(root.SpatialAIDesktop?.workingFolder?.()||state.home):state.home);
       if(action==='note')bridge().launchNote('Untitled note','');
       if(action==='selection'&&visibleTool==='chat'){
@@ -147,6 +184,7 @@
     }catch(error){find('[data-display-feedback]').textContent=error.message||'This action could not complete.';}
   });
   root.addEventListener('spatial-display-role-change',refresh);
+  root.addEventListener('spatial-ai-chat-change',refresh);
   root.addEventListener('spatial-assistant-display-reveal',event=>{const state=bridge()?.state();if(event.detail?.workspace&&event.detail.workspace!==state?.workspaceId)return;selectTool('chat');});
   root.addEventListener('pagehide',()=>{clearInterval(clockTimer);clockTimer=0;root.SpatialAIDesktop?.unmountDisplay();chatMounted=false;selection=null;});
   root.addEventListener('pageshow',refresh);

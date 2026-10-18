@@ -4,7 +4,7 @@
   const C=SpatialAIContext,D=SpatialAIDemo,F=SpatialStashFiles,key='spatial-ai-context-v1';
   const model=C.create(readDesktopStorage(key,{}),{workspaces:()=>workspaceProfiles,projects:()=>projectSpaces});
   const area=areaFor('ai'),content=$('.ai-content',area),prompt=$('#aiPrompt'),folder=$('#aiWorkingFolder'),attachments=$('#aiAttachments'),transcript=$('#aiTranscript'),status=$('#aiStatus');
-  let current='',signature='',sourceDrag=null;const views=new Map();
+  let current='',signature='',chatContext='',sourceDrag=null;const views=new Map();
   const chatSelect=$('#aiChatSelect'),chatName=$('#aiChatName'),renameForm=$('#aiRenameForm'),send=$('#aiSend');
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
   const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
@@ -88,6 +88,17 @@
     dropHint.style.top=Math.max(8,Math.min(event.clientY+18,window.innerHeight-rect.height-8))+'px';
   }
   function persist(){try{desktopStorage.setItem(key,JSON.stringify(model.snapshot()));queueDesktopStateBroadcast(0);return true;}catch{status.textContent='Changes are visible here but could not be saved. Keep this tab open.';return false;}}
+  function validateWorkingFolder(path,workspace=activeWorkspace){
+    const profile=workspaceProfiles[workspace];if(!profile)throw Error('Choose an available Workspace.');
+    if(typeof path!=='string'||!path.startsWith('/'))throw Error('Choose an available local working folder.');
+    const scopes=[{root:profile.home,rows:profile.folders||[]},...Object.values(projectSpaces).map(project=>({root:project.root,rows:project.files||[]}))];
+    const scope=scopes.filter(scope=>path===scope.root.replace(/\/+$/,'')+'/Assistant'||path.startsWith(scope.root.replace(/\/+$/,'')+'/Assistant/')).sort((a,b)=>b.root.length-a.root.length)[0];
+    if(!scope)return path;
+    const rows=[...scope.rows,...(globalThis.SpatialMemoryDesktop?.fileRows?.(scope.root)||[])];
+    const downloads=typeof workspaceDownloads==='undefined'?[]:workspaceDownloads.list(scope.root);
+    if(rows.some(row=>row[0]==='Assistant'&&row[2]!=='folder')||downloads.some(file=>file.name==='Assistant'))throw Error('A file named Assistant already exists in '+scope.root+'. Rename it before using the Assistant working folder.');
+    return path;
+  }
   function captureInput(item,workspace=activeWorkspace){
     const normalized=model.normalize(item,workspace),canonical=item.itemId||item.fileId||item.id||normalized.id,history=globalThis.SpatialItemHistoryDesktop;
     // Files's virtual saved-file location is an attachment locator, not a new
@@ -173,12 +184,14 @@
     if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Local demo · scripted replies';}
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title)+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
-    folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home)+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root)+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
+    folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home+'/Assistant')+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root+'/Assistant')+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
     attachments.innerHTML=session.items.map(itemMarkup).join('');const examples=session.turns.filter(turn=>turn.example),replies=session.turns.filter(turn=>!turn.example);transcript.innerHTML=exampleMarkup(examples)+replies.map(turnMarkup).join('');$('.ai-empty',content).hidden=session.items.length>0||session.turns.length>0;
     const sources=$('.ai-context-sources',content),view=views.get(nextKey);sources.open=view?.sources??false;sources.hidden=!session.items.length||!sources.open;sources.querySelector('summary').textContent='Details';
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
     if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;
     prepareControlSemantics(area);prepareControlSemantics(quickPanel);if(displayHost)prepareControlSemantics(displayHost);
+    const detail={workspace:activeWorkspace,chatId:session.id,folder:model.workingFolder(activeWorkspace)},context=JSON.stringify(detail);
+    if(context!==chatContext){chatContext=context;if(typeof CustomEvent==='function')window.dispatchEvent?.(new CustomEvent('spatial-ai-chat-change',{detail}));}
   }
   chatSelect.addEventListener('change',()=>{rememberView();model.select(activeWorkspace,chatSelect.value);persist();render();});
   function newChat(){rememberView();model.draft(activeWorkspace,prompt.value);const chat=model.newChat(activeWorkspace);if(!chat){openQuick();status.textContent='This workspace holds up to 50 chats.';return;}persist();render();openQuick();prompt.focus();}
@@ -212,7 +225,7 @@
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const inspect=event.target.closest('[data-ai-inspect]');if(inspect){inspectInput(model.session(activeWorkspace).items.find(item=>item.id===inspect.dataset.aiInspect),'Attached input');return;}const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
-  transcript.addEventListener('click',async event=>{const save=event.target.closest('[data-ai-save-output]');if(save){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===save.dataset.aiSaveOutput);if(!turn||!globalThis.SpatialMemoryDesktop)return;const workspace=activeWorkspace,key=JSON.stringify([workspace,turn.project&&projectSpaces[turn.project]?turn.project:null]);save.disabled=true;const kept=await SpatialMemoryDesktop.keepContext(outputContext(turn),key);save.disabled=false;if(activeWorkspace===workspace)status.textContent=kept?'Saved to Files with its input versions.':'Could not save this draft. Check the Files and try again.';return;}const citation=event.target.closest('[data-ai-input]');if(!citation)return;const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===citation.dataset.aiInputTurn);inspectInput(turn?.sources[Number(citation.dataset.aiInput)],'Request input · '+(turn?.title||'Reply'));});
+  transcript.addEventListener('click',async event=>{const save=event.target.closest('[data-ai-save-output]');if(save){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===save.dataset.aiSaveOutput);if(!turn||!globalThis.SpatialMemoryDesktop)return;const workspace=activeWorkspace,key=JSON.stringify([workspace,turn.project&&projectSpaces[turn.project]?turn.project:null]);save.disabled=true;const kept=await SpatialMemoryDesktop.keepContext(outputContext(turn),key,{folder:turn.folder||model.workingFolder(workspace)});save.disabled=false;if(activeWorkspace===workspace)status.textContent=kept?'Saved in '+(turn.folder||model.workingFolder(workspace))+' with its input versions.':'Could not save this draft. Check the Files and try again.';return;}const citation=event.target.closest('[data-ai-input]');if(!citation)return;const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===citation.dataset.aiInputTurn);inspectInput(turn?.sources[Number(citation.dataset.aiInput)],'Request input · '+(turn?.title||'Reply'));});
   document.addEventListener('keydown',event=>{if((globalThis.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;if(!globalThis.SpatialAssistantDesktop?.invoke())toggle();}},true);
 
   function baseSource(target){
@@ -316,9 +329,11 @@
     if(!Array.isArray(items)||items.length>24||items.some(item=>!item||typeof item!=='object'||item.workspace&&item.workspace!==workspace||item.source?.workspace&&item.source.workspace!==workspace))throw Error('Choose up to 24 inputs from the current Workspace.');
     const files=globalThis.SpatialAssistantFiles,home=workspaceProfiles[workspace].home;
     if(!files)throw Error('Assistant file tools are unavailable.');
-    const destination=files.path(targetFolder||model.workingFolder(workspace),home),project=Object.keys(projectSpaces).find(id=>projectSpaces[id].root===destination)||null;
+    const requested=files.path(targetFolder||model.workingFolder(workspace),home),project=Object.keys(projectSpaces).find(id=>[projectSpaces[id].root,projectSpaces[id].root.replace(/\/+$/,'')+'/Assistant'].includes(requested))||null;
+    const base=project?projectSpaces[project].root:home,destination=base.replace(/\/+$/,'')+'/Assistant';
     const accessible=typeof openProjectNames==='function'?openProjectNames(workspace):[activeProjectName].filter(Boolean);
-    if((destination!==home&&!project)||!files.allowed(destination,workspace,workspaceProfiles,projectSpaces,accessible))throw Error('Choose this Workspace Home or an open Project as the working folder.');
+    if(![base,destination].includes(requested)||!files.allowed(destination,workspace,workspaceProfiles,projectSpaces,accessible))throw Error('Choose the Assistant folder in this Workspace Home or an open Project.');
+    validateWorkingFolder(destination,workspace);
     const sources=items.map(item=>captureInput(item,workspace));
     if(new Set(sources.map(item=>item.id)).size!==sources.length)throw Error('Choose distinct example inputs.');
     rememberView();model.draft(workspace,prompt.value);
@@ -348,11 +363,12 @@
     previous.classList.remove('ai-area','ai-display-chat','is-ai-drop-target');
     render();return true;
   }
-  globalThis.SpatialAIDesktop={render,expand,revealChat,startExample,mountDisplay,unmountDisplay,displayMounted:()=>Boolean(displayHost),
+  globalThis.SpatialAIDesktop={render,expand,revealChat,startExample,validateWorkingFolder,mountDisplay,unmountDisplay,displayMounted:()=>Boolean(displayHost),
     attach(items,{focus=true}={}){if(quickBlocked())return [];const existing=new Set(model.session(activeWorkspace).items.map(i=>i.id));if(existing.size+new Set(items.filter(i=>!existing.has(i.id)).map(i=>i.id)).size>24){status.textContent='Remove unused sources before adding this selection.';return [];}const added=[];for(const item of items){if(add(item))added.push(model.session(activeWorkspace).items.find(entry=>entry.id===item.id));}if(focus)openQuick();return added.filter(Boolean);},
     inspect(item){inspectInput(item,'Attached input');},toggleInputs(){const panel=$('.ai-context-sources',content);panel.open=!panel.open;panel.hidden=!panel.open;return panel.open;},removeInputs(ids){for(const id of ids)model.remove(activeWorkspace,id);persist();render();},current:()=>model.session(activeWorkspace),workingFolder:()=>model.workingFolder(activeWorkspace),
     notify(text){status.textContent=text;},
     createTurn(request,response,context={}){const session=model.session(activeWorkspace),turn=model.exchange(activeWorkspace,request,response,context);if(!turn)return null;recordInputs(turn,session.id);model.draft(activeWorkspace,'');prompt.value='';persist();render();$('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;return turn;},
+    updateTurn(workspace,chatId,turnId,response){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId)return null;const turn=model.reply(workspace,turnId,response,chatId);if(turn){persist();render();}return turn;},
     setAction(workspace,chatId,turnId,value){const turn=model.action(workspace,turnId,value,chatId);if(turn){persist();render();}return turn;},mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){if(!quickPanel.hidden&&quickWorkspace!==activeWorkspace)closeQuick();model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
   layoutDockAreas(false,false);render();
 })();

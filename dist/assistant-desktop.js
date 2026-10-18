@@ -72,10 +72,10 @@
   strip.addEventListener('click',event=>{if(event.target.closest('[data-direct-remove]')){A.removeInputs(A.current().items.map(i=>i.id));drawStrip();return;}A.toggleInputs();drawStrip();});
   function folders(workspace){
     const home=workspaceProfiles[workspace].home;
-    return [...new Set([home,...SpatialHomeFolders.standard.map(f=>home+'/'+f),...Object.entries(projectSpaces).filter(([id,p])=>p.originWorkspace===workspace||(typeof openProjectNames==='function'&&openProjectNames(workspace).includes(id))).flatMap(([,p])=>[p.root,...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]));
+    return [...new Set([home,home+'/Assistant',...SpatialHomeFolders.standard.map(f=>home+'/'+f),...Object.entries(projectSpaces).filter(([id,p])=>p.originWorkspace===workspace||(typeof openProjectNames==='function'&&openProjectNames(workspace).includes(id))).flatMap(([,p])=>[p.root,p.root+'/Assistant',...p.files.filter(r=>r[2]==='folder').map(r=>p.root+'/'+r[0])]),...workspaceDownloads.snapshot().directories])].filter(path=>T.allowed(path,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]));
   }
   function cwd(){return local(lastFrame)&&(appInfo[lastFrame.dataset.appFrame].base||lastFrame.dataset.appFrame)==='dolphin'?lastFrame.dataset.fileLocation:A.workingFolder();}
-  function resolveFolder(value,base,workspace){const raw=String(value),first=raw.split('/')[0];if(SpatialHomeFolders.standard.includes(first))base=workspaceProfiles[workspace].home;const result=T.chooseFolder(value,base,folders(workspace));if(!T.allowed(result,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]))throw Error('Choose a folder in the current Workspace. Other Workspaces stay separate.');return result;}
+  function resolveFolder(value,base,workspace){const raw=String(value),first=raw.split('/')[0];if(SpatialHomeFolders.standard.includes(first))base=workspaceProfiles[workspace].home;const result=raw==='Assistant'?A.workingFolder():T.chooseFolder(value,base,folders(workspace));if(!T.allowed(result,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]))throw Error('Choose a folder in the current Workspace. Other Workspaces stay separate.');A.validateWorkingFolder?.(result,workspace);return result;}
   function filesIn(directory,workspace){
     const paths=new Set(workspaceDownloads.list(directory).filter(f=>!f.workspace||f.workspace===workspace).map(f=>directory+'/'+f.name));
     const frame=Object.keys(appInfo).map(frameFor).find(frame=>frame&&frame.dataset.appKind==='dolphin');
@@ -129,8 +129,8 @@
     const workspace=bound.workspace??activeWorkspace,chatId=bound.chatId||A.current().id;
     const check=()=>chatCheck(workspace,chatId,bound.isCurrent);check();
     if(!T.mime[parsed.format])throw Error('Choose a supported conversion format.');
-    const base=bound.folder?resolveFolder(bound.folder,A.workingFolder(),workspace):cwd(),items=bound.items||sourcesFor(parsed,workspace);
-    const destination=resolveFolder(parsed.destination||'Converted',base,workspace);
+    const base=bound.folder?resolveFolder(bound.folder,A.workingFolder(),workspace):parsed.destination?cwd():A.workingFolder(),items=bound.items||sourcesFor(parsed,workspace);
+    const destination=resolveFolder(parsed.destination||base.replace(/\/$/,'')+'/Converted',base,workspace);
     if(!Array.isArray(items)||!items.length||items.length>24||items.some(i=>i.workspace!==workspace||i.source?.workspace&&i.source.workspace!==workspace))throw Error('Choose up to 24 saved inputs from the current Workspace.');
     // Freeze text in the source snapshot; media use their retained immutable bytes.
     const sources=[];

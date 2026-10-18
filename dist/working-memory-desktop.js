@@ -83,7 +83,7 @@
     if(workspaceChanged)refreshStashBrowsers();
     if(changed){persistProjectState();refreshStashBrowsers();}
   }
-  function refreshStashBrowsers(){Object.keys(appInfo).forEach(id=>{const frame=frameFor(id);if(!frame||(appInfo[id].base||id)!=='dolphin')return;const owners=[...Object.values(projectSpaces),...workspaceStashes.values()],legacy=owners.find(owner=>frame.dataset.fileLocation===F.folder(owner)+'/Stash');if(legacy)renderFileLocation(id,F.folder(legacy));else if(owners.some(owner=>frame.dataset.fileLocation===owner.root||frame.dataset.fileLocation===F.folder(owner)))renderFileLocation(id,frame.dataset.fileLocation);});}
+  function refreshStashBrowsers(){Object.keys(appInfo).forEach(id=>{const frame=frameFor(id);if(!frame||(appInfo[id].base||id)!=='dolphin')return;const path=frame.dataset.fileLocation||'',owners=[...Object.values(projectSpaces),...workspaceStashes.values()],legacy=owners.find(owner=>path===F.folder(owner)+'/Stash');if(legacy)renderFileLocation(id,F.folder(legacy));else if(owners.some(owner=>path===F.folder(owner)||path.startsWith(F.folder(owner)+'/')))renderFileLocation(id,path);});}
   function cacheMedia(key,file){
     const token=key+':'+file.id;if(copying.has(token))return;copying.add(token);
     F.copyAsset(ownerFor(key),file).then(blob=>{
@@ -253,14 +253,30 @@
   ['drop','dragend','pointercancel'].forEach(type=>document.addEventListener(type,()=>showDropTarget(),true));
   window.addEventListener('blur',()=>showDropTarget());
   document.addEventListener('keydown',event=>{if(event.key==='Escape')showDropTarget();},true);
-  async function keepContext(value,key=scope()){
+  async function keepContext(value,key=scope(),options={}){
     if(!value||typeof value!=='object'||!allowed())return false;
     if(value.transfer!=='copy'&&value.storageScope===key&&itemsFor(key).some(item=>(item.fileId||item.id)===value.id)){feedback('This item is already in this folder.');return false;}
-    const relativeDirectory=globalThis.SpatialFolderDesktop?.relativeDirectory(key)||'';
+    const destinationOwner=options?.folder!==undefined?ownerFor(key):null;
+    let relativeDirectory=globalThis.SpatialFolderDesktop?.relativeDirectory(key)||'';
+    if(options?.folder!==undefined){
+      const target=options.folder,owner=destinationOwner,base=owner&&F.folder(owner),[workspace,project]=JSON.parse(key);
+      const inside=(value,root)=>value===root||value.startsWith(root.replace(/\/$/,'')+'/');
+      if(typeof target!=='string'||!target.startsWith('/')||/[\\\x00-\x1f]/.test(target)||target.split('/').some(part=>part==='.'||part==='..')||!base){feedback('Choose an available folder for these files.');return false;}
+      const folder='/'+target.split('/').filter(Boolean).join('/');
+      const accessibleProjects=typeof openProjectNames==='function'?openProjectNames(workspace):[];
+      const allowedOwners=[...Object.entries(workspaceProfiles).map(([id,profile])=>({root:profile.home,workspace:id})),...Object.entries(projectSpaces).filter(([id,value])=>value.originWorkspace||accessibleProjects.includes(id)).map(([id,value])=>({root:value.root,workspace:accessibleProjects.includes(id)?workspace:value.originWorkspace}))].filter(value=>inside(folder,value.root)).sort((a,b)=>b.root.length-a.root.length);
+      const projectOwner=Object.entries(projectSpaces).filter(([,value])=>inside(folder,value.root)).sort((a,b)=>b[1].root.length-a[1].root.length)[0];
+      if(!inside(folder,base)||allowedOwners[0]?.workspace!==workspace||projectOwner&&projectOwner[0]!==project){feedback('Choose a folder in this Workspace or Project.');return false;}
+      const rootRows=[...((project?owner.files:workspaceProfiles[workspace]?.folders)||[]),...F.rows(owner)];
+      const savedRoots=typeof workspaceDownloads==='undefined'?[]:workspaceDownloads.list?.(base)||[];
+      if(inside(folder,base+'/Assistant')&&(rootRows.some(row=>row[0]==='Assistant'&&row[2]!=='folder')||savedRoots.some(file=>file.name==='Assistant'))){feedback('A file named Assistant already exists here. Choose another working folder before saving.');return false;}
+      relativeDirectory=folder.slice(base.length).replace(/^\//,'');
+    }
     const [workspace,project]=JSON.parse(key),source=M.source(value.source&&typeof value.source==='object'?value.source:{workspace:value.workspace||'',project:value.project||null,app:value.app,label:value.app?appInfo[value.app]?.label||value.app:'Dropped content',address:value.address});
     let attachment=F.safeAttachment(value.attachment);if(attachment)attachment={...attachment,filename:attachment.filename||String(value.filename||value.title||'Saved file').slice(0,160)};
     if(attachment?.key){try{if(!await F.get(attachment.key)){feedback('The saved file is unavailable. Open its source to recover it.');return false;}}catch{feedback('The saved file could not be read.');return false;}}
     if(attachment?.src){try{const blob=await F.copyAsset(ownerFor(key),{id:value.id,attachment}),blobKey='stash-upload-'+crypto.randomUUID();await F.put(blobKey,blob);attachment={...attachment,key:blobKey,src:undefined,filename:value.filename||value.title,mime:blob.type,size:blob.size};}catch{feedback('The file could not be copied.');return false;}}
+    if(destinationOwner&&ownerFor(key)!==destinationOwner){feedback('This folder is no longer available. Choose it again before saving.');return false;}
     if(itemsFor(key).length>=80){feedback('This folder supports up to 80 items.');return false;}
     const text=String(value.text||'').slice(0,12000),why=String(value.why||'').slice(0,1000),title=String(value.title||'').slice(0,120),address=source.address||M.source({address:value.address}).address;
     const shared=value.transfer==='reference'||value.transfer==='move',itemId=shared?(value.itemId||value.id):undefined;const data={title,text,why,source,attachment,itemId,reference:shared,relativeDirectory};let item;
@@ -316,6 +332,8 @@
     const [,projectId]=JSON.parse(pair.key),profile=workspaceProfiles[JSON.parse(pair.key)[0]];
     let rows=at===root?(projectId?[[".spatial-project.toml","Project settings","config"],...pair.owner.files]:profile.folders).filter(row=>!(row[0]==='Stash'&&row[1]==='Saved notes, files and media')):[];
     const saved=F.rows(pair.owner,at);
+    const downloads=at===root&&typeof workspaceDownloads!=='undefined'?workspaceDownloads.list?.(root)||[]:[];
+    if(at===root&&!rows.some(row=>row[0]==='Assistant')&&!saved.some(row=>row[0]==='Assistant')&&!downloads.some(file=>file.name==='Assistant'))rows.push(['Assistant','Assistant working files','folder',root+'/Assistant']);
     if(!legacy&&at!==root&&!saved.length&&!F.list(pair.owner).some(file=>F.directory(pair.owner,file).startsWith(at+'/')))return null;
     if(legacy)return saved;
     for(const row of saved)if(!rows.some(existing=>existing[0]===row[0]))rows.push(row);

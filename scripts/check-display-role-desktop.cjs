@@ -373,7 +373,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
   for(const stale of ['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.']){
     const packet=c.captureDesktopSyncState();
-    packet.displayRoles.workspaces.work.displays[2].assistant={status:'paused',control:'user',task:'Prepare briefing',result:stale};
+    packet.displayRoles.workspaces.work.displays[2].assistant={revision:B.state().space.assistant.revision+1,status:'paused',control:'user',task:'Prepare briefing',result:stale};
     c.applyDesktopSyncState(packet);
     assert.equal(B.state().space.assistant.result,'','Previously persisted control instructions are removed when loading saved display state');
     B.setRole(2,'side');B.setRole(2,'assistant');

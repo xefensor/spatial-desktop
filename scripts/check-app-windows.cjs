@@ -63,6 +63,8 @@ assert.equal(ctx.appFileRows('files','/mnt/Short Film').filter(row=>row[0]==='Do
 assert(ctx.appFileRows('files',home).some(row=>row[0]==='New folder'),'Created folders appear in their actual parent');
 assert(ctx.appFileRows('files','/home/demo').some(row=>row[0]==='Documents'),'Another Home remains explicitly accessible');
 assert(ctx.appFileRows('files','/home/demo/Workspaces').some(row=>row[0]==='Work'),'Parent navigation exposes the known workspace hierarchy');
+assert(ctx.appFileRows('files',home).some(row=>row[0]==='Assistant'&&row[2]==='folder'),'An unused Workspace Assistant folder appears in File Browser');
+assert(ctx.appFileRows('files','/mnt/Short Film').some(row=>row[0]==='Assistant'&&row[3]==='/mnt/Short Film/Assistant'),'An unused custom Project Assistant folder appears in File Browser');
 const crumbs=ctx.appFileBreadcrumbs(home+'/Documents');
 assert.match(crumbs,/Work Home/);assert.match(crumbs,/aria-current="page"/);assert(!crumbs.includes('×'),'Breadcrumbs are locations, without fake tab close controls');
 const html=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');

@@ -25,16 +25,22 @@
   function references(value){
     return (Array.isArray(value)?value:[]).map(item=>typeof item==='string'?key(item):record(item)?cleanReference(item):undefined).filter(item=>item!==undefined&&item!=='');
   }
+  function activity(value){
+    if(!record(value)||!['plan','source','output','question','review','complete','stopped','interrupted','error'].includes(value.stage))return null;
+    const text=(value,max)=>typeof value==='string'?value.slice(0,max):'';
+    const question=record(value.question)&&key(value.question.id)?{id:text(value.question.id,180),prompt:text(value.question.prompt,500),options:(Array.isArray(value.question.options)?value.question.options:[]).slice(0,4).filter(option=>record(option)&&key(option.id)&&key(option.label)).map(option=>({id:text(option.id,100),label:text(option.label,160),description:text(option.description,500)}))}:null;
+    return {stage:value.stage,label:text(value.label,200),detail:text(value.detail,1000),step:Math.max(0,Math.min(20,Math.floor(Number(value.step)||0))),total:Math.max(0,Math.min(20,Math.floor(Number(value.total)||0))),entries:(Array.isArray(value.entries)?value.entries:[]).slice(-12).filter(record).map(entry=>({label:text(entry.label,200),detail:text(entry.detail,1000)})),question:value.stage==='question'&&question?.options.length?question:null};
+  }
   function assistant(value){
     const context=value?.context;
     const result=typeof value?.result==='string'?value.result:'';
     // Earlier control transitions stored instructions in the task result. They
     // describe temporary authority, so never restore them as a completed result.
     const controlNotice=['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.'].includes(result);
-    return {status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:controlNotice?'':result,
+    return {revision:Number.isSafeInteger(value?.revision)&&value.revision>=0?value.revision:0,status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:controlNotice?'':result,
       control:value?.control==='user'||value?.control!=='assistant'&&value?.status==='paused'?'user':'assistant',kind:['briefing','image','checklist','compare'].includes(value?.kind)?value.kind:'',
       context:record(context)&&key(context.workspace)&&key(context.setup)&&slot(context.slot)?{workspace:key(context.workspace),setup:key(context.setup),slot:slot(context.slot),folder:key(context.folder),...(key(context.chatId)?{chatId:key(context.chatId)}:{}),...(key(context.turnId)?{turnId:key(context.turnId)}:{}),...(key(context.operationId)?{operationId:key(context.operationId)}:{})}:null,
-      outputs:ids(value?.outputs)};
+      outputs:ids(value?.outputs),activity:activity(value?.activity)};
   }
   function content(value){
     return {windows:ids(value?.windows),widgets:references(value?.widgets),folders:references(value?.folders),note:typeof value?.note==='string'?value.note.slice(0,8000):'',assistant:assistant(value?.assistant)};
@@ -125,7 +131,7 @@
       if(own(patch,'widgets'))next.widgets=references(patch.widgets);
       if(own(patch,'folders'))next.folders=references(patch.folders);
       if(own(patch,'note'))next.note=typeof patch.note==='string'?patch.note.slice(0,8000):'';
-      if(own(patch,'assistant'))next.assistant=assistant({...previous.assistant,...(record(patch.assistant)?patch.assistant:{})});
+      if(own(patch,'assistant'))next.assistant=assistant({...previous.assistant,...(record(patch.assistant)?patch.assistant:{}),revision:Math.min(Number.MAX_SAFE_INTEGER,Math.max(Date.now(),(previous.assistant.revision||0)+1))});
       target.displays[number]=next;return clone(next);
     }
     function pinWindow(name,number,id){

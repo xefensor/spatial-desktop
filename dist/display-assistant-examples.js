@@ -13,9 +13,10 @@
     after:'# Sample release notes\n\nVersion 0.5\nThe desktop map shows open windows.\nAssistant can prepare an editable checklist.\nSide space keeps references visible.\nYou can review a WebP conversion before running it.\n',
     image:'images/philosophy/keychron-profile.jpg'
   });
-  function checklistFromBrief(text){
+  function checklistFromBrief(text,style='simple'){
     const tasks=String(text).split(/\r?\n/).map(line=>/^\s*[-*]\s+(.+?)\s*$/.exec(line)?.[1]).filter(Boolean);
     if(!tasks.length)throw Error('This local example needs an explicit bullet list.');
+    if(style==='grouped')return '# Launch checklist\n\n## Prepare the page\n'+tasks.slice(0,3).map(task=>'- [ ] '+task).join('\n')+'\n\n## Check and share\n'+tasks.slice(3).map(task=>'- [ ] '+task).join('\n')+'\n';
     return '# Launch checklist\n\n'+tasks.map(task=>'- [ ] '+task).join('\n')+'\n';
   }
   // An exact line diff. The LCS retains ordering and repeated lines instead of
@@ -34,37 +35,74 @@
     }
     return edits;
   }
-  function comparisonText(edits){
+  function comparisonText(edits,style='full'){
     const added=edits.filter(edit=>edit.kind==='added'),removed=edits.filter(edit=>edit.kind==='removed');
     return '# Release note comparison\n\nExact line comparison of the two supplied sample files. No semantic or image analysis is performed.\n\n'+
-      '## Removed from the first version\n'+(removed.length?removed.map(edit=>'- Line '+edit.line+': '+(edit.text||'(blank line)')).join('\n'):'No removed lines.')+'\n\n'+
+      (style==='additions'?'This report shows only added lines; the supplied originals retain the complete before and after text.\n\n':'## Removed from the first version\n'+(removed.length?removed.map(edit=>'- Line '+edit.line+': '+(edit.text||'(blank line)')).join('\n'):'No removed lines.')+'\n\n')+
       '## Added in the second version\n'+(added.length?added.map(edit=>'- Line '+edit.line+': '+(edit.text||'(blank line)')).join('\n'):'No added lines.')+'\n';
   }
   async function run(id,tools){
     const definition=definitions.find(example=>example.id===id);if(!definition)throw Error('Choose one of the available Assistant examples.');
     tools.check();
-    // Retain the bundled image before publishing metadata, then re-check the
-    // originating display, Workspace and user control after every async step.
-    const image=id==='image'?await tools.prepareImage(fixtures.image):null;tools.check();
     const chat=tools.startChat(definition.title),outputs=[];tools.check();
+    let turn=null;
+    const update=response=>{tools.check();if(turn)turn=tools.update?tools.update(turn.id,response):Object.assign(turn,response);return turn;};
+    const step=async(stage,label,detail,number,action)=>{
+      tools.check();if(tools.step)await tools.step({stage,label,detail,step:number,total:4});tools.check();
+      const result=action?await action():undefined;tools.check();tools.completed?.({label,detail});return result;
+    };
     const openNote=(title,text)=>{tools.check();const result=tools.note(title,text);if(!result)throw Error('Note Editor could not open.');outputs.push(result);return result;};
+    const ask=async question=>{
+      update({title:'A quick question',text:question.introduction+'\n\n'+question.prompt+'\n'+question.options.map(option=>'- '+option.label+': '+option.description).join('\n')});
+      const choice=tools.ask?await tools.ask(question):question.options[0].id;tools.check();
+      const selected=question.options.find(option=>option.id===choice);if(!selected)throw Error('Choose one of the displayed options.');
+      turn=tools.turn(selected.label,{title:'Choice received',text:selected.description+' I will save the result in '+tools.folder+'.'},{sources:question.sources});return choice;
+    };
+    // Public plans and observable actions are shown while they happen. These
+    // are scripted local workflows, not private model reasoning or fake work.
+    if(id!=='image')turn=tools.turn(definition.prompt,{title:'Here is the plan',text:'I will open the supplied sample material, ask how you want the result arranged, and save a new file in '+tools.folder+'. The original sample will stay available.'},{sources:[]});
+    await step('plan','Preparing a working copy','The example uses explicit bundled inputs and saves its own files in '+tools.folder+'.',1);
     if(id==='checklist'){
-      const source=tools.save('Example launch brief.md',fixtures.brief),text=checklistFromBrief(source.text),sources=tools.attach([source]);
-      const result=tools.save('Example launch checklist.md',text,{related:sources});
-      openNote('Sample launch brief',source.text);openNote('Launch checklist',text);
-      const turn=tools.turn(definition.prompt,{title:'Checklist ready',text:text+'\nSaved as: '+result.address+'\n\nThe five checklist items were copied from the explicit bullets in the attached sample brief. Edit the checklist in the Note Editor.'},{sources});
-      tools.check();return {status:'done',result:'Opened the sample brief and an editable checklist. A Markdown copy is saved in '+tools.folder+'.',outputs,chatId:chat.chatId,turnId:turn.id};
+      let source,sources;
+      await step('source','Opening the launch brief','I will retain the sample brief, attach it to this chat and open it in Note Editor.',2,()=>{
+        source=tools.save('Example launch brief.md',fixtures.brief);sources=tools.attach([source]);openNote('Sample launch brief',source.text);
+      });
+      const style=await ask({id:'checklist-layout',introduction:'The brief has five explicit deliverables. I can copy all five without inventing new tasks.',prompt:'How would you like the checklist arranged?',sources,
+        options:[{id:'simple',label:'One simple list',description:'Keep the five tasks in their original order.'},{id:'grouped',label:'Group by stage',description:'Separate preparing the page from checking and sharing it.'}]});
+      let text,result;
+      await step('output','Creating your checklist','Using your chosen arrangement and the five bullets from the retained brief.',3,()=>{
+        text=checklistFromBrief(source.text,style);result=tools.save('Example launch checklist.md',text,{related:sources});openNote('Launch checklist',text);
+      });
+      await step('output','Saving the handoff','The editable Note Editor copy and the saved Markdown file start with the same text.',4,()=>{
+        update({title:'Checklist ready',text:text+'\nSaved as: '+result.address+'\n\nAll five tasks came from the attached sample brief. The Note Editor is a working copy; later edits there do not rewrite this saved Markdown file.'});
+      });
+      return {status:'done',result:'Your '+(style==='grouped'?'grouped':'simple')+' checklist is open. A Markdown copy is saved in '+tools.folder+'.',outputs,chatId:chat.chatId,turnId:turn.id};
     }
     if(id==='compare'){
-      const before=tools.save('Example release notes before.md',fixtures.before),after=tools.save('Example release notes after.md',fixtures.after);
-      const edits=compareLines(before.text,after.text),text=comparisonText(edits),sources=tools.attach([before,after]),report=tools.save('Example release comparison.md',text,{related:sources});
-      openNote('Release notes · before',before.text);openNote('Release notes · after',after.text);openNote('Release comparison',text);
-      const turn=tools.turn(definition.prompt,{title:'Exact changes',text:text+'\nSaved report: '+report.address},{sources});
-      tools.check();return {status:'done',result:'Compared both supplied sample files and opened the exact changes. The report is saved in '+tools.folder+'.',outputs,chatId:chat.chatId,turnId:turn.id};
+      let before,after,sources;
+      await step('source','Opening both versions','I will retain each supplied version separately so that the comparison can be checked.',2,()=>{
+        before=tools.save('Example release notes before.md',fixtures.before);after=tools.save('Example release notes after.md',fixtures.after);sources=tools.attach([before,after]);
+        openNote('Release notes · before',before.text);openNote('Release notes · after',after.text);
+      });
+      const style=await ask({id:'comparison-scope',introduction:'Both originals are open. This example compares exact lines; it does not infer the meaning of the changes.',prompt:'What should the report include?',sources,
+        options:[{id:'full',label:'All changed lines',description:'Show both removed and added lines with their original line numbers.'},{id:'additions',label:'Only what is new',description:'Show added lines and keep the complete originals alongside the report.'}]});
+      let text,report;
+      await step('output','Comparing the supplied text','Calculating the exact ordered line differences from the retained versions.',3,()=>{
+        text=comparisonText(compareLines(before.text,after.text),style);report=tools.save('Example release comparison.md',text,{related:sources});openNote('Release comparison',text);
+      });
+      await step('output','Saving the comparison report','The report keeps the source links and records the scope you selected.',4,()=>{
+        update({title:'Comparison ready',text:text+'\nSaved report: '+report.address});
+      });
+      return {status:'done',result:'The '+(style==='additions'?'additions-only':'complete changed-line')+' report is open and saved in '+tools.folder+'.',outputs,chatId:chat.chatId,turnId:turn.id};
     }
-    const source=tools.save('Example keyboard photo.jpg','',{attachment:image}),sources=tools.attach([source]);
-    tools.check();const preview=tools.showFile(source);if(!preview)throw Error('The saved image preview could not open.');outputs.push(preview);
-    const turn=await tools.proposeConversion({request:definition.prompt,items:sources,workspace:tools.workspace,chatId:chat.chatId,folder:tools.folder,format:'webp',destination:tools.folder,isCurrent:tools.isCurrent});
+    let image,source,sources;
+    await step('source','Retaining the original photograph','Loading the bundled JPEG into this browser before publishing its file entry.',2,async()=>{image=await tools.prepareImage(fixtures.image);tools.check();});
+    await step('source','Opening the saved photograph','The original will stay unchanged. The conversion will create a separate file.',3,()=>{
+      source=tools.save('Example keyboard photo.jpg','',{attachment:image});sources=tools.attach([source]);
+      const preview=tools.showFile(source);if(!preview)throw Error('The saved image preview could not open.');outputs.push(preview);
+    });
+    await step('output','Preparing a conversion for review','Check the destination in chat, then choose Convert when you want to create the WebP copy.',4);
+    turn=await tools.proposeConversion({request:definition.prompt,items:sources,workspace:tools.workspace,chatId:chat.chatId,folder:tools.folder,format:'webp',destination:tools.folder,isCurrent:tools.isCurrent});
     tools.check();return {status:'needs-you',result:'The saved original is open. Review its destination in chat, then choose Convert to create a real WebP copy.',outputs,chatId:chat.chatId,turnId:turn.id};
   }
   return {list:()=>definitions.map(example=>({...example})),fixtures,checklistFromBrief,compareLines,comparisonText,run};

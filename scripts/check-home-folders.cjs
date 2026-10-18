@@ -14,6 +14,10 @@ const projects = {
   film:{root:'/mnt/media/Short Film',files:[],downloadToProject:true}
 };
 assert.equal(H.standard.length,8);
+assert.equal(H.folder(profiles,'work','Assistant'),profiles.work.home+'/Assistant');
+assert.equal(H.assistantFolder(profiles,projects,'work'),profiles.work.home+'/Assistant');
+assert.equal(H.assistantFolder(profiles,projects,'work','film'),projects.film.root+'/Assistant','A custom Project root owns its ordinary working folder');
+assert(!H.standard.includes('Assistant'),'The working folder is not an XDG user directory');
 for (const workspace of Object.keys(profiles)) {
   assert.equal(H.folder(profiles,workspace),profiles[workspace].home);
   for (const folder of H.standard) assert.equal(H.folder(profiles,workspace,folder),profiles[workspace].home+'/'+folder);

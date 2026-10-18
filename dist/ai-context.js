@@ -61,6 +61,8 @@
       if(!Object.hasOwn(chat,'mode'))Object.defineProperty(chat,'mode',{enumerable:false,get:()=>record.mode});
       return chat;
     }
+    const scopeFolder=(workspace,id)=>projects()[session(workspace,id)?.workingProject]?.root||profiles()[workspace].home;
+    const workingFolder=(workspace,id)=>scopeFolder(workspace,id).replace(/\/+$/,'')+'/Assistant';
     function changed(chat){chat.updated=tick();}
     function titleFrom(chat,text){if(!chat.named&&!chat.turns.length)chat.title=clean(text,80).replace(/\s+/g,' ').trim()||chat.title;}
     function load(snapshot,options={}){
@@ -98,13 +100,14 @@
       rename(workspace,id,title){const chat=session(workspace,id),name=clean(title,80).trim();if(!chat||!name)return false;chat.title=name;chat.named=true;changed(chat);return true;},
       add(workspace,item,id){const record=session(workspace,id),entry=normalize(item,workspace);if(!record||!entry)return null;const duplicate=record.items.find(old=>old.id===entry.id);if(duplicate){record.items[record.items.indexOf(duplicate)]=entry;changed(record);return entry;}if(record.items.length>=24)return null;if(entry.project&&!record.workingProject&&!record.folderChosen){record.workingProject=entry.project;record.folderChosen=true;}if(!record.items.length)titleFrom(record,entry.title);record.items.push(entry);changed(record);return entry;},
       remove(workspace,id,chatId){const record=session(workspace,chatId);if(!record)return;record.items=record.items.filter(item=>item.id!==id);changed(record);},
-      exchange(workspace,request,response,context={},id){const record=session(workspace,id);if(!record||record.turns.length>=60)return null;const turn=normalizeTurn({id:'turn-'+Math.random().toString(36).slice(2),request,title:response.title,text:response.text,folder:context.folder||projects()[record.workingProject]?.root||profiles()[workspace].home,project:context.project===undefined?record.workingProject:context.project,sources:context.sources||record.items,example:context.example,action:response.action,created:Date.now()},workspace);if(!turn)return null;titleFrom(record,request);record.turns.push(turn);changed(record);return turn;},
+      exchange(workspace,request,response,context={},id){const record=session(workspace,id);if(!record||record.turns.length>=60)return null;const turn=normalizeTurn({id:'turn-'+Math.random().toString(36).slice(2),request,title:response.title,text:response.text,folder:context.folder||workingFolder(workspace,id),project:context.project===undefined?record.workingProject:context.project,sources:context.sources||record.items,example:context.example,action:response.action,created:Date.now()},workspace);if(!turn)return null;titleFrom(record,request);record.turns.push(turn);changed(record);return turn;},
+      reply(workspace,turnId,response={},id){const record=session(workspace,id),turn=record?.turns.find(turn=>turn.id===turnId);if(!turn||!response||typeof response!=='object')return null;if(typeof response.title==='string')turn.title=clean(response.title,120)||turn.title;if(typeof response.text==='string')turn.text=clean(response.text,12000);if(Object.hasOwn(response,'action'))turn.action=A?.action(response.action);changed(record);return turn;},
       action(workspace,turnId,value,chatId){const record=session(workspace,chatId),turn=record?.turns.find(t=>t.id===turnId);if(!turn)return null;turn.action=A?.action(value);changed(record);return turn;},
       examplesSeen(workspace){const record=session(workspace);record.examplesSeen=true;changed(record);},
       draft(workspace,text,id){const record=session(workspace,id);if(!record)return;record.draft=clean(text,4000);changed(record);},
       mode(workspace,mode){const record=space(workspace);record.mode=mode==='expanded'?'expanded':'rail';record.modeUpdated=tick();},
       folder(workspace,project,id){const record=session(workspace,id);if(!record)return;record.workingProject=Object.hasOwn(projects(),project)?project:null;record.folderChosen=true;changed(record);},
-      workingFolder(workspace,id){const record=session(workspace,id);return projects()[record?.workingProject]?.root||profiles()[workspace].home;},
+      scopeFolder,workingFolder,
       snapshot(){const sessions={};Object.entries(records).forEach(([workspace,record])=>{const chat=session(workspace);sessions[workspace]={...record,draft:chat.draft,items:chat.items,turns:chat.turns,examplesSeen:chat.examplesSeen,workingProject:chat.workingProject,updated:Math.max(record.modeUpdated,record.selectionUpdated,...Object.values(record.chats).map(item=>item.updated))};});return JSON.parse(JSON.stringify({version:4,sessions}));}
 
     };

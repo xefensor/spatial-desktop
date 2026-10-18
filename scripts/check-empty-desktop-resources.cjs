@@ -47,6 +47,8 @@ const result=collect(input);
 assert.equal(JSON.stringify({profiles,projects,downloads}),before,'The collector never mutates any source data');
 assert.deepEqual(stashCalls,[home+'',projects.launch.root+'']);
 assert.deepEqual(result.folders.filter(entry=>!entry.searchOnly).slice(0,7).map(entry=>entry.label),['Launch <review>','Work Home','Documents','Downloads','Desktop','Projects','Clips'],'Default folders keep the current Project followed by Home working folders');
+assert(result.folders.some(entry=>entry.path===projects.launch.root+'/Assistant'&&entry.owner==='launch'),'An empty Project Assistant folder is discoverable before any task runs');
+assert(result.folders.some(entry=>entry.path===home+'/Assistant'&&entry.owner==='workspace'),'Workspace Assistant files have their own ordinary folder');
 assert(result.folders.find(entry=>entry.label==='Pictures').searchOnly,'Other standard Home folders are available for local search without crowding default folders');
 assert(result.folders.some(entry=>entry.path===home+'/References <draft>'),'Configured Home extras retain literal names');
 assert(result.folders.some(entry=>entry.path==='/mnt/film/Clips'&&entry.owner==='launch'),'Explicit Project folder targets preserve their real path');
@@ -84,4 +86,13 @@ const noConfig=collect({workspace:'general',profiles,projects:{},downloads:{}});
 assert(!noConfig.files.some(entry=>entry.name==='.spatial-workspace.toml'),'A workspace config is not invented when no row exists');
 assert.deepEqual(collect({workspace:'missing',profiles,projects,downloads}),{folders:[],files:[]});
 assert.doesNotThrow(()=>collect({...input,stashRows(){throw new Error('Unavailable');}}),'An unavailable optional Stash does not hide the other working files');
+for(const collision of [
+  {profiles:{...profiles,work:{...profiles.work,folders:[['Assistant','Existing file','document']]}}},
+  {downloads:{directories:[],files:[{directory:home,name:'Assistant',workspace:'work',content:'Keep me'}]}},
+  {stashRows:directory=>directory===home?[['Assistant','Saved file','file']]:[]}
+]){
+  const blocked=collect({...input,column:'workspace',...collision});
+  assert(blocked.files.some(entry=>entry.path===home+'/Assistant'),'An actual same-name file stays visible');
+  assert(!blocked.folders.some(entry=>entry.path===home+'/Assistant'),'An actual same-name file is never duplicated as a synthetic folder');
+}
 console.log('Empty desktop resources passed: scoped Home/Project folders, actual saved files, Stash metadata, stable keys, target paths, deduplication, literal names, ownership isolation and immutable inputs.');

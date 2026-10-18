@@ -9,8 +9,13 @@
   function folder(profiles, workspace, name = 'Home') {
     const base = home(profiles, workspace);
     if (name === 'Home') return base;
-    if (!standard.includes(name) && name !== 'Projects') throw new Error('Unknown Home folder');
+    if (!standard.includes(name) && name !== 'Projects' && name !== 'Assistant') throw new Error('Unknown Home folder');
     return join(base, name);
+  }
+  // Assistant work is stored in an ordinary child folder of its chat's scope.
+  // Keep this separate from XDG standard folders: it is not an OS user dir.
+  function assistantFolder(profiles, projects, workspace, project) {
+    return join(projects[project]?.root || home(profiles, workspace), 'Assistant');
   }
   // Only download requests opt into the project path. Places always use Home.
   function downloadDestination(profiles, projects, workspace, owner) {
@@ -45,7 +50,7 @@
     function update(directory,name,patch={}) { const file=files.find(file=>file.directory===directory&&file.name===name);if(!file)return null;if(typeof patch.content==='string')file.content=patch.content.slice(0,12000);return {...file}; }
     return {load, ensure, list, add, update, snapshot: () => ({directories: [...directories], files: files.map(file => ({...file}))})};
   }
-  const api = {standard, home, folder, downloadDestination, create};
+  const api = {standard, home, folder, assistantFolder, downloadDestination, create};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SpatialHomeFolders = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -123,3 +123,39 @@ body[data-theme="light"] .display-workbench-empty{text-shadow:0 1px 8px rgba(255
   .display-parked-windows{max-height:90px;padding-top:5px;margin-top:5px}
   .display-clock{display:none}
 }
+/* The visible plan describes real demo actions. Keep the live chat and its
+   composer available; its step log stays in an optional short history. */
+.display-workbench .display-working-folder{flex:none;justify-content:flex-start;gap:7px;padding:3px 0;min-height:32px;overflow:hidden}
+.display-working-folder>span:first-of-type{display:flex;align-items:baseline;gap:7px;min-width:0;flex:1;text-align:left}
+.display-working-folder small{flex:none;font-size:10px;font-weight:400;color:var(--sd-glass-muted)}
+.display-working-folder b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600}
+.display-working-folder>svg{color:var(--display-role-accent);width:15px!important;height:15px!important}
+.display-working-folder>span:last-of-type{font-size:12px;color:var(--sd-glass-muted)}
+.display-example-activity{flex:none;min-width:0;max-height:45%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;border-left:2px solid color-mix(in srgb,var(--display-role-accent) 55%,transparent);padding:0 0 0 10px}
+.display-activity-heading{display:flex;gap:7px;align-items:center;min-height:25px}
+.display-activity-heading>b{font-size:11px;font-weight:600;line-height:1.45;flex:1;min-width:0}
+.display-activity-heading>small{font-size:10px;font-variant-numeric:tabular-nums;color:var(--sd-glass-muted);white-space:nowrap}
+.display-workbench .display-activity-heading>button{font-size:10px;min-height:25px;padding:3px 6px}
+.display-example-activity>p{font-size:11px;line-height:1.5;color:var(--sd-glass-muted);margin:4px 0 6px;overflow-wrap:anywhere}
+.display-example-activity>progress{display:block;width:100%;height:2px;border:0;background:var(--sd-glass-groove);color:var(--display-role-accent);accent-color:var(--display-role-accent);margin:8px 0}
+.display-example-activity>progress::-webkit-progress-bar{background:var(--sd-glass-groove)}
+.display-example-activity>progress::-webkit-progress-value{background:var(--display-role-accent)}
+.display-example-activity>progress::-moz-progress-bar{background:var(--display-role-accent)}
+.display-activity-history{font-size:10px;line-height:1.5;color:var(--sd-glass-muted);margin-top:6px}
+.display-activity-history>summary{cursor:pointer;user-select:none;padding:3px 0}
+.display-activity-history>ol{padding-left:16px;margin:5px 0 4px;max-height:110px;overflow:auto;scrollbar-width:thin}
+.display-activity-history li{padding:0 0 5px 2px}.display-activity-history li>b{display:block;color:var(--sd-glass-text);font-weight:500}.display-activity-history li>span{display:block;overflow-wrap:anywhere}
+.display-activity-question{margin-top:9px;padding-top:8px;border-top:1px solid var(--sd-glass-groove)}
+.display-activity-question>b{font-size:12px;font-weight:600;line-height:1.5;display:block;margin-bottom:6px}
+.display-activity-question>div{display:grid;gap:4px}
+.display-workbench .display-example-choice{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:6px 7px;justify-content:flex-start;border-color:var(--sd-glass-groove)}
+.display-example-choice>b{font-size:11px;font-weight:600;line-height:1.5}.display-example-choice>span{font-size:10px;line-height:1.4;color:var(--sd-glass-muted)}
+.display-example-choice:disabled{opacity:.45;cursor:default}
+.display-example-activity[data-stage="complete"]{border-left-color:color-mix(in srgb,var(--display-role-accent) 25%,transparent)}
+.display-workbench[data-display-tool="chat"] .display-assistant-chat{flex:1 1 180px}
+@media(max-height:700px){
+  .display-assistant-tools{gap:6px}
+  .display-example-activity{max-height:43%}
+  .display-workbench .display-working-folder{min-height:27px}
+  .display-activity-question{margin-top:5px;padding-top:5px}
+}

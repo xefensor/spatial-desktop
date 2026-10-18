@@ -29,7 +29,7 @@
   function rows(scope=key()){
     const current=path(scope),base=F.folder(owner(scope)),project=projectSpaces[JSON.parse(scope)[1]],snapshot=workspaceDownloads.snapshot();
     const seed=fileLocationRows({dataset:{}},current);
-    const directories=[...snapshot.directories,...(project?.files||[]).filter(row=>row[2]==='folder').map(row=>base+'/'+row[0])];
+    const directories=[base+'/Assistant',...snapshot.directories,...(project?.files||[]).filter(row=>row[2]==='folder').map(row=>base+'/'+row[0])];
     if(!project){const profile=workspaceProfiles[JSON.parse(scope)[0]];directories.push(...profile.folders.filter(row=>row[2]==='folder').map(row=>row[3]||base+'/'+row[0]));if(current===base+'/Projects')seed.push(...Object.values(projectSpaces).filter(project=>project.originWorkspace===activeWorkspace).map(project=>[project.name,'Project','folder',project.root]));}
     return projectRows({path:current,base,rows:seed,files:F.list(owner(scope)).map(file=>({...file,directory:F.directory(owner(scope),file)})),directories,downloads:snapshot.files,archive:project?.archiveFiles});
   }
