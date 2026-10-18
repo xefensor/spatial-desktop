@@ -19,6 +19,14 @@
   const withinAssistant=target=>area.contains(target)||quickPanel.contains(target)||Boolean(displayHost?.contains(target));
   const blockedByDialog=()=>Boolean(document.querySelector?.('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]),#universalSearch.is-open,#packageDialog.is-open,#projectEditorDialog.is-open:not(.is-inline),#desktopContextMenu:not([hidden]),#spatialGuideDialog:not([hidden])'));
   const quickBlocked=()=>Boolean((displayHost?displayHost.inert:area.inert)||$('.desktop-shell').inert||blockedByDialog()||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai')));
+  const displayVisible=()=>{if(!displayHost)return false;for(let at=displayHost;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true')return false;return true;};
+  function revealDisplay(focus=true){
+    if(!displayHost||quickBlocked())return false;
+    // The live conversation stays mounted when References is selected. Its
+    // owner reveals Chat synchronously before any composer focus is requested.
+    window.dispatchEvent(new CustomEvent('spatial-assistant-display-reveal',{detail:{workspace:activeWorkspace}}));
+    if(focus&&displayVisible())prompt.focus();return true;
+  }
   function positionQuick(){
     if(quickPanel.hidden)return;
     const rect=area.getBoundingClientRect(),edge=area.dataset.dockEdge||'right',gap=10;
@@ -39,7 +47,7 @@
   function openQuick(focus=true){
     if(quickBlocked())return;
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
-    if(displayHost){if(focus)prompt.focus();return;}
+    if(displayHost){revealDisplay(focus);return;}
     if(area.hidden||area.dataset.areaState!=='rail'){expand(focus);return;}
     if(quickPanel.hidden){window.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'ai'}}));quickReturnFocus=document.activeElement;quickWorkspace=activeWorkspace;$('#aiQuickBody').append(content);quickPanel.hidden=false;}
     $('#aiRailChat').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-pressed','true');$('#aiAreaToggle').setAttribute('aria-label','Close Assistant quick chat');renderRail(model.session(activeWorkspace));
@@ -70,7 +78,7 @@
   const editableDropTarget=target=>Boolean(target?.closest?.('input,textarea,select,[contenteditable="true"]'));
   const insertsText=event=>editableDropTarget(event.target)&&![...event.dataTransfer.types].some(type=>type==='Files'||type===C.MIME);
   function showDropTarget(event=null){
-    const visible=Boolean(event)&&Boolean(displayHost||!area.hidden)&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'));
+    const visible=Boolean(event)&&(displayHost?displayVisible():!area.hidden)&&!quickBlocked();
     area.classList.toggle('is-ai-drop-target',visible);displayHost?.classList.toggle('is-ai-drop-target',visible);dropHint.hidden=!visible;dropPosition=visible?{clientX:event.clientX,clientY:event.clientY}:null;
     if(!visible)return;
     const title='Attach to '+model.session(activeWorkspace).title,detail=workspaceLabel(activeWorkspace)+' workspace · Copy source';
@@ -181,13 +189,13 @@
   function setMode(mode,save=true){model.mode(activeWorkspace,mode);if(save)persist();}
   function expand(focus=true){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
-    if(displayHost){if(!quickBlocked()&&focus)prompt.focus();return;}
+    if(displayHost){revealDisplay(focus);return;}
     if(extendedDesktopActive()&&!isLocalArea('ai')){displayAssignmentsFor().areas.ai=localDisplaySlot();persistDisplayAssignments();}
     closeQuick();setAreaState('ai','expanded',false);scheduleWindowTiling();if(focus)prompt.focus();
   }
   function toggle(){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
-    if(displayHost){if(!quickBlocked())prompt.focus();return;}
+    if(displayHost){revealDisplay();return;}
     if(!area.hidden&&area.dataset.areaState==='rail'){if(quickPanel.hidden)openQuick();else closeQuick(true);return;}
     const next=area.hidden?'expanded':'rail';
     setAreaState('ai',next);if(next==='expanded')prompt.focus();
@@ -242,7 +250,7 @@
   // Native HTML drops remain available for external files, links and selections.
   function bindContentTransfers(){
     let gesture=null,suppressClick=false;
-    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&withinAssistant(target)&&(!area.hidden||Boolean(target.closest?.('.ai-display-chat')));};
+    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return !quickBlocked()&&target&&(displayHost?displayVisible()&&displayHost.contains(target):withinAssistant(target)&&!area.hidden);};
     const stashAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target?.closest?.('#workingMemory,.memory-header-key,.memory-rail-entry')&&!editableDropTarget(target);};
     const clear=()=>{gesture=null;showDropTarget();globalThis.SpatialMemoryDesktop?.showDropTarget?.();};
     document.addEventListener('pointerdown',event=>{
@@ -280,13 +288,14 @@
     if(sourceDrag.title){event.dataTransfer.setData(C.MIME,JSON.stringify(sourceDrag));event.dataTransfer.setData('text/plain',sourceDrag.text||sourceDrag.address||sourceDrag.title);event.dataTransfer.effectAllowed='copy';}
   });
   function accepts(event){return [...event.dataTransfer.types].some(type=>[C.MIME,'Files','text/plain','text/uri-list'].includes(type));}
-  for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('dragover',event=>{if(!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
+  const receivesDrop=event=>!quickBlocked()&&(displayHost?displayVisible()&&displayHost.contains(event.target):!area.hidden);
+  for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('dragover',event=>{if(!receivesDrop(event)||!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
   for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('dragleave',event=>{if(!withinAssistant(event.relatedTarget))showDropTarget();});
   document.addEventListener('dragover',event=>{if(!withinAssistant(event.target))showDropTarget();});
   document.addEventListener('drop',()=>showDropTarget(),true);
   document.addEventListener('dragend',()=>{sourceDrag=null;showDropTarget();});
   for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('drop',async event=>{
-    showDropTarget();if(!accepts(event)||insertsText(event))return;event.preventDefault();event.stopPropagation();
+    showDropTarget();if(!receivesDrop(event)||!accepts(event)||insertsText(event))return;event.preventDefault();event.stopPropagation();
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];

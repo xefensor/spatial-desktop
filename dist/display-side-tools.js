@@ -28,7 +28,7 @@
     const saved=(Array.isArray(space?.widgets)?space.widgets:[]).find(widget=>widget?.kind==='checklist'&&widget.id==='side-checklist');
     return (Array.isArray(saved?.items)?saved.items:[]).slice(0,40).filter(item=>item&&typeof item.id==='string'&&text(item.text,200).trim()).map(item=>({id:item.id,text:text(item.text,200).trim(),done:item.done===true}));
   }
-  const contextKey=state=>state?[state.setupKey,state.workspaceId,state.localSlot,state.role].join('|'):'';
+  const contextKey=state=>state?[state.setupKey,state.workspaceId,state.localSlot].join('|'):'';
   const api={normalizePath,normalizeUrl,normalizeReference,checklist,contextKey};
   if(typeof module!=='undefined'&&module.exports){module.exports=api;return;}
   const mounts=new Set(),records=new WeakMap(),drafts=new Map();
@@ -78,7 +78,7 @@
     const message=value=>find('[data-side-feedback]').textContent=value;
     function current(){
       const state=bridge()?.state();
-      return state?.role==='side'&&record.key===contextKey(state)?state:null;
+      return (state?.role==='side'||state?.role==='assistant')&&state.role===record.state?.role&&record.key===contextKey(state)&&!host.hidden&&!host.closest?.('[hidden],[inert]')?state:null;
     }
     function activeDraft(){return drafts.get(record.key)||{kind:'folder',address:'',label:'',task:'',expanded:false};}
     function storeDraft(){if(!record.key)return;drafts.set(record.key,{kind:find('[data-side-reference-kind]').value,address:find('[data-side-reference-address]').value,label:find('[data-side-reference-label]').value,task:find('#displaySideTask').value,expanded:find('[data-side-pin-editor]').open});}

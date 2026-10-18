@@ -5,11 +5,22 @@
   'use strict';
   if(!root.SpatialDisplayRoles)return;
   const key='spatial-display-roles-v1';
-  let model=SpatialDisplayRoles.create(readDesktopStorage(key,{})),refreshing=false,lastRole='',lastSetup='';
+  let model=SpatialDisplayRoles.create(readDesktopStorage(key,{})),refreshing=false,lastRole='',lastSetup='',lastWorkspace=activeWorkspace;
   const special=role=>role==='side'||role==='assistant';
   const labels={main:'Main workspace',extended:'Extended workspace',assistant:'Assistant',side:'Side space'};
   function connect(){return model.connect(activeDisplayRoster().map((display,index)=>({...display,slot:index+1})));}
+  function sharedTileContexts(sessions=tileSessions){
+    const canonical=new Set(Object.keys(sessions).filter(context=>/:display-role:space:\d+$/.test(context)));
+    for(const [context,session] of Object.entries(sessions)){
+      const match=/^(.*):display-role:(side|assistant):(\d+)$/.exec(context);if(!match)continue;
+      const shared=match[1]+':display-role:space:'+match[3];
+      // The current role's old session is the visible layout during migration.
+      if(!canonical.has(shared)&&(!sessions[shared]||match[2]===model.role(Number(match[3]))))sessions[shared]=session;
+    }
+    for(const context of Object.keys(sessions))if(/:display-role:(side|assistant):\d+$/.test(context))delete sessions[context];
+  }
   connect();
+  sharedTileContexts();
   const role=(slot=localDisplaySlot())=>model.role(slot)||'main';
   const pinned=id=>{
     if(!extendedDesktopActive())return null;
@@ -52,14 +63,23 @@
     const setup=connect(),local=localDisplaySlot();
     return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,home:workspaceProfiles[activeWorkspace].home,
       displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),local:display.slot===local})),
-      space:model.space(activeWorkspace,local),referenceOptions:role(local)==='side'?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
+      space:model.space(activeWorkspace,local),referenceOptions:special(role(local))?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
       parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
   function notify(){
     if(refreshing)return;
     refreshing=true;
     try{
-      const next=state();document.body.dataset.displayRole=next.role;
+      let next=state();
+      if(lastWorkspace!==activeWorkspace||lastSetup&&lastSetup!==next.setupKey){
+        const spaces=model.snapshot().workspaces[lastWorkspace]?.displays||{};let paused=false;
+        for(const [slot,space] of Object.entries(spaces))if(space.assistant.status==='working'){
+          model.setAssistant(lastWorkspace,slot,{control:'user',status:'paused',result:'The Workspace or monitor setup changed. Continue here when you are ready.'});paused=true;
+        }
+        if(paused){persist();queueDesktopStateBroadcast(0);next=state();}
+      }
+      lastWorkspace=activeWorkspace;
+      document.body.dataset.displayRole=next.role;
       if(special(next.role)){
         $('#emptyWorkspace').hidden=true;
         $('.workspace-zone').setAttribute('aria-label',next.workspace+' · '+labels[next.role]+' · Display '+next.localSlot);
@@ -104,6 +124,10 @@
     if(!result.ok)throw new Error(result.reason==='choose-main-first'?'Choose another display as Main workspace first.':'This role needs a connected second display.');
     if(!result.changed)return true;
     placementUndoEpoch++;
+    if(result.previous==='assistant'||next==='assistant')for(const workspace of Object.keys(workspaceProfiles)){
+      const prior=model.space(workspace,slot).assistant;
+      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused',result:prior.result});
+    }
     if(special(result.previous)&&!special(next)){
       for(const workspace of Object.keys(workspaceProfiles))for(const id of model.space(workspace,slot).windows){
         if(workspace===activeWorkspace)detachTiles(id);
@@ -114,7 +138,7 @@
       }
     }
     if(special(next)){
-      for(const id of Object.keys(appState))if(appState[id]==='open'&&Number(displayAssignmentsFor().apps[id]||1)===slot&&desktopPages.visible(activeWorkspace,id,slot,activeDisplayRoster().length))pin(id,slot);
+      for(const id of Object.keys(appState))if(appState[id]==='open'&&model.windowDisplay(activeWorkspace,id)!==slot&&Number(displayAssignmentsFor().apps[id]||1)===slot&&desktopPages.visible(activeWorkspace,id,slot,activeDisplayRoster().length))pin(id,slot);
     }
     for(const workspace of Object.keys(workspaceProfiles)){
       const assignments=displayAssignmentsFor(workspace);
@@ -137,13 +161,13 @@
     return originalArea(name);
   };
   const originalTileKey=tileContextKey;
-  tileContextKey=function(){return special(role())?activeWorkspace+':display-role:'+role()+':'+localDisplaySlot():originalTileKey();};
+  tileContextKey=function(){return special(role())?activeWorkspace+':display-role:space:'+localDisplaySlot():originalTileKey();};
   const originalIntentPrefix=intentContextPrefix;
-  intentContextPrefix=function(){return special(role())?activeWorkspace+':display-role:'+role()+':':originalIntentPrefix();};
+  intentContextPrefix=function(){return special(role())?activeWorkspace+':display-role:space:':originalIntentPrefix();};
   const originalTileBounds=tileBounds;
   tileBounds=function(){
     const bounds=originalTileBounds();if(!special(role()))return bounds;
-    const panel=role()==='assistant'?(window.innerWidth>=1100?380:window.innerWidth>=900?340:window.innerWidth>=600?300:280):(window.innerWidth>=900?240:window.innerWidth>=600?200:160);
+    const panel=window.innerWidth>=1100?380:window.innerWidth>=900?340:window.innerWidth>=600?300:280;
     return {...bounds,x:bounds.x+panel,width:Math.max(1,bounds.width-panel)};
   };
   const originalPage=changeDesktopPage;
@@ -204,10 +228,11 @@
   const originalApply=applyDesktopSyncState;
   applyDesktopSyncState=function(incoming){
     if(!incoming)return originalApply(incoming);
-    if(incoming.displayRoles){model.load(incoming.displayRoles);connect();persist();}
+    if(incoming.displayRoles){model.load(incoming.displayRoles);connect();sharedTileContexts();persist();}
     const same=incoming.activeWorkspace===activeWorkspace,focused=desktopHasWindowFocus,localFront=frontApp;
-    const packet=same?{...incoming,desktopHasWindowFocus:focused,frontApp:localFront}:incoming;
-    const result=originalApply(packet);
+    const packet={...incoming,...(same?{desktopHasWindowFocus:focused,frontApp:localFront}:{})};
+    if(incoming.tileSessions){packet.tileSessions=JSON.parse(JSON.stringify(incoming.tileSessions));sharedTileContexts(packet.tileSessions);}
+    const result=originalApply(packet);sharedTileContexts();
     if(same&&localFront&&appState[localFront]==='open'&&isLocalApp(localFront)){frontApp=localFront;desktopHasWindowFocus=focused;}
     notify();return result;
   };
@@ -215,7 +240,11 @@
   const originalPlacement=capturePlacement;
   capturePlacement=function(){return {...originalPlacement(),displayRoles:model.snapshot()};};
   const originalRestore=restorePlacement;
-  restorePlacement=function(saved){if(saved.workspace===activeWorkspace&&saved.displayRoles){model.load(saved.displayRoles);connect();persist();}const result=originalRestore(saved);notify();return result;};
+  restorePlacement=function(saved){
+    if(saved.workspace===activeWorkspace&&saved.displayRoles){model.load(saved.displayRoles);connect();persist();}
+    const packet={...saved};if(saved.tileSessions){packet.tileSessions=JSON.parse(JSON.stringify(saved.tileSessions));sharedTileContexts(packet.tileSessions);}
+    const result=originalRestore(packet);sharedTileContexts();notify();return result;
+  };
   const originalContext=contextMenuEntries;
   contextMenuEntries=function(context){
     let entries=originalContext(context).filter(entry=>!(context.kind==='area'&&entry.action==='area-move-display'&&special(role(otherDisplaySlot()))));
@@ -243,9 +272,61 @@
     if(action.startsWith('display-role:')){closeDesktopContextMenu();setRole(localDisplaySlot(),action.slice(13));return;}
     return originalExecute(action);
   };
-  root.SpatialDisplayRoleBridge={state,setRole,openReference,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+  function assistantContext(){
+    const setup=connect(),slot=localDisplaySlot();
+    if(role(slot)!=='assistant'||!extendedDesktopActive())throw Error('Assistant can control windows only on its assigned display.');
+    return {workspace:activeWorkspace,setup:setup.signature,slot,folder:root.SpatialAIDesktop?.workingFolder?.()||workspaceProfiles[activeWorkspace].home};
+  }
+  function controlContextMatches(context){return context.workspace===activeWorkspace&&context.slot===localDisplaySlot()&&context.setup===connect().signature&&role(context.slot)==='assistant';}
+  function saveAssistant(context,patch){
+    const assistant=model.setAssistant(context.workspace,context.slot,patch);persist();notify();queueDesktopStateBroadcast(0);return assistant;
+  }
+  function assistantControl(action){
+    const context=assistantContext();
+    if(!['takeover','resume'].includes(action))throw Error('Choose Take control or Continue.');
+    return saveAssistant(context,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle',result:action==='takeover'?'You control this display. Assistant will wait until you choose Continue.':'Assistant may work with windows on this display when you give it a task.'});
+  }
+  function runAssistantTask(kind){
+    const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
+    if(previous.control==='user')throw Error('You control this display. Choose Continue before asking Assistant to work here.');
+    if(previous.status==='working')throw Error('Assistant is already working on this display.');
+    if(!['briefing','image'].includes(kind))throw Error('Choose a supported local demonstration.');
+    const folder=root.SpatialAssistantFiles.path(context.folder,workspaceProfiles[context.workspace].home);
+    if(!root.SpatialAssistantFiles.allowed(folder,context.workspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a working folder in this Workspace or one of its open Projects.');
+    context.folder=folder;
+    const localWindows=Object.keys(appState).filter(id=>appState[id]==='open'&&pinned(id)===context.slot).map(id=>({id,label:appInfo[id]?.label||id}));
+    const task=kind==='briefing'?'Prepare a Workspace briefing':'Show an image for review',outputs=[];
+    saveAssistant(context,{status:'working',control:'assistant',kind,task,result:'Working in '+context.folder,context,outputs});
+    function check(){if(!controlContextMatches(context)||model.space(context.workspace,context.slot).assistant.control!=='assistant')throw Error('Assistant stopped because control or the Workspace changed.');}
+    try{
+      check();
+      if(kind==='briefing'){
+        const text=[workspaceProfiles[context.workspace].label+' — Workspace briefing','','Working folder: '+context.folder,'','Windows on this display',...(localWindows.length?localWindows.map(window=>'• '+window.label):['• No windows yet']),'','Next steps','','Add your observations here. This local demonstration lists window labels; it does not inspect their document contents.'].join('\n');
+        const note=root.SpatialDisplayRoleBridge.launchNote('Workspace briefing',text);if(!note)throw Error('Note Editor could not open.');outputs.push(note);check();
+        const files=root.SpatialDisplayRoleBridge.openFolder(context.folder);if(!files)throw Error('File Browser could not open.');outputs.push(files);
+      }else{
+        const image=referenceOptions().find(reference=>reference.kind==='file'&&root.SpatialMemoryDesktop?.contextAtFile?.(reference.path)?.attachment?.kind==='image');
+        if(image)outputs.push(openReference(image));
+        else{
+          const id=root.SpatialDisplayRoleBridge.openFolder(context.folder);if(!id)throw Error('File Browser could not open.');outputs.push(id);check();
+          const preview=frameFor(id)?.querySelector?.('.file-preview');if(!preview)throw Error('The image preview could not open.');
+          preview.innerHTML='<header><div><b>Built-in reference photograph</b><small>Local demo image · not a saved Workspace file</small></div></header><img class="stash-file-image" src="images/philosophy/keychron-profile.jpg" alt="Keyboard profile reference photograph"><p>Photo: Mulad · public domain</p>';preview.hidden=false;
+        }
+        check();
+        const note=root.SpatialDisplayRoleBridge.launchNote('Image review','Reference image opened on this display.\n\nWorking folder: '+context.folder+'\n\nReview notes\n\nDescribe the crop, colours or details you want to change. This local demonstration opens an image and a note; it does not analyse the image.');if(!note)throw Error('Note Editor could not open.');outputs.push(note);
+      }
+      check();
+      return saveAssistant(context,{status:'done',result:kind==='briefing'?'Opened a briefing note and its working folder on this display.':'Opened a reference image and an editable review note on this display.',outputs});
+    }catch(error){
+      const current=model.space(context.workspace,context.slot).assistant;
+      if(controlContextMatches(context)&&current.control==='assistant')saveAssistant(context,{status:'error',result:error.message,outputs});
+      else saveAssistant(context,{status:'paused',control:'user',result:error.message,outputs});
+      throw error;
+    }
+  }
+  root.SpatialDisplayRoleBridge={state,setRole,openReference,assistantControl,runAssistantTask,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
-    windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:'+role(slot)+':'+slot:null;},
+    windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:space:'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},
     openCompanion(){
       const url=new URL(location.href);
@@ -261,12 +342,15 @@
       captureWorkspaceContent();saveIndependentSessions();queueDesktopStateBroadcast(0);return id;
     }
   };
-  document.addEventListener('pointerdown',event=>{
-    if(role()==='assistant'&&event.target.closest('[data-app-frame]')){
-      const assistant=model.space(activeWorkspace,localDisplaySlot()).assistant;
-      if(assistant.status==='working'){model.setAssistant(activeWorkspace,localDisplaySlot(),{status:'paused',result:'You took over the workspace. Resume when you are ready.'});persist();notify();queueDesktopStateBroadcast(0);}
-    }
-  },true);
+  function takeWindowControl(event){
+    if(role()!=='assistant')return;
+    const frame=event.target.closest('[data-app-frame]'),id=frame?.dataset?.appFrame;
+    const empty=!frame&&event.type==='pointerdown'&&(event.target.matches?.('.workspace-zone')||event.target.closest('.display-workbench-empty')&&!event.target.closest('button,a,input,textarea,select'));
+    if(!empty&&(!id||appState[id]!=='open'||pinned(id)!==localDisplaySlot()||!isLocalApp(id)))return;
+    if(model.space(activeWorkspace,localDisplaySlot()).assistant.control!=='user')assistantControl('takeover');
+  }
+  document.addEventListener('pointerdown',takeWindowControl,true);
+  document.addEventListener('keydown',takeWindowControl,true);
   root.addEventListener('resize',()=>notify());
   root.addEventListener('storage',event=>{if(event.key===key){model.load(readDesktopStorage(key,{}));connect();notify();}});
   root.SpatialDisplayRoleDesktop={refresh:notify,snapshot:()=>model.snapshot()};

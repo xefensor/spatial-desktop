@@ -12,10 +12,11 @@ for(const address of ['javascript:alert(1)','data:text/plain,test','file:///home
 assert.deepEqual(Side.normalizeReference({kind:'file',path:'~/Documents/brief.md'},'/home/demo/work'),{id:'file:/home/demo/work/Documents/brief.md',kind:'file',label:'brief.md',path:'/home/demo/work/Documents/brief.md'});
 assert.equal(Side.normalizeReference({kind:'unknown',path:'/tmp'}),null);
 assert.deepEqual(Side.checklist({widgets:[{kind:'clock'},{kind:'checklist',id:'side-checklist',items:[{id:'one',text:'  Review brief  ',done:true},{id:'empty',text:' '},{id:'two',text:'Send notes',done:'yes'}]}]}),[{id:'one',text:'Review brief',done:true},{id:'two',text:'Send notes',done:false}]);
+assert.equal(Side.contextKey({setupKey:'pair',workspaceId:'work',localSlot:2,role:'side'}),Side.contextKey({setupKey:'pair',workspaceId:'work',localSlot:2,role:'assistant'}),'Who controls the display does not fork reference drafts');
 
-function harness(){
-  let workspace='work',slot=2,setup='pair',role='side';
-  const model=Roles.create();model.connect([{slot:1},{slot:2}]);model.setRole(2,'side');
+function harness(initialRole='side'){
+  let workspace='work',slot=2,setup='pair',role=initialRole;
+  const model=Roles.create();model.connect([{slot:1},{slot:2}]);model.setRole(2,initialRole);
   const opened=[],notes=[],writes=[],elements=new Map(),classNames=new Set(),listeners={};
   const document={activeElement:null};
   function element(selector=''){
@@ -23,7 +24,7 @@ function harness(){
       focus(){document.activeElement=this;},matches(query){return query.split(',').includes(selector);},
       hasAttribute(name){return this.attributes?.includes(name)||selector==='['+name+']';}};
   }
-  const host={innerHTML:'',classList:{add(...names){names.forEach(name=>classNames.add(name));},remove(...names){names.forEach(name=>classNames.delete(name));}},
+  const host={innerHTML:'',hidden:false,parentHidden:false,parentInert:false,closest(selector){return selector==='[hidden],[inert]'&&(this.hidden||this.parentHidden||this.parentInert)?this:null;},classList:{add(...names){names.forEach(name=>classNames.add(name));},remove(...names){names.forEach(name=>classNames.delete(name));}},
     querySelector(selector){if(!elements.has(selector))elements.set(selector,element(selector));return elements.get(selector);},
     contains(node){return Boolean(node?.owner);},
     addEventListener(type,fn){(listeners[type]||=[]).push(fn);},removeEventListener(type,fn){listeners[type]=(listeners[type]||[]).filter(value=>value!==fn);}};
@@ -41,7 +42,7 @@ function harness(){
     find('[data-side-reference-kind]').value=kind;find('[data-side-reference-address]').value=address;find('[data-side-reference-label]').value=label;
     dispatch('submit',{target:find('[data-side-reference-form]')});
   }
-  return {model,host,elements,listeners,context,controller,state,opened,notes,writes,find,dispatch,click,submitReference,
+  return {model,host,elements,listeners,context,controller,state,opened,notes,writes,find,dispatch,click,submitReference,document,
     refresh:()=>controller.refresh(),switchWorkspace(next,refresh=true){workspace=next;if(refresh)controller.refresh();},role(next,refresh=true){role=next;if(refresh)controller.refresh();},
     setup(next,refresh=true){setup=next;if(refresh)controller.refresh();},moveDisplay(next,refresh=true){slot=next;if(refresh)controller.refresh();}};
 }
@@ -83,6 +84,34 @@ function harness(){
   note.value='Game plan';h.dispatch('input',{target:note});h.switchWorkspace('work');assert.equal(note.value.length,8000);assert.equal(h.model.space('gaming',2).note,'Game plan');
 }
 
+for(const initialRole of ['side','assistant']){
+  const h=harness(initialRole),focus={label:'Focused canvas editor'};h.document.activeElement=focus;
+  h.submitReference('file','~/Documents/brief.md','Review brief');
+  const note=h.find('[data-side-note]');note.value='Shared workspace scratch';h.dispatch('input',{target:note});
+  h.find('[data-side-reference-address]').value='~/Documents/in-progress.md';h.find('[data-side-reference-label]').value='Unfinished pin';h.find('#displaySideTask').value='Unfinished checklist item';h.find('[data-side-pin-editor]').open=true;
+  h.dispatch('input',{target:h.find('[data-side-reference-address]')});
+  h.document.activeElement=focus;
+  const nextRole=initialRole==='side'?'assistant':'side';h.role(nextRole);
+  assert.equal(h.find('[data-side-reference-address]').value,'~/Documents/in-progress.md','Mode handoff keeps the unfinished pin address');assert.equal(h.find('[data-side-reference-label]').value,'Unfinished pin');assert.equal(h.find('#displaySideTask').value,'Unfinished checklist item');assert.equal(h.find('[data-side-pin-editor]').open,true);
+  assert.equal(note.value,'Shared workspace scratch');assert.equal(h.model.space('work',2).folders.length,1);assert.equal(h.document.activeElement,focus,'Refreshing or changing mode does not steal canvas focus');
+  h.click({'data-side-open':'file:/home/demo/work/Documents/brief.md'});assert.equal(h.opened.at(-1).item.path,'/home/demo/work/Documents/brief.md','Pins open from the same shelf in either mode');
+  note.value+=' after handoff';h.dispatch('input',{target:note});assert.equal(h.model.space('work',2).note,'Shared workspace scratch after handoff');
+  h.switchWorkspace('gaming');assert.equal(h.find('[data-side-reference-address]').value,'');assert.equal(h.find('#displaySideTask').value,'');
+  h.switchWorkspace('work');assert.equal(h.find('[data-side-reference-address]').value,'~/Documents/in-progress.md');assert.equal(h.find('#displaySideTask').value,'Unfinished checklist item','Returning to the Workspace restores the one shared draft');
+  assert.equal(h.context.SpatialDisplaySideTools.mount(h.host),h.controller);for(const type of ['click','change','input','submit','dragover','dragleave','drop'])assert.equal(h.listeners[type].length,1,'Mode handoffs keep one '+type+' handler');
+}
+
+for(const invisible of ['hidden','parentHidden','parentInert']){
+  const h=harness('assistant');h.host[invisible]=true;
+  h.submitReference('file','~/Documents/hidden.md');
+  h.find('[data-side-note]').value='Do not save from hidden controls';h.dispatch('input',{target:h.find('[data-side-note]')});
+  h.click({'data-side-action':'open-note'});h.click({'data-side-quick-folder':'/home/demo/work/Documents'});
+  let prevented=false;const dataTransfer={types:['text/uri-list'],getData:()=> 'https://example.com/hidden'};
+  h.dispatch('dragover',{dataTransfer,preventDefault(){prevented=true;}});assert.equal(prevented,false,'A hidden/inert shelf does not claim a drag intended for Chat');
+  h.dispatch('drop',{dataTransfer});assert.equal(h.writes.length,0,invisible+': hidden reference controls cannot write');assert.equal(h.opened.length,0);assert.equal(h.notes.length,0);
+  h.host[invisible]=false;h.refresh();h.submitReference('file','~/Documents/visible.md');assert.equal(h.writes.length,1,'References work again when explicitly shown');
+}
+
 for(const transition of ['workspace','role','setup','display']){
   const h=harness();h.find('[data-side-reference-address]').value='~/Documents/stale.md';
   if(transition==='workspace')h.switchWorkspace('gaming',false);
@@ -102,4 +131,4 @@ for(const transition of ['workspace','role','setup','display']){
   h.switchWorkspace('gaming');h.dispatch('drop',{dataTransfer:{types:['text/uri-list'],getData:name=>name==='text/uri-list'?'https://example.com/game':''}});
   assert.equal(h.model.space('gaming',2).folders[0].url,'https://example.com/game');assert.equal(h.model.space('work',2).folders.length,1);
 }
-console.log('Display Side tools passed: validated references, saved Workspace shelf, real open actions, note/checklist persistence, safe names, stale context guards, drops and idempotent mounts.');
+console.log('Display Side tools passed: one shared shelf across modes, reference/note/checklist persistence, draft and focus retention, hidden/inert drop guards, Workspace scope, stale controls and one-time listeners.');

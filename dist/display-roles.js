@@ -26,7 +26,11 @@
     return (Array.isArray(value)?value:[]).map(item=>typeof item==='string'?key(item):record(item)?cleanReference(item):undefined).filter(item=>item!==undefined&&item!=='');
   }
   function assistant(value){
-    return {status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:typeof value?.result==='string'?value.result:''};
+    const context=value?.context;
+    return {status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:typeof value?.result==='string'?value.result:'',
+      control:value?.control==='user'||value?.control!=='assistant'&&value?.status==='paused'?'user':'assistant',kind:['briefing','image'].includes(value?.kind)?value.kind:'',
+      context:record(context)&&key(context.workspace)&&key(context.setup)&&slot(context.slot)?{workspace:key(context.workspace),setup:key(context.setup),slot:slot(context.slot),folder:key(context.folder)}:null,
+      outputs:ids(value?.outputs)};
   }
   function content(value){
     return {windows:ids(value?.windows),widgets:references(value?.widgets),folders:references(value?.folders),note:typeof value?.note==='string'?value.note.slice(0,8000):'',assistant:assistant(value?.assistant)};

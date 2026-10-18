@@ -116,6 +116,28 @@ const checklistView=reopenedShelf.space('work',2).widgets;checklistView[0].items
 assert.equal(reopenedShelf.space('work',2).widgets[0].items[0].done,false,'Public checklist views cannot mutate persisted completion');
 assert.deepEqual(reopenedShelf.space('gaming',2).widgets,[],'A new Workspace starts with its own empty checklist');
 
+// Delegation belongs to the same persisted surface and keeps its captured task
+// folder even if the user changes Projects before reading the result.
+const context={workspace:'work',setup:Displays.signature(pair),slot:2,folder:'/Work/Projects/site'};
+reopenedShelf.setAssistant('work',2,{status:'done',control:'assistant',kind:'briefing',task:'Prepare briefing',result:'Opened note',context,outputs:['notes--2','dolphin--3','notes--2']});
+context.folder='/Other';
+let controlView=reopenedShelf.space('work',2).assistant;
+assert.equal(controlView.context.folder,'/Work/Projects/site');
+assert.deepEqual(controlView.outputs,['notes--2','dolphin--3']);
+reopenedShelf.setAssistant('work',2,{control:'user',status:'paused'});
+controlView=reopenedShelf.space('work',2).assistant;
+assert.equal(controlView.kind,'briefing');assert.equal(controlView.context.folder,'/Work/Projects/site','Taking control keeps the original task context');
+assert.equal(controlView.result,'Opened note');
+controlView.outputs.length=0;controlView.context.folder='/Changed';
+const controlReload=Displays.create(reopenedShelf.snapshot());controlReload.connect(pair);
+assert.deepEqual(controlReload.space('work',2).assistant,reopenedShelf.space('work',2).assistant,'Reload keeps authority and task outputs without mutable aliases');
+assert.equal(controlReload.space('gaming',2).assistant.control,'assistant');
+assert.deepEqual(controlReload.space('gaming',2).assistant.outputs,[],'A different Workspace does not inherit a task or result windows');
+controlReload.setAssistant('work',2,{control:'root',kind:'unknown',context:{workspace:'work',setup:'x',slot:-2},outputs:[42,null,'notes--2']});
+assert.equal(controlReload.space('work',2).assistant.control,'user','Legacy paused records retain user control even without a valid control field');
+assert.equal(controlReload.space('work',2).assistant.kind,'');assert.equal(controlReload.space('work',2).assistant.context,null);
+assert.deepEqual(controlReload.space('work',2).assistant.outputs,['notes--2']);
+
 // Malformed storage is repaired to one main and safe, independent content.
 const corrupt=Displays.create({setups:{[Displays.signature(pair)]:{roles:{1:'main',2:'main',8:'nonsense'}}},workspaces:{work:{displays:{1:{windows:['same','same',null,42],assistant:{status:'anything',task:7},widgets:[null,'',{},false]},2:{windows:['same','other'],folders:[{path:'/Documents'}]}}},broken:null}});
 corrupt.connect(pair);
