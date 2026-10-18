@@ -6,7 +6,7 @@
   const roles={
     main:{label:'Main workspace',summary:'Your primary place to work.',detail:'Desktops and Projects change here. One connected display is always the Main workspace.',preview:'main'},
     extended:{label:'Extended workspace',summary:'More room for the current desktop.',detail:'Windows share the desktop you are viewing on the Main workspace. Switching desktops or Projects updates both displays.',preview:'extended'},
-    side:{label:'Side space',summary:'Windows and references that stay beside your work.',detail:'Windows, chat and references stay here across desktops and Projects. Each Workspace keeps its own Side space.',preview:'side'}
+    side:{label:'Side space',summary:'Windows that stay beside your work.',detail:'Windows stay here across desktops and Projects. Use normal docked Areas, including Assistant for chat and optional control of this display. Each Workspace keeps its own Side space.',preview:'side'}
   };
   const mounted=new Set(),editors=new WeakMap();
   let nextEditor=0;

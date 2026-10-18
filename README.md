@@ -18,7 +18,7 @@ A browser prototype designed by Xef, exploring Workspaces, Projects, tiled windo
 - **Work with files.** Browse folders, create notes, pin material and inspect its history. Captured text, media, references and copies live in ordinary Project or Workspace folders. Pack a Project as a ZIP that also gathers linked local files.
 - **Ask Assistant.** Highlight text or select files, then use **Ask Assistant** or **F2+A**. Inputs stay attached to the request; reviewed conversions create actual browser-local files. Drafts and results use the Workspace or Project’s **Assistant** folder.
 - **Find your place.** **F2 / Super** opens Overview and search. Its horizontal tabs are **Windows**, **Apps**, **Projects & Files**, **Timeline** and **System**. **Meta+Tab / F2+Tab** opens the desktop map.
-- **Use another display.** Choose **Extended workspace** to follow the current desktop, or **Side space** to keep windows and references in place. Its **Allow Assistant to use this display** switch grants optional control for that display and Workspace. Turning it off pauses work without clearing anything.
+- **Use another display.** Choose **Extended workspace** to follow the current desktop, or **Side space** to keep windows in place. Both use the normal docked Areas. In Side space, the Assistant Area’s **Allow Assistant to use this display** switch grants optional control for that display and Workspace. Turning it off pauses work without clearing anything.
 
 Settings is a normal app window, available from Quick launch, search and the System gear. Desktop Guide introduces the interactions through short lessons and searchable, expandable topics.
 

@@ -7,7 +7,7 @@
 .display-side-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:9px}
 .display-side-section-heading>span{color:var(--sd-glass-muted);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .display-side-home{display:flex;gap:3px;min-width:0}
-.display-workbench .display-side-home button.surface-key{display:flex;flex:1 1 0;flex-direction:column;gap:4px;justify-content:center;min-width:0;padding:7px 2px;font-size:11px;line-height:1.35}
+:is(.display-workbench,.display-side-legacy) .display-side-home button.surface-key{display:flex;flex:1 1 0;flex-direction:column;gap:4px;justify-content:center;min-width:0;padding:7px 2px;font-size:11px;line-height:1.35}
 .display-side-home button svg{color:var(--display-role-accent)}
 .display-side-home button span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .display-side-reference-list{display:grid;gap:3px}
@@ -30,33 +30,47 @@
 .display-side-add label{display:block;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);min-width:0}
 .display-side-add label>span{font-size:11px;margin-left:3px;opacity:.8}
 .display-side-add :is(select,input){margin-top:4px}
-.display-workbench .display-side-add :is(select,input){box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:33px;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);padding:7px;font:inherit;font-size:11px;line-height:1.45}
+:is(.display-workbench,.display-side-legacy) .display-side-add :is(select,input){box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:33px;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);padding:7px;font:inherit;font-size:11px;line-height:1.45}
 .display-side-add select option{background:var(--sd-glass-face);color:var(--sd-glass-text)}
-.display-workbench .display-side-add button.surface-key{justify-self:start;min-height:31px;font-size:11px}
+:is(.display-workbench,.display-side-legacy) .display-side-add button.surface-key{justify-self:start;min-height:31px;font-size:11px}
 .display-side-feedback{font-size:11px;line-height:1.6;color:var(--display-role-accent);margin:5px 0 0;overflow-wrap:anywhere}
 .display-side-feedback:empty{display:none}
 .display-side-notepad{border-top:1px solid var(--sd-glass-groove);padding-top:16px}
-.display-workbench .display-side-notepad textarea{min-height:96px;max-height:350px;display:block;font-size:12px;line-height:1.65;padding:9px;resize:vertical}
+:is(.display-workbench,.display-side-legacy) .display-side-notepad textarea{min-height:96px;max-height:350px;display:block;font-size:12px;line-height:1.65;padding:9px;resize:vertical}
 .display-side-text-action{font-size:11px;line-height:1.5;padding:5px 0;text-align:left;color:var(--sd-glass-muted);margin-top:5px}
 .display-side-text-action:disabled{opacity:.45;cursor:default}
 .display-side-text-action:disabled:hover{background:transparent;color:var(--sd-glass-muted)}
 .display-side-task{display:flex;align-items:center;gap:3px;min-width:0}
 .display-side-task>label{display:flex;align-items:flex-start;gap:7px;flex:1;min-width:0;padding:6px 0;line-height:1.5;cursor:pointer}
-.display-workbench .display-side-task input[type="checkbox"]{appearance:auto;flex:none;width:13px;height:13px;min-height:0;max-width:13px;padding:0;margin:2px 0 0;accent-color:var(--display-role-accent);border-radius:0}
+:is(.display-workbench,.display-side-legacy) .display-side-task input[type="checkbox"]{appearance:auto;flex:none;width:13px;height:13px;min-height:0;max-width:13px;padding:0;margin:2px 0 0;accent-color:var(--display-role-accent);border-radius:0}
 .display-side-task>label>span{font-size:12px;overflow-wrap:anywhere;min-width:0}
 .display-side-task.is-done>label>span{color:var(--sd-glass-muted);text-decoration:line-through}
 .display-side-task-form{display:flex;gap:3px;margin-top:7px;min-width:0}
-.display-workbench .display-side-task-form input{flex:1;min-width:0;padding:7px;font-size:11px;line-height:1.5;min-height:33px}
-.display-workbench .display-side-task-form button.surface-key{flex:none;width:30px;min-height:33px;padding:4px;font-size:18px}
+:is(.display-workbench,.display-side-legacy) .display-side-task-form input{flex:1;min-width:0;padding:7px;font-size:11px;line-height:1.5;min-height:33px}
+:is(.display-workbench,.display-side-legacy) .display-side-task-form button.surface-key{flex:none;width:30px;min-height:33px;padding:4px;font-size:18px}
 .display-side-scope{font-size:11px;color:var(--sd-glass-muted);line-height:1.6;margin:8px 0 18px}.display-side-scope>summary{cursor:pointer;width:fit-content;padding:5px 0}.display-side-scope>p{margin:6px 0}
 .display-side-shelf.is-drop-target{outline:1px dashed var(--display-role-accent);outline-offset:5px;background:color-mix(in srgb,var(--display-role-accent) 5%,transparent)}
 .display-side-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .display-side-shelf :is(button,summary,select):focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
 @media(max-width:599px){
   .display-side-home{flex-wrap:wrap}
-  .display-workbench .display-side-home button.surface-key{flex-direction:row;flex-basis:100%;justify-content:flex-start;font-size:11px;gap:6px;padding:5px 3px}
+  :is(.display-workbench,.display-side-legacy) .display-side-home button.surface-key{flex-direction:row;flex-basis:100%;justify-content:flex-start;font-size:11px;gap:6px;padding:5px 3px}
   .display-side-reference-open{gap:5px}
   .display-side-reference-open>svg{width:14px;height:14px}
   .display-side-reference-open b{font-size:12px}
   .display-side-remove{width:19px;min-width:19px}
 }
+
+/* Compatibility tools appear only for material kept in the earlier Side shelf. */
+.project-area>.display-side-legacy{flex:0 1 auto;min-height:38px;max-height:50%;overflow:auto;overscroll-behavior:contain;margin:0 6px 8px;padding:0 6px;border-top:1px solid var(--soft-line);color:var(--sd-glass-text);--display-role-accent:var(--project-accent,var(--blue));scrollbar-width:thin}
+.project-area:has(>.display-side-legacy:not([hidden]))>.project-closed-state{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.display-side-legacy[hidden],.display-side-legacy [hidden]{display:none!important}
+.project-area[data-area-state="rail"]>.display-side-legacy{display:none!important}
+.display-side-legacy>summary{cursor:pointer;padding:10px 0;font-size:12px;line-height:1.5;font-weight:600}
+.display-side-legacy>summary:focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
+.display-side-legacy-scope{font-size:11px;line-height:1.5;color:var(--sd-glass-muted);margin:0 0 14px;overflow-wrap:anywhere}
+.display-side-legacy-body{min-width:0}
+.display-side-legacy button.surface-key{min-width:0;min-height:32px;padding:6px 8px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;color:inherit;cursor:pointer}
+.display-side-legacy button.surface-key svg{width:17px;height:17px;flex:none}
+.display-side-legacy :is(textarea,input:not([type="checkbox"])){box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);font:inherit}
+.display-side-legacy .display-side-section:last-of-type{margin-bottom:12px}

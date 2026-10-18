@@ -1736,7 +1736,7 @@ function miniMarkup(name) {
 }
 
 function renderMiniApps() {
-  const minimized = Object.keys(appState).filter(key => appState[key] === "minimized" && desktopPages.inColumn(activeWorkspace, key));
+  const minimized = Object.keys(appState).filter(key => appState[key] === "minimized" && (globalThis.SpatialDisplayRoleBridge?.windowInCurrentContext?.(key) ?? desktopPages.inColumn(activeWorkspace, key)));
   $("#miniStack").innerHTML = minimized.length ? minimized.map(miniMarkup).join("") : '<div class="mini-empty">Drag a window here to keep it controllable.</div>';
   applyAppPrimaryColors($("#miniStack"));
   prepareControlSemantics($("#miniStack"));
@@ -5233,13 +5233,14 @@ function workspaceFavoriteMarkup([asset, label]) {
 function renderOverviewWindows() {
   const target = $("#overviewWindowGrid");
   if (!target) return;
-  const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed" && desktopPages.inColumn(activeWorkspace, name));
+  const windowNames = Object.keys(appState).filter(name => appState[name] !== "closed" && (globalThis.SpatialDisplayRoleBridge?.windowInCurrentContext?.(name) ?? desktopPages.inColumn(activeWorkspace, name)));
   $("#workspaceOpenCount").textContent = windowNames.length + (windowNames.length === 1 ? " window" : " windows");
   const filter = $("#overviewWindowFilter")?.value || "all";
   const currentPage = desktopPages.current(activeWorkspace);
   const hotbarOrder = workspaceHotbarNames();
+  const sideSpace = Boolean(globalThis.SpatialDisplayRoleBridge?.isSideSpace?.());
   const selectedBond=desktopPages.selectedFullscreen?.(activeWorkspace);
-  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "open" && (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage) : appState[name] === (filter === "parked" ? "minimized" : "open")));
+  const visibleNames = windowNames.filter(name => filter === "all" || (filter === "desktop" ? appState[name] === "open" && (sideSpace || (selectedBond || desktopPages.fullscreenBond?.(activeWorkspace,name) ? desktopPages.visible(activeWorkspace,name,localDisplaySlot(),activeDisplayRoster().length) : desktopPages.pageOf(activeWorkspace,name) === currentPage)) : appState[name] === (filter === "parked" ? "minimized" : "open")));
   visibleNames.sort((a,b) => {
     const parkedA = appState[a] === "minimized", parkedB = appState[b] === "minimized";
     return Number(parkedA) - Number(parkedB)
@@ -5247,18 +5248,18 @@ function renderOverviewWindows() {
       || (hotbarOrder.indexOf(a) < 0 ? 999 : hotbarOrder.indexOf(a)) - (hotbarOrder.indexOf(b) < 0 ? 999 : hotbarOrder.indexOf(b)) || a.localeCompare(b);
   });
   const owner = desktopPages.column?.(activeWorkspace) || "workspace";
-  const scope = owner === "workspace" ? "Workspace" : "Project";
+  const scope = sideSpace ? "Side space" : owner === "workspace" ? "Workspace" : "Project";
   let group = "";
   target.innerHTML = visibleNames.map(name => {
     const info = appInfo[name];
     const minimized = appState[name] === "minimized";
     const bond=desktopPages.fullscreenBond?.(activeWorkspace,name);
-    const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked · " + scope + "-wide" : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open") + " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1));
+    const stateLabel = bond ? "Temporary desktop · linked to Desktop "+(bond.page+1)+" · Display "+bond.display : (minimized ? "Parked · " + scope + (sideSpace ? "" : "-wide") : (desktopHasWindowFocus && isLocalApp(name) && name === frontApp ? "Active" : "Open") + (sideSpace ? " · Side space" : " · Desktop " + (desktopPages.pageOf(activeWorkspace, name) + 1)));
     const frame = frameFor(name);
     const detail = globalThis.SpatialPreviewPrivacy?.hidden(name) ? 'Preview hidden' : (frame && $('.app-identity small', frame)?.textContent) || info.detail || '';
     const slot = hotbarOrder.indexOf(name) + 1;
     const shortcut = slot ? '<kbd class="overview-window-hotkey" aria-hidden="true">' + (slot <= 10 ? slot % 10 : slot <= 20 ? '⇧' + slot % 10 : slot) + '</kbd>' : '';
-    const nextGroup = minimized ? "Parked · " + scope + "-wide" : desktopPages.pageOf(activeWorkspace,name) === currentPage ? "This desktop" : "Other desktops";
+    const nextGroup = minimized ? "Parked · " + scope + (sideSpace ? "" : "-wide") : sideSpace ? "Side space" : desktopPages.pageOf(activeWorkspace,name) === currentPage ? "This desktop" : "Other desktops";
     const heading = nextGroup !== group ? '<h4 class="overview-window-group">' + nextGroup + '</h4>' : '';
     group = nextGroup;
     if (info.borderlessFullscreen && globalThis.SpatialVirtualScreen) return heading + SpatialVirtualScreen.overviewCard(name,{bond,shortcut,detail,minimized});
@@ -8238,7 +8239,7 @@ function workspaceHotbarNames() {
   // Minimized windows travel with the Apps Area, including its icon-only rail.
   return [...ordered,
     ...fullscreen,
-    ...names.filter(name => appState[name] === 'minimized' && desktopPages.inColumn(activeWorkspace, name))];
+    ...names.filter(name => appState[name] === 'minimized' && (globalThis.SpatialDisplayRoleBridge?.windowInCurrentContext?.(name) ?? desktopPages.inColumn(activeWorkspace, name)))];
 }
 function workspaceShortcutNames() {
   // Window titles and parked cards share one shortcut slot per window.

@@ -2,6 +2,12 @@
 
 Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
 
+## Side space Areas — 18 October 2026
+
+Side space now uses the ordinary docked Areas and their shared layout rules. The real Assistant Area contains display permission, monitor and Workspace scope, control status, Take over / Continue and paced examples. Its chat remains in the same Area through Expanded, Compact quick chat and Hidden recovery. File and selection tools live in Chat options; Apps provides parked windows and System provides everyday controls.
+
+The first setup places Assistant on Side space while later layout edits are retained. Side windows keep their own stable surface across main-display Project and desktop changes; normal Apps cards, shortcut numbers and Overview use that same context. Saved material from the earlier panel remains available in Files under a conditional Saved side-space tools disclosure. Display permission still starts off and remains specific to the monitor and Workspace.
+
 ## Readability pass — 18 October 2026
 
 The current interface gives names and useful state priority over repeated metadata. Empty desktops omit routine “Open here”, folder-type and saved-file subtitles. Search inherits scope from its section and shows an extra location when the result is elsewhere. Parked counts do not repeat their section name.

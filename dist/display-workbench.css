@@ -1,136 +1,50 @@
-/* Supporting displays keep one full-height tools panel against the viewport
-   edge. Window bounds reserve its width; there is no top or bottom bar. */
+/* Side space is one stable surface, so the main Project/page navigation is
+   omitted while ordinary docked Areas and their window bounds remain intact. */
 body:is([data-display-role="extended"],[data-display-role="side"]) .desktop-shell{--desktop-context-height:0px!important}
 body:is([data-display-role="extended"],[data-display-role="side"]) .desktop-context-header{display:none!important}
-body[data-display-role="side"] .desktop-shell>.workspace-zone{inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important}
-.display-workbench{position:absolute;inset:0;z-index:5;pointer-events:none;--display-workbench-width:380px;--display-role-accent:var(--role-project,var(--workspace-accent,var(--blue)));color:var(--sd-glass-text);font-size:12px}
-.display-workbench[hidden],.display-workbench [hidden]{display:none!important}
-body[data-display-role="side"] :is(#emptyWorkspace,.desktop-page-rail,.desktop-folder,#desktopContextColumns){display:none!important}
-.display-workbench[data-assistant-allowed="true"]{--display-role-accent:var(--role-ai,var(--violet,#b89aff))}
-.display-workbench-panel{display:flex;flex-direction:column;pointer-events:auto;box-sizing:border-box;position:absolute;inset:0 auto 0 0;width:min(var(--display-workbench-width),100%);padding:12px;overflow:hidden;overscroll-behavior:contain;scrollbar-width:thin;background:linear-gradient(125deg,rgba(255,255,255,.055),transparent 46%),color-mix(in srgb,var(--sd-glass-face) 94%,var(--display-role-accent) 6%);backdrop-filter:blur(24px) saturate(125%);-webkit-backdrop-filter:blur(24px) saturate(125%);border:0;border-right:1px solid var(--sd-glass-groove);box-shadow:inset -1px 0 var(--sd-glass-highlight)}
-.display-workbench-context{display:flex;align-items:center;gap:8px;flex:none;margin-bottom:4px;padding-bottom:4px}
-.display-workbench-context>div{flex:1;min-width:0}
-.display-workbench-context b{display:block;font-size:13px;font-weight:650;line-height:1.5}
-.display-workbench-context small{display:block;font-size:11px;color:var(--sd-glass-muted);line-height:1.5;overflow-wrap:anywhere;margin-top:0}
-.display-workbench button.surface-key{min-width:0;min-height:32px;border:1px solid transparent;border-radius:0;padding:6px 8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;color:inherit;cursor:pointer;--control-accent:var(--display-role-accent)}
-.display-workbench-context>button.surface-key{flex:none;width:32px;padding:6px}
-.display-workbench button.surface-key svg{height:17px;width:17px;flex:none}
-.display-workbench button:focus-visible,.display-workbench :is(textarea,input):focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
-.display-workbench-section{margin:0 0 20px;min-width:0}
-.display-workbench-section h2{font-size:12px;font-weight:650;margin:0 0 9px}
-.display-workbench-section p{font-size:12px;line-height:1.6;margin:7px 0 12px;color:var(--sd-glass-muted)}
-.display-folder-shortcuts{display:grid;gap:3px}
-.display-folder-shortcuts button.surface-key{width:100%;min-height:36px;justify-content:flex-start;text-align:left}
-.display-folder-shortcuts svg{color:var(--display-role-accent)}
-.display-side-note label{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:9px;font-size:12px;font-weight:650}
-.display-side-note label span{font-size:10px;color:var(--sd-glass-muted);font-weight:400}
-.display-workbench :is(textarea,input){box-sizing:border-box;width:100%;max-width:100%;min-width:0;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);padding:9px;font:inherit;line-height:1.6}
-.display-workbench textarea{min-height:100px;resize:vertical;max-height:300px}
-.display-workbench textarea::placeholder{color:var(--sd-glass-muted);opacity:.8}
-.display-clock{flex:none;margin-top:8px;border-top:1px solid var(--sd-glass-groove);padding-top:15px;display:flex;flex-direction:column;gap:3px}
-.display-clock time{font-size:28px;line-height:1.2;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:-.6px}
-.display-clock>span{font-size:11px;color:var(--sd-glass-muted)}
-.display-workbench-empty{position:absolute;left:var(--display-workbench-width);right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;text-align:center;box-sizing:border-box;color:var(--sd-glass-text);text-shadow:0 1px 8px rgba(0,0,0,.6)}
-.display-workbench-empty>svg{height:38px;width:38px;color:var(--display-role-accent);opacity:.8}
-.display-workbench-empty>b{font-size:16px;font-weight:500}
-.display-workbench-empty>p{font-size:12px;line-height:1.65;max-width:300px;margin:0;opacity:.8}
-.display-assistant-tools{display:flex;flex-direction:column;flex:1;min-height:0;gap:0}
-.display-assistant-chat{display:flex;flex:1;min-width:0;min-height:0}
-.display-empty-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;pointer-events:auto;max-width:400px}
-.display-workbench-status{font-size:11px;line-height:1.5;margin:0;color:var(--sd-glass-muted);flex:none}
-.display-workbench-status:empty{display:none}
-.display-parked-windows{flex:none;max-height:140px;overflow:auto;border-top:1px solid var(--sd-glass-groove);padding-top:8px;margin:8px 0 0}
-.display-parked-windows>summary{font-size:12px;font-weight:600;cursor:pointer;padding-bottom:8px}.display-parked-windows>summary span{font-weight:400;color:var(--sd-glass-muted);margin-left:5px}.display-parked-list{display:grid;gap:4px}
-.display-workbench .display-parked-restore{justify-content:flex-start!important;text-align:left;overflow-wrap:anywhere;width:100%}
-body[data-theme] .display-workbench.material-surface-glass button.display-role-primary,body[data-theme] .display-workbench .material-surface-glass button.display-role-primary{background:color-mix(in srgb,var(--display-role-accent) 12%,transparent)!important;border-color:color-mix(in srgb,var(--display-role-accent) 30%,transparent)!important}
-body[data-theme="light"] .display-workbench-empty{text-shadow:0 1px 8px rgba(255,255,255,.6)}
-@media(min-width:900px) and (max-width:1099px){.display-workbench{--display-workbench-width:340px}}
-@media(max-width:899px){
-  .display-workbench{--display-workbench-width:300px}
-  .display-workbench-panel{padding:12px}
-  .display-folder-shortcuts button.surface-key{padding-inline:5px;font-size:11px}
-  .display-workbench-empty{padding:18px}
-}
-@media(max-width:599px){
-  .display-workbench{--display-workbench-width:280px}
-  .display-workbench-panel{padding:10px}
-  .display-workbench-context{gap:3px}
-  .display-workbench-context b{font-size:12px}
-  .display-side-note label{display:block}
-  .display-side-note label span{display:block;margin-top:3px}
-  .display-clock time{font-size:24px}
-  .display-workbench-empty{padding:12px}
-}
-@media(prefers-reduced-transparency:reduce){
-  .display-workbench .display-workbench-panel{background:#142332;backdrop-filter:none;-webkit-backdrop-filter:none}
-  body[data-theme="light"] .display-workbench .display-workbench-panel{background:#eff5fa}
-}
-
-/* A shared tool panel keeps its geometry when control changes hands. */
-.display-assistant-control{flex:none;padding:3px 0 10px;margin:0}
-.display-assistant-permission{display:flex;align-items:center;gap:9px;min-height:30px;cursor:pointer;font-size:12px;line-height:1.45}
-.display-workbench .display-assistant-permission>input{appearance:none;flex:none;box-sizing:border-box;width:30px;height:17px;min-height:17px;max-height:17px;max-width:none;padding:0;margin:0;border:1px solid var(--sd-glass-groove);border-radius:10px;background:var(--sd-glass-face-deep);cursor:pointer;position:relative;box-shadow:inset 0 1px 3px #0002;transition:background 100ms ease}
+body[data-display-role="side"] .desktop-shell{--desktop-page-rail-width:0px;--desktop-page-rail-left-width:0px;--desktop-page-rail-right-width:0px}
+body[data-display-role="side"] :is(.desktop-page-rail,.desktop-folder,#desktopContextColumns){display:none!important}
+/* Monitor permission is part of the ordinary Assistant Area. Its saved dock,
+   sizing, Compact state and quick chat remain the normal Area implementation. */
+.ai-display-controls{--display-role-accent:var(--role-ai,var(--violet,#b89aff));display:flex;flex:none;flex-direction:column;min-width:0;min-height:0;color:var(--sd-glass-text)}
+.ai-display-controls[hidden],.ai-display-controls [hidden],.ai-display-tools[hidden]{display:none!important}
+.display-assistant-control{flex:none;padding:0 0 8px;border-bottom:1px solid var(--sd-glass-groove)}
+.display-assistant-permission{display:flex;align-items:center;gap:8px;min-height:30px;cursor:pointer;font-size:12px;line-height:1.5}
+.ai-area .display-assistant-permission>input{appearance:none;flex:none;box-sizing:border-box;position:relative;width:30px;height:17px;min-height:17px;max-height:17px;max-width:none;padding:0;margin:0;border:1px solid var(--sd-glass-groove);border-radius:10px;background:var(--sd-glass-face-deep);cursor:pointer;box-shadow:inset 0 1px 3px #0002}
 .display-assistant-permission>input::after{content:"";position:absolute;top:3px;left:3px;width:9px;height:9px;border-radius:50%;background:var(--sd-glass-muted);transition:transform 100ms ease,background 100ms ease}
-.display-workbench .display-assistant-permission>input:checked{background:color-mix(in srgb,var(--display-role-accent) 24%,var(--sd-glass-face-deep));border-color:var(--display-role-accent);box-shadow:inset 0 1px 3px #0002}
+.ai-area .display-assistant-permission>input:checked{background:color-mix(in srgb,var(--display-role-accent) 24%,var(--sd-glass-face-deep));border-color:var(--display-role-accent)}
 .display-assistant-permission>input:checked::after{transform:translateX(13px);background:var(--display-role-accent)}
 .display-assistant-permission>input:disabled{opacity:.5;cursor:wait}
-.display-permission-scope{display:block;margin:0 0 6px 39px;font-size:11px;line-height:1.45;color:var(--sd-glass-muted)}
+.display-permission-scope{display:block;margin:0 0 7px 38px;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere}
 .display-control-heading{display:flex;align-items:center;gap:7px;min-width:0}
-.display-control-heading>strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;font-weight:600}
-.display-control-heading>button.surface-key{font-size:11px;min-height:28px;padding:4px 7px}
+.display-control-heading>strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;font-weight:600;line-height:1.5}
+.ai-area .display-control-heading>button.surface-key{flex:none;font-size:11px;min-height:28px;padding:4px 6px}
 .display-control-indicator{flex:none;width:6px;height:6px;border-radius:50%;background:var(--display-role-accent);box-shadow:0 0 5px color-mix(in srgb,var(--display-role-accent) 40%,transparent)}
 .display-assistant-control[data-control="user"] .display-control-indicator{background:var(--sd-glass-muted);box-shadow:none}
 .display-assistant-control[data-control="working"] .display-control-indicator{animation:display-control-working 1.2s ease-in-out infinite alternate}
-/* Examples temporarily use the panel’s full tool viewport. Chat nodes stay
-   mounted, keeping drafts and focus state without compressing the composer. */
+.ai-display-tools{border-top:1px solid var(--sd-glass-groove);margin-top:7px;padding-top:7px}
+.ai-area .ai-display-tools>button.surface-key{display:flex;justify-content:flex-start;width:100%;text-align:left;white-space:normal;min-height:32px}
+.display-assistant-feedback{font-size:11px;line-height:1.5;margin:4px 0 0;color:var(--sd-glass-muted);flex:none}
+.display-assistant-feedback:empty{display:none}
+/* Examples use the existing conversation viewport. The live chat stays in its
+   Area with its handlers and draft; nothing is moved to another panel. */
+.ai-content[data-display-examples="open"]>.ai-display-controls{flex:1 1 0;gap:8px}
+.ai-content[data-display-examples="open"]>:is(.ai-chat-toolbar,.ai-rename-form,.ai-context-sources,.ai-chat,.ai-composer){display:none!important}
 .display-assistant-examples{display:flex;flex:1 1 0;flex-direction:column;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:3px}
 .display-examples-heading{flex:none;margin:0 0 9px}
 .display-examples-heading h2{font-size:16px;font-weight:600;line-height:1.4;margin:10px 0 0}
-.display-workbench .display-examples-heading>button{justify-content:flex-start;padding-inline:0;font-size:11px}
+.ai-area .display-examples-heading>button{justify-content:flex-start;padding-inline:0;font-size:11px}
 .display-examples-intro{font-size:12px;line-height:1.6;color:var(--sd-glass-muted);margin:0 0 7px}
 .display-examples-local{font-size:11px;line-height:1.5;color:var(--sd-glass-muted);margin:0 0 16px}
 .display-examples-access{border-left:2px solid var(--display-role-accent);padding-left:10px;margin:0 0 12px}
 .display-examples-access>p{font-size:11px;line-height:1.6;margin:0 0 5px;color:var(--sd-glass-muted)}
-.display-examples-access>button{font-size:11px!important}
+.ai-area .display-examples-access>button{font-size:11px}
 .display-examples-list{display:grid;gap:14px;flex:none;padding-bottom:12px}
 .display-example-card{border-top:1px solid var(--sd-glass-groove);padding-top:12px;min-width:0}
 .display-example-card h3{font-size:13px;font-weight:600;line-height:1.5;margin:0 0 5px}
 .display-example-outcome{font-size:12px;line-height:1.5;margin:0 0 5px;overflow-wrap:anywhere}
 .display-example-input{display:block;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);margin-bottom:8px;overflow-wrap:anywhere}
-.display-workbench .display-example-card>button{font-size:11px;justify-content:flex-start;padding:5px 10px;min-height:30px}
+.ai-area .display-example-card>button{font-size:11px;justify-content:flex-start;padding:5px 10px;min-height:30px}
 .display-example-card>button:disabled{opacity:.4;cursor:default}
-.display-workbench[data-display-examples="open"] :is(.display-tool-navigation,.display-side-tools,.display-assistant-tools,.display-parked-windows,.display-clock){display:none!important}
-.display-tool-navigation{display:flex;align-items:center;gap:8px;flex:none;border-bottom:1px solid var(--sd-glass-groove);margin:0 0 8px;min-height:34px;position:relative}
-.display-tool-tabs{display:flex;flex:1;gap:15px;min-height:34px}
-.display-tool-tabs>.nav-choice{font:inherit;font-weight:600;color:var(--sd-glass-muted);padding:6px 0 9px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;cursor:pointer;position:relative}
-.display-tool-tabs>.nav-choice[aria-selected="true"]{color:var(--sd-glass-text);border-bottom-color:var(--display-role-accent)}
-.display-side-tools{flex:1;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:3px}
-.display-side-tools .display-side-section{margin-bottom:18px}
-.display-workbench[data-display-tool="chat"] .display-assistant-tools{flex:1 1 0}
 @keyframes display-control-working{from{opacity:.55}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){.display-assistant-control[data-control="working"] .display-control-indicator{animation:none}}
-@media(max-height:700px){
-  .display-workbench-context{margin-bottom:6px;padding-bottom:5px}
-  .display-assistant-control{padding:5px 0;margin-bottom:3px}
-  .display-tool-navigation{margin-bottom:6px;min-height:29px}.display-tool-tabs{min-height:29px}
-  .display-parked-windows{max-height:90px;padding-top:5px;margin-top:5px}
-  .display-clock{display:none}
-}
-
-/* Menus keep configuration and occasional tools out of the live conversation. */
-.display-workbench-menu{position:relative;flex:none;min-width:0}
-.display-workbench-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:28px;padding:2px 6px;color:var(--sd-glass-muted);font-size:11px;line-height:1.4;user-select:none}
-.display-workbench-menu>summary::-webkit-details-marker{display:none}
-.display-workbench-menu>summary:hover,.display-workbench-menu[open]>summary{color:var(--sd-glass-text);background:var(--sd-glass-hover)}
-.display-workbench-menu>summary:focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
-.display-options>summary{font-size:23px;min-width:24px;line-height:1}
-.display-workbench-menu-body{position:absolute;z-index:30;right:0;top:calc(100% + 5px);box-sizing:border-box;width:260px;max-width:calc(100vw - 32px);max-height:calc(100vh - 130px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:9px;background:var(--sd-glass-face);backdrop-filter:blur(28px) saturate(125%);-webkit-backdrop-filter:blur(28px) saturate(125%);border:1px solid var(--sd-glass-groove);box-shadow:0 8px 24px #0003}
-.display-workbench-menu-body>p{font-size:11px;line-height:1.6;color:var(--sd-glass-muted);padding:3px 6px;margin:0 0 7px}
-.display-workbench .display-workbench-menu-body>button{display:flex;justify-content:flex-start;text-align:left;width:100%;font-size:12px;min-height:35px;padding:7px 6px}
-.display-workbench .display-working-folder{gap:8px;border-top:1px solid var(--sd-glass-groove);margin-top:5px;padding-top:10px!important}
-.display-working-folder>span{display:block;min-width:0;flex:1}
-.display-working-folder b{display:block;font-size:12px;font-weight:400}
-.display-working-folder small{display:block;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere;margin-top:1px}
-.display-working-folder>svg{color:var(--display-role-accent)}
-
-@media(prefers-reduced-motion:reduce){.display-workbench .display-assistant-permission>input,.display-assistant-permission>input::after{transition:none}}
+@media(prefers-reduced-motion:reduce){.display-assistant-control[data-control="working"] .display-control-indicator{animation:none}.display-assistant-permission>input::after{transition:none}}
