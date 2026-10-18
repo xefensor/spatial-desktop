@@ -91,7 +91,7 @@ html[data-guide-system-overview="false"] [data-overview-panel="system"]{visibili
 .guide-current-mission{font-size:14px!important;line-height:1.5!important;font-weight:550;color:var(--text)!important;margin:7px 0!important}
 .guide-current-hint{font-size:12px!important;margin:0 0 9px!important}
 .guide-mission-count{display:block;font-size:10px;color:var(--muted);margin-bottom:8px}
-.guide-task #guideTaskStatus{display:block;font-size:12px;line-height:1.5;color:var(--app-primary);margin-top:8px}
+.guide-task #guideTaskStatus{display:block;font-size:12px;line-height:1.5;color:var(--text);margin-top:8px}
 .guide-more{border-top:1px solid var(--line);margin-top:13px;padding-top:10px}
 .guide-more summary{cursor:pointer;font-size:11px;color:var(--muted)}
 .guide-more p{font-size:12px!important;margin:10px 0 0!important}
