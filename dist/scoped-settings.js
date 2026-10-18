@@ -52,6 +52,7 @@
   const navigationKey='spatial-settings-nav-v1';
   let navigation={};try{const saved=JSON.parse(desktopStorage.getItem(navigationKey)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))navigation=saved;}catch{}
   const state={category:'home',query:'',history:[],contextKey:'',options:{},workspaceId:activeWorkspace};
+  const displayHosts=new WeakSet();
   function restoreNavigation(){
     const saved=navigation[activeWorkspace]||{};
     state.workspaceId=activeWorkspace;state.category=categoryFor(saved.category).id;
@@ -120,7 +121,6 @@
       page.innerHTML='<header class="settings-page-heading"><h2 tabindex="-1">Search settings</h2><p role="status" aria-live="polite">'+results.length+' result'+(results.length===1?'':'s')+' for “'+escape(state.query)+'”</p></header><div class="settings-search-results">'+(results.length?results.map(result=>'<button type="button" class="settings-search-result nav-choice" data-settings-category="'+result.category+'" data-settings-result="'+result.id+'">'+icon(categoryFor(result.category).icon)+'<span><small>'+categoryFor(result.category).label+'</small><b>'+result.title+'</b><span>'+result.detail+'</span></span>'+icon('right')+'</button>').join(''):'<div class="settings-empty"><h3>No settings found</h3><p>Try a word such as “theme”, “monitor”, “downloads” or “Areas”.</p></div>')+'</div>';
     }else{
       page.innerHTML='<header class="settings-page-heading"><h2 tabindex="-1">'+category.label+'</h2><p>'+category.detail+'</p></header>'+scopeBanner(category,ctx)+'<div class="settings-page-body">'+pageContent(category.id,ctx)+'</div>';
-      if(category.id==='displays')root.SpatialDisplaySettings?.mount(page.querySelector('[data-settings-displays]'),state.options.slot);
     }
     host.querySelectorAll('[data-settings-category]').forEach(button=>{if(!button.classList.contains('settings-nav'))return;const active=!state.query&&button.dataset.settingsCategory===state.category;button.classList.toggle('is-active',active);button.setAttribute('aria-pressed',String(active));if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     host.querySelector('[data-settings-back]').disabled=!state.query&&!state.history.length;
@@ -132,6 +132,13 @@
     }else if(focus)page.querySelector('h2')?.focus({preventScroll:true});
   }
   function refreshControls(){
+    // Navigation is restored before the Displays module finishes loading.
+    // Mount it when available, once per rendered page, so a refresh never
+    // re-applies the original deep-link slot over the user's monitor choice.
+    const displays=host.querySelector('[data-settings-displays]');
+    if(displays&&!displayHosts.has(displays)&&root.SpatialDisplaySettings?.mount){
+      if(root.SpatialDisplaySettings.mount(displays,state.options.slot))displayHosts.add(displays);
+    }
     const select=host.querySelector('[data-settings-theme]');if(select&&document.activeElement!==select)select.value=SpatialDesktopTheme.preference;
     const markers=host.querySelector('[data-settings-desktop-markers]');if(markers&&document.activeElement!==markers)markers.value=root.SpatialDesktopMarkers?.preference||'icons';
     host.querySelectorAll('[data-settings-area]').forEach(select=>{const name=select.dataset.settingsArea,area=areaFor(name);if(!area)return;const value=area.hidden?'hidden':area.dataset.areaState;select.value=value;const description=host.querySelector('[data-settings-area-state="'+name+'"]');if(description)description.textContent=value==='hidden'?'Hidden':layoutStateLabel(value);});
@@ -221,5 +228,6 @@
   };
   const originalUpdate=updateDesktopPageUi;updateDesktopPageUi=function(...args){const result=originalUpdate(...args);updateNotes();return result;};
   root.addEventListener('storage',refresh);
+  document.addEventListener('DOMContentLoaded',refresh,{once:true});
   root.SpatialSettings={open,refresh,navigate,search,catalog,categories,category:()=>state.category};updateNotes();
 })(typeof globalThis!=='undefined'?globalThis:this);

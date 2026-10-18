@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path');
-const Roles=require('../dist/display-roles.js'),Pages=require('../dist/desktop-pages.js'),Tiles=require('../dist/spatial-tiling.js'),AssistantFiles=require('../dist/assistant-files.js');
+const Roles=require('../dist/display-roles.js'),Pages=require('../dist/desktop-pages.js'),Tiles=require('../dist/spatial-tiling.js'),AssistantFiles=require('../dist/assistant-files.js'),Resources=require('../dist/empty-desktop-resources.js');
 const source=fs.readFileSync(path.join(__dirname,'../dist/display-role-desktop.js'),'utf8');
 const shell=fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.js'),'utf8');
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -280,4 +280,28 @@ for(const [viewport,sidePanel,assistantPanel] of [[1440,240,380],[1100,240,380],
   c.localSlot=1;assert.equal(c.isLocalApp(browser),false,'Opening helper references never covers the main display');
 }
 
-console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');
+{
+  const {c}=fixture();c.SpatialEmptyDesktopResources=Resources;
+  c.workspaceProfiles.work.folders=[['Documents','Workspace folder','folder'],['.spatial-workspace.toml','Workspace settings','config']];
+  c.projectSpaces={site:{name:'Website',root:'/Work/Projects/site',originWorkspace:'work',files:[['index.html','Website entry','document']]},closed:{name:'Closed Project',root:'/Work/Projects/closed',originWorkspace:'work',files:[['closed.md','Closed file','document']]},game:{name:'Game notes',root:'/Gaming/Projects/game',originWorkspace:'gaming',files:[['guide.md','Game guide','document']]}};
+  c.openProjectNames=(workspace=c.activeWorkspace)=>workspace==='work'?['site']:['game'];
+  c.workspaceDownloads={snapshot:()=>({directories:['/Work/Documents/Reports','/Gaming/Downloads'],files:[
+    {workspace:'work',directory:'/Work/Documents',name:'brief.md',content:'Do not copy file contents into the picker'},
+    {workspace:'work',project:'site',directory:'/Work/Projects/site',name:'review.md'},
+    {workspace:'work',project:'closed',directory:'/Work/Projects/closed',name:'closed-secret.md'},
+    {workspace:'gaming',directory:'/Gaming/Downloads',name:'game.txt'},
+    {workspace:'work',directory:'/Gaming/Downloads',name:'mislabeled-private.txt'},
+  ]})};
+  c.SpatialMemoryDesktop={fileRows:directory=>directory==='/Work'?[['scratch.md','Saved note','document']]:[]};
+  c.SpatialDisplayRoleBridge.setRole(2,'side');c.localSlot=2;
+  const options=clone(c.SpatialDisplayRoleBridge.state().referenceOptions),paths=options.map(option=>option.path);
+  for(const path of ['/Work','/Work/Documents','/Work/Documents/Reports','/Work/Documents/brief.md','/Work/scratch.md','/Work/Projects/site','/Work/Projects/site/index.html','/Work/Projects/site/review.md'])assert(paths.includes(path),'The real resource collector supplies '+path+' to the Side picker');
+  assert.equal(options.find(option=>option.path==='/Work/Documents/brief.md').kind,'file');assert.equal(options.find(option=>option.path==='/Work/Documents').kind,'folder');
+  assert.equal(new Set(paths).size,paths.length,'Workspace and Project collections deduplicate Home references');
+  assert(!paths.some(path=>path.startsWith('/Gaming')||path.startsWith('/Work/Projects/closed')),'Foreign Workspace and closed Project references stay out');
+  assert(!JSON.stringify(options).includes('Do not copy file contents'),'The picker contains references rather than document contents');
+  c.activeWorkspace='gaming';const gamingPaths=c.SpatialDisplayRoleBridge.state().referenceOptions.map(option=>option.path);
+  assert(gamingPaths.includes('/Gaming/Downloads/game.txt'));assert(gamingPaths.includes('/Gaming/Projects/game/guide.md'));assert(!gamingPaths.some(path=>path.startsWith('/Work')),'Switching Workspace replaces the catalogue');
+}
+
+console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, scoped reference catalogue, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');

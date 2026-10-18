@@ -57,22 +57,23 @@ async function displayChecks(){
 // Small DOM fixture executes the shipped renderer and its delegated handlers.
 // It parses the generated elements so tests click real controls rather than
 // reproducing navigation logic in test helpers.
-function settingsHarness(saved={}){
+function settingsHarness(saved={},options={}){
   let document;
   const storage={...saved};
   const decode=value=>String(value??'').replaceAll('&quot;','"').replaceAll('&#39;',"'").replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&');
   function node(tag='div',attributes={}){
     const classes=new Set((attributes.class||'').split(/\s+/).filter(Boolean));
-    const out={tag,attributes:{...attributes},children:[],dataset:{},events:{},value:attributes.value||'',checked:'checked' in attributes,disabled:'disabled' in attributes,hidden:'hidden' in attributes,textContent:'',scrollTop:0,
+    const out={tag,isConnected:true,attributes:{...attributes},children:[],dataset:{},events:{},value:attributes.value||'',checked:'checked' in attributes,disabled:'disabled' in attributes,hidden:'hidden' in attributes,textContent:'',scrollTop:0,
       classList:{contains:name=>classes.has(name),add:name=>classes.add(name),remove:name=>classes.delete(name),toggle(name,active){if(active===undefined)active=!classes.has(name);if(active)classes.add(name);else classes.delete(name);}},
       getAttribute:name=>out.attributes[name]??null,setAttribute(name,value){out.attributes[name]=String(value);},removeAttribute(name){delete out.attributes[name];},
       addEventListener(type,callback){(out.events[type]||=[]).push(callback);},
       matches(selector){if(selector.startsWith('.'))return classes.has(selector.slice(1));if(selector.startsWith('#'))return out.attributes.id===selector.slice(1);const match=selector.match(/^\[([^=\]]+)(?:="([^"]*)")?\]$/);if(match)return match[1] in out.attributes&&(match[2]===undefined||out.attributes[match[1]]===match[2]);return tag===selector;},
       closest(selector){for(let item=out;item;item=item.parentElement)if(item.matches(selector))return item;return null;},
-      querySelectorAll(selector){const result=[];for(const child of out.children){if(child.matches(selector))result.push(child);result.push(...child.querySelectorAll(selector));}return result;},querySelector(selector){return out.querySelectorAll(selector)[0]||null;},
+      contains(target){for(let item=target;item;item=item.parentElement)if(item===out)return true;return false;},
+      querySelectorAll(selector){if(selector.includes(' ')){const [ancestor,...rest]=selector.split(/\s+/);return out.querySelectorAll(ancestor).flatMap(child=>child.querySelectorAll(rest.join(' ')));}const result=[];for(const child of out.children){if(child.matches(selector))result.push(child);result.push(...child.querySelectorAll(selector));}return result;},querySelector(selector){return out.querySelectorAll(selector)[0]||null;},
       focus(){document.activeElement=out;},scrollIntoView(){out.scrolled=true;},prepend(child){child.parentElement=out;out.children.unshift(child);},click(){for(const callback of document.events.click||[])callback({target:out});},
       set innerHTML(html){out.html=String(html);out.children=[];const stack=[out];for(const match of out.html.matchAll(/<\/?([a-z][\w-]*)([^>]*)>/gi)){
-        const name=match[1].toLowerCase();if(match[0].startsWith('</')){if(stack.length>1)stack.pop();continue;}
+        const name=match[1].toLowerCase();if(match[0].startsWith('</')){const index=stack.map(item=>item.tag).lastIndexOf(name);if(index>0)stack.length=index;continue;}
         const attrs={};for(const item of match[2].matchAll(/([\w:-]+)(?:="([^"]*)"|'([^']*)'|=([^\s>]+))?/g))attrs[item[1]]=decode(item[2]??item[3]??item[4]??'');
         const child=node(name,attrs);child.parentElement=stack.at(-1);stack.at(-1).children.push(child);if(!['input','use','br','hr','img','meta','link'].includes(name)&&!match[0].endsWith('/>'))stack.push(child);
       }},get innerHTML(){return out.html||'';}
@@ -91,7 +92,7 @@ function settingsHarness(saved={}){
     setSystemToggle(label,active){calls.system.push([label,active]);sourceToggles.find(button=>button.textContent===label).classList.toggle('is-active',active);},
     SpatialDesktopTheme:{preference:'graphite',setPreference(value){this.preference=value;calls.theme.push(value);}},SpatialDesktopMarkers:{preference:'icons',setPreference(value){this.preference=value;calls.markers.push(value);this.onChange?.();}},
     SpatialHomeFolders:{downloadDestination:(profiles,projects,workspace,project)=>projects[project]?.downloadToProject?projects[project].root+'/Downloads':profiles[workspace].home+'/Downloads'},
-    SpatialDisplaySettings:{mount:(host,slot)=>calls.mounts.push({host,slot}),refresh(){}},setUniversalSearchOpen:value=>calls.overview.push(value),launchAppHere:id=>calls.launched.push(id),
+    SpatialDisplaySettings:options.displaysReady===false?undefined:{mount(host,slot){calls.mounts.push({host,slot});return host;},refresh(){}},setUniversalSearchOpen:value=>calls.overview.push(value),launchAppHere:id=>calls.launched.push(id),
     ensureProjectDownloads:id=>calls.downloads.push(id),persistProjectState:()=>calls.persist++,refreshDownloadUi(){},renderProjectSpace(){},queueDesktopStateBroadcast:()=>calls.broadcasts++,
     openProjectEditor:(...args)=>calls.manage.push(args),renderProjectEditor(){},updateDesktopPageUi(){},renderDesktopPageRail:()=>calls.markerRenders++,scheduleWindowTiling:()=>calls.tiling++,
     openFileLocation:path=>calls.folders.push(path),addEventListener(){},queueMicrotask:callback=>callback(),
@@ -153,6 +154,24 @@ function settingsChecks(){
   h.context.SpatialGuide={model:{active:()=>true,allows:()=>false}};const launched=h.calls.launched.length;h.api.open('areas');assert.equal(h.calls.launched.length,launched,'The early Guide cannot open gated Settings');h.api.navigate('areas');assert.equal(h.find('[data-settings-area]'),null,'Guide restrictions also hide direct category controls');
 }
 
+// Classic scripts restore Settings before loading the embedded Displays
+// editor. Exercise that production load order with both real modules.
+function delayedDisplaysChecks(){
+  const h=settingsHarness({'spatial-settings-nav-v1':JSON.stringify({work:{category:'displays',query:'',history:['home']}})},{displaysReady:false});
+  const empty=h.find('[data-settings-displays]');assert(empty);assert.equal(empty.innerHTML,'','The restored page initially waits for its editor module');
+  h.context.SpatialDisplayRoleBridge={state:()=>({workspace:'Work',mainSlot:1,localSlot:1,displays:[{slot:1,label:'Display 1',role:'main',width:1440,height:900},{slot:2,label:'Display 2',role:'assistant',width:1440,height:900}]})};
+  vm.runInContext(fs.readFileSync(require.resolve('../dist/display-settings.js'),'utf8'),h.context);
+  for(const ready of h.document.events.DOMContentLoaded||[])ready();
+  assert.equal(h.find('[data-settings-displays]'),empty,'Module readiness fills the existing page without rebuilding navigation');
+  assert(empty.classList.contains('settings-displays-editor'));assert.equal(empty.querySelector('legend').textContent,'Use Display 1 as');assert.equal(empty.events.click.length,1,'The delayed editor binds one listener');
+  h.api.navigate('displays',{slot:1});const editor=h.find('[data-settings-displays]');
+  editor.events.click[0]({target:editor.querySelector('[data-display-select="2"]')});
+  assert.equal(editor.querySelector('legend').textContent,'Use Display 2 as');
+  h.api.refresh();h.api.open();h.api.refresh();
+  assert.equal(editor.querySelector('legend').textContent,'Use Display 2 as','Repeated refresh/reopen preserves the user-selected display instead of reapplying the original slot');
+  assert.equal(editor.events.click.length,1);assert.equal(editor.events.change.length,1);
+}
+
 // Exercise the Settings adapter around the real desktop open/minimize/close
 // functions and the real saved desktop/tiling models.
 function lifecycleChecks(){
@@ -207,4 +226,4 @@ function workspaceCaptureChecks(){
   assert.equal(documentField.value,'Current document','Ordinary app document fields still restore');assert.equal(settingsField.value,'live preference');assert.equal(settingsReads,0,'Neither capture nor restore reads positional Settings controls');assert.equal(saves,1);
 }
 
-(async()=>{settingsChecks();lifecycleChecks();workspaceCaptureChecks();await displayChecks();console.log('Settings app passed: searchable categories, real navigation and shortcuts, live controls, safe current scopes, fullscreen ownership, Guide gates, independent embedded Displays and window-model identity.');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{settingsChecks();delayedDisplaysChecks();lifecycleChecks();workspaceCaptureChecks();await displayChecks();console.log('Settings app passed: searchable categories, real navigation and shortcuts, live controls, safe current scopes, fullscreen ownership, Guide gates, independent embedded Displays and window-model identity.');})().catch(error=>{console.error(error);process.exitCode=1;});

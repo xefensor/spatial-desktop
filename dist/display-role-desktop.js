@@ -23,7 +23,7 @@
     for(const column of columns){
       const resources=root.SpatialEmptyDesktopResources.collect({workspace:activeWorkspace,column,profiles:workspaceProfiles,projects:projectSpaces,downloads:workspaceDownloads.snapshot(),stashRows:path=>root.SpatialMemoryDesktop?.fileRows(path)});
       for(const [kind,rows] of [['folder',resources.folders],['file',resources.files]])for(const row of rows){
-        if(row.target&&!options.has(row.target))options.set(row.target,{kind,path:row.target,label:row.label,detail:row.detail});
+        if(row.path&&!options.has(row.path))options.set(row.path,{kind,path:row.path,label:row.label,detail:row.detail});
       }
     }
     return [...options.values()].slice(0,150);
