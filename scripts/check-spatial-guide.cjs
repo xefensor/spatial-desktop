@@ -441,12 +441,14 @@ assert.equal(boot(pending.storage).api.model.state.exitStatus,'skipped','Reloadi
 console.log('Desktop exit choices passed: skip/completion, clean/demo reset, preference preservation and late autosave isolation.');
 
 const syncBoundary=desktop.slice(desktop.indexOf('function postDesktopSyncMessage('),desktop.indexOf('function prepareCrossDisplaySync('));
+const syncPresenceGrace=desktop.slice(desktop.indexOf('const DESKTOP_SYNC_PRESENCE_GRACE_MS ='),desktop.indexOf('const workspaceDisplayAssignments ='));
+assert(syncPresenceGrace.startsWith('const DESKTOP_SYNC_PRESENCE_GRACE_MS ='),'The synchronization fixture uses the production presence grace');
 let sent=[],applied=[],closed=0;
 const syncContext=vm.createContext({cancelAreaPointerInteraction:null,cancelWindowPointerInteraction:null,SpatialGuide:{model:{active:()=>true},syncScope:'guide:test',displayValid:true},desktopSyncScope:'guide:test',desktopSyncSource:'main',desktopSyncLastStamp:0,desktopSyncReady:true,desktopSyncApplying:false,desktopSyncTimer:0,desktopSyncAnnounced:false,
  desktopSyncChannel:{postMessage(packet){sent.push(packet);}},localDisplayDescriptor:()=>({guideCompanion:false}),captureDesktopSyncState:()=>({schema:4}),desktopStorage:{setItem(){}},desktopSyncPeers:new Map(),refreshIntentAreas(){},localDisplaySlot:()=>1,localDisplayRoleLabel:()=> 'Main display',
  document:{body:{classList:{toggle(){}}}},$(){return null;},areaFor(){return null;},rebalanceAreaDisplays:()=>false,applyExtendedDesktopPartition(){},showToast(){},workspaceProfiles:{general:{label:'General'}},activeWorkspace:'general',setTimeout,clearTimeout,
  applyDesktopSyncState(state){applied.push(state);},close(){closed++;}});
-vm.runInContext(syncBoundary,syncContext);
+vm.runInContext(syncPresenceGrace+syncBoundary,syncContext);
 syncContext.postDesktopSyncMessage({type:'presence'});assert.equal(sent[0].scope,'guide:test');
 syncContext.receiveDesktopSyncMessage({source:'normal',scope:'desktop',type:'state',stamp:1,state:{wrong:true}});assert(!applied.length);assert(!syncContext.desktopSyncPeers.size);
 syncContext.receiveDesktopSyncMessage({source:'old-practice',scope:'guide:another',type:'state',stamp:2,state:{wrong:true}});assert(!applied.length);

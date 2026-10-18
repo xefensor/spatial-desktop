@@ -24,6 +24,19 @@
   let displayTask=null,taskSignature='',taskQuestionKey='';
   const taskStages=new Set(['plan','source','question','output']);
   const nearConversationEnd=()=>{const chat=$('.ai-chat',content);return chat.scrollHeight-(chat.scrollTop||0)-(chat.clientHeight||0)<90;};
+  let followingChat='',followRevision=0;
+  const conversationKey=()=>activeWorkspace+':'+model.session(activeWorkspace).id;
+  const shouldFollowConversation=()=>followingChat===conversationKey()||nearConversationEnd();
+  function stopFollowingConversation(){followingChat='';followRevision++;}
+  function followConversation(){
+    const key=conversationKey(),revision=++followRevision,chat=$('.ai-chat',content);followingChat=key;chat.scrollTop=chat.scrollHeight;
+    if(typeof requestAnimationFrame!=='function'){followingChat='';return;}
+    // Replacing messages and changing the question tray can adjust browser
+    // scroll anchoring after the synchronous render. Settle the same reader
+    // intent across that layout, without retaining it after a user scrolls up.
+    requestAnimationFrame(()=>{if(revision!==followRevision||followingChat!==key||conversationKey()!==key)return;chat.scrollTop=chat.scrollHeight;requestAnimationFrame(()=>{if(revision!==followRevision||followingChat!==key||conversationKey()!==key)return;chat.scrollTop=chat.scrollHeight;followingChat='';});});
+  }
+  const conversation=$('.ai-chat',content);conversation.addEventListener('wheel',stopFollowingConversation,{passive:true});conversation.addEventListener('pointerdown',stopFollowingConversation,{passive:true});conversation.addEventListener('keydown',event=>{if(['PageUp','PageDown','Home','End','ArrowUp','ArrowDown'].includes(event.key))stopFollowingConversation();});
   function currentDisplayTask(){
     const state=displayTask,task=state?.space?.assistant,context=task?.context;
     const visibleRole=state?.role==='assistant'||(state?.role==='side'&&['interrupted','stopped','error'].includes(task?.activity?.stage));
@@ -37,7 +50,7 @@
     if((displayHost&&!displayVisible())||quickBlocked()||!question||taskPaused(task)||question.id!==questionId||task.context.operationId!==operationId||!question.options?.some(option=>option.id===choiceId))return false;
     const bridge=globalThis.SpatialDisplayRoleBridge;if(!bridge?.answerAssistantExample)return false;
     if(bridge.state){const fresh=bridge.state(),current=fresh.space?.assistant;if(fresh.role!=='assistant'||fresh.workspaceId!==activeWorkspace||current?.context?.chatId!==model.session(activeWorkspace).id||current.context.operationId!==operationId||current.activity?.question?.id!==questionId)return false;}
-    return bridge.answerAssistantExample(choiceId,{questionId,operationId})!==false;
+    const accepted=bridge.answerAssistantExample(choiceId,{questionId,operationId})!==false;if(accepted)followConversation();return accepted;
   }
   function renderDisplayTask(){
     const task=currentDisplayTask(),activity=task?.activity,ongoing=taskOngoing(task),paused=taskPaused(task),question=activity?.stage==='question'?activity.question:null;
@@ -45,22 +58,22 @@
     const latest=model.session(activeWorkspace).turns.at(-1),finishedHere=!task?.context?.turnId||task.context.turnId===latest?.id;
     const show=Boolean(activity&&(ongoing||['error','interrupted','stopped'].includes(activity.stage)||(finishedHere&&(activity.entries||[]).length))),next=JSON.stringify([show,task?.status,task?.control,task?.context?.operationId,activity]);
     $('.ai-empty',content).hidden=show||Boolean(model.session(activeWorkspace).items.length||model.session(activeWorkspace).turns.length);
-    if(next===taskSignature)return;const follow=nearConversationEnd();taskSignature=next;taskPanel.hidden=!show;
+    if(next===taskSignature)return;const follow=shouldFollowConversation();taskSignature=next;taskPanel.hidden=!show;
     if(!show){taskQuestionKey='';return;}
     taskPanel.dataset.stage=activity.stage;
     const heading=$('.ai-live-task-heading',taskPanel),label=$('.ai-live-task-label',taskPanel),step=$('.ai-live-task-step',taskPanel),stop=$('[data-ai-task-stop]',taskPanel);
     // The durable question turn already asks the question. Its answer buttons
     // live here, so there is no second question panel competing with the chat.
     heading.hidden=!ongoing&&!['error','interrupted','stopped'].includes(activity.stage);
-    label.textContent=question?'Waiting for your choice':paused?'Assistant is paused':activity.label||task.task||'Working';
+    label.textContent=question?'Waiting for your choice':paused&&ongoing?'Assistant is paused':activity.label||task.task||'Working';
     step.textContent=!question&&ongoing&&activity.total?String(activity.step||0)+' / '+activity.total:'';step.hidden=!step.textContent;
     stop.hidden=!ongoing;stop.dataset.aiTaskOperation=task.context?.operationId||'';
-    $('.ai-live-task-paused',taskPanel).hidden=!paused||!ongoing;
+    const notice=$('.ai-live-task-paused',taskPanel),ended=['error','interrupted','stopped'].includes(activity.stage);notice.hidden=!(paused&&ongoing)&&!(ended&&activity.detail);notice.textContent=ended?activity.detail:'Paused. Choose Continue to let Assistant carry on.';
     const choices=$('.ai-live-task-choices',taskPanel),questionKey=JSON.stringify([question,task.context?.operationId]);choices.hidden=!question;
     if(taskQuestionKey!==questionKey){taskQuestionKey=questionKey;choices.innerHTML=(question?.options||[]).map(option=>'<button class="surface-key ai-task-choice" type="button" data-ai-task-answer="'+escapeHtml(option.id)+'" data-ai-task-question="'+escapeHtml(question.id)+'" data-ai-task-operation="'+escapeHtml(task.context?.operationId||'')+'"><b>'+escapeHtml(option.label)+'</b>'+(option.description?'<small>'+escapeHtml(option.description)+'</small>':'')+'</button>').join('');}
     $$('[data-ai-task-answer]',choices).forEach(button=>{button.disabled=paused;});
     const steps=$('.ai-live-task-steps',taskPanel),list=$('ol',steps),entries=activity.entries||[],markup=entries.map(entry=>'<li><b>'+escapeHtml(entry.label||'')+'</b>'+(entry.detail?'<span>'+escapeHtml(entry.detail)+'</span>':'')+'</li>').join('');steps.hidden=!entries.length;if(list.innerHTML!==markup)list.innerHTML=markup;
-    if(follow)$('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;
+    if(follow)followConversation();
   }
   function setDisplayTask(state){displayTask=state||null;renderDisplayTask();}
   taskPanel.addEventListener('click',event=>{
@@ -228,7 +241,7 @@
     recordInputs(turn,session.id);
     model.draft(activeWorkspace,'');prompt.value='';persist();render();
     const sources=$('.ai-context-sources',content);if(sources){sources.open=false;sources.hidden=true;}
-    $('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;
+    followConversation();
     status.textContent='Reply ready · local demo';
   }
   function rememberView(){
@@ -246,7 +259,7 @@
     const expanded=Boolean(displayHost)||area.dataset.areaState==='expanded'||!quickPanel.hidden;
     $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Make Assistant area Compact':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
     if(dropPosition)showDropTarget(dropPosition);
-    renderDisplayTask();if(next===signature)return;const follow=nearConversationEnd(),focusedSummary=!switched&&transcript.contains(document.activeElement)&&document.activeElement?.matches?.('summary')?document.activeElement:null,focusedDetails=focusedSummary?.closest?.('[data-ai-turn-details]')?.dataset.aiTurnDetails;rememberView();signature=next;
+    const follow=!switched&&shouldFollowConversation();if(switched)stopFollowingConversation();renderDisplayTask();if(next===signature)return;const focusedSummary=!switched&&transcript.contains(document.activeElement)&&document.activeElement?.matches?.('summary')?document.activeElement:null,focusedDetails=focusedSummary?.closest?.('[data-ai-turn-details]')?.dataset.aiTurnDetails;rememberView();signature=next;
     if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Local demo · scripted replies';}
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title)+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
@@ -256,7 +269,7 @@
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
     $$('[data-ai-turn-details]',transcript).forEach(node=>{node.open=Boolean(view?.turnDetails?.includes(node.dataset.aiTurnDetails));});
     if(focusedDetails&&(document.activeElement===focusedSummary||focusedSummary.isConnected===false))$$('[data-ai-turn-details]',transcript).find(node=>node.dataset.aiTurnDetails===focusedDetails)?.querySelector('summary')?.focus?.({preventScroll:true});
-    if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;else if(follow)$('.ai-chat',content).scrollTop=$('.ai-chat',content).scrollHeight;
+    if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;else if(follow)followConversation();
     prepareControlSemantics(area);prepareControlSemantics(quickPanel);if(displayHost)prepareControlSemantics(displayHost);
     const detail={workspace:activeWorkspace,chatId:session.id,folder:model.workingFolder(activeWorkspace)},context=JSON.stringify(detail);
     if(context!==chatContext){chatContext=context;if(typeof CustomEvent==='function')window.dispatchEvent?.(new CustomEvent('spatial-ai-chat-change',{detail}));}

@@ -7025,6 +7025,9 @@ const desktopSyncStartedAt = (() => {
 })();
 const desktopSyncChannel = "BroadcastChannel" in window ? new BroadcastChannel(DESKTOP_SYNC_CHANNEL) : null;
 const desktopSyncPeers = new Map();
+// Browsers can throttle a hidden demo window's timers for a minute. Keep its
+// display slot through that pause; an explicit goodbye still unlinks at once.
+const DESKTOP_SYNC_PRESENCE_GRACE_MS = 90000;
 const workspaceDisplayAssignments = (() => {
   try { return JSON.parse(desktopStorage.getItem("spatial-workspace-display-assignments-v1") || "{}"); }
   catch { return {}; }
@@ -7061,7 +7064,7 @@ function activeDisplayRoster() {
   const now = Date.now();
   const roster = [{ source: desktopSyncSource, seenAt: now, ...localDisplayDescriptor() }];
   desktopSyncPeers.forEach((peer, source) => {
-    if (now - peer.seenAt <= 6500) roster.push({ source, ...peer });
+    if (now - peer.seenAt <= DESKTOP_SYNC_PRESENCE_GRACE_MS) roster.push({ source, ...peer });
   });
   /* The first window opened is the main monitor. Physical X coordinates are
      deliberately not used: a main monitor may sit to the right in KDE. */
@@ -8076,7 +8079,7 @@ function updateDesktopSyncPresence() {
   refreshIntentAreas();
   const now = Date.now();
   desktopSyncPeers.forEach((peer, source) => {
-    if (now - peer.seenAt > 6500) desktopSyncPeers.delete(source);
+    if (now - peer.seenAt > DESKTOP_SYNC_PRESENCE_GRACE_MS) desktopSyncPeers.delete(source);
   });
   const count = desktopSyncPeers.size;
   const slot = localDisplaySlot();
