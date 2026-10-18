@@ -99,8 +99,13 @@ assert.equal(sceneProjects.work.mode, 'default');
 assert.equal(sceneApps.gaming.elisa, 'minimized');
 assert.equal(sceneAreas.gaming.sizes.right, 70);
 for (const [workspace, layout] of Object.entries(sceneAreas)) {
-  assert.deepEqual(layout.state, D.defaultAreaDocks, workspace + ' starts with four vertical side docks');
+  if(workspace!=='general')assert.deepEqual(layout.state, D.defaultAreaDocks, workspace + ' keeps its existing side docks');
 }
+const generalLeft=Object.entries(sceneAreas.general.state).filter(([name,dock])=>dock.edge==='left'&&!sceneAreas.general.hidden[name]).sort((a,b)=>a[1].order-b[1].order).map(([name])=>name);
+assert.deepEqual(generalLeft,['apps','systems'],'General starts with Compact System below Expanded Apps in one left panel');
+const compactGeneral=require('../dist/compact-area-layout.js').allocate({names:generalLeft,states:sceneAreas.general.preferred,axis:'vertical',crossSize:sceneAreas.general.sizes.left,extent:900});
+assert.equal(compactGeneral.apps.state,'expanded');assert.equal(compactGeneral.systems.state,'rail');
+assert.equal(compactGeneral.systems.offset+compactGeneral.systems.extent,900,'System finishes at the bottom of the panel');
 const oldAreaLayout = {
   state: {apps:{edge:'left',order:0},projects:{edge:'left',order:1},systems:{edge:'right',order:0},ai:{edge:'bottom',order:0}},
   sizes: {left:68,right:280,bottom:310}, hidden:{ai:false}, manual:{left:true,right:true,bottom:true}
@@ -148,6 +153,7 @@ for(const edge of ['top','bottom']){
 
 // Refresh only the former shipped General Area layout, once, without reseeding work.
 const formerGeneral=copy(D.scenarios.general.areas);
+formerGeneral.state=copy(D.defaultAreaDocks);
 Object.assign(formerGeneral.sizes,{left:68,right:280});
 Object.assign(formerGeneral.hidden,{projects:false,ai:false});
 formerGeneral.preferred={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
@@ -175,6 +181,21 @@ for(const customize of [value=>value.sizes.left=340,value=>value.state.apps.edge
 }
 const extendedGeneral=oldGeneralScene(formerGeneral,{areas:{apps:2}});D.seedWorkspaces(extendedGeneral.storage);
 assert.deepEqual(extendedGeneral.read('spatial-workspace-area-layouts-v1').general,formerGeneral,'Explicit display placement survives');
+
+const previousOpening=copy(D.scenarios.general.areas);previousOpening.state=copy(D.defaultAreaDocks);
+function previousOpeningScene(general=previousOpening){
+  const store=oldGeneralScene(general);store.storage.setItem('spatial-demo-general-areas-v1','1');return store;
+}
+const previousOpeningUpgrade=previousOpeningScene();D.seedWorkspaces(previousOpeningUpgrade.storage);
+assert.deepEqual(previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas,'The previous two-panel opening updates even after its earlier migration');
+for(const customize of [value=>value.sizes.left=360,value=>value.preferred.systems='expanded',value=>value.hidden.ai=false,
+  value=>value.state.systems.order=2,value=>value.shares={left:{apps:.7}},value=>value.expanded={apps:{left:360}}]){
+  const custom=copy(previousOpening);customize(custom);const store=previousOpeningScene(custom);D.seedWorkspaces(store.storage);
+  assert.deepEqual(store.read('spatial-workspace-area-layouts-v1').general,custom,'Edited two-panel opening remains unchanged');
+}
+const afterOpening=previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1');afterOpening.general.state.systems.edge='right';
+previousOpeningUpgrade.storage.setItem('spatial-workspace-area-layouts-v1',JSON.stringify(afterOpening));D.seedWorkspaces(previousOpeningUpgrade.storage);
+assert.deepEqual(previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1'),afterOpening,'The new opening migration runs once');
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');

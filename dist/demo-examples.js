@@ -348,6 +348,7 @@
     example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
   }
   Object.assign(scenarios.general.areas.sizes,{left:280,right:70});
+  scenarios.general.areas.state.systems={edge:'left',order:2};
   Object.assign(scenarios.general.areas.hidden,{projects:true,ai:true});
   scenarios.general.areas.preferred={apps:'expanded',projects:'expanded',systems:'rail',ai:'rail'};
   scenarios.school.areas.sizes = {left:280,right:280,top:250,bottom:250};
@@ -458,7 +459,7 @@
   // Adopt the new General opening layout once, retaining deliberate edits.
   function seedGeneralAreas(storage) {
     const marker='spatial-demo-general-areas-v1',key='spatial-workspace-area-layouts-v1';
-    if(storage.getItem(marker))return false;
+    if(storage.getItem(marker)==='2')return false;
     const layouts=JSON.parse(storage.getItem(key)||'{}'),saved=layouts.general;
     const previousSizes={left:68,right:280,top:250,bottom:250};
     const previousStates={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
@@ -469,12 +470,19 @@
       && Object.entries(saved.preferred||{}).every(([name,state])=>previousStates[name]===state)
       // The Assistant's minimum width fitted the former 280px dock to 300px.
       && Object.values(saved.expanded||{}).every(edges=>Object.entries(edges).every(([edge,size])=>edge==='right'&&[280,300].includes(size)));
-    const adopt=original&&Object.values(assignments).every(display=>display===1);
+    const previousOpening=saved?.layoutMode==='manual'
+      && Object.entries(defaultAreaDocks).every(([name,dock])=>saved.state?.[name]?.edge===dock.edge&&saved.state[name].order===dock.order)
+      && Object.entries(scenarios.general.areas.hidden).every(([name,hidden])=>saved.hidden?.[name]===hidden)
+      && Object.entries(scenarios.general.areas.sizes).every(([edge,size])=>saved.sizes?.[edge]===size&&saved.manual?.[edge]===true)
+      && Object.entries(scenarios.general.areas.preferred).every(([name,state])=>saved.preferred?.[name]===state)
+      && Object.entries(saved.expanded||{}).every(([name,edges])=>name==='apps'&&Object.entries(edges).every(([edge,size])=>edge==='left'&&size===280))
+      && Object.values(saved.shares||{}).every(shares=>!Object.keys(shares).length);
+    const adopt=(original||previousOpening)&&Object.values(assignments).every(display=>display===1);
     if(adopt){
       layouts.general=JSON.parse(JSON.stringify(scenarios.general.areas));
       storage.setItem(key,JSON.stringify(layouts));
     }
-    storage.setItem(marker,'1');
+    storage.setItem(marker,'2');
     return Boolean(adopt);
   }
 

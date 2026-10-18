@@ -66,7 +66,7 @@ Find Desktop Guide in **Overview → Apps → Help**, or search its name. [Start
 | Work | Website Launch and Short Film | Two Projects, each with two desktops |
 | Gaming | Co-op session | Desktop 1, with Firefox and the Fallout virtual screen in the same desktop, Steam and Music Player parked |
 
-General opens with **Apps expanded on the left** and **System Compact on the right**. **Workspace & Projects** and **Assistant** start hidden and can be shown through Overview. The one-time layout update adopts this arrangement for the former shipped General layout while preserving customized Area layouts and other Workspaces.
+General opens with **Apps expanded on the left** and **System Compact at the bottom of the same panel**. **Files** and **Assistant** start hidden and can be shown through Overview. The one-time layout update adopts this arrangement for the former shipped General layouts while preserving customized Area layouts and other Workspaces.
 
 Website Launch pairs a preview with its development terminal on Desktop 1, and source files with a checklist on Desktop 2. Short Film pairs footage with edit notes, then cut feedback with a parked soundtrack player. Urban Ecology pairs reading and observations, with survey evidence on the next desktop. The data and app content illustrate workflows.
 
