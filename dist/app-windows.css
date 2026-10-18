@@ -116,7 +116,7 @@
   .app-frame[data-app-kind="dolphin"] .dolphin-layout {grid-template-columns:42px minmax(0,1fr);gap:5px;padding:0 7px}
   .app-frame[data-app-kind="dolphin"] .places-list .small-heading {display:none}
   .app-frame[data-app-kind="dolphin"] .places-list .nav-choice {font-size:0;padding:0;justify-content:center;gap:0}
-  .app-frame[data-app-kind="dolphin"] .places-list .nav-choice svg {width:18px;margin:0}
+  .app-frame[data-app-kind="dolphin"] .places-list .nav-choice svg {width:18px;height:18px;flex:none;margin:0}
   .app-frame[data-app-kind="dolphin"] .file-head,.app-frame[data-app-kind="dolphin"] .content-row {grid-template-columns:minmax(0,1fr) 76px}
   .app-frame[data-app-kind="dolphin"] .file-head span:last-child,.app-frame[data-app-kind="dolphin"] .content-row small:last-child {display:none}
   .app-frame[data-app-kind="elisa"] .volume-range {width:42px}

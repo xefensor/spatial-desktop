@@ -6,7 +6,7 @@ Spatial Desktop remains a browser prototype; simulated apps, system tools and fi
 
 The current interface gives names and useful state priority over repeated metadata. Empty desktops omit routine “Open here”, folder-type and saved-file subtitles. Search inherits scope from its section and shows an extra location when the result is elsewhere. Parked counts do not repeat their section name.
 
-App and file names wrap in narrow panels. Supporting text, menus and dialogs use larger reading sizes; app-coloured parked titles keep stronger contrast. Firefox’s menu actions have visible labels. Ordinary file save errors remain readable beside the destination.
+App and file names wrap in narrow panels. Supporting text, menus and dialogs use larger reading sizes; app-coloured parked titles keep stronger contrast. Firefox’s menu actions have visible labels. Ordinary file save errors remain readable beside the destination. Compact File Browser navigation keeps explicit icon dimensions when labels are hidden. Guide task feedback uses the normal text colour so completed steps remain readable in Light as well as dark themes.
 
 Guide explanations use named disclosures and short paragraphs. Settings repeats scope only where it changes the meaning of an action. Assistant keeps one permanent local-demo notice beside its composer; transient feedback is reserved for actual results, errors and required choices. Side space retains the same tools and permission boundary, with optional explanations under About.
 
