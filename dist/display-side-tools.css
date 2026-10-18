@@ -1,0 +1,62 @@
+/* The Side shelf uses the same glass face as its edge panel. Separators and
+   typography organize the tools without wrapping every action in a card. */
+.display-side-shelf{min-width:0;--side-tool-gap:12px}
+.display-side-section{min-width:0;margin:0 0 22px}
+.display-side-section h2,.display-side-section-heading>label{margin:0;font-size:12px;line-height:1.5;font-weight:650;color:var(--sd-glass-text)}
+.display-side-section>h2{margin-bottom:10px}
+.display-side-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:9px}
+.display-side-section-heading>span{color:var(--sd-glass-muted);font-size:10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.display-side-home{display:flex;gap:3px;min-width:0}
+.display-workbench .display-side-home button.surface-key{display:flex;flex:1 1 0;flex-direction:column;gap:4px;justify-content:center;min-width:0;padding:7px 2px;font-size:10px;line-height:1.35}
+.display-side-home button svg{color:var(--display-role-accent)}
+.display-side-home button span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.display-side-reference-list{display:grid;gap:3px}
+.display-side-reference{display:flex;align-items:stretch;gap:2px;min-width:0}
+.display-side-reference-open,.display-side-remove,.display-side-text-action{appearance:none;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.display-side-reference-open{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:7px 3px;text-align:left;line-height:1.5;border-radius:0}
+.display-side-reference-open>svg{width:17px;height:17px;color:var(--display-role-accent);flex:none}
+.display-side-reference-open>span{min-width:0}
+.display-side-reference-open b,.display-side-reference-open small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.display-side-reference-open b{font-weight:550;font-size:11px;color:var(--sd-glass-text)}
+.display-side-reference-open small{font-size:9px;color:var(--sd-glass-muted)}
+.display-side-remove{width:23px;min-width:23px;align-self:center;min-height:27px;font-size:17px;line-height:1;color:var(--sd-glass-muted);padding:3px}
+.display-side-reference-open:hover,.display-side-remove:hover,.display-side-text-action:hover{background:color-mix(in srgb,var(--sd-glass-highlight) 12%,transparent);color:var(--sd-glass-text)}
+.display-side-remove:hover{color:var(--red,#f28a8a)}
+.display-side-empty{font-size:11px;line-height:1.6;color:var(--sd-glass-muted);margin:9px 0 12px}
+.display-side-add{margin-top:7px}
+.display-side-add>summary{width:fit-content;max-width:100%;padding:5px 0;font-size:11px;line-height:1.5;color:var(--sd-glass-text);cursor:pointer}
+.display-side-add>summary::marker{color:var(--display-role-accent)}
+.display-side-add form{display:grid;gap:10px;margin:9px 0}
+.display-side-add label{display:block;font-size:10px;line-height:1.5;color:var(--sd-glass-muted);min-width:0}
+.display-side-add label>span{font-size:9px;margin-left:3px;opacity:.8}
+.display-side-add :is(select,input){margin-top:4px}
+.display-workbench .display-side-add :is(select,input){box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:33px;border:1px solid var(--sd-glass-groove);border-radius:0;background:var(--sd-glass-face-deep);color:var(--sd-glass-text);padding:7px;font:inherit;font-size:11px;line-height:1.45}
+.display-side-add select option{background:var(--sd-glass-face);color:var(--sd-glass-text)}
+.display-workbench .display-side-add button.surface-key{justify-self:start;min-height:31px;font-size:11px}
+.display-side-feedback{font-size:10px;line-height:1.6;color:var(--display-role-accent);margin:5px 0 0;overflow-wrap:anywhere}
+.display-side-feedback:empty{display:none}
+.display-side-notepad{border-top:1px solid var(--sd-glass-groove);padding-top:16px}
+.display-workbench .display-side-notepad textarea{min-height:96px;max-height:350px;display:block;font-size:11px;line-height:1.65;padding:9px;resize:vertical}
+.display-side-text-action{font-size:10px;line-height:1.5;padding:5px 0;text-align:left;color:var(--sd-glass-muted);margin-top:5px}
+.display-side-text-action:disabled{opacity:.45;cursor:default}
+.display-side-text-action:disabled:hover{background:transparent;color:var(--sd-glass-muted)}
+.display-side-task{display:flex;align-items:center;gap:3px;min-width:0}
+.display-side-task>label{display:flex;align-items:flex-start;gap:7px;flex:1;min-width:0;padding:6px 0;line-height:1.5;cursor:pointer}
+.display-workbench .display-side-task input[type="checkbox"]{appearance:auto;flex:none;width:13px;height:13px;min-height:0;max-width:13px;padding:0;margin:2px 0 0;accent-color:var(--display-role-accent);border-radius:0}
+.display-side-task>label>span{font-size:11px;overflow-wrap:anywhere;min-width:0}
+.display-side-task.is-done>label>span{color:var(--sd-glass-muted);text-decoration:line-through}
+.display-side-task-form{display:flex;gap:3px;margin-top:7px;min-width:0}
+.display-workbench .display-side-task-form input{flex:1;min-width:0;padding:7px;font-size:11px;line-height:1.5;min-height:33px}
+.display-workbench .display-side-task-form button.surface-key{flex:none;width:30px;min-height:33px;padding:4px;font-size:18px}
+.display-side-scope{font-size:10px;color:var(--sd-glass-muted);line-height:1.65;margin:8px 0 18px}
+.display-side-shelf.is-drop-target{outline:1px dashed var(--display-role-accent);outline-offset:5px;background:color-mix(in srgb,var(--display-role-accent) 5%,transparent)}
+.display-side-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.display-side-shelf :is(button,summary,select):focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
+@media(max-width:599px){
+  .display-side-home{flex-wrap:wrap}
+  .display-workbench .display-side-home button.surface-key{flex-direction:row;flex-basis:100%;justify-content:flex-start;font-size:10px;gap:6px;padding:5px 3px}
+  .display-side-reference-open{gap:5px}
+  .display-side-reference-open>svg{width:14px;height:14px}
+  .display-side-reference-open b{font-size:10px}
+  .display-side-remove{width:19px;min-width:19px}
+}

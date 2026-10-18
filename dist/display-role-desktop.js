@@ -17,11 +17,42 @@
     return slot&&special(role(slot))?slot:null;
   };
   function persist(){try{desktopStorage.setItem(key,JSON.stringify(model.snapshot()));}catch{}}
+  function referenceOptions(){
+    if(!root.SpatialEmptyDesktopResources)return [];
+    const options=new Map(),columns=['workspace',...(typeof openProjectNames==='function'?openProjectNames():[])];
+    for(const column of columns){
+      const resources=root.SpatialEmptyDesktopResources.collect({workspace:activeWorkspace,column,profiles:workspaceProfiles,projects:projectSpaces,downloads:workspaceDownloads.snapshot(),stashRows:path=>root.SpatialMemoryDesktop?.fileRows(path)});
+      for(const [kind,rows] of [['folder',resources.folders],['file',resources.files]])for(const row of rows){
+        if(row.target&&!options.has(row.target))options.set(row.target,{kind,path:row.target,label:row.label,detail:row.detail});
+      }
+    }
+    return [...options.values()].slice(0,150);
+  }
+  function openReference(reference){
+    if(!reference||!['folder','file','link'].includes(reference.kind))throw Error('Choose a file, folder or web link.');
+    if(reference.kind==='link'){
+      let url;try{url=new URL(reference.url);}catch{throw Error('Use a complete web address.');}
+      if(!['http:','https:'].includes(url.protocol))throw Error('Use an HTTP or HTTPS web link.');
+      const id=createAppInstance('browser');if(!id)throw Error('Firefox could not open.');
+      navigateBrowser(id,url.href);captureWorkspaceContent();queueDesktopStateBroadcast(0);return id;
+    }
+    const path=root.SpatialAssistantFiles.path(reference.path,workspaceProfiles[activeWorkspace].home);
+    if(!root.SpatialAssistantFiles.allowed(path,activeWorkspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a location in this Workspace or one of its open Projects.');
+    const directory=reference.kind==='file'?path.slice(0,path.lastIndexOf('/'))||'/':path;
+    const id=createAppInstance('dolphin');if(!id)throw Error('File Browser could not open.');
+    renderFileLocation(id,directory);
+    if(reference.kind==='file'){
+      const name=path.split('/').at(-1);
+      if(!appFileRows(id,directory).some(row=>row[0]===name)){closeApp(id);throw Error('This file is no longer available in the demo.');}
+      openAppFile(id,name);
+    }
+    captureWorkspaceContent();queueDesktopStateBroadcast(0);return id;
+  }
   function state(){
     const setup=connect(),local=localDisplaySlot();
     return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,home:workspaceProfiles[activeWorkspace].home,
       displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),local:display.slot===local})),
-      space:model.space(activeWorkspace,local),localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
+      space:model.space(activeWorkspace,local),referenceOptions:role(local)==='side'?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
       parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
   function notify(){
@@ -112,7 +143,7 @@
   const originalTileBounds=tileBounds;
   tileBounds=function(){
     const bounds=originalTileBounds();if(!special(role()))return bounds;
-    const panel=window.innerWidth>=900?240:window.innerWidth>=600?200:160;
+    const panel=role()==='assistant'?(window.innerWidth>=1100?380:window.innerWidth>=900?340:window.innerWidth>=600?300:280):(window.innerWidth>=900?240:window.innerWidth>=600?200:160);
     return {...bounds,x:bounds.x+panel,width:Math.max(1,bounds.width-panel)};
   };
   const originalPage=changeDesktopPage;
@@ -212,7 +243,7 @@
     if(action.startsWith('display-role:')){closeDesktopContextMenu();setRole(localDisplaySlot(),action.slice(13));return;}
     return originalExecute(action);
   };
-  root.SpatialDisplayRoleBridge={state,setRole,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+  root.SpatialDisplayRoleBridge={state,setRole,openReference,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:'+role(slot)+':'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},

@@ -9,7 +9,7 @@
   const sourceTray=document.querySelector('.ai-context-sources');if(sourceTray){sourceTray.classList.add('ai-input-details');document.getElementById('aiComposer').before(sourceTray);}
   function allowed(){return (!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))&&!document.querySelector('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"])');}
   function projectAt(path){return Object.keys(projectSpaces).filter(id=>T.inside(path,projectSpaces[id].root)).sort((a,b)=>projectSpaces[b].root.length-projectSpaces[a].root.length)[0]||null;}
-  function local(frame){const id=frame?.dataset.appFrame;return id&&appState[id]==='open'&&!frame.hidden&&isLocalApp(id)&&desktopPages.inColumn(activeWorkspace,id)&&desktopPages.pageOf(activeWorkspace,id)===desktopPages.current(activeWorkspace);}
+  function local(frame){const id=frame?.dataset.appFrame;return id&&appState[id]==='open'&&!frame.hidden&&isLocalApp(id)&&(globalThis.SpatialDisplayRoleBridge?.windowContextKey(id)||(desktopPages.inColumn(activeWorkspace,id)&&desktopPages.pageOf(activeWorkspace,id)===desktopPages.current(activeWorkspace)));}
   function scope(frame){const id=frame?.dataset.appFrame,owner=id&&desktopPages.columnOf(activeWorkspace,id);return {workspace:activeWorkspace,project:projectSpaces[owner]?owner:null,app:appInfo[id]?.base||id||''};}
   function selectedText(){
     const active=document.activeElement;

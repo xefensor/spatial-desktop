@@ -9,16 +9,16 @@
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
   const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
   dropHint.className='ai-drop-hint';dropHint.hidden=true;dropHint.setAttribute('role','status');dropHint.append(dropTitle,dropDetail);document.body.append(dropHint);
-  let dropPosition=null,quickWorkspace=null,quickReturnFocus=null,inputPanel=null,inputOwner='',inputReturnFocus=null;
+  let dropPosition=null,quickWorkspace=null,quickReturnFocus=null,inputPanel=null,inputOwner='',inputReturnFocus=null,displayHost=null;
   const rail=document.createElement('nav');rail.className='ai-rail-tools';rail.setAttribute('aria-label','Assistant quick actions');
   rail.innerHTML='<button class="surface-key ai-rail-chat" id="aiRailChat" type="button" aria-controls="aiQuickPanel" aria-expanded="false"><span class="ai-rail-chat-title" id="aiRailChatTitle"></span><span class="ai-rail-sources">'+icon('i-note')+'<span id="aiRailSources"></span></span><small id="aiRailDraft" hidden>Draft</small></button><button class="surface-key ai-rail-new" id="aiRailNewChat" type="button" aria-label="Start a new Assistant chat" title="New chat"><span aria-hidden="true">+</span><small>New chat</small></button>';
   area.insertBefore(rail,content);
   const quickPanel=document.createElement('section');quickPanel.className='ai-area ai-quick-panel material-surface-glass';quickPanel.id='aiQuickPanel';quickPanel.hidden=true;quickPanel.setAttribute('role','region');quickPanel.setAttribute('aria-label','Assistant quick chat');
   quickPanel.innerHTML='<header class="ai-quick-header"><span><b id="aiQuickTitle">Assistant</b><small id="aiQuickContext"></small></span><button class="surface-key" id="aiQuickExpand" type="button" title="Keep Assistant expanded">Expand area</button><button class="surface-key" id="aiQuickClose" type="button" aria-label="Close Assistant quick chat">'+icon('i-close')+'</button></header><div class="ai-quick-body" id="aiQuickBody"></div>';
   document.body.append(quickPanel);
-  const withinAssistant=target=>area.contains(target)||quickPanel.contains(target);
+  const withinAssistant=target=>area.contains(target)||quickPanel.contains(target)||Boolean(displayHost?.contains(target));
   const blockedByDialog=()=>Boolean(document.querySelector?.('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]),#universalSearch.is-open,#packageDialog.is-open,#projectEditorDialog.is-open:not(.is-inline),#desktopContextMenu:not([hidden]),#spatialGuideDialog:not([hidden])'));
-  const quickBlocked=()=>Boolean(area.inert||$('.desktop-shell').inert||blockedByDialog());
+  const quickBlocked=()=>Boolean((displayHost?displayHost.inert:area.inert)||$('.desktop-shell').inert||blockedByDialog()||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai')));
   function positionQuick(){
     if(quickPanel.hidden)return;
     const rect=area.getBoundingClientRect(),edge=area.dataset.dockEdge||'right',gap=10;
@@ -39,6 +39,7 @@
   function openQuick(focus=true){
     if(quickBlocked())return;
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
+    if(displayHost){if(focus)prompt.focus();return;}
     if(area.hidden||area.dataset.areaState!=='rail'){expand(focus);return;}
     if(quickPanel.hidden){window.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'ai'}}));quickReturnFocus=document.activeElement;quickWorkspace=activeWorkspace;$('#aiQuickBody').append(content);quickPanel.hidden=false;}
     $('#aiRailChat').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-expanded','true');$('#aiAreaToggle').setAttribute('aria-pressed','true');$('#aiAreaToggle').setAttribute('aria-label','Close Assistant quick chat');renderRail(model.session(activeWorkspace));
@@ -69,8 +70,8 @@
   const editableDropTarget=target=>Boolean(target?.closest?.('input,textarea,select,[contenteditable="true"]'));
   const insertsText=event=>editableDropTarget(event.target)&&![...event.dataTransfer.types].some(type=>type==='Files'||type===C.MIME);
   function showDropTarget(event=null){
-    const visible=Boolean(event)&&!area.hidden&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'));
-    area.classList.toggle('is-ai-drop-target',visible);dropHint.hidden=!visible;dropPosition=visible?{clientX:event.clientX,clientY:event.clientY}:null;
+    const visible=Boolean(event)&&Boolean(displayHost||!area.hidden)&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'));
+    area.classList.toggle('is-ai-drop-target',visible);displayHost?.classList.toggle('is-ai-drop-target',visible);dropHint.hidden=!visible;dropPosition=visible?{clientX:event.clientX,clientY:event.clientY}:null;
     if(!visible)return;
     const title='Attach to '+model.session(activeWorkspace).title,detail=workspaceLabel(activeWorkspace)+' workspace · Copy source';
     if(dropTitle.textContent!==title)dropTitle.textContent=title;if(dropDetail.textContent!==detail)dropDetail.textContent=detail;
@@ -152,12 +153,12 @@
   }
   function render(){
     if(!quickPanel.hidden&&(quickWorkspace!==activeWorkspace||quickBlocked()||area.hidden||area.dataset.areaState!=='rail'||area.classList.contains('is-on-other-display')||(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))))closeQuick();
-    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||area.hidden))closeInput();renderRail(session);positionQuick();
+    const session=model.session(activeWorkspace),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||(!displayHost&&area.hidden)))closeInput();renderRail(session);positionQuick();
     const chats=model.chats(activeWorkspace),project=projectSpaces[session.workingProject];
     const options=[...new Set([session.workingProject,...session.items.map(item=>item.project),activeProjectName].filter(id=>projectSpaces[id]))];
     const next=JSON.stringify([activeWorkspace,activeProjectName,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     $('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
-    const expanded=area.dataset.areaState==='expanded'||!quickPanel.hidden;
+    const expanded=Boolean(displayHost)||area.dataset.areaState==='expanded'||!quickPanel.hidden;
     $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Make Assistant area Compact':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
     if(dropPosition)showDropTarget(dropPosition);
     if(next===signature)return;rememberView();signature=next;
@@ -169,7 +170,7 @@
     const sources=$('.ai-context-sources',content),view=views.get(nextKey);sources.open=view?.sources??false;sources.hidden=!session.items.length||!sources.open;sources.querySelector('summary').textContent='Details';
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
     if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;
-    prepareControlSemantics(area);prepareControlSemantics(quickPanel);
+    prepareControlSemantics(area);prepareControlSemantics(quickPanel);if(displayHost)prepareControlSemantics(displayHost);
   }
   chatSelect.addEventListener('change',()=>{rememberView();model.select(activeWorkspace,chatSelect.value);persist();render();});
   function newChat(){rememberView();model.draft(activeWorkspace,prompt.value);const chat=model.newChat(activeWorkspace);if(!chat){openQuick();status.textContent='This workspace holds up to 50 chats.';return;}persist();render();openQuick();prompt.focus();}
@@ -180,11 +181,13 @@
   function setMode(mode,save=true){model.mode(activeWorkspace,mode);if(save)persist();}
   function expand(focus=true){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
+    if(displayHost){if(!quickBlocked()&&focus)prompt.focus();return;}
     if(extendedDesktopActive()&&!isLocalArea('ai')){displayAssignmentsFor().areas.ai=localDisplaySlot();persistDisplayAssignments();}
     closeQuick();setAreaState('ai','expanded',false);scheduleWindowTiling();if(focus)prompt.focus();
   }
   function toggle(){
     if(globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('ai'))return;
+    if(displayHost){if(!quickBlocked())prompt.focus();return;}
     if(!area.hidden&&area.dataset.areaState==='rail'){if(quickPanel.hidden)openQuick();else closeQuick(true);return;}
     const next=area.hidden?'expanded':'rail';
     setAreaState('ai',next);if(next==='expanded')prompt.focus();
@@ -197,7 +200,7 @@
   }
   $('#aiAreaToggle').addEventListener('click',()=>{if(!globalThis.SpatialAssistantDesktop?.invoke())toggle();});
   prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderRail(model.session(activeWorkspace));status.textContent='Local demo · scripted replies';});
-  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();if(!quickPanel.hidden)closeQuick(true);else setAreaState('ai','rail');}});
+  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();if(!quickPanel.hidden)closeQuick(true);else if(!displayHost)setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{model.folder(activeWorkspace,folder.value);persist();render();});
   attachments.addEventListener('click',event=>{const inspect=event.target.closest('[data-ai-inspect]');if(inspect){inspectInput(model.session(activeWorkspace).items.find(item=>item.id===inspect.dataset.aiInspect),'Attached input');return;}const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
@@ -239,7 +242,7 @@
   // Native HTML drops remain available for external files, links and selections.
   function bindContentTransfers(){
     let gesture=null,suppressClick=false;
-    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&withinAssistant(target)&&!area.hidden;};
+    const targetAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target&&withinAssistant(target)&&(!area.hidden||Boolean(target.closest?.('.ai-display-chat')));};
     const stashAt=event=>{const target=document.elementFromPoint(event.clientX,event.clientY);return target?.closest?.('#workingMemory,.memory-header-key,.memory-rail-entry')&&!editableDropTarget(target);};
     const clear=()=>{gesture=null;showDropTarget();globalThis.SpatialMemoryDesktop?.showDropTarget?.();};
     document.addEventListener('pointerdown',event=>{
@@ -277,12 +280,12 @@
     if(sourceDrag.title){event.dataTransfer.setData(C.MIME,JSON.stringify(sourceDrag));event.dataTransfer.setData('text/plain',sourceDrag.text||sourceDrag.address||sourceDrag.title);event.dataTransfer.effectAllowed='copy';}
   });
   function accepts(event){return [...event.dataTransfer.types].some(type=>[C.MIME,'Files','text/plain','text/uri-list'].includes(type));}
-  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('dragover',event=>{if(!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
-  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('dragleave',event=>{if(!withinAssistant(event.relatedTarget))showDropTarget();});
+  for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('dragover',event=>{if(!accepts(event)||insertsText(event)){showDropTarget();return;}event.preventDefault();event.dataTransfer.dropEffect='copy';showDropTarget(event);});
+  for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('dragleave',event=>{if(!withinAssistant(event.relatedTarget))showDropTarget();});
   document.addEventListener('dragover',event=>{if(!withinAssistant(event.target))showDropTarget();});
   document.addEventListener('drop',()=>showDropTarget(),true);
   document.addEventListener('dragend',()=>{sourceDrag=null;showDropTarget();});
-  for(const dropSurface of [area,quickPanel])dropSurface.addEventListener('drop',async event=>{
+  for(const dropSurface of [area,quickPanel,content])dropSurface.addEventListener('drop',async event=>{
     showDropTarget();if(!accepts(event)||insertsText(event))return;event.preventDefault();event.stopPropagation();
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
@@ -295,7 +298,27 @@
   const legacyDrafts=readDesktopStorage('spatial-stash-ai-drafts-v1',{}),drafts=legacyDrafts&&typeof legacyDrafts==='object'?legacyDrafts:{};
   if(!desktopStorage.getItem(key)){Object.keys(workspaceProfiles).forEach(workspace=>{const project=workspaceProjects[workspace];const draft=drafts['project:'+project]||drafts[JSON.stringify([workspace,null])];if(typeof draft==='string'&&draft){model.draft(workspace,draft);model.folder(workspace,project);}});persist();}
   function revealChat(chatId,{turnId}={}){if(quickBlocked()||!model.select(activeWorkspace,chatId))return false;closeInput();persist();render();expand(false);if(turnId)$$('[data-ai-demo-turn]',transcript).find(node=>node.dataset.aiDemoTurn===turnId)?.scrollIntoView?.({block:'center'});return true;}
-  globalThis.SpatialAIDesktop={render,expand,revealChat,
+  // A supporting display hosts the same live chat, not a second implementation.
+  // Moving this node preserves direct file actions, listeners, source details,
+  // scroll position and the currently selected Workspace conversation.
+  function mountDisplay(host){
+    if(!host?.append||!host.classList)return false;
+    if(displayHost===host&&content.parentNode===host)return true;
+    if(displayHost)unmountDisplay();
+    closeQuick();rememberView();
+    displayHost=host;host.classList.add('ai-area','ai-display-chat');
+    host.setAttribute('aria-label','Assistant chat');host.append(content);
+    render();return true;
+  }
+  function unmountDisplay(){
+    if(!displayHost)return false;
+    rememberView();closeInput();showDropTarget();
+    const previous=displayHost;displayHost=null;
+    area.insertBefore(content,rail.nextSibling);
+    previous.classList.remove('ai-area','ai-display-chat','is-ai-drop-target');
+    render();return true;
+  }
+  globalThis.SpatialAIDesktop={render,expand,revealChat,mountDisplay,unmountDisplay,displayMounted:()=>Boolean(displayHost),
     attach(items,{focus=true}={}){if(quickBlocked())return [];const existing=new Set(model.session(activeWorkspace).items.map(i=>i.id));if(existing.size+new Set(items.filter(i=>!existing.has(i.id)).map(i=>i.id)).size>24){status.textContent='Remove unused sources before adding this selection.';return [];}const added=[];for(const item of items){if(add(item))added.push(model.session(activeWorkspace).items.find(entry=>entry.id===item.id));}if(focus)openQuick();return added.filter(Boolean);},
     inspect(item){inspectInput(item,'Attached input');},toggleInputs(){const panel=$('.ai-context-sources',content);panel.open=!panel.open;panel.hidden=!panel.open;return panel.open;},removeInputs(ids){for(const id of ids)model.remove(activeWorkspace,id);persist();render();},current:()=>model.session(activeWorkspace),workingFolder:()=>model.workingFolder(activeWorkspace),
     notify(text){status.textContent=text;},

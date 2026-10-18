@@ -1,0 +1,35 @@
+/* The supporting display uses the ordinary Assistant conversation in its edge
+   panel. Its host is a layout slot; the panel supplies the shared glass surface. */
+.ai-area.ai-display-chat{
+  position:relative;inset:auto;display:flex;flex:1 1 0;align-self:stretch;
+  box-sizing:border-box;width:100%;height:auto;min-width:0;min-height:0;
+  margin:0;padding:0;border:0;background:none;backdrop-filter:none;
+  box-shadow:none;overflow:hidden;color:var(--text)
+}
+.ai-display-chat>.ai-content{display:flex;flex:1 1 0;width:100%;min-width:0;min-height:0;gap:10px}
+.ai-display-chat [hidden]{display:none!important}
+.ai-display-chat .ai-chat-toolbar{flex-wrap:nowrap;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--soft-line)}
+.ai-display-chat .ai-chat-toolbar>select{flex:1 1 100px;min-width:0;max-width:100%}
+.ai-display-chat .ai-chat-toolbar>button{font-size:11px;padding-inline:8px}
+.ai-display-chat .ai-chat-settings-body{width:min(270px,calc(100vw - 44px));max-height:45vh;overflow:auto;overscroll-behavior:contain}
+.ai-display-chat .ai-rename-form{flex-wrap:wrap}
+.ai-display-chat .ai-rename-form>input{flex:1 1 130px}
+.ai-display-chat .ai-chat{flex:1 1 0;min-width:0;min-height:0;padding-inline:1px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.ai-display-chat .ai-empty{line-height:1.6;padding-block:12px}
+.ai-display-chat .ai-empty small{display:block;font-size:11px;line-height:1.6}
+.ai-display-chat .ai-transcript{gap:18px;padding-top:4px}
+.ai-display-chat .ai-request>p,.ai-display-chat .ai-demo-output>p{font-size:13px;line-height:1.6}
+.ai-display-chat .ai-context-chip{min-height:34px}
+.ai-display-chat .ai-context-chip>span{min-width:0}
+.ai-display-chat .ai-content>.ai-input-details{flex:0 1 auto;min-height:0;max-height:min(200px,25vh);overflow:auto;overscroll-behavior:contain}
+.ai-display-chat .ai-attachments{max-height:none}
+.ai-display-chat .ai-composer{padding-top:8px;border-top:1px solid var(--soft-line)}
+.ai-display-chat .ai-composer textarea{height:70px;min-height:70px;max-height:120px;font-size:13px;line-height:1.5;padding:9px}
+.ai-display-chat .ai-compose-row>button{min-height:38px}
+.ai-display-chat .ai-composer small{font-size:10px;line-height:1.5;margin-top:6px}
+.ai-display-chat.is-ai-drop-target{outline:2px solid var(--text);outline-offset:-2px}
+@media(max-height:620px){
+  .ai-display-chat>.ai-content{gap:6px}
+  .ai-display-chat .ai-composer textarea{height:50px;min-height:50px;padding-block:6px}
+  .ai-display-chat .ai-content>.ai-input-details{max-height:110px}
+}

@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path');
-const Roles=require('../dist/display-roles.js'),Pages=require('../dist/desktop-pages.js'),Tiles=require('../dist/spatial-tiling.js');
+const Roles=require('../dist/display-roles.js'),Pages=require('../dist/desktop-pages.js'),Tiles=require('../dist/spatial-tiling.js'),AssistantFiles=require('../dist/assistant-files.js');
 const source=fs.readFileSync(path.join(__dirname,'../dist/display-role-desktop.js'),'utf8');
 const shell=fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.js'),'utf8');
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -9,9 +9,9 @@ function fixture(count=2){
   const listeners={},elements={},frames={},storage=new Map(),roster=Array.from({length:count},(_,index)=>({slot:index+1,source:'browser-'+index,width:1440,height:900}));
   for(const selector of ['#emptyWorkspace','.workspace-zone','.desktop-context-page'])elements[selector]={hidden:false,textContent:'',setAttribute(name,value){this[name]=value;}};
   const assignments={work:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}},gaming:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}}};
-  const removedProjects=[],released=[],packets=[],transfers=[],areaTransfers=[];
+  const removedProjects=[],released=[],packets=[],transfers=[],areaTransfers=[],created=[],fileLocations=[],openedFiles=[],browserLocations=[];
   const c={
-    SpatialDisplayRoles:Roles,activeWorkspace:'work',localSlot:1,roster,
+    SpatialDisplayRoles:Roles,SpatialAssistantFiles:AssistantFiles,URL,activeWorkspace:'work',localSlot:1,roster,projectSpaces:{},openProjectNames:()=>[],
     workspaceProfiles:{work:{label:'Work',home:'/Work'},gaming:{label:'Gaming',home:'/Gaming'}},
     activeDisplayRoster:()=>c.roster,localDisplaySlot:()=>c.localSlot,extendedDesktopActive:()=>c.roster.length>1,
     otherDisplaySlot:()=>c.localSlot===1?2:1,
@@ -54,6 +54,9 @@ function fixture(count=2){
     },executeContextAction(){},closeDesktopContextMenu(){},desktopNavigationBlocked:()=>false,
     showToast(message){c.toast=message;},
     SpatialDisplaySettings:{refresh(){},open(){c.settingsOpened=true;}},SpatialDisplayWorkbench:{refresh(){}},
+    createAppInstance(kind){const id=kind+'--'+(created.length+1);created.push({id,kind});c.appInfo[id]={label:kind,base:kind};c.appState[id]='closed';c.openApp(id);return id;},
+    renderFileLocation(id,path){fileLocations.push({id,path});},appFileRows:()=>[['brief.md','Saved file','document']],openAppFile(id,name){openedFiles.push({id,name});},
+    navigateBrowser(id,url){browserLocations.push({id,url});},captureWorkspaceContent(){},
   };
   for(const workspace of ['work','gaming'])for(const id of Object.keys(c.appInfo))c.desktopPages.assign(workspace,id,0,'workspace');
   vm.createContext(c);
@@ -62,12 +65,12 @@ function fixture(count=2){
   vm.runInContext(slice('function tileContextKey() {','function tileSession() {'),c);
   vm.runInContext(slice('function intentContextPrefix() {','function screenWindowRect(frame) {'),c);
   vm.runInContext(source,c);
-  return {c,assignments,listeners,storage,packets,transfers,areaTransfers,removedProjects,released};
+  return {c,assignments,listeners,storage,packets,transfers,areaTransfers,removedProjects,released,created,fileLocations,openedFiles,browserLocations};
 }
 
 // Supporting-display tools always occupy a vertical side panel. They cannot
 // leave a ghost header or turn into a bottom strip on smaller viewports.
-for(const [viewport,panel] of [[1440,240],[900,240],[899,200],[600,200],[599,160],[320,160]]){
+for(const [viewport,sidePanel,assistantPanel] of [[1440,240,380],[1100,240,380],[1099,240,340],[900,240,340],[899,200,300],[600,200,300],[599,160,280],[320,160,280]]){
   const {c}=fixture();
   c.window.innerWidth=viewport;
   const normal={x:8,y:8,width:viewport-16,height:884};
@@ -75,6 +78,7 @@ for(const [viewport,panel] of [[1440,240],[900,240],[899,200],[600,200],[599,160
   c.localSlot=2;
   assert.deepEqual(clone(c.tileBounds()),normal,'Extended display keeps its normal tiling bounds at '+viewport+'px');
   for(const role of ['side','assistant']){
+    const panel=role==='assistant'?assistantPanel:sidePanel;
     c.SpatialDisplayRoleBridge.setRole(2,role);
     const actual=clone(c.tileBounds());
     assert.deepEqual(actual,{...normal,x:8+panel,width:Math.max(1,normal.width-panel)},role+': the '+viewport+'px canvas reserves only its '+panel+'px side panel');
@@ -256,4 +260,24 @@ for(const [viewport,panel] of [[1440,240],[900,240],[899,200],[600,200],[599,160
   assert.equal(c.SpatialDisplayRoleBridge.openWindow('unknown-app'),false);
 }
 
-console.log('Display-role integration: full-height side-panel geometry, helper visibility, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');
+{
+  const {c,created,fileLocations,openedFiles,browserLocations}=fixture();c.SpatialDisplayRoleBridge.setRole(2,'side');c.localSlot=2;
+  const folder=c.SpatialDisplayRoleBridge.openReference({kind:'folder',path:'/Work/Documents'});
+  assert.equal(created.at(-1).kind,'dolphin');assert.deepEqual(fileLocations.at(-1),{id:folder,path:'/Work/Documents'});
+  assert.equal(c.isLocalApp(folder),true,'Opening a shelf folder creates a window on this helper display');
+  assert.equal(c.SpatialDisplayRoleDesktop.snapshot().workspaces.work.displays[2].windows.includes(folder),true);
+  const file=c.SpatialDisplayRoleBridge.openReference({kind:'file',path:'/Work/Documents/brief.md'});
+  assert.notEqual(file,folder,'A shelf file uses a fresh File Browser rather than taking over another display’s window');
+  assert.deepEqual(fileLocations.at(-1),{id:file,path:'/Work/Documents'});assert.deepEqual(openedFiles.at(-1),{id:file,name:'brief.md'});
+  const browser=c.SpatialDisplayRoleBridge.openReference({kind:'link',url:'https://example.com/reference'});
+  assert.equal(created.at(-1).kind,'browser');assert.deepEqual(browserLocations.at(-1),{id:browser,url:'https://example.com/reference'});assert.equal(c.isLocalApp(browser),true);
+  const before=created.length;
+  assert.throws(()=>c.SpatialDisplayRoleBridge.openReference({kind:'file',path:'/Gaming/private.md'}),/this Workspace/);
+  assert.throws(()=>c.SpatialDisplayRoleBridge.openReference({kind:'link',url:'javascript:alert(1)'}),/HTTP or HTTPS/);
+  assert.equal(created.length,before,'Invalid and foreign references cannot create windows');
+  assert.throws(()=>c.SpatialDisplayRoleBridge.openReference({kind:'file',path:'/Work/Documents/missing.md'}),/no longer available/);
+  assert.equal(c.appState[created.at(-1).id],'closed','An unavailable file does not leave an empty window behind');
+  c.localSlot=1;assert.equal(c.isLocalApp(browser),false,'Opening helper references never covers the main display');
+}
+
+console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');

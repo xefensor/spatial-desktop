@@ -62,6 +62,10 @@ vm.createContext(boot);vm.runInContext(fs.readFileSync(require.resolve('../dist/
 assert.equal(session.session('work').items.length,0,'Highlighting alone captures nothing');
 assert.equal(boot.SpatialAssistantDesktop.invoke(),true);assert.equal(session.session('work').items[0].text,'SELECTED');
 field.value='Changed later';assert.equal(session.session('work').items[0].text,'SELECTED','Invocation retains the exact selected text');
+boot.desktopPages.inColumn=()=>false;boot.SpatialDisplayRoleBridge={windowContextKey:()=> 'work:display-role:assistant:2'};
+field.value='PINNED';field.selectionStart=0;field.selectionEnd=6;assert.equal(boot.SpatialAssistantDesktop.capture()[0].text,'PINNED','A local supporting-display window is selectable outside the main desktop column');
+boot.SpatialDisplayRoleBridge.windowContextKey=()=>null;assert.equal(boot.SpatialAssistantDesktop.capture().length,0,'Unpinned off-column windows remain outside selection context');
+boot.desktopPages.inColumn=()=>true;delete boot.SpatialDisplayRoleBridge;
 boot.activeWorkspace='gaming';assert.equal(boot.SpatialAssistantDesktop.invoke(),false);assert.equal(session.session('gaming').items.length,0);
 boot.activeWorkspace='work';frame.dataset.appFrame='files';frame.dataset.fileLocation='/mnt/Web';field.matches=()=>false;
 const rows=['one.md','two.md'].map(name=>({dataset:{fileName:name},closest:()=>frame}));frame.querySelectorAll=()=>rows;

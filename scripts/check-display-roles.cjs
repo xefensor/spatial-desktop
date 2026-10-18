@@ -80,6 +80,42 @@ assert.equal(restored.space('work',2).widgets[0].text,'References');
 restored.connect([pair[0]]);restored.connect(pair);
 assert.deepEqual(restored.space('work',2),model.space('work',2),'Disconnects retain helper-space content');
 
+// User-pinned references use one persisted list. A reference is a shortcut,
+// not a copied file, and changing a role must not delete the user's collection.
+const shelf=Displays.create();shelf.connect(pair);shelf.setRole(2,'side');
+const pinnedReferences=[
+  {id:'folder-1',kind:'folder',path:'/home/demo/work/Documents',label:'Documents'},
+  {id:'file-1',kind:'file',path:'/home/demo/work/Documents/brief.md',label:'Brief'},
+  {id:'link-1',kind:'link',url:'https://example.com/reference',label:'Reference page'},
+];
+shelf.updateSpace('work',2,{folders:pinnedReferences,note:'Read the brief first.'});
+shelf.updateSpace('work',2,{widgets:[{id:'side-checklist',kind:'checklist',items:[{id:'review',text:'Review brief',done:false},{id:'send',text:'Send notes',done:true}]}]});
+shelf.updateSpace('gaming',2,{folders:[{id:'game-link',kind:'link',url:'https://example.com/game',label:'Game guide'}]});
+pinnedReferences[0].label='Changed after saving';
+assert.equal(shelf.space('work',2).folders[0].label,'Documents','Pinning stores independent reference values');
+shelf.updateSpace('work',2,{assistant:{status:'done',result:'Reference notes prepared'}});
+assert.equal(shelf.space('work',2).folders.length,3,'Assistant status updates preserve the reference shelf');
+shelf.updateSpace('work',2,{note:'Updated note'});
+assert.equal(shelf.space('work',2).folders.length,3,'Editing a note preserves saved shortcuts');
+assert.equal(shelf.space('gaming',2).folders[0].id,'game-link','References belong to the current Workspace');
+for(const nextRole of ['assistant','extended','side'])assert(shelf.setRole(2,nextRole).ok);
+shelf.connect([pair[0]]);shelf.connect(pair);
+const reopenedShelf=Displays.create(shelf.snapshot());reopenedShelf.connect(pair);
+assert.deepEqual(reopenedShelf.space('work',2).folders,[
+  {id:'folder-1',kind:'folder',path:'/home/demo/work/Documents',label:'Documents'},
+  {id:'file-1',kind:'file',path:'/home/demo/work/Documents/brief.md',label:'Brief'},
+  {id:'link-1',kind:'link',url:'https://example.com/reference',label:'Reference page'},
+],'Changing display roles, disconnecting and reloading keep folders, files and web references');
+const remaining=reopenedShelf.space('work',2).folders.filter(reference=>reference.id!=='file-1');
+reopenedShelf.updateSpace('work',2,{folders:remaining});
+assert.equal(reopenedShelf.space('work',2).folders.length,2,'Removing a shortcut changes only the saved list');
+assert.equal(reopenedShelf.space('work',2).note,'Updated note');
+assert.equal(reopenedShelf.space('gaming',2).folders.length,1,'Removing a Work shortcut never changes Gaming');
+assert.deepEqual(reopenedShelf.space('work',2).widgets,[{id:'side-checklist',kind:'checklist',items:[{id:'review',text:'Review brief',done:false},{id:'send',text:'Send notes',done:true}]}],'Checklist text and completion persist with the Workspace');
+const checklistView=reopenedShelf.space('work',2).widgets;checklistView[0].items[0].done=true;
+assert.equal(reopenedShelf.space('work',2).widgets[0].items[0].done,false,'Public checklist views cannot mutate persisted completion');
+assert.deepEqual(reopenedShelf.space('gaming',2).widgets,[],'A new Workspace starts with its own empty checklist');
+
 // Malformed storage is repaired to one main and safe, independent content.
 const corrupt=Displays.create({setups:{[Displays.signature(pair)]:{roles:{1:'main',2:'main',8:'nonsense'}}},workspaces:{work:{displays:{1:{windows:['same','same',null,42],assistant:{status:'anything',task:7},widgets:[null,'',{},false]},2:{windows:['same','other'],folders:[{path:'/Documents'}]}}},broken:null}});
 corrupt.connect(pair);
@@ -94,5 +130,9 @@ const badSignature=Displays.create({setups:{[Displays.signature(pair)]:{roles:{8
 badSignature.connect(pair);assert.equal(badSignature.main(),1);
 const cycle={kind:'note'};cycle.self=cycle;
 corrupt.updateSpace('work',1,{widgets:[cycle]});assert.deepEqual(corrupt.space('work',1).widgets,[{kind:'note'}]);
+const hostileReference=JSON.parse('{"id":"reference","kind":"link","url":"https://example.com","__proto__":{"polluted":true},"constructor":{"prototype":{"polluted":true}}}');
+corrupt.updateSpace('work',1,{folders:[hostileReference]});
+assert.deepEqual(corrupt.space('work',1).folders,[{id:'reference',kind:'link',url:'https://example.com'}],'Reference sanitization drops prototype-manipulating keys');
+assert.equal({}.polluted,undefined);
 assert.doesNotThrow(()=>JSON.stringify(corrupt.snapshot()));
 console.log('Display roles: main invariant, remembered monitor setups, reconnects, Workspace isolation and sticky content passed');
