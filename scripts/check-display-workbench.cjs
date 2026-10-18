@@ -4,19 +4,19 @@ const source=fs.readFileSync(path.join(__dirname,'../dist/display-workbench.js')
 const clone=value=>JSON.parse(JSON.stringify(value));
 // Exercise production workbench handlers with the real role model. The chat
 // and shelf adapters record mount identity, preserving their own live state.
-function harness(initialRole='assistant'){
-  const elements=new Map(),listeners={},opened=[],folders=[],restored=[],settings=[],controls=[],tasks=[],examples=[],answers=[],stops=[],modeChanges=[],chat={mounts:[],unmounts:0,renders:0,attachments:[],notices:[],taskStates:[]},side={mounts:[],states:[]},intervals=new Set();
+function harness(initialAllowed=true){
+  const elements=new Map(),listeners={},opened=[],folders=[],restored=[],settings=[],controls=[],tasks=[],examples=[],answers=[],stops=[],permissionChanges=[],chat={mounts:[],unmounts:0,renders:0,attachments:[],notices:[],taskStates:[]},side={mounts:[],states:[]},intervals=new Set();
   let serial=0,workspace='work',localSlot=2,parkedWindows=[],captureItems=[],failLaunch=false,blockedFolder=false,workingFolder='',currentChat='chat-1';
   let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
-  const model=Roles.create();model.connect(roster);model.setRole(2,initialRole);
+  const model=Roles.create();model.connect(roster);model.setRole(2,'side');model.setAssistantAllowed('work',2,initialAllowed);
   const document={activeElement:null};
   function element(){return {hidden:false,value:'',textContent:'',dataset:{},events:{},children:[],attributes:{},classList:{toggle(){}},focus(){document.activeElement=this;},replaceChildren(...children){this.children=children;},append(...children){this.children.push(...children);},querySelectorAll(selector){const all=node=>node.children.flatMap(child=>[child,...all(child)]);return selector==='[data-display-example]'?all(this).filter(child=>child.dataset.displayExample):[];},setAttribute(name,value){this.attributes[name]=value;},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
   const host=element(),zone={append(node){assert.equal(node,host);}};
   const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,
-    displays:model.setup().displays.map(display=>({...display,label:'Display '+display.slot})),space:model.space(workspace,localSlot),
+    displays:model.setup().displays.map(display=>({...display,label:'Display '+display.slot,assistantAllowed:model.space(workspace,display.slot).assistant.allowed})),space:model.space(workspace,localSlot),
     localWindows:model.space(workspace,localSlot).windows.filter(id=>!parkedWindows.some(window=>window.id===id)).map(id=>({id,label:'Note Editor'})),parkedWindows});
   const browser={addEventListener(type,fn){listeners[type]=fn;},SpatialDisplayRoleBridge:{state,
-    setRole(slot,role){modeChanges.push({slot,role});assert(model.setRole(slot,role).ok);browser.SpatialDisplayWorkbench.refresh();},
+    setAssistantAllowed(slot,allowed){permissionChanges.push({workspace,slot,allowed});const result=model.setAssistantAllowed(workspace,slot,allowed);browser.SpatialDisplayWorkbench.refresh();return result;},
     assistantControl(action){controls.push({workspace,slot:localSlot,action});model.setAssistant(workspace,localSlot,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});browser.SpatialDisplayWorkbench.refresh();},
     assistantExamples(){return [{id:'checklist',title:'Turn a brief into a checklist',prompt:'Make a launch checklist from this brief.',input:'A short sample launch brief',outcome:'Source note, editable checklist and saved Markdown copy'},{id:'image',title:'Convert an image for the web',prompt:'Convert this image to WebP.',input:'A bundled keyboard photograph',outcome:'Image preview and a conversion to review'},{id:'compare',title:'Compare two text versions',prompt:'Compare these release notes.',input:'Two sample versions',outcome:'An exact line comparison'}];},
     runAssistantExample(id){examples.push({workspace,slot:localSlot,id});return true;},
@@ -38,36 +38,38 @@ function harness(initialRole='assistant'){
     if(selector==='[data-display-assistant]')return inChat?elements.get('[data-display-assistant]'):null;
     return null;
   }}};}
-  return {model,host,elements,listeners,opened,folders,restored,settings,controls,tasks,examples,answers,stops,modeChanges,chat,side,intervals,state,refresh,document,
+  return {model,host,elements,listeners,opened,folders,restored,settings,controls,tasks,examples,answers,stops,permissionChanges,chat,side,intervals,state,refresh,document,
     action:(name,options)=>host.events.click(event('data-display-action',name,options)),example:id=>host.events.click(event('data-display-example',id)),answer:(id,tokens={})=>host.events.click(event('data-display-example-answer',id,{inChat:true,dataset:{displayQuestion:tokens.questionId,displayOperation:tokens.operationId}})),selectionDown:()=>host.events.pointerdown(event('data-display-action','selection',{inChat:true})),toolsDown:()=>host.events.pointerdown({target:{closest:selector=>selector==='[data-display-tools] summary'?{}:null}}),capture(items){captureItems=items;},restore:id=>host.events.click(event('data-display-window',id)),
     tabKey(key){let prevented=false;host.events.keydown({key,target:{closest:selector=>selector==='[role="tab"]'?{}:null},preventDefault(){prevented=true;},stopPropagation(){}});return prevented;},
     reveal(detail={}){listeners['spatial-assistant-display-reveal']({detail});},
     park(windows){parkedWindows=windows;for(const window of windows)model.pinWindow(workspace,localSlot,window.id);refresh();},
+    permission(allowed){host.events.change({target:{closest:selector=>selector==='[data-display-assistant-allowed]'?{checked:allowed}:null}});},
+    allowed(next,render=true){model.setAssistantAllowed(workspace,localSlot,next);if(render)refresh();},
     switchWorkspace(next,render=true){workspace=next;if(render)refresh();},role(next,render=true){assert(model.setRole(localSlot,next).ok);if(render)refresh();},
-    moveDisplay(next,render=true){localSlot=next;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'assistant');if(render)refresh();},failLaunch(value){failLaunch=value;},folder(path){workingFolder=path;},blockFolder(value){blockedFolder=value;},chatId(id){currentChat=id;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:id}});}};
+    moveDisplay(next,render=true){localSlot=next;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'side');if(render)refresh();},failLaunch(value){failLaunch=value;},folder(path){workingFolder=path;},blockFolder(value){blockedFolder=value;},chatId(id){currentChat=id;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:id}});}};
 }
 {
   const h=harness();
   assert.doesNotMatch(h.host.innerHTML,/display-workbench-bar/,'No horizontal helper header');
   assert.doesNotMatch(h.host.innerHTML,/Run demo task|displayAssistantTask/,'Shared chat remains the real chat implementation');
   assert.match(h.host.innerHTML,/class="display-assistant-chat"[^>]*aria-label="Assistant chat"/);
-  assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.chat.mounts.length,1);assert.equal(h.side.mounts.length,1,'Both modes have the same shelf and chat');
+  assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.chat.mounts.length,1);assert.equal(h.side.mounts.length,1,'The same Side space has both shelf and chat');h.action('chat');
   h.refresh();h.refresh();assert.equal(h.chat.mounts.length,1);assert.equal(h.side.mounts.length,1,'Routine refreshes preserve chat and reference node identities');
   h.action('references');const shelf=h.side.mounts[0],chat=h.chat.mounts[0];
   assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.elements.get('[data-display-assistant]').hidden,true);assert.equal(h.intervals.size,1);
-  h.role('side');assert.equal(h.chat.unmounts,0,'Changing who controls the space preserves its live chat');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.chat.mounts[0],chat);assert.equal(h.side.mounts[0],shelf);
+  h.permission(false);assert.equal(h.chat.unmounts,0,'Changing who controls the space preserves its live chat');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.chat.mounts[0],chat);assert.equal(h.side.mounts[0],shelf);
   h.action('chat');assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.intervals.size,0);
-  h.role('assistant');assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.chat.mounts.length,1);assert.equal(h.side.mounts.length,1);
-  h.switchWorkspace('gaming');assert.equal(h.host.dataset.displayTool,'chat');h.action('references');
+  h.permission(true);assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.chat.mounts.length,1);assert.equal(h.side.mounts.length,1);
+  h.switchWorkspace('gaming');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.elements.get('[data-display-assistant-allowed]').checked,false,'Permission never carries into a new Workspace');h.action('references');
   h.switchWorkspace('work');assert.equal(h.host.dataset.displayTool,'chat','Each Workspace restores its chosen tool');
   h.switchWorkspace('gaming');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.chat.mounts.length,1);assert.equal(h.side.states.at(-1).workspaceId,'gaming');
   h.role('extended');assert.equal(h.chat.unmounts,1);assert.equal(h.host.hidden,true);assert.equal(h.intervals.size,0);
   h.moveDisplay(1);assert.equal(h.host.hidden,true,'The main display has no helper workbench');
 }
-for(const role of ['side','assistant']){
-  const h=harness(role);
-  assert.equal(h.host.dataset.displayTool,role==='assistant'?'chat':'references','A new display starts with the mode’s most useful tool');
-  assert.equal(h.elements.get('[data-display-title]').textContent,role==='assistant'?'Assistant':'Side space');assert.match(h.elements.get('[data-display-scope]').textContent,/Work.*Display 2/);
+for(const allowed of [false,true]){
+  const h=harness(allowed);
+  assert.equal(h.host.dataset.displayTool,'references','A Side space starts with references regardless of permission');
+  assert.equal(h.elements.get('[data-display-title]').textContent,'Side space');assert.match(h.elements.get('[data-display-scope]').textContent,/Work.*Display 2/);
   h.action('settings');assert.deepEqual(h.settings.at(-1),{workspace:'work',slot:2});
   h.action('files');assert.deepEqual(h.folders.at(-1),{workspace:'work',slot:2,path:'/home/demo/work'});
   h.action('chat');h.folder('/home/demo/work/Projects/Website Launch');h.action('files',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Projects/Website Launch','Chat opens its selected working folder');h.folder('/home/demo/work/Projects/Website Launch/Assistant');h.refresh();h.action('working-folder',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Projects/Website Launch/Assistant');assert.equal(h.elements.get('[data-display-folder-name]').textContent,'Website Launch / Assistant');assert.equal(h.elements.get('[data-display-action="working-folder"]').title,'/home/demo/work/Projects/Website Launch/Assistant');h.folder('');
@@ -78,9 +80,9 @@ for(const role of ['side','assistant']){
   h.failLaunch(true);h.action('note');assert.match(h.elements.get('[data-display-feedback]').textContent,/could not open/);
 }
 {
-  const h=harness('side');h.model.pinWindow('work',2,'notes--existing');
+  const h=harness(false);h.model.pinWindow('work',2,'notes--existing');
   h.model.updateSpace('work',2,{note:'Shared scratch note',folders:[{kind:'folder',path:'/home/demo/work/Documents'}]});
-  h.action('mode');assert.deepEqual(h.modeChanges.at(-1),{slot:2,role:'assistant'});assert.deepEqual(h.model.space('work',2).windows,['notes--existing']);assert.equal(h.model.space('work',2).note,'Shared scratch note');assert.equal(h.host.dataset.displayTool,'references','Handing control to Assistant preserves the tool being used');
+  h.permission(true);assert.deepEqual(h.permissionChanges.at(-1),{workspace:'work',slot:2,allowed:true});assert.deepEqual(h.model.space('work',2).windows,['notes--existing']);assert.equal(h.model.space('work',2).note,'Shared scratch note');assert.equal(h.host.dataset.displayTool,'references','Handing control to Assistant preserves the tool being used');
   h.action('task-briefing');h.action('task-image');assert.deepEqual(h.tasks,[{workspace:'work',slot:2,kind:'briefing'},{workspace:'work',slot:2,kind:'image'}]);
   h.model.setAssistant('work',2,{status:'done',result:'Opened the reference image.'});h.refresh();
   h.action('takeover');assert.deepEqual(h.controls.at(-1),{workspace:'work',slot:2,action:'takeover'});assert.equal(h.elements.get('[data-display-control-status]').textContent,'You’re in control');assert.equal(h.elements.get('[data-display-action="takeover"]').hidden,true);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,false);
@@ -88,21 +90,21 @@ for(const role of ['side','assistant']){
   h.action('resume');assert.equal(h.model.space('work',2).assistant.result,'Opened the reference image.','Returning control retains the completed result');assert.equal(h.elements.get('[data-display-control-status]').textContent,'Ready');
   h.model.setAssistant('work',2,{status:'working',task:'Preparing a reference'});h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Working');
   h.model.setAssistant('work',2,{status:'needs-you',result:'Choose a reference'});h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input');
-  h.action('mode');assert.deepEqual(h.modeChanges.at(-1),{slot:2,role:'side'});assert.equal(h.elements.get('[data-display-control]').hidden,true);const count=h.controls.length,taskCount=h.tasks.length;
-  h.action('takeover');h.action('resume');h.action('task-image');assert.equal(h.controls.length,count);assert.equal(h.tasks.length,taskCount,'Side mode cannot invoke Assistant control from hidden controls');
-  assert.equal(h.model.space('work',2).note,'Shared scratch note');assert.equal(h.model.space('work',2).folders.length,1);
+  h.permission(false);assert.deepEqual(h.permissionChanges.at(-1),{workspace:'work',slot:2,allowed:false});assert.equal(h.elements.get('[data-display-control]').hidden,false);assert.equal(h.elements.get('[data-display-assistant-allowed]').checked,false);assert.equal(h.elements.get('[data-display-control-status]').textContent,'You’re in control');assert.equal(h.elements.get('[data-display-action="takeover"]').hidden,true);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,true);const count=h.controls.length,taskCount=h.tasks.length;
+  h.action('takeover');h.action('resume');h.action('task-image');assert.equal(h.controls.length,count);assert.equal(h.tasks.length,taskCount,'Permission off cannot invoke Assistant control from hidden controls');
+  assert.equal(h.model.space('work',2).note,'Shared scratch note');assert.equal(h.model.space('work',2).folders.length,1);assert.equal(h.state().role,'side');assert.deepEqual(h.model.space('work',2).windows,['notes--existing'],'Permission toggles preserve the actual display windows');
 }
 {
-  const h=harness('side'),focus={label:'Keep this editor focused'};h.document.activeElement=focus;h.refresh();assert.equal(h.document.activeElement,focus,'A routine display refresh does not steal focus');
+  const h=harness(false),focus={label:'Keep this editor focused'};h.document.activeElement=focus;h.refresh();assert.equal(h.document.activeElement,focus,'A routine display refresh does not steal focus');
   h.reveal({workspace:'gaming'});assert.equal(h.host.dataset.displayTool,'references','A reveal for another Workspace is ignored');
   h.reveal({workspace:'work'});assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.document.activeElement,focus,'Opening the shared tool leaves focus decisions to its caller');
   assert.equal(h.tabKey('End'),true);assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.document.activeElement,h.elements.get('[data-display-action="references"]'));
   assert.equal(h.elements.get('[data-display-action="references"]').attributes['aria-selected'],'true');assert.equal(h.elements.get('[data-display-action="chat"]').attributes.tabindex,'-1');
   h.tabKey('ArrowRight');assert.equal(h.host.dataset.displayTool,'chat');h.tabKey('Home');assert.equal(h.host.dataset.displayTool,'chat');assert.equal(h.tabKey('Tab'),false,'Normal Tab navigation is retained');
 }
-for(const role of ['side','assistant']){
-  const h=harness(role),selection=[{id:'selected-text',title:'Selected text · Note Editor',kind:'text',text:'Review this paragraph',workspace:'work'}];h.action('chat');
-  h.capture(selection);h.selectionDown();h.capture([]);h.action('selection',{inChat:true});assert.deepEqual(h.chat.attachments,[selection],'Selection is captured before button focus removes it in either mode');
+for(const allowed of [false,true]){
+  const h=harness(allowed),selection=[{id:'selected-text',title:'Selected text · Note Editor',kind:'text',text:'Review this paragraph',workspace:'work'}];h.action('chat');
+  h.capture(selection);h.selectionDown();h.capture([]);h.action('selection',{inChat:true});assert.deepEqual(h.chat.attachments,[selection],'Selection is captured before button focus removes it in either permission state');
   h.action('selection',{inChat:true});assert.equal(h.chat.attachments.length,1);assert.match(h.chat.notices.at(-1),/Select text or files/);
   h.capture(selection);h.selectionDown();h.switchWorkspace('gaming');h.action('selection',{inChat:true});assert.equal(h.chat.attachments.length,1,'A Work selection cannot attach to Gaming');
   h.action('references');const opened=h.opened.length,folders=h.folders.length;h.action('note',{inChat:true});h.action('files',{inChat:true});h.capture(selection);h.selectionDown();h.action('selection',{inChat:true});
@@ -110,18 +112,19 @@ for(const role of ['side','assistant']){
 }
 for(const transition of ['workspace','role','setup','display']){
   const h=harness();h.capture([{id:'selected',text:'Work only'}]);h.selectionDown();
-  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('side',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
-  for(const action of ['files','note','briefing','selection','mode','takeover','resume','task-briefing','task-image','references'])h.action(action);
-  assert.equal(h.opened.length,0,transition+': stale actions cannot open new-context windows');assert.equal(h.folders.length,0);assert.equal(h.chat.attachments.length,0);assert.equal(h.controls.length,0);assert.equal(h.tasks.length,0);assert.equal(h.modeChanges.length,0);
+  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('extended',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
+  h.permission(false);
+  for(const action of ['files','note','briefing','selection','takeover','resume','task-briefing','task-image','references'])h.action(action);
+  assert.equal(h.opened.length,0,transition+': stale actions cannot open new-context windows');assert.equal(h.folders.length,0);assert.equal(h.chat.attachments.length,0);assert.equal(h.controls.length,0);assert.equal(h.tasks.length,0);assert.equal(h.permissionChanges.length,0);
 }
-for(const role of ['side','assistant']){
-  const h=harness(role);assert.equal(h.elements.get('[data-display-parked]').hidden,true);
+for(const allowed of [false,true]){
+  const h=harness(allowed);assert.equal(h.elements.get('[data-display-parked]').hidden,true);
   h.park([{id:'notes--1',label:'Note Editor',title:'Workspace briefing'}]);assert.equal(h.elements.get('[data-display-parked]').hidden,false);assert.equal(h.elements.get('[data-display-parked-count]').textContent,'1');
   const button=h.elements.get('[data-display-parked-list]').children[0];assert.equal(button.textContent,'Restore Workspace briefing');assert.equal(button.dataset.displayWindow,'notes--1');
   h.restore('notes--1');assert.deepEqual(h.restored[0],{workspace:'work',slot:2,id:'notes--1'});assert.equal(h.elements.get('[data-display-parked]').hidden,true);assert.equal(h.state().localWindows[0].id,'notes--1');
   h.action('references');const mounts=h.chat.mounts.length,shelfMounts=h.side.mounts.length;
   h.listeners.pagehide();assert.equal(h.intervals.size,0);assert.equal(h.chat.unmounts,1,'Page exit returns the shared chat node');
-  h.listeners.pageshow();assert.equal(h.chat.mounts.length,mounts+1,'The page cache remounts chat in either supporting mode');assert.equal(h.side.mounts.length,shelfMounts,'Page cache return does not duplicate shelf listeners');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.intervals.size,1,'Returning to References restarts its clock');
+  h.listeners.pageshow();assert.equal(h.chat.mounts.length,mounts+1,'The page cache remounts chat in Side space');assert.equal(h.side.mounts.length,shelfMounts,'Page cache return does not duplicate shelf listeners');assert.equal(h.host.dataset.displayTool,'references');assert.equal(h.intervals.size,1,'Returning to References restarts its clock');
 }
 // Examples are an explicit temporary viewport; simply browsing does not
 // create chats or documents, and stale or manual-control runs are rejected.
@@ -138,17 +141,17 @@ for(const role of ['side','assistant']){
   h.action('takeover');h.action('examples');assert.match(h.elements.get('[data-display-examples-access-text]').textContent,/Continue/);assert.equal(cards[0].children[3].disabled,true);h.example('image');assert.equal(h.examples.length,1);
   h.action('resume');assert.equal(cards[0].children[3].disabled,false);h.example('image');assert.equal(h.examples.at(-1).id,'image');
   h.action('examples');h.switchWorkspace('gaming');assert.equal(h.host.dataset.displayExamples,'closed','Workspace changes close the example view');
-  h.action('examples');h.role('side');assert.equal(h.host.dataset.displayExamples,'closed','Mode changes close the example view');
-  h.action('chat');h.action('examples');assert.match(h.elements.get('[data-display-examples-access-text]').textContent,/Hand this display/);h.example('compare');assert.equal(h.examples.length,2,'Side space allows browsing without granting control');
-  h.action('examples-delegate');assert.equal(h.state().role,'assistant');assert.equal(h.host.dataset.displayExamples,'closed');
+  h.action('examples');h.permission(false);assert.equal(h.host.dataset.displayExamples,'open','Changing permission preserves the browsed examples');
+  h.action('chat');h.action('examples');assert.match(h.elements.get('[data-display-examples-access-text]').textContent,/Allow Assistant/);h.example('compare');assert.equal(h.examples.length,2,'Side space allows browsing without granting control');
+  h.action('examples-delegate');assert.equal(h.state().role,'side');assert.equal(h.state().space.assistant.allowed,true);assert.equal(h.host.dataset.displayExamples,'open','Granting access leaves the browsed examples in place');
 }
 for(const transition of ['workspace','role','setup','display']){
   const h=harness();h.action('examples');
-  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('side',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
+  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('extended',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
   h.example('checklist');assert.equal(h.examples.length,0,transition+': stale example controls cannot act in a changed context');
 }
 {
-  const h=harness();h.folder('/home/demo/work/Assistant');h.blockFolder(true);h.action('working-folder',{inChat:true});assert.equal(h.folders.length,0,'An existing file named Assistant cannot be opened as a new folder');assert.match(h.elements.get('[data-display-feedback]').textContent,/already names a file/);h.blockFolder(false);h.action('working-folder',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Assistant');
+  const h=harness();h.action('chat');h.folder('/home/demo/work/Assistant');h.blockFolder(true);h.action('working-folder',{inChat:true});assert.equal(h.folders.length,0,'An existing file named Assistant cannot be opened as a new folder');assert.match(h.elements.get('[data-display-feedback]').textContent,/already names a file/);h.blockFolder(false);h.action('working-folder',{inChat:true});assert.equal(h.folders.at(-1).path,'/home/demo/work/Assistant');
 }
 // The workbench supplies the actual chat with current display state. Task
 // progress, answers and results have one owner inside that conversation.
@@ -168,7 +171,7 @@ for(const transition of ['workspace','role','setup','display']){
   h.role('extended');assert.equal(h.chat.taskStates.at(-1),null,'Leaving the workbench clears its inline display task');
 }
 {
-  const h=harness(),selection=[{id:'selected-text',title:'Selected text',kind:'text',text:'Keep this selection',workspace:'work'}];
+  const h=harness(),selection=[{id:'selected-text',title:'Selected text',kind:'text',text:'Keep this selection',workspace:'work'}];h.action('chat');
   assert.match(h.host.innerHTML,/class="display-chat-tools display-workbench-menu"[^>]*data-display-tools/);
   assert.match(h.host.innerHTML,/class="display-options display-workbench-menu"[^>]*data-display-options/);
   assert.doesNotMatch(h.host.innerHTML,/class="display-canvas-actions"|class="display-mode-controls"/,'Occasional tools and mode descriptions stay out of the conversation layout');
@@ -194,4 +197,4 @@ for(const transition of ['workspace','role','setup','display']){
   pinned=true;context.appState['notes--1']='closed';assert.equal(context.selectedText(),null,'A closed helper window cannot supply a selection');
   context.appState['notes--1']='open';frame.hidden=true;assert.equal(context.selectedText(),null,'A hidden helper window cannot supply a selection');
 }
-console.log('Display workbench passed: shared tools and mode handoff, explicit control status, real canvas actions, selections, focus, stale guards, tab keyboard access and page-cache lifecycle.');
+console.log('Display workbench passed: shared tools and scoped permission, explicit control status, real canvas actions, selections, focus, stale guards, tab keyboard access and page-cache lifecycle.');

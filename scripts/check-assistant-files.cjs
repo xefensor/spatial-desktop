@@ -80,21 +80,21 @@ node('aiPrompt').value='Convert selected files to HTML in Converted';
   await clickRun(sent[0].id);assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,2,'A completed action cannot run twice');
   // Conversion outputs on a helper display must use new local windows. The
   // normal File Browser lookup can otherwise pull a main-display window away.
-  const normalFolders=[],normalFiles=[],helperReferences=[],outputPath='/mnt/Web/Converted/'+written[0].name;let outputRole='main',failReference=false;
+  const normalFolders=[],normalFiles=[],helperReferences=[],outputPath='/mnt/Web/Converted/'+written[0].name;let outputRole='main',outputAllowed=false,failReference=false;
   boot.openFileLocation=directory=>{normalFolders.push(directory);frame.dataset.fileLocation=directory;};
   boot.openAppFile=(id,name)=>normalFiles.push({id,name});
-  boot.SpatialDisplayRoleBridge={state:()=>({role:outputRole}),openReference(reference){if(failReference)throw Error('Output is unavailable.');helperReferences.push({...reference});return 'helper-file';}};
+  boot.SpatialDisplayRoleBridge={state:()=>({role:outputRole,space:{assistant:{allowed:outputAllowed}}}),openReference(reference){if(failReference)throw Error('Output is unavailable.');helperReferences.push({...reference});return 'helper-file';}};
   function clickOutput(attribute,path){const card={dataset:{turn:sent[0].id}};return events['aiTranscript:click'][0]({target:{closest(selector){if(selector==='.ai-file-task')return card;if(selector===attribute)return path?{dataset:{taskFileOpen:path}}:{};return null;}}});}
   clickOutput('[data-task-open]');clickOutput('[data-task-file-open]',outputPath);
   assert.deepEqual(normalFolders,['/mnt/Web/Converted','/mnt/Web/Converted'],'Main keeps the ordinary folder-opening behavior');
   assert.deepEqual(normalFiles,[{id:'files',name:written[0].name}],'Main keeps its existing file preview behavior');
-  for(const role of ['assistant','side']){outputRole=role;clickOutput('[data-task-open]');clickOutput('[data-task-file-open]',outputPath);}
+  for(const allowed of [false,true]){outputRole='side';outputAllowed=allowed;clickOutput('[data-task-open]');clickOutput('[data-task-file-open]',outputPath);}
   assert.deepEqual(helperReferences,[{kind:'folder',path:'/mnt/Web/Converted'},{kind:'file',path:outputPath},{kind:'folder',path:'/mnt/Web/Converted'},{kind:'file',path:outputPath}]);
   assert.equal(normalFolders.length,2,'Helper output actions never invoke the cross-display File Browser lookup');assert.equal(normalFiles.length,1);
   failReference=true;clickOutput('[data-task-file-open]',outputPath);assert.equal(boot.status,'Output is unavailable.','Failed helper outputs show the error without taking over a main window');
   const failed=session.exchange('work','Convert again',{title:'Conversion',text:'Review',action:{format:'html',destination:'/mnt/Web/Converted',status:'review'}},{sources:sent[0].sources});failPut=true;await clickRun(failed.id);assert.equal(session.session('work').turns.at(-1).action.status,'failed');assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,2,'A failed save leaves the folder unchanged');
   failPut=false;const exampleChat=session.newChat('work').id,exampleSources=sent[0].sources.slice(0,1),updates=[];
-  let helperState={role:'assistant',setupKey:'setup-2',localSlot:2,workspaceId:'work',space:{assistant:{control:'assistant'}}};
+  let helperState={role:'side',setupKey:'setup-2',localSlot:2,workspaceId:'work',space:{assistant:{allowed:true,control:'assistant'}}};
   boot.SpatialDisplayRoleBridge={state:()=>helperState,assistantExampleConversionUpdate(update){updates.push(update);}};
   const exampleOptions={request:'Convert the attached notes to HTML',format:'html',destination:'/mnt/Web',folder:'/mnt/Web',items:exampleSources,workspace:'work',chatId:exampleChat,isCurrent:()=>true};
   frame.dataset.fileLocation='/mnt/Web/Converted';
@@ -114,10 +114,11 @@ node('aiPrompt').value='Convert selected files to HTML in Converted';
   boot.workspaceDownloads.add('/mnt/Web/Converted','Unrelated user edit.txt',{workspace:'work',content:'Keep this intervening edit'});boot.activeWorkspace='gaming';releaseWrite();await interrupted;
   assert.equal(session.session('work',exampleChat).turns[0].action.status,'failed');assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,3,'Stopping an awaited write preserves unrelated file changes and publishes no conversion');assert(boot.workspaceDownloads.list('/mnt/Web/Converted').some(file=>file.name==='Unrelated user edit.txt'));assert.equal(updates.at(-1).action.status,'failed');assert.equal(updates.at(-1).chatId,exampleChat);
   boot.activeWorkspace='work';session.select('work',exampleChat);releaseWrite=null;
-  const takeover=clickRun(exampleTurn.id);for(let i=0;i<10&&!releaseWrite;i++)await Promise.resolve();assert(releaseWrite);helperState={...helperState,space:{assistant:{control:'user'}}};releaseWrite();await takeover;assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,3,'Taking over the Assistant display also stops an awaited conversion before files are published');assert.equal(updates.at(-1).action.status,'failed');
+  const takeover=clickRun(exampleTurn.id);for(let i=0;i<10&&!releaseWrite;i++)await Promise.resolve();assert(releaseWrite);helperState={...helperState,space:{assistant:{allowed:true,control:'user'}}};releaseWrite();await takeover;assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,3,'Taking over the Assistant display also stops an awaited conversion before files are published');assert.equal(updates.at(-1).action.status,'failed');
   assert.equal(removedKeys.length,2);assert(removedKeys.every(key=>key.startsWith('stash-converted-')),'Interrupted conversions clean up only their own unpublished byte keys');
-  helperState={...helperState,space:{assistant:{control:'assistant'}}};boot.SpatialStashFiles.put=normalPut;
-  await clickRun(exampleTurn.id);assert.equal(updates.at(-1).action.status,'complete');assert.equal(updates.at(-1).action.outputs.length,1);assert.equal(updates.at(-1).turnId,exampleTurn.id);assert.equal(removedKeys.length,2,'Published bytes are never removed by staging cleanup');
+  helperState={...helperState,space:{assistant:{allowed:true,control:'assistant'}}};releaseWrite=null;const revoked=clickRun(exampleTurn.id);for(let i=0;i<10&&!releaseWrite;i++)await Promise.resolve();assert(releaseWrite);helperState={...helperState,space:{assistant:{allowed:false,control:'assistant'}}};releaseWrite();await revoked;assert.equal(boot.workspaceDownloads.list('/mnt/Web/Converted').length,3,'Revoking display permission stops an awaited delegated conversion before publication');assert.equal(updates.at(-1).action.status,'failed');assert.equal(removedKeys.length,3);
+  helperState={...helperState,space:{assistant:{allowed:true,control:'assistant'}}};boot.SpatialStashFiles.put=normalPut;
+  await clickRun(exampleTurn.id);assert.equal(updates.at(-1).action.status,'complete');assert.equal(updates.at(-1).action.outputs.length,1);assert.equal(updates.at(-1).turnId,exampleTurn.id);assert.equal(removedKeys.length,3,'Published bytes are never removed by staging cleanup');
   const cancelled=await boot.SpatialAssistantDesktop.proposeExampleConversion(exampleOptions),cancelCard={dataset:{turn:cancelled.id}};
   events['aiTranscript:click'][0]({target:{closest:selector=>selector==='.ai-file-task'?cancelCard:selector==='[data-task-cancel]'?{}:null}});assert.equal(updates.at(-1).action.status,'cancelled');assert.equal(updates.at(-1).turnId,cancelled.id);
   const reviewOnly=await boot.SpatialAssistantDesktop.proposeExampleConversion({...exampleOptions,assistantOnly:true});assert.equal(reviewOnly.request,'');assert.equal(reviewOnly.assistantOnly,true,'An example conversion review follows its existing request without inventing a repeated user prompt');assert.equal(reviewOnly.action.status,'review');

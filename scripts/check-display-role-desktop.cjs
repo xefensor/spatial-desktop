@@ -5,7 +5,7 @@ const source=fs.readFileSync(path.join(__dirname,'../dist/display-role-desktop.j
 const shell=fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.js'),'utf8');
 const clone=value=>JSON.parse(JSON.stringify(value));
 const slice=(start,end)=>shell.slice(shell.indexOf(start),shell.indexOf(end,shell.indexOf(start)));
-function fixture(count=2){
+function fixture(count=2,savedRoles=null,savedTiles=null){
   const listeners={},elements={},frames={},storage=new Map(),roster=Array.from({length:count},(_,index)=>({slot:index+1,source:'browser-'+index,width:1440,height:900}));
   for(const selector of ['#emptyWorkspace','.workspace-zone','.desktop-context-page'])elements[selector]={hidden:false,textContent:'',setAttribute(name,value){this[name]=value;}};
   const assignments={work:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}},gaming:{apps:{browser:1,editor:2,music:1},areas:{apps:1,systems:2}}};
@@ -61,6 +61,8 @@ function fixture(count=2){
     SpatialAppTools:{activeNote:model=>model},appWindowModel:id=>notes[id]||=({title:'',text:''}),renderNotes(){},saveAppWindows(){},
   };
   for(const workspace of ['work','gaming'])for(const id of Object.keys(c.appInfo))c.desktopPages.assign(workspace,id,0,'workspace');
+  if(savedRoles)storage.set('spatial-display-roles-v1',JSON.stringify(savedRoles));
+  if(savedTiles)c.tileSessions=savedTiles;
   vm.createContext(c);
   // Use the real normal-display membership and tile-context implementations.
   vm.runInContext(slice('function isLocalApp(name) {','function isLocalArea(name) {'),c);
@@ -79,7 +81,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   assert.deepEqual(clone(c.tileBounds()),normal,'Main display keeps its normal tiling bounds at '+viewport+'px');
   c.localSlot=2;
   assert.deepEqual(clone(c.tileBounds()),normal,'Extended display keeps its normal tiling bounds at '+viewport+'px');
-  for(const role of ['side','assistant']){
+  for(const role of ['side']){
     c.SpatialDisplayRoleBridge.setRole(2,role);
     const actual=clone(c.tileBounds());
     assert.deepEqual(actual,{...normal,x:8+panel,width:Math.max(1,normal.width-panel)},role+': the '+viewport+'px canvas reserves only its '+panel+'px side panel');
@@ -120,7 +122,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
 }
 
 {
-  const {c}=fixture(3);c.SpatialDisplayRoleBridge.setRole(2,'side');c.SpatialDisplayRoleBridge.setRole(3,'assistant');
+  const {c}=fixture(3);c.SpatialDisplayRoleBridge.setRole(2,'side');c.SpatialDisplayRoleBridge.setRole(3,'side');c.SpatialDisplayRoleBridge.setAssistantAllowed(3,true);
   c.transferAppToDisplay('browser',2);
   assert.equal(c.SpatialDisplayRoleDesktop.snapshot().workspaces.work.displays[2].windows.includes('browser'),true);
   c.transferAppToDisplay('browser',3);
@@ -140,7 +142,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
 }
 
 {
-  const {c,packets,listeners}=fixture();c.SpatialDisplayRoleBridge.setRole(2,'assistant');
+  const {c,packets,listeners}=fixture();c.SpatialDisplayRoleBridge.setRole(2,'side');c.SpatialDisplayRoleBridge.setAssistantAllowed(2,true);
   const saved=c.captureDesktopSyncState();assert(saved.displayRoles,'Linked displays receive role and helper content state');
   c.frontApp='browser';c.desktopHasWindowFocus=true;
   c.applyDesktopSyncState({...saved,frontApp:'editor',desktopHasWindowFocus:false});
@@ -204,7 +206,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   assert.equal(assignments.work.areas.apps,1);assert.equal(areaTransfers.length,1,'Side space blocks Area transfers');
   assert.equal(c.contextMenuEntries({kind:'area',name:'apps'}).some(entry=>entry.action==='area-move-display'),false,'The Area menu hides unavailable helper-display moves');
   assert.equal(c.contextMenuEntries({kind:'area',name:'apps'}).some(entry=>entry.action==='area-hide'),true,'Other Area actions remain available');
-  c.SpatialDisplayRoleBridge.setRole(2,'assistant');c.transferAreaToDisplay('apps',2);
+  c.SpatialDisplayRoleBridge.setAssistantAllowed(2,true);c.transferAreaToDisplay('apps',2);
   assert.equal(assignments.work.areas.apps,1);assert.equal(areaTransfers.length,1,'Assistant space also blocks Area transfers');
   c.SpatialDisplayRoleBridge.setRole(2,'extended');
   assert.equal(c.contextMenuEntries({kind:'area',name:'apps'}).some(entry=>entry.action==='area-move-display'),true);
@@ -230,11 +232,15 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   assert.equal(side.some(entry=>['desktop-new-folder','desktop-paste'].includes(entry.action)),false);
   assert.equal(side.some(entry=>entry.label?.startsWith('Project · ')),false,'Side space does not offer actions for a Project it does not follow');
   assert(side.some(entry=>entry.action==='desktop-wallpaper'),'Independent display actions remain available');
+  assert.equal(sideRoles.children.filter(entry=>entry.action?.startsWith('display-role:')).length,3,'Only Main, Extended and Side space are display roles');
+  assert.equal(sideRoles.children.find(entry=>entry.action==='display-assistant-toggle').checked,false);
+  c.executeContextAction('display-assistant-toggle');assert.equal(c.SpatialDisplayRoleBridge.state().space.assistant.allowed,true);
+  c.executeContextAction('display-assistant-toggle');assert.equal(c.SpatialDisplayRoleBridge.state().space.assistant.allowed,false);
   assert.match(side.find(entry=>entry.info).info,/Side space · Display 2 · Work Workspace · all desktops and Projects/);
-  c.SpatialDisplayRoleBridge.setRole(2,'assistant');
+  c.SpatialDisplayRoleBridge.setAssistantAllowed(2,true);
   const assistant=c.contextMenuEntries({kind:'desktop'});
-  assert.match(assistant.find(entry=>entry.info).info,/Assistant · Display 2 · Work Workspace/);
-  assert.equal(assistant.find(entry=>entry.label==='Display role').children.find(entry=>entry.action==='display-role:assistant').checked,true);
+  assert.match(assistant.find(entry=>entry.info).info,/Side space · Display 2 · Work Workspace/);
+  assert.equal(assistant.find(entry=>entry.label==='Display role').children.find(entry=>entry.action==='display-assistant-toggle').checked,true);
   assert.equal(assistant.some(entry=>entry.action==='desktop-page:next'||entry.label?.startsWith('Project · ')),false);
   c.roster=[c.roster[0]];c.localSlot=1;c.updateDesktopSyncPresence();
   const single=c.contextMenuEntries({kind:'desktop'}).find(entry=>entry.label==='Display role');
@@ -309,14 +315,17 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   const {c,packets}=fixture();c.SpatialDisplayRoleBridge.setRole(2,'side');c.localSlot=2;
   const key=c.tileContextKey(),session={root:Tiles.leaf('editor'),floating:{},parked:{}};
   c.tileSessions[key]=session;c.SpatialDisplayRoleBridge.updateSpace({note:'Keep this shelf',folders:[{kind:'folder',path:'/Work/Documents'}]});
-  c.SpatialDisplayRoleBridge.setRole(2,'assistant');
+  c.SpatialDisplayRoleBridge.setAssistantAllowed(2,true);
+  assert.equal(c.SpatialDisplayRoleBridge.state().role,'side','Permission changes no display role');
+  assert.equal(c.SpatialDisplayRoleBridge.state().displays[1].assistantAllowed,true);
+  c.activeWorkspace='gaming';assert.equal(c.SpatialDisplayRoleBridge.state().displays[1].assistantAllowed,false,'Settings permission follows the active Workspace');c.activeWorkspace='work';
   assert.equal(c.tileContextKey(),key,'Assistant and Side use the same tile session');
   assert.equal(c.intentContextPrefix()+2,key);assert.equal(c.tileSessions[key],session,'Mode toggle preserves the actual tile tree');
   assert.equal(c.tileSessions[key].root.name,'editor');
   assert.equal(c.SpatialDisplayRoleBridge.windowContextKey('editor'),key,'Window source scope stays stable when delegated');
   assert.equal(c.SpatialDisplayRoleBridge.state().space.note,'Keep this shelf');
-  c.SpatialDisplayRoleBridge.setRole(2,'side');assert.equal(c.tileSessions[key],session,'Returning control preserves window arrangement too');
-  assert.equal(c.SpatialDisplayRoleBridge.state().space.assistant.control,'user');
+  c.SpatialDisplayRoleBridge.setAssistantAllowed(2,false);assert.equal(c.tileSessions[key],session,'Removing permission preserves window arrangement too');
+  assert.equal(c.SpatialDisplayRoleBridge.state().space.assistant.allowed,false);
   const old='work:display-role:side:2';delete c.tileSessions[key];c.tileSessions[old]=session;
   c.applyDesktopSyncState(c.captureDesktopSyncState());
   assert.equal(c.tileSessions[key],session,'Old saved Side sessions migrate to the shared context');assert.equal(c.tileSessions[old],undefined);
@@ -334,9 +343,9 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
 
 {
   const {c,created,fileLocations,notes,listeners}=fixture();const B=c.SpatialDisplayRoleBridge;
-  assert.throws(()=>B.runAssistantTask('briefing'),/assigned display/);
-  B.setRole(2,'side');c.localSlot=2;assert.throws(()=>B.runAssistantTask('briefing'),/assigned display/);assert.throws(()=>B.assistantControl('resume'),/assigned display/);
-  B.setRole(2,'assistant');c.SpatialAIDesktop={workingFolder:()=>'/Work/Documents'};
+  assert.throws(()=>B.runAssistantTask('briefing'),/connected Side space/);
+  B.setRole(2,'side');c.localSlot=2;assert.throws(()=>B.runAssistantTask('briefing'),/Allow Assistant/);assert.throws(()=>B.assistantControl('resume'),/Allow Assistant/);
+  B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop={workingFolder:()=>'/Work/Documents'};
   const mainBefore=c.appState.browser;
   let result=B.runAssistantTask('briefing');
   assert.equal(result.status,'done');assert.equal(result.control,'assistant');assert.equal(result.kind,'briefing');
@@ -353,7 +362,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   assert.deepEqual(clone(B.state().space.assistant.outputs),completed.outputs);
   B.assistantControl('resume');assert.equal(B.state().space.assistant.status,'idle');assert.equal(created.length,count,'Continue restores authority without replaying a completed task');
   assert.equal(B.state().space.assistant.result,completed.result,'Continue changes authority without replacing the result with control instructions');
-  B.setRole(2,'side');B.setRole(2,'assistant');
+  B.setAssistantAllowed(2,false);B.setAssistantAllowed(2,true);
   assert.equal(B.state().space.assistant.control,'assistant');assert.equal(B.state().space.assistant.status,'idle');
   assert.equal(B.state().space.assistant.result,completed.result,'Handing a Side space back to Assistant retains its completed result');
   result=B.runAssistantTask('image');assert.equal(result.status,'done');assert.equal(result.outputs.length,2);
@@ -366,26 +375,27 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   fire(event(c.frameFor(result.outputs[1]),'keydown'));assert.equal(B.state().space.assistant.control,'user','Typing in a local result note takes control even after the task finished');
   B.assistantControl('resume');fire(event(c.frameFor(result.outputs[0])));assert.equal(B.state().space.assistant.status,'paused','Pointer interaction with an actual local window pauses control');
   B.assistantControl('resume');fire({type:'pointerdown',target:{closest:()=>null,matches:selector=>selector==='.workspace-zone'}});assert.equal(B.state().space.assistant.control,'user','The empty canvas also gives the user control');
-  B.assistantControl('resume');B.setRole(2,'side');fire(event(c.frameFor(result.outputs[1]),'keydown'));assert.equal(B.state().space.assistant.control,'user','Side space stays user controlled');
-  B.setRole(2,'assistant');c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';assert.throws(()=>B.runAssistantTask('briefing'),/this Workspace/);assert.equal(created.length,count+2,'A foreign task folder cannot open windows');
+  B.assistantControl('resume');B.setAssistantAllowed(2,false);fire(event(c.frameFor(result.outputs[1]),'keydown'));assert.equal(B.state().space.assistant.control,'assistant','Working in Side space with permission off does not alter Assistant control state');
+  B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';assert.throws(()=>B.runAssistantTask('briefing'),/this Workspace/);assert.equal(created.length,count+2,'A foreign task folder cannot open windows');
 }
 
 {
-  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
+  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'side');B.setAssistantAllowed(2,true);c.localSlot=2;
   for(const stale of ['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.']){
     const packet=c.captureDesktopSyncState();
-    packet.displayRoles.workspaces.work.displays[2].assistant={revision:B.state().space.assistant.revision+1,status:'paused',control:'user',task:'Prepare briefing',result:stale};
+    packet.displayRoles.workspaces.work.displays[2].assistant={allowed:true,revision:B.state().space.assistant.revision+1,status:'paused',control:'user',task:'Prepare briefing',result:stale};
     c.applyDesktopSyncState(packet);
     assert.equal(B.state().space.assistant.result,'','Previously persisted control instructions are removed when loading saved display state');
-    B.setRole(2,'side');B.setRole(2,'assistant');
-    assert.equal(B.state().space.assistant.control,'assistant');assert.equal(B.state().space.assistant.status,'idle');
+    B.setAssistantAllowed(2,false);B.setAssistantAllowed(2,true);
+    assert.equal(B.state().space.assistant.control,'user','Reallowing never clears a separate Take over');
+    B.assistantControl('resume');assert.equal(B.state().space.assistant.status,'idle');
     assert.equal(B.state().space.assistant.result,'','A Ready display never restores stale user-control instructions');
     assert.equal(B.state().space.assistant.task,'Prepare briefing','Control-notice repair preserves the original task title');
   }
 }
 
 {
-  const {c,created}=fixture();const B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
+  const {c,created}=fixture();const B=c.SpatialDisplayRoleBridge;B.setRole(2,'side');B.setAssistantAllowed(2,true);c.localSlot=2;
   B.updateSpace({assistant:{status:'working',task:'Unfinished',context:{workspace:'work',setup:'displays:1|2',slot:2,folder:'/Work'}}});
   c.activeWorkspace='gaming';c.updateDesktopPageUi();
   const old=c.SpatialDisplayRoleDesktop.snapshot().workspaces.work.displays[2].assistant;
@@ -401,7 +411,7 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
 }
 
 {
-  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
+  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'side');B.setAssistantAllowed(2,true);c.localSlot=2;
   const context={workspace:'work',setup:B.state().setupKey,slot:2,folder:'/Work',chatId:'chat-example',turnId:'turn-example'};
   B.updateSpace({assistant:{kind:'image',status:'needs-you',control:'assistant',task:'Convert an image',context}});
   const update=(status,details={})=>B.assistantExampleConversionUpdate({workspace:'work',chatId:context.chatId,turnId:context.turnId,action:{status,destination:'/Work/Web',outputs:[],...details}});
@@ -416,3 +426,15 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
 }
 
 console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, scoped reference catalogue, Project-independent tiling, transfers, Workspace isolation, sync focus, conversion progress and reconnect recovery passed');
+
+// Older role-specific sessions migrate using the formerly visible role, even
+// when both historical layouts exist. No pins, notes or chat scope are reset.
+{
+  const saved={version:1,setups:{'displays:1|2':{roles:{1:'main',2:'assistant'}}},workspaces:{work:{displays:{2:{windows:['editor'],note:'Old monitor notes',assistant:{task:'Old task',context:{workspace:'work',setup:'displays:1|2',slot:2,folder:'/Work/Assistant',chatId:'old-chat'}}}}}}};
+  const assistantSession={root:Tiles.leaf('editor'),floating:{},parked:{}},sideSession={root:Tiles.leaf('browser'),floating:{},parked:{}};
+  const {c}=fixture(2,saved,{'work:display-role:assistant:2':assistantSession,'work:display-role:side:2':sideSession});c.localSlot=2;
+  const state=c.SpatialDisplayRoleBridge.state();assert.equal(state.role,'side');assert.equal(state.space.assistant.allowed,true);
+  assert.equal(c.tileSessions['work:display-role:space:2'],assistantSession,'The old visible Assistant layout wins the one-time merge');
+  assert.equal(c.tileSessions['work:display-role:side:2'],undefined);assert.equal(c.tileSessions['work:display-role:assistant:2'],undefined);
+  assert.deepEqual(clone(state.space.windows),['editor']);assert.equal(state.space.note,'Old monitor notes');assert.equal(state.space.assistant.context.chatId,'old-chat');
+}

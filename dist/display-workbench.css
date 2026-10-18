@@ -1,12 +1,12 @@
 /* Supporting displays keep one full-height tools panel against the viewport
    edge. Window bounds reserve its width; there is no top or bottom bar. */
-body:is([data-display-role="extended"],[data-display-role="side"],[data-display-role="assistant"]) .desktop-shell{--desktop-context-height:0px!important}
-body:is([data-display-role="extended"],[data-display-role="side"],[data-display-role="assistant"]) .desktop-context-header{display:none!important}
-body:is([data-display-role="side"],[data-display-role="assistant"]) .desktop-shell>.workspace-zone{inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important}
+body:is([data-display-role="extended"],[data-display-role="side"]) .desktop-shell{--desktop-context-height:0px!important}
+body:is([data-display-role="extended"],[data-display-role="side"]) .desktop-context-header{display:none!important}
+body[data-display-role="side"] .desktop-shell>.workspace-zone{inset:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important}
 .display-workbench{position:absolute;inset:0;z-index:5;pointer-events:none;--display-workbench-width:380px;--display-role-accent:var(--role-project,var(--workspace-accent,var(--blue)));color:var(--sd-glass-text);font-size:12px}
 .display-workbench[hidden],.display-workbench [hidden]{display:none!important}
-body:is([data-display-role="side"],[data-display-role="assistant"]) :is(#emptyWorkspace,.desktop-page-rail,.desktop-folder,#desktopContextColumns){display:none!important}
-.display-workbench[data-display-role="assistant"]{--display-role-accent:var(--role-ai,var(--violet,#b89aff))}
+body[data-display-role="side"] :is(#emptyWorkspace,.desktop-page-rail,.desktop-folder,#desktopContextColumns){display:none!important}
+.display-workbench[data-assistant-allowed="true"]{--display-role-accent:var(--role-ai,var(--violet,#b89aff))}
 .display-workbench-panel{display:flex;flex-direction:column;pointer-events:auto;box-sizing:border-box;position:absolute;inset:0 auto 0 0;width:min(var(--display-workbench-width),100%);padding:12px;overflow:hidden;overscroll-behavior:contain;scrollbar-width:thin;background:linear-gradient(125deg,rgba(255,255,255,.055),transparent 46%),color-mix(in srgb,var(--sd-glass-face) 94%,var(--display-role-accent) 6%);backdrop-filter:blur(24px) saturate(125%);-webkit-backdrop-filter:blur(24px) saturate(125%);border:0;border-right:1px solid var(--sd-glass-groove);box-shadow:inset -1px 0 var(--sd-glass-highlight)}
 .display-workbench-context{display:flex;align-items:center;gap:8px;flex:none;margin-bottom:4px;padding-bottom:4px}
 .display-workbench-context>div{flex:1;min-width:0}
@@ -67,7 +67,14 @@ body[data-theme="light"] .display-workbench-empty{text-shadow:0 1px 8px rgba(255
 }
 
 /* A shared tool panel keeps its geometry when control changes hands. */
-.display-assistant-control{flex:none;padding:2px 0 7px;margin:0}
+.display-assistant-control{flex:none;padding:3px 0 10px;margin:0}
+.display-assistant-permission{display:flex;align-items:center;gap:9px;min-height:30px;cursor:pointer;font-size:12px;line-height:1.45}
+.display-workbench .display-assistant-permission>input{appearance:none;flex:none;box-sizing:border-box;width:30px;height:17px;max-width:none;padding:0;margin:0;border:1px solid var(--sd-glass-groove);border-radius:10px;background:var(--sd-glass-face-deep);cursor:pointer;position:relative;transition:background 100ms ease}
+.display-assistant-permission>input::after{content:"";position:absolute;top:3px;left:3px;width:9px;height:9px;border-radius:50%;background:var(--sd-glass-muted);transition:transform 100ms ease,background 100ms ease}
+.display-workbench .display-assistant-permission>input:checked{background:color-mix(in srgb,var(--display-role-accent) 24%,var(--sd-glass-face-deep));border-color:var(--display-role-accent)}
+.display-assistant-permission>input:checked::after{transform:translateX(13px);background:var(--display-role-accent)}
+.display-assistant-permission>input:disabled{opacity:.5;cursor:wait}
+.display-permission-scope{display:block;margin:0 0 6px 39px;font-size:10px;line-height:1.45;color:var(--sd-glass-muted)}
 .display-control-heading{display:flex;align-items:center;gap:7px;min-width:0}
 .display-control-heading>strong{flex:1;min-width:0;font-size:12px;font-weight:600}
 .display-control-heading>button.surface-key{font-size:11px;min-height:28px;padding:4px 7px}
@@ -125,3 +132,5 @@ body[data-theme="light"] .display-workbench-empty{text-shadow:0 1px 8px rgba(255
 .display-working-folder b{display:block;font-size:12px;font-weight:400}
 .display-working-folder small{display:block;font-size:10px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere;margin-top:1px}
 .display-working-folder>svg{color:var(--display-role-accent)}
+
+@media(prefers-reduced-motion:reduce){.display-workbench .display-assistant-permission>input,.display-assistant-permission>input::after{transition:none}}

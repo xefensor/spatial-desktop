@@ -1,5 +1,5 @@
 /* Display roles use the real linked-window desktop, not a separate mock scene.
-   Ordinary desktop membership is retained on normal displays. Side/Assistant
+   Ordinary desktop membership is retained on normal displays. Side-space
    windows live in a stable Workspace-owned surface and tile there normally. */
 (function(root){
   'use strict';
@@ -8,9 +8,11 @@
   const exampleStages=new Set(['plan','source','output','question']);
   let activeExample=null;
   const endedExamples=new Map();
-  let model=SpatialDisplayRoles.create(readDesktopStorage(key,{})),refreshing=false,lastRole='',lastSetup='',lastWorkspace=activeWorkspace;
-  const special=role=>role==='side'||role==='assistant';
-  const labels={main:'Main workspace',extended:'Extended workspace',assistant:'Assistant',side:'Side space'};
+  const initialSaved=readDesktopStorage(key,{});
+  let legacyLayoutSetups=initialSaved?.setups||{};
+  let model=SpatialDisplayRoles.create(initialSaved),refreshing=false,lastRole='',lastSetup='',lastWorkspace=activeWorkspace;
+  const special=role=>role==='side';
+  const labels={main:'Main workspace',extended:'Extended workspace',side:'Side space'};
   function connect(){return model.connect(activeDisplayRoster().map((display,index)=>({...display,slot:index+1})));}
   function sharedTileContexts(sessions=tileSessions){
     const canonical=new Set(Object.keys(sessions).filter(context=>/:display-role:space:\d+$/.test(context)));
@@ -18,7 +20,7 @@
       const match=/^(.*):display-role:(side|assistant):(\d+)$/.exec(context);if(!match)continue;
       const shared=match[1]+':display-role:space:'+match[3];
       // The current role's old session is the visible layout during migration.
-      if(!canonical.has(shared)&&(!sessions[shared]||match[2]===model.role(Number(match[3]))))sessions[shared]=session;
+      if(!canonical.has(shared)&&(!sessions[shared]||match[2]===(legacyLayoutSetups[model.setup().signature]?.roles?.[Number(match[3])]||model.role(Number(match[3])))))sessions[shared]=session;
     }
     for(const context of Object.keys(sessions))if(/:display-role:(side|assistant):\d+$/.test(context))delete sessions[context];
   }
@@ -35,13 +37,29 @@
     endedExamples.set(session.operationId,{workspace:session.context.workspace,slot:session.context.slot});
     if(endedExamples.size>32)endedExamples.delete(endedExamples.keys().next().value);
   }
+  function permissionStatusPatch(assistant,allowed){
+    if(!allowed&&['working','needs-you'].includes(assistant.status))return {status:'paused'};
+    if(allowed&&!assistant.allowed&&assistant.control==='assistant'&&assistant.status==='paused'){
+      // An image review has no live runner after its proposal is ready. Restore
+      // its actual public lifecycle instead of inventing a Take over pause.
+      const stage=assistant.activity?.stage;
+      return {status:stage==='question'||stage==='review'?'needs-you':stage==='complete'?'done':stage==='error'?'error':exampleStages.has(stage)?'working':'idle'};
+    }
+    return {};
+  }
   function loadDisplayRoles(value){
     // This tab owns its running job. Linked tabs echo whole snapshots, so an
     // older echo must not rewind its question, resurrect a stopped operation,
     // or replace a later result. Persisted revisions also cover old idle
     // snapshots with no operation ID. Window membership and roles still sync.
     const preserved=new Map(),next=JSON.parse(JSON.stringify(value||{})),local=localDisplaySlot();
-    const keep=(workspace,slot)=>preserved.set(workspace+':'+slot,{workspace,slot,assistant:model.space(workspace,slot).assistant});
+    const keep=(workspace,slot)=>{
+      const current=model.space(workspace,slot).assistant,incoming=next.workspaces?.[workspace]?.displays?.[slot]?.assistant;
+      // Only permission may cross a newer whole-snapshot edit while this tab
+      // retains ownership of its live or completed operation metadata.
+      const assistant=Number(incoming?.revision)>current.revision&&typeof incoming.allowed==='boolean'?{...current,allowed:incoming.allowed,revision:incoming.revision,...permissionStatusPatch(current,incoming.allowed)}:current;
+      preserved.set(workspace+':'+slot,{workspace,slot,assistant});
+    };
     for(const workspace of Object.keys(model.snapshot().workspaces)){
       const current=model.space(workspace,local).assistant,incoming=next.workspaces?.[workspace]?.displays?.[local]?.assistant;
       if(current.revision>(Number(incoming?.revision)||0))keep(workspace,local);
@@ -58,7 +76,7 @@
     }
     // Load the preserved data directly: restoring a snapshot is not a new edit
     // and must not advance its revision merely because another tab echoed it.
-    model.load(next);
+    legacyLayoutSetups=next.setups||{};model.load(next);
   }
   function referenceOptions(){
     if(!root.SpatialEmptyDesktopResources)return [];
@@ -105,7 +123,7 @@
   function state(){
     const setup=connect(),local=localDisplaySlot();
     return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,home:workspaceProfiles[activeWorkspace].home,
-      displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),local:display.slot===local})),
+      displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),assistantAllowed:model.space(activeWorkspace,display.slot).assistant.allowed,local:display.slot===local})),
       space:model.space(activeWorkspace,local),referenceOptions:special(role(local))?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
       parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
@@ -168,9 +186,9 @@
     if(!result.ok)throw new Error(result.reason==='choose-main-first'?'Choose another display as Main workspace first.':'This role needs a connected second display.');
     if(!result.changed)return true;
     placementUndoEpoch++;
-    if(result.previous==='assistant'||next==='assistant')for(const workspace of Object.keys(workspaceProfiles)){
+    if(special(result.previous)&&!special(next))for(const workspace of Object.keys(workspaceProfiles)){
       const previous=model.space(workspace,slot).assistant;
-      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused',context:previous.context?{...previous.context,operationId:''}:null,...(previous.activity&&exampleStages.has(previous.activity.stage)?{activity:{...previous.activity,stage:'interrupted',label:'Example interrupted',detail:'The display role changed. Run the example again when you are ready.',question:null}}:{})});
+      model.setAssistant(workspace,slot,{control:'user',status:'paused',context:previous.context?{...previous.context,operationId:''}:null,...(previous.activity&&exampleStages.has(previous.activity.stage)?{activity:{...previous.activity,stage:'interrupted',label:'Example interrupted',detail:'The display role changed. Run the example again when you are ready.',question:null}}:{})});
     }
     if(special(result.previous)&&!special(next)){
       for(const workspace of Object.keys(workspaceProfiles))for(const id of model.space(workspace,slot).windows){
@@ -306,6 +324,7 @@
     }
     const direct=entries.findIndex(entry=>entry.action==='desktop-settings'),shared=entries.findIndex(entry=>entry.label==='System-wide');
     const choices=extendedDesktopActive()?Object.entries(labels).map(([id,label])=>({action:'display-role:'+id,icon:'i-monitor',label,checked:role()===id,disabled:role()==='main'&&id!=='main',detail:role()==='main'&&id!=='main'?'Choose another display as Main workspace first':''})):[{info:'This is your only display. Add a second demo display in Displays.'}];
+    if(role()==='side')choices.push({separator:true},{action:'display-assistant-toggle',label:'Allow Assistant to use this display',checked:model.space(activeWorkspace,localDisplaySlot()).assistant.allowed,icon:'i-sparkles',detail:'Applies to this Workspace. Your windows and references stay here.'});
     choices.push({separator:true},{action:'display-settings',label:'Open Displays',icon:'i-settings'});
     entries.splice(direct>=0?direct:shared>=0?shared:entries.length,0,{label:'Display role',icon:'i-monitor',children:choices});
     return entries;
@@ -313,21 +332,32 @@
   const originalExecute=executeContextAction;
   executeContextAction=function(action){
     if(action==='desktop-settings'||action==='display-settings'){closeDesktopContextMenu();root.SpatialDisplaySettings.open();return;}
+    if(action==='display-assistant-toggle'){closeDesktopContextMenu();setAssistantAllowed(localDisplaySlot(),!model.space(activeWorkspace,localDisplaySlot()).assistant.allowed);return;}
     if(action.startsWith('display-role:')){closeDesktopContextMenu();setRole(localDisplaySlot(),action.slice(13));return;}
     return originalExecute(action);
   };
   function assistantContext(){
     const setup=connect(),slot=localDisplaySlot();
-    if(role(slot)!=='assistant'||!extendedDesktopActive())throw Error('Assistant can control windows only on its assigned display.');
+    if(role(slot)!=='side'||!extendedDesktopActive())throw Error('Assistant can control windows only in a connected Side space.');
+    if(!model.space(activeWorkspace,slot).assistant.allowed)throw Error('Turn on Allow Assistant to use this display before asking Assistant to work here.');
     return {workspace:activeWorkspace,setup:setup.signature,slot,folder:root.SpatialAIDesktop?.workingFolder?.()||workspaceProfiles[activeWorkspace].home};
   }
-  function controlContextMatches(context){return context.workspace===activeWorkspace&&context.slot===localDisplaySlot()&&context.setup===connect().signature&&role(context.slot)==='assistant';}
+  function surfaceContextMatches(context){return context.workspace===activeWorkspace&&context.slot===localDisplaySlot()&&context.setup===connect().signature&&role(context.slot)==='side'&&extendedDesktopActive();}
+  function controlContextMatches(context){return surfaceContextMatches(context)&&model.space(context.workspace,context.slot).assistant.allowed;}
+  function setAssistantAllowed(slot,allowed){
+    connect();slot=Number(slot);allowed=allowed===true;
+    if(role(slot)!=='side'||!extendedDesktopActive())throw Error('Choose a connected Side space before allowing Assistant to use it.');
+    const previous=model.space(activeWorkspace,slot).assistant;
+    if(previous.allowed===(allowed===true))return previous;
+    model.setAssistant(activeWorkspace,slot,{allowed,...permissionStatusPatch(previous,allowed)});
+    persist();notify();queueDesktopStateBroadcast(0);return model.space(activeWorkspace,slot).assistant;
+  }
   function saveAssistant(context,patch){
     const assistant=model.setAssistant(context.workspace,context.slot,patch);persist();notify();queueDesktopStateBroadcast(0);return assistant;
   }
   function exampleIdentity(session){
     const current=model.space(session.context.workspace,session.context.slot).assistant;
-    return !session.stopped&&controlContextMatches(session.context)&&current.context?.operationId===session.operationId&&(!session.chatId||root.SpatialAIDesktop?.current?.().id===session.chatId);
+    return !session.stopped&&surfaceContextMatches(session.context)&&current.context?.operationId===session.operationId&&(!session.chatId||root.SpatialAIDesktop?.current?.().id===session.chatId);
   }
   function wakeExample(session){for(const wake of [...session.waiters])wake();session.waiters.clear();}
   function interruptExample(session,detail='The example was interrupted. Run it again when you are ready.'){
@@ -345,12 +375,21 @@
         const current=model.space(activeExample.context.workspace,activeExample.context.slot).assistant;
         if(current.context?.operationId===activeExample.operationId){model.setAssistant(activeExample.context.workspace,activeExample.context.slot,{status:current.control==='user'?'paused':'idle',result:activeExample.end?.detail||'Example interrupted.',context:{...current.context,operationId:''},activity:{...current.activity,...activeExample.end,question:null}});persist();queueDesktopStateBroadcast(0);}
       }else if(!activeExample.startingChat&&!exampleIdentity(activeExample))interruptExample(activeExample,'The chat, Workspace or display changed. Run the example again when you are ready.');
+      else if(!activeExample.startingChat){
+        const current=model.space(activeExample.context.workspace,activeExample.context.slot).assistant;
+        if(activeExample.allowed!==current.allowed){
+          activeExample.allowed=current.allowed;
+          const status=!current.allowed||current.control==='user'?'paused':activeExample.question?'needs-you':'working';
+          if(current.status!==status){model.setAssistant(activeExample.context.workspace,activeExample.context.slot,{status});persist();queueDesktopStateBroadcast(0);}
+          wakeExample(activeExample);
+        }
+      }
       return;
     }
     // Only this display's owner can resume its live closure. After a reload its
     // saved log remains useful, but a persisted question is never a live job.
     const current=model.space(activeWorkspace,localDisplaySlot()).assistant;
-    if(role()==='assistant'&&exampleStages.has(current.activity?.stage)&&current.context?.operationId?.startsWith('assistant-example-')){
+    if(role()==='side'&&exampleStages.has(current.activity?.stage)&&current.context?.operationId?.startsWith('assistant-example-')){
       model.setAssistant(activeWorkspace,localDisplaySlot(),{status:current.control==='user'?'paused':'idle',result:'Example interrupted by reloading this display. Run it again to continue.',context:{...current.context,operationId:''},activity:{...current.activity,stage:'interrupted',label:'Example interrupted',detail:'This display was reloaded. Saved files and the conversation are kept; choose Run example to start again.',question:null}});persist();queueDesktopStateBroadcast(0);
     }
   }
@@ -366,7 +405,7 @@
   function answerAssistantExample(choiceId,{questionId,operationId}={}){
     const session=activeExample;if(!session||!exampleIdentity(session))throw Error('This example question is no longer active.');
     const current=model.space(session.context.workspace,session.context.slot).assistant;
-    if(current.control!=='assistant'||current.status!=='needs-you'||session.answer!==null||!session.question||questionId!==session.question.id||operationId!==session.operationId||!session.question.options.some(option=>option.id===choiceId))throw Error('Choose one of the current question options after continuing Assistant.');
+    if(!current.allowed||current.control!=='assistant'||current.status!=='needs-you'||session.answer!==null||!session.question||questionId!==session.question.id||operationId!==session.operationId||!session.question.options.some(option=>option.id===choiceId))throw Error('Choose one of the current question options after continuing Assistant.');
     session.answer=choiceId;wakeExample(session);return true;
   }
   function stopAssistantExample(){
@@ -385,14 +424,14 @@
     if(!root.SpatialAssistantFiles.allowed(context.folder,context.workspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a working folder in this Workspace or one of its open Projects.');
     const project=Object.keys(projectSpaces).filter(id=>root.SpatialAssistantFiles.inside(context.folder,projectSpaces[id].root)).sort((a,b)=>projectSpaces[b].root.length-projectSpaces[a].root.length)[0]||null;
     const operationId='assistant-example-'+crypto.randomUUID(),opened=[],originalChatId=A.current().id;
-    const session={context,operationId,chatId:originalChatId,startingChat:false,stopped:false,waiters:new Set(),question:null,answer:null};
+    const session={context,operationId,chatId:originalChatId,startingChat:false,stopped:false,allowed:true,waiters:new Set(),question:null,answer:null};
     activeExample=session;
     context.operationId=operationId;
     let chatId='',preparedImageKey='',imagePublished=false;
-    const isCurrent=()=>exampleIdentity(session)&&model.space(context.workspace,context.slot).assistant.control==='assistant';
+    const isCurrent=()=>exampleIdentity(session)&&controlContextMatches(context)&&model.space(context.workspace,context.slot).assistant.control==='assistant';
     const check=()=>{if(!isCurrent())throw Error('Assistant stopped because control, the chat or the Workspace changed.');};
     const wait=()=>new Promise(resolve=>session.waiters.add(resolve));
-    const checkpoint=async()=>{while(exampleIdentity(session)&&model.space(context.workspace,context.slot).assistant.control==='user')await wait();check();};
+    const checkpoint=async()=>{while(exampleIdentity(session)&&(!model.space(context.workspace,context.slot).assistant.allowed||model.space(context.workspace,context.slot).assistant.control==='user'))await wait();check();};
     const delay=()=>new Promise(resolve=>{let settled=false;const finish=()=>{if(settled)return;settled=true;session.waiters.delete(finish);resolve();};session.waiters.add(finish);setTimeout(finish,1400);});
     const progress=patch=>{check();const current=model.space(context.workspace,context.slot).assistant;return saveAssistant(context,{activity:{...current.activity,...patch},context:{...context,...(chatId?{chatId}:{})},outputs:opened});};
     saveAssistant(context,{status:'working',control:'assistant',kind,task:definition.title,result:'Working with explicit sample inputs in '+context.folder,context:{...context,chatId:originalChatId},outputs:[],activity:{stage:'plan',label:'Starting the example',detail:'Preparing a fresh chat and a bound working folder.',step:0,total:4,entries:[],question:null}});
@@ -451,7 +490,7 @@
         showFile(item,options={}){check();const id=openReference({kind:'file',path:item.address,reuseId:options.reuseId,reuse:false});if(id&&!opened.includes(id))opened.push(id);return id;},
         proposeConversion(options){check();if(!root.SpatialAssistantDesktop?.proposeExampleConversion)throw Error('The local file converter is unavailable.');return root.SpatialAssistantDesktop.proposeExampleConversion(options);}
       });
-      check();
+      await checkpoint();
       root.SpatialTimelineDesktop?.record('assistant.output',{workspace:context.workspace,project,chatId:result.chatId,turnId:result.turnId,title:definition.title,path:context.folder,detail:result.result});
       const current=model.space(context.workspace,context.slot).assistant;
       return saveAssistant(context,{status:result.status,result:result.result,context:{...context,chatId:result.chatId,turnId:result.turnId},outputs:result.outputs,activity:{...current.activity,stage:result.status==='needs-you'?'review':'complete',label:result.status==='needs-you'?'Ready for your review':'Result ready',detail:result.result,question:null}});
@@ -467,15 +506,15 @@
     }finally{rememberExample(session);if(activeExample===session)activeExample=null;}
   }
   function assistantExampleConversionUpdate({workspace,chatId,turnId,action}={}){
-    if(role()!=='assistant'||workspace!==activeWorkspace||!extendedDesktopActive())return false;
+    if(role()!=='side'||workspace!==activeWorkspace||!extendedDesktopActive())return false;
     const current=model.space(workspace,localDisplaySlot()).assistant,context=current.context;
-    if(current.kind!=='image'||!context||context.chatId!==chatId||context.turnId!==turnId||!controlContextMatches(context))return false;
+    if(current.kind!=='image'||!context||context.chatId!==chatId||context.turnId!==turnId||!surfaceContextMatches(context))return false;
     if(!['running','complete','failed','cancelled'].includes(action?.status))return false;
     const running=action.status==='running',complete=action.status==='complete',cancelled=action.status==='cancelled';
     const count=Array.isArray(action.outputs)?action.outputs.length:0;
     const destination=action.destination||context.folder;
     const result=running?'Converting the saved example image to WebP in '+destination+'.':complete?'Created '+count+' WebP '+(count===1?'copy':'copies')+' in '+destination+'. Use Open or Show in folder in the chat.':cancelled?'The example conversion was cancelled. The saved original is unchanged.':'The example conversion failed: '+(action.error||'Review the chat for details.');
-    saveAssistant(context,{status:current.control==='user'?'paused':running?'working':complete?'done':cancelled?'idle':'error',result,...(current.activity?{activity:{...current.activity,stage:running?'review':complete?'complete':cancelled?'stopped':'error',label:running?'Converting the image':complete?'Image copy ready':cancelled?'Conversion cancelled':'Conversion failed',detail:result,question:null}}:{})});return true;
+    saveAssistant(context,{status:!current.allowed||current.control==='user'?'paused':running?'working':complete?'done':cancelled?'idle':'error',result,...(current.activity?{activity:{...current.activity,stage:running?'review':complete?'complete':cancelled?'stopped':'error',label:running?'Converting the image':complete?'Image copy ready':cancelled?'Conversion cancelled':'Conversion failed',detail:result,question:null}}:{})});return true;
   }
   function runAssistantTask(kind){
     const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
@@ -515,7 +554,7 @@
       throw error;
     }
   }
-  root.SpatialDisplayRoleBridge={state,setRole,openReference,assistantControl,runAssistantTask,runAssistantExample,answerAssistantExample,stopAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+  root.SpatialDisplayRoleBridge={state,setRole,setAssistantAllowed,openReference,assistantControl,runAssistantTask,runAssistantExample,answerAssistantExample,stopAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:space:'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},
@@ -535,7 +574,7 @@
     }
   };
   function takeWindowControl(event){
-    if(role()!=='assistant')return;
+    if(role()!=='side'||!model.space(activeWorkspace,localDisplaySlot()).assistant.allowed)return;
     const frame=event.target.closest('[data-app-frame]'),id=frame?.dataset?.appFrame;
     const empty=!frame&&event.type==='pointerdown'&&(event.target.matches?.('.workspace-zone')||event.target.closest('.display-workbench-empty')&&!event.target.closest('button,a,input,textarea,select'));
     if(!empty&&(!id||appState[id]!=='open'||pinned(id)!==localDisplaySlot()||!isLocalApp(id)))return;

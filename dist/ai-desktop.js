@@ -39,24 +39,24 @@
   const conversation=$('.ai-chat',content);conversation.addEventListener('wheel',stopFollowingConversation,{passive:true});conversation.addEventListener('pointerdown',stopFollowingConversation,{passive:true});conversation.addEventListener('keydown',event=>{if(['PageUp','PageDown','Home','End','ArrowUp','ArrowDown'].includes(event.key))stopFollowingConversation();});
   function currentDisplayTask(){
     const state=displayTask,task=state?.space?.assistant,context=task?.context;
-    const visibleRole=state?.role==='assistant'||(state?.role==='side'&&['interrupted','stopped','error'].includes(task?.activity?.stage));
+    const visibleRole=state?.role==='side';
     return visibleRole&&state.workspaceId===activeWorkspace&&context?.workspace===activeWorkspace&&context.chatId===model.session(activeWorkspace).id?task:null;
   }
   const taskOngoing=task=>Boolean(task&&taskStages.has(task.activity?.stage));
-  const taskPaused=task=>task?.control==='user'||task?.status==='paused';
+  const taskPaused=task=>task?.allowed!==true||task?.control==='user'||task?.status==='paused';
   const choiceText=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
   function answerTask(choiceId,questionId,operationId){
     const task=currentDisplayTask(),question=task?.activity?.stage==='question'?task.activity.question:null;
     if((displayHost&&!displayVisible())||quickBlocked()||!question||taskPaused(task)||question.id!==questionId||task.context.operationId!==operationId||!question.options?.some(option=>option.id===choiceId))return false;
     const bridge=globalThis.SpatialDisplayRoleBridge;if(!bridge?.answerAssistantExample)return false;
-    if(bridge.state){const fresh=bridge.state(),current=fresh.space?.assistant;if(fresh.role!=='assistant'||fresh.workspaceId!==activeWorkspace||current?.context?.chatId!==model.session(activeWorkspace).id||current.context.operationId!==operationId||current.activity?.question?.id!==questionId)return false;}
+    if(bridge.state){const fresh=bridge.state(),current=fresh.space?.assistant;if(fresh.role!=='side'||current?.allowed!==true||fresh.workspaceId!==activeWorkspace||current?.context?.chatId!==model.session(activeWorkspace).id||current.context.operationId!==operationId||current.activity?.question?.id!==questionId)return false;}
     const accepted=bridge.answerAssistantExample(choiceId,{questionId,operationId})!==false;if(accepted)followConversation();return accepted;
   }
   function renderDisplayTask(){
     const task=currentDisplayTask(),activity=task?.activity,ongoing=taskOngoing(task),paused=taskPaused(task),question=activity?.stage==='question'?activity.question:null;
     folder.disabled=ongoing;folder.title=ongoing?'This task keeps its working folder until it finishes.':model.workingFolder(activeWorkspace);
     const latest=model.session(activeWorkspace).turns.at(-1),finishedHere=!task?.context?.turnId||task.context.turnId===latest?.id;
-    const show=Boolean(activity&&(ongoing||['error','interrupted','stopped'].includes(activity.stage)||(finishedHere&&(activity.entries||[]).length))),next=JSON.stringify([show,task?.status,task?.control,task?.context?.operationId,activity]);
+    const show=Boolean(activity&&(ongoing||['error','interrupted','stopped'].includes(activity.stage)||(finishedHere&&(activity.entries||[]).length))),next=JSON.stringify([show,task?.allowed,task?.status,task?.control,task?.context?.operationId,activity]);
     $('.ai-empty',content).hidden=show||Boolean(model.session(activeWorkspace).items.length||model.session(activeWorkspace).turns.length);
     if(next===taskSignature)return;const follow=shouldFollowConversation();taskSignature=next;taskPanel.hidden=!show;
     if(!show){taskQuestionKey='';return;}
@@ -68,7 +68,7 @@
     label.textContent=question?'Waiting for your choice':paused&&ongoing?'Assistant is paused':activity.label||task.task||'Working';
     step.textContent=!question&&ongoing&&activity.total?String(activity.step||0)+' / '+activity.total:'';step.hidden=!step.textContent;
     stop.hidden=!ongoing;stop.dataset.aiTaskOperation=task.context?.operationId||'';
-    const notice=$('.ai-live-task-paused',taskPanel),ended=['error','interrupted','stopped'].includes(activity.stage);notice.hidden=!(paused&&ongoing)&&!(ended&&activity.detail);notice.textContent=ended?activity.detail:'Paused. Choose Continue to let Assistant carry on.';
+    const notice=$('.ai-live-task-paused',taskPanel),ended=['error','interrupted','stopped'].includes(activity.stage);notice.hidden=!(paused&&ongoing)&&!(ended&&activity.detail);notice.textContent=ended?activity.detail:task?.allowed!==true?'Paused. Turn on Allow Assistant to use this display to carry on.':'Paused. Choose Continue to let Assistant carry on.';
     const choices=$('.ai-live-task-choices',taskPanel),questionKey=JSON.stringify([question,task.context?.operationId]);choices.hidden=!question;
     if(taskQuestionKey!==questionKey){taskQuestionKey=questionKey;choices.innerHTML=(question?.options||[]).map(option=>'<button class="surface-key ai-task-choice" type="button" data-ai-task-answer="'+escapeHtml(option.id)+'" data-ai-task-question="'+escapeHtml(question.id)+'" data-ai-task-operation="'+escapeHtml(task.context?.operationId||'')+'"><b>'+escapeHtml(option.label)+'</b>'+(option.description?'<small>'+escapeHtml(option.description)+'</small>':'')+'</button>').join('');}
     $$('[data-ai-task-answer]',choices).forEach(button=>{button.disabled=paused;});
@@ -78,7 +78,7 @@
   function setDisplayTask(state){displayTask=state||null;renderDisplayTask();}
   taskPanel.addEventListener('click',event=>{
     const answer=event.target.closest('[data-ai-task-answer]');if(answer){try{if(answerTask(answer.dataset.aiTaskAnswer,answer.dataset.aiTaskQuestion,answer.dataset.aiTaskOperation)){status.textContent='';prompt.focus();}}catch(error){status.textContent=error.message||'Choose one of the displayed options.';}return;}
-    const stop=event.target.closest('[data-ai-task-stop]'),task=currentDisplayTask();if(stop&&(!displayHost||displayVisible())&&!quickBlocked()&&taskOngoing(task)&&stop.dataset.aiTaskOperation===task.context.operationId){try{const bridge=globalThis.SpatialDisplayRoleBridge,fresh=bridge?.state?.(),context=fresh?.space?.assistant?.context;if(!fresh||(fresh.role==='assistant'&&fresh.workspaceId===activeWorkspace&&context?.chatId===model.session(activeWorkspace).id&&context.operationId===stop.dataset.aiTaskOperation))bridge?.stopAssistantExample?.();}catch(error){status.textContent=error.message||'The task could not stop.';}}
+    const stop=event.target.closest('[data-ai-task-stop]'),task=currentDisplayTask();if(stop&&(!displayHost||displayVisible())&&!quickBlocked()&&taskOngoing(task)&&stop.dataset.aiTaskOperation===task.context.operationId){try{const bridge=globalThis.SpatialDisplayRoleBridge,fresh=bridge?.state?.(),context=fresh?.space?.assistant?.context;if(!fresh||(fresh.role==='side'&&fresh.workspaceId===activeWorkspace&&context?.chatId===model.session(activeWorkspace).id&&context.operationId===stop.dataset.aiTaskOperation))bridge?.stopAssistantExample?.();}catch(error){status.textContent=error.message||'The task could not stop.';}}
   });
   const withinAssistant=target=>area.contains(target)||quickPanel.contains(target)||Boolean(displayHost?.contains(target));
   const blockedByDialog=()=>Boolean(document.querySelector?.('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]),#universalSearch.is-open,#packageDialog.is-open,#projectEditorDialog.is-open:not(.is-inline),#desktopContextMenu:not([hidden]),#spatialGuideDialog:not([hidden])'));
@@ -226,7 +226,7 @@
     const task=currentDisplayTask();
     if(taskOngoing(task)){
       model.draft(activeWorkspace,prompt.value);persist();
-      if(taskPaused(task)){status.textContent='Your draft is kept. Choose Continue before answering the task.';return;}
+      if(taskPaused(task)){status.textContent=task.allowed!==true?'Your draft is kept. Turn on Allow Assistant to use this display before answering the task.':'Your draft is kept. Choose Continue before answering the task.';return;}
       const question=task.activity.stage==='question'?task.activity.question:null;
       if(!question){status.textContent='Your draft is kept while Assistant works. Stop the task to start a different request.';return;}
       const choice=question.options?.find(option=>[option.id,option.label].some(label=>choiceText(label)===choiceText(request)));

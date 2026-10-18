@@ -59,7 +59,7 @@ function fixture(){
   c.appFileRows=(id,directory)=>c.workspaceDownloads.list(directory).map(file=>[file.name,'Saved file',file.attachment?.kind||'document']);
   c.fetch=async()=>({ok:true,blob:async()=>new Blob(['retained photograph bytes'],{type:'image/jpeg'})});
   c.SpatialAssistantDesktop={proposeExampleConversion:async options=>c.SpatialAIDesktop.createTurn(options.assistantOnly?'':options.request,{title:'Convert WebP',text:'Review',assistantOnly:options.assistantOnly,action:{format:'webp',destination:options.folder,status:'review'}},{sources:options.items,folder:options.folder})};
-  B.setRole(2,'assistant');c.localSlot=2;
+  B.setRole(2,'side');B.setAssistantAllowed(2,true);c.localSlot=2;
   return {...f,chats,history,bytes,B,timers,microtasks,advance,until,start,complete};
 }
 
@@ -222,6 +222,90 @@ function savedResult(chat,file,sources){
     assert(turn.assistantOnly,'The conversion review does not repeat the same invented user request');
     assert.equal(created.filter(window=>window.kind==='dolphin').length,1);assert.equal(created.filter(window=>window.kind==='notes').length,0);
   }
+  {
+    const {c,B,start,complete,chats}=fixture();await complete(start('image'));
+    const review=clone(B.state().space.assistant),files=clone(c.workspaceDownloads.snapshot()),chat=clone(chats.session('work'));
+    B.setAssistantAllowed(2,false);assert.equal(B.state().space.assistant.status,'paused');
+    B.setAssistantAllowed(2,true);assert.equal(B.state().space.assistant.status,'needs-you','Reallowing a finished example restores its pending image review without Continue');
+    assert.equal(B.state().space.assistant.control,'assistant');assert.deepEqual(clone(B.state().space.assistant.activity),review.activity);assert.deepEqual(clone(B.state().space.assistant.context),review.context);
+    assert.deepEqual(clone(c.workspaceDownloads.snapshot()),files);assert.deepEqual(clone(chats.session('work')),chat,'Review permission changes never replay the example or duplicate its input');
+    // The same restoration must work when permission is changed from Main.
+    const remoteOff=clone(c.captureDesktopSyncState());remoteOff.displayRoles.workspaces.work.displays[2].assistant.allowed=false;remoteOff.displayRoles.workspaces.work.displays[2].assistant.revision++;
+    c.applyDesktopSyncState(remoteOff);assert.equal(B.state().space.assistant.status,'paused');
+    const remoteOn=clone(c.captureDesktopSyncState());remoteOn.displayRoles.workspaces.work.displays[2].assistant.allowed=true;remoteOn.displayRoles.workspaces.work.displays[2].assistant.revision++;
+    c.applyDesktopSyncState(remoteOn);assert.equal(B.state().space.assistant.status,'needs-you','Remote regrant also restores the pending review');
+    for(const [action,status,stage] of [['complete','done','complete'],['failed','error','error'],['cancelled','idle','stopped']]){
+      B.setAssistantAllowed(2,false);
+      assert.equal(B.assistantExampleConversionUpdate({workspace:'work',chatId:review.context.chatId,turnId:review.context.turnId,action:{status:action,destination:'/Work/Assistant',outputs:action==='complete'?[{path:'/Work/Assistant/photo.webp'}]:[],error:'Example failure'}}),true);
+      assert.equal(B.state().space.assistant.status,'paused');assert.equal(B.state().space.assistant.activity.stage,stage);
+      B.setAssistantAllowed(2,true);assert.equal(B.state().space.assistant.status,status,'Regrant restores '+action+' rather than an unnecessary Continue prompt');
+      assert.equal(B.state().space.assistant.control,'assistant');
+    }
+    B.assistantControl('takeover');B.setAssistantAllowed(2,false);B.setAssistantAllowed(2,true);
+    assert.equal(B.state().space.assistant.control,'user');assert.equal(B.state().space.assistant.status,'paused','A distinct user Take over still requires Continue');
+  }
+  // Revoking monitor permission pauses this same live job. It is distinct
+  // from Take over, role changes, reloads and cancellation.
+  {
+    const {c,B,start,complete,until,advance,created,chats}=fixture(),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'a question before revoking permission');
+    const waiting=clone(B.state().space.assistant),files=clone(c.workspaceDownloads.snapshot()),windows=created.length,conversation=clone(chats.session('work'));
+    const answer={questionId:waiting.activity.question.id,operationId:waiting.context.operationId};
+    B.setAssistantAllowed(2,false);
+    const off=clone(B.state().space.assistant);assert.equal(off.allowed,false);assert.equal(off.status,'paused');assert.equal(off.control,'assistant');
+    assert.deepEqual(off.context,waiting.context);assert.deepEqual(off.activity,waiting.activity,'Permission off retains the exact pending question');
+    assert.equal(B.state().role,'side');assert.equal(B.state().displays[1].assistantAllowed,false);
+    assert.throws(()=>B.answerAssistantExample('simple',answer),/current question/);
+    assert.throws(()=>B.assistantControl('resume'),/Allow Assistant/);
+    await assert.rejects(complete(start('compare')),/Allow Assistant/);
+    for(let i=0;i<4;i++)await advance();
+    assert.equal(task.settled,false);assert.deepEqual(clone(c.workspaceDownloads.snapshot()),files);assert.equal(created.length,windows);assert.deepEqual(clone(chats.session('work')),conversation,'Revoking permission cannot edit the conversation or create files');
+    B.setAssistantAllowed(2,true);assert.equal(B.state().space.assistant.status,'needs-you');
+    assert.equal(B.state().space.assistant.context.operationId,waiting.context.operationId);
+    const result=await complete(task,'grouped');assert.equal(result.status,'done');assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,2);
+  }
+  {
+    const {c,B,start,complete,advance,microtasks}=fixture(),task=start('checklist');
+    await microtasks();const operation=B.state().space.assistant.context.operationId;B.setAssistantAllowed(2,false);
+    for(let i=0;i<5;i++)await advance();
+    assert.equal(c.workspaceDownloads.snapshot().files.length,0,'An expired timed step cannot publish while permission is off');assert.equal(task.settled,false);
+    B.setAssistantAllowed(2,true);assert.equal(B.state().space.assistant.context.operationId,operation);await complete(task,'simple');
+  }
+  {
+    const {c,B,bytes,start,until,advance,complete}=fixture();let release;
+    c.SpatialStashFiles.put=(key,blob)=>new Promise(resolve=>{release=()=>{bytes.set(key,blob);resolve();};});
+    const task=start('image');await until(()=>Boolean(release),'retention before permission revocation');
+    B.setAssistantAllowed(2,false);release();for(let i=0;i<4;i++)await advance();
+    assert.equal(c.workspaceDownloads.snapshot().files.length,0,'Late I/O cannot publish a file after permission is revoked');assert.equal(task.settled,false);
+    B.setAssistantAllowed(2,true);assert.equal((await complete(task)).status,'needs-you');assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,1);assert.equal(bytes.size,1);
+  }
+  {
+    const {c,B,start,complete,until,advance}=fixture(),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'question before remote permission edits');
+    const waiting=clone(B.state().space.assistant),stale=clone(c.captureDesktopSyncState()),revoked=clone(stale);
+    // The main display may know only older task metadata. Its newer permission
+    // change is accepted without replacing the owner's operation or question.
+    revoked.displayRoles.workspaces.work.displays[2].assistant={allowed:false,revision:waiting.revision+1,status:'idle',activity:null,context:null};
+    c.applyDesktopSyncState(revoked);
+    assert.equal(B.state().space.assistant.allowed,false);assert.equal(B.state().space.assistant.status,'paused');assert.deepEqual(clone(B.state().space.assistant.activity),waiting.activity);assert.deepEqual(clone(B.state().space.assistant.context),waiting.context);
+    c.applyDesktopSyncState(stale);assert.equal(B.state().space.assistant.allowed,false,'A stale whole-desktop echo cannot restore revoked permission');
+    for(let i=0;i<3;i++)await advance();assert.equal(task.settled,false);
+    const resumed=clone(stale);resumed.displayRoles.workspaces.work.displays[2].assistant={allowed:true,revision:B.state().space.assistant.revision+1,status:'idle',activity:null,context:null};
+    c.applyDesktopSyncState(resumed);assert.equal(B.state().space.assistant.allowed,true);assert.equal(B.state().space.assistant.status,'needs-you');await complete(task,'simple');
+  }
+  {
+    const {B,start,until,advance,complete}=fixture(),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'question before separate user takeover');
+    B.assistantControl('takeover');B.setAssistantAllowed(2,false);B.setAssistantAllowed(2,true);
+    assert.equal(B.state().space.assistant.control,'user');assert.equal(B.state().space.assistant.status,'paused','Turning permission back on does not clear Take over');
+    for(let i=0;i<3;i++)await advance();assert.equal(task.settled,false);B.assistantControl('resume');await complete(task,'simple');
+  }
+  {
+    const {B,start,until,complete}=fixture(),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'question before cancelling with permission off');
+    B.setAssistantAllowed(2,false);assert.equal(B.stopAssistantExample(),true,'Stop remains an explicit user cancellation even with permission off');
+    await complete(task);assert.equal(B.state().space.assistant.allowed,false);assert.equal(B.state().space.assistant.activity.stage,'stopped');assert.equal(B.state().space.assistant.activity.question,null);
+  }
   for(const change of ['chat','workspace','role','setup','stop']){
     const {c,B,chats,bytes,created,start,until,advance}=fixture(),task=start('checklist');
     await until(()=>Boolean(B.state().space.assistant.activity?.question),'a cancellable question');
@@ -229,7 +313,7 @@ function savedResult(chat,file,sources){
     const answer={questionId:current.activity.question.id,operationId:current.context.operationId};
     if(change==='chat')chats.newChat('work');
     if(change==='workspace')c.activeWorkspace='gaming';
-    if(change==='role')B.setRole(2,'side');
+    if(change==='role')B.setRole(2,'extended');
     if(change==='setup')c.roster.push({slot:3,source:'new-display',width:1440,height:900});
     if(change==='stop')B.stopAssistantExample();
     c.SpatialDisplayRoleDesktop.refresh();
@@ -282,7 +366,7 @@ function savedResult(chat,file,sources){
     const selected=chats.session('work').id,saved=clone(c.workspaceDownloads.snapshot());
     if(change==='chat')chats.newChat('work');
     if(change==='workspace')c.activeWorkspace='gaming';
-    if(change==='role')B.setRole(2,'side');
+    if(change==='role')B.setRole(2,'extended');
     if(change==='setup')c.roster.push({slot:3,source:'new-display',width:1440,height:900});
     if(change==='stop')B.stopAssistantExample();
     c.SpatialDisplayRoleDesktop.refresh();
@@ -358,15 +442,23 @@ function savedResult(chat,file,sources){
     assert.deepEqual(clone(B.state().space.assistant),completed,'An idle snapshot captured before the job cannot erase the latest completed local result');
   }
   {
+    const {c,B,start,complete}=fixture();await complete(start('checklist'),'simple');
+    const completed=clone(B.state().space.assistant),stale=clone(c.captureDesktopSyncState()),off=clone(stale);
+    off.displayRoles.workspaces.work.displays[2].assistant.allowed=false;off.displayRoles.workspaces.work.displays[2].assistant.revision=completed.revision+1;
+    c.applyDesktopSyncState(off);assert.equal(B.state().space.assistant.allowed,false,'A newer remote permission toggle works after completion too');
+    assert.equal(B.state().space.assistant.result,completed.result);assert.deepEqual(clone(B.state().space.assistant.outputs),completed.outputs);
+    c.applyDesktopSyncState(stale);assert.equal(B.state().space.assistant.allowed,false,'A completed job tombstone also rejects stale permission echoes');
+  }
+  {
     const {c,B,start,until,complete}=fixture(),task=start('checklist');
     await until(()=>Boolean(B.state().space.assistant.activity?.question),'question before remote role change');
     const side=clone(c.captureDesktopSyncState()),setup=B.state().setupKey;
-    side.displayRoles.setups[setup].roles[2]='side';c.applyDesktopSyncState(side);
-    assert.equal(B.state().role,'side','Protecting local task metadata still accepts the main display role change');
+    side.displayRoles.setups[setup].roles[2]='extended';c.applyDesktopSyncState(side);
+    assert.equal(B.state().role,'extended','Protecting local task metadata still accepts the main display role change');
     await complete(task);assert.equal(B.state().space.assistant.activity.question,null);
     assert.equal(B.state().space.assistant.activity.stage,'interrupted');
-    const assistant=clone(side);assistant.displayRoles.setups[setup].roles[2]='assistant';c.applyDesktopSyncState(assistant);
-    assert.equal(B.state().role,'assistant');assert.equal(B.state().space.assistant.activity.question,null,'Switching back cannot revive the interrupted remote question');
+    const assistant=clone(side);assistant.displayRoles.setups[setup].roles[2]='side';c.applyDesktopSyncState(assistant);
+    assert.equal(B.state().role,'side');assert.equal(B.state().space.assistant.activity.question,null,'Switching back cannot revive the interrupted remote question');
     assert.equal((await complete(start('checklist'),'simple')).status,'done','The new role can start a fresh task after interruption');
   }
   {
@@ -406,9 +498,9 @@ function savedResult(chat,file,sources){
   }
   {
     const {c,B,start,complete,created}=fixture();
-    c.localSlot=1;await assert.rejects(complete(start('checklist')),/assigned display/);
-    c.localSlot=2;B.setRole(2,'side');await assert.rejects(complete(start('checklist')),/assigned display/);
-    B.setRole(2,'assistant');c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';
+    c.localSlot=1;await assert.rejects(complete(start('checklist')),/connected Side space/);
+    c.localSlot=2;B.setAssistantAllowed(2,false);await assert.rejects(complete(start('checklist')),/Allow Assistant/);
+    B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';
     await assert.rejects(complete(start('checklist')),/this Workspace/);
     assert.equal(c.workspaceDownloads.snapshot().files.length,0);assert.equal(created.length,0);
   }

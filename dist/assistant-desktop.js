@@ -114,12 +114,12 @@
     if(activeWorkspace!==workspace||A.current().id!==chatId||isCurrent&&!isCurrent())throw Error('The Workspace, chat or display control changed. Run the request again in its original space.');
   }
   function conversionCheck(workspace,chatId){
-    const initial=globalThis.SpatialDisplayRoleBridge?.state?.(),helper=initial&&['assistant','side'].includes(initial.role);
+    const initial=globalThis.SpatialDisplayRoleBridge?.state?.(),helper=initial?.role==='side',delegated=helper&&initial.space?.assistant?.allowed===true;
     return ()=>{
       chatCheck(workspace,chatId);
       if(!helper)return;
       const current=globalThis.SpatialDisplayRoleBridge?.state?.();
-      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||initial.role==='assistant'&&current.space?.assistant?.control==='user')throw Error('Conversion stopped because display control changed. Choose Continue before running it again.');
+      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||delegated&&(current.space?.assistant?.allowed!==true||current.space?.assistant?.control==='user'))throw Error('Conversion stopped because display control changed. Allow Assistant to use this display and choose Continue before running it again.');
     };
   }
   function reportAction(workspace,chatId,turnId,action){
@@ -201,7 +201,7 @@
   }
   function openOutputLocation(path,file=false){
     const bridge=globalThis.SpatialDisplayRoleBridge,role=bridge?.state?.()?.role;
-    if(role==='assistant'||role==='side'){
+    if(role==='side'){
       try{return bridge.openReference({kind:file?'file':'folder',path});}
       catch(error){A.notify(error.message||'This output could not open.');return null;}
     }

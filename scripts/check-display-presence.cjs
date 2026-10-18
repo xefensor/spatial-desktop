@@ -36,17 +36,17 @@ function fixture(){
 
 {
   const f=fixture(),{c,roles}=f;
-  f.presence();const initial=f.setup();assert.equal(roles.setRole(2,'assistant').ok,true);
+  f.presence();const initial=f.setup();assert.equal(roles.setRole(2,'side').ok,true);
   assert.equal(c.localDisplaySlot(),2);assert.equal(c.extendedDesktopActive(),true);
   const initialSources=clone(c.activeDisplayRoster().map(display=>display.source));
   for(const age of [10000,60000,90000]){
     f.time(100000+age);
     assert.deepEqual(clone(c.activeDisplayRoster().map(display=>display.source)),initialSources,'A '+age+' ms silent peer remains in the same ordered roster');
     assert.equal(c.localDisplaySlot(),2,'Timer throttling cannot turn the helper into Main');
-    const beforePrune=f.setup();assert.equal(beforePrune.signature,initial.signature);assert.equal(roles.role(2),'assistant');
+    const beforePrune=f.setup();assert.equal(beforePrune.signature,initial.signature);assert.equal(roles.role(2),'side');
     c.updateDesktopSyncPresence();
     assert.equal(c.desktopSyncPeers.size,1,'Pruning uses the same inclusive grace boundary as the roster');
-    assert.equal(f.setup().signature,initial.signature);assert.equal(roles.role(2),'assistant');
+    assert.equal(f.setup().signature,initial.signature);assert.equal(roles.role(2),'side');
     assert(f.bodyClasses.has('is-session-synced'));
   }
   f.time(190001);

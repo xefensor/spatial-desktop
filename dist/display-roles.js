@@ -2,7 +2,7 @@
    This module is deliberately independent of browser windows and OS APIs. */
 (function(root){
   'use strict';
-  const ROLES=['main','extended','assistant','side'];
+  const ROLES=['main','extended','side'];
   const STATUSES=['idle','working','needs-you','done','error','paused'];
   const own=(value,key)=>Object.prototype.hasOwnProperty.call(value,key);
   const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -37,7 +37,7 @@
     // Earlier control transitions stored instructions in the task result. They
     // describe temporary authority, so never restore them as a completed result.
     const controlNotice=['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.'].includes(result);
-    return {revision:Number.isSafeInteger(value?.revision)&&value.revision>=0?value.revision:0,status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:controlNotice?'':result,
+    return {allowed:value?.allowed===true,revision:Number.isSafeInteger(value?.revision)&&value.revision>=0?value.revision:0,status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:controlNotice?'':result,
       control:value?.control==='user'||value?.control!=='assistant'&&value?.status==='paused'?'user':'assistant',kind:['briefing','image','checklist','compare'].includes(value?.kind)?value.kind:'',
       context:record(context)&&key(context.workspace)&&key(context.setup)&&slot(context.slot)?{workspace:key(context.workspace),setup:key(context.setup),slot:slot(context.slot),folder:key(context.folder),...(key(context.chatId)?{chatId:key(context.chatId)}:{}),...(key(context.turnId)?{turnId:key(context.turnId)}:{}),...(key(context.operationId)?{operationId:key(context.operationId)}:{})}:null,
       outputs:ids(value?.outputs),activity:activity(value?.activity)};
@@ -60,7 +60,7 @@
     return 'displays:'+displays(roster).map(item=>item.slot+(item.screenWidth&&item.screenHeight?'@'+item.screenWidth+'x'+item.screenHeight:'')).join('|');
   }
   function normalizedRoles(value,available){
-    const roles=Object.fromEntries(available.map(number=>[number,ROLES.includes(value?.[number])?value[number]:'extended']));
+    const roles=Object.fromEntries(available.map(number=>[number,value?.[number]==='assistant'?'side':ROLES.includes(value?.[number])?value[number]:'extended']));
     const main=available.find(number=>roles[number]==='main')||available[0];
     for(const number of available)if(roles[number]==='main'&&number!==main)roles[number]='extended';
     roles[main]='main';return roles;
@@ -68,7 +68,11 @@
   function create(saved={}){
     let state,currentDisplays,currentSignature;
     function load(value={}){
-      state={version:1,setups:{},workspaces:{}};
+      state={version:2,setups:{},workspaces:{}};
+      // The old Assistant role implied permission, but only existing saved
+      // Workspace/display records inherit that intent. New Workspaces stay off.
+      const legacyAllowed=new Set();
+      for(const [,setup] of entries(value?.setups))for(const [number,role] of entries(setup?.roles))if(role==='assistant'&&slot(number))legacyAllowed.add(slot(number));
       for(const [name,valueSetup] of entries(value?.setups)){
         if(!record(valueSetup))continue;
         const available=[...new Set(entries(valueSetup.roles).map(([name])=>slot(name)).filter(Boolean))].sort((a,b)=>a-b);
@@ -80,7 +84,9 @@
         const byDisplay={},seen=new Set();
         for(const [name,valueSpace] of entries(valueWorkspace.displays)){
           const number=slot(name);if(!number||!record(valueSpace))continue;
-          const next=content(valueSpace);next.windows=next.windows.filter(id=>{if(seen.has(id))return false;seen.add(id);return true;});byDisplay[number]=next;
+          const next=content(valueSpace);
+          if(!own(valueSpace.assistant||{},'allowed')&&legacyAllowed.has(number))next.assistant.allowed=true;
+          next.windows=next.windows.filter(id=>{if(seen.has(id))return false;seen.add(id);return true;});byDisplay[number]=next;
         }
         Object.defineProperty(state.workspaces,workspace,{value:{displays:byDisplay},enumerable:true,writable:true,configurable:true});
       }
@@ -148,9 +154,10 @@
       return removed;
     }
     function setAssistant(name,number,patch){return updateSpace(name,number,{assistant:patch}).assistant;}
+    function setAssistantAllowed(name,number,allowed){return setAssistant(name,number,{allowed:allowed===true});}
     function snapshot(){return clone(state);}
     load(saved);
-    return {load,connect,setup,roles,role,main,setRole,space,updateSpace,pinWindow,unpinWindow,windowDisplay,pruneWindows,setAssistant,snapshot};
+    return {load,connect,setup,roles,role,main,setRole,space,updateSpace,pinWindow,unpinWindow,windowDisplay,pruneWindows,setAssistant,setAssistantAllowed,snapshot};
   }
   const api={create,signature,roles:ROLES.slice(),statuses:STATUSES.slice()};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SpatialDisplayRoles=api;

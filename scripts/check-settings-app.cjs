@@ -16,19 +16,20 @@ assert.equal(settingsModel.tracks,undefined,'Settings cannot acquire a Music Pla
 // Mounting again must keep exactly one delegated listener and each host owns
 // its own chosen monitor.
 function displayHarness(){
-  const writes=[],routes=[],listeners={};
+  const writes=[],permissions=[],routes=[],listeners={};
   const state={workspace:'Work',mainSlot:1,localSlot:1,displays:[{slot:1,label:'Display 1',role:'main',width:2560,height:1440},{slot:2,label:'Display 2',role:'extended',width:1920,height:1080}]};
   function host(){
     const nodes=new Map(),events={};
     const value={isConnected:true,hidden:false,events,nodes,classList:{add(){}},contains:()=>false,checkVisibility(){return !this.hidden;},closest(){return this.hidden?{}:null;},addEventListener(type,fn){(events[type]||=[]).push(fn);},querySelector(selector){
-      if(!nodes.has(selector))nodes.set(selector,{textContent:'',htmlWrites:0,hidden:false,focus(){},replaceChildren(node){this.textContent=node.textContent;},set innerHTML(value){this.html=value;this.htmlWrites++;},get innerHTML(){return this.html||'';}});
+      if(!nodes.has(selector))nodes.set(selector,{textContent:'',htmlWrites:0,hidden:false,dataset:{},checked:false,disabled:false,focus(){},replaceChildren(node){this.textContent=node.textContent;},set innerHTML(value){this.html=value;this.htmlWrites++;},get innerHTML(){return this.html||'';}});
       return nodes.get(selector);
     }};return value;
   }
-  const context=vm.createContext({document:{activeElement:null,createTextNode:text=>({textContent:text})},CSS:{escape:String},addEventListener(type,fn){listeners[type]=fn;},SpatialSettings:{open:(...args)=>routes.push(args)},SpatialDisplayRoleBridge:{state:()=>state,setRole:async(slot,role)=>{writes.push([slot,role]);state.displays.find(display=>display.slot===slot).role=role;return true;},openCompanion(){}}});
+  const context=vm.createContext({document:{activeElement:null,createTextNode:text=>({textContent:text})},CSS:{escape:String},addEventListener(type,fn){listeners[type]=fn;},SpatialSettings:{open:(...args)=>routes.push(args)},SpatialDisplayRoleBridge:{state:()=>state,setRole:async(slot,role)=>{writes.push([slot,role]);state.displays.find(display=>display.slot===slot).role=role;return true;},setAssistantAllowed:async(slot,allowed)=>{permissions.push([slot,allowed,state.workspace]);state.displays.find(display=>display.slot===slot).assistantAllowed=allowed;return {allowed};},openCompanion(){}}});
   vm.runInContext(fs.readFileSync(require.resolve('../dist/display-settings.js'),'utf8'),context);
   const change=(host,role,slot=2)=>host.events.change[0]({target:{closest:selector=>selector==='[data-display-role]'?{value:role,dataset:{displaySlot:String(slot)}}:null}});
-  return {context,state,writes,routes,host,change,api:context.SpatialDisplaySettings};
+  const permission=(host,checked,slot=2,scope=host.querySelector('[data-display-assistant-allowed]').dataset.displayContext)=>host.events.change[0]({target:{closest:selector=>selector==='[data-display-assistant-allowed]'?{checked,dataset:{displaySlot:String(slot),displayContext:scope}}:null}});
+  return {context,state,writes,permissions,routes,host,change,permission,api:context.SpatialDisplaySettings};
 }
 async function displayChecks(){
   const h=displayHarness(),first=h.host(),second=h.host();
@@ -39,17 +40,20 @@ async function displayChecks(){
   first.events.keydown[0]({key:'ArrowRight',stopPropagation(){blocked=true;}});
   assert.equal(blocked,true,'Radio arrows stay inside the embedded display editor');
   assert.equal(first.querySelector('legend').textContent,'Use Display 2 as');assert.equal(second.querySelector('legend').textContent,'Use Display 1 as');
-  assert.match(first.querySelector('.display-role-options').innerHTML,/aria-label="Assistant on Display 2"/);
+  assert.doesNotMatch(first.querySelector('.display-role-options').innerHTML,/value="assistant"|aria-label="Assistant on/);assert.equal((first.querySelector('.display-role-options').innerHTML.match(/type="radio"/g)||[]).length,3);assert.match(first.querySelector('.display-role-options').innerHTML,/aria-label="Side space on Display 2"/);assert.equal(first.querySelector('.display-settings-permission').hidden,true);
   assert.match(second.querySelector('.display-role-options').innerHTML,/value="side"[^>]* disabled/,'The Main workspace keeps one user work display');
   h.api.open(2);assert.equal(h.routes[0][0],'displays');assert.equal(h.routes[0][1].slot,2,'Display context-menu links select their source monitor');
   await h.change(first,'side');assert.deepEqual(h.writes,[[2,'side']]);
+  assert.equal(first.querySelector('.display-settings-permission').hidden,false);assert.equal(first.querySelector('[data-display-assistant-allowed]').checked,false);
+  await h.permission(first,true);assert.deepEqual(h.permissions,[[2,true,'Work']]);assert.equal(first.querySelector('[data-display-assistant-allowed]').checked,true);assert.equal(h.state.displays[1].role,'side','Permission does not change the role');
   assert.equal(second.querySelector('legend').textContent,'Use Display 1 as','An editor cannot take another host’s monitor selection');
   const options=first.querySelector('.display-role-options'),renders=options.htmlWrites;
-  h.state.workspace='Gaming';h.state.windowActivity='unrelated';h.api.refresh();
-  assert.equal(options.htmlWrites,renders,'Unrelated bridge activity does not replace focused monitor controls');
+  const stalePermissionScope=first.querySelector('[data-display-assistant-allowed]').dataset.displayContext;
+  h.state.workspace='Gaming';await h.permission(first,false,2,stalePermissionScope);assert.equal(h.permissions.length,1,'A stale Workspace control cannot change the newly active Workspace');h.state.windowActivity='unrelated';h.api.refresh();
+  assert.equal(options.htmlWrites,renders,'Unrelated bridge activity does not replace focused monitor controls');assert.match(first.querySelector('[data-display-permission-scope]').textContent,/Gaming Workspace only/);
   first.events.click[0]({target:{closest:selector=>selector==='[data-display-select]'?{dataset:{displaySelect:'1'}}:null}});
-  await h.change(first,'assistant',2);assert.equal(h.writes.length,1,'A control rendered for another selected monitor cannot change this one');
-  h.api.mount(first,2);first.hidden=true;await h.change(first,'assistant');
+  await h.change(first,'side',2);await h.permission(first,false,2);assert.equal(h.permissions.length,1,'A permission control for another selected monitor cannot grant access');assert.equal(h.writes.length,1,'A control rendered for another selected monitor cannot change this one');
+  h.api.mount(first,2);first.hidden=true;await h.change(first,'side');await h.permission(first,false);assert.equal(h.permissions.length,1,'A hidden editor cannot change permission');
   assert.equal(h.writes.length,1,'A hidden Displays page cannot apply a stale role action');
   first.isConnected=false;h.api.refresh();
 }

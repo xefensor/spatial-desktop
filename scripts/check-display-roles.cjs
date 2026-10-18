@@ -8,7 +8,7 @@ assert.equal(model.main(),1);assert.equal(model.role(1),'main');
 assert.equal(model.setRole(1,'side').reason,'single-display');
 assert.deepEqual(model.connect(pair).roles,{'1':'main','2':'extended'});
 assert(model.setRole(2,'side').ok);
-assert.equal(model.setRole(1,'assistant').reason,'choose-main-first');
+assert.equal(model.setRole(1,'side').reason,'choose-main-first');
 assert.equal(model.role(1),'main');assert.equal(model.role(2),'side');
 assert.equal(model.setRole(9,'side').reason,'unknown-display');
 assert.equal(model.setRole(2,'unrestricted').reason,'unknown-role');
@@ -22,11 +22,11 @@ assert.equal(model.role(2),'side');
 assert.equal(Displays.signature(pair),Displays.signature([...pair].reverse()));
 assert(model.setRole(2,'main').ok);
 assert.equal(model.main(),2);assert.equal(model.role(1),'extended');
-assert(model.setRole(1,'assistant').ok);
+assert(model.setRole(1,'side').ok);
 model.connect([pair[0]]);
 assert.equal(model.role(1),'main');assert.equal(model.role(2),null);
 model.connect(pair);
-assert.equal(model.main(),2);assert.equal(model.role(1),'assistant','Reconnect restores the saved main and helper roles');
+assert.equal(model.main(),2);assert.equal(model.role(1),'side','Reconnect restores the saved main and helper roles');
 
 // Physical screen geometry can distinguish monitor sets without using browser IDs.
 const physical=pair.map((display,index)=>({...display,screenWidth:index?1920:2560,screenHeight:index?1080:1440}));
@@ -35,7 +35,7 @@ model.connect(physical);assert.equal(model.main(),1);model.setRole(2,'side');
 const changedMonitor=physical.map(display=>({...display,screenWidth:display.screenWidth+100}));
 model.connect(changedMonitor);assert.equal(model.role(2),'extended');
 model.connect(physical);assert.equal(model.role(2),'side');
-model.connect(pair);assert.equal(model.role(1),'assistant');
+model.connect(pair);assert.equal(model.role(1),'side');
 
 // Side-space contents are Workspace-owned and independent of Projects/desktops.
 model.pinWindow('work',2,'browser');
@@ -66,7 +66,7 @@ assert.deepEqual(model.space('work',2).windows,['editor']);
 const saved=model.snapshot(),restored=Displays.create(saved);restored.connect(pair);
 saved.setups[Displays.signature(pair)].roles[1]='side';
 saved.workspaces.work.displays[2].folders[0].label='Changed externally';
-assert.equal(restored.role(1),'assistant');
+assert.equal(restored.role(1),'side');
 assert.equal(restored.space('work',2).folders[0].label,'Reference folder');
 assert.equal(restored.space('work',2).note,'Keep these references beside the desktop.','Side-space note persists with its Workspace');
 restored.updateSpace('gaming',2,{note:'Game notes'});
@@ -98,7 +98,7 @@ assert.equal(shelf.space('work',2).folders.length,3,'Assistant status updates pr
 shelf.updateSpace('work',2,{note:'Updated note'});
 assert.equal(shelf.space('work',2).folders.length,3,'Editing a note preserves saved shortcuts');
 assert.equal(shelf.space('gaming',2).folders[0].id,'game-link','References belong to the current Workspace');
-for(const nextRole of ['assistant','extended','side'])assert(shelf.setRole(2,nextRole).ok);
+for(const nextRole of ['extended','side'])assert(shelf.setRole(2,nextRole).ok);
 shelf.connect([pair[0]]);shelf.connect(pair);
 const reopenedShelf=Displays.create(shelf.snapshot());reopenedShelf.connect(pair);
 assert.deepEqual(reopenedShelf.space('work',2).folders,[
@@ -173,3 +173,25 @@ assert.deepEqual(corrupt.space('work',1).folders,[{id:'reference',kind:'link',ur
 assert.equal({}.polluted,undefined);
 assert.doesNotThrow(()=>JSON.stringify(corrupt.snapshot()));
 console.log('Display roles: main invariant, remembered monitor setups, reconnects, Workspace isolation and sticky content passed');
+
+// Permission is explicit per Workspace/display and independent of surface role.
+assert.deepEqual(Displays.roles,['main','extended','side']);
+const permission=Displays.create();permission.connect(pair);permission.setRole(2,'side');
+assert.equal(permission.space('work',2).assistant.allowed,false);
+permission.updateSpace('work',2,{windows:['reference'],note:'Keep this',folders:[{path:'/Work/References'}]});
+const beforePermission=permission.space('work',2);
+permission.setAssistantAllowed('work',2,true);
+assert.equal(permission.space('work',2).assistant.allowed,true);
+assert.equal(permission.space('gaming',2).assistant.allowed,false,'A new Workspace never inherits monitor permission');
+assert.equal(permission.space('work',1).assistant.allowed,false,'Permission belongs only to the selected display');
+permission.setAssistantAllowed('work',2,false);
+const afterPermission=permission.space('work',2);
+assert.deepEqual(afterPermission.windows,beforePermission.windows);assert.deepEqual(afterPermission.folders,beforePermission.folders);assert.equal(afterPermission.note,beforePermission.note);
+assert.equal(permission.setRole(2,'assistant').reason,'unknown-role','Assistant is no longer a display role');
+const legacy=Displays.create({version:1,setups:{[Displays.signature(pair)]:{roles:{1:'main',2:'assistant'}}},workspaces:{work:{displays:{2:{windows:['legacy-note'],note:'Retained',assistant:{task:'Old task',context:{workspace:'work',setup:Displays.signature(pair),slot:2,folder:'/Work/Assistant',chatId:'legacy-chat'}}}}},gaming:{displays:{2:{assistant:{allowed:false}}}}}});
+legacy.connect(pair);assert.equal(legacy.role(2),'side');
+assert.equal(legacy.space('work',2).assistant.allowed,true,'A saved legacy Assistant record retains delegated intent');
+assert.equal(legacy.space('gaming',2).assistant.allowed,false,'Explicit revocation survives legacy role migration');
+assert.equal(legacy.space('new',2).assistant.allowed,false,'Legacy setup cannot grant permission to a new Workspace');
+assert.deepEqual(legacy.space('work',2).windows,['legacy-note']);assert.equal(legacy.space('work',2).note,'Retained');assert.equal(legacy.space('work',2).assistant.context.chatId,'legacy-chat');
+const migrated=Displays.create(legacy.snapshot());migrated.connect(pair);assert.deepEqual(migrated.snapshot(),legacy.snapshot(),'Migration is stable across reloads');

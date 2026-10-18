@@ -30,7 +30,7 @@
     {id:'reset-areas',category:'areas',title:'Reset Areas',detail:'Restore the default Area layout in this Workspace.',keywords:'panel dock position layout reset'},
     {id:'color-theme',category:'appearance',title:'Color theme',detail:'Auto, OLED, Graphite or Light across all Workspaces.',keywords:'dark light black colors surface theme automatic'},
     {id:'desktop-indicators',category:'appearance',title:'Desktop indicators',detail:'Choose lines only or lines with app icons.',keywords:'markers rail icons desktop lines'},
-    {id:'display-roles',category:'displays',title:'Display roles',detail:'Main workspace, Extended workspace, Side space or Assistant.',keywords:'monitor screen second main extended assistant side pinned odkládací'},
+    {id:'display-roles',category:'displays',title:'Display roles',detail:'Main workspace, Extended workspace or Side space with optional Assistant control.',keywords:'monitor screen second main extended assistant permission side pinned odkládací'},
     {id:'second-display',category:'displays',title:'Open second demo display',detail:'Try another screen in a linked browser window.',keywords:'monitor screen second companion popup'},
     {id:'wifi',category:'connections',title:'Wi-Fi',detail:'Toggle the shared Wi-Fi demo state.',keywords:'network internet wireless connections'},
     {id:'bluetooth',category:'connections',title:'Bluetooth',detail:'Toggle the shared Bluetooth demo state.',keywords:'devices wireless connections pairing'},
