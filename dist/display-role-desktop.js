@@ -74,7 +74,7 @@
       if(lastWorkspace!==activeWorkspace||lastSetup&&lastSetup!==next.setupKey){
         const spaces=model.snapshot().workspaces[lastWorkspace]?.displays||{};let paused=false;
         for(const [slot,space] of Object.entries(spaces))if(space.assistant.status==='working'){
-          model.setAssistant(lastWorkspace,slot,{control:'user',status:'paused'});paused=true;
+          model.setAssistant(lastWorkspace,slot,{control:'user',status:'paused',context:space.assistant.context?{...space.assistant.context,operationId:''}:null});paused=true;
         }
         if(paused){persist();queueDesktopStateBroadcast(0);next=state();}
       }
@@ -125,7 +125,8 @@
     if(!result.changed)return true;
     placementUndoEpoch++;
     if(result.previous==='assistant'||next==='assistant')for(const workspace of Object.keys(workspaceProfiles)){
-      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused'});
+      const previous=model.space(workspace,slot).assistant;
+      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused',context:previous.context?{...previous.context,operationId:''}:null});
     }
     if(special(result.previous)&&!special(next)){
       for(const workspace of Object.keys(workspaceProfiles))for(const id of model.space(workspace,slot).windows){
@@ -283,7 +284,80 @@
   function assistantControl(action){
     const context=assistantContext();
     if(!['takeover','resume'].includes(action))throw Error('Choose Take control or Continue.');
-    return saveAssistant(context,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});
+    const previous=model.space(context.workspace,context.slot).assistant;
+    return saveAssistant(context,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle',...(action==='takeover'?{context:previous.context?{...previous.context,operationId:''}:null}:{})});
+  }
+  async function runAssistantExample(kind){
+    const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
+    if(previous.control==='user')throw Error('You control this display. Choose Continue before asking Assistant to work here.');
+    if(previous.status==='working')throw Error('Assistant is already working on this display.');
+    const examples=root.SpatialDisplayAssistantExamples,definition=examples?.list().find(example=>example.id===kind),A=root.SpatialAIDesktop;
+    if(!definition||!A?.startExample)throw Error('This Assistant example is unavailable. Reload the demo and try again.');
+    context.folder=root.SpatialAssistantFiles.path(context.folder,workspaceProfiles[context.workspace].home);
+    if(!root.SpatialAssistantFiles.allowed(context.folder,context.workspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a working folder in this Workspace or one of its open Projects.');
+    const project=Object.keys(projectSpaces).filter(id=>root.SpatialAssistantFiles.inside(context.folder,projectSpaces[id].root)).sort((a,b)=>projectSpaces[b].root.length-projectSpaces[a].root.length)[0]||null;
+    const operationId='assistant-example-'+crypto.randomUUID(),opened=[],originalChatId=A.current().id;
+    context.operationId=operationId;
+    let chatId='',preparedImageKey='',imagePublished=false;
+    const isCurrent=()=>controlContextMatches(context)&&model.space(context.workspace,context.slot).assistant.control==='assistant'&&model.space(context.workspace,context.slot).assistant.context?.operationId===operationId&&A.current().id===(chatId||originalChatId);
+    const check=()=>{if(!isCurrent())throw Error('Assistant stopped because control, the chat or the Workspace changed.');};
+    saveAssistant(context,{status:'working',control:'assistant',kind,task:definition.title,result:'Working with explicit sample inputs in '+context.folder,context,outputs:[]});
+    function save(name,text,options={}){
+      check();
+      // Include catalogue and Stash names, not only generated downloads. Keeping
+      // the returned path also handles a second run without replacing a file.
+      const frame=Object.keys(appInfo).find(id=>frameFor(id)),used=new Set((frame?appFileRows(frame,context.folder):[]).map(row=>row[0].toLocaleLowerCase()));
+      for(const file of workspaceDownloads.list(context.folder))used.add(file.name.toLocaleLowerCase());
+      const requested=root.SpatialStashFiles.safeName(name),dot=requested.lastIndexOf('.'),stem=dot>0?requested.slice(0,dot):requested,extension=dot>0?requested.slice(dot):'';
+      let unique=requested,index=2;while(used.has(unique.toLocaleLowerCase()))unique=stem+' ('+(index++)+')'+extension;
+      const itemId='example-'+crypto.randomUUID(),before=workspaceDownloads.snapshot();let file;
+      try{
+        file=workspaceDownloads.add(context.folder,unique,{workspace:context.workspace,project,content:text,attachment:options.attachment,itemId,operationId,source:'Assistant local example'});
+        desktopStorage.setItem('spatial-downloads-v1',JSON.stringify(workspaceDownloads.snapshot()));
+      }catch(error){workspaceDownloads.load(before);throw Error('The example file could not be saved in this browser.');}
+      if(file.attachment?.key===preparedImageKey)imagePublished=true;
+      const item={id:itemId,itemId,title:file.name,filename:file.name,text:file.content,kind:file.attachment?.kind||'note',address:file.path,attachment:file.attachment,workspace:context.workspace,project,source:{workspace:context.workspace,project,app:'assistant',label:'Assistant local example',address:file.path}};
+      root.SpatialItemHistoryDesktop?.capture(item,{workspace:context.workspace,project,action:options.related?.length?'created':'saved',detail:'Explicit sample file created by '+definition.title,related:options.related?.map(parent=>({itemId:parent.itemId||parent.id,versionId:parent.versionId,relation:'derivedFrom'}))});
+      root.SpatialItemHistoryDesktop?.persist();refreshDownloadUi();captureWorkspaceContent();queueDesktopStateBroadcast(0);return item;
+    }
+    try{
+      const result=await examples.run(kind,{workspace:context.workspace,folder:context.folder,check,isCurrent,
+        async prepareImage(asset){
+          check();const response=await fetch(asset);check();if(!response.ok)throw Error('The bundled example photograph could not load.');
+          const blob=await response.blob();check();if(!blob.type.startsWith('image/')||blob.size>25*1024*1024)throw Error('The example photograph is unavailable or too large.');
+          const key='stash-example-'+crypto.randomUUID();preparedImageKey=key;await root.SpatialStashFiles.put(key,blob);check();
+          return {kind:'image',key,filename:'Example keyboard photo.jpg',mime:blob.type,size:blob.size,format:'JPEG'};
+        },
+        startChat(title){check();const chat=A.startExample({title,workspace:context.workspace,folder:context.folder,items:[]});chatId=chat.chatId;return chat;},
+        save,
+        attach(items){check();const attached=A.attach(items,{focus:false});if(attached.length!==items.length)throw Error('The sample inputs could not be attached.');return attached;},
+        turn(request,response,details){check();const turn=A.createTurn(request,response,{...details,folder:context.folder,project});if(!turn)throw Error('The sample conversation could not be saved.');return turn;},
+        note(title,text){check();const id=root.SpatialDisplayRoleBridge.launchNote(title,text);if(id)opened.push(id);return id;},
+        showFile(item){check();const id=openReference({kind:'file',path:item.address});if(id)opened.push(id);return id;},
+        proposeConversion(options){check();if(!root.SpatialAssistantDesktop?.proposeExampleConversion)throw Error('The local file converter is unavailable.');return root.SpatialAssistantDesktop.proposeExampleConversion(options);}
+      });
+      check();
+      root.SpatialTimelineDesktop?.record('assistant.output',{workspace:context.workspace,project,chatId:result.chatId,turnId:result.turnId,title:definition.title,path:context.folder,detail:result.result});
+      return saveAssistant(context,{status:result.status,result:result.result,context:{...context,chatId:result.chatId,turnId:result.turnId},outputs:result.outputs});
+    }catch(error){
+      if(preparedImageKey&&!imagePublished)try{await root.SpatialStashFiles.remove?.(preparedImageKey);}catch{}
+      const current=model.space(context.workspace,context.slot).assistant;
+      if(current.context?.operationId===operationId){
+        if(controlContextMatches(context)&&current.control==='assistant')saveAssistant(context,{status:'error',result:error.message,outputs:opened});
+        else saveAssistant(context,{status:'paused',control:'user',result:error.message,outputs:opened});
+      }
+      throw error;
+    }
+  }
+  function assistantExampleConversionUpdate({workspace,chatId,turnId,action}={}){
+    if(role()!=='assistant'||workspace!==activeWorkspace||!extendedDesktopActive())return false;
+    const current=model.space(workspace,localDisplaySlot()).assistant,context=current.context;
+    if(current.kind!=='image'||!context||context.chatId!==chatId||context.turnId!==turnId||!controlContextMatches(context))return false;
+    if(!['complete','failed','cancelled'].includes(action?.status))return false;
+    const complete=action.status==='complete',cancelled=action.status==='cancelled';
+    const count=Array.isArray(action.outputs)?action.outputs.length:0;
+    const result=complete?'Created '+count+' WebP '+(count===1?'copy':'copies')+' in '+context.folder+'. Use Open or Show in folder in the chat.':cancelled?'The example conversion was cancelled. The saved original is unchanged.':'The example conversion failed: '+(action.error||'Review the chat for details.');
+    saveAssistant(context,{status:current.control==='user'?'paused':complete?'done':cancelled?'idle':'error',result});return true;
   }
   function runAssistantTask(kind){
     const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
@@ -323,7 +397,7 @@
       throw error;
     }
   }
-  root.SpatialDisplayRoleBridge={state,setRole,openReference,assistantControl,runAssistantTask,openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+  root.SpatialDisplayRoleBridge={state,setRole,openReference,assistantControl,runAssistantTask,runAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:space:'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},

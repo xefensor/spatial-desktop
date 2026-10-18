@@ -110,18 +110,43 @@
     }
     const text=T.convertText(await textOf(item),extension(item),format);return {blob:new Blob([text],{type:T.mime[format]+';charset=utf-8'}),text,kind:'file'};
   }
-  async function propose(request,parsed){
-    const workspace=activeWorkspace,chatId=A.current().id,base=cwd(),items=sourcesFor(parsed,workspace);
+  function chatCheck(workspace,chatId,isCurrent){
+    if(activeWorkspace!==workspace||A.current().id!==chatId||isCurrent&&!isCurrent())throw Error('The Workspace, chat or display control changed. Run the request again in its original space.');
+  }
+  function conversionCheck(workspace,chatId){
+    const initial=globalThis.SpatialDisplayRoleBridge?.state?.(),helper=initial&&['assistant','side'].includes(initial.role);
+    return ()=>{
+      chatCheck(workspace,chatId);
+      if(!helper)return;
+      const current=globalThis.SpatialDisplayRoleBridge?.state?.();
+      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||initial.role==='assistant'&&current.space?.assistant?.control==='user')throw Error('Conversion stopped because display control changed. Choose Continue before running it again.');
+    };
+  }
+  function reportAction(workspace,chatId,turnId,action){
+    try{globalThis.SpatialDisplayRoleBridge?.assistantExampleConversionUpdate?.({workspace,chatId,turnId,action});}catch{/* The conversion result remains usable if its display was disconnected. */}
+  }
+  async function propose(request,parsed,bound={}){
+    const workspace=bound.workspace??activeWorkspace,chatId=bound.chatId||A.current().id;
+    const check=()=>chatCheck(workspace,chatId,bound.isCurrent);check();
+    if(!T.mime[parsed.format])throw Error('Choose a supported conversion format.');
+    const base=bound.folder?resolveFolder(bound.folder,A.workingFolder(),workspace):cwd(),items=bound.items||sourcesFor(parsed,workspace);
     const destination=resolveFolder(parsed.destination||'Converted',base,workspace);
-    if(items.some(i=>i.workspace!==workspace))throw Error('Selected inputs must belong to the current Workspace.');
+    if(!Array.isArray(items)||!items.length||items.length>24||items.some(i=>i.workspace!==workspace||i.source?.workspace&&i.source.workspace!==workspace))throw Error('Choose up to 24 saved inputs from the current Workspace.');
     // Freeze text in the source snapshot; media use their retained immutable bytes.
     const sources=[];
-    for(const item of items){if(!['png','jpg','webp'].includes(parsed.format)){const text=await textOf(item);if(text.length>12000)throw Error('This demo converts text files up to 12,000 characters so the complete input can be kept in history.');sources.push({...item,text});}else{if(!F.safeAttachment(item.attachment))throw Error('Original image bytes are unavailable for '+item.title+'.');sources.push(item);}}
-    if(activeWorkspace!==workspace||A.current().id!==chatId)throw Error('The chat changed. Send the request again in its original Workspace.');
+    for(const item of items){check();if(!['png','jpg','webp'].includes(parsed.format)){const text=await textOf(item);check();if(text.length>12000)throw Error('This demo converts text files up to 12,000 characters so the complete input can be kept in history.');sources.push({...item,text});}else{if(!F.safeAttachment(item.attachment))throw Error('Original image bytes are unavailable for '+item.title+'.');sources.push(item);}}
+    check();
     const exact=A.attach(sources,{focus:false});if(exact.length!==sources.length)throw Error('There is no room for these sources. Remove unused attachments first.');
     const project=projectAt(destination),action={format:parsed.format,destination,status:'review',outputs:[]};
     const turn=A.createTurn(request,{title:'Convert files · '+parsed.format.toUpperCase(),text:'Review '+sources.length+' input'+(sources.length===1?'':'s')+' and the destination below. Run conversion creates local copies; originals stay unchanged.',action},{sources:exact,folder:base,project});
-    if(!turn)throw Error('Start a new chat before converting more files.');drawCards();A.notify('Review the inputs and output folder, then run the local conversion.');
+    if(!turn)throw Error('Start a new chat before converting more files.');drawCards();A.notify('Review the inputs and output folder, then run the local conversion.');return turn;
+  }
+  async function proposeExampleConversion(options={}){
+    const {request,items,folder,workspace,chatId,isCurrent}=options;
+    if(typeof request!=='string'||!request.trim()||!Array.isArray(items)||!folder||!workspace||!chatId)throw Error('Start an example chat with its saved inputs and working folder first.');
+    chatCheck(workspace,chatId,isCurrent);
+    const parsed=T.parse(request)||{};
+    return propose(request,{...parsed,format:options.format||parsed.format,destination:options.destination||parsed.destination||folder},{items,folder,workspace,chatId,isCurrent});
   }
   async function intercept(event){
     const request=prompt.value.trim();let parsed;
@@ -149,24 +174,28 @@
   }
   async function run(turn,destination){
     if(running.has(turn.id)||turn.action.status==='complete')return;
-    const workspace=activeWorkspace,chatId=A.current().id,format=turn.action.format;
-    const action={...turn.action,destination:resolveFolder(destination,turn.folder,workspace),status:'running',error:''};running.add(turn.id);A.setAction(workspace,chatId,turn.id,action);drawCards();
+    const workspace=activeWorkspace,chatId=A.current().id,format=turn.action.format,check=conversionCheck(workspace,chatId);check();
+    const action={...turn.action,destination:resolveFolder(destination,turn.folder,workspace),status:'running',error:''};running.add(turn.id);A.setAction(workspace,chatId,turn.id,action);reportAction(workspace,chatId,turn.id,action);drawCards();
+    const retained=[];let committed=false;
     try{
-      // Prepare every conversion before publishing any output into the filesystem.
-      const prepared=[];for(const input of turn.sources)prepared.push({input,...await converted(input,format)});
-      if(activeWorkspace!==workspace||A.current().id!==chatId)throw Error('Conversion stopped because the Workspace or chat changed. Run it again from its original chat.');
+      // Retain every encoded blob before a synchronous filesystem publication.
+      // No rollback snapshot spans an await, so switching spaces or unrelated
+      // file edits while bytes are saved cannot be undone by this operation.
+      const prepared=[];for(const input of turn.sources){const value=await converted(input,format);check();const key='stash-converted-'+crypto.randomUUID();retained.push(key);await F.put(key,value.blob);check();prepared.push({input,...value,key});}
+      check();
       const before=workspaceDownloads.snapshot(),outputs=[];const project=projectAt(action.destination);
-      try{for(const value of prepared){const {input,blob,text,kind}=value,key='stash-converted-'+crypto.randomUUID();await F.put(key,blob);
+      try{for(const value of prepared){const {input,blob,text,kind,key}=value;
         const name=F.safeName((input.filename||input.title).replace(/\.[a-z0-9]{1,10}$/i,'')+'.'+format),itemId='converted-'+crypto.randomUUID(),attachment={kind,key,filename:name,mime:blob.type,size:blob.size,format:format.toUpperCase()};
         const file=workspaceDownloads.add(action.destination,name,{workspace,project,content:text,source:input.source?.address||input.address,itemId,attachment,operationId:turn.id});outputs.push({file,input,attachment});}
         desktopStorage.setItem('spatial-downloads-v1',JSON.stringify(workspaceDownloads.snapshot()));
       }catch(error){workspaceDownloads.load(before);throw error;}
+      committed=true;
       for(const {file,input,attachment} of outputs){const related=[{itemId:input.itemId||input.id,versionId:input.versionId,relation:'derivedFrom'}];SpatialItemHistoryDesktop.capture({id:file.itemId,title:file.name,text:file.content,address:file.path,attachment,workspace,project,source:{workspace,project,app:'assistant',label:'Assistant file conversion'}},{workspace,project,action:'converted',detail:format.toUpperCase()+' copy created in '+action.destination,related});}
       SpatialItemHistoryDesktop.persist();
-      A.setAction(workspace,chatId,turn.id,{...action,status:'complete',outputs:outputs.map(({file})=>({path:file.path,itemId:file.itemId}))});
+      const complete={...action,status:'complete',outputs:outputs.map(({file})=>({path:file.path,itemId:file.itemId}))};A.setAction(workspace,chatId,turn.id,complete);reportAction(workspace,chatId,turn.id,complete);
       globalThis.SpatialTimelineDesktop?.record('assistant.output',{workspace,project,chatId,turnId:turn.id,title:'Converted '+outputs.length+' file'+(outputs.length===1?'':'s')+' to '+format.toUpperCase(),path:action.destination,sourceIds:turn.sources.map(i=>i.itemId||i.id),detail:'Created copies in '+action.destination});
       refreshDownloadUi();captureWorkspaceContent();queueDesktopStateBroadcast(0);A.notify('Converted '+outputs.length+' file'+(outputs.length===1?'':'s')+' · Open output folder to use them.');
-    }catch(error){A.setAction(workspace,chatId,turn.id,{...action,status:'failed',error:error.message});A.notify('Conversion failed: '+error.message);}
+    }catch(error){const failed={...action,status:'failed',error:error.message};A.setAction(workspace,chatId,turn.id,failed);reportAction(workspace,chatId,turn.id,failed);if(activeWorkspace===workspace&&A.current().id===chatId)A.notify('Conversion failed: '+error.message);if(!committed&&F.remove)await Promise.allSettled(retained.map(key=>Promise.resolve().then(()=>F.remove(key))));}
     finally{running.delete(turn.id);drawCards();}
   }
   function openOutputLocation(path,file=false){
@@ -182,7 +211,7 @@
   transcript.addEventListener('click',event=>{
     const card=event.target.closest('.ai-file-task');if(!card)return;const turn=A.current().turns.find(t=>t.id===card.dataset.turn);if(!turn)return;
     if(event.target.closest('[data-task-run]')){const destination=card.querySelector('[data-task-destination]').value;return run(turn,destination).catch(error=>A.notify(error.message));}
-    if(event.target.closest('[data-task-cancel]')){A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'cancelled'});drawCards();}
+    if(event.target.closest('[data-task-cancel]')){const action={...turn.action,status:'cancelled'};A.setAction(activeWorkspace,A.current().id,turn.id,action);reportAction(activeWorkspace,A.current().id,turn.id,action);drawCards();}
     if(event.target.closest('[data-task-open]'))openOutputLocation(turn.action.destination);
     if(event.target.closest('[data-task-location]')){card.querySelector('.ai-task-details').open=true;const input=card.querySelector('[data-task-destination]');input.focus();input.select();}
     const file=event.target.closest('[data-task-file-open]');if(file)openOutputLocation(file.dataset.taskFileOpen,true);
@@ -200,5 +229,5 @@
   // No interrupted task resumes itself after a reload. It must be reviewed again.
   for(const turn of A.current().turns)if(turn.action?.status==='running')A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'failed',error:'Interrupted. Review the output folder before retrying.'});
   window.addEventListener('pagehide',()=>{for(const url of urls)URL.revokeObjectURL(url);});
-  globalThis.SpatialAssistantDesktop={invoke,fileContext,capture,drawCards};drawCards();
+  globalThis.SpatialAssistantDesktop={invoke,fileContext,capture,drawCards,proposeExampleConversion};drawCards();
 })();

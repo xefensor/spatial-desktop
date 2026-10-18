@@ -37,7 +37,10 @@
   function db(){if(!database)database=new Promise((resolve,reject)=>{const request=indexedDB.open('spatial-stash-files-v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('files');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});return database;}
   async function put(key,blob){const database=await db();return new Promise((resolve,reject)=>{const tx=database.transaction('files','readwrite');tx.objectStore('files').put(blob,key);tx.oncomplete=()=>resolve(key);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
   async function get(key){const database=await db();return new Promise((resolve,reject)=>{const request=database.transaction('files').objectStore('files').get(key);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+  // Roll back only a key that the caller just created and has not published as
+  // a file. Existing file/history ownership must be checked by the caller.
+  async function remove(key){if(!/^stash-[\w-]{1,160}$/.test(String(key)))throw Error('Invalid retained file key.');const database=await db();return new Promise((resolve,reject)=>{const tx=database.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
   async function copyAsset(project,file){if(!file.attachment)return null;const key=file.attachment.key||file.blobKey||'stash-'+hash(project.root+'\n'+file.id);let blob=await get(key);if(!blob){if(!file.attachment.src)throw Error('Missing saved file');const response=await fetch(file.attachment.src);if(!response.ok)throw Error('Source unavailable');blob=await response.blob();await put(key,blob);}file.blobKey=key;return blob;}
   function hash(value){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0).toString(36);}
-  return {folder,directory,path,relative,safeName,safeAttachment,describe,materialize,list,rows,put,get,copyAsset};
+  return {folder,directory,path,relative,safeName,safeAttachment,describe,materialize,list,rows,put,get,remove,copyAsset};
 });

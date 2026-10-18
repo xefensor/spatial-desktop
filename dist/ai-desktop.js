@@ -307,6 +307,27 @@
   const legacyDrafts=readDesktopStorage('spatial-stash-ai-drafts-v1',{}),drafts=legacyDrafts&&typeof legacyDrafts==='object'?legacyDrafts:{};
   if(!desktopStorage.getItem(key)){Object.keys(workspaceProfiles).forEach(workspace=>{const project=workspaceProjects[workspace];const draft=drafts['project:'+project]||drafts[JSON.stringify([workspace,null])];if(typeof draft==='string'&&draft){model.draft(workspace,draft);model.folder(workspace,project);}});persist();}
   function revealChat(chatId,{turnId}={}){if(quickBlocked()||!model.select(activeWorkspace,chatId))return false;closeInput();persist();render();expand(false);if(turnId)$$('[data-ai-demo-turn]',transcript).find(node=>node.dataset.aiDemoTurn===turnId)?.scrollIntoView?.({block:'center'});return true;}
+  function startExample({title='Assistant example',folder:targetFolder,items=[],workspace=activeWorkspace,chatId}={}){
+    // Validate before selecting a new conversation. An example must never
+    // consume an existing draft, replace its inputs or spill into another Home.
+    if(workspace!==activeWorkspace||(chatId&&model.session(workspace).id!==chatId))throw Error('The Workspace or chat changed. Start the example again here.');
+    if(quickBlocked())throw Error('Close the open dialog before starting an Assistant example.');
+    if(model.chats(workspace).length>=50)throw Error('This Workspace holds up to 50 chats. Your current chat has been kept.');
+    if(!Array.isArray(items)||items.length>24||items.some(item=>!item||typeof item!=='object'||item.workspace&&item.workspace!==workspace||item.source?.workspace&&item.source.workspace!==workspace))throw Error('Choose up to 24 inputs from the current Workspace.');
+    const files=globalThis.SpatialAssistantFiles,home=workspaceProfiles[workspace].home;
+    if(!files)throw Error('Assistant file tools are unavailable.');
+    const destination=files.path(targetFolder||model.workingFolder(workspace),home),project=Object.keys(projectSpaces).find(id=>projectSpaces[id].root===destination)||null;
+    const accessible=typeof openProjectNames==='function'?openProjectNames(workspace):[activeProjectName].filter(Boolean);
+    if((destination!==home&&!project)||!files.allowed(destination,workspace,workspaceProfiles,projectSpaces,accessible))throw Error('Choose this Workspace Home or an open Project as the working folder.');
+    const sources=items.map(item=>captureInput(item,workspace));
+    if(new Set(sources.map(item=>item.id)).size!==sources.length)throw Error('Choose distinct example inputs.');
+    rememberView();model.draft(workspace,prompt.value);
+    const chat=model.newChat(workspace);if(!chat)throw Error('This Workspace holds up to 50 chats. Your current chat has been kept.');
+    model.rename(workspace,chat.id,title);model.folder(workspace,project,chat.id);
+    for(const item of sources)model.add(workspace,item,chat.id);
+    closeInput();persist();render();openQuick(false);
+    return {workspace,chatId:chat.id,folder:destination,project,items:chat.items};
+  }
   // A supporting display hosts the same live chat, not a second implementation.
   // Moving this node preserves direct file actions, listeners, source details,
   // scroll position and the currently selected Workspace conversation.
@@ -327,7 +348,7 @@
     previous.classList.remove('ai-area','ai-display-chat','is-ai-drop-target');
     render();return true;
   }
-  globalThis.SpatialAIDesktop={render,expand,revealChat,mountDisplay,unmountDisplay,displayMounted:()=>Boolean(displayHost),
+  globalThis.SpatialAIDesktop={render,expand,revealChat,startExample,mountDisplay,unmountDisplay,displayMounted:()=>Boolean(displayHost),
     attach(items,{focus=true}={}){if(quickBlocked())return [];const existing=new Set(model.session(activeWorkspace).items.map(i=>i.id));if(existing.size+new Set(items.filter(i=>!existing.has(i.id)).map(i=>i.id)).size>24){status.textContent='Remove unused sources before adding this selection.';return [];}const added=[];for(const item of items){if(add(item))added.push(model.session(activeWorkspace).items.find(entry=>entry.id===item.id));}if(focus)openQuick();return added.filter(Boolean);},
     inspect(item){inspectInput(item,'Attached input');},toggleInputs(){const panel=$('.ai-context-sources',content);panel.open=!panel.open;panel.hidden=!panel.open;return panel.open;},removeInputs(ids){for(const id of ids)model.remove(activeWorkspace,id);persist();render();},current:()=>model.session(activeWorkspace),workingFolder:()=>model.workingFolder(activeWorkspace),
     notify(text){status.textContent=text;},
