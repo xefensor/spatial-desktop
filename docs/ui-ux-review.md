@@ -8,7 +8,7 @@ The current interface gives names and useful state priority over repeated metada
 
 App and file names wrap in narrow panels. Supporting text, menus and dialogs use larger reading sizes; app-coloured parked titles keep stronger contrast. Firefox’s menu actions have visible labels. Ordinary file save errors remain readable beside the destination. Compact File Browser navigation keeps explicit icon dimensions when labels are hidden. Guide task feedback uses the normal text colour so completed steps remain readable in Light as well as dark themes.
 
-Guide explanations use named disclosures and short paragraphs. Settings repeats scope only where it changes the meaning of an action. Assistant keeps one permanent local-demo notice beside its composer; transient feedback is reserved for actual results, errors and required choices. Side space retains the same tools and permission boundary, with optional explanations under About.
+Guide explanations use named disclosures and short paragraphs. Files stays mounted but hidden before its Guide chapter, so history and rail adapters can initialize normally. Settings repeats scope only where it changes the meaning of an action. Assistant keeps one permanent local-demo notice beside its composer; transient feedback is reserved for actual results, errors and required choices. Side space retains the same tools and permission boundary, with optional explanations under About.
 
 History starts with Journey; captured Origin and Sources remain inspectable. Steam keeps one Friends & Chat entry in its app window. The material reference’s instructional text uses the stronger secondary text colour. Xef’s authored design philosophy is unchanged.
 

@@ -14,6 +14,8 @@
   <div class="memory-items"></div>
   <div class="memory-empty" hidden><b data-memory-empty-title></b><p data-memory-empty-detail></p><button class="library-reset" data-memory-action="clear-filter" hidden>Show all items</button></div>
   <p class="memory-help">Drop files, text or links</p><p class="memory-feedback" role="status"></p><button class="memory-text-action" data-memory-action="undo" hidden>Undo removal</button></section>`;
+  // History and rail adapters need the Files host even before Guide unlocks it.
+  host.hidden=true;area.append(host);
   const rail=document.createElement('button');rail.className='surface-key memory-header-key';rail.dataset.memoryAction='reveal';rail.title='Files';rail.setAttribute('aria-label','Open files');rail.innerHTML=icon('i-note');$('.area-window-actions',area).prepend(rail);
   const railEntry=document.createElement('button');railEntry.className='surface-key memory-rail-entry rail-action';railEntry.setAttribute('aria-label','Open files');railEntry.innerHTML=icon('i-note')+'<span>Files</span>';area.append(railEntry);
   const dropHint=document.createElement('div'),dropTitle=document.createElement('b'),dropDetail=document.createElement('small');
