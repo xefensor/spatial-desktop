@@ -399,4 +399,19 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   assert.equal(B.state().space.assistant.task,'','No task result is written into the newly selected Workspace');
 }
 
-console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, scoped reference catalogue, Project-independent tiling, transfers, Workspace isolation, sync focus and reconnect recovery passed');
+{
+  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
+  const context={workspace:'work',setup:B.state().setupKey,slot:2,folder:'/Work',chatId:'chat-example',turnId:'turn-example'};
+  B.updateSpace({assistant:{kind:'image',status:'needs-you',control:'assistant',task:'Convert an image',context}});
+  const update=(status,details={})=>B.assistantExampleConversionUpdate({workspace:'work',chatId:context.chatId,turnId:context.turnId,action:{status,destination:'/Work/Web',outputs:[],...details}});
+  assert.equal(update('running'),true);assert.equal(B.state().space.assistant.status,'working','A real Convert starts working instead of leaving the display waiting for input');
+  assert(B.state().space.assistant.result.includes('/Work/Web'),'The progress summary uses the user-reviewed destination');
+  const working=clone(B.state().space.assistant);
+  assert.equal(B.assistantExampleConversionUpdate({workspace:'work',chatId:'another-chat',turnId:context.turnId,action:{status:'running'}}),false);
+  assert.deepEqual(clone(B.state().space.assistant),working,'An unrelated conversion cannot change the display task');
+  B.assistantControl('takeover');update('running');assert.equal(B.state().space.assistant.status,'paused');assert.equal(B.state().space.assistant.control,'user','A conversion update preserves explicit user control');
+  update('complete',{outputs:[{path:'/Work/Web/photo.webp'}]});assert.equal(B.state().space.assistant.status,'paused');assert(B.state().space.assistant.result.includes('/Work/Web'));
+  B.assistantControl('resume');update('complete',{outputs:[{path:'/Work/Web/photo.webp'}]});assert.equal(B.state().space.assistant.status,'done');
+}
+
+console.log('Display-role integration: full-height side-panel geometry, helper visibility, real reference windows, scoped reference catalogue, Project-independent tiling, transfers, Workspace isolation, sync focus, conversion progress and reconnect recovery passed');

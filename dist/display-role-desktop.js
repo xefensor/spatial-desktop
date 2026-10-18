@@ -353,11 +353,12 @@
     if(role()!=='assistant'||workspace!==activeWorkspace||!extendedDesktopActive())return false;
     const current=model.space(workspace,localDisplaySlot()).assistant,context=current.context;
     if(current.kind!=='image'||!context||context.chatId!==chatId||context.turnId!==turnId||!controlContextMatches(context))return false;
-    if(!['complete','failed','cancelled'].includes(action?.status))return false;
-    const complete=action.status==='complete',cancelled=action.status==='cancelled';
+    if(!['running','complete','failed','cancelled'].includes(action?.status))return false;
+    const running=action.status==='running',complete=action.status==='complete',cancelled=action.status==='cancelled';
     const count=Array.isArray(action.outputs)?action.outputs.length:0;
-    const result=complete?'Created '+count+' WebP '+(count===1?'copy':'copies')+' in '+context.folder+'. Use Open or Show in folder in the chat.':cancelled?'The example conversion was cancelled. The saved original is unchanged.':'The example conversion failed: '+(action.error||'Review the chat for details.');
-    saveAssistant(context,{status:current.control==='user'?'paused':complete?'done':cancelled?'idle':'error',result});return true;
+    const destination=action.destination||context.folder;
+    const result=running?'Converting the saved example image to WebP in '+destination+'.':complete?'Created '+count+' WebP '+(count===1?'copy':'copies')+' in '+destination+'. Use Open or Show in folder in the chat.':cancelled?'The example conversion was cancelled. The saved original is unchanged.':'The example conversion failed: '+(action.error||'Review the chat for details.');
+    saveAssistant(context,{status:current.control==='user'?'paused':running?'working':complete?'done':cancelled?'idle':'error',result});return true;
   }
   function runAssistantTask(kind){
     const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
