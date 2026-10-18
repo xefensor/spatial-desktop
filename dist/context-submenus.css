@@ -4,17 +4,17 @@
 #desktopContextMenu>.context-submenu{position:absolute;animation:none;transform:none;min-width:260px;width:300px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;z-index:1}
 #desktopContextMenu>.context-submenu[hidden]{display:none!important}
 #desktopContextMenu .context-submenu-heading{display:flex;align-items:center;gap:7px;padding:3px 6px 8px;border-bottom:1px solid var(--sd-glass-groove);margin-bottom:4px}
-#desktopContextMenu .context-submenu-heading b{font-size:12px;overflow-wrap:anywhere}
+#desktopContextMenu .context-submenu-heading b{font-size:13px;overflow-wrap:anywhere}
 #desktopContextMenu .context-submenu-heading button{display:grid;place-items:center;width:28px;min-height:28px;padding:3px;border:0;background:none;color:var(--text);flex:none}
 #desktopContextMenu .context-submenu-heading svg{width:16px;height:16px}
-#desktopContextMenu .context-menu-info{font-size:10px;line-height:1.5;color:var(--sd-glass-muted);padding:6px 9px;margin:0;overflow-wrap:anywhere}
+#desktopContextMenu .context-menu-info{font-size:12px;line-height:1.5;color:var(--sd-glass-muted);padding:6px 9px;margin:0;overflow-wrap:anywhere}
 #desktopContextMenu .context-entry-copy{display:block;min-width:0;white-space:normal}
-#desktopContextMenu .context-entry-copy b{display:block;font-size:12px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
-#desktopContextMenu .context-entry-copy small{display:block;font-size:10px;line-height:1.4;white-space:normal;color:var(--sd-glass-muted);margin-top:2px;overflow-wrap:anywhere}
+#desktopContextMenu .context-entry-copy b{display:block;font-size:13px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
+#desktopContextMenu .context-entry-copy small{display:block;font-size:12px;line-height:1.4;white-space:normal;color:var(--sd-glass-muted);margin-top:2px;overflow-wrap:anywhere}
 #desktopContextMenu .context-menu-item:has(.context-entry-copy small){padding-block:8px;min-height:46px}
 #desktopContextMenu .context-menu-item[disabled]{opacity:.55;cursor:default}
 #desktopContextMenu .context-menu-item[disabled]:hover{background:transparent!important;box-shadow:none!important}
 #desktopContextMenu .context-menu-item[aria-expanded="true"]{background:var(--sd-glass-hover)!important}
 #desktopContextMenu .context-menu-item .context-submenu-arrow{width:14px;height:14px}
-#desktopContextMenu .context-menu-item kbd{font-size:9px;padding:2px 3px}
+#desktopContextMenu .context-menu-item kbd{font-size:11px;padding:2px 3px}
 @media(pointer:coarse){#desktopContextMenu .context-menu-item{min-height:44px!important}}

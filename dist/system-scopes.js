@@ -50,9 +50,9 @@
     project.style.setProperty('--system-scope-accent',space?.accent||workspaceProfiles[activeWorkspace].accent);
     $('#systemRailProject small').textContent=space?.name||'';
     $('#systemRailProject').title=space?'Project plans · '+space.name:'Project plans';
-    const stamp=item=>item?new Date(item.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+(item.projectName?' · '+item.projectName:''):'Add one in Timeline';
-    $('#systemProjectAgendaTitle').textContent=result.project?.title||'No upcoming project plans';$('#systemProjectAgendaMeta').textContent=stamp(result.project);
-    $('#systemAgendaTitle').textContent=result.workspace?.title||'No other upcoming plans';$('#systemAgendaMeta').textContent=stamp(result.workspace);
+    const stamp=(item,showProject=true)=>item?new Date(item.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+(showProject&&item.projectName?' · '+item.projectName:''):'Add in Timeline';
+    $('#systemProjectAgendaTitle').textContent=result.project?.title||'No upcoming plans';$('#systemProjectAgendaMeta').textContent=stamp(result.project,false);
+    $('#systemAgendaTitle').textContent=result.workspace?.title||(space?'No other upcoming plans':'No upcoming plans');$('#systemAgendaMeta').textContent=stamp(result.workspace);
     $('.calendar-widget h2',area).textContent=space?'Elsewhere in Workspace':'Next up';
   }
   function render(){

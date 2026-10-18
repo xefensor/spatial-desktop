@@ -26,7 +26,7 @@
 .ai-display-chat .ai-composer{padding-top:8px;border-top:1px solid var(--soft-line)}
 .ai-display-chat .ai-composer textarea{height:58px;min-height:58px;max-height:120px;font-size:13px;line-height:1.5;padding:9px}
 .ai-display-chat .ai-compose-row>button{min-height:38px}
-.ai-display-chat .ai-composer small{font-size:10px;line-height:1.5;margin-top:6px}
+.ai-display-chat .ai-composer small{font-size:11px;line-height:1.5;margin-top:6px}
 .ai-display-chat.is-ai-drop-target{outline:2px solid var(--text);outline-offset:-2px}
 .display-workbench .ai-display-chat button.ai-task-choice{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;text-align:left}
 @media(max-height:620px){

@@ -14,7 +14,7 @@
     find('steamChatAvatar').textContent=f.initial;find('steamChatAvatar').className='steam-avatar avatar-'+f.tone;
     all('[data-steam-friend]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.steamFriend===selected)));
     const log=find('steamMessages');log.replaceChildren();
-    for(const m of f.messages){const row=document.createElement('div'),by=document.createElement('small'),p=document.createElement('p');row.className='steam-message'+(m.you?' is-you':'');by.textContent=m.you?'You · sample':f.name+' · sample';p.textContent=m.text;row.append(by,p);log.append(row);}
+    for(const m of f.messages){const row=document.createElement('div'),by=document.createElement('small'),p=document.createElement('p');row.className='steam-message'+(m.you?' is-you':'');by.textContent=m.you?'You':f.name;p.textContent=m.text;row.append(by,p);log.append(row);}
     find('steamMessageInput').value=drafts[selected]||'';log.scrollTop=log.scrollHeight;
   }
   function selectTool(id,focus=false){

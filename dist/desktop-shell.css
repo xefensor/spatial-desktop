@@ -1755,9 +1755,11 @@ body[data-theme="light"] .app-frame.is-front{
 .mini-card input[type="range"]{
   accent-color:var(--app-primary);
 }
-.apps-zone .app-key.is-active span,
-.mini-card header b{
+.apps-zone .app-key.is-active span{
   color:var(--app-primary);
+}
+.mini-card header b{
+  color:color-mix(in srgb,var(--app-primary) 35%,var(--sd-glass-text,var(--text)));
 }
 .notification[data-app-origin]{
   background:linear-gradient(90deg,color-mix(in srgb,var(--app-primary) 8%,transparent),transparent 72%);

@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {scopeFor,localProject}=require('../dist/search-scopes.js');
+const {scopeFor,localProject,canonicalFilePath,duplicateFiles}=require('../dist/search-scopes.js');
 const source=fs.readFileSync(require.resolve('../dist/search-scopes.js'),'utf8');
 const shell=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
 function segment(text,first,last){const start=text.indexOf(first),end=text.indexOf(last,start+first.length);assert(start>=0&&end>start);return text.slice(start,end);}
@@ -43,6 +43,45 @@ ctx.fileResults('shot');assert.equal(target('#universalFileResults').children[0]
 ctx.fileResults('review');assert.equal(target('#universalFileResults').children[0].dataset.searchFileDirectory,'/home/work/Documents');
 ctx.fileResults('secret');assert.equal(target('#universalFileResults').children.length,0,'Foreign Home and unopened Project files stay out');
 ctx.fileResults('workspace toml');assert.equal(target('#universalFileResults').children[0].dataset.searchFileDirectory,'/home/work','Config is a file, not an invented folder');
+
+// Canonical file deduplication keeps content-search/action-rich saved items,
+// without merging copies, references at different paths, or case-sensitive names.
+assert.equal(canonicalFilePath('/home/work//Assistant/./brief.md'),'/home/work/Assistant/brief.md');
+assert.equal(canonicalFilePath('/home/work/../private.md'),'');
+assert.equal(canonicalFilePath('https://example.org/brief.md'),'');
+const fileRow={path:'/projects/film/brief.md',provider:'files'},savedRow={path:'/projects/film/brief.md',provider:'memory'},copyRow={path:'/projects/film/brief (2).md',provider:'memory'};
+assert.deepEqual(duplicateFiles([fileRow,savedRow,copyRow]),[fileRow]);
+assert.deepEqual(duplicateFiles([savedRow,fileRow]),[fileRow],'Saved-item preference does not depend on provider order');
+assert.equal(duplicateFiles([{path:'/projects/film/Brief.md',provider:'files'},savedRow]).length,0,'Distinct Linux filenames stay distinct');
+const duplicateFile={dataset:{searchFileDirectory:'/projects/film',searchFileName:'brief.md'},hidden:false};
+const memoryResult={dataset:{memoryResult:'saved'},hidden:false},contentOnly={dataset:{memoryResult:'content-only'},hidden:false},differentCopy={dataset:{memoryResult:'copy'},hidden:false},sourceLink={dataset:{memoryResult:'source'},hidden:false};
+const savedItems={saved:{id:'saved'},'content-only':{id:'content-only'},copy:{id:'copy'},source:{id:'source',source:{address:'/projects/film/brief.md'}}};
+const pathById={saved:'/projects/film/brief.md','content-only':'/projects/film/only-content.md',copy:'/projects/film/brief (2).md'};
+const dedupeContext={results:{},duplicateFiles,$$:()=>[duplicateFile,memoryResult,contentOnly,differentCopy,sourceLink],root:{SpatialMemoryDesktop:{itemFor:id=>savedItems[id],savedItem:item=>pathById[item.id]?{path:pathById[item.id]}:null}}};
+vm.createContext(dedupeContext);vm.runInContext(segment(source,'  function dedupe(','  function metadata('),dedupeContext);
+assert.equal(dedupeContext.dedupe(false),1,'Category counts can use the same unique All count without hiding their own result');
+assert(!duplicateFile.hidden);assert(!memoryResult.hidden);
+assert.equal(dedupeContext.dedupe(),1);assert(duplicateFile.hidden);assert(!memoryResult.hidden,'All results retains the actionable saved item');
+assert(!contentOnly.hidden,'A content-only match remains searchable without a matching filename');
+assert(!differentCopy.hidden,'Different saved locations retain separate results');
+assert(!sourceLink.hidden,'A source address is not its saved location');
+
+// Rows inherit their visible section's scope; location appears only when needed
+// to distinguish another desktop/Project. Parking has no desktop ownership.
+const rowContext={scopeFor,activeWorkspace:'work',appState:{here:'open',away:'open',parked:'minimized',other:'minimized',background:'background'},
+  projectSpaces:{film:{name:'Film'},research:{name:'Research'}},kinds:{apps:'Application',files:'File',settings:'Action'},
+  desktopPages:{columnOf:(_,id)=>id==='other'?'research':'film',visible:(_,id)=>id!=='away',pageOf:()=>2,fullscreenBond:()=>null},
+  localDisplaySlot:()=>1,activeDisplayRoster:()=>[{}]};
+vm.createContext(rowContext);vm.runInContext(segment(source,'  function metadata(','  function render('),rowContext);
+const row=id=>({dataset:{searchWindow:'true',searchOpenApp:id}}),rowScope={owner:'film',workspace:{label:'Work'}};
+assert.equal(rowContext.metadata(row('here'),'apps',rowScope).detail,'','Current desktop is already identified by its heading');
+assert.equal(rowContext.metadata(row('away'),'apps',rowScope).detail,'Desktop 3','Another desktop remains distinguishable');
+assert.equal(rowContext.metadata(row('parked'),'apps',rowScope).scope,'project','Parked windows span their Project, regardless of the stored page');
+assert.equal(rowContext.metadata(row('parked'),'apps',rowScope).detail,'');
+assert.equal(rowContext.metadata(row('other'),'apps',rowScope).detail,'Research','A parked window has a Project location, not a misleading desktop');
+assert.equal(rowContext.metadata(row('background'),'apps',rowScope).scope,'system','Background apps have system scope');
+assert.equal(rowContext.metadata({dataset:{searchOwner:'film'}},'files',rowScope).detail,'','The existing file path needs no second generic scope line');
+assert.equal(rowContext.metadata({dataset:{searchScope:'system'}},'settings',rowScope).detail,'','Settings inherit their scope heading');
 
 // Search result navigation uses its actual page, project column and fullscreen bond.
 const handlers=[];const controls={addEventListener:(event,handler)=>handlers.push(handler)};

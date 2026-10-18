@@ -92,7 +92,7 @@
     const bond=desktopPages.selectedFullscreen?.(activeWorkspace),page=desktopPages.current(activeWorkspace)+1;
     const local=bond && Math.min(bond.display,activeDisplayRoster().length)===localDisplaySlot();
     const place=local ? (appInfo[bond.name]?.label||'App')+' · temporary desktop · linked to Desktop '+page : 'Desktop '+page+(bond?' · temporary desktop on Display '+bond.display:'');
-    $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name||'Workspace',place].join(' / ');
+    $('#overviewContext').textContent=[workspaceProfiles[activeWorkspace]?.label||activeWorkspace,project?.name,place].filter(Boolean).join(' / ');
     if(formWorkspace!==activeWorkspace){formWorkspace=activeWorkspace;$('#timelinePlanForm').hidden=true;$('#timelineAddToggle').setAttribute('aria-pressed','false');$('#timelineAddToggle').setAttribute('aria-expanded','false');$('#timelinePlanTitle').value='';$('#timelinePlanDetail').value='';}
     renderTimeline();
     const visible=allowed();

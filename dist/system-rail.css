@@ -37,14 +37,15 @@
 .systems-zone.system-rail-ready .system-rail-flyout[hidden]{display:none!important}
 .systems-zone.system-rail-ready .system-rail-flyout:not([hidden]){display:block!important}
 .systems-zone.system-rail-ready .system-rail-flyout-heading{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent)}
-.systems-zone.system-rail-ready .system-rail-flyout-heading h2{display:block!important;margin:4px 0 0;font-size:14px;font-weight:650}
-.systems-zone.system-rail-ready .system-rail-flyout-heading small{font-size:10px;color:var(--muted);line-height:1.35}
+.systems-zone.system-rail-ready .system-rail-flyout-heading h2{display:block!important;margin:4px 0 0;font-size:15px;line-height:1.35;font-weight:650;overflow-wrap:anywhere}
+.systems-zone.system-rail-ready .system-rail-flyout-heading small{font-size:11px;overflow-wrap:anywhere;color:var(--muted);line-height:1.35}
+.systems-zone.system-rail-ready .system-rail-flyout-heading>div{min-width:0}
 .systems-zone.system-rail-ready .system-rail-flyout-heading>button{width:29px;height:29px;padding:6px;flex:none}
 .systems-zone.system-rail-ready .system-rail-flyout-heading>button svg{width:15px;height:15px}
 .systems-zone.system-rail-ready .system-rail-flyout-body{padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .systems-zone.system-rail-ready .system-rail-flyout-body:empty{display:none}
 .systems-zone.system-rail-ready .system-rail-flyout :is(.system-scope:not([hidden]),.system-scope-heading,.system-scope-body,.system-agenda-stack,.static-widget-stack,.system-device-details:not([hidden]),.system-rail-quick-panel,.system-rail-media-panel){display:block!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0;border:0;min-width:0}
-.systems-zone.system-rail-ready .system-rail-flyout .system-scope-heading{margin-bottom:10px!important}
+.systems-zone.system-rail-ready .system-rail-flyout .system-scope-heading{display:none!important}
 .systems-zone.system-rail-ready .system-rail-flyout .system-desktop-requests{display:block!important}
 .systems-zone.system-rail-ready .system-rail-flyout .system-widget:not([hidden]){display:block!important;opacity:1;transform:none;min-width:0;max-width:none;width:100%;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
 .systems-zone.system-rail-ready .system-rail-flyout .system-widget[hidden]{display:none!important}
@@ -69,7 +70,7 @@
 .systems-zone.system-rail-ready .system-rail-flyout .connect-widget .device-row{display:flex;gap:12px}
 .systems-zone.system-rail-ready .system-rail-flyout .system-rail-settings{display:flex;align-items:center;gap:8px;min-height:32px;width:100%;padding:7px 10px;font-size:12px}
 .systems-zone.system-rail-ready .system-rail-flyout .system-rail-settings svg{width:16px;height:16px}
-.systems-zone.system-rail-ready .system-rail-flyout .system-rail-note{margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+.systems-zone.system-rail-ready .system-rail-flyout .system-rail-note{margin:10px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
 .systems-zone.system-rail-ready .system-rail-flyout .system-rail-empty{margin:0;padding:0 14px 14px;color:var(--muted);font-size:12px;line-height:1.5}
 .systems-zone.system-rail-ready .system-rail-flyout .system-rail-empty[hidden]{display:none!important}
 .systems-zone.system-rail-ready .system-rail-track b{display:block;font-size:15px;line-height:1.4;overflow-wrap:anywhere}

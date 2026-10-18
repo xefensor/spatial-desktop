@@ -213,9 +213,23 @@
     globalThis.SpatialOverviewDesktop?.refresh();
     layoutDockAreas(false, false); refreshIntentAreas(); scheduleWindowTiling();
   }
+  function guideProseMarkup(text) {
+    // Keep authored paragraphs, and break older long references at sentence
+    // boundaries so no disclosure opens as a wall of text.
+    return String(text || '').split(/\n\s*\n/).flatMap(paragraph=>{
+      const sentences=paragraph.split(/(?<=[.!?])\s+(?=[A-Z])/u);
+      const parts=[];let current='';
+      sentences.forEach(sentence=>{
+        if(current && (current+' '+sentence).trim().split(/\s+/).length>85){parts.push(current);current='';}
+        current+=(current?' ':'')+sentence.trim();
+      });
+      if(current)parts.push(current);
+      return parts;
+    }).map(paragraph=>'<p>'+escapeHtml(paragraph)+'</p>').join('');
+  }
   function lessonContentMarkup(lesson, explanation = lesson.text) {
-    const details=lesson.details?'<details class="guide-more"><summary>More details</summary><p>'+escapeHtml(lesson.details)+'</p></details>':'';
-    const sections=(lesson.referenceSections||[]).map(section=>'<details class="guide-more"><summary>'+escapeHtml(section.title)+'</summary><p>'+escapeHtml(section.text)+'</p></details>').join('');
+    const details=lesson.details?'<details class="guide-more"><summary>More details</summary>'+guideProseMarkup(lesson.details)+'</details>':'';
+    const sections=(lesson.referenceSections||[]).map(section=>'<details class="guide-more"><summary>'+escapeHtml(section.title)+'</summary>'+guideProseMarkup(section.text)+'</details>').join('');
     const example=lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'';
     return '<p class="guide-explanation">'+escapeHtml(explanation)+'</p>'+details+sections+example;
   }
@@ -225,7 +239,7 @@
   }
   function referenceMarkup() {
     const groups=guide.chapters.map(chapter=>'<details class="guide-chapter" data-guide-group><summary><span>'+escapeHtml(chapter.title)+'</span>'+icon('i-right')+'</summary><div class="guide-topic-list">'+guide.lessons.filter(lesson=>lesson.chapter===chapter.id).map(lesson=>'<details data-guide-topic><summary><span>'+escapeHtml(lesson.title)+'</span>'+icon('i-right')+'</summary>'+lessonContentMarkup(lesson)+'<button class="surface-key guide-show" data-guide-show="'+guide.lessons.indexOf(lesson)+'">Show me</button><button class="guide-text-action guide-replay" data-guide-chapter="'+lesson.id+'">Try this step</button></details>').join('')+'</div></details>').join('');
-    return '<div class="guide-heading"><span class="eyebrow">DESKTOP COMPANION</span><h1>What would you like to try?</h1><p>Follow the steps or find a topic below. Use your own apps and ideas.</p></div><button class="surface-key guide-primary" data-guide-action="start">Start the hands-on guide</button><label class="guide-search recessed-field">'+icon('i-search')+'<input type="search" aria-label="Search Guide topics" placeholder="Find a topic or shortcut"></label><div class="guide-chapters">'+groups+'</div>';
+    return '<div class="guide-heading"><h1>Desktop Guide</h1><p>Try the hands-on introduction, or search for a topic below.</p></div><button class="surface-key guide-primary" data-guide-action="start">Start the hands-on guide</button><label class="guide-search recessed-field">'+icon('i-search')+'<input type="search" aria-label="Search Guide topics" placeholder="Find a topic or shortcut"></label><div class="guide-chapters">'+groups+'</div>';
   }
   function setCompact(compact, manual = false) {
     if (manual) {manuallyExpanded=!compact;guide.setView(compact ? 'compact' : 'expanded');}

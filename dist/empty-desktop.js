@@ -21,8 +21,9 @@
   }
   const matches = value => !query.trim() || matchesSearch(value, query);
   function resourceMarkup(entry) {
+    const detail = /^(Workspace folder|Saved file|Saved folder|Folder|Imported file)$/.test(entry.detail) ? '' : entry.detail;
     const glyph = entry.folder ? 'i-folder' : entry.type === 'config' ? 'i-code' : entry.type === 'image' ? 'i-image' : entry.type === 'audio' ? 'i-music' : 'i-note';
-    return '<button type="button" class="empty-desktop-resource" data-empty-resource="'+escapeHtml(entry.key)+'" data-empty-context="'+escapeHtml(scope)+'" title="'+escapeHtml(entry.path)+'">'+icon(glyph)+'<span><b>'+escapeHtml(entry.label)+'</b><small>'+escapeHtml(entry.detail)+'</small></span>'+icon('i-right')+'</button>';
+    return '<button type="button" class="empty-desktop-resource" data-empty-resource="'+escapeHtml(entry.key)+'" data-empty-context="'+escapeHtml(scope)+'" title="'+escapeHtml(entry.path)+'">'+icon(glyph)+'<span><b>'+escapeHtml(entry.label)+'</b>'+(detail?'<small>'+escapeHtml(detail)+'</small>':'')+'</span>'+icon('i-right')+'</button>';
   }
   function refresh() {
     const nextScope = scopeKey();
@@ -40,7 +41,7 @@
     grid.innerHTML = names.map(name => {
       const info = appInfo[name], action = actionFor(name);
       const detail = action === 'return' ? 'Return to app' : action === 'new' ? 'New window here' : 'Open here';
-      return '<button class="empty-desktop-app" type="button" data-empty-app="' + escapeHtml(name) + '" aria-label="' + escapeHtml(info.label + ' · ' + detail) + '" title="' + escapeHtml(info.label + ' · ' + detail) + '" style="--app-primary:' + info.primary + '">' + appArt(name) + '<b>' + escapeHtml(info.label) + '</b><small>' + detail + '</small></button>';
+      return '<button class="empty-desktop-app" type="button" data-empty-app="' + escapeHtml(name) + '" aria-label="' + escapeHtml(info.label + ' · ' + detail) + '" title="' + escapeHtml(info.label + ' · ' + detail) + '" style="--app-primary:' + info.primary + '">' + appArt(name) + '<b>' + escapeHtml(info.label) + '</b>' + (action === 'open' ? '' : '<small>' + detail + '</small>') + '</button>';
     }).join('');
     if (folders && files) {
       const searching = Boolean(query.trim());
@@ -54,7 +55,7 @@
       const appSection = $('#emptyDesktopAppsSection'); if (appSection) appSection.hidden = searching && !names.length;
       const emptyFiles = $('#emptyDesktopFilesEmpty'); if (emptyFiles) emptyFiles.hidden = fileRows.length > 0 || searching;
       if (clear) clear.hidden = !searching;
-      if (status) {status.hidden = !searching;status.textContent = (names.length+folderRows.length+fileRows.length) ? (names.length+folderRows.length+fileRows.length)+' matches' : 'No matches here. Try another name.';}
+      if (status) {status.hidden = !searching;status.textContent = (names.length+folderRows.length+fileRows.length) ? (names.length+folderRows.length+fileRows.length)+(names.length+folderRows.length+fileRows.length===1?' match':' matches') : 'No matches here. Try another name.';}
     }
   }
   grid.addEventListener('click', event => {

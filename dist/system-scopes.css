@@ -16,19 +16,19 @@
 .system-scope[hidden],.system-rail-project[hidden]{display:none!important}
 .systems-zone #layoutModeToggle[hidden]{display:none!important}
 .system-scope-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 8px;padding:0 3px;color:var(--muted)}
-.system-scope-heading>span{font-size:9px;font-weight:650;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
-.system-scope-heading>b{font-size:11px;font-weight:550;color:var(--system-scope-accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.system-scope-heading>span{font-size:10px;font-weight:650;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+.system-scope-heading>b{min-width:0;font-size:12px;font-weight:550;color:var(--system-scope-accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .system-scope-body{min-width:0;display:flex;flex-direction:column;gap:10px}
 .system-scope .system-widget{padding:5px 3px!important;border:0!important;box-shadow:none!important;background:transparent!important}
 .system-scope .widget-heading{margin-bottom:7px}.system-scope .widget-heading h2{font-size:11px!important}
-.system-scope .widget-heading>span{font-size:10px}
+.system-scope .widget-heading>span{font-size:11px}
 .system-scope .dynamic-widget-stack,.system-scope .static-widget-stack{gap:6px;flex:none;max-height:none!important;overflow:visible!important;margin:0!important}
 .system-scope .notification{padding-block:8px!important}.system-scope .notification b{font-size:12px!important}.system-scope .notification small{font-size:11px!important}
-.system-scope .next-event{margin:0;min-height:45px}.system-scope .next-event b{font-size:12px;white-space:normal}.system-scope .next-event small{font-size:10px!important;white-space:normal}
+.system-scope .next-event{margin:0;min-height:45px}.system-scope .next-event b{font-size:12px;line-height:1.45;white-space:normal;overflow-wrap:anywhere}.system-scope .next-event small{font-size:11px!important;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
 .system-scope-empty{margin:0;padding:0 3px;font-size:11px;color:var(--muted)}
 .system-desktop-request{width:100%;display:flex;align-items:center;gap:9px;padding:7px 3px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
 .system-desktop-request>.app-art{width:22px;height:22px;flex:none}.system-desktop-request>svg:last-child{width:13px;height:13px;color:var(--muted)}
-.system-desktop-request>span{flex:1;min-width:0}.system-desktop-request b{display:block;font-size:11px;font-weight:550}.system-desktop-request small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.system-desktop-request>span{flex:1;min-width:0}.system-desktop-request b{display:block;font-size:12px;line-height:1.4;font-weight:550;overflow-wrap:anywhere}.system-desktop-request small{display:block;color:var(--muted);font-size:11px;line-height:1.4;overflow-wrap:anywhere;margin-top:3px}
 .system-focus-controls{display:flex;flex-direction:column;gap:6px}.system-focus-controls:has(>#launchTimer[hidden]):has(>#timerWidget[hidden]){display:none}
 .system-focus-controls #launchTimer{justify-content:flex-start;gap:8px;width:100%;padding:7px 9px;font-size:11px}.system-focus-controls #launchTimer[hidden]{display:none!important}
 .system-focus-controls .timer-face strong{font-size:25px}.system-focus-controls .timer-actions button{font-size:11px;padding:5px 9px}
@@ -39,7 +39,7 @@
 .system-scope[data-system-scope="system"] .workspace-notifications-widget{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 3px;border:0}
 .system-scope[data-system-scope="system"] .workspace-notifications-widget[hidden]{display:none!important}
 .system-scope[data-system-scope="system"] .workspace-notifications-widget header{margin:0}
-.system-scope[data-system-scope="system"] .workspace-notifications-widget h3{font-size:9px;max-width:70px}
+.system-scope[data-system-scope="system"] .workspace-notifications-widget h3{font-size:10px;line-height:1.4;max-width:80px}
 .system-scope[data-system-scope="system"] .workspace-notifications-widget header small{display:none}
 .system-scope .time-block{padding:0 3px!important;margin:2px 0!important;min-height:40px;gap:12px;display:flex;align-items:center}
 .system-scope .time-block>.live-time{font-size:25px!important}.system-scope .time-block b{font-size:11px}.system-scope .time-block small{font-size:10px}
@@ -48,8 +48,8 @@
 .system-scope>.quick-settings{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:10px 0 0!important;padding:0!important;flex:none}
 .system-scope>.quick-settings .quick-toggle{min-width:0;min-height:38px;padding:5px!important;gap:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .system-scope>.quick-settings .quick-toggle svg{width:16px;height:16px}
-.system-device-details>summary{font-size:10px;color:var(--muted);cursor:pointer;padding:2px 3px}.system-device-details[open]>summary{margin-bottom:7px}
-.system-scope .system-month{margin-top:9px}.system-scope .system-month summary{font-size:10px}
+.system-device-details>summary{font-size:11px;color:var(--muted);cursor:pointer;padding:2px 3px}.system-device-details[open]>summary{margin-bottom:7px}
+.system-scope .system-month{margin-top:9px}.system-scope .system-month summary{font-size:11px}
 .systems-zone:not([data-area-state="rail"]) :is(.system-rail-desktop,.system-rail-project,.system-rail-global,.system-rail-middle){display:none!important}
 .systems-zone[data-area-state="rail"] :is(.system-scope:not([data-system-scope="system"]),.system-scope-heading,.system-scope[data-system-scope="system"]>.system-scope-body){display:none!important}
 .systems-zone[data-area-state="rail"] .system-scope[data-system-scope="system"]{display:flex;flex-direction:column;gap:7px;border:0;padding:7px 0 0;flex:none;min-height:0}

@@ -1,6 +1,20 @@
 # UI and UX notes
 
-Current conventions as of 13 October 2026. Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
+Spatial Desktop remains a browser prototype; simulated apps, system tools and files do not provide native OS integrations.
+
+## Readability pass — 18 October 2026
+
+The current interface gives names and useful state priority over repeated metadata. Empty desktops omit routine “Open here”, folder-type and saved-file subtitles. Search inherits scope from its section and shows an extra location when the result is elsewhere. Parked counts do not repeat their section name.
+
+App and file names wrap in narrow panels. Supporting text, menus and dialogs use larger reading sizes; app-coloured parked titles keep stronger contrast. Firefox’s menu actions have visible labels. Ordinary file save errors remain readable beside the destination.
+
+Guide explanations use named disclosures and short paragraphs. Settings repeats scope only where it changes the meaning of an action. Assistant keeps one permanent local-demo notice beside its composer; transient feedback is reserved for actual results, errors and required choices. Side space retains the same tools and permission boundary, with optional explanations under About.
+
+History starts with Journey; captured Origin and Sources remain inspectable. Steam keeps one Friends & Chat entry in its app window. The material reference’s instructional text uses the stronger secondary text colour. Xef’s authored design philosophy is unchanged.
+
+The earlier notes below retain their dates and terminology. Use the [prototype reference](prototype-reference.md) for current behaviour.
+
+## Earlier review — 13 October 2026
 
 ## Windows and hotbar
 

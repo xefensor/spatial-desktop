@@ -10,11 +10,29 @@
   function localProject(project,id,workspace,open){
     return !project.originWorkspace || project.originWorkspace===workspace || open.includes(id);
   }
-  if(typeof module!=='undefined' && module.exports){module.exports={scopeFor,localProject};return;}
+  // Compare actual saved locations, never source URLs or shared item identities.
+  // Linux paths remain case-sensitive; reject parent segments rather than guess.
+  function canonicalFilePath(value){
+    const path=String(value||'');if(!path.startsWith('/')||path.includes('\0'))return '';
+    const parts=path.split('/').filter(part=>part&&part!=='.');
+    return parts.includes('..')?'':'/'+parts.join('/');
+  }
+  function duplicateFiles(rows){
+    const winners=new Map(),duplicates=[];
+    for(const row of rows){
+      const path=canonicalFilePath(row.path);if(!path)continue;
+      const previous=winners.get(path);
+      if(!previous){winners.set(path,row);continue;}
+      if(row.provider==='memory'&&previous.provider!=='memory'){duplicates.push(previous);winners.set(path,row);}
+      else duplicates.push(row);
+    }
+    return duplicates;
+  }
+  if(typeof module!=='undefined' && module.exports){module.exports={scopeFor,localProject,canonicalFilePath,duplicateFiles};return;}
   const results=document.querySelector('#universalResults');if(!results)return;
   const host=document.createElement('div');host.id='scopedSearchResults';host.className='scoped-search-results';results.prepend(host);
   const origins=new Map();
-  const kinds={apps:'Application',files:'File',memory:'Stash',projects:'Project',settings:'Action'};
+  const kinds={apps:'Application',files:'File',memory:'Saved items',projects:'Project',settings:'Action'};
   const context=()=>({owner:desktopPages.column(activeWorkspace),workspace:workspaceProfiles[activeWorkspace],page:desktopPages.current(activeWorkspace),bond:desktopPages.selectedFullscreen(activeWorkspace)});
   const availableProjects=()=>Object.entries(projectSpaces).filter(([id,project])=>localProject(project,id,activeWorkspace,openProjectNames()));
   function restore(){
@@ -73,24 +91,42 @@
     }
     prepareControlSemantics(target);
   }
+  // Run after query/Guide matching and category counts, before category hiding.
+  // All results keeps the richer saved-item action; each category keeps its own row.
+  function dedupe(hideDuplicates=true){
+    const candidates=[];
+    for(const row of $$('.universal-result:not([hidden])',results)){
+      if(row.dataset.memoryResult){
+        const item=root.SpatialMemoryDesktop?.itemFor(row.dataset.memoryResult);
+        const saved=item&&root.SpatialMemoryDesktop?.savedItem(item);
+        if(saved?.path)candidates.push({row,path:saved.path,provider:'memory'});
+      }else if(row.dataset.searchFileName){
+        candidates.push({row,path:row.dataset.searchFileDirectory.replace(/\/$/,'')+'/'+row.dataset.searchFileName,provider:'files'});
+      }
+    }
+    const duplicates=duplicateFiles(candidates);
+    if(hideDuplicates)for(const item of duplicates)item.row.hidden=true;
+    return duplicates.length;
+  }
   function metadata(row,kind,ctx){
     let owner=row.dataset.searchOwner;
     let detail='';const item={kind:({files:'file',projects:'project',apps:'app'})[kind]||kind,owner,scope:row.dataset.searchScope};
     if(row.dataset.searchWindow){
       const id=row.dataset.searchOpenApp;owner=desktopPages.columnOf(activeWorkspace,id);item.kind='window';item.owner=owner;
-      item.visible=desktopPages.visible(activeWorkspace,id,localDisplaySlot(),activeDisplayRoster().length);
+      item.visible=appState[id]==='open'&&desktopPages.visible(activeWorkspace,id,localDisplaySlot(),activeDisplayRoster().length);
       const bond=desktopPages.fullscreenBond(activeWorkspace,id);
-      detail=(projectSpaces[owner]?.name||ctx.workspace.label)+' · '+(bond?'Temporary desktop · from Desktop '+(bond.page+1):'Desktop '+(desktopPages.pageOf(activeWorkspace,id)+1));
+      if(appState[id]==='background')item.scope='system';
+      else if(appState[id]==='minimized'){if(owner!==ctx.owner)detail=projectSpaces[owner]?.name||ctx.workspace.label;}
+      else if(owner!==ctx.owner||!item.visible){
+        const place=bond?'Temporary desktop · from Desktop '+(bond.page+1):'Desktop '+(desktopPages.pageOf(activeWorkspace,id)+1);
+        detail=(owner!==ctx.owner?(projectSpaces[owner]?.name||ctx.workspace.label)+' · ':'')+place;
+      }
     }else if(row.dataset.memoryResult){
       const record=SpatialMemoryDesktop.itemFor(row.dataset.memoryResult);
-      if(record){item.owner=JSON.parse(record.scope)[1]||'workspace';detail=(projectSpaces[item.owner]?.name||ctx.workspace.label)+' · Stash';}
+      if(record){item.owner=JSON.parse(record.scope)[1]||'workspace';if(item.owner!==ctx.owner)detail=projectSpaces[item.owner]?.name||'';}
     }else if(row.dataset.searchProject){
-      item.owner=row.dataset.searchProject;detail=projectSpaces[item.owner]?.name||'';
-    }else if(kind==='files')detail=projectSpaces[owner]?.name||ctx.workspace.label+' Home';
-    else if(row.dataset.areaShow){item.scope='workspace';detail=ctx.workspace.label+' · Area layout';}
-    else if(row.id==='universalTimer'){item.scope='workspace';detail=ctx.workspace.label+' · Focus timer';}
-    else if(item.scope==='workspace')detail=ctx.workspace.label+' · Available application';
-    else detail=kind==='apps'?'Installed application':'System-wide setting';
+      item.owner=row.dataset.searchProject;
+    }else if(row.dataset.areaShow||row.id==='universalTimer')item.scope='workspace';
     return {scope:scopeFor(item,ctx),detail,kind:item.kind==='window'?'Window':kinds[kind]||kind};
   }
   function render(){
@@ -107,8 +143,10 @@
       for(const row of $$('.universal-result:not([hidden])',group)){
         const meta=metadata(row,kind,ctx),section=sections.get(meta.scope);if(!section)continue;
         origins.set(row,row.parentElement);
-        const location=document.createElement('small');location.dataset.searchLocation='true';location.className='search-result-location';location.textContent=meta.kind+' · '+meta.detail;
-        row.querySelector('b').parentElement.append(location);section.querySelector('.universal-result-grid').append(row);section.hidden=false;
+        // The heading owns scope; the row already describes its action or path.
+        // Add a location only when it helps distinguish another desktop or Project.
+        if(meta.detail){const location=document.createElement('small');location.dataset.searchLocation='true';location.className='search-result-location';location.textContent=meta.detail;row.querySelector('b').parentElement.append(location);}
+        section.querySelector('.universal-result-grid').append(row);section.hidden=false;
       }
       group.hidden=true;
     }
@@ -128,5 +166,5 @@
     openFileLocation(row.dataset.searchFileDirectory);
     if(row.dataset.searchFileName)showToast(row.dataset.searchFileName+' · shown in its folder');
   });
-  root.SpatialSearchScopes={restore,render,appResults,fileResults};
+  root.SpatialSearchScopes={restore,render,appResults,fileResults,dedupe};
 })(typeof globalThis!=='undefined'?globalThis:this);

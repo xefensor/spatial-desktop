@@ -49,11 +49,7 @@
 .settings-area-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .settings-area-row b{display:block;font-size:12px;font-weight:550}
 .settings-area-row small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
-.settings-home-context{display:flex;align-items:center;gap:12px;padding:0 0 20px;margin-bottom:5px}
-.settings-home-context>span{color:var(--settings-accent)}
-.settings-home-context svg{width:25px;height:25px}
-.settings-home-context b{display:block;font-size:12px;font-weight:600}
-.settings-home-context p{font-size:12px;color:var(--muted);margin:3px 0 0}
+.settings-home-scope{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}.settings-home-scope b{font-weight:550;color:var(--text)}
 .settings-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
 .settings-app-content .settings-category-card{min-width:0;height:auto!important;max-height:none!important;min-height:84px;display:flex;align-items:center;gap:12px;padding:17px 8px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent!important;box-shadow:none!important;transform:none!important;text-align:left;white-space:normal;color:var(--text);font:inherit}
 .settings-category-card>svg:first-child{width:21px;height:21px;color:var(--settings-accent);flex:none}
@@ -87,3 +83,20 @@
    Multi-line destination rows need their own geometry, not a second cap. */
 body[data-theme] .app-frame[data-app-kind="settings"] .settings-app-content :is(.settings-category-card,.settings-search-result){height:auto!important;border-radius:0!important;corner-shape:square!important;border-bottom:1px solid var(--line)!important}
 body[data-theme="light"] .app-frame[data-app-kind="settings"] .settings-app-page{box-shadow:inset 0 2px 5px rgba(42,53,58,.12)}
+
+/* Settings explanations remain readable in a tiled window; scope is stated once. */
+.settings-app-toolbar .settings-search input{font-size:13px}
+.settings-app-content button.settings-nav{font-size:13px}
+.settings-nav-group>span{font-size:11px;letter-spacing:.025em;text-transform:none}
+.settings-page-heading p,.settings-app-content :is(.settings-row,.settings-section-intro) p,.settings-help p,.settings-empty p,.settings-about p{font-size:13px;line-height:1.6}
+.settings-scope-banner{font-size:12px;gap:4px 8px;padding:8px 0;margin-bottom:18px}
+.settings-scope-banner>span{font-size:11px;letter-spacing:0;text-transform:none}
+.settings-category-card small,.settings-demo-note,.settings-destination,.settings-area-row b,.settings-search-result>span>span{font-size:12px;line-height:1.55}
+.settings-help>summary{font-size:13px;font-weight:550;color:var(--text);cursor:pointer;line-height:1.5;padding:4px 0}
+.settings-help[open]>summary{margin-bottom:4px}
+.settings-category-card small{max-width:42ch}
+.settings-app-content .settings-row:has(.settings-state-toggle){padding-block:14px}
+@container settings-app (max-width:650px){.settings-app-content button.settings-nav{font-size:13px}.settings-app-content .settings-row:has(.settings-state-toggle){flex-wrap:nowrap}.settings-row:has(.settings-state-toggle)>div{flex:1}}
+
+/* The narrow sidebar keeps section names visually hidden beside icon labels. */
+@container settings-app (max-width:410px){.settings-nav-group>span{font-size:0}}

@@ -185,6 +185,13 @@ console.log('Two-display chapter passed: optional ending, real transfers, same-w
 
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
+// The reference renderer adds paragraph breaks without losing paths, URLs,
+// punctuation or literal markup from the saved Guide text.
+const proseContext=vm.createContext({escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')});
+vm.runInContext(adapter.slice(adapter.indexOf('  function guideProseMarkup('),adapter.indexOf('  function lessonContentMarkup(')),proseContext);
+const literalReference='Open /home/demo/Assistant/brief.md or https://example.org/brief.html. Keep <draft> & its sources.\n\nThen return to Chat.';
+assert.equal(proseContext.guideProseMarkup(literalReference),'<p>Open /home/demo/Assistant/brief.md or https://example.org/brief.html. Keep &lt;draft&gt; &amp; its sources.</p><p>Then return to Chat.</p>');
+
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
 const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,

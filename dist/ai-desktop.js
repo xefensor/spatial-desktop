@@ -122,7 +122,7 @@
     $('#aiRailChatTitle').textContent=title;$('#aiRailSources').textContent=String(sources);$('#aiRailDraft').hidden=!session.draft;
     $('#aiRailChat').setAttribute('aria-label',(quickPanel.hidden?'Open ':'Close ')+title+' · '+label+(session.draft?' · Unsent draft':''));
     $('#aiRailChat').title=title+' · '+label+' · Drop sources here or open chat';
-    $('#aiQuickTitle').textContent=title;$('#aiQuickContext').textContent=workspaceLabel(activeWorkspace)+' workspace · Scripted local demo';
+    $('#aiQuickTitle').textContent=title;$('#aiQuickContext').textContent=workspaceLabel(activeWorkspace)+' workspace';
   }
   $('#aiRailChat').addEventListener('click',()=>{if(globalThis.SpatialAssistantDesktop?.invoke())return;quickPanel.hidden?openQuick():closeQuick(true);});
   $('#aiQuickClose').addEventListener('click',()=>closeQuick(true));$('#aiQuickExpand').addEventListener('click',()=>expand());
@@ -221,7 +221,7 @@
     return recipes||earlier?'<details class="ai-examples"><summary>Examples</summary>'+recipes+(recipes?'<p class="ai-example-note">Try these with your selection. Replies are scripted locally; supported file conversions create real copies in the demo.</p>':'')+earlier+'</details>':'';
   }
   function submitRequest(){
-    const request=prompt.value.trim();if(!request){status.textContent='Assistant demo · write a request first';return;}
+    const request=prompt.value.trim();if(!request){status.textContent='Write a request first.';return;}
     if((displayHost&&!displayVisible())||quickBlocked())return;
     const task=currentDisplayTask();
     if(taskOngoing(task)){
@@ -233,7 +233,7 @@
       if(!choice){status.textContent='Choose one of the displayed options, or type its label. Your draft is kept.';return;}
       const workspace=activeWorkspace,chatId=model.session(workspace).id,sentDraft=prompt.value;
       try{if(!answerTask(choice.id,question.id,task.context.operationId)){status.textContent='This question changed. Choose one of the current options.';return;}}catch(error){status.textContent=error.message||'The answer could not be used. Your draft is kept.';return;}
-      if(activeWorkspace===workspace&&model.session(workspace).id===chatId&&prompt.value===sentDraft){model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();}status.textContent='Scripted local demo';return;
+      if(activeWorkspace===workspace&&model.session(workspace).id===chatId&&prompt.value===sentDraft){model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();}status.textContent='';return;
     }
     const session=model.session(activeWorkspace),workingFolder=model.workingFolder(activeWorkspace),project=projectSpaces[session.workingProject];
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:session.items,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}));
@@ -242,7 +242,7 @@
     model.draft(activeWorkspace,'');prompt.value='';persist();render();
     const sources=$('.ai-context-sources',content);if(sources){sources.open=false;sources.hidden=true;}
     followConversation();
-    status.textContent='Reply ready · local demo';
+    status.textContent='Reply ready';
   }
   function rememberView(){
     if(!current)return;
@@ -260,7 +260,7 @@
     $('#aiAreaToggle').setAttribute('aria-expanded',String(expanded));$('#aiAreaToggle').setAttribute('aria-pressed',String(expanded));$('#aiAreaToggle').setAttribute('aria-label',area.dataset.areaState==='expanded'?'Make Assistant area Compact':!quickPanel.hidden?'Close Assistant quick chat':'Open Assistant quick chat');
     if(dropPosition)showDropTarget(dropPosition);
     const follow=!switched&&shouldFollowConversation();if(switched)stopFollowingConversation();renderDisplayTask();if(next===signature)return;const focusedSummary=!switched&&transcript.contains(document.activeElement)&&document.activeElement?.matches?.('summary')?document.activeElement:null,focusedDetails=focusedSummary?.closest?.('[data-ai-turn-details]')?.dataset.aiTurnDetails;rememberView();signature=next;
-    if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='Local demo · scripted replies';}
+    if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='';}
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title)+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     send.disabled=!prompt.value.trim()||session.turns.length>=60;
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home+'/Assistant')+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root+'/Assistant')+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
@@ -298,10 +298,10 @@
     const previous=model.session(activeWorkspace).workingProject,added=model.add(activeWorkspace,captureInput(item));
     if(!added){status.textContent='This conversation holds up to 24 attachments. Remove one to add another.';return false;}
     persist();render();openQuick(false);
-    status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached · ready for a scripted demo';return true;
+    status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached to this request.';return true;
   }
   $('#aiAreaToggle').addEventListener('click',()=>{if(!globalThis.SpatialAssistantDesktop?.invoke())toggle();});
-  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderRail(model.session(activeWorkspace));status.textContent='Scripted local demo';});
+  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderRail(model.session(activeWorkspace));status.textContent='';});
   prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();if(!quickPanel.hidden)closeQuick(true);else if(!displayHost)setAreaState('ai','rail');}});
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
   folder.addEventListener('change',()=>{if(taskOngoing(currentDisplayTask())){folder.value=model.session(activeWorkspace).workingProject||'';status.textContent='This task keeps its working folder until it finishes.';return;}model.folder(activeWorkspace,folder.value);persist();render();});
@@ -311,7 +311,7 @@
     if(outputButton){
       if((displayHost&&!displayVisible())||quickBlocked())return;
       const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===outputButton.dataset.aiResultTurn),showFolder=Object.hasOwn(outputButton.dataset,'aiResultFolder'),index=Number(showFolder?outputButton.dataset.aiResultFolder:outputButton.dataset.aiResultOpen),output=turn?.outputs?.[index];if(!output)return;
-      try{const files=globalThis.SpatialAssistantFiles,accessible=typeof openProjectNames==='function'?openProjectNames():[];if(!files?.allowed(output.path,activeWorkspace,workspaceProfiles,projectSpaces,accessible))throw Error('Open this file’s Project before using its result.');const directory=output.path.slice(0,output.path.lastIndexOf('/'))||'/';if(globalThis.SpatialDisplayRoleBridge?.openReference&&displayHost)SpatialDisplayRoleBridge.openReference({kind:showFolder?'folder':'file',path:showFolder?directory:output.path});else if(showFolder)openFileLocation(directory);else{const app=createAppInstance('dolphin');if(!app)throw Error('File Browser could not open.');renderFileLocation(app,directory);if(!appFileRows(app,directory).some(row=>row[0]===output.path.split('/').at(-1))){closeApp(app);throw Error('This saved result is no longer available.');}openAppFile(app,output.path.split('/').at(-1));}status.textContent='Scripted local demo';}catch(error){status.textContent=error.message||'The saved file could not open.';}return;
+      try{const files=globalThis.SpatialAssistantFiles,accessible=typeof openProjectNames==='function'?openProjectNames():[];if(!files?.allowed(output.path,activeWorkspace,workspaceProfiles,projectSpaces,accessible))throw Error('Open this file’s Project before using its result.');const directory=output.path.slice(0,output.path.lastIndexOf('/'))||'/';if(globalThis.SpatialDisplayRoleBridge?.openReference&&displayHost)SpatialDisplayRoleBridge.openReference({kind:showFolder?'folder':'file',path:showFolder?directory:output.path});else if(showFolder)openFileLocation(directory);else{const app=createAppInstance('dolphin');if(!app)throw Error('File Browser could not open.');renderFileLocation(app,directory);if(!appFileRows(app,directory).some(row=>row[0]===output.path.split('/').at(-1))){closeApp(app);throw Error('This saved result is no longer available.');}openAppFile(app,output.path.split('/').at(-1));}status.textContent='';}catch(error){status.textContent=error.message||'The saved file could not open.';}return;
     }
     const save=event.target.closest('[data-ai-save-output]');if(save){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===save.dataset.aiSaveOutput);if(!turn||turn.presentation||turn.assistantOnly||turn.outputs?.length||!globalThis.SpatialMemoryDesktop)return;const workspace=activeWorkspace,chatId=model.session(workspace).id,key=JSON.stringify([workspace,turn.project&&projectSpaces[turn.project]?turn.project:null]);save.disabled=true;const kept=await SpatialMemoryDesktop.keepContext(outputContext(turn),key,{folder:turn.folder||model.workingFolder(workspace)});save.disabled=false;if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent=kept?'Saved in '+(turn.folder||model.workingFolder(workspace))+' with its input versions.':'Could not save this draft. Check the Files and try again.';return;}
     const citation=event.target.closest('[data-ai-input]');if(!citation)return;const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===citation.dataset.aiInputTurn);inspectInput(turn?.sources[Number(citation.dataset.aiInput)],'Request input · '+(turn?.title||'Reply'));
@@ -402,7 +402,7 @@
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
-    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);const text=file.type.startsWith('text/')?await file.text():'';model.add(workspace,captureInput({workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text,attachment:{kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',key:fileKey,filename:file.name,mime:file.type,size:file.size},source:{workspace,label:'File upload'}},workspace),chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached · ready for a scripted demo';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
+    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);const text=file.type.startsWith('text/')?await file.text():'';model.add(workspace,captureInput({workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text,attachment:{kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',key:fileKey,filename:file.name,mime:file.type,size:file.size},source:{workspace,label:'File upload'}},workspace),chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached to this request.';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
     const text=event.dataTransfer.getData('text/plain'),url=event.dataTransfer.getData('text/uri-list').split('\n').find(line=>line&&!line.startsWith('#'));
     if(text||url)add({...source,title:url||text.trim().slice(0,80)||'Dropped content',kind:url?'link':'text',text,address:url||''});
   });
@@ -459,7 +459,7 @@
     notify(text){status.textContent=text;},
     taskActive:()=>taskOngoing(currentDisplayTask()),
     consumeDraft(value,{workspace=activeWorkspace,chatId=model.session(workspace).id}={}){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId||prompt.value!==value)return false;model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();return true;},
-    createTurn(request,response,context={}){const session=model.session(activeWorkspace),turn=model.exchange(activeWorkspace,request,response,context);if(!turn)return null;recordInputs(turn,session.id);model.draft(activeWorkspace,prompt.value);persist();render();status.textContent='Scripted local demo';return turn;},
+    createTurn(request,response,context={}){const session=model.session(activeWorkspace),turn=model.exchange(activeWorkspace,request,response,context);if(!turn)return null;recordInputs(turn,session.id);model.draft(activeWorkspace,prompt.value);persist();render();status.textContent='';return turn;},
     updateTurn(workspace,chatId,turnId,response){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId)return null;const turn=model.reply(workspace,turnId,response,chatId);if(turn){persist();render();}return turn;},
     setAction(workspace,chatId,turnId,value){const turn=model.action(workspace,turnId,value,chatId);if(turn){persist();render();}return turn;},mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){if(!quickPanel.hidden&&quickWorkspace!==activeWorkspace)closeQuick();model.load(value,{preserveSelection:activeWorkspace});signature='';const session=model.session(activeWorkspace);if(document.activeElement!==prompt)prompt.value=session.draft;render();}};
   layoutDockAreas(false,false);render();

@@ -17,11 +17,11 @@
   const area=areaFor('projects'),memory=root.SpatialMemoryDesktop,host=document.getElementById('workingMemory');
   if(!area||!memory||!host)return;
   const make=(tag,classes,text='')=>{const node=document.createElement(tag);node.className=classes;node.textContent=text;return node;};
-  const rail=make('nav','project-material-rail');rail.setAttribute('aria-label','Current working material');
-  rail.innerHTML='<small class="project-material-context"></small><button type="button" class="rail-action memory-rail-entry project-material-stash" data-project-shelf="stash">'+icon('i-note')+'<span>Files</span><small></small></button><button type="button" class="rail-action" data-project-shelf="note">'+icon('i-add')+'<span>Note</span></button><div class="project-material-pinned" aria-label="Pinned files"></div><footer><button type="button" class="rail-action" data-project-shelf="files">'+icon('i-folder')+'<span>Files</span></button><button type="button" class="rail-action" data-project-shelf="more" aria-label="Workspace and Project actions">'+icon('i-settings')+'<span>More</span></button></footer>';
+  const rail=make('nav','project-material-rail');rail.setAttribute('aria-label','Files and notes');
+  rail.innerHTML='<small class="project-material-context"></small><button type="button" class="rail-action memory-rail-entry project-material-stash" data-project-shelf="stash">'+icon('i-note')+'<span>Files</span><small></small></button><button type="button" class="rail-action" data-project-shelf="note">'+icon('i-add')+'<span>New note</span></button><div class="project-material-pinned" aria-label="Pinned files"></div><footer><button type="button" class="rail-action" data-project-shelf="files">'+icon('i-folder')+'<span>Files</span></button><button type="button" class="rail-action" data-project-shelf="more" aria-label="Workspace and Project actions">'+icon('i-settings')+'<span>Actions</span></button></footer>';
   area.append(rail);area.dataset.projectRailReady='true';
   const popup=make('section','project-shelf-popup material-surface-glass');popup.id='projectShelfPopup';popup.hidden=true;popup.inert=true;popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','false');popup.setAttribute('aria-labelledby','projectShelfTitle');
-  popup.innerHTML='<header><div><small id="projectShelfContext"></small><h2 id="projectShelfTitle"></h2></div><button type="button" class="surface-key" data-project-shelf-expand>Expand area</button><button type="button" class="surface-key" data-project-shelf-close aria-label="Close working-material shelf">×</button></header><div class="project-shelf-body"></div>';
+  popup.innerHTML='<header><div><small id="projectShelfContext"></small><h2 id="projectShelfTitle"></h2></div><button type="button" class="surface-key" data-project-shelf-expand>Expand area</button><button type="button" class="surface-key" data-project-shelf-close aria-label="Close Files">×</button></header><div class="project-shelf-body"></div>';
   document.body.append(popup);
   rail.querySelectorAll('[data-project-shelf]').forEach(button=>{button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',popup.id);button.setAttribute('aria-expanded','false');});
   const body=popup.querySelector('.project-shelf-body'),pinned=rail.querySelector('.project-material-pinned');
@@ -57,7 +57,7 @@
       button.innerHTML=icon(entry.folder?'i-folder':'i-note');const text=make('span',''),name=make('b','',entry.name),detail=make('small','',entry.detail);text.append(name,detail);button.append(text);list.append(button);
     }
     if(!entries.length)list.append(make('p','project-shelf-empty','This folder is empty.'));
-    body.append(list,make('p','project-shelf-hint','Select a file or drag it into Assistant.'));
+    body.append(list,make('p','project-shelf-hint','Drag files to Assistant.'));
   }
   function renderMore(state){
     const menu=make('div','project-shelf-menu');menu.setAttribute('role','menu');menu.setAttribute('aria-label',state.project?'Project actions':'Workspace actions');

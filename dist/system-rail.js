@@ -77,7 +77,7 @@
   $('.system-rail-global').append(quick);$('.system-rail-middle').append(media);
   for(const button of [quick,media])button.setAttribute('aria-controls',popup.id);
   const sound=$('.quick-settings [aria-label="Sound"]');if(sound){sound.title='Sound · click to mute or unmute';sound.classList.add('system-rail-sound');}
-  const quickPanel=make('div','system-rail-quick-panel','<button type="button" class="surface-key system-rail-settings" data-open-settings>'+icon('i-settings')+'<span>All Settings</span></button><p class="system-rail-note">Demo controls · no device settings are changed.</p>');
+  const quickPanel=make('div','system-rail-quick-panel','<button type="button" class="surface-key system-rail-settings" data-open-settings>'+icon('i-settings')+'<span>Settings</span></button><p class="system-rail-note">Demo controls only.</p>');
   quickPanel.hidden=true;area.append(quickPanel);
   quick.addEventListener('click',()=>{
     quickPanel.hidden=false;
@@ -122,7 +122,7 @@
     const routes={
       '#notificationWidget':['notifications','Notifications',profile.label,[target],$('#systemRailNotifications'),'No notifications in this Workspace.'],
       '#systemWideNotificationWidget':['alerts','System alerts','System-wide',[target],$('#systemRailWideAlerts'),'No system alerts.'],
-      '#systemScopeDesktop':['requests','Pending requests','This desktop',[target],$('#systemRailDesktop'),'No pending requests.'],
+      '#systemScopeDesktop':['requests','Pending requests','Desktop '+(desktopPages.current(activeWorkspace)+1),[target],$('#systemRailDesktop'),'No pending requests.'],
       '#systemScopeProject':['project','Project plans',space?.name||'Project',[target],$('#systemRailProject'),'No upcoming project plans.'],
       '.calendar-widget':['agenda','Calendar & agenda',profile.label,[$('.system-agenda-stack')],$('#systemRailCalendar'),'No upcoming plans.']
     };

@@ -103,3 +103,18 @@ html[data-guide-system-overview="false"] [data-overview-panel="system"]{visibili
 .guide-chapter>.guide-topic-list{padding-left:12px}
 .guide-chapter .guide-more summary{display:block;padding:6px 0;font-size:11px}
 .guide-current-hint[hidden]{display:none!important}
+
+/* Reference help is a set of short topics, not a single dense paragraph. */
+.guide-window.is-reference:not(.was-moved){width:500px;left:calc(50% - 250px)}
+.guide-content p{font-size:14px;line-height:1.6}
+.guide-content .guide-example-choice,.guide-content .guide-footnote{font-size:12px;color:var(--muted)}
+.guide-step-meta,.guide-strip-meta,.guide-mission-count{font-size:11px;line-height:1.5}
+.guide-text-action,.guide-topic-list summary,.guide-more summary,.guide-chapter .guide-more summary{font-size:13px;line-height:1.5}
+.guide-topic-list details p,.guide-more p{font-size:13px!important;line-height:1.65;margin:10px 0 0!important;max-width:65ch}
+.guide-more summary{padding-block:4px;color:var(--text)}
+.guide-chapter>.guide-topic-list{padding-left:10px}
+.guide-topic-list>details>summary>span{min-width:0;flex:1}
+.guide-topic-list>details>summary>svg{flex:none;margin-left:10px}
+.guide-search input{font-size:13px}
+.guide-content .guide-explanation{font-size:14px;line-height:1.6}
+@media(max-width:800px){.guide-window.is-reference:not(.was-moved){left:12px;width:500px}.guide-content p{font-size:14px}}

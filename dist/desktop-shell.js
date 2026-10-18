@@ -1740,7 +1740,7 @@ function renderMiniApps() {
   $("#miniStack").innerHTML = minimized.length ? minimized.map(miniMarkup).join("") : '<div class="mini-empty">Drag a window here to keep it controllable.</div>';
   applyAppPrimaryColors($("#miniStack"));
   prepareControlSemantics($("#miniStack"));
-  $("#miniCount").textContent = minimized.length + " parked";
+  $("#miniCount").textContent = String(minimized.length);
   $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
   $$("[data-mini-card]").forEach(bindMiniDrag);
@@ -5799,10 +5799,13 @@ function filterUniversalSearch() {
   $$(".universal-group", $("#universalResults")).forEach(group => {
     const id = group.dataset.universalGroup;
     counts[id] = $$(".universal-result:not([hidden])", group).length;
-    if (resultFilter !== 'all' && id !== resultFilter) $$(".universal-result", group).forEach(result => { result.hidden = true; });
+  });
+  localVisible -= globalThis.SpatialSearchScopes?.dedupe?.(resultFilter === 'all') || 0;
+  $$(".universal-group", $("#universalResults")).forEach(group => {
+    if (resultFilter !== 'all' && group.dataset.universalGroup !== resultFilter) $$(".universal-result", group).forEach(result => { result.hidden = true; });
     group.hidden = !$(".universal-result:not([hidden])", group);
   });
-  const labels = { all: 'All results', apps: 'Applications', files: 'Files', memory: 'Stash', projects: 'Projects', settings: 'System & actions' };
+  const labels = { all: 'All results', apps: 'Applications', files: 'Files', memory: 'Saved items', projects: 'Projects', settings: 'System & actions' };
   Array.from($("#universalResultFilter").options).forEach(option => { option.textContent = labels[option.value] + ' · ' + (option.value === 'all' ? localVisible : counts[option.value] || 0); });
   const visibleCount = resultFilter === 'all' ? localVisible : counts[resultFilter] || 0;
   $("#universalFilterReset").hidden = resultFilter === 'all';

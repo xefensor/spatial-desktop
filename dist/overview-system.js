@@ -29,17 +29,17 @@
     const models=appWindowStore.snapshot()[activeWorkspace]||{},items=SpatialSystemScopes.requests(models,appState,id=>desktopPages.inColumn(activeWorkspace,id),id=>desktopPages.visible(activeWorkspace,id,localDisplaySlot(),activeDisplayRoster().length),appInfo);
     const key=JSON.stringify(items);if(requests.dataset.rendered!==key){requests.dataset.rendered=key;requests.replaceChildren();
       for(const item of items){const button=make('button','overview-system-request',appArt(item.id)+'<span><b></b><small></small></span>'+icon('i-right'));button.type='button';button.dataset.overviewSystemRequest=item.id;button.querySelector('b').textContent=item.label+' · Needs input';button.querySelector('small').textContent=item.detail;requests.append(button);}
-      if(!items.length)requests.append(make('p','overview-system-empty','No pending requests'));
     }
+    desktop.hidden=!items.length;
     const plans=root.SpatialTimelineDesktop?.snapshot().plans||[],agenda=SpatialSystemScopes.agendas(plans,activeWorkspace,space?owner:'',Date.now());
     const stamp=item=>item?new Date(item.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'Add one in Timeline';
     projectAgenda.querySelector('b').textContent=agenda.project?.title||'No upcoming Project plans';projectAgenda.querySelector('small').textContent=stamp(agenda.project);
-    $('#workspaceAgendaHeading').textContent=space?'Elsewhere in Workspace':'Next up';$('#workspaceAgendaTitle').textContent=agenda.workspace?.title||'No other upcoming plans';$('#workspaceAgendaMeta').textContent=stamp(agenda.workspace);
+    $('#workspaceAgendaHeading').textContent=space?'Elsewhere in Workspace':'Next up';$('#workspaceAgendaTitle').textContent=agenda.workspace?.title||(space?'No other upcoming plans':'No upcoming plans');$('#workspaceAgendaMeta').textContent=stamp(agenda.workspace);
     notificationEmpty.hidden=$$('#overviewNotificationList .overview-notification').length>0;
     const store=root.SpatialAllWorkspaces;
     if(store){
       const scopes=notificationScopes(store,activeWorkspace,workspaceProfiles);
-      notifications.hidden=false;notifications.setAttribute('aria-label',profile.label+' notifications');notifications.querySelector('h3').textContent=profile.label+' notifications';notificationEmpty.hidden=scopes.local.length>0;
+      notifications.hidden=false;notifications.setAttribute('aria-label',profile.label+' notifications');notifications.querySelector('h3').textContent='Notifications';notificationEmpty.hidden=scopes.local.length>0;
       const list=$('#overviewSystemWideNotificationList'),fingerprint=JSON.stringify(scopes.shared.map(note=>({id:note.id,...store.content(note)})));
       if(list.dataset.rendered!==fingerprint){list.dataset.rendered=fingerprint;list.replaceChildren();
         for(const note of scopes.shared){const article=make('article','overview-notification','<span><b></b><small></small></span><button type="button" class="dismiss-button">×</button>'),text=store.content(note);article.dataset.notificationId=note.id;article.querySelector('b').textContent=text.title;article.querySelector('small').textContent=text.detail;const dismiss=article.querySelector('button');dismiss.dataset.overviewSystemDismiss=note.id;dismiss.setAttribute('aria-label','Dismiss '+text.title);list.append(article);}

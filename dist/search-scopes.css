@@ -6,13 +6,13 @@
 .universal-search .search-scope[data-search-scope="system"]{margin-top:5px;border-inline-start-color:var(--muted);background:color-mix(in srgb,var(--content-surface) 42%,transparent)}
 .search-scope-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 0 10px;margin-bottom:5px;border-bottom:1px solid var(--sd-glass-groove)}
 .search-scope-heading>div{display:flex;align-items:baseline;gap:12px;min-width:0;flex-wrap:wrap}
-.search-scope-heading span{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.search-scope-heading span{font-size:11px;letter-spacing:.03em;color:var(--muted)}
 .universal-search .search-scope-heading h3{font-size:13px;letter-spacing:0;margin:0;padding:0;border:0;overflow-wrap:anywhere}
 .search-scope-heading>small{flex:none;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .universal-search .universal-results .search-scope .universal-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr))!important;gap:4px 18px}
-.universal-search .search-scope .universal-result{display:flex;align-items:center;gap:11px;min-height:76px;padding:10px 6px;min-width:0}
+.universal-search .search-scope .universal-result{display:flex;align-items:center;gap:11px;min-height:64px;padding:10px 6px;min-width:0}
 .universal-search .search-scope .universal-app-icon{flex:none;width:34px;height:34px;display:grid;place-items:center}
 .universal-search .search-scope .universal-app-icon>:is(svg,.app-art){width:34px;height:34px}
-.universal-search .search-result-location{display:block!important;font-size:10px!important;color:var(--muted);margin-top:4px;line-height:1.4!important;white-space:normal;overflow-wrap:anywhere}
+.universal-search .search-result-location{display:block!important;font-size:11px!important;color:var(--muted);margin-top:4px;line-height:1.4!important;white-space:normal;overflow-wrap:anywhere}
 .universal-search .universal-web-group{margin-top:16px}
 @media(max-width:700px){.universal-search .search-scope{padding:10px}.search-scope-heading>div{gap:5px 10px}.universal-search .universal-results .search-scope .universal-result-grid{grid-template-columns:1fr!important}}

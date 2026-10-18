@@ -14,10 +14,10 @@
 .project-material-rail .rail-action>span{font-size:10px!important}
 .project-material-pinned{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;gap:6px;padding-top:5px;border-top:1px solid var(--sd-glass-groove)}
 .project-material-pinned:empty{border:0}
-.project-material-pinned-label{font-size:9px;color:var(--muted);text-align:center}
+.project-material-pinned-label{font-size:10px;color:var(--muted);text-align:center}
 .project-material-item{display:flex;flex:none;flex-direction:column;align-items:center;gap:5px;min-width:0;min-height:46px;border:0;padding:5px 2px;color:var(--text);background:transparent;font:inherit;font-size:10px;cursor:grab}
 .project-material-item svg{width:21px;height:21px;color:var(--project-accent,var(--workspace-accent));flex:none}
-.project-material-item>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px}
+.project-material-item>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;overflow:hidden;overflow-wrap:anywhere;font-size:10px;line-height:1.35}
 .project-material-rail>footer{display:flex;flex:none;flex-direction:column;border-top:1px solid var(--sd-glass-groove);padding-top:5px}
 .project-material-rail :is(button:hover,button[aria-expanded="true"]){background:color-mix(in srgb,var(--text) 7%,transparent)}
 .project-material-rail :is(button:focus-visible){outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}
@@ -25,9 +25,9 @@
 .project-shelf-popup[hidden]{display:none!important}
 .project-shelf-popup>header{display:flex;align-items:center;gap:10px;flex:none;padding:12px 14px;border-bottom:1px solid var(--sd-glass-groove);background:color-mix(in srgb,var(--text) 4%,transparent)}
 .project-shelf-popup>header>div{flex:1;min-width:0}
-.project-shelf-popup>header small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
+.project-shelf-popup>header small{display:block;overflow-wrap:anywhere;font-size:11px;line-height:1.4;color:var(--muted)}
 .project-shelf-popup h2{margin:4px 0 0;font-size:17px}
-.project-shelf-popup>header>button{font-size:10px;min-height:28px;padding:5px 7px;white-space:nowrap}
+.project-shelf-popup>header>button{font-size:11px;min-height:28px;padding:5px 7px;white-space:nowrap}
 .project-shelf-popup [data-project-shelf-close]{font-size:17px;min-width:28px}
 .project-shelf-body{padding:0 14px 14px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .project-shelf-body #workingMemory{display:block!important;min-width:0;margin:0!important;padding-top:12px;max-height:none!important}
@@ -38,7 +38,7 @@
 .project-shelf-file>svg{width:21px;height:21px;flex:none;color:var(--project-accent)}
 .project-shelf-file>span{min-width:0}
 .project-shelf-file b{display:block;font-size:12px;overflow-wrap:anywhere}
-.project-shelf-file small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.project-shelf-file small{display:block;font-size:11px;line-height:1.45;overflow-wrap:anywhere;color:var(--muted);margin-top:4px}
 .project-shelf-file:hover{background:color-mix(in srgb,var(--text) 5%,transparent)}
 .project-shelf-hint,.project-shelf-empty{font-size:11px;color:var(--muted);line-height:1.5;margin-block:14px 0}
 .project-shelf-menu{display:grid;padding-top:10px;gap:4px}

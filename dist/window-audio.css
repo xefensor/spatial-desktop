@@ -19,7 +19,7 @@
   background:linear-gradient(var(--abs-body-hi,#65747c),var(--abs-body,#36464f));box-shadow:inset 0 1px #ffffff60,0 1px 3px #0008;
 }
 .app-titlebar .window-audio input:focus-visible{outline:2px solid var(--app-primary,var(--text));outline-offset:4px}
-.app-titlebar .window-audio output{flex:0 0 28px;font:10px/1.2 system-ui,sans-serif;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
+.app-titlebar .window-audio output{flex:0 0 28px;font:11px/1.2 system-ui,sans-serif;font-variant-numeric:tabular-nums;text-align:right;color:var(--text)}
 .app-titlebar .window-audio.is-muted input{filter:saturate(0);opacity:.65}
 @container (max-width:520px){.app-titlebar>.window-audio{flex-basis:92px;max-width:92px;min-width:72px}.app-titlebar .window-audio output{display:none}}
 @container (max-width:390px){.app-titlebar>.window-audio{flex-basis:74px;max-width:74px;min-width:64px}.app-titlebar .window-audio{gap:4px}}

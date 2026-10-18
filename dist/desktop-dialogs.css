@@ -86,3 +86,7 @@ body[data-theme="light"] .package-overlay { background: rgba(36,53,64,.22); }
   .import-grid { grid-template-columns: minmax(0,1fr); }
   .package-actions { flex-wrap: wrap; }
 }
+
+/* Creation and import text use the same reading sizes as Settings. */
+.package-window :is(.package-intro small,.package-mode-switch small,.package-content-row small,.package-safety p,.package-safety ul,.package-actions small,.import-hero p,.import-grid small){font-size:12px;line-height:1.55}
+.package-window :is(.package-content-row b,.package-mode-switch b,.package-secondary,.package-primary,.package-actions b,.import-grid b,.package-panel>header>button,.safety-details,.import-map header button){font-size:13px;line-height:1.5}

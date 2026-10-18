@@ -1,15 +1,15 @@
 .project-package-explanation,.project-package-demo,.project-package-status{margin:12px 3px;font-size:12px;line-height:1.6}
-.project-package-demo{padding:9px 12px;border-left:2px solid var(--workspace-accent);background:var(--sd-glass-face-deep);font-size:11px}
+.project-package-demo{padding:9px 12px;border-left:2px solid var(--workspace-accent);background:var(--sd-glass-face-deep);font-size:12px}
 .project-package-status{min-height:20px;color:var(--sd-glass-text)!important}
-.package-window .project-archive-row{display:flex;align-items:center;gap:10px;min-height:53px;padding:10px 12px;border-bottom:1px solid var(--sd-glass-groove);font-size:12px}
+.package-window .project-archive-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-height:53px;padding:10px 12px;border-bottom:1px solid var(--sd-glass-groove);font-size:12px}
 .project-archive-row>svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--workspace-accent);stroke-width:1.6}
-.project-archive-row>span{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px;overflow-wrap:anywhere}
-.project-archive-row small{font-size:11px;line-height:1.5}
-.project-archive-row .archive-count{flex:0 0 auto;font-size:11px;color:var(--sd-glass-muted)}
-.project-archive-row label{font-size:11px;text-decoration:underline;cursor:pointer}
-.project-archive-row input[type=file]{display:block;font-size:10px;max-width:180px;margin-top:5px}
+.project-archive-row>span{display:flex;flex:1 1 160px;min-width:0;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.project-archive-row small{font-size:12px;line-height:1.5}
+.project-archive-row .archive-count{flex:0 0 auto;font-size:12px;color:var(--sd-glass-muted)}
+.project-archive-row label{font-size:12px;text-decoration:underline;cursor:pointer}
+.project-archive-row input[type=file]{display:block;font-size:12px;width:100%;max-width:220px;margin-top:5px}
 .project-package-file,.project-package-destination{display:flex;flex-direction:column;gap:8px;margin:16px 3px;font-size:12px}
-.project-package-file input,.project-package-destination input{padding:10px;font:inherit}
+.project-package-file input,.project-package-destination input{width:100%;min-width:0;padding:10px;font:inherit}
 #importPreview .import-grid{margin:12px 0}
 #projectImportFiles{max-height:220px;overflow:auto}
 #packageLinkedList{max-height:340px;overflow:auto}

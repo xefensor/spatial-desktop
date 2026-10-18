@@ -41,13 +41,13 @@
     host.classList.add('display-side-shelf');
     host.innerHTML=`
       <section class="display-side-section">
-        <h2>Handy folders</h2>
+        <h2>Folders</h2>
         <nav class="display-side-home" aria-label="Workspace folder shortcuts"></nav>
       </section>
       <section class="display-side-section display-side-pins" aria-label="Pinned references">
         <div class="display-side-section-heading"><h2>Pinned references</h2><span data-side-pin-count></span></div>
         <div class="display-side-reference-list" data-side-references></div>
-        <p class="display-side-empty" data-side-pin-empty>Keep a file, folder or web page within reach. Drag one here, or pin its address.</p>
+        <p class="display-side-empty" data-side-pin-empty>Drop a file, folder or web link here, or pin its address.</p>
         <details class="display-side-add" data-side-pin-editor>
           <summary>Pin a reference</summary>
           <form data-side-reference-form>
@@ -71,7 +71,7 @@
         <form class="display-side-task-form" data-side-task-form><label class="display-side-sr-only" for="displaySideTask">New checklist item</label><input id="displaySideTask" type="text" maxlength="200" placeholder="Add a next step…" autocomplete="off" required><button type="submit" class="surface-key" aria-label="Add checklist item">+</button></form>
         <button type="button" class="display-side-text-action" data-side-action="clear-done" hidden>Clear completed</button>
       </section>
-      <p class="display-side-scope">Saved for this Workspace. Pins and notes stay here as you switch desktops and Projects.</p>`;
+      <details class="display-side-scope"><summary>About these tools</summary><p>Pins, notes and checklist items belong to this Workspace. They stay here across desktops and Projects.</p></details>`;
     const find=selector=>host.querySelector(selector),note=find('[data-side-note]'),form=find('[data-side-reference-form]'),taskForm=find('[data-side-task-form]');
     const record={host,key:'',state:null,pinsKey:'',tasksKey:'',foldersKey:'',optionsKey:'',controller:null};
     mounts.add(record);records.set(host,record);
