@@ -346,8 +346,15 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   for(const output of result.outputs)assert.equal(c.isLocalApp(output),true);
   assert.equal(c.appState.browser,mainBefore);assert.equal(c.isLocalApp('browser'),false,'The main-display window is not taken over');
   const count=created.length;
+  const completed=clone(B.state().space.assistant);
   B.assistantControl('takeover');assert.equal(B.state().space.assistant.status,'paused');assert.throws(()=>B.runAssistantTask('image'),/Choose Continue/);
+  assert.equal(B.state().space.assistant.result,completed.result,'Taking control preserves the actual task result');
+  assert.deepEqual(clone(B.state().space.assistant.outputs),completed.outputs);
   B.assistantControl('resume');assert.equal(B.state().space.assistant.status,'idle');assert.equal(created.length,count,'Continue restores authority without replaying a completed task');
+  assert.equal(B.state().space.assistant.result,completed.result,'Continue changes authority without replacing the result with control instructions');
+  B.setRole(2,'side');B.setRole(2,'assistant');
+  assert.equal(B.state().space.assistant.control,'assistant');assert.equal(B.state().space.assistant.status,'idle');
+  assert.equal(B.state().space.assistant.result,completed.result,'Handing a Side space back to Assistant retains its completed result');
   result=B.runAssistantTask('image');assert.equal(result.status,'done');assert.equal(result.outputs.length,2);
   const preview=c.frameFor(result.outputs[0]).preview;assert.equal(preview.hidden,false);assert(preview.innerHTML.includes('<img'));assert(preview.innerHTML.includes('Local demo image'));
   assert(notes[result.outputs[1]].text.includes('does not analyse the image'));
@@ -360,6 +367,20 @@ for(const [viewport,panel] of [[1440,380],[1100,380],[1099,340],[900,340],[899,3
   B.assistantControl('resume');fire({type:'pointerdown',target:{closest:()=>null,matches:selector=>selector==='.workspace-zone'}});assert.equal(B.state().space.assistant.control,'user','The empty canvas also gives the user control');
   B.assistantControl('resume');B.setRole(2,'side');fire(event(c.frameFor(result.outputs[1]),'keydown'));assert.equal(B.state().space.assistant.control,'user','Side space stays user controlled');
   B.setRole(2,'assistant');c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';assert.throws(()=>B.runAssistantTask('briefing'),/this Workspace/);assert.equal(created.length,count+2,'A foreign task folder cannot open windows');
+}
+
+{
+  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'assistant');c.localSlot=2;
+  for(const stale of ['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.']){
+    const packet=c.captureDesktopSyncState();
+    packet.displayRoles.workspaces.work.displays[2].assistant={status:'paused',control:'user',task:'Prepare briefing',result:stale};
+    c.applyDesktopSyncState(packet);
+    assert.equal(B.state().space.assistant.result,'','Previously persisted control instructions are removed when loading saved display state');
+    B.setRole(2,'side');B.setRole(2,'assistant');
+    assert.equal(B.state().space.assistant.control,'assistant');assert.equal(B.state().space.assistant.status,'idle');
+    assert.equal(B.state().space.assistant.result,'','A Ready display never restores stale user-control instructions');
+    assert.equal(B.state().space.assistant.task,'Prepare briefing','Control-notice repair preserves the original task title');
+  }
 }
 
 {

@@ -56,7 +56,7 @@
     find('[data-display-control]').dataset.control=user?'user':task.status==='working'?'working':'assistant';
     find('[data-display-action="takeover"]').hidden=user;find('[data-display-action="resume"]').hidden=!user;
     for(const name of ['task-briefing','task-image'])find('[data-display-action="'+name+'"]').disabled=user||task.status==='working';
-    const summary=find('[data-display-task-summary]');summary.textContent=task.result||task.task||'';summary.hidden=!summary.textContent;
+    const summary=find('[data-display-task-summary]');summary.textContent=user?'Assistant will wait until you choose Continue.':task.result||task.task||'';summary.hidden=!summary.textContent;
   }
   function time(){const now=new Date();find('[data-display-clock]').textContent=now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});find('[data-display-clock]').dateTime=now.toISOString();find('[data-display-date]').textContent=now.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'});}
   function refresh(){

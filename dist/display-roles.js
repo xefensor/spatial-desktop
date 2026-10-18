@@ -27,7 +27,11 @@
   }
   function assistant(value){
     const context=value?.context;
-    return {status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:typeof value?.result==='string'?value.result:'',
+    const result=typeof value?.result==='string'?value.result:'';
+    // Earlier control transitions stored instructions in the task result. They
+    // describe temporary authority, so never restore them as a completed result.
+    const controlNotice=['You control this display. Assistant will wait until you choose Continue.','Assistant may work with windows on this display when you give it a task.','The Workspace or monitor setup changed. Continue here when you are ready.','You took over the workspace. Resume when you are ready.'].includes(result);
+    return {status:STATUSES.includes(value?.status)?value.status:'idle',task:typeof value?.task==='string'?value.task:'',result:controlNotice?'':result,
       control:value?.control==='user'||value?.control!=='assistant'&&value?.status==='paused'?'user':'assistant',kind:['briefing','image'].includes(value?.kind)?value.kind:'',
       context:record(context)&&key(context.workspace)&&key(context.setup)&&slot(context.slot)?{workspace:key(context.workspace),setup:key(context.setup),slot:slot(context.slot),folder:key(context.folder)}:null,
       outputs:ids(value?.outputs)};

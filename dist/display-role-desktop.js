@@ -74,7 +74,7 @@
       if(lastWorkspace!==activeWorkspace||lastSetup&&lastSetup!==next.setupKey){
         const spaces=model.snapshot().workspaces[lastWorkspace]?.displays||{};let paused=false;
         for(const [slot,space] of Object.entries(spaces))if(space.assistant.status==='working'){
-          model.setAssistant(lastWorkspace,slot,{control:'user',status:'paused',result:'The Workspace or monitor setup changed. Continue here when you are ready.'});paused=true;
+          model.setAssistant(lastWorkspace,slot,{control:'user',status:'paused'});paused=true;
         }
         if(paused){persist();queueDesktopStateBroadcast(0);next=state();}
       }
@@ -125,8 +125,7 @@
     if(!result.changed)return true;
     placementUndoEpoch++;
     if(result.previous==='assistant'||next==='assistant')for(const workspace of Object.keys(workspaceProfiles)){
-      const prior=model.space(workspace,slot).assistant;
-      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused',result:prior.result});
+      model.setAssistant(workspace,slot,{control:next==='assistant'?'assistant':'user',status:next==='assistant'?'idle':'paused'});
     }
     if(special(result.previous)&&!special(next)){
       for(const workspace of Object.keys(workspaceProfiles))for(const id of model.space(workspace,slot).windows){
@@ -284,7 +283,7 @@
   function assistantControl(action){
     const context=assistantContext();
     if(!['takeover','resume'].includes(action))throw Error('Choose Take control or Continue.');
-    return saveAssistant(context,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle',result:action==='takeover'?'You control this display. Assistant will wait until you choose Continue.':'Assistant may work with windows on this display when you give it a task.'});
+    return saveAssistant(context,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});
   }
   function runAssistantTask(kind){
     const context=assistantContext(),previous=model.space(context.workspace,context.slot).assistant;
