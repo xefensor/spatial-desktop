@@ -85,3 +85,8 @@ context.activeWorkspace='work';context.restoreWorkspaceContent();
 assert.equal(frames['browser--1'].control.range.value,63,'Switching back restores the owning window’s level');
 assert(saves>0);
 console.log('Window audio: independent levels, mute, media sync, persistence and Workspace ownership passed');
+
+// Master audio changes effective media output without overwriting a window level.
+assert.equal(Audio.effective({volume:50,muted:false},{volume:40,outputMuted:false}).volume,20);
+assert.equal(Audio.effective({volume:50,muted:false},{volume:40,outputMuted:true}).muted,true);
+assert.equal(Audio.effective({volume:50,muted:true},{volume:100,outputMuted:false}).muted,true);

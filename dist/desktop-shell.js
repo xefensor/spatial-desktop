@@ -218,6 +218,7 @@ function observeMaterialInheritance() {
 }
 
 const appInfo = {
+  ...globalThis.SpatialDesktopApps?.definitions,
   settings: { label: "Settings", icon: "i-settings", tone: "violet", primary: "#a483ff", detail: "Preferences", singleInstance: true, parkingWidget: false, audio: false },
   dolphin: { label: SpatialAppNames.label("Dolphin"), icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
   elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
@@ -228,7 +229,7 @@ const appInfo = {
   game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true }
 };
 
-const appState = desktopPreset === 'demo' ? { settings: 'closed', ...SpatialDemoExamples.scenarios.general.apps } : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']));
+const appState = { ...Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed'])), ...(desktopPreset === 'demo' ? SpatialDemoExamples.scenarios.general.apps : {}) };
 const appMaximizedState = { settings: false, dolphin: false, elisa: false, browser: false, terminal: false, notes: false };
 const windowGeometry = new Map();
 const autoTiledWindows = new Set();
@@ -269,7 +270,8 @@ function icon(name) {
 }
 
 function appArt(name, extraClass = "") {
-  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + (appInfo[name]?.base || name) + '"/></svg>';
+  const base=appInfo[name]?.base||name,utility=globalThis.SpatialDesktopApps?.definitions[base];
+  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#' + (utility?utility.icon:'app-'+base) + '"/></svg>';
 }
 
 function applyAppPrimaryColors(root = document) {
@@ -5163,7 +5165,7 @@ let activeWorkspace = (() => {
   try { return desktopStorage.getItem("spatial-active-workspace") || "general"; }
   catch { return "general"; }
 })();
-const workspaceAppStates = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, desktopPreset === 'demo' && SpatialDemoExamples.scenarios[name] ? {settings:'closed', ...SpatialDemoExamples.scenarios[name].apps} : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']))]));
+const workspaceAppStates = Object.fromEntries(Object.keys(workspaceProfiles).map(name => [name, desktopPreset === 'demo' && SpatialDemoExamples.scenarios[name] ? {...Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed'])), ...SpatialDemoExamples.scenarios[name].apps} : Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed']))]));
 
 function persistWorkspaceAppStates() {
   if (!workspaceProfiles[activeWorkspace]) return;
@@ -5227,7 +5229,7 @@ function captureCurrentWorkspaceSession() {
 function workspaceFavoriteMarkup([asset, label]) {
   label = appInfo[asset]?.label || SpatialAppNames.label(label);
   if (appInfo[asset]) return '<button class="workspace-favorite" data-open-app="' + asset + '" title="' + escapeHtml(label) + '">' + appArt(asset) + '</button>';
-  return '<button class="workspace-favorite generic" data-toast="' + escapeHtml(label) + ' launched" title="' + escapeHtml(label) + '">' + icon(asset) + '</button>';
+  return '<button class="workspace-favorite generic" data-launch-app="' + escapeHtml(label) + '" title="' + escapeHtml(label) + '">' + icon(asset) + '</button>';
 }
 
 function renderOverviewWindows() {
@@ -5640,13 +5642,14 @@ document.addEventListener("click", event => {
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 });
 
-$$("[data-launch-app]").forEach(button => button.addEventListener("click", () => {
+document.addEventListener("click", event => {
+  const button=event.target.closest("[data-launch-app]");if(!button)return;
   if (button.dataset.launchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
   if (button.dataset.launchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
   pulseBusyCursor();
-  showToast(SpatialAppNames.label(button.dataset.launchApp) + " launched");
+  globalThis.SpatialDesktopApps?.launch(button.dataset.launchApp);
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
-}));
+});
 
 let activeLauncherCategory = "all";
 $("#overviewWindowFilter").addEventListener("change", renderOverviewWindows);
@@ -5877,7 +5880,7 @@ $("#universalResults").addEventListener("click", event => {
     if (result.dataset.searchLaunchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
-    showToast(SpatialAppNames.label(result.dataset.searchLaunchApp) + " launched");
+    globalThis.SpatialDesktopApps?.launch(result.dataset.searchLaunchApp);
   }
   setUniversalSearchOpen(false);
 });
@@ -6029,6 +6032,7 @@ function prepareMaterialCursor() {
 }
 
 let superKeyAlone = false;
+if(globalThis.SpatialDemoSuper)SpatialDemoSuper.onCancel=()=>{superKeyAlone=false;};
 
 function trapDialogFocus(root, event) {
   if (event.key !== "Tab") return false;
@@ -6891,8 +6895,8 @@ function executeContextAction(action) {
   if (action === "desktop-overview") setUniversalSearchOpen(true);
   if (action === "desktop-guide") window.location.href = "philosophy.html";
   if (action === "desktop-new-folder") createDesktopFolder(context.point);
-  if (action === "desktop-paste") showToast("Clipboard pasted to the desktop");
-  if (action === "desktop-settings") showToast("Display Settings opened");
+  if (action === "desktop-paste") globalThis.SpatialDesktopClipboard?.paste(globalThis.SpatialDesktopSurface?.directory()||workspaceProfiles[activeWorkspace].home+"/Desktop");
+  if (action === "desktop-settings") globalThis.SpatialSettings?.open("displays");
   if (action === "file-open") showToast("Opening " + context.label);
   if (action === "file-copy") showToast("Copied /home/demo/Downloads/" + context.label);
   if (action === "file-trash") {
@@ -7866,6 +7870,7 @@ function captureDesktopSyncState() {
 
   return {
     schema: 5,
+    accessibility: globalThis.SpatialAccessibility?.snapshot(),
     workingMemory: globalThis.SpatialMemoryDesktop?.snapshot(),
     itemHistory: globalThis.SpatialItemHistoryDesktop?.snapshot(),
     aiContext: globalThis.SpatialAIDesktop?.snapshot(),
@@ -7905,6 +7910,7 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  if(state.accessibility) globalThis.SpatialAccessibility?.load(state.accessibility);
   if (state.itemHistory) globalThis.SpatialItemHistoryDesktop?.merge(state.itemHistory);
   if (state.workingMemory) globalThis.SpatialMemoryDesktop?.merge(state.workingMemory);
   if (state.aiContext) globalThis.SpatialAIDesktop?.merge(state.aiContext);

@@ -1,6 +1,6 @@
 # Prototype reference
 
-Current implementation reference; Files, Assistant, Timeline and display-role sections were updated on 18 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
+Current implementation reference; desktop document, file, app and system workflows were updated on 19 October 2026. The main design philosophy is Xef’s unfinished author text; this document separately describes implemented prototype behaviour. Start with the [README](../README.md) or the [live design philosophy](https://xefensor.github.io/spatial-desktop/philosophy.html).
 
 ## Context and ownership
 
@@ -56,6 +56,20 @@ The Guide audit also updated expanded explanations for hotbar numbering per wind
 Repeated introductions and chapter practice use isolated storage. Progress survives reload. Leaving a repeated introduction offers a return to the original session; individual chapter practice returns directly. Explicit **Clean desktop** or **Explore the demo** choices replace the current session while preserving display preferences. A clean desktop has General only, with no open apps or Projects. The temporary second practice display closes when its chapter ends and does not join the original session.
 
 Find Desktop Guide in **Overview → Apps → Help**, or search its name. [Start the guide](https://xefensor.github.io/spatial-desktop/?guide=start).
+
+## Everyday desktop work
+
+Note Editor provides **Open**, **Save** and **Save As**, including Ctrl+O, Ctrl+S and Ctrl+Shift+S. New writing is a session draft until saved to a named file. The app-owned chooser browses the current Workspace and its Projects. Saving over a file requires review; keep both is available. Saved text reopens in the editor and keeps its identity after rename or move. Closing edited work offers Save, Discard or Cancel. Missing or externally changed files keep the editor draft available for recovery through Save As. Browser storage failures report an error instead of claiming success.
+
+File Browser and the Files Area project the same browser-local file model. File Browser supports Rename (F2), Cut/Copy/Paste (Ctrl+X/C/V), folders, multi-selection and Move to Trash (Delete). Trash persists across reload and can restore files and folders. Filename conflicts offer a decision rather than silently destroying the existing file; replaced files remain recoverable. **Download a copy** hands a real file to the browser. Desktop folder icons now refer to actual files and directories in the current Home or Project's Desktop folder.
+
+**Clipboard** in System keeps a private history per Workspace. Explicit copies inside the demo can be pasted into an editor or folder. Copy to browser is an explicit host-clipboard operation; the demo does not automatically read the host clipboard. Password and one-time-code fields are excluded. **Do Not Disturb** quiets notification popups while retaining unread notifications. File notifications can open the affected folder or undo the latest safe operation; foreign Workspace previews do not expose action controls.
+
+**Calculator**, **Screenshot Tool**, **Software Center** and **System Monitor** are ordinary parkable windows. Calculator retains calculations. Screenshot Tool uses the browser's explicit sharing chooser for one captured frame, stops the capture stream, and offers crop, annotation, save, download, copy and Assistant attachment; image import is an alternative. Software Center distinguishes available demo apps from app previews. System Monitor lists the demo's actual windows and background activity. Other advertised apps open an availability view rather than reporting a launch without a window. These utilities do not install host applications or measure host CPU usage.
+
+**System → Devices & session** connects the quick controls to one set of demo device states. Network choice, authentication failure/retry, Bluetooth pairing, speakers/microphones, microphone mute, power profiles and a sample USB transfer have explicit outcomes. USB removal waits for its transfer to finish. Master output volume/mute combines with each window's own level. Lock, sleep, restart and shut down affect the demo session and preserve saved work; they do not authenticate a native user or control host power. Hardware examples are labelled **Demo devices**.
+
+**Settings → Accessibility** provides reading sizes, a larger Material pointer or the system pointer, and reduced motion. These preferences apply across Workspaces and linked displays. Browser zoom and keyboard navigation remain available.
 
 ## Demonstration scenes
 
@@ -204,7 +218,7 @@ The Project editor also names the Project affected by its download preference. S
 
 ## Display roles
 
-Supporting displays omit the desktop context header. Side space keeps a full-height tools panel flush against the left screen edge, with a small role/status header, a visible **Allow Assistant to use this display** toggle and **Display options (⋯)** for opening Display settings. Its horizontal **Chat / References** selector stays available whether Assistant has permission or not. The toggle leaves the panel width, tiles, windows and working material intact. Narrower windows keep this vertical layout; the panel becomes narrower instead of moving below the apps. Tiled windows use the remaining space without a top-bar reservation.
+Supporting displays omit the desktop context header. Side space uses the same movable, resizable Areas as the main display. Display permission and task controls live in the normal Assistant Area; Files, Apps and System can also be assigned to that display. Tiles use the space left by the visible Areas.
 
 Open **Settings → Displays** and select a display in the arrangement preview embedded in the app. **Use this display as** describes how its space behaves:
 

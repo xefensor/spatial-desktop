@@ -29,3 +29,15 @@ body[data-theme] .parked-owned-dialog-restore:is(:hover,:focus-visible){backgrou
 .owned-dialog-actions button{min-height:36px;padding:7px 18px;font-size:12px;color:var(--text);background:var(--shell);border:1px solid var(--line);border-radius:0}
 .owned-dialog-actions button[type=submit]{border-color:var(--app-primary);color:var(--app-primary)}
 .firefox-menu .firefox-save-page{display:block;width:100%;padding:8px;text-align:left;font-size:12px}
+.note-file-actions{display:flex;flex:none;gap:5px;padding:3px 14px 7px;flex-wrap:wrap}
+.note-file-actions>button.surface-key{font-size:11px;min-height:29px;padding:4px 8px}
+.owned-note-dialog{gap:11px}
+.owned-folder-actions{display:flex;gap:5px;flex-wrap:wrap}
+.owned-folder-actions button,.owned-folder-list button{min-height:30px;padding:5px 8px;font:inherit;font-size:11px;border:1px solid var(--soft-line);background:var(--well);color:var(--text)}
+.owned-folder-list{display:flex;flex-wrap:wrap;gap:5px;max-height:110px;overflow:auto;overscroll-behavior:contain}
+.owned-folder-list button{display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow-wrap:anywhere}
+.owned-folder-list svg{width:14px;height:14px;flex:none}
+.owned-note-dialog select{width:100%;min-width:0;max-height:170px;font:inherit;font-size:12px;padding:6px;color:var(--text);background:var(--well);border:1px solid var(--line)}
+.owned-note-dialog select option{padding:6px}
+.owned-note-dialog .owned-dialog-error{color:var(--text)}
+.owned-dialog-error:empty{display:none}

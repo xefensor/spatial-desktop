@@ -16,6 +16,7 @@
     {id:'workspace',label:'Workspace',icon:'grid',detail:'Your Home folder and separate working environment.',scope:'workspace',group:'Your work'},
     {id:'areas',label:'Areas',icon:'grid',detail:'Choose which Areas stay beside your windows.',scope:'workspace',group:'Your work'},
     {id:'appearance',label:'Appearance',icon:'palette',detail:'Color theme and desktop indicators.',scope:'system',group:'System'},
+    {id:'accessibility',label:'Accessibility',icon:'help',detail:'Reading size, pointer and motion.',scope:'system',group:'System'},
     {id:'displays',label:'Displays',icon:'monitor',detail:'Set up your screens and choose their roles.',scope:'system',group:'System'},
     {id:'connections',label:'Connections',icon:'wifi',detail:'Wi-Fi and Bluetooth demo controls.',scope:'system',group:'System'},
     {id:'sound',label:'Sound',icon:'volume',detail:'Shared sound and individual window volume.',scope:'system',group:'System'},
@@ -30,6 +31,9 @@
     {id:'reset-areas',category:'areas',title:'Reset Areas',detail:'Restore the default Area layout in this Workspace.',keywords:'panel dock position layout reset'},
     {id:'color-theme',category:'appearance',title:'Color theme',detail:'Auto, OLED, Graphite or Light across all Workspaces.',keywords:'dark light black colors surface theme automatic'},
     {id:'desktop-indicators',category:'appearance',title:'Desktop indicators',detail:'Choose lines only or lines with app icons.',keywords:'markers rail icons desktop lines'},
+    {id:'reading-size',category:'accessibility',title:'Reading size',detail:'Enlarge document text and file names.',keywords:'font text larger zoom accessibility'},
+    {id:'pointer-style',category:'accessibility',title:'Pointer',detail:'Use the Material pointer, a larger pointer or your system pointer.',keywords:'cursor mouse size native accessibility'},
+    {id:'reduce-motion',category:'accessibility',title:'Reduce motion',detail:'Follow your system preference or reduce animation.',keywords:'animation transitions movement accessibility'},
     {id:'display-roles',category:'displays',title:'Display roles',detail:'Main workspace, Extended workspace or Side space with optional Assistant control.',keywords:'monitor screen second main extended assistant permission side pinned odkládací'},
     {id:'second-display',category:'displays',title:'Open second demo display',detail:'Try another screen in a linked browser window.',keywords:'monitor screen second companion popup'},
     {id:'wifi',category:'connections',title:'Wi-Fi',detail:'Toggle the shared Wi-Fi demo state.',keywords:'network internet wireless connections'},
@@ -109,8 +113,9 @@
     if(id==='appearance')return row('color-theme','Color theme','Auto follows your system’s light or dark appearance.','<select data-settings-theme aria-label="Color theme for all Workspaces"><option value="auto">Auto</option><option value="oled">OLED</option><option value="graphite">Graphite</option><option value="light">Light</option></select>')+
       row('desktop-indicators','Desktop indicators','Lines only leaves more room for windows. App icons show what is open on each desktop.','<select data-settings-desktop-markers aria-label="Desktop indicators for all Workspaces"><option value="lines">Lines only</option><option value="icons">Lines and app icons</option></select>');
     if(id==='displays')return '<div data-settings-target="display-roles" id="settings-display-roles" tabindex="-1"><div data-settings-displays></div></div>';
-    if(id==='connections')return '<p class="settings-demo-note">Simulated controls · no hardware settings are changed.</p>'+toggleRow('wifi','Wi-Fi','')+toggleRow('bluetooth','Bluetooth','');
-    if(id==='sound')return '<p class="settings-demo-note">Simulated sound control · native audio settings stay unchanged.</p>'+toggleRow('sound-output','Sound','')+row('window-volume','Window volume','Use the speaker button and volume slider in a window’s title bar to adjust that window only.')+'<div class="settings-help"><p>The Music Player and embedded audio previews use their window’s volume. Native audio routing will need desktop integration.</p></div>';
+    if(id==='accessibility')return row('reading-size','Reading size','Applies to document text, file names and Settings descriptions. Browser zoom remains available for the whole interface.','<select data-settings-accessibility="text" aria-label="Reading size"><option value="normal">Normal</option><option value="large">Large · 115%</option><option value="larger">Larger · 130%</option></select>')+row('pointer-style','Pointer','Choose the pointer that is easiest to see.','<select data-settings-accessibility="pointer" aria-label="Pointer style"><option value="material">Material</option><option value="large">Large Material</option><option value="system">System pointer</option></select>')+row('reduce-motion','Motion','System follows your device’s reduced-motion preference.','<select data-settings-accessibility="motion" aria-label="Motion preference"><option value="system">System</option><option value="reduced">Reduce motion</option></select>')+'<details class="settings-help"><summary>Keyboard navigation</summary><p>Use Tab and Shift+Tab to move between controls, Enter to activate, and Escape to dismiss dialogs. F2 opens Overview. File Browser supports F2 to rename, Delete for Trash and Ctrl+C / X / V. Note Editor supports Ctrl+O, Ctrl+S and Ctrl+Shift+S.</p></details>';
+    if(id==='connections')return '<p class="settings-demo-note">Simulated controls · no hardware settings are changed.</p>'+toggleRow('wifi','Wi-Fi','')+toggleRow('bluetooth','Bluetooth','')+row('network-devices','Networks & devices','Choose a demo network, pair a device and safely remove demo storage.',action('network-devices','Open connections'));
+    if(id==='sound')return '<p class="settings-demo-note">Simulated sound control · native audio settings stay unchanged.</p>'+toggleRow('sound-output','Sound','')+row('sound-devices','Input & output','Select a demo speaker or microphone and control microphone mute.',action('sound-devices','Sound devices'))+row('window-volume','Window volume','Use the speaker button and volume slider in a window’s title bar to adjust that window only.')+'<div class="settings-help"><p>The Music Player and embedded audio previews use their window’s volume. Native audio routing will need desktop integration.</p></div>';
     return '<section class="settings-about" data-settings-target="prototype-info" id="settings-prototype-info" tabindex="-1"><span>'+icon('settings')+'</span><h3>Spatial Desktop</h3><p>A tactile, project-centred computing environment.</p><p class="settings-demo-note">Work in progress · interactive web prototype</p></section><div class="settings-help"><b>What this demo does</b><p>Explore tiling windows, Workspaces, Projects, Areas and linked demo displays. Preferences save locally in this browser.</p><p>Assistant replies and tasks are local scripted examples. Native OS integration remains future work.</p></div>'+row('guide','Learn the desktop','Use the interactive Guide for a step-by-step introduction.',action('guide','Open Guide'));
   }
   function renderPage({focus=false,targetId=null}={}){
@@ -141,6 +146,7 @@
     }
     const select=host.querySelector('[data-settings-theme]');if(select&&document.activeElement!==select)select.value=SpatialDesktopTheme.preference;
     const markers=host.querySelector('[data-settings-desktop-markers]');if(markers&&document.activeElement!==markers)markers.value=root.SpatialDesktopMarkers?.preference||'icons';
+    const accessibility=root.SpatialAccessibility?.snapshot();if(accessibility)host.querySelectorAll('[data-settings-accessibility]').forEach(select=>{if(document.activeElement!==select)select.value=accessibility[select.dataset.settingsAccessibility];});
     host.querySelectorAll('[data-settings-area]').forEach(select=>{const name=select.dataset.settingsArea,area=areaFor(name);if(!area)return;const value=area.hidden?'hidden':area.dataset.areaState;select.value=value;const description=host.querySelector('[data-settings-area-state="'+name+'"]');if(description)description.textContent=value==='hidden'?'Hidden':layoutStateLabel(value);});
     host.querySelectorAll('[data-settings-toggle]').forEach(button=>{
       const label=button.dataset.settingsToggle,source=$$('.quick-toggle[data-toggle]').find(node=>node.textContent.trim()===label),active=source?.classList.contains('is-active')||false;
@@ -187,11 +193,14 @@
     if(name==='desktop-map'&&allowed('projects')&&allowed('desktops'))root.SpatialDesktopMapDesktop?.open();
     if(name==='projects'&&allowed('projects')){setUniversalSearchOpen(true);document.querySelector('[data-overview-section="projects"]')?.click();}
     if(name==='guide')root.SpatialGuide?.open?.();
+    if(name==='network-devices')root.SpatialDesktopSystem?.open('network');
+    if(name==='sound-devices')root.SpatialDesktopSystem?.open('sound');
   });
   host.addEventListener('change',event=>{
     const target=event.target;
     if(target.matches('[data-settings-theme]')){SpatialDesktopTheme.setPreference(target.value);refreshControls();}
     if(target.matches('[data-settings-desktop-markers]')){root.SpatialDesktopMarkers?.setPreference(target.value);refreshControls();}
+    if(target.matches('[data-settings-accessibility]')){root.SpatialAccessibility?.set({[target.dataset.settingsAccessibility]:target.value});refreshControls();}
     if(target.matches('[data-settings-area]')&&allowedAreas()){
       if(target.dataset.settingsWorkspace!==activeWorkspace){refresh();return;}
       setAreaState(target.dataset.settingsArea,target.value);refresh();

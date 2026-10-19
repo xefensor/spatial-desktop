@@ -4,12 +4,14 @@ let appWindowsHydrating = false;
 let appWindowStore;
 function saveAppWindows(broadcast = true) {
   if (!appWindowsReady) return;
-  try { desktopStorage.setItem('spatial-app-windows-v1', JSON.stringify(appWindowStore.snapshot())); } catch {}
+  try { desktopStorage.setItem('spatial-app-windows-v1', JSON.stringify(appWindowStore.snapshot()));globalThis.SpatialAppWindowSaveFailed=false; } catch {globalThis.SpatialAppWindowSaveFailed=true;return false;}
   if (broadcast) queueDesktopStateBroadcast(120);
+  return true;
 }
 function appWindowModel(id) {
   const frame = frameFor(id), kind = appInfo[id]?.base || id;
   const model=appWindowStore.get(activeWorkspace, id, () => {
+    if (globalThis.SpatialDesktopApps?.definitions[kind]) return {kind};
     if (kind === 'game' || kind === 'steam' || kind === 'settings') return {kind};
     if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
     if (kind === 'notes') {
@@ -52,7 +54,7 @@ function hydrateAppWindow(id, force = false) {
       const editor = document.createElement('section'); editor.className = 'note-editor';
       const text = $('.notes-layout textarea', frame);
       text.before(editor); editor.append(text);
-      editor.insertAdjacentHTML('afterbegin', '<header class="note-toolbar"><input data-note-title aria-label="Note title" maxlength="80" placeholder="Untitled note"><span data-note-save-state aria-live="polite">Saved</span></header><p class="note-file-location" data-note-file-location hidden></p>');
+      editor.insertAdjacentHTML('afterbegin', '<header class="note-toolbar"><input data-note-title aria-label="Note title" maxlength="80" placeholder="Untitled note"><span data-note-save-state aria-live="polite">Draft</span></header><div class="note-file-actions" role="toolbar" aria-label="Document actions"><button class="surface-key" type="button" data-app-action="note-open">Open…</button><button class="surface-key" type="button" data-app-action="note-save">Save</button><button class="surface-key" type="button" data-app-action="note-save-as">Save as…</button></div><p class="note-file-location" data-note-file-location hidden></p>');
       editor.insertAdjacentHTML('beforeend', '<footer class="note-status"><span data-note-count></span><span data-note-save-help>Ctrl+S</span></footer>');
       text.placeholder = 'Start writing…';
     }
@@ -185,7 +187,7 @@ function renderNotes(id) {
   $('[data-note-title]', frame).readOnly = Boolean(note.file);
   if(note.file)$('.notes-layout textarea',frame).maxLength=12000;
   else $('.notes-layout textarea',frame).removeAttribute('maxlength');
-  $('.notes-layout textarea',frame).readOnly = Boolean(note.file && noteFileContext(note).error);
+  $('.notes-layout textarea',frame).readOnly = false; // Missing files retain an editable recovery draft; saving still validates ownership.
   $('.app-identity small',frame).textContent = note.title || 'Untitled';
   appInfo[id].detail=note.title || 'Untitled';
   updateNoteStatus(id); prepareControlSemantics(frame);
@@ -194,10 +196,10 @@ function updateNoteStatus(id) {
   const frame = frameFor(id), note = SpatialAppTools.activeNote(appWindowModel(id));
   $('[data-note-count]',frame).textContent = SpatialAppTools.words(note.text) + ' words · ' + note.text.length + ' characters';
   const state=$('[data-note-save-state]',frame),location=$('[data-note-file-location]',frame),help=$('[data-note-save-help]',frame);
-  state.textContent = note.file ? (note.fileError || note.fileDirty ? 'Not saved to file' : 'Saved to file') : 'Saved';
-  state.title = note.fileError || (note.file ? 'Edits update this saved file.' : 'Saved with this Note Editor window.');
+  state.textContent = note.file ? (note.fileError || note.fileDirty ? 'Not saved to file' : 'Saved to file') : globalThis.SpatialAppWindowSaveFailed?'Draft · not saved':'Draft · kept in session';
+  state.title = note.fileError || (note.file ? 'Edits update this saved file.' : globalThis.SpatialAppWindowSaveFailed?'Session storage failed. Keep this tab open and use Save to create a file.':'Kept with this window. Choose Save to create an ordinary file.');
   if(location){location.hidden=!note.file;location.textContent=note.file ? (note.fileError ? note.fileError + ' · ' : '') + note.file.path : '';location.title=location.textContent;location.className='note-file-location'+(note.fileError?' is-save-error':'');}
-  if(help)help.textContent=note.file ? 'Markdown file · Ctrl+S' : 'Ctrl+S';
+  if(help)help.textContent=note.file ? 'Ctrl+S Save · Ctrl+Shift+S Save as' : 'Ctrl+S Save to file';
 }
 // A file-backed note is a view of one existing saved Markdown file, not a new
 // document with a similar title. The binding travels with the window session.
@@ -207,15 +209,19 @@ function noteFileContext(note) {
   const path=binding.path;
   if(typeof path!=='string'||path.length>1000||/[\x00-\x1f\\]/.test(path)||!path.startsWith('/')||SpatialAppTools.resolvePath(path,'/','/')!==path||!/\.(?:md|markdown|txt)$/i.test(path)||typeof binding.itemId!=='string'||!binding.itemId||binding.itemId.length>320)return {error:'The saved file link is invalid.'};
   if(binding.workspace!==activeWorkspace||!workspaceProfiles[binding.workspace])return {error:'This file belongs to another Workspace.'};
-  const project=binding.project||null;
+  const backend=globalThis.SpatialDesktopFiles;
+  const resolved=backend?.resolve?.(binding);
+  if(backend&&!resolved)return {error:'The saved file is missing or in Trash. Your draft is kept; restore it or use Save as.'};
+  if(resolved){binding.path=resolved.path;binding.project=resolved.project||null;}
+  const currentPath=binding.path,project=binding.project||null;
   if(project&&!projectSpaces[project])return {error:'The Project for this file is no longer available.'};
   if(project&&typeof openProjectNames==='function'&&!openProjectNames(binding.workspace).includes(project))return {error:'Reopen this Project to edit its saved file.'};
-  if(!SpatialAssistantFiles.allowed(path,binding.workspace,workspaceProfiles,projectSpaces,project?[project]:[]))return {error:'This file is outside its Workspace or Project.'};
-  const directory=path.slice(0,path.lastIndexOf('/'))||'/',name=path.slice(path.lastIndexOf('/')+1);
-  const file=workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId);
+  if(!SpatialAssistantFiles.allowed(currentPath,binding.workspace,workspaceProfiles,projectSpaces,project?[project]:[]))return {error:'This file is outside its Workspace or Project.'};
+  const directory=currentPath.slice(0,currentPath.lastIndexOf('/'))||'/',name=currentPath.slice(currentPath.lastIndexOf('/')+1);
+  const file=resolved||workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId);
   if(!file)return {error:'The saved file is no longer available.'};
   if(file.workspace!==binding.workspace||(file.project||null)!==project)return {error:'The file ownership no longer matches this note.'};
-  if(project&&!SpatialAssistantFiles.inside(path,projectSpaces[project].root))return {error:'The saved file is outside its Project folder.'};
+  if(project&&!SpatialAssistantFiles.inside(currentPath,projectSpaces[project].root))return {error:'The saved file is outside its Project folder.'};
   return {binding,file,directory,name,project};
 }
 function refreshBoundNote(note) {
@@ -236,11 +242,11 @@ function flushBoundNoteHistory(id) {
     const {binding,text,title}=pending;
     if(!workspaceProfiles[binding.workspace]||(binding.project&&!projectSpaces[binding.project]))continue;
     const directory=binding.path.slice(0,binding.path.lastIndexOf('/'))||'/',name=binding.path.slice(binding.path.lastIndexOf('/')+1);
-    const file=workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId&&file.workspace===binding.workspace&&(file.project||null)===(binding.project||null));
+    const file=globalThis.SpatialDesktopFiles?.resolve?.(binding)||workspaceDownloads.list(directory).find(file=>file.name===name&&file.itemId===binding.itemId&&file.workspace===binding.workspace&&(file.project||null)===(binding.project||null));
     if(!file||file.content!==text)continue;
     // A burst of typing is one edit to this same item, rather than a trail of
     // phantom files or one history version for every individual keypress.
-    globalThis.SpatialItemHistoryDesktop?.capture({id:binding.itemId,itemId:binding.itemId,title,text,address:binding.path,workspace:binding.workspace,project:binding.project,source:{workspace:binding.workspace,project:binding.project,app:'notes',label:'Note Editor',address:binding.path}},{workspace:binding.workspace,project:binding.project,force:true,action:'edit',detail:'Edited the saved Markdown file in Note Editor'});
+    globalThis.SpatialItemHistoryDesktop?.capture({id:binding.itemId,itemId:binding.itemId,title,text,address:binding.path,workspace:binding.workspace,project:binding.project,source:{workspace:binding.workspace,project:binding.project,app:'notes',label:'Note Editor',address:binding.path}},{workspace:binding.workspace,project:binding.project,force:true,action:'edit',detail:'Edited the saved text file in Note Editor'});
     globalThis.SpatialItemHistoryDesktop?.persist();
   }
 }
@@ -257,18 +263,18 @@ function saveBoundNote(id,{deferHistory=false}={}) {
   if(!note.file)return true;
   const context=noteFileContext(note);
   if(context.error){note.fileError=context.error;return false;}
-  if(note.text.length>12000){note.fileError='This demo saves Markdown files up to 12,000 characters. Your draft is kept in this window.';return false;}
+  if(note.text.length>12000){note.fileError='This demo saves text documents up to 12,000 characters. Your draft is kept in this window.';return false;}
   if(context.file.content!==note.fileText&&context.file.content!==note.text){note.fileError='The file changed elsewhere. Copy your unsaved text before reopening it.';return false;}
-  if(context.file.content===note.text){note.fileText=note.text;note.fileDirty=false;note.fileError='';if(!deferHistory)flushBoundNoteHistory(id);return true;}
+  if(context.file.content===note.text){note.fileText=note.text;note.fileDirty=false;note.draftDirty=false;note.fileError='';if(!deferHistory)flushBoundNoteHistory(id);return true;}
   const before=workspaceDownloads.snapshot();
   try{
-    const updated=workspaceDownloads.update(context.directory,context.name,{content:note.text});
+    const updated=globalThis.SpatialDesktopFiles?.write ? SpatialDesktopFiles.write(context.binding.path,note.text,{workspace:context.binding.workspace,itemId:context.binding.itemId,expectedContent:note.fileText}) : workspaceDownloads.update(context.directory,context.name,{content:note.text});
     if(!updated||updated.content!==note.text)throw Error('The full text could not be saved.');
-    desktopStorage.setItem('spatial-downloads-v1',JSON.stringify(workspaceDownloads.snapshot()));
+    if(!globalThis.SpatialDesktopFiles)desktopStorage.setItem('spatial-downloads-v1',JSON.stringify(workspaceDownloads.snapshot()));
   }catch{
-    workspaceDownloads.load(before);note.fileError='Saving failed. Your draft is kept in this window; use Ctrl+S to retry.';return false;
+    if(!globalThis.SpatialDesktopFiles)workspaceDownloads.load(before);note.fileError='Saving failed. Your draft is kept in this window; use Ctrl+S to retry.';return false;
   }
-  note.fileText=note.text;note.fileDirty=false;note.fileError='';
+  note.fileText=note.text;note.fileDirty=false;note.draftDirty=false;note.fileError='';
   queueBoundNoteHistory(id,context,note,deferHistory);
   if(typeof persistDownloads==='function')persistDownloads();
   if(typeof refreshDownloadUi==='function')refreshDownloadUi();
@@ -279,10 +285,27 @@ globalThis.SpatialNoteFiles={
     if(!file||!appInfo[id]||(appInfo[id].base||id)!=='notes')return false;
     const note=SpatialAppTools.activeNote(appWindowModel(id)),binding={path:file.path,itemId:file.itemId,workspace:file.workspace,project:file.project||null};
     const candidate={file:binding};
-    if(noteFileContext(candidate).error)return false;
-    note.file=binding;note.fileDirty=false;refreshBoundNote(note);return true;
+    const context=noteFileContext(candidate);if(context.error||typeof context.file.content!=='string')return false;
+    note.file=binding;note.fileDirty=false;note.draftDirty=false;delete note.draftBase;refreshBoundNote(note);return true;
   },
   save:saveBoundNote,
+  needsSave(id){const model=appWindowModel(id);return model.kind==='notes'&&model.notes.some(note=>note.fileDirty||note.draftDirty);},
+  pending(id){return appWindowModel(id).notes.find(note=>note.fileDirty||note.draftDirty)||null;},
+  discard(id){const note=SpatialAppTools.activeNote(appWindowModel(id));if(note.file){note.text=note.fileText||'';note.fileDirty=false;refreshBoundNote(note);}else{note.text=note.draftBase?.text||'';note.title=note.draftBase?.title||'Untitled';}note.draftDirty=false;delete note.draftBase;if(id==='notes'&&!note.file){noteDraft=note.text;persistWorkspaceNote();}renderNotes(id);saveAppWindows();},
+  saveAs(id,path,options={}){
+    const note=SpatialAppTools.activeNote(appWindowModel(id)),backend=globalThis.SpatialDesktopFiles;
+    if(!backend?.write)throw Error('File storage is not ready. Your draft is kept.');
+    if(note.text.length>12000)throw Error('This demo saves text documents up to 12,000 characters. Your draft is kept.');
+    if(!/\.(?:md|markdown|txt)$/i.test(path))throw Error('Choose a Markdown (.md) or text (.txt) file.');
+    const file=backend.write(path,note.text,{workspace:activeWorkspace,...options});
+    if(!this.bind(id,file))throw Error('The file was saved, but its editor link could not open.');
+    queueBoundNoteHistory(id,noteFileContext(note),note,false);renderNotes(id);saveAppWindows();return file;
+  },
+  open(id,file){
+    const model=appWindowModel(id);const prior=model.notes.find(note=>note.file?.itemId===file.itemId&&note.file.workspace===file.workspace);
+    if(prior){model.active=prior.id;refreshBoundNote(prior);}else{SpatialAppTools.addNote(model);if(!this.bind(id,file)){model.notes.pop();model.active=model.notes[0].id;throw Error('This saved text file could not open.');}}
+    renderNotes(id);saveAppWindows();return true;
+  },
   flush:flushBoundNoteHistory,
   refresh(id){const note=SpatialAppTools.activeNote(appWindowModel(id));refreshBoundNote(note);renderNotes(id);return !note.fileError;}
 };
@@ -540,7 +563,7 @@ function prepareAppWindows() {
   const originalCapture=captureWorkspaceContent;
   captureWorkspaceContent=function(){flushBoundNoteHistory();saveAppWindows(false);originalCapture();};
   const originalClose=closeApp;
-  closeApp=function(id){flushBoundNoteHistory(id);return originalClose(id);};
+  closeApp=function(id,...args){flushBoundNoteHistory(id);return originalClose(id,...args);};
   const originalMove=moveAppWorkspace;
   moveAppWorkspace=function(id,destination,page=null){const origin=activeWorkspace;const result=originalMove(id,destination,page);if(result){appWindowStore.copy(origin,id,destination,result.id);saveAppWindows();}return result;};
   const originalSnapshot=captureDesktopSyncState;
@@ -658,9 +681,11 @@ function appWindowInput(event) {
   if(event.target.matches('.notes-layout textarea,[data-app-mini-note],[data-note-title]')){
     const note=SpatialAppTools.activeNote(model);
     if(note.file)event.stopImmediatePropagation();
+    if(!note.file&&!note.draftDirty)note.draftBase={text:note.text,title:note.title};
+    if(!note.file)note.draftDirty=true;
     if(event.target.matches('[data-note-title]')){if(note.file){event.target.value=note.title;return;}note.title=event.target.value;const label=$$('[data-note-id]',frame).find(button=>button.dataset.noteId===note.id);$('span',label).textContent=note.title||'Untitled';$('.app-identity small',frame).textContent=note.title||'Untitled';appInfo[id].detail=note.title||'Untitled';label.title=note.title||'Untitled';}
     else {note.text=event.target.value;$('.notes-layout textarea',frame).value=note.text;if(note.file){note.fileDirty=true;saveBoundNote(id,{deferHistory:true});}else if(id==='notes'){noteDraft=note.text;persistWorkspaceNote();}}
-    updateNoteStatus(id);saveAppWindows();
+    saveAppWindows();updateNoteStatus(id);
   }
   if(event.target.matches('.track-range,.volume-range')){event.stopImmediatePropagation();if(event.target.matches('.track-range'))model.position=Number(event.target.value);else model.volume=Number(event.target.value);renderAppMusic(id);saveAppWindows(false);}
 }
@@ -691,6 +716,6 @@ function appWindowKey(event) {
       event.target.value=model.history[model.historyIndex]??model.draft;handled=true;
     }
     if(event.ctrlKey&&event.key.toLowerCase()==='l'){model.lines=[];renderTerminal(id);saveAppWindows();handled=true;}
-  } else if(model.kind==='notes'&&event.ctrlKey&&event.key.toLowerCase()==='s'){saveBoundNote(id);saveAppWindows();updateNoteStatus(id);handled=true;}
+  } else if(model.kind==='notes'&&event.ctrlKey&&['s','o'].includes(event.key.toLowerCase())){performAppAction(id,event.key.toLowerCase()==='o'?'note-open':event.shiftKey?'note-save-as':'note-save');handled=true;}
   if(handled){event.preventDefault();event.stopImmediatePropagation();}
 }

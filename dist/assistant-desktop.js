@@ -25,6 +25,11 @@
     return {...at,id:'selection-'+crypto.randomUUID(),title:'Selected text · '+appInfo[id].label,kind:'text',text,address,source:{...at,label:appInfo[id].label,address,desktop:desktopPages.pageOf(activeWorkspace,id)}};
   }
   function fileContext(path,workspace=activeWorkspace){
+    if(globalThis.SpatialDesktopFiles){
+      let file;try{file=globalThis.SpatialDesktopFiles.read(path,{workspace});}catch{return null;}
+      if(!file||file.kind==='folder')return null;
+      return {id:file.itemId,itemId:file.itemId,title:file.name,filename:file.name,kind:file.attachment?.kind||'file',text:file.content||'',address:file.path,attachment:file.attachment,workspace:file.workspace,project:file.project,source:{workspace:file.workspace,project:file.project,address:file.path,label:'File Browser'}};
+    }
     if(!T.allowed(path,workspace,workspaceProfiles,projectSpaces,typeof openProjectNames==='function'?openProjectNames(workspace):[]))return null;
     const saved=globalThis.SpatialMemoryDesktop?.contextAtFile(path);if(saved)return {...saved,address:path,filename:path.split('/').at(-1)};
     const directory=path.slice(0,path.lastIndexOf('/')),name=path.split('/').at(-1),file=workspaceDownloads.list(directory).find(f=>f.name===name&&(!f.workspace||f.workspace===workspace));

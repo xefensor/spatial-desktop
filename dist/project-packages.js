@@ -7,20 +7,42 @@
   const size=bytes=>bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KB':(bytes/1048576).toFixed(1)+' MB';
   function row(title,detail,count='',type='i-folder'){return '<div class="project-archive-row">'+icon(type)+'<span><b>'+escapeHtml(title)+'</b><small>'+escapeHtml(detail)+'</small></span>'+(count?'<small class="archive-count">'+escapeHtml(count)+'</small>':'')+'</div>';}
   async function collect(project,id,replacements){
-    const files=[],prefix=project.root.replace(/\/$/,'')+'/';
-    for(const file of workspaceDownloads.snapshot().files){if(file.directory.startsWith(prefix)||file.directory===project.root){const path=(file.directory+'/'+file.name).slice(prefix.length);files.push({path,data:file.content||'',kind:'text'});}}
-    for(const [path,file]of Object.entries(project.archiveFiles||{})){const blob=await F.get(file.key);if(!blob)throw Error('An imported file is no longer available: '+path);const at=files.findIndex(f=>f.path===path);if(at>=0)files.splice(at,1);files.push({path,data:new Uint8Array(await blob.arrayBuffer()),kind:file.kind||'file',mime:file.mime||blob.type});}
-    const snapshot=clone(project);
+    const files=[],prefix=project.root.replace(/\/$/,'')+'/',snapshot=clone(project),backend=root.SpatialDesktopFiles,workspace=activeWorkspace;
+    const rawStash=F.list(snapshot);
+    if(backend){
+      // Export the same file projection that the desktop shows. Old bundled,
+      // retained and imported sources can remain underneath a rename or Trash.
+      const folders=[project.root],visited=new Set(),canonical=[];
+      while(folders.length){const directory=folders.pop();if(visited.has(directory))continue;visited.add(directory);for(const file of backend.list(directory,{workspace})){canonical.push(file);if(file.kind==='folder')folders.push(file.path);}}
+      for(const file of canonical){
+        if(file.kind==='folder'||file.path.slice(prefix.length).startsWith('.spatial-project.'))continue;
+        // Listed-only examples keep the archive's explicit sample labeling.
+        if(typeof file.content!=='string'&&!file.attachment)continue;
+        const blob=await backend.blob(file.path,{workspace});
+        files.push({path:file.path.slice(prefix.length),data:new Uint8Array(await blob.arrayBuffer()),kind:typeof file.content==='string'?'text':file.attachment?.kind||'file',mime:blob.type||file.attachment?.mime||'application/octet-stream'});
+      }
+      const rootNames=new Set(canonical.filter(file=>file.directory===project.root).map(file=>file.name));
+      snapshot.files=(snapshot.files||[]).filter(row=>rootNames.has(row[0]));
+      const suppressed=rawStash.filter(file=>!backend.visibleSource(F.path(snapshot,file),{workspace})),suppressedIds=new Set(suppressed.flatMap(file=>[file.id,file.record?.id,file.record?.fileId,file.record?.itemId].filter(Boolean)));
+      snapshot.resources=(snapshot.resources||[]).filter(entry=>{
+        const meta=entry[4]||{},address=meta.address||meta.source?.address||(String(entry[1]||'').startsWith('Linked · ')?entry[1].slice(9):'');
+        return ![meta.fileId,meta.itemId].some(value=>value&&suppressedIds.has(value))&&!(address.startsWith(prefix)&&!backend.visibleSource(address,{workspace}));
+      });
+    }else{
+      for(const file of workspaceDownloads.snapshot().files){if(file.directory.startsWith(prefix)||file.directory===project.root){const path=(file.directory+'/'+file.name).slice(prefix.length);files.push({path,data:file.content||'',kind:'text'});}}
+      for(const [path,file]of Object.entries(project.archiveFiles||{})){const blob=await F.get(file.key);if(!blob)throw Error('An imported file is no longer available: '+path);const at=files.findIndex(f=>f.path===path);if(at>=0)files.splice(at,1);files.push({path,data:new Uint8Array(await blob.arrayBuffer()),kind:file.kind||'file',mime:file.mime||blob.type});}
+    }
     const itemHistory=globalThis.SpatialItemHistoryDesktop,historyPackage=globalThis.SpatialItemHistoryPackage;
     if(itemHistory&&historyPackage){
       const bundle=historyPackage.exportProject(itemHistory.snapshot(),globalThis.SpatialMemoryDesktop?.allItems?.()||[],project.originWorkspace||activeWorkspace,id);
       if(Object.keys(bundle.records).length){const path='.spatial-item-history.json',old=files.findIndex(file=>file.path===path);if(old>=0)files.splice(old,1);files.push({path,data:JSON.stringify(bundle,null,2),kind:'text',mime:'application/json'});}
     }
     // Notes already materialized in Stash remain actual files in the archive.
-    const stash=F.list(snapshot);
+    const stash=rawStash.filter(file=>!backend||backend.visibleSource(F.path(snapshot,file),{workspace}));
     return A.build(snapshot,{home:workspaceProfiles[project.originWorkspace||activeWorkspace]?.home||'',files,stash,replacements,
       readAttachment:file=>F.copyAsset(snapshot,{...clone(file),id:'archive:'+(file.attachment?.key||file.attachment?.src||file.id)}),
       readPath:async address=>{
+        if(backend){let accessible=false;try{backend.owner(address,{workspace});accessible=true;}catch{}if(accessible){const file=backend.read(address,{workspace});if(!file||file.kind==='folder')return undefined;const blob=await backend.blob(address,{workspace});return new Uint8Array(await blob.arrayBuffer());}}
         const file=workspaceDownloads.snapshot().files.find(file=>file.directory+'/'+file.name===address);if(file)return file.content||'';
         for(const other of Object.values(projectSpaces)){const prefix=other.root.replace(/\/$/,'')+'/';if(address.startsWith(prefix)){const binary=other.archiveFiles?.[address.slice(prefix.length)];if(binary){const blob=await F.get(binary.key);if(blob)return new Uint8Array(await blob.arrayBuffer());}}}
         return undefined;

@@ -18,12 +18,14 @@
     else{model.volume=previous.volume;model.muted=!previous.muted;}
     model.audioRestoreVolume=previous.restore;return read(model);
   }
-  function apply(media,state){
+  function effective(state,master={}){return {...state,volume:state.volume*(Number.isFinite(master.volume)?master.volume:100)/100,muted:state.muted||master.outputMuted===true};}
+  function apply(media,state,master={}){
+    state=effective(state,master);
     const volume=state.volume/100;
     if(media.volume!==volume)media.volume=volume;
     if(media.muted!==state.muted)media.muted=state.muted;
   }
-  const api={read,setVolume,toggleMute,apply};
+  const api={read,setVolume,toggleMute,apply,effective};
   if(typeof module!=='undefined'&&module.exports){module.exports=api;return;}
   const bound=new WeakMap();let scheduled=0;
   function render(id){
@@ -52,7 +54,7 @@
     control.classList.toggle('is-muted',state.silent);
     for(const media of frame.querySelectorAll('audio,video')){
       if(media.closest('.parked-preview-window,.desktop-map-snapshot'))continue;
-      bound.set(media,{workspace:activeWorkspace,id});apply(media,state);
+      bound.set(media,{workspace:activeWorkspace,id});apply(media,state,root.SpatialDesktopSystem?.audioState());
     }
   }
   function renderAll(){for(const id of Object.keys(appInfo))render(id);}
@@ -76,8 +78,10 @@
   document.addEventListener('volumechange',event=>{
     const media=event.target,owner=bound.get(media);if(!owner||owner.workspace!==activeWorkspace||!media.isConnected)return;
     const frame=media.closest('[data-app-frame]');if(frame!==frameFor(owner.id))return;
-    const state=read(appWindowModel(owner.id)),volume=clamp(media.volume*100);
-    if(state.volume===volume&&state.muted===media.muted)return;
+    const state=read(appWindowModel(owner.id)),master=root.SpatialDesktopSystem?.audioState()||{},expected=effective(state,master);
+    if(Math.abs(expected.volume-media.volume*100)<.01&&expected.muted===media.muted)return;
+    if(master.outputMuted||master.volume===0){render(owner.id);return;}
+    const volume=clamp(media.volume*100/(Number.isFinite(master.volume)?master.volume/100:1));
     update(owner.id,model=>{setVolume(model,volume);model.muted=media.muted;});
   },true);
   const originalSave=saveAppWindows;saveAppWindows=function(...args){renderAll();return originalSave(...args);};
@@ -85,5 +89,6 @@
   const originalRestore=restoreWorkspaceContent;restoreWorkspaceContent=function(...args){const result=originalRestore(...args);renderAll();return result;};
   const originalInstall=installInstance;installInstance=function(id,...args){const result=originalInstall(id,...args);render(id);return result;};
   new MutationObserver(schedule).observe(document.querySelector('.workspace-zone'),{subtree:true,childList:true});
+  root.addEventListener?.('spatial-system-change',schedule);
   root.SpatialWindowAudio={...api,refresh:renderAll};renderAll();
 })(typeof globalThis!=='undefined'?globalThis:this);

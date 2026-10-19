@@ -51,7 +51,7 @@ assert.equal(stopped,1,'Desktop/project shortcuts and zoom keep their normal rou
 // existing-window buttons in the parked rack still explicitly restore.
 let appLauncher;
 context.document={addEventListener(type,handler){assert.equal(type,'click');appLauncher=handler;}};
-vm.runInContext(segment('document.addEventListener("click", event => {\n  const button = event.target.closest("[data-open-app]");', '$$("[data-launch-app]")'),context);
+vm.runInContext(segment('document.addEventListener("click", event => {\n  const button = event.target.closest("[data-open-app]");', 'document.addEventListener("click", event => {\n  const button=event.target.closest("[data-launch-app]");'),context);
 context.activeWorkspace='general';context.desktopPages.select('general','workspace');context.desktopPages.go('general',1);
 const launchButton=(name,{parked=false,overview=false}={})=>({dataset:{openApp:name},closest(selector){return selector==='#appRack'&&parked?nodes['#emptyDesktopApps']:selector==='#universalSearch'&&overview?{}:null;}});
 const launch=(name,options={},shiftKey=false)=>appLauncher({shiftKey,target:{closest:()=>launchButton(name,options)}});

@@ -1,0 +1,17 @@
+/* Ordinary file actions stay inside the File Browser's app surface. */
+.desktop-file-actions{display:flex;flex-wrap:wrap;gap:5px;flex:none;padding:7px 8px;border-block-end:1px solid var(--soft-line)}
+.desktop-file-actions>button.surface-key{min-height:30px;padding:4px 8px;font-size:12px;white-space:normal}
+.desktop-file-actions>button:disabled{opacity:.42;cursor:default}
+.desktop-file-feedback{flex:none;font-size:12px;line-height:1.5;padding:0 10px;margin:5px 0;color:var(--muted);overflow-wrap:anywhere}
+.desktop-file-feedback:empty{display:none}
+.desktop-files-dialog{box-sizing:border-box;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--content-surface,var(--shell));color:var(--text);box-shadow:0 18px 60px #0007;font:inherit}
+.desktop-files-dialog::backdrop{background:#0006}
+.desktop-files-dialog h2{font-size:18px;line-height:1.4;margin:0 0 12px}
+.desktop-files-dialog p{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.desktop-files-dialog label{display:grid;gap:7px;font-size:13px}
+.desktop-files-dialog input{box-sizing:border-box;width:100%;min-width:0;padding:9px;border:1px solid var(--soft-line);border-radius:7px;font:inherit;background:var(--app-content-surface);color:var(--text)}
+.desktop-files-dialog form>div{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:18px}
+.desktop-files-dialog button.surface-key{min-height:34px;padding:7px 11px;font-size:12px;white-space:normal}
+.desktop-files-dialog-error{color:var(--red);margin:8px 0 0}
+.desktop-files-dialog :is(button,input):focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+[data-trash-id]>span>svg{width:18px;height:18px;flex:none}

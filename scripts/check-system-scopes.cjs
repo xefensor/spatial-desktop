@@ -25,11 +25,12 @@ assert.equal(S.requests(models,states,()=>true,()=>false,info).length,1,'Only pa
 
 // Run the actual local renderer with separate Workspace and System lists.
 const notes=N.create();notes.add({id:'work',workspace:'work',title:'Work review',time:10});notes.add({id:'game',workspace:'gaming',title:'Private invitation',time:20});notes.add({id:'system',workspace:null,title:'Low battery',time:30});
-const local={innerHTML:''},shared={innerHTML:''};let syncs=0;
-const context=vm.createContext({notifications:notes,activeWorkspace:'work',painting:false,document:{getElementById:()=>shared},$:()=>local,notificationMarkup:note=>note.id,originalSync:()=>syncs++});
+const local={innerHTML:''},shared={innerHTML:''};let syncs=0,actionRenders=0;
+const context=vm.createContext({notifications:notes,activeWorkspace:'work',painting:false,document:{getElementById:()=>shared},$:()=>local,notificationMarkup:note=>note.id,originalSync:()=>syncs++,renderActions:()=>actionRenders++});
 const source=fs.readFileSync(require.resolve('../dist/all-workspaces.js'),'utf8');
 vm.runInContext(source.slice(source.indexOf('  function renderLocal(){'),source.indexOf('  syncNotifications=function')),context);
 context.renderLocal();assert.equal(local.innerHTML,'work');assert.equal(shared.innerHTML,'system');assert.equal(notes.list(null).length,1);
 context.activeWorkspace='gaming';context.renderLocal();assert.equal(local.innerHTML,'game');assert.equal(shared.innerHTML,'system');assert.equal(syncs,2);
 context.document.getElementById=()=>null;context.renderLocal();assert.equal(local.innerHTML,'systemgame','The original renderer still works before the scope adapter mounts');
+assert.equal(actionRenders,3,'Local notification actions are refreshed after each native/Overview render');
 console.log('System scopes passed: actual project/Workspace plan separation, current-desktop requests, parked ownership, hidden content and independent shared alerts.');

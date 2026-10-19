@@ -26,10 +26,12 @@
   function create(saved = {}) {
     let directories = new Set();
     let files = [];
+    let fileOperations;
     function load(value = {}) {
       directories = new Set((Array.isArray(value.directories) ? value.directories : []).filter(path => typeof path === 'string' && path.startsWith('/')));
       files = (Array.isArray(value.files) ? value.files : []).filter(file => file && typeof file.directory === 'string' && file.directory.startsWith('/') && typeof file.name === 'string' && file.name && !/[\\/]/.test(file.name) && file.name !== '.' && file.name !== '..').map(file => ({...file}));
       files.forEach(file => directories.add(file.directory));
+      fileOperations=value.fileOperations&&typeof value.fileOperations==='object'?JSON.parse(JSON.stringify(value.fileOperations)):undefined;
     }
     const ensure = path => { directories.add(path); return path; };
     const list = path => files.filter(file => file.directory === path).map(file => ({...file}));
@@ -48,7 +50,7 @@
     }
     load(saved);
     function update(directory,name,patch={}) { const file=files.find(file=>file.directory===directory&&file.name===name);if(!file)return null;if(typeof patch.content==='string')file.content=patch.content.slice(0,12000);return {...file}; }
-    return {load, ensure, list, add, update, snapshot: () => ({directories: [...directories], files: files.map(file => ({...file}))})};
+    return {load, ensure, list, add, update, snapshot: () => ({directories: [...directories], files: files.map(file => ({...file})),...(fileOperations?{fileOperations:JSON.parse(JSON.stringify(fileOperations))}:{})})};
   }
   const api = {standard, home, folder, assistantFolder, downloadDestination, create};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

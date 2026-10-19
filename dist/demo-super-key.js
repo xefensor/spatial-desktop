@@ -4,7 +4,7 @@
   let held = false;
   const isKey = event => event.key === 'F2';
   const reset = () => { held = false; };
-  const api = { held: () => held, isKey };
+  const api = { held: () => held, isKey, cancel(){reset();api.onCancel?.();} };
   globalThis.SpatialDemoSuper = api;
   document.addEventListener('keydown', event => {
     if (!isKey(event)) return;
