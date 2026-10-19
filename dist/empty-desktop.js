@@ -5,7 +5,7 @@
   const search = $('#emptyDesktopSearch'), folders = $('#emptyDesktopFolders'), files = $('#emptyDesktopFiles');
   const status = $('#emptyDesktopStatus'), clear = $('#emptyDesktopClear');
   let rendered = '', scope = '', query = '', allFolders = false, allFiles = false;
-  const available = name => appInfo[name] && !appInfo[name].launcherHidden && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace);
+  const available = name => appInfo[name] && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace);
   const scopeKey = () => JSON.stringify([activeWorkspace, desktopPages.column(activeWorkspace), desktopPages.current(activeWorkspace)]);
   const allowedFiles = () => !globalThis.SpatialGuide?.model.active() || SpatialGuide.model.allows('folders');
   const blocked = () => panel.hidden || $('.desktop-shell').inert || desktopNavigationBlocked();

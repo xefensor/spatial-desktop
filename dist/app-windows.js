@@ -11,7 +11,6 @@ function saveAppWindows(broadcast = true) {
 function appWindowModel(id) {
   const frame = frameFor(id), kind = appInfo[id]?.base || id;
   const model=appWindowStore.get(activeWorkspace, id, () => {
-    if (globalThis.SpatialDesktopApps?.definitions[kind]) return {kind};
     if (kind === 'game' || kind === 'steam' || kind === 'settings') return {kind};
     if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
     if (kind === 'notes') {

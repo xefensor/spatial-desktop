@@ -1,4 +1,4 @@
-const desktopStorage = globalThis.SpatialGuide?.storage || globalThis.localStorage;
+const desktopStorage = SpatialRetiredApps.storage(globalThis.SpatialGuide?.storage || globalThis.localStorage);
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 const desktopPreset = desktopStorage.getItem(SpatialWorkspaceSetup.presetKey) || (globalThis.SpatialGuide?.model.active() ? 'clean' : 'demo');
@@ -225,8 +225,7 @@ const appInfo = {
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
   steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", singleInstance: true, parkingWidget: false },
-  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true },
-  ...globalThis.SpatialDesktopApps?.definitions
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true }
 };
 
 const appState = { ...Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed'])), ...(desktopPreset === 'demo' ? SpatialDemoExamples.scenarios.general.apps : {}) };
@@ -270,8 +269,7 @@ function icon(name) {
 }
 
 function appArt(name, extraClass = "") {
-  const base=appInfo[name]?.base||name,utility=globalThis.SpatialDesktopApps?.definitions[base];
-  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#' + (utility?utility.icon:'app-'+base) + '"/></svg>';
+  return '<svg class="app-art ' + extraClass + '" aria-hidden="true"><use href="#app-' + (appInfo[name]?.base || name) + '"/></svg>';
 }
 
 function applyAppPrimaryColors(root = document) {
@@ -5647,7 +5645,7 @@ document.addEventListener("click", event => {
   if (button.dataset.launchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
   if (button.dataset.launchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
   pulseBusyCursor();
-  globalThis.SpatialDesktopApps?.launch(button.dataset.launchApp);
+  showToast(SpatialAppNames.label(button.dataset.launchApp) + " is not included in this demo.");
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 });
 
@@ -5880,7 +5878,7 @@ $("#universalResults").addEventListener("click", event => {
     if (result.dataset.searchLaunchApp === 'Settings' && globalThis.SpatialSettings) { SpatialSettings.open(); return; }
     if (result.dataset.searchLaunchApp === 'Spatial Guide') { setUniversalSearchOpen(false); SpatialGuide.open(); return; }
     pulseBusyCursor();
-    globalThis.SpatialDesktopApps?.launch(result.dataset.searchLaunchApp);
+    showToast(SpatialAppNames.label(result.dataset.searchLaunchApp) + " is not included in this demo.");
   }
   setUniversalSearchOpen(false);
 });
@@ -7910,6 +7908,7 @@ function captureDesktopSyncState() {
 }
 
 function persistIncomingDesktopState(state) {
+  state=globalThis.SpatialRetiredApps?.filterSnapshot(state)||state;
   if(state.accessibility) globalThis.SpatialAccessibility?.load(state.accessibility);
   if (state.itemHistory) globalThis.SpatialItemHistoryDesktop?.merge(state.itemHistory);
   if (state.workingMemory) globalThis.SpatialMemoryDesktop?.merge(state.workingMemory);
@@ -7948,6 +7947,7 @@ function persistIncomingDesktopState(state) {
 }
 
 function applyDesktopSyncState(state) {
+  state=globalThis.SpatialRetiredApps?.filterSnapshot(state)||state;
   if (!state || ![1, 2, 3, 4, 5].includes(state.schema) || !workspaceProfiles[state.activeWorkspace]) return;
   desktopSyncApplying = true;
   try {

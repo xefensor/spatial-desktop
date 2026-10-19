@@ -46,7 +46,6 @@
   <link rel="stylesheet" href="desktop-files.css?v=1">
   <link rel="stylesheet" href="desktop-clipboard.css?v=1">
   <link rel="stylesheet" href="desktop-system.css?v=1">
-  <link rel="stylesheet" href="desktop-apps.css?v=1">
   <link rel="stylesheet" href="desktop-accessibility.css?v=1">
   <link rel="stylesheet" href="settings-app.css?v=4">
   <link rel="stylesheet" href="context-submenus.css?v=3">
@@ -438,7 +437,6 @@
                   <button class="launcher-app" data-launch-app="Gwenview" data-category="graphics"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-image"/></svg></span><span>Image Viewer</span></button>
                   <button class="launcher-app" data-launch-app="Inkscape" data-category="graphics"><span class="launcher-icon app-tile tile-charcoal"><svg><use href="#i-code"/></svg></span><span>Vector Editor</span></button>
                   <button class="launcher-app" data-launch-app="Blender" data-category="graphics"><span class="launcher-icon app-tile tile-orange"><b>B</b></span><span>3D Editor</span></button>
-                  <button class="launcher-app" data-launch-app="Spectacle" data-category="graphics"><span class="launcher-icon app-tile tile-blue"><svg><use href="#i-image"/></svg></span><span>Screenshot Tool</span></button>
                   <button class="launcher-app" data-open-app="steam" data-category="games"><span class="launcher-icon"><svg class="app-art"><use href="#app-steam"/></svg></span><span>Steam</span></button>
                   <button class="launcher-app" data-open-app="game" data-category="games"><span class="launcher-icon"><svg class="app-art"><use href="#app-game"/></svg></span><span>Fallout 4</span></button>
                   <button class="launcher-app" data-launch-app="Lutris" data-category="games"><span class="launcher-icon app-tile tile-amber"><b>L</b></span><span>Game Launcher</span></button>
@@ -450,11 +448,8 @@
                   <button class="launcher-app" data-launch-app="VLC" data-category="multimedia"><span class="launcher-icon app-tile tile-orange"><svg><use href="#i-play"/></svg></span><span>Media Player</span></button>
                   <button class="launcher-app" data-launch-app="Kdenlive" data-category="multimedia"><span class="launcher-icon app-tile tile-violet"><svg><use href="#i-video"/></svg></span><span>Video Editor</span></button>
                   <button class="launcher-app" data-launch-app="OBS Studio" data-category="multimedia"><span class="launcher-icon app-tile tile-charcoal"><b>O</b></span><span>Screen Recorder</span></button>
-                  <button class="launcher-app" data-launch-app="Calculator" data-category="utilities"><span class="launcher-icon app-tile tile-silver"><svg><use href="#i-calculator"/></svg></span><span>Calculator</span></button>
                   <button class="launcher-app" data-launch-app="Ark" data-category="utilities"><span class="launcher-icon app-tile tile-amber"><svg><use href="#i-archive"/></svg></span><span>Archive Manager</span></button>
                   <button class="launcher-app" data-open-app="settings" data-category="system" data-favorite="true"><span class="launcher-icon"><svg class="app-art" aria-hidden="true"><use href="#app-settings"/></svg></span><span>Settings</span></button>
-                  <button class="launcher-app" data-launch-app="System Monitor" data-category="system"><span class="launcher-icon app-tile tile-green"><svg><use href="#i-monitor"/></svg></span><span>System Monitor</span></button>
-                  <button class="launcher-app" data-launch-app="Discover" data-category="system"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-grid"/></svg></span><span>Software Center</span></button>
                   <button class="launcher-app" data-launch-app="Partition Manager" data-category="system"><span class="launcher-icon app-tile tile-red"><svg><use href="#i-tools"/></svg></span><span>Partition Manager</span></button>
                   <button class="launcher-app" data-launch-app="KStars" data-category="education"><span class="launcher-icon app-tile tile-navy"><svg><use href="#i-star"/></svg></span><span>Planetarium</span></button>
                   <button class="launcher-app" data-launch-app="Marble" data-category="education"><span class="launcher-icon app-tile tile-cyan"><svg><use href="#i-web"/></svg></span><span>World Map</span></button>
@@ -714,7 +709,7 @@
   <script src="app-tools.js?v=2"></script>
   <script src="assistant-files.js?v=2"></script>
   <script src="project-archive.js?v=4"></script>
-  <script src="app-windows.js?v=31"></script>
+  <script src="app-windows.js?v=32"></script>
 <script src="item-history.js?v=1"></script>
 <script src="item-history-package.js?v=1"></script>
 <script src="working-memory.js?v=9"></script>
@@ -724,15 +719,15 @@
 <script src="timeline.js?v=8"></script>
 <script src="app-names.js?v=4"></script>
 <script src="compact-area-layout.js?v=8"></script>
-<script src="desktop-apps.js?v=2"></script>
-<script src="desktop-shell.js?v=330"></script>
+<script src="retired-apps.js?v=1"></script>
+<script src="desktop-shell.js?v=331"></script>
 <script src="parked-previews.js?v=4"></script>
   <script src="owned-dialogs.js?v=5"></script>
 <script src="background-services.js?v=1"></script>
 <script src="background-apps.js?v=7"></script>
 <script src="preview-privacy.js?v=1"></script>
 <script src="empty-desktop-resources.js?v=3"></script>
-<script src="empty-desktop.js?v=7"></script>
+<script src="empty-desktop.js?v=8"></script>
 <script src="apps-quick-launch.js?v=4"></script>
 <script src="working-memory-desktop.js?v=43"></script>
 <script src="item-history-desktop.js?v=8"></script>
@@ -772,7 +767,7 @@
 <script src="desktop-system.js?v=1"></script>
 <script src="desktop-accessibility.js?v=1"></script>
 <script src="desktop-surface-files.js?v=1"></script>
-<script>SpatialDesktopApps.start();</script>
+<script>SpatialRetiredApps.installSyncGuards();</script>
 </body>
 </html>
 

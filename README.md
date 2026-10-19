@@ -20,7 +20,7 @@ A browser prototype designed by Xef, exploring Workspaces, Projects, tiled windo
 - **Find your place.** **F2 / Super** opens Overview and search. Its horizontal tabs are **Windows**, **Apps**, **Projects & Files**, **Timeline** and **System**. **Meta+Tab / F2+Tab** opens the desktop map.
 - **Use another display.** Choose **Extended workspace** to follow the current desktop, or **Side space** to keep windows in place. Both use the normal docked Areas. In Side space, the Assistant Area’s **Allow Assistant to use this display** switch grants optional control for that display and Workspace. Turning it off pauses work without clearing anything.
 
-Calculator, Screenshot Tool, Software Center and System Monitor provide usable demo workflows. **System → Devices & session** adds network choice, device pairing, sound, a sample USB transfer and session controls. **Do Not Disturb** quiets alerts while retaining them.
+**System → Devices & session** adds network choice, device pairing, sound, a sample USB transfer and session controls. **Do Not Disturb** quiets alerts while retaining them.
 
 Settings is a normal app window, available from Quick launch, search and the System gear. Desktop Guide introduces the interactions through short lessons and searchable, expandable topics.
 

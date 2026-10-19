@@ -12,7 +12,7 @@ const html = read('index.html');
 assert.equal(A.label('System Settings'), 'Settings', 'The previous Settings name follows the actual app');
 const primary = {settings:'Settings',dolphin:'Dolphin',elisa:'Elisa',browser:'Firefox',terminal:'Konsole',notes:'Notes'};
 const launchers = [...html.matchAll(/<button class="launcher-app"[^>]*data-(open|launch)-app="([^"]+)"[\s\S]*?<span>([^<>]+)<\/span><\/button>/g)];
-assert.equal(launchers.length,35,'Every catalog application is checked');
+assert.equal(launchers.length,31,'Every catalog application is checked');
 for (const [,action,id,label] of launchers) {
   if (id === 'steam' || id === 'game') {
     assert.equal(label,id === 'steam' ? 'Steam' : 'Fallout 4','App-contributed examples keep their identity');
