@@ -15,36 +15,24 @@
 .memory-excerpt{white-space:pre-wrap;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px}.memory-item:focus-within .memory-excerpt{-webkit-line-clamp:unset}
 .memory-source-address{display:block;overflow-wrap:anywhere}.memory-item-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}.memory-selection-tools{border-left:2px solid var(--project-accent,var(--text));padding-left:10px}
 .memory-preview textarea{max-height:360px}.memory-feedback{font-size:12px}.memory-history summary{cursor:pointer;font-size:12px}.memory-history ol{list-style:none;padding:0;margin:8px 0}.memory-history li{padding:5px 0;border-bottom:1px solid var(--soft-line)}.memory-history li small{display:block}
-.working-memory.is-drop-target{outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}.memory-header-key{width:28px;min-width:28px;height:28px;padding:5px!important}.memory-header-key svg{width:16px;height:16px}
-.memory-header-key.is-drop-target,.memory-rail-entry.is-drop-target{outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}
+.working-memory.is-drop-target{outline:2px solid var(--project-accent,var(--text));outline-offset:-2px}
 .memory-drop-hint{position:fixed;z-index:10050;pointer-events:none;box-sizing:border-box;max-width:min(300px,calc(100vw - 16px));padding:11px 14px;border:1px solid var(--sd-glass-groove,var(--line));border-inline-start:3px solid var(--text);border-radius:0;background:var(--shell);color:var(--text);box-shadow:0 8px 28px #0005;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
 .memory-drop-hint[hidden]{display:none!important}.memory-drop-hint b{display:block;font-weight:650}.memory-drop-hint small{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
-.project-area[data-area-state="rail"] #workingMemory{display:none!important}
-.project-area[data-area-state="rail"] .memory-header-key{display:grid!important}
-.project-area[data-project-library-open="true"] #workingMemory{margin-top:0;border-top:0;border-bottom:1px solid var(--soft-line)}
+.files-widget[data-project-library-open="true"] #workingMemory{margin-top:0;border-top:0;border-bottom:1px solid var(--soft-line)}
 #universalMemoryResults .universal-result>span:last-child{min-width:0}#universalMemoryResults small{white-space:normal;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.working-memory *{scroll-behavior:auto!important}}
-
-.memory-rail-entry{display:none!important}.project-area[data-area-state="rail"] .memory-rail-entry:not([hidden]){display:flex!important;flex:none;flex-direction:column;align-items:center;gap:3px;margin-top:auto;padding:7px 2px;font-size:10px;min-height:45px}.memory-rail-entry svg{width:18px;height:18px}
-.project-area:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-space-content{grid-template-columns:minmax(220px,.8fr) minmax(280px,1.25fr) minmax(220px,1fr);overflow:auto}
-.project-area:is([data-dock-edge="top"],[data-dock-edge="bottom"]) #workingMemory{overflow:auto;min-height:0;max-height:100%;padding-right:12px;scrollbar-width:thin}
-
-.project-area .project-module[hidden],.project-rail-tool[hidden]{display:none!important}
+.files-widget:is([data-panel-edge="top"],[data-panel-edge="bottom"]) .project-space-content{grid-template-columns:minmax(220px,.8fr) minmax(280px,1.25fr) minmax(220px,1fr);overflow:auto}
+.files-widget:is([data-panel-edge="top"],[data-panel-edge="bottom"]) #workingMemory{overflow:auto;min-height:0;max-height:100%;padding-right:12px;scrollbar-width:thin}
+.files-widget .project-module[hidden]{display:none!important}
 .memory-quick-note{margin:12px 0}.memory-quick-note>span{display:flex;justify-content:space-between;gap:8px}.memory-quick-note textarea{min-height:80px}
 
 /* Normal reading stays compact; selection and text tools are explicit modes. */
-.working-memory{padding-top:10px;gap:10px}.memory-toolbar{display:flex;align-items:center;gap:12px;margin:10px 0}.memory-toolbar button{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.memory-toolbar .surface-key{padding-inline:7px}.memory-toolbar svg{width:14px;height:14px}.memory-ai-key{margin-left:auto}.memory-ai-key small{font-size:10px}.memory-ai-info{padding:10px 0;border-block:1px solid var(--soft-line)}.memory-ai-info p{font-size:12px}.memory-select input{display:none}.working-memory.is-selecting .memory-select input{display:block}.memory-source-address{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.memory-source-address svg{width:12px;height:12px;vertical-align:middle;margin-right:4px}.memory-row-actions{display:flex;align-items:baseline;gap:12px;margin-top:3px}.memory-item-details{flex:1}.memory-item-details summary{cursor:pointer;font-size:11px;color:var(--muted);width:max-content;list-style:none;padding:4px 2px}.memory-item-details summary::-webkit-details-marker{display:none}.memory-item-details summary::after{content:' ▾'}.memory-item-details[open] summary::after{content:' ▴'}.memory-item-actions{margin-top:2px}.memory-help{margin-bottom:0!important}.memory-feedback:empty{display:none}.memory-selection-tools{border-left:0;padding-left:0}.project-note-module{order:0}.project-area .project-quick-note{min-height:70px;max-height:220px}
+.working-memory{padding-top:10px;gap:10px}.memory-toolbar{display:flex;align-items:center;gap:12px;margin:10px 0}.memory-toolbar button{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.memory-toolbar .surface-key{padding-inline:7px}.memory-toolbar svg{width:14px;height:14px}.memory-ai-key{margin-left:auto}.memory-ai-key small{font-size:10px}.memory-ai-info{padding:10px 0;border-block:1px solid var(--soft-line)}.memory-ai-info p{font-size:12px}.memory-select input{display:none}.working-memory.is-selecting .memory-select input{display:block}.memory-source-address{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.memory-source-address svg{width:12px;height:12px;vertical-align:middle;margin-right:4px}.memory-row-actions{display:flex;align-items:baseline;gap:12px;margin-top:3px}.memory-item-details{flex:1}.memory-item-details summary{cursor:pointer;font-size:11px;color:var(--muted);width:max-content;list-style:none;padding:4px 2px}.memory-item-details summary::-webkit-details-marker{display:none}.memory-item-details summary::after{content:' ▾'}.memory-item-details[open] summary::after{content:' ▴'}.memory-item-actions{margin-top:2px}.memory-help{margin-bottom:0!important}.memory-feedback:empty{display:none}.memory-selection-tools{border-left:0;padding-left:0}.project-note-module{order:0}.files-widget .project-quick-note{min-height:70px;max-height:220px}
 
 /* Typed sources use square glass previews; only captions are editable. */
 .memory-kind{display:block;margin:2px 0 7px;text-transform:uppercase;letter-spacing:.06em;font-size:9px!important}.memory-image{display:block;margin:8px 0;line-height:0}.memory-image img{display:block;width:100%;max-height:155px;object-fit:cover;border-radius:0!important}.memory-document{margin:8px 0}.memory-document summary{cursor:pointer;font-size:12px;padding:5px 0}.memory-document iframe{display:block;width:100%;height:280px;border:1px solid var(--soft-line);border-radius:0;box-sizing:border-box;margin-top:7px;background:#f1f0eb}.memory-audio{display:flex;gap:8px;align-items:center;margin:10px 0}.memory-audio audio{display:none}.memory-audio button{display:grid;place-items:center;flex:none;width:32px;height:32px;padding:6px!important}.memory-audio small{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:10px}.working-memory .memory-seek{appearance:none;min-width:30px;padding:0;height:4px;border:0;background:var(--soft-line);cursor:pointer;flex:1}.memory-seek::-webkit-slider-thumb{appearance:none;width:10px;height:14px;border:0;border-radius:0;background:var(--text)}.memory-seek::-moz-range-thumb{width:10px;height:14px;border:0;border-radius:0;background:var(--text)}
 
 .memory-folder-action{display:flex;align-items:center;gap:7px;border:0;border-radius:0;background:none;color:inherit;padding:0;font:inherit;cursor:pointer}.memory-folder-action:hover b{text-decoration:underline;text-underline-offset:3px}.memory-folder-action:disabled{cursor:default;color:inherit;opacity:1}.memory-file{display:flex;align-items:center;gap:6px}.stash-file-content img{display:block;max-width:100%;max-height:320px;object-fit:contain}.stash-file-content iframe{display:block;width:100%;height:300px;border:0;background:#f1f0eb}.stash-file-content audio{width:100%;margin-block:10px}.stash-file-actions{display:flex;gap:10px;flex-wrap:wrap;padding:10px 0}.stash-file-actions a{font:inherit;text-decoration:none;display:inline-flex;align-items:center}
-
-
-/* Keep the full Area name legible beside its compact header actions. */
-.project-area .area-window-identity #projectAreaName{white-space:normal;font-size:12px;line-height:1.15}
-
-.project-area[data-project-library-open="true"][data-area-state="rail"] .memory-rail-entry:not([hidden]){margin-top:0}
 
 /* Stash items start as compact, draggable disclosures. */
 .working-memory .memory-item{padding:0;border-bottom:1px solid var(--soft-line)}
@@ -70,34 +58,31 @@
 .memory-source-address{white-space:normal;overflow-wrap:anywhere}
 
 /* Readable shelf rows: one seam per item, with room around each source. */
-.project-area .working-memory{padding:16px 6px 18px}
-.project-area .working-memory header{min-height:28px}
-.project-area .memory-folder-action b,.project-area .project-module>header b{font-size:14px;font-weight:650;line-height:1.35}
-.project-area .project-module>header{align-items:center;min-height:30px;height:auto;margin-bottom:10px}
-.project-area .memory-scope{margin:3px 0 0}
-.project-area .memory-toolbar{margin:12px 0 14px;gap:14px}
-.project-area .memory-items{gap:7px}
-.project-area .memory-item{border-bottom-color:color-mix(in srgb,var(--text) 22%,transparent);scroll-margin-block:12px}
-.project-area .memory-item-summary{min-height:48px;padding:9px 6px;gap:10px}
-.project-area .memory-item-summary .memory-select{display:block;min-width:0}
-.project-area .memory-item-summary .memory-select b{font-size:13px;font-weight:600;line-height:1.45}
+.files-widget .working-memory{padding:16px 6px 18px}
+.files-widget .working-memory header{min-height:28px}
+.files-widget .memory-folder-action b,.files-widget .project-module>header b{font-size:14px;font-weight:650;line-height:1.35}
+.files-widget .project-module>header{align-items:center;min-height:30px;height:auto;margin-bottom:10px}
+.files-widget .memory-scope{margin:3px 0 0}
+.files-widget .memory-toolbar{margin:12px 0 14px;gap:14px}
+.files-widget .memory-items{gap:7px}
+.files-widget .memory-item{border-bottom-color:color-mix(in srgb,var(--text) 22%,transparent);scroll-margin-block:12px}
+.files-widget .memory-item-summary{min-height:48px;padding:9px 6px;gap:10px}
+.files-widget .memory-item-summary .memory-select{display:block;min-width:0}
+.files-widget .memory-item-summary .memory-select b{font-size:13px;font-weight:600;line-height:1.45}
 .memory-type-icon{display:grid;place-items:center;flex:0 0 20px;color:var(--muted)}
 .memory-type-icon svg{width:19px;height:19px}
-.project-area .memory-item-summary::after{font-size:20px;color:var(--muted)}
-.project-area .memory-item-summary:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
-.project-area .memory-item[open]{background:color-mix(in srgb,var(--text) 4%,transparent);border-bottom-color:color-mix(in srgb,var(--text) 30%,transparent)}
-.project-area .memory-item[open]>.memory-item-summary{background:color-mix(in srgb,var(--text) 4%,transparent)}
-.project-area .memory-item-body{padding:2px 12px 12px}
-.project-area .memory-item[open] .memory-excerpt{display:block;overflow:visible;white-space:pre-wrap;font-size:13px;line-height:1.55;margin:8px 0 12px}
-.project-area .memory-tags{gap:5px;margin:12px 0 7px}
-.project-area .memory-saved-time{margin:6px 0 12px}
-.project-area .memory-edit-details>summary,.project-area .memory-item-details>summary{font-size:12px;padding-block:6px}
-.project-area .memory-help{margin-top:14px;padding-top:4px;line-height:1.7}
-.project-area .project-root-module .project-items{gap:0;margin-top:10px}
-.project-area .project-root-module .project-items>button{height:auto;min-height:44px;padding:8px 4px;border-bottom:1px solid var(--soft-line);border-radius:0!important}
-.project-area .project-root-module .project-items>button:last-child{border-bottom:0}
-.project-area .project-root-module .project-items b{font-size:13px;line-height:1.4}
-.project-area .project-root-module .project-items small{font-size:11px;line-height:1.4;margin-top:2px}
-
-/* Two sections remain after consolidating project notes into Stash. */
-.project-area[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-space-content{grid-template-columns:repeat(2,minmax(260px,1fr))}
+.files-widget .memory-item-summary::after{font-size:20px;color:var(--muted)}
+.files-widget .memory-item-summary:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+.files-widget .memory-item[open]{background:color-mix(in srgb,var(--text) 4%,transparent);border-bottom-color:color-mix(in srgb,var(--text) 30%,transparent)}
+.files-widget .memory-item[open]>.memory-item-summary{background:color-mix(in srgb,var(--text) 4%,transparent)}
+.files-widget .memory-item-body{padding:2px 12px 12px}
+.files-widget .memory-item[open] .memory-excerpt{display:block;overflow:visible;white-space:pre-wrap;font-size:13px;line-height:1.55;margin:8px 0 12px}
+.files-widget .memory-tags{gap:5px;margin:12px 0 7px}
+.files-widget .memory-saved-time{margin:6px 0 12px}
+.files-widget .memory-edit-details>summary,.files-widget .memory-item-details>summary{font-size:12px;padding-block:6px}
+.files-widget .memory-help{margin-top:14px;padding-top:4px;line-height:1.7}
+.files-widget .project-root-module .project-items{gap:0;margin-top:10px}
+.files-widget .project-root-module .project-items>button{height:auto;min-height:44px;padding:8px 4px;border-bottom:1px solid var(--soft-line);border-radius:0!important}
+.files-widget .project-root-module .project-items>button:last-child{border-bottom:0}
+.files-widget .project-root-module .project-items b{font-size:13px;line-height:1.4}
+.files-widget .project-root-module .project-items small{font-size:11px;line-height:1.4;margin-top:2px}

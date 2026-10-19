@@ -1,11 +1,10 @@
-/* Creation belongs to the surface being created in. All Area glass stays square. */
-.project-area.is-creating-project > :is(#projectSpaceContent,#projectClosedState,.project-rail-tools){display:none!important}
-.project-area .project-editor-overlay.is-inline{position:static;inset:auto;z-index:auto!important;padding:0;display:block;flex:1;min-height:0;overflow:auto;background:transparent!important;backdrop-filter:none;opacity:1;visibility:visible}
-.project-area .project-editor-overlay.is-inline[hidden]{display:none}
-.project-area .is-inline .project-editor-window{width:100%;max-height:none;border:0;border-radius:0;background:transparent!important;box-shadow:none;backdrop-filter:none}
-.project-area .is-inline .project-editor-body{max-height:none;padding:14px}
-.project-area .is-inline .project-editor-mark{display:none}
-.project-area .is-inline .project-editor-titlebar{height:46px;background:transparent}
+
+.files-widget .project-editor-overlay.is-inline{position:static;inset:auto;z-index:auto!important;padding:0;display:block;flex:1;min-height:0;overflow:auto;background:transparent!important;backdrop-filter:none;opacity:1;visibility:visible}
+.files-widget .project-editor-overlay.is-inline[hidden]{display:none}
+.files-widget .is-inline .project-editor-window{width:100%;max-height:none;border:0;border-radius:0;background:transparent!important;box-shadow:none;backdrop-filter:none}
+.files-widget .is-inline .project-editor-body{max-height:none;padding:14px}
+.files-widget .is-inline .project-editor-mark{display:none}
+.files-widget .is-inline .project-editor-titlebar{height:46px;background:transparent}
 .project-create-actions,.workspace-create-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding-top:10px}
 .workspace-create-toggle{align-self:center;white-space:nowrap}
 .workspace-switcher:has(.workspace-create-form:not([hidden])){flex-wrap:wrap}

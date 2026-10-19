@@ -13,8 +13,7 @@ body[data-theme="light"]{color-scheme:light;--bg:#d9dde0;--text:#182025;--muted:
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}.icon-sprite{position:absolute;width:0;height:0;overflow:hidden}svg{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.icon-sprite symbol:first-child path{fill:currentColor;stroke:none}
 .desktop-shell{width:100vw;height:100vh;display:grid;grid-template-columns:25% 50% 25%;background:color-mix(in srgb,var(--workspace-accent,#56baff) 18%,black);isolation:isolate}
 .desktop-shell::before{content:none}
-.zone{min-width:0;height:100%;padding:24px;overflow:hidden;background:linear-gradient(115deg,color-mix(in srgb,var(--shell-hi) 78%,transparent),color-mix(in srgb,var(--shell) 93%,transparent) 45%,color-mix(in srgb,var(--shell-lo) 94%,transparent));box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(0,0,0,.82)}
-.apps-zone{display:flex;flex-direction:column;border-right:1px solid var(--line)}.systems-zone{display:flex;flex-direction:column;gap:14px;border-left:1px solid var(--line);overflow-y:auto;scrollbar-width:none}.systems-zone::-webkit-scrollbar{display:none}
+.zone{min-width:0;height:100%;padding:24px;overflow:hidden;background:linear-gradient(115deg,color-mix(in srgb,var(--shell-hi) 78%,transparent),color-mix(in srgb,var(--shell) 93%,transparent) 45%,color-mix(in srgb,var(--shell-lo) 94%,transparent));box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(0,0,0,.82)}.system-widget-content::-webkit-scrollbar{display:none}
 .zone-heading{height:70px;display:flex;align-items:start;justify-content:space-between}.eyebrow,.small-heading{font:750 10px/1.2 ui-monospace,monospace;letter-spacing:.12em;color:var(--muted)}h1{margin:5px 0 0;font-size:26px;letter-spacing:-.04em}.icon-key{width:40px;height:40px;padding:0;display:grid;place-items:center}.icon-key svg{width:19px;height:19px}
 .surface-key,.app-key,.quick-toggle,.folder-tab,.nav-choice{border:1px solid var(--line);background:linear-gradient(var(--shell-hi),var(--shell-lo));box-shadow:var(--key-shadow);transition:transform 55ms cubic-bezier(.2,.8,.2,1),box-shadow 55ms ease,filter 55ms ease,color 55ms linear,border-color 55ms linear;transform-origin:50% 100%}
 .surface-key{border-radius:10px;padding:9px 12px;text-decoration:none}.surface-key:hover,.app-key:hover,.quick-toggle:hover,.folder-tab:hover,.nav-choice:hover{filter:brightness(1.08);transform:translateY(-1px)}
@@ -39,13 +38,10 @@ body[data-theme="light"]{color-scheme:light;--bg:#d9dde0;--text:#182025;--muted:
 .quick-settings{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}.quick-toggle{height:48px;border-radius:14px;display:flex;align-items:center;gap:8px;padding:0 11px;color:var(--muted)}.quick-toggle svg{width:17px}.quick-toggle span{font-size:10px}.quick-toggle.is-active{transform:translateY(2px) scaleY(.985);color:var(--blue);border-color:color-mix(in srgb,var(--blue) 35%,var(--line));box-shadow:inset 0 3px 6px rgba(0,0,0,.68)}.theme-dot{width:14px;height:14px;border-radius:50%;background:linear-gradient(90deg,#000 50%,#ddd 50%);border:1px solid var(--line)}
 .toast{position:fixed;left:50%;bottom:22px;z-index:100;transform:translate(-50%,18px);padding:10px 14px;border:1px solid var(--soft-line);border-radius:12px;background:var(--shell);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.18s}.toast.is-visible{opacity:1;transform:translate(-50%,0)}
 input[type="range"]{height:5px;appearance:none;border-radius:6px;background:var(--well);box-shadow:inset 0 2px 4px rgba(0,0,0,.72)}input[type="range"]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:6px;border:1px solid var(--line);background:linear-gradient(var(--shell-hi),var(--shell-lo));box-shadow:var(--key-shadow)}input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:6px;border:1px solid var(--line);background:linear-gradient(var(--shell-hi),var(--shell-lo));box-shadow:var(--key-shadow)}
-@media(max-width:1350px){.zone{padding:16px}.app-rack{gap:5px}.app-key span{display:none}.music-hero{grid-template-columns:120px 1fr}.album-block{height:130px}.equalizer{display:none}.calendar-widget{display:none}.systems-zone{gap:10px}.dolphin-layout{grid-template-columns:120px minmax(0,1fr)}}
+@media(max-width:1350px){.zone{padding:16px}.app-rack{gap:5px}.app-key span{display:none}.music-hero{grid-template-columns:120px 1fr}.album-block{height:130px}.equalizer{display:none}.calendar-widget{display:none}.dolphin-layout{grid-template-columns:120px minmax(0,1fr)}}
 @media(max-width:1050px){html,body{overflow:auto}.desktop-shell{width:1200px;min-height:760px;grid-template-columns:300px 600px 300px}.zone,.workspace-zone{height:100vh;min-height:760px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 .folder-tab{position:relative}.mini-empty,.notification-empty{padding:18px 10px;text-align:center;color:var(--muted);font-size:11px;border:1px dashed var(--soft-line);border-radius:14px}
-
-/* Spatial multi-window workspace */
-.apps-zone{position:relative}
 .workspace-zone{isolation:isolate}
 .app-frame{
   position:absolute;
@@ -108,9 +104,9 @@ input[type="range"]{height:5px;appearance:none;border-radius:6px;background:var(
   transform:rotate(-1.5deg) scale(.97);
   box-shadow:0 28px 65px rgba(0,0,0,.66),0 0 0 2px color-mix(in srgb,var(--blue) 55%,transparent);
 }
-.apps-zone.is-drop-target,
+.apps-widget.is-drop-target,
 .workspace-zone.is-drop-target{box-shadow:inset 0 0 0 3px var(--blue),inset 0 0 54px rgba(42,159,255,.18)}
-.apps-zone.is-drop-target::after,
+.apps-widget.is-drop-target::after,
 .workspace-zone.is-drop-target::after{
   position:absolute;
   z-index:1500;
@@ -127,7 +123,7 @@ input[type="range"]{height:5px;appearance:none;border-radius:6px;background:var(
   letter-spacing:.07em;
   pointer-events:none;
 }
-.apps-zone.is-drop-target::after{content:"RELEASE TO PARK"}
+.apps-widget.is-drop-target::after{content:"RELEASE TO PARK"}
 .workspace-zone.is-drop-target::after{content:"RELEASE INTO WORKSPACE"}
 @media(max-width:1350px){
   .app-frame[data-app-frame="dolphin"]{width:88%;height:79%}
@@ -397,8 +393,6 @@ body[data-theme="light"]{
   --key-shadow:0 2px 2px rgba(38,42,43,.18),inset 0 1px rgba(255,255,255,.82),inset 0 -1px rgba(70,76,78,.2);
 }
 .zone{box-shadow:none}
-.apps-zone{border-right-color:color-mix(in srgb,var(--line) 68%,transparent)}
-.systems-zone{border-left-color:color-mix(in srgb,var(--line) 68%,transparent)}
 .surface-key,.folder-tab,.nav-choice,.quick-toggle{
   border-color:color-mix(in srgb,var(--line) 74%,transparent);
   border-radius:8px;
@@ -706,28 +700,12 @@ body[data-theme="light"]{
   --glass-charge:#087ed0;
   --glass-charge-soft:rgba(8,126,208,.14);
 }
-
-.apps-zone,.systems-zone{
-  background:
-    linear-gradient(180deg,var(--glass-highlight),transparent 16%,transparent 84%,rgba(0,0,0,.07)),
-    color-mix(in srgb,var(--glass-field) 84%,transparent);
-  backdrop-filter:blur(21px) saturate(1.08);
-  box-shadow:inset 0 0 0 1px var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
-}
-.apps-zone{
-  border-right-color:var(--glass-groove);
-  box-shadow:inset -1px 0 var(--glass-groove-deep),inset -2px 0 var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
-}
-.systems-zone{
-  border-left-color:var(--glass-groove);
-  box-shadow:inset 1px 0 var(--glass-groove-deep),inset 2px 0 var(--glass-highlight),inset 0 0 28px var(--glass-field-deep);
-}
-.apps-zone .zone-heading,.systems-zone .zone-heading{
+.apps-widget .zone-heading,.system-widget-content .zone-heading{
   position:relative;
   height:62px;
   padding:2px 3px 10px;
 }
-.apps-zone .zone-heading::after,.systems-zone .zone-heading::after{
+.apps-widget .zone-heading::after,.system-widget-content .zone-heading::after{
   content:"";
   position:absolute;
   left:2px;
@@ -737,13 +715,13 @@ body[data-theme="light"]{
   background:var(--glass-groove);
   box-shadow:0 1px var(--glass-groove-deep),0 0 5px rgba(201,232,247,.055);
 }
-.apps-zone .eyebrow,.systems-zone .eyebrow,.apps-zone .small-heading,.systems-zone .small-heading{
+.apps-widget .eyebrow,.system-widget-content .eyebrow,.apps-widget .small-heading,.system-widget-content .small-heading{
   color:var(--glass-frost);
   text-shadow:0 1px rgba(0,0,0,.45),0 0 4px rgba(205,235,249,.055);
 }
 
 /* Each widget is an engraving in the sheet, not another raised glass card. */
-.apps-zone .app-rack,.mini-card,.system-widget{
+.apps-widget .app-rack,.mini-card,.system-widget{
   position:relative;
   border:1px solid var(--glass-groove);
   background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008));
@@ -753,7 +731,7 @@ body[data-theme="light"]{
     inset 0 1px var(--glass-highlight),
     0 0 7px rgba(210,235,246,.035);
 }
-.apps-zone .app-rack{
+.apps-widget .app-rack{
   height:74px;
   padding:4px;
   border-radius:13px;
@@ -802,7 +780,7 @@ body[data-theme="light"]{
 }
 
 /* Controls etched into the acrylic light the existing groove; the surface never moves. */
-.apps-zone .app-key,.systems-zone .quick-toggle,.systems-zone .system-launcher{
+.apps-widget .app-key,.system-widget-content .quick-toggle,.system-widget-content .system-launcher{
   transform:none;
   filter:none;
   border:1px solid var(--glass-groove);
@@ -810,7 +788,7 @@ body[data-theme="light"]{
   box-shadow:inset 0 0 0 1px var(--glass-groove-deep);
   transition:color 30ms linear,border-color 30ms linear,box-shadow 30ms linear,text-shadow 30ms linear;
 }
-.apps-zone .app-key:hover,.systems-zone .quick-toggle:hover,.systems-zone .system-launcher:hover{
+.apps-widget .app-key:hover,.system-widget-content .quick-toggle:hover,.system-widget-content .system-launcher:hover{
   transform:none;
   filter:none;
   color:var(--text);
@@ -818,7 +796,7 @@ body[data-theme="light"]{
   background:transparent;
   box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px rgba(62,174,255,.08);
 }
-.apps-zone .app-key:active,.systems-zone .quick-toggle:active,.systems-zone .system-launcher:active{
+.apps-widget .app-key:active,.system-widget-content .quick-toggle:active,.system-widget-content .system-launcher:active{
   transform:none;
   filter:none;
   color:var(--glass-charge);
@@ -828,7 +806,7 @@ body[data-theme="light"]{
   text-shadow:0 0 5px var(--glass-charge-soft);
   transition-duration:16ms;
 }
-.apps-zone .app-key.is-active,.systems-zone .quick-toggle.is-active{
+.apps-widget .app-key.is-active,.system-widget-content .quick-toggle.is-active{
   transform:none;
   color:var(--glass-charge);
   border-color:color-mix(in srgb,var(--glass-charge) 64%,var(--glass-groove));
@@ -836,19 +814,19 @@ body[data-theme="light"]{
   box-shadow:inset 0 0 0 1px rgba(218,242,252,.065),0 0 6px var(--glass-charge-soft);
   text-shadow:0 0 5px var(--glass-charge-soft);
 }
-.apps-zone .app-key.is-active:active{transform:none}
-.apps-zone .app-key span,.systems-zone .quick-toggle span{color:inherit}
-.apps-zone .app-key>i{
+.apps-widget .app-key.is-active:active{transform:none}
+.apps-widget .app-key span,.system-widget-content .quick-toggle span{color:inherit}
+.apps-widget .app-key>i{
   bottom:2px;
   height:1px;
   background:var(--glass-groove);
   box-shadow:none;
 }
-.apps-zone .app-key.is-open>i{
+.apps-widget .app-key.is-open>i{
   background:var(--glass-charge);
   box-shadow:0 0 5px var(--glass-charge-soft);
 }
-.systems-zone .quick-toggle.is-active{
+.system-widget-content .quick-toggle.is-active{
   transform:none;
 }
 
@@ -907,17 +885,14 @@ body[data-theme="light"]{
   --glass-groove:rgba(43,67,79,.38);
   --glass-frost:#334f5d;
 }
-.apps-zone,.systems-zone{
-  backdrop-filter:blur(23px) saturate(.96) contrast(1.05);
-}
-body[data-theme="light"] .apps-zone,
-body[data-theme="light"] .systems-zone{
+body[data-theme="light"] .apps-widget,
+body[data-theme="light"] .system-widget-content{
   backdrop-filter:blur(23px) saturate(.9) brightness(1.05);
 }
 
 /* Readable everyday labels without turning the compact side areas into large-type cards. */
-.apps-zone .eyebrow,.systems-zone .eyebrow,
-.apps-zone .small-heading,.systems-zone .small-heading{
+.apps-widget .eyebrow,.system-widget-content .eyebrow,
+.apps-widget .small-heading,.system-widget-content .small-heading{
   font-size:10.5px;
   font-weight:800;
   letter-spacing:.105em;
@@ -943,34 +918,34 @@ body[data-theme="light"] .systems-zone{
 .next-event b,.next-event small{font-size:10.5px}
 .mini-card header b,.mini-track b{font-size:12.5px}
 .mini-card header small,.mini-track small{font-size:10.5px}
-body[data-theme="light"] .apps-zone .eyebrow,
-body[data-theme="light"] .systems-zone .eyebrow,
-body[data-theme="light"] .apps-zone .small-heading,
-body[data-theme="light"] .systems-zone .small-heading{
+body[data-theme="light"] .apps-widget .eyebrow,
+body[data-theme="light"] .system-widget-content .eyebrow,
+body[data-theme="light"] .apps-widget .small-heading,
+body[data-theme="light"] .system-widget-content .small-heading{
   text-shadow:none;
 }
 
 /* Each developer-provided app primary travels across rack, window and parked card. */
-.apps-zone .app-key[data-open-app],.mini-card[data-mini-card]{--item-tone:var(--app-primary,var(--blue))}
-.apps-zone .app-key svg{color:var(--item-tone,var(--blue))}
-.apps-zone .app-key:hover{
+.apps-widget .app-key[data-open-app],.mini-card[data-mini-card]{--item-tone:var(--app-primary,var(--blue))}
+.apps-widget .app-key svg{color:var(--item-tone,var(--blue))}
+.apps-widget .app-key:hover{
   border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 42%,var(--glass-groove));
   background:color-mix(in srgb,var(--item-tone,var(--blue)) 5%,transparent);
 }
-.apps-zone .app-key.is-active{
+.apps-widget .app-key.is-active{
   color:var(--text);
   border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 68%,var(--glass-groove));
   background:color-mix(in srgb,var(--item-tone,var(--blue)) 9%,transparent);
   box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 7px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent);
   text-shadow:none;
 }
-.apps-zone .app-key:active{
+.apps-widget .app-key:active{
   color:var(--text);
   border-color:var(--item-tone,var(--blue));
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 34%,transparent),0 0 6px color-mix(in srgb,var(--item-tone,var(--blue)) 23%,transparent);
   text-shadow:none;
 }
-.apps-zone .app-key.is-open>i{
+.apps-widget .app-key.is-open>i{
   background:var(--item-tone,var(--blue));
   box-shadow:0 0 5px color-mix(in srgb,var(--item-tone,var(--blue)) 54%,transparent);
 }
@@ -1032,9 +1007,9 @@ body[data-theme="light"] .app-badge{
 
 #launchTimer{--control-tone:var(--amber)}
 #launchNotification{--control-tone:var(--rose)}
-.systems-zone .system-launcher svg{color:var(--control-tone,var(--blue))}
-.systems-zone .system-launcher:hover,
-.systems-zone .system-launcher:active{
+.system-widget-content .system-launcher svg{color:var(--control-tone,var(--blue))}
+.system-widget-content .system-launcher:hover,
+.system-widget-content .system-launcher:active{
   color:var(--text);
   border-color:color-mix(in srgb,var(--control-tone,var(--blue)) 62%,var(--glass-groove));
   box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px color-mix(in srgb,var(--control-tone,var(--blue)) 20%,transparent);
@@ -1044,62 +1019,56 @@ body[data-theme="light"] .app-badge{
 .quick-settings .quick-toggle:nth-child(1){--toggle-tone:var(--blue)}
 .quick-settings .quick-toggle:nth-child(2){--toggle-tone:var(--violet)}
 .quick-settings .quick-toggle:nth-child(3){--toggle-tone:var(--green)}
-.systems-zone .quick-toggle.is-active{
+.system-widget-content .quick-toggle.is-active{
   color:var(--text);
   border-color:color-mix(in srgb,var(--toggle-tone,var(--blue)) 64%,var(--glass-groove));
   background:color-mix(in srgb,var(--toggle-tone,var(--blue)) 8%,transparent);
   box-shadow:inset 0 0 0 1px var(--glass-groove-deep),0 0 6px color-mix(in srgb,var(--toggle-tone,var(--blue)) 18%,transparent);
   text-shadow:none;
 }
-.systems-zone .quick-toggle.is-active svg{color:var(--toggle-tone,var(--blue))}
-.systems-zone .quick-toggle:active{
+.system-widget-content .quick-toggle.is-active svg{color:var(--toggle-tone,var(--blue))}
+.system-widget-content .quick-toggle:active{
   color:var(--text);
   border-color:var(--toggle-tone,var(--blue));
   text-shadow:none;
-}
-
-/* Full-page border audit: every region gets one visual boundary at most. */
-.apps-zone,.systems-zone{
-  border:0;
-  box-shadow:none;
 }
 .workspace-depth{
   display:none;
 }
 
 /* The app rack is an open shelf. Icons do not sit inside another framed button. */
-.apps-zone .app-rack{
+.apps-widget .app-rack{
   border:0;
   background:transparent;
   box-shadow:none;
   padding:2px 0 5px;
 }
-.apps-zone .app-key,
-.apps-zone .app-key:hover,
-.apps-zone .app-key:active,
-.apps-zone .app-key.is-active{
+.apps-widget .app-key,
+.apps-widget .app-key:hover,
+.apps-widget .app-key:active,
+.apps-widget .app-key.is-active{
   border:0;
   box-shadow:none;
 }
-.apps-zone .app-key{
+.apps-widget .app-key{
   border-radius:9px;
   background:transparent;
 }
-.apps-zone .app-key:hover{
+.apps-widget .app-key:hover{
   background:color-mix(in srgb,var(--item-tone,var(--blue)) 7%,transparent);
 }
-.apps-zone .app-key.is-active{
+.apps-widget .app-key.is-active{
   background:color-mix(in srgb,var(--item-tone,var(--blue)) 12%,transparent);
 }
-.apps-zone .app-key:active{
+.apps-widget .app-key:active{
   background:color-mix(in srgb,var(--item-tone,var(--blue)) 17%,transparent);
 }
-.apps-zone .app-key svg{
+.apps-widget .app-key svg{
   width:24px;
   height:24px;
   filter:drop-shadow(0 0 4px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent));
 }
-.apps-zone .app-key>i{
+.apps-widget .app-key>i{
   width:18px;
   bottom:0;
 }
@@ -1241,20 +1210,20 @@ body[data-theme="light"] .file-well{
 
 /* Only actual controls retain a physical edge, and only one edge. */
 .surface-key,
-.systems-zone .quick-toggle,
-.systems-zone .system-launcher{
+.system-widget-content .quick-toggle,
+.system-widget-content .system-launcher{
   box-shadow:0 2px 2px rgba(0,0,0,.26),inset 0 1px rgba(255,255,255,.08);
 }
-.systems-zone .quick-toggle,
-.systems-zone .system-launcher{
+.system-widget-content .quick-toggle,
+.system-widget-content .system-launcher{
   border-color:color-mix(in srgb,var(--glass-groove) 72%,transparent);
 }
-.systems-zone .quick-toggle.is-active{
+.system-widget-content .quick-toggle.is-active{
   border-color:color-mix(in srgb,var(--toggle-tone,var(--blue)) 62%,var(--glass-groove));
   box-shadow:inset 0 1px color-mix(in srgb,var(--toggle-tone,var(--blue)) 19%,transparent);
 }
-.systems-zone .system-launcher:hover,
-.systems-zone .system-launcher:active{
+.system-widget-content .system-launcher:hover,
+.system-widget-content .system-launcher:active{
   box-shadow:inset 0 1px color-mix(in srgb,var(--control-tone,var(--blue)) 18%,transparent);
 }
 .recessed-field{
@@ -1284,8 +1253,8 @@ body[data-theme="light"]{
   --toggle-rail:rgba(38,58,68,.32);
 }
 .surface-key,
-.systems-zone .system-launcher,
-.systems-zone .quick-toggle{
+.system-widget-content .system-launcher,
+.system-widget-content .quick-toggle{
   background:
     linear-gradient(180deg,var(--cap-highlight),transparent 42%),
     linear-gradient(180deg,var(--cap-top),var(--cap-bottom));
@@ -1293,13 +1262,13 @@ body[data-theme="light"]{
   box-shadow:0 2px 3px var(--cap-contact),inset 0 1px var(--cap-highlight);
 }
 .surface-key:hover,
-.systems-zone .system-launcher:hover,
-.systems-zone .quick-toggle:hover{
+.system-widget-content .system-launcher:hover,
+.system-widget-content .quick-toggle:hover{
   filter:brightness(1.055);
 }
 .surface-key:active,
-.systems-zone .system-launcher:active,
-.systems-zone .quick-toggle:active{
+.system-widget-content .system-launcher:active,
+.system-widget-content .quick-toggle:active{
   transform:translateY(2px) scaleY(.985);
   filter:brightness(.92);
   background:linear-gradient(180deg,var(--cap-bottom),var(--cap-top));
@@ -1360,19 +1329,19 @@ body[data-theme="light"]{
 }
 
 /* Task buttons are stateful too; their existing slit is the same toggle rail. */
-.apps-zone .app-key>i{
+.apps-widget .app-key>i{
   width:20px;
   height:2px;
   background:var(--toggle-rail);
   opacity:.8;
 }
-.apps-zone .app-key.is-open>i{
+.apps-widget .app-key.is-open>i{
   background:var(--item-tone,var(--blue));
   opacity:1;
 }
 
 /* Held toggles sit one step lower, but press and release at the same mouse-switch speed. */
-.systems-zone .quick-toggle.is-active,
+.system-widget-content .quick-toggle.is-active,
 .play-toggle.is-active,
 #timerToggle[aria-pressed="true"],
 #fullscreenButton[aria-pressed="true"],
@@ -1384,7 +1353,7 @@ body[data-theme="light"]{
   box-shadow:inset 0 2px 4px var(--cap-contact),inset 0 1px rgba(255,255,255,.04);
   transition-duration:var(--button-release-time);
 }
-.systems-zone .quick-toggle.is-active:active,
+.system-widget-content .quick-toggle.is-active:active,
 .play-toggle.is-active:active,
 #timerToggle[aria-pressed="true"]:active,
 #fullscreenButton[aria-pressed="true"]:active,
@@ -1392,11 +1361,11 @@ body[data-theme="light"]{
   transform:translateY(2px) scaleY(.985);
   transition-duration:var(--button-press-time);
 }
-.apps-zone .app-key.is-active{
+.apps-widget .app-key.is-active{
   transform:translateY(1px);
   box-shadow:inset 0 2px 3px rgba(0,0,0,.28);
 }
-.apps-zone .app-key.is-active:active{
+.apps-widget .app-key.is-active:active{
   transform:translateY(2px) scaleY(.985);
   transition-duration:var(--button-press-time);
 }
@@ -1460,8 +1429,8 @@ body[data-theme="light"]{
 /* Raised controls use one restrained ABS cap recipe. */
 .surface-key.control-push,
 .surface-key.control-toggle,
-.systems-zone .quick-toggle.control-push,
-.systems-zone .quick-toggle.control-toggle,
+.system-widget-content .quick-toggle.control-push,
+.system-widget-content .quick-toggle.control-toggle,
 .folder-tab.control-toggle,
 .folder-tab.control-toggle:not(.is-active){
   border:1px solid var(--control-edge);
@@ -1473,15 +1442,15 @@ body[data-theme="light"]{
 }
 .surface-key.control-push:hover,
 .surface-key.control-toggle:hover,
-.systems-zone .quick-toggle.control-push:hover,
-.systems-zone .quick-toggle.control-toggle:hover,
+.system-widget-content .quick-toggle.control-push:hover,
+.system-widget-content .quick-toggle.control-toggle:hover,
 .folder-tab.control-toggle:hover{
   filter:brightness(1.055);
 }
 .surface-key.control-push:active,
 .surface-key.control-toggle:active,
-.systems-zone .quick-toggle.control-push:active,
-.systems-zone .quick-toggle.control-toggle:active,
+.system-widget-content .quick-toggle.control-push:active,
+.system-widget-content .quick-toggle.control-toggle:active,
 .folder-tab.control-toggle:active{
   filter:brightness(.92);
   background:linear-gradient(180deg,var(--control-bottom),var(--control-top));
@@ -1490,22 +1459,22 @@ body[data-theme="light"]{
 .window-key,.compact-key,.mini-control,.tiny-key{border-radius:7px}
 
 /* App icons and list navigation stay flush, but obey the same motion model. */
-.apps-zone .app-key.control-toggle,
+.apps-widget .app-key.control-toggle,
 .nav-choice.control-toggle,
 .nav-choice.control-toggle:hover,
 .nav-choice.control-toggle:active{
   border:0;
   box-shadow:none;
 }
-.apps-zone .app-key.control-toggle,
+.apps-widget .app-key.control-toggle,
 .nav-choice.control-toggle{background:transparent}
-.apps-zone .app-key.control-toggle:hover,
+.apps-widget .app-key.control-toggle:hover,
 .nav-choice.control-toggle:hover{
   transform:none;
   filter:none;
   background:color-mix(in srgb,var(--state-tone,var(--blue)) 7%,transparent);
 }
-.apps-zone .app-key.control-toggle:active,
+.apps-widget .app-key.control-toggle:active,
 .nav-choice.control-toggle:active{
   transform:translateY(var(--control-press)) scaleY(.985);
   filter:none;
@@ -1544,7 +1513,7 @@ body[data-theme="light"]{
   box-shadow:0 0 6px color-mix(in srgb,var(--state-tone) 56%,transparent);
   opacity:1;
 }
-.apps-zone .app-key>i{display:none}
+.apps-widget .app-key>i{display:none}
 .control-push::after{content:none}
 
 /* A held toggle is one step lower everywhere; pressing it travels one step further. */
@@ -1556,7 +1525,7 @@ body[data-theme="light"]{
 .surface-key.control-toggle.is-active,
 .surface-key.control-toggle[aria-pressed="true"],
 .surface-key.control-toggle[aria-selected="true"],
-.systems-zone .quick-toggle.control-toggle.is-active,
+.system-widget-content .quick-toggle.control-toggle.is-active,
 .folder-tab.control-toggle.is-active,
 .folder-tab.control-toggle[aria-selected="true"]{
   transform:translateY(var(--control-held));
@@ -1564,7 +1533,7 @@ body[data-theme="light"]{
   background:linear-gradient(180deg,color-mix(in srgb,var(--control-bottom) 84%,var(--state-tone) 16%),var(--control-bottom));
   box-shadow:inset 0 2px 4px var(--control-contact),inset 0 1px rgba(255,255,255,.04);
 }
-.apps-zone .app-key.control-toggle.is-active,
+.apps-widget .app-key.control-toggle.is-active,
 .nav-choice.control-toggle.is-active{
   background:color-mix(in srgb,var(--state-tone) 12%,transparent);
   box-shadow:inset 0 2px 3px rgba(0,0,0,.24);
@@ -1609,7 +1578,7 @@ body[data-theme="light"]{
 body[data-theme="light"] .app-badge .app-art{
   filter:drop-shadow(0 1px 1px rgba(34,46,52,.18));
 }
-.apps-zone .app-key .app-art{
+.apps-widget .app-key .app-art{
   width:36px;
   height:36px;
   color:initial;
@@ -1619,16 +1588,16 @@ body[data-theme="light"] .app-badge .app-art{
   filter:drop-shadow(0 2px 2px rgba(0,0,0,.28));
   transition:filter var(--button-release-time) linear,transform var(--button-release-time) linear;
 }
-.apps-zone .app-key:hover .app-art{
+.apps-widget .app-key:hover .app-art{
   transform:translateY(-1px);
   filter:drop-shadow(0 3px 3px rgba(0,0,0,.31)) saturate(1.06);
 }
-.apps-zone .app-key:active .app-art,
-.apps-zone .app-key.is-active .app-art{
+.apps-widget .app-key:active .app-art,
+.apps-widget .app-key.is-active .app-art{
   transform:translateY(1px);
   filter:drop-shadow(0 1px 1px rgba(0,0,0,.22)) saturate(1.08);
 }
-body[data-theme="light"] .apps-zone .app-key .app-art{
+body[data-theme="light"] .apps-widget .app-key .app-art{
   filter:drop-shadow(0 2px 2px rgba(34,46,52,.22));
 }
 
@@ -1755,7 +1724,7 @@ body[data-theme="light"] .app-frame.is-front{
 .mini-card input[type="range"]{
   accent-color:var(--app-primary);
 }
-.apps-zone .app-key.is-active span{
+.apps-widget .app-key.is-active span{
   color:var(--app-primary);
 }
 .mini-card header b{
@@ -1784,16 +1753,16 @@ body[data-theme="light"] .app-frame.is-front{
 }
 
 /* Systems hierarchy: live activity rises; pinned utilities settle at the base. */
-.systems-zone .time-block{order:0}
-.systems-zone .dynamic-widget-stack{
+.system-widget-content .time-block{order:0}
+.system-widget-content .dynamic-widget-stack{
   order:1;
   flex:0 0 auto;
 }
-.systems-zone .system-launchers{
+.system-widget-content .system-launchers{
   order:2;
   flex:0 0 auto;
 }
-.systems-zone .static-widget-stack{
+.system-widget-content .static-widget-stack{
   order:3;
   min-height:0;
   margin-top:auto;
@@ -1801,23 +1770,20 @@ body[data-theme="light"] .app-frame.is-front{
   gap:14px;
   align-content:end;
 }
-.systems-zone .static-widget-stack .quick-settings{
+.system-widget-content .static-widget-stack .quick-settings{
   margin-top:0;
 }
 @media(max-width:1350px){
-  .systems-zone .static-widget-stack{gap:10px}
+  .system-widget-content .static-widget-stack{gap:10px}
 }
 
 /* The shell exposes only real desktop actions, never prototype controls. */
-.apps-zone .bottom-actions{justify-content:flex-end}
-.systems-zone .system-launchers{grid-template-columns:1fr}
-
-/* Bottom-up application launcher */
-.apps-zone{isolation:isolate}
+.apps-widget .bottom-actions{justify-content:flex-end}
+.system-widget-content .system-launchers{grid-template-columns:1fr}
 .apps-bottom{position:relative;z-index:904}
-.apps-zone .apps-bottom{grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:center}
-.apps-zone .app-search{width:100%}
-.apps-zone .bottom-actions{align-items:center;justify-content:space-between}
+.apps-widget .apps-bottom{grid-template-columns:minmax(0,1fr) 40px;gap:8px;align-items:center}
+.apps-widget .app-search{width:100%}
+.apps-widget .bottom-actions{align-items:center;justify-content:space-between}
 .all-apps-toggle{position:relative;width:40px;height:40px;padding:0;display:grid;place-items:center}
 .all-apps-toggle svg{width:18px;height:18px}
 .all-apps-drawer{
@@ -1875,7 +1841,7 @@ body[data-theme="light"] .app-frame.is-front{
 .all-apps-empty{margin:12px 0 2px;padding:18px 8px;text-align:center;color:var(--muted);font-size:12px}
 body[data-theme="light"] .all-apps-drawer{background:var(--content-surface);box-shadow:0 -12px 26px rgba(35,40,43,.16),inset 0 1px rgba(255,255,255,.62)}
 body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#1877b7;box-shadow:inset 3px 0 #75d0ff}
-.systems-zone .system-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
+.system-widget-content .system-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:1350px){.launcher-body{grid-template-columns:46px minmax(0,1fr)}.launcher-category{justify-content:center;padding:6px}.launcher-category span{display:none}}
 
 /* Edge-lit glass system cursor with context-aware shapes. */
@@ -2044,9 +2010,8 @@ body[data-theme="light"] .universal-scope.is-active{color:#fff;background:rgba(1
   min-height:0;
   transition:left 150ms cubic-bezier(.2,.8,.2,1),right 150ms cubic-bezier(.2,.8,.2,1),bottom 150ms cubic-bezier(.2,.8,.2,1),top 150ms cubic-bezier(.2,.8,.2,1);
 }
-.area-window,
-.desktop-shell>.apps-zone,
-.desktop-shell>.systems-zone{
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
   position:absolute;
   z-index:220;
   min-width:240px;
@@ -2065,44 +2030,12 @@ body[data-theme="light"] .universal-scope.is-active{color:#fff;background:rgba(1
   box-shadow:0 13px 34px rgba(0,0,0,.24),inset 0 0 0 1px color-mix(in srgb,var(--glass-highlight) 60%,transparent),inset 0 0 30px var(--glass-field-deep);
   transition:left 150ms cubic-bezier(.2,.8,.2,1),top 150ms cubic-bezier(.2,.8,.2,1),width 150ms cubic-bezier(.2,.8,.2,1),height 150ms cubic-bezier(.2,.8,.2,1),opacity 90ms linear;
 }
-.desktop-shell>.apps-zone{left:12px;top:12px;width:280px;height:calc(100% - 24px);border-right-color:color-mix(in srgb,var(--glass-groove) 78%,var(--line))}
-.desktop-shell>.systems-zone{right:12px;top:12px;width:300px;height:calc(100% - 24px);border-left-color:color-mix(in srgb,var(--glass-groove) 78%,var(--line));overflow-y:auto;scrollbar-width:none}
-.desktop-shell>.project-area{left:304px;right:324px;bottom:12px;height:250px;display:flex;flex-direction:column;--project-accent:#5cbcff}
-.area-window[hidden]{display:none!important}
-.area-window.is-area-dragging,.area-window.is-area-resizing{transition:none;box-shadow:0 18px 46px rgba(0,0,0,.38),0 0 0 1px rgba(89,193,255,.18),inset 0 0 0 1px var(--glass-highlight)}
-.area-window.is-area-dragging{opacity:.96}
-.area-window-bar{
-  position:relative;
-  z-index:20;
-  flex:0 0 50px;
-  min-height:50px;
-  margin:-12px -12px 10px;
-  padding:7px 8px 7px 11px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  border-bottom:1px solid color-mix(in srgb,var(--text) 13%,transparent);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--glass-highlight) 38%,transparent),transparent);
-  cursor:grab;
-  touch-action:none;
-  user-select:none;
-}
-.systems-zone .area-window-bar{position:sticky;top:-12px;margin-bottom:10px}
-.area-window-bar:active{cursor:grabbing}.area-window-bar button{touch-action:auto}
-.area-window-identity,.area-window-actions{display:flex;align-items:center;gap:7px;min-width:0}.area-window-identity{gap:9px}.area-window-identity>span:last-child{min-width:0}
-.area-window-identity b,.area-window-identity small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.area-window-identity b{font-size:14px}.area-window-identity small{margin-top:2px;color:var(--muted);font-size:11px}
-.area-window-icon{flex:0 0 32px;width:32px;height:32px;border:1px solid color-mix(in srgb,currentColor 38%,transparent);border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,currentColor 10%,transparent)}.area-window-icon svg{width:17px;height:17px}.area-window-icon.blue{color:var(--blue)}.area-window-icon.cyan{color:var(--cyan)}.area-window-icon.violet{color:var(--violet)}
-.area-window-key{width:31px;height:29px;padding:0;display:grid;place-items:center}.area-window-key svg{width:14px;height:14px}
-.area-resize-handle{z-index:35;border-radius:7px 0 17px 0}
+.desktop-shell>.apps-widget{left:12px;top:12px;width:280px;height:calc(100% - 24px);border-right-color:color-mix(in srgb,var(--glass-groove) 78%,var(--line))}
+.desktop-shell>.system-widget-content{right:12px;top:12px;width:300px;height:calc(100% - 24px);border-left-color:color-mix(in srgb,var(--glass-groove) 78%,var(--line));overflow-y:auto;scrollbar-width:none}
+.desktop-shell>.files-widget{left:304px;right:324px;bottom:12px;height:250px;display:flex;flex-direction:column;--project-accent:#5cbcff}
 body.areas-freeform .workspace-zone{top:12px;left:12px;right:12px;bottom:12px}
-body.areas-freeform .area-window{transition:none}
 .workspace-zone>.app-frame:not([hidden]),
-.workspace-zone>.app-frame.is-active{display:grid!important;visibility:visible!important;opacity:1!important}
-
-/* Apps and System retain their internal layouts inside window chrome. */
-.apps-zone{display:flex;flex-direction:column}.apps-zone .app-rack{flex:0 0 auto}.apps-zone .mini-section{margin-top:12px}.apps-zone .apps-bottom{flex:0 0 auto}
-.systems-zone{display:flex;flex-direction:column;gap:10px}.systems-zone .time-block{flex:0 0 auto}.systems-zone .dynamic-widget-stack{flex:0 0 auto}.systems-zone .static-widget-stack{flex:0 0 auto;margin-top:auto}
+.workspace-zone>.app-frame.is-active{display:grid!important;visibility:visible!important;opacity:1!important}.apps-widget .app-rack{flex:0 0 auto}.apps-widget .mini-section{margin-top:12px}.apps-widget .apps-bottom{flex:0 0 auto}.system-widget-content .time-block{flex:0 0 auto}.system-widget-content .dynamic-widget-stack{flex:0 0 auto}.system-widget-content .static-widget-stack{flex:0 0 auto;margin-top:auto}
 
 /* Project Space */
 .project-switcher{flex:0 0 38px;display:flex;gap:6px;margin-bottom:9px;overflow-x:auto;scrollbar-width:none}.project-switcher::-webkit-scrollbar{display:none}
@@ -2120,26 +2053,12 @@ body.areas-freeform .area-window{transition:none}
 .project-clipboard,.project-note-widget{min-width:0;border:0;border-radius:8px;color:var(--text);background:color-mix(in srgb,var(--content-surface-raised) 78%,transparent)}.project-clipboard{min-height:42px;padding:5px 6px;display:grid;grid-template-columns:27px minmax(0,1fr) auto;align-items:center;gap:6px}.clipboard-mark{width:27px;height:27px;border-radius:7px;display:grid;place-items:center;color:var(--project-accent);background:color-mix(in srgb,var(--project-accent) 11%,transparent)}.clipboard-mark svg{width:14px}.project-clipboard b,.project-clipboard small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-clipboard b{font:700 11px ui-monospace,monospace}.project-clipboard small{margin-top:2px;color:var(--muted);font-size:9px}
 .project-note-widget{width:100%;min-height:38px;margin-top:5px;padding:5px 7px;display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:6px;text-align:left}.project-note-widget>svg{width:15px;color:var(--amber)}.project-note-widget b,.project-note-widget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-note-widget b{font-size:10px}.project-note-widget small{margin-top:2px;color:var(--muted);font-size:9px}
 .universal-symbol.violet{color:var(--violet)}
-body[data-theme="light"] .area-window{box-shadow:0 13px 30px rgba(36,54,65,.18),inset 0 0 0 1px rgba(255,255,255,.42),inset 0 0 28px var(--glass-field-deep)}
 body[data-theme="light"] .project-module{background:rgba(238,242,243,.88)}
 @media(max-width:1180px){.project-space-content{grid-template-columns:1fr 1fr}.project-context-module{display:none}}
-@media(max-width:1050px){html,body{overflow:hidden}.desktop-shell{width:100vw;min-height:0}.area-window-bar{min-height:46px;flex-basis:46px}.project-space-content{grid-template-columns:1fr}.project-links-module{display:none}}
-
-/* Docked areas: they always reserve their own space and never float over apps. */
-body.areas-docked .area-window{
-  z-index:220;
-  transform:none;
-  opacity:1;
-  box-shadow:0 8px 22px rgba(0,0,0,.22),inset 0 0 0 1px color-mix(in srgb,var(--glass-highlight) 58%,transparent),inset 0 0 26px var(--glass-field-deep);
-}
+@media(max-width:1050px){html,body{overflow:hidden}.desktop-shell{width:100vw;min-height:0}.project-space-content{grid-template-columns:1fr}.project-links-module{display:none}}
 body.areas-docked .desktop-shell>.workspace-zone{
   z-index:1;
   transition:left 135ms cubic-bezier(.2,.8,.2,1),right 135ms cubic-bezier(.2,.8,.2,1),top 135ms cubic-bezier(.2,.8,.2,1),bottom 135ms cubic-bezier(.2,.8,.2,1);
-}
-.area-window.is-dock-dragging{
-  opacity:.72;
-  filter:saturate(.8);
-  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 0 0 1px var(--glass-highlight);
 }
 .dock-preview{
   position:absolute;
@@ -2159,30 +2078,9 @@ body.areas-docked .desktop-shell>.workspace-zone{
 .dock-preview[data-edge="top"]{left:22%;right:22%;top:8px;height:min(250px,29vh)}
 .dock-preview[data-edge="bottom"]{left:22%;right:22%;bottom:8px;height:min(250px,29vh)}
 
-/* The grip always sits on the edge shared with the app workspace. */
-.area-resize-handle{
-  clip-path:none;
-  border-radius:5px;
-  background:color-mix(in srgb,var(--text) 26%,transparent);
-  opacity:.34;
-}
-.area-resize-handle:hover{opacity:.9;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
-.area-window[data-dock-edge="left"]>.area-resize-handle{
-  left:auto;right:1px;top:50%;bottom:auto;width:5px;height:58px;transform:translateY(-50%);cursor:ew-resize;
-}
-.area-window[data-dock-edge="right"]>.area-resize-handle{
-  left:1px;right:auto;top:50%;bottom:auto;width:5px;height:58px;transform:translateY(-50%);cursor:ew-resize;
-}
-.area-window[data-dock-edge="top"]>.area-resize-handle{
-  left:50%;right:auto;top:auto;bottom:1px;width:58px;height:5px;transform:translateX(-50%);cursor:ns-resize;
-}
-.area-window[data-dock-edge="bottom"]>.area-resize-handle{
-  left:50%;right:auto;top:1px;bottom:auto;width:58px;height:5px;transform:translateX(-50%);cursor:ns-resize;
-}
-
 /* Project Space is vertical by default and remains useful as a tall dock. */
-.project-area[data-dock-edge="left"] .project-space-content,
-.project-area[data-dock-edge="right"] .project-space-content{
+.files-widget[data-panel-edge="left"] .project-space-content,
+.files-widget[data-panel-edge="right"] .project-space-content{
   display:flex;
   flex-direction:column;
   gap:8px;
@@ -2190,35 +2088,33 @@ body.areas-docked .desktop-shell>.workspace-zone{
   padding-right:2px;
   scrollbar-width:thin;
 }
-.project-area[data-dock-edge="left"] .project-module,
-.project-area[data-dock-edge="right"] .project-module{
+.files-widget[data-panel-edge="left"] .project-module,
+.files-widget[data-panel-edge="right"] .project-module{
   flex:0 0 auto;
   min-height:auto;
   overflow:visible;
 }
-.project-area[data-dock-edge="left"] .project-context-module,
-.project-area[data-dock-edge="right"] .project-context-module,
-.project-area[data-dock-edge="left"] .project-links-module,
-.project-area[data-dock-edge="right"] .project-links-module{display:flex}
-.project-area[data-dock-edge="left"] .project-links-module,
-.project-area[data-dock-edge="right"] .project-links-module{display:block}
-.project-area[data-dock-edge="left"] .project-switcher,
-.project-area[data-dock-edge="right"] .project-switcher{flex-basis:auto;display:grid;grid-template-columns:1fr 1fr;overflow:visible}
+.files-widget[data-panel-edge="left"] .project-context-module,
+.files-widget[data-panel-edge="right"] .project-context-module,
+.files-widget[data-panel-edge="left"] .project-links-module,
+.files-widget[data-panel-edge="right"] .project-links-module{display:flex}
+.files-widget[data-panel-edge="left"] .project-links-module,
+.files-widget[data-panel-edge="right"] .project-links-module{display:block}
+.files-widget[data-panel-edge="left"] .project-switcher,
+.files-widget[data-panel-edge="right"] .project-switcher{flex-basis:auto;display:grid;grid-template-columns:1fr 1fr;overflow:visible}
 
 /* Horizontal docking is allowed, but the information rearranges instead of overflowing. */
-.project-area[data-dock-edge="top"] .project-space-content,
-.project-area[data-dock-edge="bottom"] .project-space-content{grid-template-columns:1.05fr 1fr .95fr;overflow:hidden}
-.area-window[data-dock-edge="top"],.area-window[data-dock-edge="bottom"]{min-height:170px}
-.apps-zone[data-dock-edge="top"] .mini-section,.apps-zone[data-dock-edge="bottom"] .mini-section{display:none}
-.apps-zone[data-dock-edge="top"] .app-rack,.apps-zone[data-dock-edge="bottom"] .app-rack{height:74px}
-.systems-zone[data-dock-edge="top"],.systems-zone[data-dock-edge="bottom"]{display:grid;grid-template-columns:190px minmax(240px,1fr) minmax(260px,1fr);grid-template-rows:auto 1fr;align-items:start;overflow:hidden}
-.systems-zone[data-dock-edge="top"] .area-window-bar,.systems-zone[data-dock-edge="bottom"] .area-window-bar{grid-column:1/-1;position:relative;top:auto}
-.systems-zone[data-dock-edge="top"] .time-block,.systems-zone[data-dock-edge="bottom"] .time-block{align-self:stretch}
-.systems-zone[data-dock-edge="top"] .static-widget-stack,.systems-zone[data-dock-edge="bottom"] .static-widget-stack{display:flex;gap:8px;overflow-x:auto;margin:0}
-.systems-zone[data-dock-edge="top"] .static-widget-stack>.system-widget,.systems-zone[data-dock-edge="bottom"] .static-widget-stack>.system-widget{min-width:260px}
+.files-widget[data-panel-edge="top"] .project-space-content,
+.files-widget[data-panel-edge="bottom"] .project-space-content{grid-template-columns:1.05fr 1fr .95fr;overflow:hidden}
+.apps-widget[data-panel-edge="top"] .mini-section,.apps-widget[data-panel-edge="bottom"] .mini-section{display:none}
+.apps-widget[data-panel-edge="top"] .app-rack,.apps-widget[data-panel-edge="bottom"] .app-rack{height:74px}
+.system-widget-content[data-panel-edge="top"],.system-widget-content[data-panel-edge="bottom"]{display:grid;grid-template-columns:190px minmax(240px,1fr) minmax(260px,1fr);grid-template-rows:auto 1fr;align-items:start;overflow:hidden}
+.system-widget-content[data-panel-edge="top"] .time-block,.system-widget-content[data-panel-edge="bottom"] .time-block{align-self:stretch}
+.system-widget-content[data-panel-edge="top"] .static-widget-stack,.system-widget-content[data-panel-edge="bottom"] .static-widget-stack{display:flex;gap:8px;overflow-x:auto;margin:0}
+.system-widget-content[data-panel-edge="top"] .static-widget-stack>.system-widget,.system-widget-content[data-panel-edge="bottom"] .static-widget-stack>.system-widget{min-width:260px}
 
 /* Desktop Overview: Super opens one place for windows, apps, search and system state. */
-.apps-zone .apps-bottom{grid-template-columns:1fr;gap:0}
+.apps-widget .apps-bottom{grid-template-columns:1fr;gap:0}
 .overview-launch{
   width:100%;
   min-height:40px;
@@ -2346,7 +2242,7 @@ body{
   --workspace-accent-soft:rgba(86,186,255,.16);
 }
 
-.apps-zone .apps-bottom{display:flex;flex-direction:column;gap:7px}
+.apps-widget .apps-bottom{display:flex;flex-direction:column;gap:7px}
 .workspace-status{
   width:100%;min-height:43px;padding:6px 8px;border:1px solid color-mix(in srgb,var(--workspace-accent) 42%,var(--line));border-radius:10px;
   color:var(--text);background:color-mix(in srgb,var(--content-surface-raised) 78%,transparent);display:grid;grid-template-columns:5px minmax(0,1fr) 15px;align-items:center;gap:8px;text-align:left;
@@ -2432,23 +2328,15 @@ body[data-theme="light"] .package-window{background:rgba(232,240,245,.94);box-sh
 body{font-size:var(--ui-label);line-height:1.35;text-rendering:optimizeLegibility}
 button,input,textarea{line-height:1.25}
 .eyebrow,.small-heading{font-size:var(--ui-micro);line-height:1.2;letter-spacing:.085em}
-
-/* Docked glass is the frame; its contents no longer need thick frames of their own. */
-.area-window,.desktop-shell>.apps-zone,.desktop-shell>.systems-zone{padding:9px;border-radius:15px}
-.area-window-bar{flex-basis:44px;min-height:44px;margin:-9px -9px 7px;padding:5px 6px 5px 9px}
-.systems-zone .area-window-bar{top:-9px;margin-bottom:7px}
-.area-window-icon{flex-basis:30px;width:30px;height:30px;border-radius:8px}.area-window-icon svg{width:16px;height:16px}
-.area-window-identity b{font-size:14px;line-height:1.2}.area-window-identity small{font-size:12px;line-height:1.2}
-.area-window-actions{gap:4px}.area-window-key{width:30px;height:28px}
-.apps-zone .app-rack{height:66px;padding:1px;border:0;background:transparent;box-shadow:none}
-.apps-zone .app-key{height:62px;border-color:transparent;border-radius:9px;gap:3px;box-shadow:none}
-.apps-zone .app-key:hover{border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 28%,transparent)}
-.apps-zone .app-key .app-art{width:29px;height:29px}.apps-zone .app-key span{font-size:12px;font-weight:680;line-height:1.1}
-.apps-zone .mini-section{margin-top:8px}.section-heading{min-height:31px;padding:0 2px 6px}.section-heading h2,.widget-heading h2{font-size:14px}.section-heading span,.widget-heading>span{font-size:12px}
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{padding:9px;border-radius:15px}
+.apps-widget .app-rack{height:66px;padding:1px;border:0;background:transparent;box-shadow:none}
+.apps-widget .app-key{height:62px;border-color:transparent;border-radius:9px;gap:3px;box-shadow:none}
+.apps-widget .app-key:hover{border-color:color-mix(in srgb,var(--item-tone,var(--blue)) 28%,transparent)}
+.apps-widget .app-key .app-art{width:29px;height:29px}.apps-widget .app-key span{font-size:12px;font-weight:680;line-height:1.1}
+.apps-widget .mini-section{margin-top:8px}.section-heading{min-height:31px;padding:0 2px 6px}.section-heading h2,.widget-heading h2{font-size:14px}.section-heading span,.widget-heading>span{font-size:12px}
 .mini-stack{gap:6px;padding-bottom:8px}.mini-card{padding:7px;border-radius:9px}.mini-card header{min-height:31px;margin-bottom:5px}.mini-card header b,.mini-track b{font-size:13px}.mini-card header small,.mini-track small{font-size:12px}.mini-card-note .mini-note-field{min-height:92px;padding:7px 8px;font-size:13px;line-height:1.45}
-.apps-zone .apps-bottom{gap:5px;padding-top:7px}.workspace-status{min-height:39px;padding:4px 7px;border-radius:8px}.workspace-status b{font-size:13px}.workspace-status small{font-size:11px}.workspace-status>i{height:21px}.overview-launch{min-height:38px;padding:0 8px}.overview-launch span{font-size:13px}.overview-launch kbd{font-size:11px}
-
-.systems-zone{gap:7px}.systems-zone .time-block{min-height:51px;padding:2px 3px 8px;gap:11px}.time-block>span{font-size:34px}.time-block b{font-size:14px}.time-block small{font-size:12px}
+.apps-widget .apps-bottom{gap:5px;padding-top:7px}.workspace-status{min-height:39px;padding:4px 7px;border-radius:8px}.workspace-status b{font-size:13px}.workspace-status small{font-size:11px}.workspace-status>i{height:21px}.overview-launch{min-height:38px;padding:0 8px}.overview-launch span{font-size:13px}.overview-launch kbd{font-size:11px}.system-widget-content .time-block{min-height:51px;padding:2px 3px 8px;gap:11px}.time-block>span{font-size:34px}.time-block b{font-size:14px}.time-block small{font-size:12px}
 .system-launchers{gap:5px}.system-launcher{height:34px;padding:0 8px;font-size:12px}
 .dynamic-widget-stack{gap:6px}.static-widget-stack{gap:6px}
 .system-widget{padding:8px;border-radius:9px;box-shadow:inset 0 0 0 1px var(--glass-groove-deep)}
@@ -2506,13 +2394,13 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
 }
 
 /* v61 — Overview is a compact launcher beside the active Workspace. */
-.apps-zone .apps-bottom{
+.apps-widget .apps-bottom{
   display:grid;
   grid-template-columns:40px minmax(0,1fr);
   align-items:stretch;
   gap:6px;
 }
-.apps-zone .overview-launch{
+.apps-widget .overview-launch{
   width:40px;
   height:40px;
   min-height:40px;
@@ -2521,8 +2409,8 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
   place-items:center;
   border-radius:9px;
 }
-.apps-zone .overview-launch svg{width:19px;height:19px;color:var(--blue)}
-.apps-zone .workspace-status{min-height:40px;height:40px}
+.apps-widget .overview-launch svg{width:19px;height:19px;color:var(--blue)}
+.apps-widget .workspace-status{min-height:40px;height:40px}
 
 .overview-projects-section{min-width:0}
 .overview-project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
@@ -2564,52 +2452,6 @@ body[data-theme="light"] .other-workspaces{border-color:rgba(33,58,70,.10)}
 .overview-layout-status{display:inline-flex;align-items:center;gap:6px;margin-top:5px;color:var(--muted);font-size:12px;font-weight:650}.overview-layout-status svg{width:14px;height:14px;color:var(--blue)}
 .universal-search-shell{width:min(100%,1760px);margin-inline:auto}
 
-/* Compact keeps the useful state but removes secondary chrome. */
-.apps-zone[data-area-state="compact"] .app-rack{grid-template-columns:repeat(3,minmax(0,1fr));height:auto;min-height:112px}
-.apps-zone[data-area-state="compact"] .app-key:nth-child(n+4){margin-top:3px}
-.apps-zone[data-area-state="compact"] .app-key span{display:none}
-.apps-zone[data-area-state="compact"] .mini-card{padding:6px}
-.apps-zone[data-area-state="compact"] .mini-card header small,.apps-zone[data-area-state="compact"] .mini-files span{display:none}
-.systems-zone[data-area-state="compact"] .calendar-grid,.systems-zone[data-area-state="compact"] .calendar-week{display:none}
-.systems-zone[data-area-state="compact"] .calendar-widget{display:block}
-.systems-zone[data-area-state="compact"] .notification:nth-child(n+2){display:none}
-.systems-zone[data-area-state="compact"] .system-launchers{grid-template-columns:1fr}
-.project-area[data-area-state="compact"] .project-context-module{display:none!important}
-
-/* Rail is an icon-and-live-status state, not a hidden panel. */
-.area-window[data-area-state="rail"]{min-width:76px;padding:6px;border-radius:13px}
-.area-window[data-area-state="rail"] .area-window-bar{min-height:39px;flex-basis:39px;margin:-6px -6px 5px;padding:4px;justify-content:center}
-.area-window[data-area-state="rail"] .area-window-identity>span:last-child{display:none}
-.area-window[data-area-state="rail"] .area-window-icon{width:28px;height:28px;flex-basis:28px;border-radius:7px}
-.area-window[data-area-state="rail"] .area-window-actions{display:flex;gap:0}
-.area-window[data-area-state="rail"] [data-area-auto],.area-window[data-area-state="rail"] .project-pack-key{display:none}
-.area-window[data-area-state="rail"] [data-area-hide]{width:27px;height:27px}
-.apps-zone[data-area-state="rail"] .app-rack{height:auto;min-height:0;flex:1;grid-template-columns:1fr;align-content:start;gap:4px;padding:2px;overflow-y:auto}
-.apps-zone[data-area-state="rail"] .app-key{height:49px;min-height:49px;border-color:transparent;background:transparent;box-shadow:none}
-.apps-zone[data-area-state="rail"] .app-key .app-art{width:31px;height:31px}
-.apps-zone[data-area-state="rail"] .app-key span,.apps-zone[data-area-state="rail"] .mini-section{display:none}
-.apps-zone[data-area-state="rail"] .apps-bottom{grid-template-columns:1fr;gap:4px;padding-top:5px}
-.apps-zone[data-area-state="rail"] .overview-launch,.apps-zone[data-area-state="rail"] .workspace-status{width:100%;height:38px;min-height:38px;padding:0;display:grid;place-items:center}
-.apps-zone[data-area-state="rail"] .workspace-status{grid-template-columns:1fr}
-.apps-zone[data-area-state="rail"] .workspace-status>i{width:19px;height:4px;box-shadow:0 0 6px color-mix(in srgb,var(--workspace-accent) 48%,transparent)}
-.apps-zone[data-area-state="rail"] .workspace-status>span,.apps-zone[data-area-state="rail"] .workspace-status>svg{display:none}
-.systems-zone[data-area-state="rail"]{gap:5px;overflow:hidden}
-.systems-zone[data-area-state="rail"] .time-block{min-height:37px;padding:3px 0 6px;justify-content:center;border-bottom-color:color-mix(in srgb,var(--text) 12%,transparent)}
-.systems-zone[data-area-state="rail"] .time-block>span{font-size:17px;font-weight:680;letter-spacing:-.03em}
-.systems-zone[data-area-state="rail"] .time-block>div{display:none}
-.systems-zone[data-area-state="rail"] .system-launchers{grid-template-columns:1fr;gap:4px}
-.systems-zone[data-area-state="rail"] .system-launcher{height:38px;padding:0;justify-content:center}
-.systems-zone[data-area-state="rail"] .system-launcher svg{width:18px;height:18px}
-.systems-zone[data-area-state="rail"] .system-launcher span{display:none}
-.systems-zone[data-area-state="rail"] .dynamic-widget-stack{gap:4px}
-.systems-zone[data-area-state="rail"] .dynamic-widget{padding:5px}
-.systems-zone[data-area-state="rail"] .widget-heading{height:31px;align-items:center;justify-content:center}
-.systems-zone[data-area-state="rail"] .widget-heading>div{gap:0}.systems-zone[data-area-state="rail"] .widget-heading h2{display:none}
-.systems-zone[data-area-state="rail"] .widget-heading>span{position:absolute;margin:0 0 20px 24px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;display:grid;place-items:center;color:#051018;background:var(--blue);font-size:10px}
-.systems-zone[data-area-state="rail"] #notificationList,.systems-zone[data-area-state="rail"] .timer-face,.systems-zone[data-area-state="rail"] .timer-actions,.systems-zone[data-area-state="rail"] .static-widget-stack{display:none}
-.systems-zone[data-area-state="rail"] .dynamic-widget[hidden]{display:none}
-.project-area[data-area-state="rail"] .project-switcher{grid-template-columns:1fr!important}.project-area[data-area-state="rail"] .project-choice span,.project-area[data-area-state="rail"] .project-space-content{display:none}
-
 body[data-display-profile="laptop"] .workspace-depth{opacity:.55}
 body[data-display-profile="ultrawide"] .workspace-zone,body[data-display-profile="dual"] .workspace-zone{padding:8px}
 body[data-display-profile="dual"] .universal-search[data-monitor="left"]{left:0;right:auto;width:50vw}
@@ -2625,17 +2467,10 @@ body[data-display-profile="dual"] .universal-search[data-monitor]{padding-left:c
 }
 
 /* v64 — resize handles directly cross Expanded, Compact and Rail thresholds. */
-.overview-areas-widget{padding:8px 9px}
-.overview-areas-widget>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.overview-areas-widget>header>span{display:flex;align-items:center;gap:8px;min-width:0}.overview-areas-widget>header svg{width:17px;height:17px;color:var(--blue)}
-.overview-areas-widget h3,.overview-areas-widget small{display:block;margin:0}.overview-areas-widget h3{font-size:14px}.overview-areas-widget>header small{margin-top:2px;color:var(--muted);font-size:12px}
-.areas-reset{min-height:27px;padding:3px 7px;border:0;border-radius:7px;color:var(--muted);background:transparent;font-size:12px}.areas-reset:hover{color:var(--text);background:color-mix(in srgb,var(--text) 8%,transparent)}.areas-reset:active{transform:translateY(2px)}
-.overview-area-list{display:grid;gap:3px}
-.overview-area-row{min-width:0;min-height:43px;padding:4px;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:6px;border-radius:8px;background:color-mix(in srgb,var(--text) 4%,transparent)}
-.overview-area-row.is-hidden{opacity:.72}.overview-area-row.is-hidden>span:nth-child(2) b{text-decoration:line-through;text-decoration-thickness:1px}
-.area-list-icon{width:29px;height:29px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb,currentColor 11%,transparent)}.area-list-icon svg{width:15px;height:15px}.area-list-icon.blue{color:var(--blue)}.area-list-icon.cyan{color:var(--cyan)}.area-list-icon.violet{color:var(--violet)}
-.overview-area-row>span:nth-child(2){min-width:0}.overview-area-row b,.overview-area-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-area-row b{font-size:13px}.overview-area-row small{margin-top:2px;color:var(--muted);font-size:12px}
-.overview-area-row>button{height:30px;padding:0 8px;border:1px solid color-mix(in srgb,var(--text) 12%,transparent);border-radius:7px;color:var(--muted);background:color-mix(in srgb,var(--content-surface-raised) 72%,transparent);font-size:12px;transition:transform 45ms linear,border-color 55ms linear,color 55ms linear}.overview-area-row>button:hover{color:var(--text);border-color:color-mix(in srgb,var(--blue) 38%,var(--line))}.overview-area-row>button:active{transform:translateY(2px)}.overview-area-row>button.is-active{color:var(--blue)}.overview-area-row>button.is-show{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 45%,var(--line))}
+.overview-panels-widget{padding:8px 9px}
+.overview-panels-widget>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.overview-panels-widget>header>span{display:flex;align-items:center;gap:8px;min-width:0}.overview-panels-widget>header svg{width:17px;height:17px;color:var(--blue)}
+.overview-panels-widget h3,.overview-panels-widget small{display:block;margin:0}.overview-panels-widget h3{font-size:14px}.overview-panels-widget>header small{margin-top:2px;color:var(--muted);font-size:12px}
 
 /* v65 — restore the material contract: ABS mechanisms inside edge-lit acrylic. */
 :root{
@@ -2677,12 +2512,8 @@ body[data-theme="light"]{
   --acrylic-charge:#087ed0;
   --acrylic-charge-soft:rgba(8,126,208,.18);
 }
-
-/* Areas are single cast sheets: a bright cut edge outside, an engraved line inside. */
-body.areas-docked .area-window,
-.area-window,
-.desktop-shell>.apps-zone,
-.desktop-shell>.systems-zone{
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
   border:1px solid var(--acrylic-rim);
   background:var(--acrylic-field);
   -webkit-backdrop-filter:blur(24px) saturate(1.06) contrast(1.04);
@@ -2693,36 +2524,12 @@ body.areas-docked .area-window,
     inset -1px -1px var(--acrylic-dark-edge),
     0 0 0 1px rgba(0,0,0,.30);
 }
-.area-window::before{
-  content:"";
-  position:absolute;
-  z-index:29;
-  inset:3px;
-  border:1px solid color-mix(in srgb,var(--acrylic-engrave) 72%,transparent);
-  border-radius:calc(15px - 2px);
-  box-shadow:inset 1px 1px rgba(255,255,255,.035),1px 1px rgba(0,0,0,.18);
-  pointer-events:none;
-}
-.area-window[data-area-state="rail"]::before{inset:2px;border-radius:10px}
-.area-window.is-area-resizing{
-  box-shadow:0 11px 28px rgba(0,0,0,.28),inset 1px 1px rgba(255,255,255,.12),inset -1px -1px var(--acrylic-dark-edge),0 0 0 1px var(--acrylic-charge-soft);
-}
-.area-window-bar{
-  border-bottom:1px solid var(--acrylic-engrave);
-  background:transparent;
-  box-shadow:0 1px var(--acrylic-dark-edge);
-}
-.area-window-icon{
-  border-color:color-mix(in srgb,currentColor 42%,var(--acrylic-engrave));
-  background:color-mix(in srgb,currentColor 10%,transparent);
-  box-shadow:inset 1px 1px rgba(255,255,255,.06),inset -1px -1px rgba(0,0,0,.22);
-}
-.apps-zone .app-rack,.mini-card,.system-widget,.overview-widget{
+.apps-widget .app-rack,.mini-card,.system-widget,.overview-widget{
   border:1px solid var(--acrylic-engrave);
   background:rgba(255,255,255,.018);
   box-shadow:inset 1px 1px rgba(255,255,255,.035),inset -1px -1px rgba(0,0,0,.24);
 }
-body[data-theme="light"] .apps-zone .app-rack,
+body[data-theme="light"] .apps-widget .app-rack,
 body[data-theme="light"] .mini-card,
 body[data-theme="light"] .system-widget,
 body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
@@ -2733,36 +2540,14 @@ body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
   background:var(--item-tone,var(--acrylic-charge));
   box-shadow:0 0 5px color-mix(in srgb,var(--item-tone,var(--acrylic-charge)) 54%,transparent);
 }
-
-/* The resize grip is a milled groove. It conducts light only while addressed. */
-.area-resize-handle{
-  border:1px solid color-mix(in srgb,var(--acrylic-engrave) 78%,transparent);
-  border-radius:999px!important;
-  background:rgba(0,0,0,.12);
-  opacity:.72;
-  box-shadow:inset 1px 1px var(--acrylic-dark-edge),1px 1px rgba(255,255,255,.07);
-  transition:background 45ms linear,border-color 45ms linear,box-shadow 45ms linear,opacity 45ms linear;
-}
-.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle{
-  opacity:1;
-  border-color:color-mix(in srgb,var(--acrylic-charge) 72%,var(--acrylic-engrave));
-  background:color-mix(in srgb,var(--acrylic-charge) 38%,transparent);
-  box-shadow:inset 1px 1px rgba(0,0,0,.28),0 0 7px var(--acrylic-charge-soft);
-}
-.area-window[data-dock-edge="left"]>.area-resize-handle,
-.area-window[data-dock-edge="right"]>.area-resize-handle{width:4px;height:62px}
-.area-window[data-dock-edge="top"]>.area-resize-handle,
-.area-window[data-dock-edge="bottom"]>.area-resize-handle{width:62px;height:4px}
-
-/* Mouse-switch controls are matte ABS caps with a short, binary travel. */
 .surface-key.control-push,
 .surface-key.control-toggle,
-.systems-zone .quick-toggle.control-toggle,
+.system-widget-content .quick-toggle.control-toggle,
 .folder-tab.control-toggle,
 .workspace-action,
 .workspace-home-open,
-.overview-area-row>button,
-.package-secondary,.package-primary{
+.package-secondary,
+.package-primary{
   border:1px solid var(--abs-seam);
   color:var(--text);
   background:linear-gradient(180deg,var(--abs-top) 0%,var(--abs-mid) 58%,var(--abs-side) 100%);
@@ -2772,19 +2557,18 @@ body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
 }
 .surface-key.control-push:hover,
 .surface-key.control-toggle:hover,
-.systems-zone .quick-toggle.control-toggle:hover,
+.system-widget-content .quick-toggle.control-toggle:hover,
 .folder-tab.control-toggle:hover,
 .workspace-action:hover,
-.workspace-home-open:hover,
-.overview-area-row>button:hover{filter:brightness(1.055);transform:translateY(-1px)}
+.workspace-home-open:hover{filter:brightness(1.055);transform:translateY(-1px)}
 .surface-key.control-push:active,
 .surface-key.control-toggle:active,
-.systems-zone .quick-toggle.control-toggle:active,
+.system-widget-content .quick-toggle.control-toggle:active,
 .folder-tab.control-toggle:active,
 .workspace-action:active,
 .workspace-home-open:active,
-.overview-area-row>button:active,
-.package-secondary:active,.package-primary:active{
+.package-secondary:active,
+.package-primary:active{
   transform:translateY(2px) scaleY(.985);
   filter:brightness(.91);
   background:linear-gradient(180deg,var(--abs-side),var(--abs-mid));
@@ -2794,7 +2578,7 @@ body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
 .surface-key.control-toggle.is-active,
 .surface-key.control-toggle[aria-pressed="true"],
 .surface-key.control-toggle[aria-selected="true"],
-.systems-zone .quick-toggle.control-toggle.is-active,
+.system-widget-content .quick-toggle.control-toggle.is-active,
 .folder-tab.control-toggle.is-active{
   transform:translateY(1px);
   filter:none;
@@ -2820,25 +2604,24 @@ body[data-theme="light"] .overview-widget{background:rgba(255,255,255,.13)}
 
 /* App icons remain artwork; this is their shared key geometry. The final
    surface material is assigned by the substrate-aware pass below. */
-.apps-zone .app-key.control-toggle{
+.apps-widget .app-key.control-toggle{
   border:0;
   border-radius:9px;
   background:color-mix(in srgb,var(--abs-mid) 64%,transparent);
   box-shadow:0 1px 1px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.045);
 }
-.apps-zone .app-key.control-toggle:hover{
+.apps-widget .app-key.control-toggle:hover{
   transform:translateY(-1px);
   background:color-mix(in srgb,var(--abs-top) 72%,transparent);
   box-shadow:0 2px 2px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.07);
 }
-.apps-zone .app-key.control-toggle:active,
-.apps-zone .app-key.control-toggle.is-active{
+.apps-widget .app-key.control-toggle:active,
+.apps-widget .app-key.control-toggle.is-active{
   transform:translateY(1px) scaleY(.99);
   background:color-mix(in srgb,var(--abs-side) 82%,var(--state-tone) 8%);
   box-shadow:inset 0 2px 3px rgba(0,0,0,.48);
 }
-.apps-zone .app-key.control-toggle:active{transform:translateY(2px) scaleY(.985);transition-duration:var(--button-press-time)}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle{background:transparent;box-shadow:none}
+.apps-widget .app-key.control-toggle:active{transform:translateY(2px) scaleY(.985);transition-duration:var(--button-press-time)}
 
 /* App windows are ABS casings around always-solid, optically recessed work surfaces. */
 .app-frame{
@@ -2892,386 +2675,12 @@ body[data-theme="light"] .recessed-field{box-shadow:inset 0 2px 5px rgba(42,53,5
   border-color:var(--acrylic-engrave);
 }
 
-/* v66 — docked Areas resize from their complete workspace-facing border,
-   matching a normal window edge instead of exposing a small custom grip. */
-.area-resize-handle{
-  padding:0;
-  margin:0;
-  border:0;
-  border-radius:0!important;
-  background:transparent;
-  opacity:1;
-  box-shadow:none;
-  touch-action:none;
-  transition:none;
-}
-.area-resize-handle::after{
-  content:"";
-  position:absolute;
-  pointer-events:none;
-  border-radius:999px;
-  background:var(--acrylic-engrave);
-  opacity:.34;
-  transition:background 42ms linear,box-shadow 42ms linear,opacity 42ms linear;
-}
-.area-resize-handle:hover,
-.area-window.is-area-resizing>.area-resize-handle{
-  border:0;
-  background:transparent;
-  box-shadow:none;
-}
-.area-resize-handle:hover::after,
-.area-window.is-area-resizing>.area-resize-handle::after{
-  background:color-mix(in srgb,var(--acrylic-charge) 74%,var(--acrylic-rim));
-  box-shadow:0 0 6px var(--acrylic-charge-soft);
-  opacity:.9;
-}
-.area-window[data-dock-edge="left"]>.area-resize-handle,
-.area-window[data-dock-edge="right"]>.area-resize-handle{
-  top:1px;
-  bottom:1px;
-  width:11px;
-  height:auto;
-  transform:none;
-  cursor:ew-resize;
-}
-.area-window[data-dock-edge="left"]>.area-resize-handle{left:auto;right:0}
-.area-window[data-dock-edge="right"]>.area-resize-handle{left:0;right:auto}
-.area-window[data-dock-edge="left"]>.area-resize-handle::after,
-.area-window[data-dock-edge="right"]>.area-resize-handle::after{
-  top:8px;
-  bottom:8px;
-  width:1px;
-}
-.area-window[data-dock-edge="left"]>.area-resize-handle::after{right:1px}
-.area-window[data-dock-edge="right"]>.area-resize-handle::after{left:1px}
-.area-window[data-dock-edge="top"]>.area-resize-handle,
-.area-window[data-dock-edge="bottom"]>.area-resize-handle{
-  left:1px;
-  right:1px;
-  width:auto;
-  height:11px;
-  transform:none;
-  cursor:ns-resize;
-}
-.area-window[data-dock-edge="top"]>.area-resize-handle{top:auto;bottom:0}
-.area-window[data-dock-edge="bottom"]>.area-resize-handle{top:0;bottom:auto}
-.area-window[data-dock-edge="top"]>.area-resize-handle::after,
-.area-window[data-dock-edge="bottom"]>.area-resize-handle::after{
-  left:8px;
-  right:8px;
-  height:1px;
-}
-.area-window[data-dock-edge="top"]>.area-resize-handle::after{bottom:1px}
-.area-window[data-dock-edge="bottom"]>.area-resize-handle::after{top:1px}
-
 .material-cursor.is-row-resize{
   --cursor-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 36'%3E%3Cpath fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M14 4v28M14 4l-6 6M14 4l6 6M14 32l-6-6M14 32l6-6'/%3E%3C/svg%3E");
   transform:translate3d(var(--cursor-x),var(--cursor-y),0) translate(-11px,-14px);
 }
 .material-cursor.is-row-resize .glyph-arrow{display:none}
 .material-cursor.is-row-resize .glyph-row-resize{display:block}
-
-/* v67 — a collapsed Area becomes a KDE-style panel. Compact and expanded
-   Areas retain normal window chrome; Rail keeps only panel structure. */
-.area-window[data-area-state="rail"]{
-  min-width:62px;
-  padding:5px;
-  border-radius:10px;
-  background:color-mix(in srgb,var(--acrylic-field) 84%,rgba(0,0,0,.28));
-  box-shadow:
-    0 5px 14px rgba(0,0,0,.20),
-    inset 1px 1px rgba(255,255,255,.075),
-    inset -1px -1px var(--acrylic-dark-edge),
-    0 0 0 1px rgba(0,0,0,.24);
-}
-body[data-theme="light"] .area-window[data-area-state="rail"]{
-  background:color-mix(in srgb,var(--acrylic-field) 90%,rgba(232,239,242,.72));
-  box-shadow:0 5px 14px rgba(34,50,58,.15),inset 1px 1px rgba(255,255,255,.74),inset -1px -1px var(--acrylic-dark-edge);
-}
-.area-window[data-area-state="rail"]::before{display:none}
-.area-window[data-area-state="rail"] .area-window-bar{
-  min-height:44px;
-  flex-basis:44px;
-  margin:-5px -5px 5px;
-  padding:4px;
-  justify-content:center;
-  border-bottom:1px solid var(--acrylic-engrave);
-  background:color-mix(in srgb,var(--content-surface) 28%,transparent);
-  box-shadow:none;
-}
-.area-window[data-area-state="rail"] .area-window-identity{
-  width:100%;
-  justify-content:center;
-}
-.area-window[data-area-state="rail"] .area-window-icon{
-  width:35px;
-  height:35px;
-  flex-basis:35px;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.area-window[data-area-state="rail"] .area-window-icon svg{width:20px;height:20px}
-.area-window[data-area-state="rail"] .area-window-actions{display:none}
-
-/* Apps rail: full-colour launchers, a restrained hover plate and a
-   workspace-facing task indicator, like a vertical Plasma task manager. */
-.apps-zone[data-area-state="rail"] .app-rack{
-  min-height:0;
-  height:auto;
-  flex:1;
-  padding:2px 0;
-  gap:3px;
-  border:0;
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
-  overflow-y:auto;
-  scrollbar-width:none;
-}
-.apps-zone[data-area-state="rail"] .app-rack::-webkit-scrollbar{display:none}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle{
-  width:100%;
-  min-width:0;
-  height:48px;
-  min-height:48px;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-  transform:none;
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle:hover{
-  transform:none;
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 10%,var(--content-surface-raised) 34%);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--item-tone,var(--blue)) 20%,transparent);
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle:active{
-  transform:translateY(2px) scaleY(.985);
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 16%,var(--content-surface-raised) 40%);
-  box-shadow:inset 0 2px 3px rgba(0,0,0,.34);
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active{
-  transform:none;
-  background:color-mix(in srgb,var(--item-tone,var(--blue)) 10%,transparent);
-  box-shadow:none;
-}
-.apps-zone[data-area-state="rail"] .app-key .app-art{width:34px;height:34px}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle::after{
-  top:9px;
-  bottom:9px;
-  left:auto;
-  right:0;
-  width:2px;
-  height:auto;
-  border-radius:2px 0 0 2px;
-  background:transparent;
-  opacity:0;
-}
-.apps-zone[data-area-state="rail"][data-dock-edge="right"] .app-key.control-toggle::after{
-  left:0;
-  right:auto;
-  border-radius:0 2px 2px 0;
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-open::after,
-.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active::after{
-  background:var(--state-tone,var(--blue));
-  box-shadow:0 0 5px color-mix(in srgb,var(--state-tone,var(--blue)) 48%,transparent);
-  opacity:1;
-}
-.apps-zone[data-area-state="rail"] .app-key.control-toggle.is-active::after{width:3px}
-.apps-zone[data-area-state="rail"] .apps-bottom{
-  grid-template-columns:1fr;
-  gap:3px;
-  padding-top:5px;
-  border-top:1px solid var(--acrylic-engrave);
-}
-.apps-zone[data-area-state="rail"] .overview-launch,
-.apps-zone[data-area-state="rail"] .workspace-status{
-  width:100%;
-  height:42px;
-  min-height:42px;
-  padding:0;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.apps-zone[data-area-state="rail"] .overview-launch:hover,
-.apps-zone[data-area-state="rail"] .workspace-status:hover{
-  background:color-mix(in srgb,var(--workspace-accent,var(--blue)) 10%,transparent);
-}
-.apps-zone[data-area-state="rail"] .overview-launch svg{width:21px;height:21px}
-.apps-zone[data-area-state="rail"] .workspace-status>i{
-  width:24px;
-  height:3px;
-  border-radius:2px;
-}
-
-/* System rail follows tray conventions: actions and live indicators above,
-   clock anchored at the bottom. */
-.systems-zone[data-area-state="rail"]{
-  gap:3px;
-  overflow:hidden;
-}
-.systems-zone[data-area-state="rail"] .system-launchers{
-  order:1;
-  grid-template-columns:1fr;
-  gap:3px;
-  padding-bottom:5px;
-  border-bottom:1px solid var(--acrylic-engrave);
-}
-.systems-zone[data-area-state="rail"] .system-launcher{
-  width:100%;
-  height:42px;
-  padding:0;
-  justify-content:center;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.systems-zone[data-area-state="rail"] .system-launcher:hover{
-  background:color-mix(in srgb,var(--blue) 9%,transparent);
-}
-.systems-zone[data-area-state="rail"] .system-launcher svg{width:20px;height:20px}
-.systems-zone[data-area-state="rail"] .dynamic-widget-stack{order:2;gap:3px}
-.systems-zone[data-area-state="rail"] .dynamic-widget{
-  padding:3px;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.systems-zone[data-area-state="rail"] .widget-heading{
-  height:38px;
-  align-items:center;
-  justify-content:center;
-}
-.systems-zone[data-area-state="rail"] .widget-heading svg{width:20px;height:20px;color:var(--text)}
-.systems-zone[data-area-state="rail"] .time-block{
-  order:10;
-  min-height:auto;
-  margin-top:auto;
-  padding:8px 0 5px;
-  justify-content:center;
-  border-top:1px solid var(--acrylic-engrave);
-  border-bottom:0;
-}
-.systems-zone[data-area-state="rail"] .time-block>span{
-  font:650 13px/1 ui-monospace,monospace;
-  letter-spacing:-.03em;
-}
-
-/* Project Rail behaves like a small activity switcher rather than a clipped window. */
-.project-area[data-area-state="rail"] .project-switcher{
-  display:grid;
-  grid-template-columns:1fr!important;
-  gap:3px;
-  margin:0;
-  overflow:auto;
-  scrollbar-width:none;
-}
-.project-area[data-area-state="rail"] .project-choice{
-  width:100%;
-  height:42px;
-  padding:0;
-  justify-content:center;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.project-area[data-area-state="rail"] .project-choice:hover{
-  background:color-mix(in srgb,var(--project-accent) 10%,transparent);
-}
-.project-area[data-area-state="rail"] .project-choice::after{
-  top:9px;
-  bottom:9px;
-  left:auto;
-  right:0;
-  width:2px;
-  height:auto;
-}
-.project-area[data-area-state="rail"][data-dock-edge="right"] .project-choice::after{left:0;right:auto}
-.project-area[data-area-state="rail"] .project-color{width:13px;height:13px;flex-basis:13px}
-
-/* A horizontal Rail rotates the same panel grammar instead of stacking a
-   vertical task manager into a short strip. */
-.area-window[data-area-state="rail"][data-dock-edge="top"],
-.area-window[data-area-state="rail"][data-dock-edge="bottom"]{
-  min-width:240px;
-  flex-direction:row;
-  align-items:stretch;
-  gap:4px;
-}
-.area-window[data-area-state="rail"][data-dock-edge="top"] .area-window-bar,
-.area-window[data-area-state="rail"][data-dock-edge="bottom"] .area-window-bar{
-  width:46px;
-  min-width:46px;
-  min-height:0;
-  flex:0 0 46px;
-  margin:-5px 0 -5px -5px;
-  border-right:1px solid var(--acrylic-engrave);
-  border-bottom:0;
-}
-.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-rack,
-.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-rack{
-  display:grid;
-  grid-template-columns:none;
-  grid-auto-flow:column;
-  grid-auto-columns:48px;
-  overflow-x:auto;
-  overflow-y:hidden;
-}
-.apps-zone[data-area-state="rail"][data-dock-edge="top"] .apps-bottom,
-.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .apps-bottom{
-  display:grid;
-  grid-template-columns:42px 42px;
-  align-content:center;
-  padding:0 0 0 5px;
-  border-top:0;
-  border-left:1px solid var(--acrylic-engrave);
-}
-.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-key.control-toggle::after,
-.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle::after{
-  top:auto;
-  bottom:0;
-  left:9px;
-  right:9px;
-  width:auto;
-  height:2px;
-  border-radius:2px 2px 0 0;
-}
-.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle::after{top:0;bottom:auto}
-.apps-zone[data-area-state="rail"][data-dock-edge="top"] .app-key.control-toggle.is-active::after,
-.apps-zone[data-area-state="rail"][data-dock-edge="bottom"] .app-key.control-toggle.is-active::after{height:3px;width:auto}
-.systems-zone[data-area-state="rail"][data-dock-edge="top"] .system-launchers,
-.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .system-launchers{
-  display:grid;
-  grid-template-columns:repeat(3,42px);
-  align-content:center;
-  padding:0 5px 0 0;
-  border-right:1px solid var(--acrylic-engrave);
-  border-bottom:0;
-}
-.systems-zone[data-area-state="rail"][data-dock-edge="top"] .dynamic-widget-stack,
-.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .dynamic-widget-stack{display:flex;align-items:center}
-.systems-zone[data-area-state="rail"][data-dock-edge="top"] .time-block,
-.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .time-block{
-  margin:0 0 0 auto;
-  padding:0 8px;
-  align-items:center;
-  border-top:0;
-  border-left:1px solid var(--acrylic-engrave);
-}
-.project-area[data-area-state="rail"][data-dock-edge="top"] .project-switcher,
-.project-area[data-area-state="rail"][data-dock-edge="bottom"] .project-switcher{
-  grid-template-columns:repeat(2,42px)!important;
-  align-content:center;
-}
 
 /* v68 — contextual actions use edge-lit acrylic around fast ABS rows. */
 .desktop-context-menu{
@@ -3415,312 +2824,6 @@ body[data-theme="light"] .context-menu-item:active{box-shadow:inset 0 2px 3px rg
   background:color-mix(in srgb,var(--blue) 18%,rgba(7,13,18,.36));
   transition-duration:var(--button-press-time);
 }
-
-/* v69 — Compact is a deliberate information mode, not Expanded with pieces hidden. */
-.area-window[data-area-state="compact"]{
-  padding:8px;
-  border-radius:13px;
-}
-.area-window[data-area-state="compact"] .area-window-bar{
-  min-height:42px;
-  flex-basis:42px;
-  margin:-8px -8px 6px;
-  padding:5px 6px 5px 8px;
-}
-.area-window[data-area-state="compact"] .area-window-identity{gap:7px}
-.area-window[data-area-state="compact"] .area-window-icon{width:29px;height:29px;flex-basis:29px}
-.area-window[data-area-state="compact"] .area-window-identity b{font-size:13px}
-.area-window[data-area-state="compact"] .area-window-identity small{font-size:11px}
-
-/* Apps Compact: readable launchers above live, still-operable parked apps. */
-.apps-zone[data-area-state="compact"]{
-  container-name:compact-apps;
-  container-type:inline-size;
-}
-.apps-zone[data-area-state="compact"] .app-rack{
-  height:auto;
-  min-height:0;
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  align-content:start;
-  gap:4px;
-  padding:1px;
-}
-.apps-zone[data-area-state="compact"] .app-key,
-.apps-zone[data-area-state="compact"] .app-key:nth-child(n+4){
-  min-width:0;
-  height:57px;
-  margin-top:0;
-  padding:3px 2px;
-  gap:3px;
-}
-.apps-zone[data-area-state="compact"] .app-key .app-art{width:28px;height:28px}
-.apps-zone[data-area-state="compact"] .app-key span{
-  display:block;
-  width:100%;
-  overflow:hidden;
-  color:var(--muted);
-  font-size:11px;
-  line-height:1.05;
-  text-align:center;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-@container compact-apps (min-width:232px){
-  .apps-zone[data-area-state="compact"] .app-rack{grid-template-columns:repeat(3,minmax(0,1fr))}
-}
-.apps-zone[data-area-state="compact"] .mini-section{
-  min-height:0;
-  margin-top:7px;
-}
-.apps-zone[data-area-state="compact"] .section-heading{
-  min-height:27px;
-  padding:0 2px 4px;
-}
-.apps-zone[data-area-state="compact"] .section-heading h2{font-size:12px}
-.apps-zone[data-area-state="compact"] .section-heading span{font-size:10px}
-.apps-zone[data-area-state="compact"] .mini-stack{gap:5px;padding:0 1px 6px}
-.apps-zone[data-area-state="compact"] .mini-card{
-  padding:6px;
-  border-radius:8px;
-}
-.apps-zone[data-area-state="compact"] .mini-card::after{left:8px;right:8px}
-.apps-zone[data-area-state="compact"] .mini-card header{
-  min-height:29px;
-  margin-bottom:5px;
-}
-.apps-zone[data-area-state="compact"] .mini-card header>div{min-width:0;gap:5px}
-.apps-zone[data-area-state="compact"] .mini-card header>div>span:last-child{min-width:0}
-.apps-zone[data-area-state="compact"] .mini-card header b,
-.apps-zone[data-area-state="compact"] .mini-card header small{
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.apps-zone[data-area-state="compact"] .mini-card header b{font-size:12px}
-.apps-zone[data-area-state="compact"] .mini-card header small{font-size:10px}
-.apps-zone[data-area-state="compact"] .mini-card header .app-badge{width:26px;height:26px;flex-basis:26px}
-.apps-zone[data-area-state="compact"] .mini-card .mini-control{width:27px;height:26px;padding:0}
-.apps-zone[data-area-state="compact"] .mini-card .mini-actions{flex:0 0 auto;gap:3px}
-.apps-zone[data-area-state="compact"] .mini-location{
-  height:29px;
-  margin:0 0 4px;
-  padding:0 6px;
-  gap:5px;
-}
-.apps-zone[data-area-state="compact"] .mini-location b{font-size:11px}
-.apps-zone[data-area-state="compact"] .mini-location small{font-size:9px}
-.apps-zone[data-area-state="compact"] .mini-file-list{gap:1px}
-.apps-zone[data-area-state="compact"] .mini-file-list button{height:29px;padding:0 5px}
-.apps-zone[data-area-state="compact"] .mini-file-list button:nth-child(n+2){display:none}
-.apps-zone[data-area-state="compact"] .mini-file-list button span{font-size:10px}
-.apps-zone[data-area-state="compact"] .mini-quick-row{gap:4px;margin-top:4px}
-.apps-zone[data-area-state="compact"] .mini-tool{height:29px;padding:0 5px;font-size:10px}
-.apps-zone[data-area-state="compact"] .mini-music{grid-template-columns:34px minmax(0,1fr);gap:6px}
-.apps-zone[data-area-state="compact"] .mini-art{height:34px;border-radius:7px}
-.apps-zone[data-area-state="compact"] .mini-track b{font-size:11px}
-.apps-zone[data-area-state="compact"] .mini-track small{font-size:9px}
-.apps-zone[data-area-state="compact"] .mini-transport{
-  grid-template-columns:27px 31px 27px minmax(30px,1fr);
-  gap:3px;
-}
-.apps-zone[data-area-state="compact"] .mini-terminal-output{min-height:42px;padding:6px 7px}
-.apps-zone[data-area-state="compact"] .mini-command,
-.apps-zone[data-area-state="compact"] .mini-browser-search{height:31px;margin-top:4px}
-.apps-zone[data-area-state="compact"] .mini-sites{gap:3px;margin-top:4px}
-.apps-zone[data-area-state="compact"] .mini-sites button{height:27px;padding:0 2px}
-.apps-zone[data-area-state="compact"] .mini-card-note .mini-note-field{
-  min-height:78px;
-  max-height:116px;
-  padding:6px 7px;
-  font-size:11px;
-}
-.apps-zone[data-area-state="compact"] .apps-bottom{
-  grid-template-columns:42px minmax(0,1fr);
-  gap:5px;
-  padding-top:6px;
-}
-.apps-zone[data-area-state="compact"] .overview-launch{
-  width:42px;
-  min-height:39px;
-  padding:0;
-  display:grid;
-  grid-template-columns:1fr;
-  place-items:center;
-}
-.apps-zone[data-area-state="compact"] .workspace-status{
-  min-width:0;
-  min-height:39px;
-  padding:4px 6px;
-  grid-template-columns:4px minmax(0,1fr) 13px;
-  gap:6px;
-}
-.apps-zone[data-area-state="compact"] .workspace-status>i{width:4px;height:22px}
-.apps-zone[data-area-state="compact"] .workspace-status b{font-size:12px}
-.apps-zone[data-area-state="compact"] .workspace-status small{font-size:10px}
-
-/* System Compact: one-glance state plus controls, with no dead card area. */
-.systems-zone[data-area-state="compact"]{gap:5px;overflow-y:auto}
-.systems-zone[data-area-state="compact"] .time-block{
-  min-height:47px;
-  padding:2px 2px 7px;
-  gap:9px;
-}
-.systems-zone[data-area-state="compact"] .time-block>span{font-size:29px}
-.systems-zone[data-area-state="compact"] .time-block b{font-size:12px}
-.systems-zone[data-area-state="compact"] .time-block small{font-size:10px}
-.systems-zone[data-area-state="compact"] .dynamic-widget-stack{gap:5px}
-.systems-zone[data-area-state="compact"] .system-widget{
-  padding:6px;
-  border-radius:8px;
-}
-.systems-zone[data-area-state="compact"] .widget-heading{height:27px}
-.systems-zone[data-area-state="compact"] .widget-heading h2{font-size:12px}
-.systems-zone[data-area-state="compact"] .widget-heading>span{font-size:10px}
-.systems-zone[data-area-state="compact"] .notification{padding:5px 0;gap:6px}
-.systems-zone[data-area-state="compact"] .notification .app-badge{width:27px;height:27px}
-.systems-zone[data-area-state="compact"] .notification b{font-size:11px}
-.systems-zone[data-area-state="compact"] .notification small{font-size:10px}
-.systems-zone[data-area-state="compact"] .timer-face{grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 0 5px}
-.systems-zone[data-area-state="compact"] .timer-face strong{font-size:23px}
-.systems-zone[data-area-state="compact"] .timer-actions{gap:4px}
-.systems-zone[data-area-state="compact"] .timer-actions button{height:29px;padding:0 5px;font-size:11px}
-.systems-zone[data-area-state="compact"] .system-launchers{
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:4px;
-}
-.systems-zone[data-area-state="compact"] .system-launcher{
-  height:35px;
-  padding:0 6px;
-  gap:5px;
-  font-size:10px;
-}
-.systems-zone[data-area-state="compact"] .system-launcher svg{flex:0 0 15px;width:15px;height:15px}
-.systems-zone[data-area-state="compact"] .layout-mode-control{grid-column:1/-1}
-.systems-zone[data-area-state="compact"] .static-widget-stack{gap:5px}
-.systems-zone[data-area-state="compact"] .calendar-widget{
-  display:block;
-  padding-bottom:6px;
-}
-.systems-zone[data-area-state="compact"] .calendar-grid,
-.systems-zone[data-area-state="compact"] .calendar-week{display:none}
-.systems-zone[data-area-state="compact"] .calendar-widget .tiny-key{height:25px;min-height:25px;padding:0 6px}
-.systems-zone[data-area-state="compact"] .next-event{
-  margin-top:3px;
-  padding:5px 6px;
-}
-.systems-zone[data-area-state="compact"] .next-event>i{height:24px}
-.systems-zone[data-area-state="compact"] .next-event b,
-.systems-zone[data-area-state="compact"] .next-event small{font-size:10px}
-.systems-zone[data-area-state="compact"] .device-row{
-  grid-template-columns:29px minmax(0,1fr) auto;
-  gap:7px;
-}
-.systems-zone[data-area-state="compact"] .phone-silhouette{height:40px;border-radius:8px}
-.systems-zone[data-area-state="compact"] .device-row b{font-size:11px}
-.systems-zone[data-area-state="compact"] .device-row small{font-size:9px}
-.systems-zone[data-area-state="compact"] .battery-track{margin-top:5px}
-.systems-zone[data-area-state="compact"] .quick-settings{gap:4px}
-.systems-zone[data-area-state="compact"] .quick-toggle{
-  min-height:35px;
-  height:35px;
-  padding:0 6px;
-  gap:5px;
-}
-.systems-zone[data-area-state="compact"] .quick-toggle span{font-size:10px}
-
-/* Project Compact: current path, one recent item from each source, quick apps
-   and the project clipboard remain available. */
-.project-area[data-area-state="compact"][data-dock-edge="left"] .project-space-content,
-.project-area[data-area-state="compact"][data-dock-edge="right"] .project-space-content{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-  overflow-y:auto;
-  padding-right:1px;
-}
-.project-area[data-area-state="compact"] .project-switcher{
-  flex-basis:auto;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:4px;
-  margin-bottom:5px;
-}
-.project-area[data-area-state="compact"] .project-choice{
-  height:32px;
-  padding:0 7px;
-  gap:5px;
-}
-.project-area[data-area-state="compact"] .project-choice span{font-size:11px}
-.project-area[data-area-state="compact"] .project-module{
-  flex:0 0 auto;
-  min-height:auto;
-  padding:6px;
-  border-radius:8px;
-  overflow:visible;
-}
-.project-area[data-area-state="compact"] .project-module>header{
-  height:25px;
-  margin-bottom:3px;
-}
-.project-area[data-area-state="compact"] .project-module>header b{font-size:12px}
-.project-area[data-area-state="compact"] .project-small-key{height:25px;padding:0 6px;font-size:10px}
-.project-area[data-area-state="compact"] .project-path{height:31px;padding:0 6px}
-.project-area[data-area-state="compact"] .project-path span{font-size:10px}
-.project-area[data-area-state="compact"] .project-items{margin-top:2px}
-.project-area[data-area-state="compact"] .project-items>button{
-  height:37px;
-  padding:2px 3px;
-}
-.project-area[data-area-state="compact"] .project-items>button:nth-child(n+2){display:none}
-.project-area[data-area-state="compact"] .project-items b{font-size:11px}
-.project-area[data-area-state="compact"] .project-items small{font-size:9px}
-.project-area[data-area-state="compact"] .project-context-module{display:flex!important}
-.project-area[data-area-state="compact"] .project-quick-apps{gap:4px;margin-bottom:4px}
-.project-area[data-area-state="compact"] .project-app{width:31px;height:31px}
-.project-area[data-area-state="compact"] .project-app .app-art{width:28px;height:28px}
-.project-area[data-area-state="compact"] .project-clipboard{
-  min-height:39px;
-  padding:4px;
-  grid-template-columns:25px minmax(0,1fr) auto;
-  gap:4px;
-}
-.project-area[data-area-state="compact"] .clipboard-mark{width:25px;height:25px}
-.project-area[data-area-state="compact"] .project-clipboard b{font-size:10px}
-.project-area[data-area-state="compact"] .project-clipboard small{font-size:9px}
-.project-area[data-area-state="compact"] .project-note-widget{display:none}
-
-/* Horizontal Compact keeps the same information but uses the available width. */
-.apps-zone[data-area-state="compact"][data-dock-edge="top"] .app-rack,
-.apps-zone[data-area-state="compact"][data-dock-edge="bottom"] .app-rack{
-  height:62px;
-  grid-template-columns:repeat(5,minmax(62px,1fr));
-}
-.apps-zone[data-area-state="compact"][data-dock-edge="top"] .mini-section,
-.apps-zone[data-area-state="compact"][data-dock-edge="bottom"] .mini-section{display:none}
-.project-area[data-area-state="compact"][data-dock-edge="top"] .project-space-content,
-.project-area[data-area-state="compact"][data-dock-edge="bottom"] .project-space-content{
-  grid-template-columns:1.1fr 1fr .9fr;
-  gap:5px;
-}
-.project-area[data-area-state="compact"][data-dock-edge="top"] .project-note-widget,
-.project-area[data-area-state="compact"][data-dock-edge="bottom"] .project-note-widget{display:none}
-
-/* v70 — Docked Areas form one continuous desktop surface. There are no
-   decorative wallpaper gutters: each Area fills its allocated slot and the
-   shared one-pixel seams are the only separation from the workspace. */
-body.areas-docked .area-window{
-  border-radius:0;
-  box-shadow:
-    inset 1px 1px rgba(255,255,255,.08),
-    inset -1px -1px var(--acrylic-dark-edge),
-    0 0 0 1px rgba(0,0,0,.26);
-}
-body.areas-docked .area-window::before{
-  inset:2px;
-  border-radius:2px;
-}
 body.areas-docked .desktop-shell>.workspace-zone{
   border-radius:0;
 }
@@ -3731,220 +2834,14 @@ body.areas-docked .dock-preview[data-edge="left"]{left:0;top:0;bottom:0}
 body.areas-docked .dock-preview[data-edge="right"]{right:0;top:0;bottom:0}
 body.areas-docked .dock-preview[data-edge="top"]{top:0}
 body.areas-docked .dock-preview[data-edge="bottom"]{bottom:0}
-
-/* v71 — Each Area has a solid, identity-coloured acrylic header. The body
-   remains neutral glass, so the header is immediately legible as chrome. */
-.apps-zone{--area-header-accent:#3aa7ff}
-.project-area{--area-header-accent:#a88aff}
-.systems-zone{--area-header-accent:#36ccd7}
-.area-window .area-window-bar{
-  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 66%,var(--acrylic-engrave));
-  background:color-mix(in srgb,var(--area-header-accent) 20%,rgba(9,15,19,.91));
-  box-shadow:
-    inset 0 1px color-mix(in srgb,var(--area-header-accent) 30%,rgba(255,255,255,.12)),
-    inset 0 -1px color-mix(in srgb,var(--area-header-accent) 54%,rgba(0,0,0,.42));
-}
-.area-window .area-window-bar .area-window-identity b{color:color-mix(in srgb,var(--area-header-accent) 22%,#fff)}
-.area-window .area-window-bar .area-window-identity small{color:color-mix(in srgb,var(--area-header-accent) 24%,rgba(226,234,238,.76))}
-body[data-theme="light"] .area-window .area-window-bar{
-  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 58%,rgba(45,60,68,.32));
-  background:color-mix(in srgb,var(--area-header-accent) 17%,rgba(239,243,243,.97));
-  box-shadow:
-    inset 0 1px rgba(255,255,255,.82),
-    inset 0 -1px color-mix(in srgb,var(--area-header-accent) 30%,rgba(43,58,66,.28));
-}
-body[data-theme="light"] .area-window .area-window-bar .area-window-identity b{color:color-mix(in srgb,var(--area-header-accent) 24%,#182128)}
-body[data-theme="light"] .area-window .area-window-bar .area-window-identity small{color:color-mix(in srgb,var(--area-header-accent) 18%,#526069)}
-
-/* v73 — Rail is a purpose-built panel mode, not merely clipped Area content. */
-.rail-workspace-glyph,.project-choice-icon,.project-rail-tools{display:none}
-
-/* Apps Rail: task manager above, Overview and a recognizable Workspace switch below. */
-.apps-zone[data-area-state="rail"] .workspace-status>i,
-.apps-zone[data-area-state="rail"] .workspace-status>span,
-.apps-zone[data-area-state="rail"] .workspace-status>svg{display:none}
-.apps-zone[data-area-state="rail"] .rail-workspace-glyph{
-  width:28px;
-  height:28px;
-  border:1px solid color-mix(in srgb,var(--workspace-accent) 55%,var(--acrylic-engrave));
-  border-radius:8px;
-  display:grid;
-  place-items:center;
-  color:color-mix(in srgb,var(--workspace-accent) 34%,#fff);
-  background:color-mix(in srgb,var(--workspace-accent) 18%,transparent);
-  box-shadow:inset 0 1px rgba(255,255,255,.07);
-  font:750 12px/1 system-ui,sans-serif;
-  font-style:normal;
-}
-body[data-theme="light"] .apps-zone[data-area-state="rail"] .rail-workspace-glyph{color:color-mix(in srgb,var(--workspace-accent) 48%,#1d2a31)}
-
-/* System Rail: dynamic status first, launchers in the middle and persistent
-   toggles beside the clock at the bottom, like a useful Plasma tray. */
-.systems-zone[data-area-state="rail"] .dynamic-widget-stack{order:1}
-.systems-zone[data-area-state="rail"] .system-launchers{order:2}
-.systems-zone[data-area-state="rail"] .static-widget-stack{
-  order:8;
-  margin-top:auto;
-  padding-top:5px;
-  display:block;
-  border-top:1px solid var(--acrylic-engrave);
-}
-.systems-zone[data-area-state="rail"] .calendar-widget,
-.systems-zone[data-area-state="rail"] .connect-widget{display:none}
-.systems-zone[data-area-state="rail"] .quick-settings{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:3px;
-}
-.systems-zone[data-area-state="rail"] .quick-toggle{
-  width:100%;
-  min-width:0;
-  height:40px;
-  padding:0;
-  justify-content:center;
-  border-color:transparent;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.systems-zone[data-area-state="rail"] .quick-toggle>span:not(.theme-dot){display:none}
-.systems-zone[data-area-state="rail"] .quick-toggle svg{width:19px;height:19px}
-.systems-zone[data-area-state="rail"] .quick-toggle.is-active{background:color-mix(in srgb,var(--toggle-tone,var(--blue)) 10%,transparent)}
-.systems-zone[data-area-state="rail"] .time-block{margin-top:3px}
-
-/* Project Rail: switch Projects, then act on the selected Project without
-   needing to widen the Area first. */
-.project-area[data-area-state="rail"] .project-choice .project-color{display:none}
-.project-area[data-area-state="rail"] .project-choice-icon{
-  width:20px;
-  height:20px;
-  display:block;
-  color:var(--project-accent);
-}
-.project-area[data-area-state="rail"] .project-rail-tools{
-  margin-top:5px;
-  padding-top:5px;
-  display:grid;
-  grid-template-columns:1fr;
-  gap:3px;
-  border-top:1px solid var(--acrylic-engrave);
-}
-.project-area[data-area-state="rail"] .project-rail-tool{
-  width:100%;
-  min-width:0;
-  height:42px;
-  padding:0;
-  display:grid;
-  place-items:center;
-  border-color:transparent;
-  border-radius:8px;
-  background:transparent;
-  box-shadow:none;
-}
-.project-area[data-area-state="rail"] .project-rail-tool:hover{background:color-mix(in srgb,var(--project-accent) 10%,transparent)}
-.project-area[data-area-state="rail"] .project-rail-tool>svg:not(.app-art){width:19px;height:19px;color:var(--project-accent)}
-.project-area[data-area-state="rail"] .project-rail-tool .app-art{width:29px;height:29px}
-
-/* The same controls turn into a conventional horizontal panel when the Rail
-   is docked to the top or bottom edge. */
-.systems-zone[data-area-state="rail"][data-dock-edge="top"] .static-widget-stack,
-.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .static-widget-stack{
-  margin:0;
-  padding:0 0 0 5px;
-  display:flex;
-  align-items:center;
-  border-top:0;
-  border-left:1px solid var(--acrylic-engrave);
-}
-.systems-zone[data-area-state="rail"][data-dock-edge="top"] .quick-settings,
-.systems-zone[data-area-state="rail"][data-dock-edge="bottom"] .quick-settings{
-  grid-template-columns:repeat(4,40px);
-  grid-auto-flow:column;
-}
-.project-area[data-area-state="rail"][data-dock-edge="top"] .project-rail-tools,
-.project-area[data-area-state="rail"][data-dock-edge="bottom"] .project-rail-tools{
-  margin:0 0 0 5px;
-  padding:0 0 0 5px;
-  grid-template-columns:repeat(5,42px);
-  grid-auto-flow:column;
-  align-content:center;
-  border-top:0;
-  border-left:1px solid var(--acrylic-engrave);
-}
-
-/* v74 — Rail has higher-specificity chrome of its own, so its identity colour
-   cannot be replaced by the older neutral panel rule. */
-.area-window[data-area-state="rail"]{
-  border-color:color-mix(in srgb,var(--area-header-accent) 30%,var(--acrylic-rim));
-}
-.area-window[data-area-state="rail"] .area-window-bar{
-  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 70%,var(--acrylic-engrave));
-  background:color-mix(in srgb,var(--area-header-accent) 38%,rgba(8,14,18,.92));
-  box-shadow:
-    inset 0 1px color-mix(in srgb,var(--area-header-accent) 42%,rgba(255,255,255,.15)),
-    inset 0 -1px color-mix(in srgb,var(--area-header-accent) 62%,rgba(0,0,0,.48));
-}
-body[data-theme="light"] .area-window[data-area-state="rail"] .area-window-bar{
-  border-bottom-color:color-mix(in srgb,var(--area-header-accent) 66%,rgba(45,60,68,.30));
-  background:color-mix(in srgb,var(--area-header-accent) 28%,rgba(241,245,245,.98));
-  box-shadow:inset 0 1px rgba(255,255,255,.88),inset 0 -1px color-mix(in srgb,var(--area-header-accent) 40%,rgba(43,58,66,.28));
-}
-.area-window[data-area-state="rail"][data-dock-edge="top"] .area-window-bar,
-.area-window[data-area-state="rail"][data-dock-edge="bottom"] .area-window-bar{
-  border-right-color:color-mix(in srgb,var(--area-header-accent) 70%,var(--acrylic-engrave));
-}
-
-/* v75 — Manual freezes Area geometry. Auto lets a complete dock lane yield to
-   a dragged or maximized window; on a dual-display canvas a free lane can move
-   to the other display instead. The four-pixel illuminated edge remains as a
-   physical, discoverable auto-hide affordance. */
-body.areas-docked .area-window{
-  transition:
-    left 145ms cubic-bezier(.2,.82,.2,1),
-    top 145ms cubic-bezier(.2,.82,.2,1),
-    width 145ms cubic-bezier(.2,.82,.2,1),
-    height 145ms cubic-bezier(.2,.82,.2,1),
-    transform 135ms cubic-bezier(.18,.82,.2,1),
-    opacity 90ms linear,
-    box-shadow 90ms linear;
-  will-change:transform;
-}
-body[data-layout-mode="auto"] .area-window.is-auto-relocated{
-  transform:translate3d(var(--auto-relocate-x),0,0);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--area-header-accent) 48%,transparent),
-    0 16px 40px rgba(0,0,0,.32),
-    inset 1px 1px rgba(255,255,255,.10),
-    inset -1px -1px var(--acrylic-dark-edge);
-}
-body[data-layout-mode="auto"] .area-window.is-auto-yielding{
-  pointer-events:none;
-  opacity:.82;
-  filter:saturate(.9);
-}
-body[data-layout-mode="auto"] .area-window.is-auto-yielding[data-dock-edge="left"]{
-  transform:translate3d(calc(-100% + 4px),0,0);
-  box-shadow:4px 0 0 color-mix(in srgb,var(--area-header-accent) 80%,#dff7ff),8px 0 16px color-mix(in srgb,var(--area-header-accent) 24%,transparent);
-}
-body[data-layout-mode="auto"] .area-window.is-auto-yielding[data-dock-edge="right"]{
-  transform:translate3d(calc(100% - 4px),0,0);
-  box-shadow:-4px 0 0 color-mix(in srgb,var(--area-header-accent) 80%,#dff7ff),-8px 0 16px color-mix(in srgb,var(--area-header-accent) 24%,transparent);
-}
-body[data-layout-mode="auto"] .area-window.is-auto-yielding[data-dock-edge="top"]{
-  transform:translate3d(0,calc(-100% + 4px),0);
-  box-shadow:0 4px 0 color-mix(in srgb,var(--area-header-accent) 80%,#dff7ff),0 8px 16px color-mix(in srgb,var(--area-header-accent) 24%,transparent);
-}
-body[data-layout-mode="auto"] .area-window.is-auto-yielding[data-dock-edge="bottom"]{
-  transform:translate3d(0,calc(100% - 4px),0);
-  box-shadow:0 -4px 0 color-mix(in srgb,var(--area-header-accent) 80%,#dff7ff),0 -8px 16px color-mix(in srgb,var(--area-header-accent) 24%,transparent);
-}
+.rail-workspace-glyph,
+.project-choice-icon{display:none}
 body.is-auto-avoiding .desktop-shell>.workspace-zone{
   box-shadow:inset 0 0 0 1px rgba(99,199,255,.10);
 }
-body[data-layout-mode="manual"] .desktop-shell>.workspace-zone,
-body[data-layout-mode="manual"] .area-window{transition:none}
+body[data-layout-mode="manual"] .desktop-shell>.workspace-zone{transition:none}
 @media(prefers-reduced-motion:reduce){
-  body.areas-docked .area-window,.desktop-shell>.workspace-zone{transition:none!important}
+.desktop-shell>.workspace-zone{transition:none!important}
 }
 
 /* v78 — Auto Areas have a small pressure boundary. A dragged window rests
@@ -4078,8 +2975,7 @@ body[data-layout-mode="manual"] .area-boundary-feedback{display:none}
 .overview-quick-grid{gap:7px;margin-top:10px}.overview-quick-grid .quick-toggle{min-height:44px;padding:7px 9px;font-size:13px}
 .overview-agenda-widget>button{min-height:54px;margin-top:8px;padding:8px}.overview-agenda-widget>button b{font-size:14px}.overview-agenda-widget>button small{margin-top:4px;color:var(--overview-muted);font-size:12px}
 .overview-connect-widget{min-height:62px;padding:10px 11px;grid-template-columns:40px minmax(0,1fr) auto;gap:10px}.overview-connect-widget b{font-size:14px}.overview-connect-widget small{margin-top:3px;color:var(--overview-muted);font-size:12px}
-.overview-areas-widget{padding:11px 12px}.overview-areas-widget>header{margin-bottom:9px}.overview-areas-widget h3{font-size:15px}.overview-areas-widget>header small{margin-top:3px;color:var(--overview-muted);font-size:12px}
-.overview-area-list{gap:5px}.overview-area-row{min-height:48px;padding:6px;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;border-radius:9px}.area-list-icon{width:33px;height:33px}.overview-area-row b{font-size:14px}.overview-area-row small{margin-top:3px;color:var(--overview-muted);font-size:12px}.overview-area-row>button{height:32px;padding-inline:10px;font-size:12px}
+.overview-panels-widget{padding:11px 12px}.overview-panels-widget>header{margin-bottom:9px}.overview-panels-widget h3{font-size:15px}.overview-panels-widget>header small{margin-top:3px;color:var(--overview-muted);font-size:12px}
 
 .universal-results{padding:4px 4px 28px}
 .universal-group{margin-bottom:28px}.universal-group h3{margin-bottom:10px;padding-inline:4px;color:var(--overview-muted);font-size:13px;letter-spacing:.09em}
@@ -4093,11 +2989,7 @@ body[data-theme="light"] .universal-search-field,
 body[data-theme="light"] .workspace-home-card,
 body[data-theme="light"] .overview-app-library{background:rgba(239,245,248,.94)}
 body[data-theme="light"] .overview-widget{border-color:rgba(45,72,86,.14);background:rgba(242,247,249,.86);box-shadow:inset 0 1px rgba(255,255,255,.78)}
-
-/* v82 — A Project is a small working context: folder, note, resources and a
-   restorable window session. Content stays solid; only its enclosing Area is acrylic. */
-.project-area{--project-solid:color-mix(in srgb,var(--content-surface) 96%,#081016 4%)}
-body[data-theme="light"] .project-area{--project-solid:#edf2f4}
+body[data-theme="light"] .files-widget{--project-solid:#edf2f4}
 .project-space-content{grid-template-columns:1fr .9fr 1.12fr}
 .project-module{
   background:var(--project-solid);
@@ -4198,21 +3090,14 @@ body[data-theme="light"] .project-area{--project-solid:#edf2f4}
   background:var(--project-accent);
   font:800 10px/1 system-ui,sans-serif;
 }
-.project-area[data-dock-edge="left"] .project-space-content,
-.project-area[data-dock-edge="right"] .project-space-content{padding-right:3px}
-.project-area[data-dock-edge="left"] .project-note-module,
-.project-area[data-dock-edge="right"] .project-note-module{min-height:142px}
-.project-area[data-dock-edge="left"] .project-resources-module,
-.project-area[data-dock-edge="right"] .project-resources-module{min-height:156px}
-.project-area[data-dock-edge="left"] .project-resource-items,
-.project-area[data-dock-edge="right"] .project-resource-items{max-height:none}
-.project-area[data-area-state="compact"] .project-space-content{display:flex;flex-direction:column;overflow:auto}
-.project-area[data-area-state="compact"] .project-root-module .project-items,
-.project-area[data-area-state="compact"] .project-resources-module .project-items{max-height:45px;overflow:hidden}
-.project-area[data-area-state="compact"] .project-note-module{min-height:118px}
-.project-area[data-area-state="compact"] .project-session-bar{grid-template-columns:1fr}.project-area[data-area-state="compact"] .project-close-key{display:none}
-.project-area[data-area-state="rail"] .project-session-bar,
-.project-area[data-area-state="rail"] .project-closed-state{display:none!important}
+.files-widget[data-panel-edge="left"] .project-space-content,
+.files-widget[data-panel-edge="right"] .project-space-content{padding-right:3px}
+.files-widget[data-panel-edge="left"] .project-note-module,
+.files-widget[data-panel-edge="right"] .project-note-module{min-height:142px}
+.files-widget[data-panel-edge="left"] .project-resources-module,
+.files-widget[data-panel-edge="right"] .project-resources-module{min-height:156px}
+.files-widget[data-panel-edge="left"] .project-resource-items,
+.files-widget[data-panel-edge="right"] .project-resource-items{max-height:none}
 body[data-theme="light"] .project-quick-note,body[data-theme="light"] .project-resource-form label{box-shadow:inset 0 2px 5px rgba(40,62,73,.13),inset 0 1px rgba(255,255,255,.75)}
 
 @media(min-width:1450px){
@@ -4263,85 +3148,24 @@ body[data-theme="light"]{
   --glass-key-contact:rgba(29,54,68,.20);
 }
 
-:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle){
-  --glass-key-tone:var(--state-tone,var(--area-header-accent,var(--workspace-accent,var(--blue))));
-  border:1px solid color-mix(in srgb,var(--glass-key-tone) 14%,var(--glass-key-edge));
-  color:var(--text);
-  background:
-    linear-gradient(180deg,var(--glass-key-top),var(--glass-key-mid) 46%,rgba(255,255,255,.018) 47%,var(--glass-key-bottom)),
-    color-mix(in srgb,var(--glass-field) 37%,transparent);
-  box-shadow:
-    0 2px 3px var(--glass-key-contact),
-    inset 0 1px rgba(239,251,255,.22),
-    inset 1px 0 rgba(230,248,255,.065),
-    inset 0 -1px rgba(0,0,0,.30);
-  filter:none;
-}
-:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle):hover{
-  border-color:color-mix(in srgb,var(--glass-key-tone) 31%,var(--glass-key-edge));
-  background:
-    linear-gradient(180deg,color-mix(in srgb,var(--glass-key-top) 82%,white 18%),var(--glass-key-mid) 46%,rgba(255,255,255,.025) 47%,var(--glass-key-bottom)),
-    color-mix(in srgb,var(--glass-field) 43%,transparent);
-  box-shadow:
-    0 2px 3px var(--glass-key-contact),
-    inset 0 1px rgba(244,253,255,.29),
-    inset 1px 0 rgba(230,248,255,.08),
-    inset 0 -1px rgba(0,0,0,.28),
-    0 0 7px color-mix(in srgb,var(--glass-key-tone) 9%,transparent);
-  filter:none;
-}
-:is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle):active{
-  transform:translateY(var(--control-press)) scaleY(.985);
-  border-color:color-mix(in srgb,var(--glass-key-tone) 34%,var(--glass-key-edge));
-  background:
-    linear-gradient(180deg,rgba(0,0,0,.12),rgba(255,255,255,.025)),
-    color-mix(in srgb,var(--glass-field-deep) 62%,transparent);
-  box-shadow:
-    inset 0 3px 6px rgba(0,0,0,.36),
-    inset 0 1px rgba(255,255,255,.045),
-    0 0 5px color-mix(in srgb,var(--glass-key-tone) 8%,transparent);
-  filter:none;
-  transition-duration:var(--button-press-time);
-}
-:is(.area-window,.universal-search,.package-window) .material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
-  transform:translateY(var(--control-held));
-  border-color:color-mix(in srgb,var(--state-tone,var(--glass-key-tone)) 32%,var(--glass-key-edge));
-  background:
-    linear-gradient(180deg,rgba(0,0,0,.075),rgba(255,255,255,.028)),
-    color-mix(in srgb,var(--glass-field-deep) 76%,var(--state-tone,var(--glass-key-tone)) 7%);
-  box-shadow:inset 0 2px 5px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.055);
-}
-:is(.area-window,.universal-search,.package-window) .material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]):active{
-  transform:translateY(var(--control-press)) scaleY(.985);
-}
-
 /* Normal app artwork remains unframed. Its large hit target is a very quiet
    glass key whose edge only becomes obvious on hover or press. */
-.apps-zone .app-key.material-glass-button{
+.apps-widget .app-key.material-glass-button{
   border-color:rgba(216,242,255,.07);
   background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.045));
   box-shadow:inset 0 1px rgba(255,255,255,.045);
 }
-.apps-zone .app-key.material-glass-button:hover{
+.apps-widget .app-key.material-glass-button:hover{
   border-color:color-mix(in srgb,var(--app-primary,var(--blue)) 25%,var(--glass-key-edge));
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(16,32,41,.10));
   box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 6px color-mix(in srgb,var(--app-primary,var(--blue)) 7%,transparent);
 }
-.apps-zone .app-key.material-glass-button:active,
-.apps-zone .app-key.material-glass-button.is-active{
+.apps-widget .app-key.material-glass-button:active,
+.apps-widget .app-key.material-glass-button.is-active{
   background:color-mix(in srgb,var(--glass-field-deep) 82%,var(--app-primary,var(--blue)) 7%);
   box-shadow:inset 0 2px 5px rgba(0,0,0,.32);
 }
-body[data-theme="light"] .apps-zone .app-key.material-glass-button{border-color:rgba(41,74,91,.10);background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(74,103,119,.045))}
-
-/* Rail controls are still glass, but read as engraved panel keys rather than
-   a stack of thick floating tiles. */
-.area-window[data-area-state="rail"] .material-glass-button:is(.control-push,.control-toggle){
-  border-color:color-mix(in srgb,var(--area-header-accent) 15%,rgba(220,245,255,.09));
-  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(0,0,0,.055));
-  box-shadow:inset 0 1px rgba(255,255,255,.055),inset 0 -1px rgba(0,0,0,.16);
-}
-.area-window[data-area-state="rail"] .material-glass-button:is(.control-push,.control-toggle):hover{border-color:color-mix(in srgb,var(--area-header-accent) 34%,var(--glass-key-edge));background:color-mix(in srgb,var(--area-header-accent) 7%,transparent)}
+body[data-theme="light"] .apps-widget .app-key.material-glass-button{border-color:rgba(41,74,91,.10);background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(74,103,119,.045))}
 
 /* ABS is deliberately opaque. This keeps controls physically connected to
    application casings and the solid content islands inside glass Areas. */
@@ -4385,10 +3209,6 @@ body[data-theme="light"] .apps-zone .app-key.material-glass-button{border-color:
 .app-frame .nav-choice.material-abs-button:hover{background:color-mix(in srgb,var(--app-primary) 8%,var(--app-content-raised));filter:none}
 .app-frame .nav-choice.material-abs-button:is(.is-active,[aria-pressed="true"]){background:color-mix(in srgb,var(--app-primary) 14%,var(--app-content-raised));box-shadow:inset 0 2px 4px rgba(0,0,0,.24)}
 
-@media(prefers-reduced-transparency:reduce){
-  :is(.area-window,.universal-search,.package-window) .material-glass-button:is(.control-push,.control-toggle){background:color-mix(in srgb,var(--glass-field) 94%,var(--glass-key-tone) 3%)}
-}
-
 /* v84 — material is inherited from the nearest physical substrate.
    A glass Area is glass all the way through; an ABS app stays ABS unless it
    deliberately contains a glass strip, whose descendants then become glass. */
@@ -4412,7 +3232,7 @@ body[data-theme="light"]{
 /* Glass components remain optically connected to their parent glass instead
    of becoming opaque plastic islands. Colour is a sparse orientation cue. */
 .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.workspace-switcher,.workspace-home-card,.overview-app-library,.project-module,.package-panel,.import-map){
-  border-color:color-mix(in srgb,var(--area-header-accent,var(--workspace-accent,var(--blue))) 13%,var(--material-glass-edge));
+  border-color:color-mix(in srgb,var(--widget-accent,var(--workspace-accent,var(--blue))) 13%,var(--material-glass-edge));
   background:
     linear-gradient(145deg,rgba(255,255,255,.075),transparent 34%,rgba(0,0,0,.055)),
     color-mix(in srgb,var(--glass-panel,var(--glass-field)) 43%,transparent);
@@ -4453,7 +3273,7 @@ body[data-theme="light"] .app-frame.material-surface-abs .material-surface-glass
    Unmanaged content buttons stay quieter; intentional push/toggle controls
    receive the more tactile cap treatment below. */
 .material-surface-glass button.material-glass-button{
-  --glass-key-tone:var(--state-tone,var(--app-primary,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
+  --glass-key-tone:var(--state-tone,var(--app-primary,var(--widget-accent,var(--workspace-accent,var(--blue)))));
   border-color:color-mix(in srgb,var(--glass-key-tone) 10%,var(--material-glass-edge));
   background:
     linear-gradient(180deg,rgba(255,255,255,.055),transparent 48%,rgba(0,0,0,.065)),
@@ -4550,14 +3370,14 @@ body[data-theme="light"] .app-frame.material-surface-abs .material-surface-glass
    child input optically seamless, avoiding a second border inside a border. */
 .material-glass-field:is(.recessed-field,.universal-search-field,.project-resource-form label,.all-apps-search,.mini-command,.mini-browser-search),
 input.material-glass-field,textarea.material-glass-field,select.material-glass-field{
-  border-color:color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 14%,var(--material-glass-edge));
+  border-color:color-mix(in srgb,var(--state-tone,var(--widget-accent,var(--app-primary,var(--blue)))) 14%,var(--material-glass-edge));
   background:linear-gradient(180deg,rgba(0,0,0,.10),rgba(255,255,255,.025)),color-mix(in srgb,var(--glass-field-deep) 58%,transparent);
   box-shadow:inset 0 2px 5px rgba(0,0,0,.27),inset 0 1px rgba(255,255,255,.05);
 }
 .material-glass-field:focus-within,
 input.material-glass-field:focus,textarea.material-glass-field:focus,select.material-glass-field:focus{
-  border-color:color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 45%,var(--material-glass-edge));
-  box-shadow:inset 0 2px 5px rgba(0,0,0,.27),0 0 0 1px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--app-primary,var(--blue)))) 14%,transparent);
+  border-color:color-mix(in srgb,var(--state-tone,var(--widget-accent,var(--app-primary,var(--blue)))) 45%,var(--material-glass-edge));
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.27),0 0 0 1px color-mix(in srgb,var(--state-tone,var(--widget-accent,var(--app-primary,var(--blue)))) 14%,transparent);
 }
 .material-abs-field:is(.recessed-field,.universal-search-field,.project-resource-form label,.all-apps-search,.mini-command,.mini-browser-search),
 input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
@@ -4577,24 +3397,24 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
   box-shadow:none;
 }
 .material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track{
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 13%,var(--material-glass-edge));
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 13%,var(--material-glass-edge));
   border-radius:999px;
   background:color-mix(in srgb,var(--glass-field-deep) 64%,transparent);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.035);
 }
 .material-surface-glass input[type="range"].material-glass-field::-webkit-slider-thumb{
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,var(--material-glass-edge));
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 18%,var(--material-glass-edge));
   background:linear-gradient(180deg,rgba(245,253,255,.32),rgba(104,153,177,.15)),color-mix(in srgb,var(--glass-field) 68%,transparent);
   box-shadow:0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.30);
 }
 .material-surface-glass input[type="range"].material-glass-field::-moz-range-track{
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 13%,var(--material-glass-edge));
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 13%,var(--material-glass-edge));
   border-radius:999px;
   background:color-mix(in srgb,var(--glass-field-deep) 64%,transparent);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.30);
 }
 .material-surface-glass input[type="range"].material-glass-field::-moz-range-thumb{
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,var(--material-glass-edge));
+  border:1px solid color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 18%,var(--material-glass-edge));
   background:color-mix(in srgb,var(--glass-field) 68%,transparent);
   box-shadow:0 1px 3px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.30);
 }
@@ -4602,7 +3422,7 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
 @media(prefers-reduced-transparency:reduce){
   .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.workspace-switcher,.workspace-home-card,.overview-app-library,.project-module,.package-panel,.import-map),
   .app-frame.material-surface-abs .material-surface-glass:is(.app-toolbar,.browser-toolbar,.music-controls,.folder-tabs,.notes-layout nav){
-    background:color-mix(in srgb,var(--glass-field) 94%,var(--area-header-accent,var(--app-primary,var(--blue))) 3%);
+    background:color-mix(in srgb,var(--glass-field) 94%,var(--widget-accent,var(--app-primary,var(--blue))) 3%);
     backdrop-filter:none;
     -webkit-backdrop-filter:none;
   }
@@ -4710,31 +3530,6 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
 .overview-desktop-wallpaper i:nth-child(1){left:71%;top:18%}.overview-desktop-wallpaper i:nth-child(2){left:37%;top:67%;opacity:.6}.overview-desktop-wallpaper i:nth-child(3){left:84%;top:73%;opacity:.45}
 @keyframes overview-breathe{from{transform:translate3d(-3%,2%,0) scale(.92);opacity:.58}to{transform:translate3d(4%,-2%,0) scale(1.08);opacity:1}}
 
-.overview-area-mini{
-  position:absolute;
-  z-index:22;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  gap:7px;
-  padding:8px 5px;
-  border:1px solid color-mix(in srgb,var(--stage-accent) 27%,rgba(204,239,255,.18));
-  border-radius:2px!important;
-  color:color-mix(in srgb,var(--stage-accent) 72%,white 28%);
-  background:color-mix(in srgb,rgba(11,25,35,.78) 93%,var(--stage-accent) 7%);
-  box-shadow:inset 0 1px rgba(238,251,255,.13),0 4px 14px rgba(0,0,0,.20);
-  backdrop-filter:blur(14px) saturate(1.15);
-  -webkit-backdrop-filter:blur(14px) saturate(1.15);
-  transition:opacity 60ms linear,transform 70ms ease;
-}
-.overview-area-mini span{width:29px;height:29px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--stage-accent) 30%,transparent);background:color-mix(in srgb,var(--stage-accent) 10%,transparent)}
-.overview-area-mini svg{width:16px;height:16px}.overview-area-mini b{font-size:10px;line-height:1;writing-mode:vertical-rl;text-orientation:mixed}
-.overview-area-mini-apps{--stage-accent:#3aa7ff;left:10px;top:10px;bottom:48px;width:40px}
-.overview-area-mini-project{--stage-accent:#a88aff;left:56px;top:10px;bottom:48px;width:56px}
-.overview-area-mini-system{--stage-accent:#36ccd7;right:10px;top:10px;bottom:48px;width:60px}
-.overview-area-mini.is-rail{width:31px;padding-inline:3px}.overview-area-mini.is-rail b{display:none}.overview-area-mini.is-hidden{opacity:.20;transform:scaleX(.6)}
-
 .overview-desktop-stage .overview-window-grid{
   position:absolute;
   z-index:10;
@@ -4806,29 +3601,27 @@ input.material-abs-field,textarea.material-abs-field,select.material-abs-field{
 .overview-home[data-overview-state="apps"] .overview-app-library{min-height:0;height:100%}
 .overview-home[data-overview-state="apps"] .launcher-results{overflow:auto}
 .overview-home[data-overview-state="system"] .overview-widgets{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));grid-auto-rows:min-content;align-content:start;gap:10px;overflow:auto;padding:2px 3px 12px}
-.overview-home[data-overview-state="system"] .overview-clock-widget{grid-column:span 1}.overview-home[data-overview-state="system"] .overview-now-playing{grid-column:span 2}.overview-home[data-overview-state="system"] .overview-areas-widget{grid-column:span 2}
+.overview-home[data-overview-state="system"] .overview-clock-widget{grid-column:span 1}.overview-home[data-overview-state="system"] .overview-now-playing{grid-column:span 2}.overview-home[data-overview-state="system"] .overview-panels-widget{grid-column:span 2}
 
 body[data-theme="light"] .overview-desktop-stage{background:#bdd9ea;border-color:rgba(42,84,109,.28);box-shadow:inset 0 1px rgba(255,255,255,.78),0 12px 30px rgba(34,67,86,.14)}
 body[data-theme="light"] .overview-desktop-wallpaper{background:radial-gradient(ellipse at 62% 26%,rgba(90,182,235,.45),transparent 36%),radial-gradient(ellipse at 25% 76%,rgba(78,145,211,.24),transparent 43%),linear-gradient(145deg,#d8edf7,#9fc9e2 52%,#c8e0ec)}
-body[data-theme="light"] .overview-area-mini{color:color-mix(in srgb,var(--stage-accent) 80%,#15384a 20%);background:color-mix(in srgb,rgba(236,247,251,.82) 92%,var(--stage-accent) 8%);box-shadow:inset 0 1px rgba(255,255,255,.72),0 4px 12px rgba(40,78,98,.15)}
 body[data-theme="light"] .overview-stage-hint{color:rgba(25,55,72,.62)}
 body[data-theme="light"] .overview-task-strip{background:rgba(233,245,250,.76);border-color:rgba(45,91,115,.22);box-shadow:inset 0 1px white,0 5px 12px rgba(44,78,96,.16)}
 
 @media(max-width:1180px){
   .overview-home[data-overview-state="desktop"]{grid-template-columns:minmax(0,1fr) 250px}
   .overview-desktop-stage .overview-window-grid{left:96px}
-  .overview-area-mini-project{width:43px}.overview-area-mini b{font-size:9px}
   .overview-home[data-overview-state="system"] .overview-widgets{grid-template-columns:repeat(2,minmax(220px,1fr))}
 }
 @media(max-width:850px){
   .overview-view-tabs{justify-content:stretch}.overview-view-tab{min-width:0;flex:1;padding-inline:7px}
   .overview-home[data-overview-state="desktop"]{display:block;overflow:auto}.overview-home[data-overview-state="desktop"] .overview-main{min-height:520px}.overview-home[data-overview-state="desktop"] .overview-widgets{display:none}
-  .overview-desktop-stage .overview-window-grid{inset:8px 51px 47px 57px}.overview-area-mini-project{display:none}.overview-area-mini-apps{left:8px;top:8px;bottom:47px;width:42px}.overview-area-mini-system{right:8px;top:8px;bottom:47px;width:38px}.overview-area-mini b{display:none}
+  .overview-desktop-stage .overview-window-grid{inset:8px 51px 47px 57px}
   .overview-stage-hint{display:none}.overview-home[data-overview-state="system"] .overview-widgets{grid-template-columns:1fr 1fr}
 }
 @media(max-width:620px){
   .overview-view-tab span{display:none}.overview-view-tab svg{width:18px;height:18px}
-  .overview-home[data-overview-state="system"] .overview-widgets{grid-template-columns:1fr}.overview-home[data-overview-state="system"] .overview-now-playing,.overview-home[data-overview-state="system"] .overview-areas-widget{grid-column:auto}
+  .overview-home[data-overview-state="system"] .overview-widgets{grid-template-columns:1fr}.overview-home[data-overview-state="system"] .overview-now-playing,.overview-home[data-overview-state="system"] .overview-panels-widget{grid-column:auto}
   .overview-desktop-stage .overview-window{min-width:105px;min-height:80px}.overview-window-titlebar small{display:none}
 }
 @media(prefers-reduced-motion:reduce){.overview-desktop-wallpaper::after{animation:none}}
@@ -4838,7 +3631,7 @@ body[data-theme="light"] .overview-task-strip{background:rgba(233,245,250,.76);b
 .overview-project-heading-actions{display:flex;align-items:center;gap:9px}
 .overview-project-heading-actions>span{color:var(--overview-muted,var(--muted));font-size:12px;font-weight:650}
 .overview-new-project{min-height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;border-radius:2px!important}
-.overview-new-project svg{width:14px;height:14px;color:var(--area-header-accent,var(--blue))}
+.overview-new-project svg{width:14px;height:14px;color:var(--widget-accent,var(--blue))}
 .overview-project-empty{min-height:72px;padding:12px;border:1px solid var(--sd-glass-groove);display:flex;align-items:center;gap:11px;color:var(--sd-glass-muted)}
 .overview-project-empty>svg{width:24px;height:24px;color:var(--violet)}
 .overview-project-empty b,.overview-project-empty small{display:block}
@@ -4862,7 +3655,7 @@ body[data-theme="light"] .overview-task-strip{background:rgba(233,245,250,.76);b
 .project-editor-overlay[hidden]{display:none}
 .project-editor-overlay.is-open{opacity:1;visibility:visible;transition-delay:0s}
 .project-editor-window{
-  --area-header-accent:#a88aff;
+  --widget-accent:#a88aff;
   width:min(540px,100%);
   max-height:min(700px,calc(100vh - 40px));
   overflow:hidden;
@@ -4917,36 +3710,14 @@ body[data-theme="light"]{
   --area-soft-shadow:rgba(30,54,67,.15);
   --area-section-wash:rgba(255,255,255,.18);
 }
-
-/* The acrylic Areas now dissolve into the wallpaper instead of looking like
-   thick edge-lit containers. Their outline is only enough to locate them. */
-body.areas-docked .area-window,
-.area-window,
-.desktop-shell>.apps-zone,
-.desktop-shell>.systems-zone{
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
   border:1px solid var(--area-soft-edge);
   background:
     linear-gradient(180deg,rgba(255,255,255,.035),transparent 72px),
     color-mix(in srgb,var(--acrylic-field) 88%,transparent);
   box-shadow:0 12px 34px var(--area-soft-shadow),inset 0 1px rgba(255,255,255,.055);
 }
-body[data-theme="light"] .area-window{
-  box-shadow:0 12px 32px var(--area-soft-shadow),inset 0 1px rgba(255,255,255,.38);
-}
-.area-window::before{display:none!important}
-.area-window.is-area-dragging,.area-window.is-area-resizing,
-body.areas-docked .area-window.is-area-resizing{
-  box-shadow:0 16px 40px rgba(0,0,0,.28),0 0 0 1px color-mix(in srgb,var(--area-header-accent,var(--blue)) 14%,transparent);
-}
-.area-window-bar{
-  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent,var(--blue)) 16%,transparent);
-  background:color-mix(in srgb,var(--area-header-accent,var(--blue)) 7%,transparent);
-  box-shadow:none;
-}
-
-/* Use spacing and a restrained tint for grouping inside glass Areas. This
-   removes the nested-card / nested-edge effect and restores breathing room. */
-.area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
 .universal-search .material-surface-glass:is(.overview-widget,.workspace-home-card,.overview-app-library){
   border:0;
   background:var(--area-section-wash);
@@ -4954,8 +3725,7 @@ body.areas-docked .area-window.is-area-resizing{
   backdrop-filter:none;
   -webkit-backdrop-filter:none;
 }
-.apps-zone .mini-section{margin-top:14px}
-.systems-zone{gap:12px}
+.apps-widget .mini-section{margin-top:14px}
 .project-space-content{gap:10px}
 .static-widget-stack,.dynamic-widget-stack{gap:10px}
 
@@ -4969,12 +3739,12 @@ body.areas-docked .area-window.is-area-resizing{
 }
 .material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle):hover{
   border-color:transparent;
-  background:color-mix(in srgb,var(--glass-key-tone,var(--area-header-accent,var(--blue))) 7%,transparent);
+  background:color-mix(in srgb,var(--glass-key-tone,var(--widget-accent,var(--blue))) 7%,transparent);
   box-shadow:none;
 }
 .material-surface-glass button.material-glass-button:not(.control-push):not(.control-toggle):active{
   transform:none;
-  background:color-mix(in srgb,var(--glass-key-tone,var(--area-header-accent,var(--blue))) 11%,transparent);
+  background:color-mix(in srgb,var(--glass-key-tone,var(--widget-accent,var(--blue))) 11%,transparent);
   box-shadow:inset 0 1px 2px rgba(0,0,0,.12);
 }
 .material-surface-abs button.material-abs-button:not(.control-push):not(.control-toggle):hover{
@@ -5059,21 +3829,9 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   --window-corner:22px;
   --window-card-corner:15px;
 }
-
-/* Architectural, docked surfaces. */
-.area-window,
-.desktop-shell>.apps-zone,
-.desktop-shell>.systems-zone,
-.area-window[data-area-state="compact"],
-.area-window[data-area-state="rail"]{
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
   border-radius:var(--area-corner);
-}
-.area-window-bar{
-  border-radius:0;
-}
-.area-resize-handle,
-.area-window[data-dock-edge]>.area-resize-handle{
-  border-radius:2px;
 }
 .all-apps-drawer{
   border-radius:2px 2px 0 0;
@@ -5118,35 +3876,6 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   --window-control-corner:10px;
 }
 
-/* Area contents remain architectural: cards, widgets, launchers and fields
-   share the same tight geometry as their docked parent. App artwork, status
-   dots and circular indicators keep their native silhouettes. */
-.area-window :where(
-  button,
-  input:not([type="range"]),
-  textarea,
-  select,
-  label,
-  section,
-  article,
-  nav,
-  .app-rack,
-  .mini-card,
-  .system-widget,
-  .project-module,
-  .project-path,
-  .project-quick-note,
-  .project-closed-state,
-  .all-apps-drawer,
-  .all-apps-search,
-  .notification,
-  .timer-face,
-  .next-event,
-  .device-row
-){
-  border-radius:var(--area-content-corner);
-}
-
 /* Small pieces inside movable windows use compact squircles, while full
    content wells use a broader version of the same curve. */
 :is(.app-frame,.package-window,.desktop-context-menu) :where(
@@ -5177,9 +3906,6 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
 }
 
 @supports (corner-shape:squircle){
-  .area-window :where(button,input:not([type="range"]),textarea,select,label,section,article,nav,.app-rack,.mini-card,.system-widget,.project-module,.project-path,.project-quick-note,.project-closed-state,.all-apps-drawer,.all-apps-search,.notification,.timer-face,.next-event,.device-row){
-    corner-shape:round;
-  }
   :is(.app-frame,.package-window,.desktop-context-menu) :where(button,input:not([type="range"]),textarea,select,label,.app-badge,.folder-tab,.nav-choice),
   :is(.app-frame,.package-window) :where(.file-well,.music-hero,.playlist,.start-page,.terminal-screen,.notes-layout nav,.notes-layout textarea,.album-block,.package-panel,.import-map){
     corner-shape:squircle;
@@ -5193,51 +3919,14 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
 /* v88 — hard separation: Area geometry must never inherit a component's
    rounded default. These declarations intentionally win over every widget. */
 :root{--area-corner:0px;--area-content-corner:2px}
-
-.area-window,
-.desktop-shell>.apps-zone,
-.desktop-shell>.systems-zone,
-.area-window[data-area-state="compact"],
-.area-window[data-area-state="rail"]{
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
   border-radius:0!important;
 }
 
-.area-window :where(
-  button,
-  input:not([type="range"]),
-  textarea,
-  select,
-  label,
-  section,
-  article,
-  nav,
-  form,
-  .app-rack,
-  .mini-card,
-  .system-widget,
-  .project-module,
-  .project-path,
-  .project-quick-note,
-  .project-closed-state,
-  .all-apps-drawer,
-  .all-apps-search,
-  .notification,
-  .timer-face,
-  .next-event,
-  .device-row,
-  .project-session-toggle,
-  .workspace-status
-){
-  border-radius:2px!important;
-}
-
 @supports (corner-shape:square){
-  .area-window,
-  .desktop-shell>.apps-zone,
-  .desktop-shell>.systems-zone,
-  .area-window[data-area-state="compact"],
-  .area-window[data-area-state="rail"],
-  .area-window :where(button,input:not([type="range"]),textarea,select,label,section,article,nav,form,.app-rack,.mini-card,.system-widget,.project-module,.project-path,.project-quick-note,.project-closed-state,.all-apps-drawer,.all-apps-search,.notification,.timer-face,.next-event,.device-row,.project-session-toggle,.workspace-status){
+.desktop-shell>.apps-widget,
+.desktop-shell>.system-widget-content{
     corner-shape:square!important;
   }
 }
@@ -5248,10 +3937,10 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   border:1px solid rgba(205,234,247,.13);
   background:
     linear-gradient(90deg,
-      color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 24%,transparent) 0 var(--range-progress,0%),
+      color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 24%,transparent) 0 var(--range-progress,0%),
       transparent var(--range-progress,0%) 100%),
     linear-gradient(90deg,
-      color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 88%,white 12%) 0 var(--range-progress,0%),
+      color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 88%,white 12%) 0 var(--range-progress,0%),
       transparent var(--range-progress,0%) 100%) center/100% 2px no-repeat,
     color-mix(in srgb,var(--glass-field-deep) 78%,transparent);
   box-shadow:
@@ -5269,8 +3958,8 @@ body[data-theme="light"] .app-frame .recessed-field.material-surface-glass{
   height:2px;
   border:0;
   border-radius:999px;
-  background:color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 88%,white 12%);
-  box-shadow:0 0 5px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 58%,transparent);
+  background:color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 88%,white 12%);
+  box-shadow:0 0 5px color-mix(in srgb,var(--app-primary,var(--widget-accent,var(--blue))) 58%,transparent);
 }
 body[data-theme="light"] .material-surface-glass input[type="range"].material-glass-field::-webkit-slider-runnable-track,
 body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.material-glass-field::-webkit-slider-runnable-track,
@@ -5342,55 +4031,14 @@ body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.m
   --button-press-time:8ms;
   --button-release-time:16ms;
 }
-
-/* Shared fit and type rhythm. */
-:is(.area-window,.universal-search,.app-frame,.package-window) *{box-sizing:border-box}
-:is(.area-window,.universal-search,.app-frame,.package-window) :where(button,input,textarea,select){font-family:inherit}
-:is(.area-window,.universal-search,.app-frame,.package-window) :where(button,label,input,select){min-width:0}
-:is(.area-window,.universal-search,.app-frame,.package-window) small{
-  font-size:var(--ui-meta-size);
-  line-height:1.3;
-}
-:is(.area-window,.universal-search,.app-frame,.package-window) button{
-  line-height:1.2;
-  transition-duration:var(--button-release-time);
-}
-:is(.area-window,.universal-search,.app-frame,.package-window) button:active{
-  transition-duration:var(--button-press-time);
-}
 .eyebrow,.small-heading{font-size:10px;line-height:1.25;letter-spacing:.10em}
-
-/* Square acrylic Areas: one outer sheet, quiet groups, consistent density. */
-.area-window{
-  padding:var(--ui-area-pad);
-}
-.area-window>*{min-width:0}
-.area-window-bar{
-  min-height:var(--ui-header-h);
-  flex-basis:var(--ui-header-h);
-  margin:calc(-1 * var(--ui-area-pad)) calc(-1 * var(--ui-area-pad)) 9px;
-  padding:6px 7px 6px 10px;
-}
-.systems-zone .area-window-bar{top:calc(-1 * var(--ui-area-pad));margin-bottom:9px}
-.area-window-identity{gap:8px}
-.area-window-identity b{font-size:var(--ui-title-size);line-height:1.2}
-.area-window-identity small{margin-top:1px}
-.area-window-icon{width:30px;height:30px;flex-basis:30px}
-.area-window-actions{gap:4px;flex:0 0 auto}
-.area-window-key{width:30px;height:28px}
-.apps-zone .app-rack,
-.area-window .mini-card,
-.area-window .system-widget,
-.area-window .project-module{
+.apps-widget .app-rack{
   border:0;
   background:var(--area-section-wash);
   box-shadow:none;
 }
-.apps-zone .app-rack{padding:6px;gap:4px}
+.apps-widget .app-rack{padding:6px;gap:4px}
 .mini-stack,.static-widget-stack,.dynamic-widget-stack{gap:8px}
-.area-window .mini-card,
-.area-window .system-widget,
-.area-window .project-module{padding:9px}
 .widget-heading{min-height:28px;margin-bottom:6px}
 .widget-heading h2,.project-module>header b{font-size:12px;line-height:1.2}
 .notification,.device-row,.next-event,.timer-face{background:var(--ui-quiet)}
@@ -5524,12 +4172,6 @@ body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.m
   box-shadow:none;
 }
 
-/* Prevent dense modes from clipping labels or wasting space. */
-.area-window[data-area-state="compact"] :is(.mini-card,.system-widget,.project-module){padding:7px}
-.area-window[data-area-state="compact"] small{font-size:10px}
-.area-window[data-area-state="rail"]{padding:5px}
-.area-window[data-area-state="rail"] .area-window-bar{margin:-5px -5px 5px}
-
 @media(max-width:1180px){
   .universal-search{padding:14px 16px}
   .overview-home{gap:10px}
@@ -5546,7 +4188,7 @@ body[data-theme="light"] .app-frame input[type="range"].material-surface-glass.m
 }
 
 @media(prefers-reduced-transparency:reduce){
-  .area-window,.universal-search{backdrop-filter:none;-webkit-backdrop-filter:none}
+.universal-search{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
 
 /* v89 — Overview is another desktop Area, not a window. Its full-screen
@@ -5835,65 +4477,7 @@ body[data-theme="light"]{
   --sd-glass-text:rgba(20,31,37,.96);
   --sd-glass-muted:rgba(38,57,66,.70);
 }
-
-/* One sheet: three parallel neutral reflections describe the cut acrylic
-   edge. There is deliberately no coloured perimeter or dotted texture. */
-:is(.area-window,.universal-search,.desktop-context-menu.material-surface-glass,.all-apps-drawer.material-surface-glass,.toast.material-surface-glass){
-  border:1px solid var(--sd-glass-edge)!important;
-  border-radius:0!important;
-  background:
-    linear-gradient(128deg,rgba(255,255,255,.075),transparent 19% 76%,rgba(255,255,255,.025)),
-    var(--sd-glass-face)!important;
-  color:var(--sd-glass-text);
-  box-shadow:
-    0 16px 36px rgba(0,0,0,.25),
-    inset 0 1px var(--sd-glass-highlight),
-    inset 1px 0 var(--sd-glass-edge-soft),
-    inset 0 -1px var(--sd-glass-groove-low),
-    inset -1px 0 rgba(0,0,0,.15)!important;
-  -webkit-backdrop-filter:blur(23px) saturate(1.08)!important;
-  backdrop-filter:blur(23px) saturate(1.08)!important;
-}
-body.areas-docked .area-window{
-  box-shadow:
-    inset 0 1px var(--sd-glass-highlight),
-    inset 1px 0 var(--sd-glass-edge-soft),
-    inset 0 -1px var(--sd-glass-groove-low),
-    inset -1px 0 rgba(0,0,0,.15)!important;
-}
-.area-window::before,
 .universal-search::before{display:none!important}
-
-/* A stronger, uniform tint distinguishes each Area from its body. The header
-   stays translucent, square and flat, including on the rail; no colour fade. */
-.area-window .area-window-bar,
-.area-window[data-area-state="rail"] .area-window-bar{
-  border:0!important;
-  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 42%,var(--sd-glass-groove))!important;
-  border-radius:0!important;
-  background:color-mix(in srgb,var(--area-header-accent) 32%,rgba(10,18,24,.76))!important;
-  box-shadow:inset 0 -1px rgba(0,0,0,.12)!important;
-}
-body[data-theme="light"] .area-window .area-window-bar,
-body[data-theme="light"] .area-window[data-area-state="rail"] .area-window-bar{
-  background:color-mix(in srgb,var(--area-header-accent) 27%,rgba(247,251,253,.82))!important;
-  box-shadow:inset 0 -1px rgba(40,66,79,.08)!important;
-}
-.area-window .area-window-bar .area-window-identity b{color:#f0f7fc!important}
-.area-window .area-window-bar .area-window-identity small{color:#d0dfe9!important}
-body[data-theme="light"] .area-window .area-window-bar .area-window-identity b{color:#172832!important}
-body[data-theme="light"] .area-window .area-window-bar .area-window-identity small{color:#3a505e!important}
-.area-window-icon.material-glass-element{
-  border:1px solid color-mix(in srgb,currentColor 22%,var(--sd-glass-groove))!important;
-  border-radius:2px!important;
-  background:color-mix(in srgb,currentColor 6%,transparent)!important;
-  box-shadow:inset 0 1px var(--sd-glass-highlight)!important;
-}
-
-/* One plane inside each Area. Modules are separated by shallow engraved
-   seams; they are no longer cards with their own glass edge and shadow. */
-.area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
-.area-window :is(.app-rack,.project-switcher),
 .universal-search .material-surface-glass:is(.workspace-switcher,.workspace-home-card,.overview-app-library,.overview-widget){
   border:0!important;
   border-top:1px solid var(--sd-glass-groove)!important;
@@ -5903,11 +4487,6 @@ body[data-theme="light"] .area-window .area-window-bar .area-window-identity sma
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
 }
-.area-window :is(.mini-card,.system-widget,.project-module):first-child,
-.area-window .dynamic-widget-stack>.system-widget:first-child,
-.area-window .static-widget-stack>.system-widget:first-child{border-top-color:var(--sd-glass-edge-soft)!important}
-body[data-theme="light"] .area-window .material-surface-glass:is(.mini-card,.system-widget,.overview-widget,.project-module),
-body[data-theme="light"] .area-window :is(.app-rack,.project-switcher),
 body[data-theme="light"] .universal-search .material-surface-glass:is(.workspace-switcher,.workspace-home-card,.overview-app-library,.overview-widget){
   background:rgba(255,255,255,.08)!important;
 }
@@ -6020,14 +4599,12 @@ body[data-theme="light"] .universal-search .material-surface-glass:is(.workspace
 .overview-home[data-overview-state="all"] .desktop-stage-heading>div{min-width:0;display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:8px}
 .overview-home[data-overview-state="all"] .overview-desktop-stage{min-height:0;height:100%;border:0;border-radius:0!important}
 .overview-home[data-overview-state="all"] .overview-desktop-stage .overview-window-grid{inset:9px 66px 46px 105px}
-.overview-home[data-overview-state="all"] .overview-area-mini-apps{left:8px;top:8px;bottom:46px;width:36px}.overview-home[data-overview-state="all"] .overview-area-mini-project{left:49px;top:8px;bottom:46px;width:48px}.overview-home[data-overview-state="all"] .overview-area-mini-system{right:8px;top:8px;bottom:46px;width:50px}
 
 /* System lane follows the dynamic-to-static priority already used by the
    real zone. Frequent state is visible first; structural controls sit last. */
 .overview-home[data-overview-state="all"] .overview-widget{flex:0 0 auto;margin:0;padding:8px 9px!important;border:0!important;border-bottom:1px solid var(--sd-glass-groove)!important;background:transparent!important}
-.overview-home[data-overview-state="all"] .overview-clock-widget{order:1;min-height:64px}.overview-home[data-overview-state="all"] .overview-now-playing{order:2}.overview-home[data-overview-state="all"] .overview-agenda-widget{order:3}.overview-home[data-overview-state="all"] .overview-quick-widget{order:4}.overview-home[data-overview-state="all"] .overview-connect-widget{order:5}.overview-home[data-overview-state="all"] .overview-areas-widget{order:6}
+.overview-home[data-overview-state="all"] .overview-clock-widget{order:1;min-height:64px}.overview-home[data-overview-state="all"] .overview-now-playing{order:2}.overview-home[data-overview-state="all"] .overview-agenda-widget{order:3}.overview-home[data-overview-state="all"] .overview-quick-widget{order:4}.overview-home[data-overview-state="all"] .overview-connect-widget{order:5}.overview-home[data-overview-state="all"] .overview-panels-widget{order:6}
 .overview-home[data-overview-state="all"] .overview-clock-widget>.live-time{font-size:28px}.overview-home[data-overview-state="all"] .overview-quick-grid{gap:4px;margin-top:6px}.overview-home[data-overview-state="all"] .overview-quick-grid .quick-toggle{min-height:34px}
-.overview-home[data-overview-state="all"] .overview-area-row{min-height:36px}.overview-home[data-overview-state="all"] .area-list-icon{width:25px;height:25px}.overview-home[data-overview-state="all"] .overview-area-row>button{height:27px}
 
 body[data-theme="light"] .overview-zone-lane,
 body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-apps-section,
@@ -6053,168 +4630,27 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
   .overview-home[data-overview-state="all"] .overview-main{display:flex;flex-direction:column}.overview-project-zone,.overview-home[data-overview-state="all"] .overview-apps-section{min-height:480px}.overview-home[data-overview-state="all"] .open-windows-section{min-height:520px}
   .overview-home[data-overview-state="all"] .overview-widgets{display:flex}.overview-system-heading{position:static}
 }
-.area-window :is(.notification,.timer-face,.next-event,.device-row,.project-path,.project-quick-note,.project-clipboard){
-  border:0!important;
-  border-left:1px solid var(--sd-glass-groove)!important;
-  border-radius:0!important;
-  background:rgba(255,255,255,.018)!important;
-  box-shadow:none!important;
-}
-.area-window :is(.notification,.next-event,.device-row):hover{
-  background:var(--sd-glass-hover)!important;
-}
-
-/* Glass controls are engraved boundaries in the parent sheet. They do not
-   rise, jump or cast a second outer shadow. Pressing reverses the tiny inner
-   reflection in 8 ms, like the microswitch under a mouse button. */
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle){
-  --glass-key-tone:var(--state-tone,var(--toggle-tone,var(--area-header-accent,var(--workspace-accent,var(--blue)))));
-  border:1px solid color-mix(in srgb,var(--glass-key-tone) 7%,var(--sd-glass-groove))!important;
-  border-radius:2px!important;
-  background:rgba(255,255,255,.018)!important;
-  box-shadow:
-    inset 0 1px var(--sd-glass-highlight),
-    inset 0 -1px rgba(0,0,0,.18)!important;
-  filter:none!important;
-  transform:none!important;
-  transition:background 36ms linear,border-color 36ms linear,box-shadow 16ms linear!important;
-}
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle):hover{
-  border-color:color-mix(in srgb,var(--glass-key-tone) 17%,var(--sd-glass-groove))!important;
-  background:color-mix(in srgb,var(--glass-key-tone) 4%,var(--sd-glass-hover))!important;
-  box-shadow:inset 0 1px color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-highlight)),inset 0 -1px rgba(0,0,0,.18)!important;
-}
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button:is(.control-push,.control-toggle):active{
-  border-color:color-mix(in srgb,var(--glass-key-tone) 20%,var(--sd-glass-groove))!important;
-  background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
-  box-shadow:inset 0 2px 3px rgba(0,0,0,.25),inset 0 -1px rgba(255,255,255,.055)!important;
-  transform:none!important;
-  transition-duration:8ms!important;
-}
-:is(.area-window,.universal-search,.desktop-context-menu,.all-apps-drawer,.toast,.desktop-glass-dialog) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"]){
-  border-color:color-mix(in srgb,var(--glass-key-tone) 16%,var(--sd-glass-groove))!important;
-  background:color-mix(in srgb,var(--glass-key-tone) 5%,var(--sd-glass-down))!important;
-  box-shadow:inset 0 2px 3px rgba(0,0,0,.22),inset 0 -1px rgba(255,255,255,.05)!important;
-  transform:none!important;
-}
-
-/* Only toggles retain a light after the click. On acrylic this is light caught
-   by a one-pixel engraving, with a small local bloom rather than a halo. */
-:is(.area-window,.universal-search,.desktop-glass-dialog) button.material-glass-button.control-toggle::after{
-  height:1px!important;
-  left:7px!important;
-  right:7px!important;
-  bottom:2px!important;
-  border-radius:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  opacity:0!important;
-}
-:is(.area-window,.universal-search,.desktop-glass-dialog) button.material-glass-button.control-toggle:is(.is-active,[aria-pressed="true"],[aria-selected="true"])::after{
-  display:block!important;
-  background:color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 84%,white 16%)!important;
-  box-shadow:
-    0 0 1px color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 82%,transparent),
-    0 0 4px color-mix(in srgb,var(--state-tone,var(--glass-key-tone,var(--area-header-accent,var(--blue)))) 32%,transparent)!important;
-  opacity:1!important;
-}
 
 /* App launchers remain normal full-colour icons. Their open/selected state is
    an acrylic engraving only—there is no extra icon well around the artwork. */
-.apps-zone .app-key.material-glass-button,
-.apps-zone .app-key.material-glass-button:is(.control-push,.control-toggle){
+.apps-widget .app-key.material-glass-button,
+.apps-widget .app-key.material-glass-button:is(.control-push,.control-toggle){
   border-color:transparent!important;
   background:transparent!important;
   box-shadow:none!important;
 }
-.apps-zone .app-key.material-glass-button:hover{background:var(--sd-glass-hover)!important}
-.apps-zone .app-key.material-glass-button:active{background:var(--sd-glass-down)!important}
-.apps-zone .app-key .app-art{filter:none!important}
-
-/* Fields are shallow cut-outs in the acrylic. Focus lights only the bottom
-   engraving instead of drawing a coloured aura around the entire field. */
-:is(.area-window,.universal-search,.all-apps-drawer) :is(.material-glass-field,input.material-glass-field,textarea.material-glass-field,select.material-glass-field){
-  border:1px solid var(--sd-glass-groove)!important;
-  border-radius:2px!important;
-  background:var(--sd-glass-face-deep)!important;
-  box-shadow:inset 0 2px 3px rgba(0,0,0,.19),inset 0 1px rgba(255,255,255,.035)!important;
-}
-:is(.area-window,.universal-search,.all-apps-drawer) :is(.material-glass-field,input.material-glass-field,textarea.material-glass-field,select.material-glass-field):focus-within,
-:is(.area-window,.universal-search,.all-apps-drawer) :is(input.material-glass-field,textarea.material-glass-field,select.material-glass-field):focus{
-  border-color:var(--sd-glass-groove)!important;
-  box-shadow:
-    inset 0 2px 3px rgba(0,0,0,.19),
-    inset 0 -1px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--blue))) 86%,white 14%),
-    0 1px 3px color-mix(in srgb,var(--state-tone,var(--area-header-accent,var(--blue))) 28%,transparent)!important;
-  outline:0!important;
-}
+.apps-widget .app-key.material-glass-button:hover{background:var(--sd-glass-hover)!important}
+.apps-widget .app-key.material-glass-button:active{background:var(--sd-glass-down)!important}
+.apps-widget .app-key .app-art{filter:none!important}
 .universal-search-field{
   border-radius:2px!important;
   background:var(--sd-glass-face-deep)!important;
-}
-
-/* Acrylic range: frosted groove, luminous engraved fill, transparent square
-   thumb. The colour is local to the filled section only. */
-:is(.area-window,.universal-search) input[type="range"].material-glass-field{
-  border:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-}
-:is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track{
-  height:4px!important;
-  border:1px solid var(--sd-glass-groove)!important;
-  border-radius:0!important;
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 86%,white 14%) 0 var(--range-progress,0%),
-      transparent var(--range-progress,0%) 100%) center/100% 1px no-repeat,
-    var(--sd-glass-face-deep)!important;
-  box-shadow:inset 0 1px 2px rgba(0,0,0,.26),0 0 3px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 18%,transparent)!important;
-}
-:is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-thumb{
-  width:12px!important;
-  height:16px!important;
-  margin-top:-7px!important;
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 12%,var(--sd-glass-edge))!important;
-  border-radius:2px!important;
-  background:rgba(190,226,241,.12)!important;
-  box-shadow:inset 0 1px var(--sd-glass-highlight),inset 0 -1px var(--sd-glass-groove-low),0 1px 2px rgba(0,0,0,.22)!important;
-}
-:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-track{
-  height:2px!important;
-  border:1px solid var(--sd-glass-groove)!important;
-  border-radius:0!important;
-  background:var(--sd-glass-face-deep)!important;
-}
-:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress{
-  height:1px!important;
-  border:0!important;
-  border-radius:0!important;
-  background:color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 86%,white 14%)!important;
-  box-shadow:0 0 3px color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 28%,transparent)!important;
-}
-:is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-thumb{
-  width:12px!important;
-  height:16px!important;
-  border:1px solid color-mix(in srgb,var(--app-primary,var(--area-header-accent,var(--blue))) 12%,var(--sd-glass-edge))!important;
-  border-radius:2px!important;
-  background:rgba(190,226,241,.12)!important;
-  box-shadow:inset 0 1px var(--sd-glass-highlight),inset 0 -1px var(--sd-glass-groove-low),0 1px 2px rgba(0,0,0,.22)!important;
 }
 
 /* Overview is a full acrylic Area. Its structural regions are etched panels;
    content rows remain flat and use a single local selection line. */
 .universal-search-shell{border-radius:0!important}
 .universal-search-header{border-bottom:1px solid var(--sd-glass-groove)!important}
-.universal-search :is(.workspace-context-card,.overview-window,.overview-project,.universal-result,.overview-area-row,.launcher-category,.launcher-app){
-  border:0!important;
-  border-radius:2px!important;
-  background:transparent!important;
-  box-shadow:none!important;
-}
-.universal-search :is(.overview-window,.overview-project,.universal-result,.overview-area-row,.launcher-category,.launcher-app):hover{
-  background:var(--sd-glass-hover)!important;
-}
 .universal-search :is(.overview-project,.universal-result,.launcher-category):is(.is-active,[aria-selected="true"]){
   background:color-mix(in srgb,var(--state-tone,var(--project-card-accent,var(--workspace-accent,var(--blue)))) 6%,transparent)!important;
   box-shadow:inset 1px 0 color-mix(in srgb,var(--state-tone,var(--project-card-accent,var(--workspace-accent,var(--blue)))) 86%,white 14%)!important;
@@ -6273,87 +4709,20 @@ body[data-theme="light"] .overview-home[data-overview-state="all"] .overview-wid
 }
 .desktop-context-menu.material-surface-glass .context-menu-separator{height:1px;background:var(--sd-glass-groove)!important;box-shadow:none!important}
 .all-apps-drawer.material-surface-glass :is(.launcher-body,.launcher-results,.launcher-categories){background:transparent!important}
-
-/* Resize and pressure affordances are engravings until the pointer injects
-   colour into that exact edge. */
-.area-resize-handle,
-.area-window[data-dock-edge]>.area-resize-handle{
-  border-radius:0!important;
-  background:var(--sd-glass-groove)!important;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025)!important;
-  opacity:.72;
-}
-.area-resize-handle:hover,
-.area-window.is-area-resizing>.area-resize-handle{
-  background:color-mix(in srgb,var(--area-header-accent) 82%,white 18%)!important;
-  box-shadow:0 0 4px color-mix(in srgb,var(--area-header-accent) 32%,transparent)!important;
-  opacity:1;
-}
-
-@media(prefers-reduced-transparency:reduce){
-  :is(.area-window,.universal-search,.desktop-context-menu.material-surface-glass,.all-apps-drawer.material-surface-glass,.toast.material-surface-glass){
-    background:color-mix(in srgb,var(--sd-glass-face) 96%,#101a20 4%)!important;
-    -webkit-backdrop-filter:none!important;
-    backdrop-filter:none!important;
-  }
-}
-
-/* v109 — Areas are panes, not framed boxes. Keep only a faint top cut and a
-   workspace-facing resize engraving. Scrollable content owns the middle of
-   the pane; headers and footers stay in normal layout and never overlap it. */
-.area-window,
-body.areas-docked .area-window{
-  border:0!important;
-  outline:0!important;
-  overflow:hidden!important;
-  /* Keep the acrylic edge inside the Area: an outer blurred shadow paints
-     a full-height shaded column over the neighbouring desktop-icon gap. */
-  box-shadow:inset 0 1px rgba(236,250,255,.065)!important;
-}
-body[data-theme="light"] .area-window,
-body[data-theme="light"].areas-docked .area-window{
-  box-shadow:inset 0 1px rgba(255,255,255,.34)!important;
-}
-
-.area-window .area-window-bar,
-.systems-zone .area-window-bar,
-.area-window[data-area-state="rail"] .area-window-bar{
-  position:relative!important;
-  top:auto!important;
-  z-index:12;
-  flex:0 0 var(--ui-header-h);
-  min-height:var(--ui-header-h);
-  margin:calc(-1 * var(--ui-area-pad)) calc(-1 * var(--ui-area-pad)) 8px!important;
-}
-.area-window .area-window-bar::after{
-  content:"";
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:-1px;
-  height:1px;
-  pointer-events:none;
-  background:color-mix(in srgb,var(--area-header-accent) 42%,var(--sd-glass-groove));
-  opacity:.85;
-}
-
-/* Apps: only the live-card list scrolls. The app rack and bottom launcher are
-   outside that viewport, so no card can pass behind either fixed region. */
-.apps-zone{overflow:hidden!important}
-.apps-zone .app-rack{flex:0 0 auto}
-.apps-zone .mini-section{
+.apps-widget .app-rack{flex:0 0 auto}
+.apps-widget .mini-section{
   min-height:0;
   flex:1 1 auto;
   overflow:hidden;
 }
-.apps-zone .mini-stack{
+.apps-widget .mini-stack{
   min-height:0;
   max-height:100%;
   overflow-y:auto;
   overscroll-behavior:contain;
   scroll-padding-block:8px;
 }
-.apps-zone .apps-bottom{
+.apps-widget .apps-bottom{
   position:relative;
   z-index:10;
   flex:0 0 auto;
@@ -6363,20 +4732,20 @@ body[data-theme="light"].areas-docked .area-window{
 /* System: the Area itself no longer scrolls under its header. Dynamic items
    get a bounded upper viewport; pinned widgets use the remaining lower space
    and keep their bottom alignment while still being independently scrollable. */
-.systems-zone[data-dock-edge="left"],
-.systems-zone[data-dock-edge="right"]{
+.system-widget-content[data-panel-edge="left"],
+.system-widget-content[data-panel-edge="right"]{
   overflow:hidden!important;
 }
-.systems-zone[data-dock-edge="left"] .dynamic-widget-stack,
-.systems-zone[data-dock-edge="right"] .dynamic-widget-stack{
+.system-widget-content[data-panel-edge="left"] .dynamic-widget-stack,
+.system-widget-content[data-panel-edge="right"] .dynamic-widget-stack{
   flex:0 1 auto;
   max-height:min(34vh,310px);
   overflow-y:auto;
   overscroll-behavior:contain;
   scrollbar-width:thin;
 }
-.systems-zone[data-dock-edge="left"] .static-widget-stack,
-.systems-zone[data-dock-edge="right"] .static-widget-stack{
+.system-widget-content[data-panel-edge="left"] .static-widget-stack,
+.system-widget-content[data-panel-edge="right"] .static-widget-stack{
   min-height:0;
   flex:1 1 auto;
   margin-top:0;
@@ -6385,77 +4754,30 @@ body[data-theme="light"].areas-docked .area-window{
   scroll-padding-block:8px;
   scrollbar-width:thin;
 }
-
-/* Project: switcher and session controls are fixed siblings around exactly one
-   scroll viewport. The viewport shrinks before it can enter either sibling. */
-.project-area{overflow:hidden!important}
-.project-area .project-switcher{
+.files-widget .project-switcher{
   position:relative;
   z-index:9;
   flex:0 0 auto;
 }
-.project-area .project-space-content{
+.files-widget .project-space-content{
   min-width:0;
   min-height:0;
   flex:1 1 auto;
   overscroll-behavior:contain;
   scroll-padding-block:8px;
 }
-.project-area[data-dock-edge="left"] .project-space-content,
-.project-area[data-dock-edge="right"] .project-space-content{
+.files-widget[data-panel-edge="left"] .project-space-content,
+.files-widget[data-panel-edge="right"] .project-space-content{
   overflow-y:auto!important;
   overflow-x:hidden!important;
 }
-.project-area .project-session-bar,
-.project-area .project-closed-state,
-.project-area .project-rail-tools{
+.files-widget .project-session-bar,
+.files-widget .project-closed-state{
   position:relative;
   z-index:10;
   flex-shrink:0;
 }
-
-/* Rail headers use the same thin treatment without reintroducing a boxed edge. */
-.area-window[data-area-state="rail"]{
-  border:0!important;
-  box-shadow:inset 0 1px rgba(236,250,255,.055)!important;
-}
-.area-window[data-area-state="rail"][data-dock-edge="top"] .area-window-bar,
-.area-window[data-area-state="rail"][data-dock-edge="bottom"] .area-window-bar{
-  margin:-5px 0 -5px -5px!important;
-}
-
-/* v110 — The resize target stays comfortably wide, but it is not material.
-   Only its one-pixel engraved centre line is visible. v108 accidentally filled
-   the complete 11px hit target, which read as a heavy frame around the Area. */
-.area-resize-handle,
-.area-window[data-dock-edge]>.area-resize-handle,
-.area-resize-handle:hover,
-.area-window.is-area-resizing>.area-resize-handle{
-  border:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  opacity:1!important;
-}
-.area-resize-handle::after{
-  background:var(--sd-glass-groove)!important;
-  box-shadow:none!important;
-  opacity:.42!important;
-}
-.area-resize-handle:hover::after,
-.area-window.is-area-resizing>.area-resize-handle::after{
-  background:color-mix(in srgb,var(--area-header-accent) 72%,white 28%)!important;
-  box-shadow:0 0 3px color-mix(in srgb,var(--area-header-accent) 25%,transparent)!important;
-  opacity:.82!important;
-}
-
-/* v111 — System gets one explicit middle viewport. The Area shell and header
-   never scroll; every system item remains reachable in a single continuous
-   scroll instead of depending on a dock attribute or nested widget scrollers. */
-.systems-zone{
-  overflow:hidden!important;
-  gap:0!important;
-}
-.systems-zone>.system-scroll-region{
+.system-widget-content>.system-scroll-region{
   min-width:0;
   min-height:0;
   flex:1 1 auto;
@@ -6469,30 +4791,30 @@ body[data-theme="light"].areas-docked .area-window{
   scrollbar-width:thin;
   scrollbar-color:var(--sd-glass-groove) transparent;
 }
-.systems-zone>.system-scroll-region>.dynamic-widget-stack,
-.systems-zone>.system-scroll-region>.static-widget-stack{
+.system-widget-content>.system-scroll-region>.dynamic-widget-stack,
+.system-widget-content>.system-scroll-region>.static-widget-stack{
   max-height:none!important;
   overflow:visible!important;
 }
-.systems-zone>.system-scroll-region>.dynamic-widget-stack{
+.system-widget-content>.system-scroll-region>.dynamic-widget-stack{
   flex:0 0 auto!important;
 }
-.systems-zone>.system-scroll-region>.static-widget-stack{
+.system-widget-content>.system-scroll-region>.static-widget-stack{
   min-height:auto;
   flex:0 0 auto!important;
   margin-top:auto;
 }
-.systems-zone>.system-scroll-region::-webkit-scrollbar{width:5px}
-.systems-zone>.system-scroll-region::-webkit-scrollbar-track{background:transparent}
-.systems-zone>.system-scroll-region::-webkit-scrollbar-thumb{
+.system-widget-content>.system-scroll-region::-webkit-scrollbar{width:5px}
+.system-widget-content>.system-scroll-region::-webkit-scrollbar-track{background:transparent}
+.system-widget-content>.system-scroll-region::-webkit-scrollbar-thumb{
   border:2px solid transparent;
   background:var(--sd-glass-groove);
   background-clip:content-box;
 }
 
 /* Horizontal docks already distribute these items across the panel grid. */
-.systems-zone[data-dock-edge="top"]>.system-scroll-region,
-.systems-zone[data-dock-edge="bottom"]>.system-scroll-region{
+.system-widget-content[data-panel-edge="top"]>.system-scroll-region,
+.system-widget-content[data-panel-edge="bottom"]>.system-scroll-region{
   display:contents;
 }
 
@@ -6697,24 +5019,6 @@ body[data-theme="light"].areas-docked .area-window{
   filter:none!important;
 }
 
-/* v120 — Full-desktop reconciliation pass.
-   The project note absorbs otherwise unused height in vertical docks, while
-   headers stay compact enough to preserve their identity at narrow widths. */
-.project-area[data-area-state="expanded"][data-dock-edge="left"] .project-note-module,
-.project-area[data-area-state="expanded"][data-dock-edge="right"] .project-note-module{
-  flex:1 1 190px;
-  min-height:142px;
-}
-.project-area[data-area-state="expanded"] .area-window-actions{gap:3px}
-.project-area[data-area-state="expanded"] .area-window-key{
-  width:27px;
-  height:27px;
-}
-.project-area[data-area-state="expanded"] .area-window-icon{
-  width:28px;
-  height:28px;
-}
-
 /* Every interactive element gets an equally legible keyboard state. This is
    a thin state indicator, not another material layer or permanent toggle LED. */
 :where(button,input,textarea,select,[tabindex]):focus-visible{
@@ -6724,36 +5028,8 @@ body[data-theme="light"].areas-docked .area-window{
 .app-frame :where(button,input,textarea,select,[tabindex]):focus-visible{
   outline-color:color-mix(in srgb,var(--app-primary,var(--blue)) 78%,white 22%);
 }
-.area-window :where(button,input,textarea,select,[tabindex]):focus-visible{
-  outline-color:color-mix(in srgb,var(--area-header-accent,var(--blue)) 76%,white 24%);
-}
 body[data-theme="light"] :where(button,input,textarea,select,[tabindex]):focus-visible{
   outline-color:color-mix(in srgb,var(--blue) 82%,#132b3b 18%);
-}
-
-/* v122 — A single restrained LED on the System Area confirms that another
-   fullscreen Site window is participating in the same local desktop session. */
-.systems-zone .area-window-icon{position:relative}
-body.is-session-synced .systems-zone .area-window-icon::before{
-  content:"";
-  position:absolute;
-  right:2px;
-  bottom:2px;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#64dff2;
-  box-shadow:0 0 4px rgba(100,223,242,.72);
-}
-body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::before{
-  background:#087f9d;
-  box-shadow:0 0 3px rgba(8,127,157,.36);
-}
-
-/* v123 — An Area rendered on the other physical display is still open; it is
-   only omitted locally. Disconnecting that display immediately restores it. */
-.area-window.is-on-other-display{
-  display:none!important;
 }
 
 /* v130 — One open Project can expose several saved working Modes. Modes are
@@ -6779,8 +5055,8 @@ body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::befo
   height:15px;
   color:var(--project-accent);
 }
-.project-area[data-dock-edge="left"] .project-mode-switcher,
-.project-area[data-dock-edge="right"] .project-mode-switcher{
+.files-widget[data-panel-edge="left"] .project-mode-switcher,
+.files-widget[data-panel-edge="right"] .project-mode-switcher{
   display:flex;
   grid-template-columns:none;
   overflow-x:auto;
@@ -6793,45 +5069,6 @@ body[data-theme="light"].is-session-synced .systems-zone .area-window-icon::befo
   box-shadow:inset 1px 0 color-mix(in srgb,var(--project-accent) 78%,white 22%);
 }
 .project-mode-status:active{transform:none}
-.project-area[data-area-state="rail"] .project-mode-switcher{
-  display:grid;
-  grid-template-columns:1fr;
-  overflow:visible;
-}
-.project-area[data-area-state="rail"] .project-mode-choice{
-  min-width:0;
-  max-width:none;
-}
-
-/* v131 — Each docked Area is one subtly coloured acrylic sheet. The tint is
-   deliberately flat and restrained: it identifies the Area without turning
-   its internal modules into separate cards or touching solid app content. */
-.apps-zone{--area-body-tint:#3aa7ff}
-.project-area{--area-body-tint:#a88aff}
-.systems-zone{--area-body-tint:#36ccd7}
-
-.area-window,
-body.areas-docked .area-window{
-  background:
-    linear-gradient(128deg,rgba(255,255,255,.07),transparent 19% 76%,rgba(255,255,255,.022)),
-    color-mix(in srgb,var(--sd-glass-face) 94%,var(--area-body-tint,var(--area-header-accent)) 6%)!important;
-}
-body[data-theme="light"] .area-window,
-body[data-theme="light"].areas-docked .area-window{
-  background:
-    linear-gradient(128deg,rgba(255,255,255,.16),transparent 19% 76%,rgba(255,255,255,.05)),
-    color-mix(in srgb,var(--sd-glass-face) 93%,var(--area-body-tint,var(--area-header-accent)) 7%)!important;
-}
-@media(prefers-reduced-transparency:reduce){
-  .area-window,
-  body.areas-docked .area-window{
-    background:color-mix(in srgb,#101a20 94%,var(--area-body-tint,var(--area-header-accent)) 6%)!important;
-  }
-  body[data-theme="light"] .area-window,
-  body[data-theme="light"].areas-docked .area-window{
-    background:color-mix(in srgb,#eef3f5 93%,var(--area-body-tint,var(--area-header-accent)) 7%)!important;
-  }
-}
 
 /* v133 terminal reconciliation. */
 .universal-search .overview-desktop-stage .overview-window.material-glass-button{
@@ -6948,7 +5185,6 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
   isolation:isolate;
 }
 .notification.is-new-attention::before,
-.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading::after,
 .notification-peek.is-attending::before{
   content:"";
   position:absolute;
@@ -6975,11 +5211,6 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
 .notification-widget.has-new-attention #notificationCount{
   color:color-mix(in srgb,var(--blue) 84%,white 16%);
   text-shadow:0 0 3px color-mix(in srgb,var(--blue) 30%,transparent);
-}
-.systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading{
-  --attention-tone:var(--blue);
-  position:relative;
-  isolation:isolate;
 }
 @keyframes notification-perimeter-orbit{
   0%{--notification-orbit:-42deg;opacity:0}
@@ -7048,9 +5279,8 @@ body[data-theme="light"] .universal-search .overview-open-windows .overview-wind
 .notification-peek-copy small{margin-top:3px;color:var(--sd-glass-muted);font-size:10.5px;line-height:1.2}
 body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,color-mix(in srgb,var(--peek-tone) 6%,rgba(255,255,255,.32)),transparent 42%),var(--sd-glass-face);box-shadow:0 8px 20px rgba(42,64,76,.16),inset 0 1px white}
 @media(prefers-reduced-motion:reduce){
-  .notification.is-new-attention::before,
-  .systems-zone[data-area-state="rail"].has-notification-attention .notification-widget .widget-heading::after,
-  .notification-peek.is-attending::before{
+.notification.is-new-attention::before,
+.notification-peek.is-attending::before{
     padding:0;
     border:1px solid color-mix(in srgb,var(--attention-tone) 70%,var(--sd-glass-edge));
     background:transparent;
@@ -7132,9 +5362,6 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
 .app-frame.is-dragging{z-index:1400!important}
 .universal-search-footer .overview-guide-link{margin-left:auto;color:var(--text);font-size:.875rem;text-underline-offset:3px;white-space:nowrap}
 .universal-search-footer .overview-guide-link:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
-.area-window.is-intent-hidden{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
-.area-window.is-intent-overlay{z-index:1000!important;opacity:0;pointer-events:none;transition:opacity 70ms linear}
-.area-window.is-intent-overlay.is-intent-revealed{opacity:1;pointer-events:auto}
 #intentAreaEdges{position:fixed;inset:0;z-index:1100;pointer-events:none}
 .intent-area-tab{position:absolute;pointer-events:auto;padding:7px 10px;border:1px solid var(--sd-glass-edge);border-radius:0;color:var(--text);background:var(--sd-glass-face);backdrop-filter:blur(20px);font-family:inherit;font-size:12px;font-weight:600;line-height:1.2;box-shadow:inset 0 1px rgba(255,255,255,.18);cursor:pointer}
 .intent-area-tab[data-edge="left"]{left:0;top:calc(38% + var(--tab-index)*46px)}
@@ -7167,18 +5394,12 @@ body[data-theme="light"] .notification-peek{background:linear-gradient(110deg,co
   .app-frame .music-controls{grid-template-columns:30px 38px 30px minmax(35px,1fr) auto!important}
   .app-frame .terminal-screen{padding:12px}
 }
-
-/* Keep the app artwork primary: only the outlined digit overlays its corner. */
-.apps-zone{
-  --hotkey-ink:#f8fafc;
-  --hotkey-outline:#111827;
-}
-body[data-theme="light"] .apps-zone{
+body[data-theme="light"] .apps-widget{
   --hotkey-ink:#111827;
   --hotkey-outline:#f8fafc;
 }
-.apps-zone .app-key .app-hotkey,
-.apps-zone .mini-card .mini-hotkey{
+.apps-widget .app-key .app-hotkey,
+.apps-widget .mini-card .mini-hotkey{
   min-width:0;
   height:18px;
   box-sizing:border-box;
@@ -7197,24 +5418,24 @@ body[data-theme="light"] .apps-zone{
   letter-spacing:0;
   text-shadow:-1px -1px 0 var(--hotkey-outline),1px -1px 0 var(--hotkey-outline),-1px 1px 0 var(--hotkey-outline),1px 1px 0 var(--hotkey-outline);
 }
-.apps-zone .app-key .app-hotkey{
+.apps-widget .app-key .app-hotkey{
   position:absolute;
   z-index:2;
   top:0;
   right:0;
   left:auto;
 }
-.apps-zone .mini-card .mini-hotkey{
+.apps-widget .mini-card .mini-hotkey{
   position:static;
   width:auto;
   flex:0 0 auto;
 }
-.apps-zone .app-key.is-hotkey-pulse{
+.apps-widget .app-key.is-hotkey-pulse{
   transform:translateY(2px) scaleY(.985)!important;
   transition-duration:8ms!important;
 }
 @media(prefers-reduced-motion:reduce){
-  .apps-zone .app-key.is-hotkey-pulse{transform:none!important}
+  .apps-widget .app-key.is-hotkey-pulse{transform:none!important}
 }
 
 /* v144 — folder-first Workspace and Project model. A Workspace root is its
@@ -7277,7 +5498,7 @@ body[data-theme="light"] .app-frame .terminal-screen i{color:#187cac}
 .workspace-browser-history p {font-size:14px; overflow-wrap:anywhere;}
 
 /* Multiple app instances must reserve space for every hotbar row. */
-.apps-zone:not([data-area-state="rail"]) .app-rack{
+.apps-widget .app-rack{
   height:auto;
   min-height:66px;
   grid-auto-rows:66px;

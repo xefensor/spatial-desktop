@@ -6,7 +6,7 @@
 
 
 /* With no open Project, the Area is a scrollable project launcher. */
-.project-area .project-closed-state.project-library {
+.files-widget .project-closed-state.project-library {
   display:block; flex:1 1 auto; min-height:0; min-width:0;
   padding:4px; border:0; border-radius:0; background:transparent;
   overflow:auto; overscroll-behavior:contain; scrollbar-width:thin;
@@ -19,12 +19,5 @@
 .project-library-copy b {display:block;font-size:14px;line-height:1.4;font-weight:650;overflow-wrap:anywhere}
 .project-library-copy small {display:block;font-size:12px;line-height:1.4;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
 .project-library-empty {padding:12px;font-size:14px;line-height:1.5}
-.project-area[data-project-library-open="true"] .project-rail-tools {display:none!important}
-.project-area[data-dock-edge="top"] .project-library-list,
-.project-area[data-dock-edge="bottom"] .project-library-list {grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}
-.project-area[data-area-state="rail"] .project-closed-state.project-library:not([hidden]) {display:block!important;padding:2px 0;flex:1 1 auto}
-.project-area[data-area-state="rail"] .project-library-list {grid-template-columns:minmax(0,1fr);gap:3px}
-.project-area[data-area-state="rail"] .project-library-entry {min-height:42px;height:42px;padding:0;justify-content:center}
-.project-area[data-area-state="rail"] .project-library-copy {display:none}
-.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-library-list {display:flex;flex-wrap:nowrap}
-.project-area[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .project-library-entry {flex:0 0 42px;width:42px}
+.files-widget[data-panel-edge="top"] .project-library-list,
+.files-widget[data-panel-edge="bottom"] .project-library-list {grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}

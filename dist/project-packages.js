@@ -126,7 +126,7 @@
       projectSpaces[id]=normalized;workspaceDownloads.ensure(target);
       for(const {path,content}of pendingFiles){const slash=path.lastIndexOf('/'),directory=slash<0?target:target+'/'+path.slice(0,slash),name=path.slice(slash+1);workspaceDownloads.ensure(directory);workspaceDownloads.add(directory,name,{workspace:current.workspace,project:id,content});const first=path.split('/')[0];if(path.includes('/')&&!normalized.files.some(row=>row[0]===first))normalized.files.push([first,'Imported files','folder']);}
       persistDownloads();persistProjectState();renderOverviewProjects();queueDesktopStateBroadcast(0);closePackageDialog();
-      if(activeWorkspace===current.workspace){activateProject(id,false);showArea('projects');setUniversalSearchOpen(false);}
+      if(activeWorkspace===current.workspace){activateProject(id,false);globalThis.SpatialPanels?.showWidget?.('files',true);setUniversalSearchOpen(false);}
       showToast(p.name+' imported into '+workspaceProfiles[current.workspace].label+' · originals unchanged');
     }catch(error){node('importStatus').textContent=error.message;node('importProject').disabled=false;}
   }

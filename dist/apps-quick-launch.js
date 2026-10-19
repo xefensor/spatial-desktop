@@ -1,7 +1,7 @@
 /* Workspace favorites launch here; visible windows already have their own place. */
 (function (root) {
   'use strict';
-  const area = areaFor('apps'), rack = document.getElementById('appRack');
+  const area = document.querySelector('[data-widget-source="apps"]'), rack = document.getElementById('appRack');
   const region = area?.querySelector('.apps-scroll-region');
   if (!area || !region || !rack) return;
   const nav = document.createElement('nav');
@@ -54,21 +54,26 @@
       button.setAttribute('aria-label', label); button.title = label + ' · Workspace favorite';
     }
   }
-  nav.addEventListener('click', event => {
-    const button = event.target.closest('[data-quick-launch-app]');
-    if (!button || !nav.contains(button) || nav.hidden || area.hidden || area.inert || $('.desktop-shell').inert || desktopNavigationBlocked()) return;
-    const name = button.dataset.quickLaunchApp;
-    if (!available(name) || !names().includes(name) || !allowed(name)) return;
+  function activate(name, shiftKey = false) {
+    if ($('.desktop-shell').inert || desktopNavigationBlocked() || !available(name) || !names().includes(name) || !allowed(name)) return false;
     // Settings keeps one window per Workspace and brings it to this desktop.
-    if (name === 'settings') { launchAppHere(name); return; }
+    if (name === 'settings') { launchAppHere(name); return true; }
     const action = actionFor(name);
     if (appInfo[name].singleInstance && action === 'return') {
       const bond = desktopPages.fullscreenBond?.(activeWorkspace, name);
       changeDesktopPage(desktopPages.pageOf(activeWorkspace, name), false, desktopPages.columnOf(activeWorkspace, name), bond?.name || null);
     }
-    if (!appInfo[name].singleInstance && (event.shiftKey || action === 'new')) createAppInstance(name);
+    if (!appInfo[name].singleInstance && (shiftKey || action === 'new')) createAppInstance(name);
     else openApp(name);
+    return true;
+  }
+  nav.addEventListener('click', event => {
+    const button = event.target.closest('[data-quick-launch-app]');
+    if (!button || !nav.contains(button) || nav.hidden || area.hidden || area.inert) return;
+    activate(button.dataset.quickLaunchApp, event.shiftKey);
   });
-  root.SpatialAppsQuickLaunch = {refresh};
+  // Expanded buttons and compact projections use one validated command. Only
+  // the expanded DOM listener owns the source area's presentation guards.
+  root.SpatialAppsQuickLaunch = {refresh, names, actionFor, activate};
   refresh();
 })(globalThis);

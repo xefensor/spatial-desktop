@@ -50,54 +50,22 @@ body[data-theme] .app-frame .nav-choice.material-abs-button:hover {
 body[data-theme] .app-frame .nav-choice.material-abs-button:is(.is-active,[aria-pressed="true"]) {
   background:color-mix(in srgb,var(--app-primary) 12%,var(--app-content-raised))!important;
 }
-
-/* Raised glass keeps a fine rim; its press stays quick and visibly recessed. */
-body[data-theme] :is(.area-window,.universal-search) button.material-glass-button:not(.app-key,.content-row) {
-  box-shadow:inset 0 1px color-mix(in srgb,var(--sd-glass-highlight) 65%,transparent),0 1px 2px rgba(0,8,18,.10);
-}
-body[data-theme] :is(.area-window,.universal-search) button.material-glass-button:not(.app-key,.content-row):is(
-    :active,.control-toggle.is-active,.control-toggle[aria-pressed="true"],.control-toggle[aria-selected="true"]) {
-  box-shadow:inset 0 1px 3px rgba(0,8,18,.22);
-}
-
-/* Reserve readable slots rather than squeezing five names into every width.
-   Compact and rail arrangements retain their existing icon-only geometry. */
-.apps-zone[data-area-state="expanded"] .app-rack {
-  grid-template-columns:repeat(auto-fill,minmax(min(100%,112px),1fr));
-  grid-auto-rows:72px;
-  gap:6px;
-  padding:3px;
-}
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .app-rack {
-  grid-template-columns:repeat(auto-fill,minmax(min(100%,112px),1fr));
-}
-.apps-zone .app-key {
+.apps-widget .app-key {
   container-type:inline-size;
   container-name:hotbar-key;
 }
-.apps-zone:not([data-area-state="rail"]) .app-key {
+.apps-widget .app-key {
   height:66px;
   min-height:66px;
   padding:8px 6px 9px;
   gap:5px;
 }
-.apps-zone:not([data-area-state="rail"]) .app-key .app-art {
+.apps-widget .app-key .app-art {
   width:32px;
   height:32px;
   flex:0 0 auto;
 }
-.apps-zone[data-area-state="expanded"] .app-key>span {
-  display:block;
-  max-width:100%;
-  font-size:11.5px;
-  line-height:1.25;
-  font-weight:550;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  color:var(--sd-glass-text);
-}
-.apps-zone .app-key .app-hotkey {
+.apps-widget .app-key .app-hotkey {
   top:4px;
   right:5px;
   height:14px;
@@ -105,21 +73,9 @@ body[data-theme] :is(.area-window,.universal-search) button.material-glass-butto
   font-weight:650;
   text-shadow:0 1px 2px var(--hotkey-outline);
 }
-@container hotbar-key (max-width:96px) {
-  .apps-zone[data-area-state="expanded"] .app-key>span {display:none}
-}
-
-/* Titles lead; metadata remains legible without competing with the content. */
-.area-window:not([data-area-state="rail"]) .area-window-identity b,
-.app-frame .app-identity b {font-size:13px;font-weight:650;letter-spacing:.005em;line-height:1.3}
-.area-window:not([data-area-state="rail"]) .area-window-identity small,
+.app-frame .app-identity b{font-size:13px;font-weight:650;letter-spacing:.005em;line-height:1.3}
 .app-frame .app-identity small,
-.mini-card header small {font-size:11.5px;line-height:1.35}
-.area-window:not([data-area-state="rail"]) :is(.widget-heading h2,.project-module>header b,.section-heading h2) {
-  font-size:12px;
-  font-weight:650;
-  letter-spacing:.01em;
-}
+.mini-card header small{font-size:11.5px;line-height:1.35}
 .overview-section-heading h2,.overview-zone-heading h2 {font-size:15px;font-weight:650;letter-spacing:-.01em}
 .overview-section-heading p,.overview-zone-heading p {font-size:12px;line-height:1.5}
 .app-frame .start-page>h2 {font-size:clamp(24px,3cqi,34px);font-weight:650;letter-spacing:-.035em;line-height:1.2}

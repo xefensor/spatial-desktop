@@ -48,7 +48,7 @@ assert(!source.includes('const miniature = name =>'), 'No decorative desktop pre
 assert(source.includes('!$("#universalResults").hidden && (event.target === $("#universalSearchInput")'), 'Result navigation leaves category select alone');
 for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'material-lab.html']) {
   const contents = fs.readFileSync(path.join(__dirname, '../dist', page), 'utf8');
-  assert(contents.includes('ui-refinements.css?v=179'), page + ': shared refinements loaded');
+  assert(/<link\b[^>]*href="ui-refinements\.css(?:\?[^"]*)?"/.test(contents), page + ': shared refinements loaded with an optional content version');
   assert(!contents.includes('href="/"'), page + ': project-relative navigation');
 }
 console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, separate window and launcher destinations and project-relative navigation.');
@@ -62,6 +62,7 @@ for (const overviewOpen of [true, false]) {
   const returnFocus = { focus: () => { focusReturned = true; } };
   const ctx = vm.createContext({
     $: selector => selector === '#projectEditorDialog' ? dialog : selector === '.desktop-shell' ? desktop : selector === '#universalSearch' ? overview : { focus() {} },
+    // Compatibility lookup resolves to the native Files source, not an Area shell.
     areaFor:()=>({classList:{remove(){}}}),
     document: { activeElement: returnFocus, body: { append(){}, classList: { add() {}, remove() {} } } },
     activeProjectName: 'custom', projectEditorState: null, renderProjectEditor() {},
@@ -93,7 +94,7 @@ const materialNode = (selector,parent=null) => {
     classList:{add: (...values)=>values.forEach(value=>classes.add(value)),remove:(...values)=>values.forEach(value=>classes.delete(value)),contains:value=>classes.has(value),toggle:(value,on)=>on?classes.add(value):classes.delete(value)}};
   return node;
 };
-const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.background-app-popup','.workspace-notification-popup','.ai-quick-panel','.project-shelf-popup','.system-rail-flyout','.notification-peek'].map(selector=>materialNode(selector));
+const utilitySurfaces=['.package-window','.project-editor-window','.desktop-context-menu','.universal-search','.toast','.background-app-popup','.workspace-notification-popup','.ai-quick-panel','[data-widget-source]','.system-widget','.overview-widget','.notification-peek'].map(selector=>materialNode(selector));
 const absApp=materialNode('.app-frame');
 const absGuide=materialNode('.guide-window');
 const guideSearch=materialNode('.guide-window .recessed-field',absGuide);
@@ -147,7 +148,7 @@ materialCtx.applyFieldMaterial(movedChoice);
 assert(movedChoice.classes.has('material-glass-field'));
 assert(!movedChoice.classes.has('material-abs-field'),'Reparenting removes stale ABS geometry');
 // A slider in an opaque app must inherit ABS; the same control parked on
-// an Area glass sheet must inherit glass instead of following app identity.
+// a panel glass sheet must inherit glass instead of following app identity.
 const appRange=materialNode('.app-frame input[type=range]',absApp);
 appRange.classes.add('material-surface-glass');
 materialCtx.prepareMaterialSurfaces({querySelectorAll:selector=>[absApp,appRange].filter(node=>node.matches(selector))});

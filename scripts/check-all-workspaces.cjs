@@ -29,12 +29,23 @@ assert.equal(items.length,1,'Workspace columns contain pending dialogs, without 
 // Exercise the production attention guard, including a queued event after switching.
 const shell=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
 let attention=0,peek=0;
-const alerts=vm.createContext({activeWorkspace:'work',notificationAttentionTimer:0,areaFor(){attention++;return null;},$:()=>({classList:{remove(){}}}),$$:()=>[],clearTimeout(){},setTimeout:()=>1,showNotificationPeek(){peek++;}});
+const alerts=vm.createContext({activeWorkspace:'work',notificationAttentionTimer:0,document:{querySelector(){attention++;return null;}},$:()=>({classList:{remove(){}}}),$$:()=>[],clearTimeout(){},setTimeout:()=>1,showNotificationPeek(){peek++;}});
 vm.runInContext(shell.slice(shell.indexOf('function drawAttentionToNotification('),shell.indexOf('function addNotification(')),alerts);
 alerts.drawAttentionToNotification({isConnected:true,dataset:{notificationWorkspace:'gaming'}},'Gaming invite','Private lobby','blue','i-bell');
 alerts.drawAttentionToNotification({isConnected:false,dataset:{notificationWorkspace:'work'}},'Old work alert','','blue','i-bell');
 assert.equal(attention,0);assert.equal(peek,0,'Neither another workspace nor a detached delayed item can show a popup');
 alerts.drawAttentionToNotification({isConnected:true,dataset:{notificationWorkspace:'work'}},'Work alert','','blue','i-bell');assert.equal(peek,1);
+// The actual renderer highlights native expanded widgets without reopening or
+// resizing their panel; compact and absent widgets retain a quiet notification.
+let highlighted=0,scrolled=0,hiddenPeek=0;
+const nativeWidget={hidden:false,classList:{add(){highlighted++;},remove(){}},closest:()=>({hidden:false})};
+const systemWidget={classList:{add(){highlighted++;},remove(){}}};
+alerts.document.querySelector=selector=>{assert(selector.includes('data-widget-id="notifications"'));return nativeWidget;};
+alerts.SpatialPanels={isWidgetExpanded:id=>id==='notifications'};
+alerts.window={matchMedia:()=>({matches:true})};alerts.hideNotificationPeek=()=>hiddenPeek++;
+alerts.$=selector=>selector==='#universalSearch'?{classList:{contains:()=>false}}:systemWidget;
+alerts.drawAttentionToNotification({isConnected:true,dataset:{notificationWorkspace:'work'},classList:{add(){highlighted++;}},closest:()=>systemWidget,scrollIntoView(){scrolled++;}},'Visible work alert','','blue','i-bell');
+assert.equal(highlighted,3);assert.equal(scrolled,1);assert.equal(hiddenPeek,1);assert.equal(peek,1,'An expanded native notification widget does not duplicate its content in a peek');
 console.log('All Workspaces passed: explicit notification origins, local-only lists, shared System alerts, bounded persistence, dismissal tombstones, privacy, real activity projection and cross-workspace/delayed-popup guards.');
 
 // Changing presets clears this session's notification history with other workspace data.

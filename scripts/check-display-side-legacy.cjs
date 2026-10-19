@@ -10,10 +10,10 @@ function harness(saved){
   const model=Roles.create(saved);model.connect([{slot:1},{slot:2},{slot:3}]);model.setRole(2,'side');model.setRole(3,'side');
   let workspace='work',localSlot=2,setup='pair';
   const mounts=[],refreshes=[],listeners={},observers=[],workingMemory={id:'workingMemory',textContent:'Existing Files contents'};
-  function element(tag){return {tag,children:[],hidden:false,open:false,className:'',textContent:'',events:{},append(...children){this.children.push(...children);},addEventListener(type,fn){this.events[type]=fn;}};}
-  const area=element('aside');area.dataset={areaState:'expanded'};area.classList={contains:()=>false};area.append(workingMemory);
+  function element(tag){return {tag,children:[],hidden:false,inert:false,open:false,className:'',textContent:'',events:{},append(...children){this.children.push(...children);},addEventListener(type,fn){this.events[type]=fn;}};}
+  const area=element('aside');area.dataset={widgetMode:'expanded'};area.classList={contains:()=>false};area.append(workingMemory);
   const state=()=>({setupKey:setup,workspaceId:workspace,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),space:model.space(workspace,localSlot)});
-  const browser={document:{querySelector(selector){assert.equal(selector,'[data-area-window="projects"]');return area;},createElement:element},
+  const browser={document:{querySelector(selector){assert.equal(selector,'[data-widget-source="files"]');return area;},createElement:element},
     addEventListener(type,fn){listeners[type]=fn;},MutationObserver:class{constructor(callback){this.callback=callback;}observe(target,options){observers.push({target,options,callback:this.callback});}},SpatialDisplayRoleBridge:{state},
     SpatialDisplaySideTools:{mount(host){mounts.push(host);return {refresh(state){refreshes.push({host,state:clone(state)});}};}}};
   vm.runInNewContext(source,browser);
@@ -40,10 +40,10 @@ function harness(saved){
   h.toggle(false);assert.equal(h.host.hidden,true,'Collapsed tools use the existing hidden-host write/drop guards');
   h.toggle(true);assert.equal(h.mounts.length,1);
   assert.equal(h.observers.length,1);assert.equal(h.observers[0].target,h.area);
-  for(const mode of ['hidden','inert','rail','other-display']){
-    if(mode==='hidden')h.area.hidden=true;if(mode==='inert')h.area.inert=true;if(mode==='rail')h.area.dataset.areaState='rail';if(mode==='other-display')h.area.classList.contains=name=>name==='is-on-other-display';
-    h.observers[0].callback();assert.equal(h.host.hidden,true,mode+': CSS and native Area visibility also block old shelf actions');
-    h.area.hidden=false;h.area.inert=false;h.area.dataset.areaState='expanded';h.area.classList.contains=()=>false;h.observers[0].callback();assert.equal(h.host.hidden,false,'Saved tools resume when the ordinary Files Area is shown');
+  for(const mode of ['hidden','inert','compact','other-display']){
+    if(mode==='hidden')h.area.hidden=true;if(mode==='inert')h.area.inert=true;if(mode==='compact'){h.area.dataset.widgetMode='compact';h.area.inert=true;}if(mode==='other-display')h.area.hidden=true;
+    h.observers[0].callback();assert.equal(h.host.hidden,true,mode+': Native widget visibility blocks saved shelf actions');
+    h.area.hidden=false;h.area.inert=false;h.area.dataset.widgetMode='expanded';h.area.classList.contains=()=>false;h.observers[0].callback();assert.equal(h.host.hidden,false,'Saved tools resume when the Files widget is expanded');
   }
   h.model.updateSpace('work',2,{note:''});h.refresh();assert.equal(h.disclosure.hidden,true);assert.equal(h.host.hidden,true,'Removing the final saved item removes the compatibility shelf');
 }

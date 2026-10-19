@@ -25,7 +25,7 @@
   const relativeDirectory=scope=>path(scope).slice(F.folder(owner(scope)).length).replace(/^\//,'');
   const revision=()=>serial;
   function persist(){desktopStorage.setItem(storage,JSON.stringify(state));queueDesktopStateBroadcast(0);serial++;}
-  function schedule(){if(!queued)queued=requestAnimationFrame(()=>{queued=0;memory.render(true);root.SpatialProjectRail?.render();});}
+  function schedule(){if(!queued)queued=requestAnimationFrame(()=>{queued=0;memory.render(true);});}
   function rows(scope=key()){
     const current=path(scope),base=F.folder(owner(scope)),project=projectSpaces[JSON.parse(scope)[1]],snapshot=workspaceDownloads.snapshot();
     const seed=fileLocationRows({dataset:{}},current);
@@ -109,7 +109,7 @@
     if(button.hasAttribute('data-folder-go'))return go(button.dataset.folderGo);
     if(button.hasAttribute('data-folder-up'))return go(parent(path()));
     if(button.hasAttribute('data-folder-new')){const names=new Set(rows().map(row=>row[0]));let name='New folder',n=2;while(names.has(name))name='New folder '+n++;workspaceDownloads.ensure(full(name));persistDownloads();serial++;memory.render(true);return;}
-    if(button.dataset.folderPin){const address=button.dataset.folderPin;state.pins[address]={pinned:!pinned(address),updated:Date.now()};persist();memory.render(true);root.SpatialProjectRail?.render();return;}
+    if(button.dataset.folderPin){const address=button.dataset.folderPin;state.pins[address]={pinned:!pinned(address),updated:Date.now()};persist();memory.render(true);return;}
     if(button.dataset.folderOpen)return openFile(button.dataset.folderOpen);
     if(button.dataset.folderHistory)return root.SpatialItemHistoryDesktop?.open(button.dataset.folderHistory);
     if(button.dataset.folderAssistant){const context=fileContext(button.dataset.folderAssistant);root.SpatialAIDesktop.attach([context]);return;}
@@ -123,5 +123,5 @@
   const incoming=persistIncomingDesktopState;persistIncomingDesktopState=function(snapshot,...args){for(const [address,value] of Object.entries(snapshot.folderViews?.pins||{}))if(!state.pins[address]||value.updated>state.pins[address].updated)state.pins[address]=value;desktopStorage.setItem(storage,JSON.stringify(state));const result=incoming(snapshot,...args);serial++;schedule();return result;};
   const sync=syncProjectAreaView;syncProjectAreaView=function(...args){const result=sync(...args);document.getElementById('projectAreaName').textContent='Files';return result;};
   root.SpatialFolderDesktop={prepareItem(item){const current=owner(item.scope),file=current?.stash?.files?.[item.fileId||item.id];if(file)paths.set(item.scope,F.directory(current,file));},path,relativeDirectory,revision,markup,decorate,filter,go,rows,pinnedItems,revealFile,fileContext};
-  document.getElementById('projectAreaName').textContent='Files';memory.render(true);root.SpatialProjectRail?.render();
+  document.getElementById('projectAreaName').textContent='Files';memory.render(true);
 })(typeof globalThis!=='undefined'?globalThis:this);

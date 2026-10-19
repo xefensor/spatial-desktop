@@ -3,7 +3,7 @@ const Roles=require('../dist/display-roles.js'),source=fs.readFileSync(path.join
 const clone=value=>JSON.parse(JSON.stringify(value));
 const css=fs.readFileSync(path.join(__dirname,'../dist/display-workbench.css'),'utf8');
 assert.match(css,/body\[data-display-role="side"\][^{]*:is\(\.desktop-page-rail,\.desktop-folder,#desktopContextColumns\)/,'Stable Side space omits the main desktop page navigation');
-assert.doesNotMatch(css,/display-workbench-width|display-workbench-panel|workspace-zone\s*\{[^}]*inset/,'Normal Areas supply display bounds without special workbench geometry');
+assert.doesNotMatch(css,/display-workbench-width|display-workbench-panel|workspace-zone\s*\{[^}]*inset/,'Native panels supply display bounds without special workbench geometry');
 
 function harness(initialAllowed=true){
   const elements=new Map(),listeners={},permissions=[],controls=[],examples=[],folders=[],opened=[],settings=[],chat={taskStates:[],attachments:[],notices:[]};
@@ -12,7 +12,7 @@ function harness(initialAllowed=true){
   const model=Roles.create();model.connect(roster);model.setRole(2,'side');model.setAssistantAllowed('work',2,initialAllowed);
   const document={activeElement:null};
   function element(){return {hidden:false,inert:false,value:'',textContent:'',dataset:{},events:{},children:[],attributes:{},classList:{contains:()=>false,toggle(){}},focus(){document.activeElement=this;},replaceChildren(...children){this.children=children;},append(...children){this.children.push(...children);for(const child of children)child.parentNode=this;},insertBefore(child){this.children.unshift(child);child.parentNode=this;},querySelectorAll(selector){const all=node=>node.children.flatMap(child=>[child,...all(child)]);return selector==='[data-display-example]'?all(this).filter(child=>child.dataset.displayExample):[];},setAttribute(name,value){this.attributes[name]=value;},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
-  const area=element(),content=element();area.dataset.areaState='expanded';content.parentNode=area;area.querySelector=()=>content;
+  const area=element(),content=element();area.dataset.widgetMode='expanded';content.parentNode=area;area.querySelector=()=>content;
   const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,space:model.space(workspace,localSlot)});
   const browser={addEventListener(type,fn){listeners[type]=fn;},SpatialDisplayRoleBridge:{state,
     setAssistantAllowed(slot,allowed){permissions.push({workspace,slot,allowed});const result=model.setAssistantAllowed(workspace,slot,allowed);browser.SpatialDisplayWorkbench.refresh();return result;},
@@ -70,12 +70,12 @@ for(const initialAllowed of [false,true]){
 }
 {
   const h=harness(false),selection=[{id:'selected',text:'Old selection'}];h.capture(selection);h.selectionDown();h.capture([]);h.selectionDown();h.action('selection');assert.equal(h.chat.attachments.length,0,'Reopening Chat options without a selection clears old capture');
-  h.area.dataset.areaState='rail';h.content.parentNode={hidden:false};h.permission(true);assert.equal(h.permissions.length,1,'Native Compact quick chat retains its display permission controls');
+  h.area.dataset.widgetMode='expanded';h.area.inert=false;h.area.parentNode={hidden:false,inert:false,dataset:{widgetMode:'expanded'}};h.permission(true);assert.equal(h.permissions.length,1,'Native Compact quick chat retains its display permission controls');
 }
-for(const transition of ['workspace','role','setup','display','hidden','inert','compact','remote-area']){
+for(const transition of ['workspace','role','setup','display','hidden','inert','compact','remote-panel','hidden-ancestor','inert-ancestor']){
   const h=harness();h.capture([{id:'work-only',text:'Saved selection'}]);h.selectionDown();h.action('examples');
   if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('extended',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
-  if(transition==='hidden')h.area.hidden=true;if(transition==='inert')h.area.inert=true;if(transition==='compact')h.area.dataset.areaState='rail';if(transition==='remote-area')h.area.classList.contains=name=>name==='is-on-other-display';
+  if(transition==='hidden')h.area.hidden=true;if(transition==='inert')h.area.inert=true;if(transition==='compact'){h.area.dataset.widgetMode='compact';h.area.inert=true;}if(transition==='remote-panel')h.area.hidden=true;if(transition==='hidden-ancestor')h.area.parentNode={hidden:true};if(transition==='inert-ancestor')h.area.parentNode={inert:true};
   h.permission(false);for(const action of ['note','working-folder','settings','selection','takeover','resume'])h.action(action);h.example('checklist');
   for(const result of [h.permissions,h.opened,h.folders,h.settings,h.chat.attachments,h.controls,h.examples])assert.equal(result.length,0,transition+': stale or unavailable controls cannot act');
 }
@@ -97,4 +97,4 @@ for(const transition of ['workspace','role','setup','display','hidden','inert','
   vm.createContext(context);vm.runInContext(between('function local(frame)','function scope(frame)')+between('function selectedText()','function selectionSource('),context);
   assert.equal(context.selectedText().text,'HELPER TEXT');local=false;assert.equal(context.selectedText(),null);local=true;pinned=false;assert.equal(context.selectedText(),null);pinned=true;context.appState['notes--1']='closed';assert.equal(context.selectedText(),null);context.appState['notes--1']='open';frame.hidden=true;assert.equal(context.selectedText(),null);
 }
-console.log('Native Assistant display controls passed: normal Area ownership, no panel/chat portal, scoped permission and status, takeover/resume, original task state, examples, working folder, selections, Workspace privacy, hidden/Compact/inert and stale-context guards.');
+console.log('Native Assistant display controls passed: native widget ownership, no panel/chat portal, scoped permission and status, takeover/resume, original task state, examples, working folder, selections, Workspace privacy, hidden/Compact/inert and stale-context guards.');

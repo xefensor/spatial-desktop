@@ -15,12 +15,12 @@
   if(typeof module!=='undefined' && module.exports){module.exports={createPreview};return;}
   const store=root.SpatialAllWorkspaces,popup=document.getElementById('workspaceNotificationPopup');
   if(!store || !popup)return;
-  const preview=createPreview(),rows=[document.getElementById('workspaceNotificationBadges'),document.getElementById('systemRailWorkspaceNotifications'),document.getElementById('overviewWorkspaceNotificationBadges')].filter(Boolean);
+  const preview=createPreview(),rows=[document.getElementById('workspaceNotificationBadges'),document.getElementById('overviewWorkspaceNotificationBadges')].filter(Boolean);
   const list=popup.querySelector('[data-workspace-notification-list]'),status=popup.querySelector('[data-workspace-notification-status]');
   let origin=null,scanPending=0;
   function renderBadges(){
     const scopes=Object.keys(workspaceProfiles).filter(workspace=>workspace!==activeWorkspace);
-    document.getElementById('workspaceNotificationsWidget').hidden=!scopes.length;
+    const widget=document.getElementById('workspaceNotificationsWidget');if(widget)widget.hidden=!scopes.length;
     const overviewWidget=document.getElementById('overviewWorkspaceNotificationsWidget');if(overviewWidget)overviewWidget.hidden=!scopes.length;
     for(const row of rows){
       row.hidden=!scopes.length;
@@ -91,14 +91,12 @@
   document.addEventListener('focusin',event=>{if(!popup.hidden && !popup.contains(event.target) && !event.target.closest('[data-notification-workspace-toggle]'))close(false);});
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && !popup.hidden){event.preventDefault();event.stopImmediatePropagation();close();}},true);
   window.addEventListener('blur',()=>close(false));window.addEventListener('resize',()=>close(false));
-  const originalRailOwns=systemRailExpansionOwns;
-  systemRailExpansionOwns=function(target){return !popup.hidden&&popup.contains(target)||originalRailOwns(target);};
   const originalWorkspace=renderWorkspace;
   renderWorkspace=function(...args){close(false);const result=originalWorkspace(...args);renderBadges();scan();return result;};
   const originalOverview=setUniversalSearchOpen;
   setUniversalSearchOpen=function(...args){close(false);const result=originalOverview(...args);scan();return result;};
   // Read state changes only for notifications actually revealed to the user.
-  // Overflow clipping, hidden rails and the inert desktop under Overview count as hidden.
+  // Overflow clipping, closed applets and the inert desktop under Overview count as hidden.
   const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
     if(document.hidden)return;
     const ids=[];
@@ -117,7 +115,9 @@
   }
   document.addEventListener('visibilitychange',()=>{if(document.hidden)close(false);else scan();});
   store.subscribe(()=>{renderBadges();renderPopup();scan();});
-  // System-wide alerts may be mounted by the scope layout after this adapter.
+  // Shared alerts are assembled before native panel widgets mount.
+  root.addEventListener('spatial-panels-ready',()=>{renderBadges();scan();});
+  root.addEventListener('spatial-panel-applet-change',()=>{close(false);scan();});
   root.SpatialWorkspaceNotificationViews={scan};
   renderBadges();scan();
 })(typeof globalThis!=='undefined'?globalThis:this);

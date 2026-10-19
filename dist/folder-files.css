@@ -1,6 +1,6 @@
 /* The same acrylic folder holds ordinary files, notes, sources and previews. */
-[data-area-window="projects"] .project-root-module,[data-area-window="projects"] #projectLibraryList{display:none!important}
-[data-area-window="projects"] #projectSpaceContent,[data-area-window="projects"] #projectClosedState{padding:0;gap:0}
+[data-widget-source="files"] .project-root-module,[data-widget-source="files"] #projectLibraryList{display:none!important}
+[data-widget-source="files"] #projectSpaceContent,[data-widget-source="files"] #projectClosedState{padding:0;gap:0}
 .interactive-folder{min-width:0;width:100%;padding:0}
 .interactive-folder .memory-shelf{border:0;padding:12px;box-shadow:none;background:transparent}
 .interactive-folder .memory-scope{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:10px/1.5 ui-monospace,monospace;opacity:.7;margin:5px 0}

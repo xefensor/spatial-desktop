@@ -10,22 +10,21 @@ button:is(.surface-key[aria-label],.project-app,.workspace-favorite):has(>svg:on
   max-width:100%;
   max-height:100%;
 }
-
-/* Text gets the remaining space; icons and actions keep their own space. */
-.area-window:not([data-area-state="rail"]) .area-window-identity,
 .app-frame .app-identity{
   flex:1 1 0;
   min-width:0;
 }
-.area-window-bar,.app-titlebar,.mini-card header{gap:8px}
-.area-window-identity>span:last-child,
+.app-titlebar,
+.mini-card header{gap:8px}
 .app-identity>div,
 .mini-card header>div:first-child>span:last-child{
   flex:1 1 0;
   min-width:0;
 }
-.area-window-actions,.window-actions,.mini-card .mini-actions{flex:0 0 auto}
-.area-window-icon,.workspace-overview,.app-badge{flex-shrink:0}
+.window-actions,
+.mini-card .mini-actions{flex:0 0 auto}
+.workspace-overview,
+.app-badge{flex-shrink:0}
 .app-identity b,.app-identity small,
 .mini-card header b,.mini-card header small{
   display:block;
@@ -41,10 +40,9 @@ button:is(.surface-key[aria-label],.project-app,.workspace-favorite):has(>svg:on
 .mini-card .mini-control{padding:0!important;display:grid;place-items:center}
 
 /* Current cards have a location and optional metadata, without a status slit. */
-.apps-zone :is(.mini-section,.mini-stack,.mini-card){min-width:0}
-.apps-zone .mini-stack{grid-template-columns:minmax(0,1fr)}
+.apps-widget :is(.mini-section,.mini-stack,.mini-card){min-width:0}
+.apps-widget .mini-stack{grid-template-columns:minmax(0,1fr)}
 .mini-card .mini-note-field{min-width:0;max-width:100%}
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]):not(:has(.app-rack-open)) .mini-section{grid-column:1 / -1}
 .mini-card .mini-location{
   grid-template-columns:minmax(0,1fr) auto;
   min-height:31px;
@@ -79,8 +77,8 @@ button:is(.surface-key[aria-label],.project-app,.workspace-favorite):has(>svg:on
 .mini-card .mini-tool>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Wrapping content expands its row rather than spilling into adjacent rows. */
-.project-area:not([data-area-state="rail"]) .project-library-entry{height:auto;flex-shrink:0}
-.project-area:not([data-area-state="rail"]) .project-library-copy{flex:1;min-width:0}
+.files-widget .project-library-entry{height:auto;flex-shrink:0}
+.files-widget .project-library-copy{flex:1;min-width:0}
 .section-heading{gap:8px;align-items:center}
 .section-heading h2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .section-heading>span{flex:none}

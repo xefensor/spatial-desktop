@@ -1,4 +1,4 @@
-/* Overview mirrors the System Area: desktop, Project, Workspace, system. */
+/* Overview groups system widgets: desktop, Project, Workspace, system. */
 (function(root){
   'use strict';
   function notificationScopes(store,current,profiles){
@@ -15,7 +15,7 @@
   const projectAgenda=make('button','overview-project-plan','<span><b></b><small></small></span>'+icon('i-right'));projectAgenda.type='button';projectAgenda.dataset.timelinePlanned='';content(project).append(projectAgenda);
   const notifications=$('#overviewNotifications'),notificationEmpty=make('p','overview-system-empty','No notifications in this Workspace');notificationEmpty.id='overviewNotificationEmpty';notifications.append(notificationEmpty);
   const localFocus=make('section','overview-widget overview-workspace-focus','<header><h3>Focus</h3></header>'),focus=panel.querySelector('[data-toggle][aria-label="Focus"]');if(focus)localFocus.append(focus);
-  content(workspace).append(notifications,panel.querySelector('.overview-now-playing'),panel.querySelector('.overview-agenda-widget'),localFocus,panel.querySelector('.overview-areas-widget'));
+  content(workspace).append(notifications,panel.querySelector('.overview-now-playing'),panel.querySelector('.overview-agenda-widget'),localFocus,panel.querySelector('.overview-panels-widget'));
   content(system).append($('#overviewSystemWideNotifications'),$('#overviewWorkspaceNotificationsWidget'),panel.querySelector('.overview-clock-widget'),panel.querySelector('.overview-quick-widget'),panel.querySelector('.overview-connect-widget'));
   const local=make('div','overview-system-local');local.append(desktop,project,workspace);body.replaceChildren(local,system);panel.classList.add('overview-system-scoped');
   let pending=0;

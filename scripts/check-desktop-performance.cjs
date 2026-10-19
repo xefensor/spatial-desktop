@@ -4,6 +4,21 @@ const vm = require('node:vm');
 
 // The real clock scheduler must stay accurate after sleeping without idle work.
 const desktop = fs.readFileSync(require.resolve('../dist/desktop-shell.js'), 'utf8');
+// Repeated whole-workspace refreshes reuse live windows, while replacing a
+// closed frame or creating an instance must resolve the new canonical node.
+let frameQueries=0;
+const liveFrames={notes:{isConnected:true,document:'unsaved note'}};
+const frameLookup=vm.createContext({document:{querySelector(selector){frameQueries++;return liveFrames[selector.match(/data-app-frame="([^"]+)"/)[1]]||null;}}});
+vm.runInContext(desktop.slice(desktop.indexOf('const appFrameNodes ='),desktop.indexOf('const windowUsableSizes =')),frameLookup);
+const originalFrame=frameLookup.frameFor('notes');
+for(let i=0;i<1000;i++)assert.equal(frameLookup.frameFor('notes'),originalFrame);
+assert.equal(frameQueries,1,'Repeated refreshes avoid scanning the entire desktop for the same live window');
+originalFrame.isConnected=false;liveFrames.notes={isConnected:true,document:'new note'};
+assert.equal(frameLookup.frameFor('notes'),liveFrames.notes,'A recreated window replaces the disconnected frame');
+assert.equal(frameLookup.frameFor('browser--new'),null);
+liveFrames['browser--new']={isConnected:true};
+assert.equal(frameLookup.frameFor('browser--new'),liveFrames['browser--new'],'A later-created instance resolves after an earlier miss');
+
 let now = 59000, clockWrites = 0, sequence = 0;
 const timers = new Map(), clockListeners = {};
 const clockDocument = {hidden:false,addEventListener:(name,fn)=>clockListeners[name]=fn};
@@ -48,4 +63,4 @@ listeners.pointercancel();assert(!attributes.has('data-background-busy'));
 listeners.pointerdown();windowListeners.blur();assert(!attributes.has('data-background-busy'));
 backgroundDocument.hidden=true;listeners.visibilitychange();assert(attributes.has('data-page-hidden'));
 backgroundDocument.hidden=false;listeners.visibilitychange();assert(!attributes.has('data-page-hidden'));
-console.log('Desktop performance passed: minute-aligned clock, hidden-page recovery, no idle music rendering/storage, continuing playback and canceled-drag recovery.');
+console.log('Desktop performance passed: live/recreated window lookup, minute-aligned clock, hidden-page recovery, no idle music rendering/storage, continuing playback and canceled-drag recovery.');

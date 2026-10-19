@@ -62,10 +62,9 @@
 }
 
 /* Compatibility tools appear only for material kept in the earlier Side shelf. */
-.project-area>.display-side-legacy{flex:0 1 auto;min-height:38px;max-height:50%;overflow:auto;overscroll-behavior:contain;margin:0 6px 8px;padding:0 6px;border-top:1px solid var(--soft-line);color:var(--sd-glass-text);--display-role-accent:var(--project-accent,var(--blue));scrollbar-width:thin}
-.project-area:has(>.display-side-legacy:not([hidden]))>.project-closed-state{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.files-widget>.display-side-legacy{flex:0 1 auto;min-height:38px;max-height:50%;overflow:auto;overscroll-behavior:contain;margin:0 6px 8px;padding:0 6px;border-top:1px solid var(--soft-line);color:var(--sd-glass-text);--display-role-accent:var(--project-accent,var(--blue));scrollbar-width:thin}
+.files-widget:has(>.display-side-legacy:not([hidden]))>.project-closed-state{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .display-side-legacy[hidden],.display-side-legacy [hidden]{display:none!important}
-.project-area[data-area-state="rail"]>.display-side-legacy{display:none!important}
 .display-side-legacy>summary{cursor:pointer;padding:10px 0;font-size:12px;line-height:1.5;font-weight:600}
 .display-side-legacy>summary:focus-visible{outline:2px solid var(--display-role-accent);outline-offset:-2px}
 .display-side-legacy-scope{font-size:11px;line-height:1.5;color:var(--sd-glass-muted);margin:0 0 14px;overflow-wrap:anywhere}

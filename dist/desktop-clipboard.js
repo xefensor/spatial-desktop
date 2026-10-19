@@ -64,11 +64,11 @@
   const model=create(saved),make=(tag,cls,html='')=>{const node=document.createElement(tag);node.className=cls;node.innerHTML=html;return node;};
   let lastEditable=null,lastRange=null,selectedId='',renderPending=0,lastSaveOk=true;
   const workspace=()=>activeWorkspace;
-  const section=document.querySelector('[data-system-scope="workspace"] .system-scope-body')||document.querySelector('.system-scroll-region');
+  const section=document.querySelector('[data-widget-source="system"]');
   if(!section)return;
   const widget=make('section','system-widget desktop-clipboard-widget','<header class="widget-heading"><div>'+icon('i-clipboard')+'<h2>Clipboard</h2></div><button type="button" class="surface-key tiny-key" data-clipboard-clear>Clear</button></header><p class="desktop-clipboard-context"></p><div class="desktop-clipboard-list"></div><form class="desktop-clipboard-destination" hidden><label>Paste files into<input aria-label="Clipboard destination folder" autocomplete="off" spellcheck="false"></label><button class="surface-key" type="submit">Paste files</button></form><small class="desktop-clipboard-status" role="status"></small>');
   widget.id='desktopClipboardWidget';section.append(widget);
-  const launch=make('button','surface-key rail-action',icon('i-clipboard')+'<span>Clipboard</span><small>Empty</small>');launch.type='button';launch.id='systemRailClipboard';launch.setAttribute('aria-label','Open Workspace clipboard');document.querySelector('.system-rail-middle')?.append(launch);
+
   const list=widget.querySelector('.desktop-clipboard-list'),status=widget.querySelector('[role="status"]'),destination=widget.querySelector('form'),folder=destination.querySelector('input');
   function save(broadcast=true){
     try{desktopStorage.setItem(key,JSON.stringify(model.snapshot()));lastSaveOk=true;}catch{lastSaveOk=false;status.textContent='Clipboard could not be saved. Browser storage may be full.';render();return false;}
@@ -89,7 +89,7 @@
     const focused=document.activeElement?.closest?.('[data-app-frame][data-file-location]');
     return focused?.dataset.fileLocation||root.SpatialDesktopFiles?.currentDirectory?.()||workspaceProfiles[workspace()]?.home+'/Documents';
   }
-  function open(){status.textContent='';render();revealSystemRailWidget('#desktopClipboardWidget');}
+  function open(){status.textContent='';render();globalThis.SpatialPanels?.openApplet?.('clipboard');}
   function chosen(){return model.list(workspace()).find(item=>item.id===selectedId)||model.list(workspace())[0];}
   function textPaste(item,target){
     if(!editable(target)||!target.isConnected){open();status.textContent='Focus a text field, then choose Paste from Clipboard.';showToast(status.textContent);return false;}
@@ -122,7 +122,6 @@
   function render(){
     const items=model.list(workspace()),profile=workspaceProfiles[workspace()];
     widget.querySelector('.desktop-clipboard-context').textContent=(profile?.label||workspace())+' only · '+items.length+' of 30 items';
-    launch.querySelector('small').textContent=items.length||'Empty';
     widget.querySelector('[data-clipboard-clear]').disabled=!items.length;
     const signature=JSON.stringify(items);if(list.dataset.rendered===signature)return;list.dataset.rendered=signature;list.replaceChildren();
     if(!items.length){const empty=make('p','desktop-clipboard-empty');empty.textContent='Copy text or files in the demo to keep them here.';list.append(empty);}
@@ -136,7 +135,6 @@
     }
   }
   function schedule(){if(!renderPending)renderPending=requestAnimationFrame(()=>{renderPending=0;render();});}
-  launch.addEventListener('click',open);
   widget.addEventListener('click',event=>{
     if(event.target.closest('[data-clipboard-clear]')){model.clear(workspace());selectedId='';destination.hidden=true;save();status.textContent='Clipboard history cleared for this Workspace.';return;}
     const row=event.target.closest('[data-clipboard-item]');if(!row)return;

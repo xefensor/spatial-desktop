@@ -116,7 +116,7 @@
     if(!permitted()||model.snapshot().session.mode!=='active')return false;
     const aliases={wifi:'network',devices:'bluetooth',audio:'sound',session:'power'};next=aliases[next]||next;
     section=['network','bluetooth','sound','power'].includes(next)?next:'network';origin=document.activeElement;
-    if(typeof setUniversalSearchOpen==='function')setUniversalSearchOpen(false);root.dispatchEvent(new CustomEvent('spatial-rail-open',{detail:{area:'system-devices'}}));
+    if(typeof setUniversalSearchOpen==='function')setUniversalSearchOpen(false);root.SpatialPanels?.closeApplet?.(false);
     feedback='';render(true);if(!dialog.open)dialog.showModal();dialog.querySelector('[data-system-section="'+section+'"]').focus();return true;
   }
   function renderNetwork(state){
@@ -246,8 +246,8 @@
     const ping=event.target.closest('[data-phone-ping]');if(ping&&!model.snapshot().bluetooth.connected.includes('phone')){event.preventDefault();event.stopImmediatePropagation();open('bluetooth');}
   },true);
   const shortcuts=document.createElement('div');shortcuts.className='desktop-system-shortcuts';shortcuts.innerHTML='<button type="button" class="surface-key" data-desktop-system-open="network"><span data-system-network-status></span><span aria-hidden="true"> ›</span></button><button type="button" class="surface-key" data-desktop-system-open="power">Devices & session</button>';
-  document.querySelector('#systemScopeSystem .system-scope-body')?.append(shortcuts);
-  const compact=document.querySelector('.system-rail-quick-panel');if(compact)compact.insertAdjacentHTML('afterbegin','<button type="button" class="surface-key" data-desktop-system-open="network">Devices & session</button>');
+  // Controls and shortcuts remain one native widget in panels and applets.
+  document.querySelector('.quick-settings')?.insertAdjacentElement('afterend',shortcuts);
   function load(next){if(!next||Number(next.revision)<=model.snapshot().revision)return false;model.load(next,{recover:false});syncToggles();render();root.dispatchEvent(new CustomEvent('spatial-system-change',{detail:model.snapshot()}));return true;}
   const bridge={...api,open,close,lock:()=>sessionAction('lock'),sleep:()=>sessionAction('sleep'),request:sessionAction,blocked,snapshot:model.snapshot,load,audioState:()=>model.snapshot().audio};
   root.SpatialDesktopSystem=bridge;

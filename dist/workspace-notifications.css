@@ -8,11 +8,6 @@ body[data-theme] button.workspace-notification-badge{--control-accent:var(--noti
 .workspace-notification-badge svg{width:18px;height:18px;flex:none}.workspace-notification-badge small{font-size:11px;font-weight:650;min-width:9px}
 body[data-theme] button.workspace-notification-badge.has-unread{color:var(--notification-workspace-accent);border-color:color-mix(in srgb,var(--notification-workspace-accent) 55%,var(--sd-glass-groove));background:color-mix(in srgb,var(--notification-workspace-accent) 9%,transparent);box-shadow:0 0 8px color-mix(in srgb,var(--notification-workspace-accent) 19%,transparent),inset 0 -2px var(--notification-workspace-accent)}
 body[data-theme] button.workspace-notification-badge:is(:hover,:focus-visible,[aria-expanded="true"]){outline:1px solid var(--notification-workspace-accent);outline-offset:2px;color:var(--notification-workspace-accent)}
-.workspace-notification-rail{flex-direction:column;flex-wrap:nowrap;padding-top:5px;border-top:1px solid var(--sd-glass-groove)}
-.systems-zone[data-area-state="rail"]:not([data-rail-expanded]) .workspace-notifications-widget{display:none!important}
-.systems-zone:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .workspace-notification-rail{flex-direction:row;padding:0 0 0 5px;border-top:0;border-left:1px solid var(--sd-glass-groove)}
-.systems-zone[data-area-state="rail"] .workspace-notification-badge{min-width:30px;min-height:29px;gap:3px;padding:3px;font-size:10px}
-.systems-zone[data-area-state="rail"] .workspace-notification-badge svg{width:15px;height:15px}
 .workspace-notification-popup{--control-accent:var(--notification-workspace-accent);position:fixed;z-index:10060;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);display:flex;flex-direction:column;border:1px solid var(--notification-workspace-accent);border-top-width:3px;background:var(--content-surface);color:var(--text);box-shadow:0 14px 42px #0005;overflow:hidden}
 .workspace-notification-popup>header{display:flex;align-items:center;gap:10px;padding:13px;border-bottom:1px solid var(--sd-glass-groove);flex:none}
 .workspace-notification-popup>header>span{color:var(--notification-workspace-accent)}.workspace-notification-popup>header svg{width:23px;height:23px}

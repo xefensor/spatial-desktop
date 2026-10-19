@@ -15,7 +15,7 @@
       ]});
       const workspaceActions=[];
       if(allowed('folders'))workspaceActions.push({action:'scope:workspace-home',label:'Open '+workspace.label+' Home',detail:workspace.home,icon:'i-folder'});
-      if(allowed('systems'))workspaceActions.push({action:'scope:workspace-settings',label:'Workspace settings',detail:'Areas across all desktops and Projects in '+workspace.label,icon:'i-settings'});
+      if(allowed('systems'))workspaceActions.push({action:'scope:workspace-settings',label:'Workspace settings',detail:'Preferences for all desktops and Projects in '+workspace.label,icon:'i-settings'});
       if(workspaceActions.length)result.push({separator:true},{label:'Workspace · '+workspace.label,icon:workspace.icon||'i-grid',children:workspaceActions});
       const shared=[];
       if(allowed('systems'))shared.push({action:'scope:system-settings',label:'System settings',detail:'Theme, connections and sound · all Workspaces',icon:'i-settings'});
@@ -23,7 +23,6 @@
       if(shared.length)result.push({separator:true},{label:'System-wide',icon:'i-monitor',children:shared});
       return result;
     }
-    if(kind==='area')return [{info:'Workspace · '+workspace.label+' · all its desktops and Projects'},...original];
     if(kind==='project')return [{info:'Project · '+project.name},...original.map(item=>{
       if(item.action==='project-open')return {...item,label:'Open Project: '+project.name};
       if(item.action==='project-manage')return {...item,label:'Manage Project: '+project.name};

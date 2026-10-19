@@ -38,7 +38,7 @@ assert.deepEqual(Array.from(reloaded.workspaceProfiles[id].favorites,row=>Array.
 const migration=vm.createContext({workspaceProfiles:{old:{folders:[['Documents','Files','folder']],favorites:[['notes','Existing note favorite']]}},SpatialWorkspaceSetup:Setup,SpatialHomeFolders:Home});
 vm.runInContext(source.slice(source.indexOf('Object.values(workspaceProfiles).forEach(profile => {'),source.indexOf('const workspaceDownloads =')),migration);
 assert.deepEqual(Array.from(migration.workspaceProfiles.old.favorites,row=>Array.from(row)),[['notes','Existing note favorite'],['settings','Settings']],'Existing demo and saved profiles receive the same Settings favorite migration');
-// Real project editor path: creation is in the Area, without inerting the desktop or trapping focus.
+// Real project editor path: creation is in the Files widget, without inerting the desktop or trapping focus.
 const classes=new Set(),attributes={};let parent,expanded=false,focused=false;
 const dialog={hidden:true,inert:true,classList:{add:v=>classes.add(v),remove:v=>classes.delete(v),contains:v=>classes.has(v),toggle:(v,on)=>on?classes.add(v):classes.delete(v)},setAttribute:(key,value)=>{attributes[key]=value;}};
 const area={classList:{add(){},remove(){}},append:node=>{parent=area;}};
@@ -48,7 +48,9 @@ const editor=vm.createContext({projectEditorState:null,activeProjectName:null,do
  areaFor:()=>area,dockState:{projects:{edge:'left'}},dockSizes:{left:48},autoSpatialEdgeStates:new Map(),renderProjectEditor(){},setUniversalSearchOpen(){},showArea:()=>{expanded=true;},layoutDockAreas(){},requestAnimationFrame:cb=>cb(),setTimeout:cb=>cb()
 });
 vm.runInContext(source.slice(source.indexOf('function openProjectEditor('),source.indexOf('function prepareProjectEditor(')),editor);
-editor.openProjectEditor('create-project');assert.equal(parent,area);assert.equal(shell.inert,false);assert.equal(attributes.role,'region');assert.equal(attributes['aria-modal'],'false');assert(expanded&&focused);assert(editor.dockSizes.left>=320);
+editor.openProjectEditor('create-project');assert.equal(parent,area);assert.equal(shell.inert,false);assert.equal(attributes.role,'region');assert.equal(attributes['aria-modal'],'false');assert(expanded&&focused,"Native Files widget expands before inline editor focus");
 editor.closeProjectEditor();assert.equal(dialog.hidden,true);assert.equal(shell.inert,false);
 editor.openProjectEditor('manage');assert.equal(parent,'body');assert.equal(shell.inert,true);assert.equal(attributes.role,'dialog');
-console.log('Workspace setup passed: unique names, standard folders, empty sessions, persisted profiles and inline project creation from a rail.');
+console.log('Workspace setup passed: unique names, standard folders, empty sessions, persisted profiles and inline project creation in the Files widget.');
+
+assert(Setup.sessionKeys.includes('spatial-widget-panels-v1'),'Clean/demo reset includes native panel layouts');

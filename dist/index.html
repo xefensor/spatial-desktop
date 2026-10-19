@@ -7,86 +7,83 @@
   <meta name="description" content="Work in progress: an interactive browser prototype of a tactile, project-centred computing environment.">
   <meta name="application-name" content="Spatial Desktop">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' rx='6' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="desktop-shell.css?v=190">
-  <title>Spatial Desktop — WIP Prototype</title>
-  <link rel="stylesheet" href="ui-refinements.css?v=179">
-  <link rel="stylesheet" href="area-layout.css?v=173">
-  <link rel="stylesheet" href="desktop-dialogs.css?v=175">
-  <link rel="stylesheet" href="project-surface.css?v=5">
-  <link rel="stylesheet" href="semantic-colors.css?v=10">
-  <link rel="stylesheet" href="toggle-controls.css?v=5">
-  <link rel="stylesheet" href="desktop-pages.css?v=35">
-  <link rel="stylesheet" href="empty-desktop.css?v=3">
-  <link rel="stylesheet" href="material-shapes.css?v=16">
-  <link rel="stylesheet" href="area-rails.css?v=10">
-  <link rel="stylesheet" href="app-windows.css?v=8">
-  <link rel="stylesheet" href="parked-previews.css?v=1">
-  <link rel="stylesheet" href="owned-dialogs.css?v=5">
-  <link rel="stylesheet" href="background-apps.css?v=4">
-  <link rel="stylesheet" href="preview-privacy.css?v=1">
-  <link rel="stylesheet" href="workspace-notifications.css?v=2">
-  <link rel="stylesheet" href="system-scopes.css?v=3">
-  <link rel="stylesheet" href="search-scopes.css?v=3">
-  <link rel="stylesheet" href="desktop-alignment.css?v=3">
-  <link rel="stylesheet" href="spatial-guide.css?v=20">
-  <link rel="stylesheet" href="workspace-setup.css?v=1">
-  <link rel="stylesheet" href="working-memory.css?v=15">
-  <link rel="stylesheet" href="ai-area.css?v=12">
-  <link rel="stylesheet" href="overview-carousel.css?v=13">
-  <link rel="stylesheet" href="desktop-background.css?v=4">
-  <link rel="stylesheet" href="control-refinements.css?v=4">
-  <link rel="stylesheet" href="overview-apps.css?v=6">
-  <link rel="stylesheet" href="interface-polish.css?v=2">
-  <link rel="stylesheet" href="system-area.css?v=3">
-  <link rel="stylesheet" href="interaction-feedback.css?v=1">
-  <link rel="stylesheet" href="browsing-controls.css?v=2">
-  <link rel="stylesheet" href="steam-overview.css?v=5">
-  <link rel="stylesheet" href="app-identities.css?v=4">
-  <link rel="stylesheet" href="scoped-settings.css?v=4">
-  <link rel="stylesheet" href="desktop-files.css?v=1">
-  <link rel="stylesheet" href="desktop-clipboard.css?v=1">
-  <link rel="stylesheet" href="desktop-system.css?v=1">
-  <link rel="stylesheet" href="desktop-accessibility.css?v=1">
-  <link rel="stylesheet" href="settings-app.css?v=4">
-  <link rel="stylesheet" href="context-submenus.css?v=3">
-  <link rel="stylesheet" href="virtual-screen.css?v=4">
-  <link rel="stylesheet" href="project-packages.css?v=2">
-  <link rel="stylesheet" href="overview-system.css?v=3">
-  <script src="demo-super-key.js?v=2"></script>
-  <script src="desktop-markers.js?v=1"></script>
-  <script src="workspace-setup.js?v=14"></script>
-  <script src="spatial-guide.js?v=101"></script>
+  <link rel="stylesheet" href="desktop-shell.css?v=b3bacb31a6b1">
+  <title>Spatial Desktop — Widgets</title>
+  <link rel="stylesheet" href="ui-refinements.css?v=2755030e94f1">
+  <link rel="stylesheet" href="desktop-dialogs.css?v=73a081532b7b">
+  <link rel="stylesheet" href="project-surface.css?v=2fbe33d4ae01">
+  <link rel="stylesheet" href="semantic-colors.css?v=126f10fd5b53">
+  <link rel="stylesheet" href="toggle-controls.css?v=f81a9688b1ac">
+  <link rel="stylesheet" href="desktop-pages.css?v=6880f57b1095">
+  <link rel="stylesheet" href="empty-desktop.css?v=a7712908dd6e">
+  <link rel="stylesheet" href="material-shapes.css?v=ec8a9f9c7f7d">
+  <link rel="stylesheet" href="app-windows.css?v=264323f57b05">
+  <link rel="stylesheet" href="parked-previews.css?v=900b9304ae4f">
+  <link rel="stylesheet" href="owned-dialogs.css?v=9b8b48c0083b">
+  <link rel="stylesheet" href="background-apps.css?v=e0e1464fc997">
+  <link rel="stylesheet" href="preview-privacy.css?v=d8f6c10507e9">
+  <link rel="stylesheet" href="workspace-notifications.css?v=0b7944b6793c">
+  <link rel="stylesheet" href="system-scopes.css?v=ed4c42ffcd10">
+  <link rel="stylesheet" href="search-scopes.css?v=f1541e66e4cf">
+  <link rel="stylesheet" href="desktop-alignment.css?v=bf15ece9d622">
+  <link rel="stylesheet" href="spatial-guide.css?v=b38734ea7e74">
+  <link rel="stylesheet" href="workspace-setup.css?v=04068926538a">
+  <link rel="stylesheet" href="working-memory.css?v=70ae96f29a8c">
+  <link rel="stylesheet" href="assistant-widget.css?v=735b30df0688">
+  <link rel="stylesheet" href="overview-carousel.css?v=72ebb909360d">
+  <link rel="stylesheet" href="desktop-background.css?v=04e77fa50d3e">
+  <link rel="stylesheet" href="control-refinements.css?v=443083bca97a">
+  <link rel="stylesheet" href="overview-apps.css?v=5dee2a1e9792">
+  <link rel="stylesheet" href="interface-polish.css?v=78a15d450dfd">
+  <link rel="stylesheet" href="system-widget-content.css?v=cb9edaa87e73">
+  <link rel="stylesheet" href="interaction-feedback.css?v=0ab1a5a92c08">
+  <link rel="stylesheet" href="browsing-controls.css?v=058cea703748">
+  <link rel="stylesheet" href="steam-overview.css?v=cc4044e106ac">
+  <link rel="stylesheet" href="app-identities.css?v=176405fe60b0">
+  <link rel="stylesheet" href="scoped-settings.css?v=588a30682f55">
+  <link rel="stylesheet" href="desktop-files.css?v=d031fc24d811">
+  <link rel="stylesheet" href="desktop-clipboard.css?v=73bab3509b4d">
+  <link rel="stylesheet" href="desktop-system.css?v=4a646e0660e2">
+  <link rel="stylesheet" href="desktop-accessibility.css?v=fedea2e453c3">
+  <link rel="stylesheet" href="settings-app.css?v=2b4d75a2baa7">
+  <link rel="stylesheet" href="context-submenus.css?v=3130eba7663d">
+  <link rel="stylesheet" href="virtual-screen.css?v=4209c25ebdd9">
+  <link rel="stylesheet" href="project-packages.css?v=6d959872d47f">
+  <link rel="stylesheet" href="overview-system.css?v=c1987d9d32fb">
+  <script src="storage-compat.js?v=f84ccc5bd3b6"></script>
+  <script src="demo-super-key.js?v=0d51c763ae38"></script>
+  <script src="desktop-markers.js?v=73adb4eef74c"></script>
+  <script src="workspace-setup.js?v=c53a110d7137"></script>
+  <script src="spatial-guide.js?v=a793d1a97530"></script>
   
-  <link rel="stylesheet" href="project-rail.css?v=2">
-  <link rel="stylesheet" href="system-rail.css?v=3">
-  <link rel="stylesheet" href="area-popovers.css?v=1">
-  <link rel="stylesheet" href="apps-quick-launch.css?v=4">
-  <link rel="stylesheet" href="temporary-parking.css?v=4">
-  <link rel="stylesheet" href="area-compact.css?v=11">
-  <link rel="stylesheet" href="item-history.css?v=3">
-  <link rel="stylesheet" href="assistant-sources.css?v=2">
-  <link rel="stylesheet" href="timeline-sessions.css?v=1">
-  <link rel="stylesheet" href="assistant-desktop.css?v=4">
-  <link rel="stylesheet" href="desktop-map.css?v=3">
-  <link rel="stylesheet" href="area-usability.css?v=3">
-  <link rel="stylesheet" href="system-tray.css?v=2">
-  <link rel="stylesheet" href="window-audio.css?v=2">
-  <link rel="stylesheet" href="folder-files.css?v=3">
-  <link rel="stylesheet" href="glass-controls.css?v=3">
-  <link rel="stylesheet" href="display-settings.css?v=5">
-  <link rel="stylesheet" href="display-workbench.css?v=11">
-  <link rel="stylesheet" href="display-side-tools.css?v=3">
-  <link rel="stylesheet" href="display-assistant.css?v=5">
+  <link rel="stylesheet" href="apps-quick-launch.css?v=52e7921374b7">
+  <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
+  <link rel="stylesheet" href="item-history.css?v=c4441cee9793">
+  <link rel="stylesheet" href="assistant-sources.css?v=e94ee18c0807">
+  <link rel="stylesheet" href="timeline-sessions.css?v=0d6bc23a81c9">
+  <link rel="stylesheet" href="assistant-desktop.css?v=95d53a53aba4">
+  <link rel="stylesheet" href="desktop-map.css?v=0dbe92fab446">
+  <link rel="stylesheet" href="window-audio.css?v=951b446f3881">
+  <link rel="stylesheet" href="folder-files.css?v=7ddf62ec8f3d">
+  <link rel="stylesheet" href="glass-controls.css?v=49ec4213985d">
+  <link rel="stylesheet" href="display-settings.css?v=6c01aeea6afe">
+  <link rel="stylesheet" href="display-workbench.css?v=6348230cf69d">
+  <link rel="stylesheet" href="display-side-tools.css?v=a609a933a397">
+  <link rel="stylesheet" href="display-assistant.css?v=30ebf31c9bf3">
+  <link rel="stylesheet" href="widget-popovers.css?v=1721553b2545">
+  <link rel="stylesheet" href="widget-content.css?v=561190a1471f">
+  <link rel="stylesheet" href="panel-desktop.css?v=e0071a66db4f">
 </head>
 <body data-theme="oled">
-  <script src="desktop-theme.js?v=1"></script>
-  <script src="desktop-background.js?v=1"></script>
+  <script src="desktop-theme.js?v=d91b0dc8bebd"></script>
+  <script src="desktop-background.js?v=25ddfc2cfe50"></script>
   <svg class="icon-sprite" aria-hidden="true">
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5"/></symbol>
     <symbol id="app-steam" viewBox="0 0 48 48"><defs><linearGradient id="steamTile" x2="0" y2="1"><stop stop-color="#273d55"/><stop offset="1" stop-color="#122233"/></linearGradient></defs><circle cx="24" cy="24" r="22" fill="url(#steamTile)"/><g fill="none" stroke="#d7edf8" stroke-width="3"><circle cx="31" cy="17" r="7"/><circle cx="16" cy="32" r="5"/><path d="m5 27 9 4m6-2 8-7"/></g></symbol>
     <symbol id="app-game" viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="9" fill="#304843"/><path d="M10 36 29 10h6v25h5v4h-5v5h-5v-5H10Zm20-18L18 35h12Z" fill="#d6dfb2"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 5v15"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m5 12 7 7 7-7M12 19V4"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2 6M20 4v7h-7"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 9v12h5v-7h4v7h5V9"/></symbol>
@@ -155,11 +152,9 @@
   </svg>
 
   <main class="desktop-shell" aria-label="Spatial Desktop prototype (work in progress)">
-    <aside class="zone apps-zone area-window" data-area-window="apps" aria-label="Apps area">
-      <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key overview-launch workspace-overview" id="allAppsToggle" aria-controls="universalSearch" aria-expanded="false" aria-label="Open General workspace overview · Desktop 1" title="Overview · General workspace · Desktop 1 · Super"><svg aria-hidden="true"><use href="#i-grid"/></svg><b id="desktopPageNumber" aria-hidden="true">1</b></button><span><b>Apps</b></span></div>
-      </header>
-      <div class="apps-area-body">
+    <button class="surface-key overview-launch workspace-overview" id="allAppsToggle" data-widget-source="launcher" aria-controls="universalSearch" aria-expanded="false" aria-label="Open General workspace overview · Desktop 1" title="Overview · General workspace · Desktop 1 · Super"><svg aria-hidden="true"><use href="#i-grid"/></svg><b id="desktopPageNumber" aria-hidden="true">1</b></button>
+    <aside class="widget-source apps-widget" data-widget-source="apps" aria-label="Apps widget">
+      <div class="apps-widget-body">
       <div class="apps-scroll-region">
       <nav class="app-rack" id="appRack" aria-label="Parked applications · Available across these desktops" title="Parked applications · Available across these desktops" hidden></nav>
       <section class="mini-section" aria-labelledby="minimizedTitle" aria-describedby="parkedScope">
@@ -169,10 +164,8 @@
       </div>
       <nav class="background-apps" id="backgroundApps" aria-label="System-wide background applications" hidden></nav>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="apps" aria-label="Resize Apps area" title="Drag this border to resize"></button>
     </aside>
 
-    <button class="zone-resizer zone-resizer-left" data-zone-resizer="apps" type="button" role="separator" aria-label="Resize Apps and Workspace areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
     <header class="desktop-context-header material-surface-glass" aria-label="Open projects and desktop context" hidden>
       <span class="desktop-context-workspace">General</span>
@@ -245,28 +238,15 @@
 
     </section>
 
-    <button class="zone-resizer zone-resizer-right" data-zone-resizer="systems" type="button" role="separator" aria-label="Resize Workspace and Systems areas" aria-orientation="vertical" aria-valuemin="15" aria-valuemax="45" aria-valuenow="25" title="Drag to resize · double-click to reset"><span aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button>
 
-    <aside class="zone systems-zone area-window" data-area-window="systems" aria-label="System area">
-      <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon cyan" data-open-settings aria-label="System Settings" title="System Settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button><span><b>System</b><small id="systemAreaContext">General workspace</small></span></div>
-      </header>
-      <div class="system-scroll-region" tabindex="0" aria-label="System widgets">
-      <section class="rail-group system-rail-start" aria-label="Time and notifications">
-        <div class="rail-clock"><strong class="live-time">--:--</strong><small id="systemRailDate"></small></div>
-        <button class="surface-key rail-action" id="systemRailNotifications" aria-label="Show notifications" title="Show notifications"><svg aria-hidden="true"><use href="#i-bell"/></svg><span>Alerts</span><small id="systemRailNotificationCount">0</small></button>
-        <nav class="workspace-notification-badges workspace-notification-rail" id="systemRailWorkspaceNotifications" aria-label="Other workspace notifications" hidden></nav>
-      </section>
-      <nav class="rail-group system-rail-middle" aria-label="Daily tools">
-        <button class="surface-key rail-action" id="systemRailTimer" aria-pressed="false" aria-label="Start focus timer" title="Start focus timer"><svg aria-hidden="true"><use href="#i-timer"/></svg><span>Focus</span><small id="systemRailTimerValue">25:00</small></button>
-        <button class="surface-key rail-action" id="systemRailCalendar" aria-label="Show calendar and agenda" title="Show calendar and agenda"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span>Agenda</span></button>
-        <button class="surface-key rail-action" data-phone-ping aria-label="Ping connected phone" title="Ping connected phone · 60% battery"><svg aria-hidden="true"><use href="#i-phone"/></svg><span>Phone</span><small>60%</small></button>
-      </nav>
+    <div class="widget-source system-widget-bank systems-zone" data-widget-source="system" hidden aria-label="System widget sources">
+      <small class="sr-only" id="systemAreaContext">General workspace</small>
+      <button class="surface-key" data-open-settings aria-label="System Settings" title="System Settings"><svg aria-hidden="true"><use href="#i-settings"/></svg></button>
+      <div class="system-widget-sources">
       <header class="time-block"><span class="live-time">--:--</span><div><b id="dayLabel">Monday</b><small id="dateLabel">22 September</small></div></header>
       <section class="quick-settings" aria-label="Quick settings"><button class="quick-toggle is-active" data-toggle aria-label="Wi-Fi" aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-label="Bluetooth" aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-label="Sound" aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" id="themeToggle" aria-label="Change color theme" title="Change color theme"><span class="theme-dot"></span><span>Surface</span></button></section>
       <nav class="system-launchers" aria-label="System actions">
         <button class="surface-key system-launcher" id="launchTimer" title="Focus timer"><svg><use href="#i-timer"/></svg><span>25 min focus</span></button>
-        <div class="layout-mode-control layout-mode-status" id="layoutModeToggle" title="Areas stay fixed · drag an Area border to resize, or its header to move"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Areas: Fixed</span></div>
       </nav>
       <div class="static-widget-stack system-agenda-stack" aria-label="Upcoming plans">
         <section class="system-widget calendar-widget">
@@ -287,29 +267,26 @@
       <section class="system-widget connect-widget"><header class="widget-heading"><div><svg><use href="#i-phone"/></svg><h2>Device Link</h2></div><i class="online-dot"></i></header><div class="device-row"><div class="phone-silhouette"><span>60</span></div><div><b>Phone</b><small>Connected · Wi-Fi</small><div class="battery-track"><i></i></div></div><button class="surface-key tiny-key" data-phone-ping>Ping</button></div></section>
       </div>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="systems" aria-label="Resize System area" title="Drag this border to resize"></button>
-    </aside>
+    </div>
 
-    <aside class="zone ai-area area-window" data-area-window="ai" aria-label="Assistant area">
-      <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon" id="aiAreaToggle" aria-label="Expand Assistant area" aria-expanded="false" title="Assistant · Super+A or F2+A"><svg aria-hidden="true"><use href="#i-ai"/></svg></button><span><b>Assistant</b><small id="aiAreaContext">General workspace</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key" data-area-hide="ai" aria-label="Hide Assistant area" title="Hide Assistant area"><svg aria-hidden="true"><use href="#i-close"/></svg></button></div>
-      </header>
+    <aside class="widget-source assistant-widget" data-widget-source="assistant" aria-label="Assistant widget">
+      <small class="sr-only" id="aiAreaContext">General workspace</small>
       <div class="ai-content">
-        <div class="ai-chat-toolbar"><label class="sr-only" for="aiChatSelect">Chat</label><select id="aiChatSelect" aria-label="Chat"></select><button class="surface-key" id="aiNewChat" type="button">New chat</button><details class="ai-chat-settings"><summary aria-label="Chat options" title="Chat options">⋯</summary><div class="ai-chat-settings-body"><button class="surface-key" id="aiRenameChat" type="button" aria-label="Rename current chat">Rename chat</button><div class="ai-folder"><label for="aiWorkingFolder">Default save location</label><select id="aiWorkingFolder" aria-label="Assistant working folder"></select></div></div></details></div>
+        <div class="ai-chat-toolbar"><label class="sr-only" for="aiChatSelect">Chat</label><select id="aiChatSelect" aria-label="Chat"></select><button class="surface-key" id="aiNewChat" type="button" aria-label="Start a new chat" title="New chat"><svg aria-hidden="true"><use href="#i-add"/></svg></button><details class="ai-chat-settings"><summary aria-label="Chat options" title="Chat options">⋯</summary><div class="ai-chat-settings-body"><button class="surface-key" id="aiRenameChat" type="button" aria-label="Rename current chat">Rename chat</button><div class="ai-folder"><label for="aiWorkingFolder">Default save location</label><select id="aiWorkingFolder" aria-label="Assistant working folder"></select></div></div></details></div>
         <form id="aiRenameForm" class="ai-rename-form" hidden><label class="sr-only" for="aiChatName">Chat name</label><input id="aiChatName" aria-label="Chat name" maxlength="80" required><button class="surface-key" type="submit">Save</button><button class="surface-key" id="aiCancelRename" type="button">Cancel</button></form>
 
         <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
-        <div class="ai-chat" aria-label="Assistant conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>What would you like to do?<small>Select text or files and choose Ask Assistant. You can also drop something here.</small></span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
+        <div class="ai-chat" aria-label="Assistant conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Drop files or text here to use them in this chat.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
         <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Ask Assistant…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiDemoNotice" class="ai-demo-notice">Scripted local demo · no AI service connected</small><small id="aiStatus" role="status"></small></form>
       </div>
-      <button class="resize-handle area-resize-handle" data-area-resize="ai" aria-label="Resize Assistant area" title="Drag this border to resize"></button>
     </aside>
-    <aside class="zone project-area area-window" data-area-window="projects" aria-label="Files area">
-      <header class="area-window-bar" data-area-drag-handle>
-        <div class="area-window-identity"><button class="surface-key area-window-icon violet" id="manageProjectButton" aria-label="Manage current project" title="Manage project"><svg aria-hidden="true"><use href="#i-folder"/></svg></button><span><b id="projectAreaName">Files</b><small id="projectAreaContext">Website Launch · Project</small></span></div>
-        <div class="area-window-actions"><button class="surface-key area-window-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button><button class="surface-key area-window-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button></div>
-      </header>
+    <aside class="widget-source files-widget" data-widget-source="files" aria-label="Files widget">
+      <span class="sr-only"><b id="projectAreaName">Files</b><small id="projectAreaContext">Website Launch · Project</small></span>
+      <div class="file-project-actions-source" hidden>
+        <button class="surface-key" id="manageProjectButton" aria-label="Manage current project" title="Manage project"><svg aria-hidden="true"><use href="#i-folder"/></svg></button>
+        <button class="surface-key project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg><use href="#i-archive"/></svg></button>
+        <button class="surface-key" id="closeProjectButton" aria-label="Close current project" title="Close current project"><svg><use href="#i-close"/></svg></button>
+      </div>
       <nav class="project-switcher project-mode-switcher" id="projectModeSwitcher" hidden aria-hidden="true"></nav>
       <div class="project-space-content" id="projectSpaceContent" tabindex="0" aria-label="Folder contents">
         <section class="project-module project-root-module">
@@ -333,23 +310,8 @@
       </div>
       <section class="project-closed-state project-library" id="projectClosedState" aria-label="Available projects" hidden>
         <div class="project-library-list" id="projectLibraryList"></div>
-        <button class="surface-key project-library-create" data-create-area-project aria-label="Create a project" title="Create a project"><svg aria-hidden="true"><use href="#i-add"/></svg><span>New project</span></button>
+        <button class="surface-key project-library-create" data-create-project aria-label="Create a project" title="Create a project"><svg aria-hidden="true"><use href="#i-add"/></svg><span>New project</span></button>
       </section>
-      <nav class="project-rail-tools" aria-label="Project quick actions">
-        <section class="rail-group project-rail-start" aria-label="Current project">
-          <strong class="rail-project-name" id="projectRailName">Website Launch</strong>
-          <button class="surface-key project-rail-tool rail-action" data-toast="Project folder opened" aria-label="Open project folder" title="Open project folder"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Folder</span></button>
-        </section>
-        <section class="rail-group project-rail-middle" aria-label="Project content">
-          <button class="surface-key project-rail-tool rail-action" id="projectRailResource" aria-label="Add project resource" title="Add resource"><svg aria-hidden="true"><use href="#i-link"/></svg><span>Links</span><small id="projectRailResourceCount">2</small></button>
-        </section>
-        <section class="rail-group project-rail-end" aria-label="Project session">
-          <button class="surface-key project-rail-tool rail-action" id="projectRailSession" aria-label="Show project desktops" title="Show project desktops"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Windows</span><small id="projectRailWindowCount">0</small></button>
-          <button class="surface-key project-rail-tool rail-action project-pack-key" data-open-package="project" aria-label="Pack this project" title="Pack project"><svg aria-hidden="true"><use href="#i-archive"/></svg><span>Pack</span></button>
-          <button class="surface-key project-rail-tool rail-action" id="projectRailClose" aria-label="Close current project" title="Close current project"><svg aria-hidden="true"><use href="#i-close"/></svg><span>Close</span></button>
-        </section>
-      </nav>
-      <button class="resize-handle area-resize-handle" data-area-resize="projects" aria-label="Resize Files area" title="Drag this border to resize"></button>
     </aside>
   </main>
   <section class="universal-search" id="universalSearch" role="dialog" aria-modal="true" aria-labelledby="universalSearchTitle" aria-hidden="true" inert>
@@ -529,14 +491,9 @@
             <header><h3>System</h3><button class="surface-key tiny-key" data-open-settings>Settings</button></header>
             <div class="overview-quick-grid"><button class="quick-toggle is-active" data-toggle aria-label="Wi-Fi" aria-pressed="true"><svg><use href="#i-wifi"/></svg><span>Wi-Fi</span></button><button class="quick-toggle is-active" data-toggle aria-label="Bluetooth" aria-pressed="true"><svg><use href="#i-bluetooth"/></svg><span>Bluetooth</span></button><button class="quick-toggle is-active" data-toggle aria-label="Sound" aria-pressed="true"><svg><use href="#i-volume"/></svg><span>Sound</span></button><button class="quick-toggle" data-toggle aria-label="Focus" aria-pressed="false"><svg><use href="#i-bell"/></svg><span>Focus</span></button></div>
           </section>
-          <section class="overview-widget overview-areas-widget" aria-labelledby="overviewAreasTitle">
-            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewAreasTitle">Desktop Areas</h3><small>Show or hide your panels</small></span></span><button class="areas-reset" id="resetAreas">Reset</button></header>
-            <div class="overview-area-list">
-              <div class="overview-area-row" data-overview-area="projects"><span class="area-list-icon violet"><svg><use href="#i-folder"/></svg></span><span><b>Files</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="projects" aria-label="Hide Files">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="apps"><span class="area-list-icon blue"><svg><use href="#i-grid"/></svg></span><span><b>Apps</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="apps" aria-label="Hide Apps">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="ai"><span class="area-list-icon"><svg><use href="#i-ai"/></svg></span><span><b>Assistant</b><small>Compact</small></span><button class="surface-key" data-overview-area-visibility="ai" aria-label="Hide Assistant">Hide</button></div>
-              <div class="overview-area-row" data-overview-area="systems"><span class="area-list-icon cyan"><svg><use href="#i-settings"/></svg></span><span><b>System</b><small>Expanded</small></span><button class="surface-key" data-overview-area-visibility="systems" aria-label="Hide System">Hide</button></div>
-            </div>
+          <section class="overview-widget overview-panels-widget" aria-labelledby="overviewPanelsTitle">
+            <header><span><svg><use href="#i-monitor"/></svg><span><h3 id="overviewPanelsTitle">Panels &amp; widgets</h3><small>Your layout in this Workspace</small></span></span></header>
+            <button class="surface-key" data-panel-action="widgets">Choose widgets</button>
           </section>
           <section class="overview-widget overview-agenda-widget"><header><span><svg><use href="#i-calendar"/></svg><h3 id="workspaceAgendaHeading">Today</h3></span><b id="overviewAgendaDay"></b></header><button data-timeline-planned><i></i><span><b id="workspaceAgendaTitle">Team check-in</b><small id="workspaceAgendaMeta">14:30 · 45 min</small></span></button><button id="overviewTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Focus timer</b><small>Ready · 25 minutes</small></span></button></section>
           <section class="overview-widget overview-connect-widget"><span class="universal-symbol green"><svg><use href="#i-phone"/></svg></span><span><b>Phone</b><small>Connected · 60%</small></span><button class="surface-key tiny-key" data-phone-ping>Ping</button></section>
@@ -581,7 +538,7 @@
         <section class="universal-group" data-universal-group="settings">
           <h3>System and actions</h3>
           <div class="universal-result-grid">
-            <button class="universal-result" data-area-show="projects" data-universal-search="show workspace projects area"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Files</b><small>Desktop area</small></span></button>
+            <button class="universal-result" data-widget-show="files" data-universal-search="show workspace project files widget"><span class="universal-symbol violet"><svg><use href="#i-folder"/></svg></span><span><b>Show Files</b><small>Desktop widget</small></span></button>
             <button class="universal-result" data-universal-search="display monitor screen resolution refresh rate settings" data-toast="Display configuration opened"><span class="universal-symbol blue"><svg><use href="#i-monitor"/></svg></span><span><b>Display Configuration</b><small>Resolution, scaling and refresh rate</small></span></button>
             <button class="universal-result" data-universal-search="bluetooth devices connect settings" data-toast="Bluetooth settings opened"><span class="universal-symbol cyan"><svg><use href="#i-bluetooth"/></svg></span><span><b>Bluetooth</b><small>Connected devices</small></span></button>
             <button class="universal-result" data-universal-search="focus timer 25 minutes action" id="universalTimer"><span class="universal-symbol amber"><svg><use href="#i-timer"/></svg></span><span><b>Start a 25 minute timer</b><small>Workspace focus timer</small></span></button>
@@ -701,73 +658,74 @@
     <span class="notification-peek-copy"><b id="notificationPeekTitle">New notification</b><small id="notificationPeekDetail"></small></span>
   </button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="spatial-tiling.js?v=154"></script>
-  <script src="spatial-intent.js?v=159"></script>
-  <script src="demo-examples.js?v=184"></script>
-  <script src="desktop-pages.js?v=4"></script>
-  <script src="home-folders.js?v=5"></script>
-  <script src="app-tools.js?v=2"></script>
-  <script src="assistant-files.js?v=2"></script>
-  <script src="project-archive.js?v=4"></script>
-  <script src="app-windows.js?v=32"></script>
-<script src="item-history.js?v=1"></script>
-<script src="item-history-package.js?v=1"></script>
-<script src="working-memory.js?v=9"></script>
-<script src="stash-files.js?v=4"></script>
-<script src="ai-context.js?v=9"></script>
-<script src="ai-demo.js?v=4"></script>
-<script src="timeline.js?v=8"></script>
-<script src="app-names.js?v=4"></script>
-<script src="compact-area-layout.js?v=8"></script>
-<script src="retired-apps.js?v=1"></script>
-<script src="desktop-shell.js?v=331"></script>
-<script src="parked-previews.js?v=4"></script>
-  <script src="owned-dialogs.js?v=5"></script>
-<script src="background-services.js?v=1"></script>
-<script src="background-apps.js?v=7"></script>
-<script src="preview-privacy.js?v=1"></script>
-<script src="empty-desktop-resources.js?v=3"></script>
-<script src="empty-desktop.js?v=8"></script>
-<script src="apps-quick-launch.js?v=4"></script>
-<script src="working-memory-desktop.js?v=43"></script>
-<script src="item-history-desktop.js?v=8"></script>
-<script src="ai-desktop.js?v=37"></script>
-<script src="overview-desktop.js?v=27"></script>
-  <script src="steam-overview.js?v=16"></script>
-<script src="all-workspaces.js?v=5"></script>
-<script src="workspace-notifications.js?v=5"></script>
-<script src="system-scopes.js?v=4"></script>
-<script src="search-scopes.js?v=3"></script>
-<script src="scoped-settings.js?v=12"></script>
-<script src="context-submenus.js?v=3"></script>
-<script src="virtual-screen.js?v=7"></script>
-  <script src="guide-desktop.js?v=48"></script>
-<script src="project-packages.js?v=4"></script>
-<script src="overview-system.js?v=2"></script>
-<script src="scoped-actions.js?v=4"></script>
-<script src="project-rail.js?v=3"></script>
-<script src="system-rail.js?v=4"></script>
-<script src="temporary-parking.js?v=1"></script>
-<script src="temporary-parking-desktop.js?v=5"></script>
-<script src="assistant-desktop.js?v=12"></script>
-<script src="desktop-map.js?v=1"></script>
-<script src="desktop-map-desktop.js?v=6"></script>
-<script src="window-audio.js?v=3"></script>
-<script src="folder-files.js?v=5"></script>
-<script src="display-roles.js?v=6"></script>
-<script src="display-settings.js?v=7"></script>
-<script src="display-assistant-examples.js?v=3"></script>
-<script src="display-role-desktop.js?v=15"></script>
-<script src="display-side-tools.js?v=4"></script>
-<script src="display-side-legacy.js?v=1"></script>
-<script src="display-workbench.js?v=14"></script>
-<script src="settings-app-desktop.js?v=1"></script>
-<script src="desktop-files.js?v=2"></script>
-<script src="desktop-clipboard.js?v=1"></script>
-<script src="desktop-system.js?v=1"></script>
-<script src="desktop-accessibility.js?v=1"></script>
-<script src="desktop-surface-files.js?v=1"></script>
+  <script src="spatial-tiling.js?v=c4963137c6b1"></script>
+  <script src="demo-examples.js?v=e4187690ebab"></script>
+  <script src="desktop-pages.js?v=c00e1e49796d"></script>
+  <script src="home-folders.js?v=cfce2403c1c3"></script>
+  <script src="app-tools.js?v=c130bf623e76"></script>
+  <script src="assistant-files.js?v=703b1a5ed673"></script>
+  <script src="project-archive.js?v=e5c3386cfa23"></script>
+  <script src="app-windows.js?v=a0bf6e311f04"></script>
+<script src="item-history.js?v=cfe18d7bde7b"></script>
+<script src="item-history-package.js?v=6d23809c9edd"></script>
+<script src="working-memory.js?v=9d828811facb"></script>
+<script src="stash-files.js?v=edf580570c75"></script>
+<script src="ai-context.js?v=c8f1b4bf4075"></script>
+<script src="ai-demo.js?v=14838c0117a0"></script>
+<script src="timeline.js?v=4315bb22bb53"></script>
+<script src="app-names.js?v=857caddbbd5b"></script>
+<script src="retired-apps.js?v=dcbb79f731ad"></script>
+<script src="desktop-shell.js?v=280f8b316e89"></script>
+<script src="parked-previews.js?v=e1eff297983d"></script>
+  <script src="owned-dialogs.js?v=d1c9c17b27fb"></script>
+<script src="background-services.js?v=a1f9ca0d2cd8"></script>
+<script src="background-apps.js?v=0bfb070fe177"></script>
+<script src="preview-privacy.js?v=089e28e6d630"></script>
+<script src="empty-desktop-resources.js?v=eb246b62d4d4"></script>
+<script src="empty-desktop.js?v=71893ec7e7b2"></script>
+<script src="apps-quick-launch.js?v=80f5e98d2dd7"></script>
+<script src="working-memory-desktop.js?v=5c8707451104"></script>
+<script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
+<script src="ai-desktop.js?v=661e27ca4bbd"></script>
+<script src="overview-desktop.js?v=fe8fc4c0e944"></script>
+  <script src="steam-overview.js?v=71bf946de330"></script>
+<script src="all-workspaces.js?v=be1912614455"></script>
+<script src="workspace-notifications.js?v=b643585e34e6"></script>
+<script src="system-scopes.js?v=eabe4aceff69"></script>
+<script src="search-scopes.js?v=e9f0da6491b5"></script>
+<script src="scoped-settings.js?v=43a181e60bfa"></script>
+<script src="context-submenus.js?v=ff80098370c2"></script>
+<script src="virtual-screen.js?v=35b7b8858766"></script>
+  <script src="guide-desktop.js?v=8f7fb565ade7"></script>
+<script src="project-packages.js?v=c0ba8ea36e6d"></script>
+<script src="overview-system.js?v=9bc978c9496c"></script>
+<script src="scoped-actions.js?v=456a2d990146"></script>
+<script src="temporary-parking.js?v=0df17801747f"></script>
+<script src="temporary-parking-desktop.js?v=2d203cab5432"></script>
+<script src="assistant-desktop.js?v=1264f5c1ec17"></script>
+<script src="desktop-map.js?v=d204b9dd5344"></script>
+<script src="desktop-map-desktop.js?v=0ac465b11826"></script>
+<script src="window-audio.js?v=ed03b6644984"></script>
+<script src="folder-files.js?v=5c25ea25bc6b"></script>
+<script src="display-roles.js?v=74cce4b5c610"></script>
+<script src="display-settings.js?v=4c4e9c155bbb"></script>
+<script src="display-assistant-examples.js?v=2cb5d469ac8b"></script>
+<script src="display-role-desktop.js?v=9594100fef16"></script>
+<script src="display-side-tools.js?v=2c3557844248"></script>
+<script src="display-side-legacy.js?v=add0cce1cf52"></script>
+<script src="display-workbench.js?v=64174a39270a"></script>
+<script src="settings-app-desktop.js?v=e7b4d9b4dc6c"></script>
+<script src="desktop-files.js?v=86b2a850faaa"></script>
+<script src="desktop-clipboard.js?v=aff213447c00"></script>
+<script src="desktop-system.js?v=a3c12fb8e2dd"></script>
+<script src="desktop-accessibility.js?v=23437540e756"></script>
+<script src="desktop-surface-files.js?v=87a921c31279"></script>
 <script>SpatialRetiredApps.installSyncGuards();</script>
+  <script src="panel-widgets.js?v=a26cc4c918db"></script>
+  <script src="panel-content.js?v=3921504eafe2"></script>
+  <script src="panel-compact.js?v=461a3b8142a0"></script>
+  <script src="panel-fit.js?v=cafbc1ee0da8"></script>
+  <script src="panel-desktop.js?v=078730d6c3a5"></script>
 </body>
 </html>
 

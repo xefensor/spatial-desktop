@@ -582,7 +582,7 @@ function prepareAppWindows() {
   const originalContext=contextMenuDescriptor;
   contextMenuDescriptor=function(target,...args){
     const context=originalContext(target,...args);
-    if(context?.kind==='app'&&appState[context.name]==='minimized'&&target.closest('.apps-zone[data-area-state="rail"] .app-rack-parked'))context.parkedRail=true;
+    if(context?.kind==='app'&&appState[context.name]==='minimized'&&target.closest('.desktop-widget[data-widget-id="apps"][data-widget-mode="compact"] .panel-compact-tasks'))context.parkedRail=true;
     if(context?.kind==='file'){
       const frame=context.element.closest('[data-app-frame]');
       context.appId=frame.dataset.appFrame;

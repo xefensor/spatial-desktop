@@ -177,7 +177,7 @@
     try{
       for(const item of detail.items||[]){for(const file of item.items||[item]){if(file.kind==='folder'||!file.itemId)continue;root.SpatialItemHistoryDesktop?.capture?.({id:file.itemId,itemId:file.itemId,title:file.name,text:file.content||'',attachment:file.attachment,address:file.path,workspace:file.workspace||detail.workspace,project:file.project||null,source:{workspace:file.workspace||detail.workspace,project:file.project||null,address:file.path,label:'Files',app:'dolphin'}},{workspace:file.workspace||detail.workspace,project:file.project||null,action:detail.action,detail:'File '+detail.action});}}
       for(const [id,info]of Object.entries(appInfo)){if((info.base||id)!=='dolphin'||appState[id]==='closed')continue;const frame=frameFor(id);if(frame?.dataset.fileWorkspace===activeWorkspace&&frame.dataset.fileLocation){if(frame.dataset.desktopTrash==='true')showTrash(id);else renderAppFiles(id,frame.dataset.fileLocation,{history:false});}}
-      memory?.render(true);root.SpatialProjectRail?.render();root.SpatialAIDesktop?.render();root.SpatialNoteFiles?.refreshAll();
+      memory?.render(true);root.SpatialAIDesktop?.render();root.SpatialNoteFiles?.refreshAll();
       queueDesktopStateBroadcast(0);root.dispatchEvent(new CustomEvent('spatial-files-change',{detail}));
     }finally{refreshing=false;}
   }

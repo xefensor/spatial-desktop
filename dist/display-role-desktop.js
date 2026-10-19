@@ -127,41 +127,19 @@
       space:model.space(activeWorkspace,local),referenceOptions:special(role(local))?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
       parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
-  function ensureAssistantArea(slot,{workspace=activeWorkspace,fromMainOnly=false}={}){
+  function ensureAssistantWidget(slot,{workspace=activeWorkspace}={}){
     connect();slot=Number(slot);
-    if(!special(role(slot))||!extendedDesktopActive()||!areaPriority.includes('ai')||!workspaceProfiles[workspace])return false;
-    const assignments=displayAssignmentsFor(workspace),previous=Number(assignments.areas.ai||1);
-    // A second Side space must not steal an Area already placed on another
-    // connected display. Disconnected assignments recover onto this space.
-    if(fromMainOnly&&previous!==model.main()&&previous!==slot&&model.role(previous))return false;
-    const source=workspace===activeWorkspace?snapshotAreaLayout():workspaceAreaSessions[workspace]||defaultAreaSession||snapshotAreaLayout();
-    const layout=JSON.parse(JSON.stringify(source));
-    layout.hidden={...layout.hidden,ai:false};layout.preferred={...layout.preferred,ai:'expanded'};
-    const edge=layout.state?.ai?.edge||dockState.ai.edge;
-    layout.sizes={...layout.sizes,[edge]:Math.max(Number(layout.sizes?.[edge])||0,stateSideMinimum('ai','expanded'))};
-    assignments.areas.ai=slot;workspaceAreaSessions[workspace]=layout;
-    if(workspace===activeWorkspace){root.SpatialAIDesktop?.setMode?.('expanded');applyAreaSession(workspace);}
-    persistAreaSessions();persistDisplayAssignments();return true;
+    if(!special(role(slot))||workspace!==activeWorkspace||slot!==localDisplaySlot())return false;
+    return root.SpatialPanels?.showWidget?.('assistant',true)!==false;
   }
-  function initializeSideAreas(slot){
-    const setup=connect();slot=Number(slot)||setup.displays.find(display=>special(role(display.slot)))?.slot;
-    if(!slot||!special(role(slot)))return;
-    let changed=false;
-    for(const workspace of Object.keys(workspaceProfiles)){
-      const assignments=displayAssignmentsFor(workspace);
-      const migrated=Array.isArray(assignments.sideAreaSetups)?assignments.sideAreaSetups:[];
-      if(migrated.includes(setup.signature))continue;
-      ensureAssistantArea(slot,{workspace,fromMainOnly:true});
-      assignments.sideAreaSetups=[...new Set([...migrated,setup.signature])];
-      changed=true;
-    }
-    if(changed)persistDisplayAssignments();
+  function initializeSideWidgets(slot=localDisplaySlot()){
+    if(special(role(slot))&&Number(slot)===localDisplaySlot())ensureAssistantWidget(slot);
   }
   function notify(){
     if(refreshing)return;
     refreshing=true;
     try{
-      initializeSideAreas();
+      if(lastRole!==role()||lastWorkspace!==activeWorkspace)initializeSideWidgets();
       reconcileAssistantExample();
       let next=state();
       if(lastWorkspace!==activeWorkspace||lastSetup&&lastSetup!==next.setupKey){
@@ -209,11 +187,11 @@
   }
   function settle(){
     persist();persistDisplayAssignments();saveDesktopPages();saveTileSessions();saveIndependentSessions();
-    syncApps();refreshIntentAreas();layoutDockAreas(false,false);renderTileLayout(frontApp);notify();queueDesktopStateBroadcast(0);
+    syncApps();schedulePanelLayout();renderTileLayout(frontApp);notify();queueDesktopStateBroadcast(0);
   }
   function setRole(slot,next){
     connect();slot=Number(slot);
-    const previousMain=model.main(),result=model.setRole(slot,next);
+    const result=model.setRole(slot,next);
     if(!result.ok)throw new Error(result.reason==='choose-main-first'?'Choose another display as Main workspace first.':'This role needs a connected second display.');
     if(!result.changed)return true;
     placementUndoEpoch++;
@@ -233,11 +211,7 @@
     if(special(next)){
       for(const id of Object.keys(appState))if(appState[id]==='open'&&model.windowDisplay(activeWorkspace,id)!==slot&&Number(displayAssignmentsFor().apps[id]||1)===slot&&desktopPages.visible(activeWorkspace,id,slot,activeDisplayRoster().length))pin(id,slot);
     }
-    for(const workspace of Object.keys(workspaceProfiles)){
-      const assignments=displayAssignmentsFor(workspace);
-      for(const name of areaPriority)if(next==='main'&&Number(assignments.areas[name]||1)===previousMain)assignments.areas[name]=model.main();
-    }
-    if(special(next))initializeSideAreas(slot);
+    if(special(next))initializeSideWidgets(slot);
     settle();showToast('Display '+slot+' · '+labels[next]);return true;
   }
   const originalLocal=isLocalApp;
@@ -247,8 +221,8 @@
     if(special(role()))return false;
     return originalLocal(id);
   };
-  // Side space uses the same assigned, resizable Areas as every display. Their
-  // normal layout already reserves the workspace bounds used by tiled windows.
+  // Side space uses the same native panels as every display. Their layout
+  // reserves the workspace bounds used by tiled windows.
   const originalTileKey=tileContextKey;
   tileContextKey=function(){return special(role())?activeWorkspace+':display-role:space:'+localDisplaySlot():originalTileKey();};
   const originalIntentPrefix=intentContextPrefix;
@@ -259,11 +233,6 @@
   updateDesktopPageUi=function(...args){const result=originalUi(...args);notify();return result;};
   const originalSync=syncApps;
   syncApps=function(...args){const result=originalSync(...args);notify();return result;};
-  const originalRebalance=rebalanceAreaDisplays;
-  rebalanceAreaDisplays=function(...args){
-    connect();if(model.main()!==1||Object.values(model.roles()).some(special))return false;
-    return originalRebalance(...args);
-  };
   const originalPresence=updateDesktopSyncPresence;
   updateDesktopSyncPresence=function(...args){connect();const result=originalPresence(...args);notify();return result;};
   const originalLabel=localDisplayRoleLabel;
@@ -309,16 +278,6 @@
     if(incoming.displayRoles){loadDisplayRoles(incoming.displayRoles);connect();sharedTileContexts();persist();}
     const same=incoming.activeWorkspace===activeWorkspace,focused=desktopHasWindowFocus,localFront=frontApp;
     const packet={...incoming,...(same?{desktopHasWindowFocus:focused,frontApp:localFront}:{})};
-    if(incoming.displayAssignments){
-      packet.displayAssignments=JSON.parse(JSON.stringify(incoming.displayAssignments));
-      // A delayed linked-display echo may predate the one-time Area migration.
-      // Keep that marker so an ordinary refresh cannot undo a later hide/move.
-      for(const workspace of Object.keys(workspaceProfiles)){
-        const local=displayAssignmentsFor(workspace).sideAreaSetups;if(!Array.isArray(local)||!local.length)continue;
-        const assignments=packet.displayAssignments[workspace] ||= {};
-        assignments.sideAreaSetups=[...new Set([...local,...(Array.isArray(assignments.sideAreaSetups)?assignments.sideAreaSetups:[])])];
-      }
-    }
     if(incoming.tileSessions){packet.tileSessions=JSON.parse(JSON.stringify(incoming.tileSessions));sharedTileContexts(packet.tileSessions);}
     const result=originalApply(packet);sharedTileContexts();
     if(same&&localFront&&appState[localFront]==='open'&&isLocalApp(localFront)){frontApp=localFront;desktopHasWindowFocus=focused;}
@@ -580,7 +539,8 @@
       throw error;
     }
   }
-  root.SpatialDisplayRoleBridge={state,setRole,setAssistantAllowed,ensureAssistantArea,openReference,assistantControl,runAssistantTask,runAssistantExample,answerAssistantExample,stopAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
+  root.addEventListener('spatial-panels-ready',()=>initializeSideWidgets());
+  root.SpatialDisplayRoleBridge={state,setRole,setAssistantAllowed,ensureAssistantWidget,openReference,assistantControl,runAssistantTask,runAssistantExample,answerAssistantExample,stopAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     isSideSpace:()=>special(role()),
     windowInCurrentContext(id){return special(role())?pinned(id)===localDisplaySlot():null;},
     openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},

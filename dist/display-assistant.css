@@ -1,7 +1,7 @@
 /* Native task replies use the same styles in expanded and Compact Assistant. */
-.ai-area button.ai-task-choice{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;text-align:left}
-.ai-area .ai-chat-settings-body{max-height:55vh;overflow:auto;overscroll-behavior:contain}
-.ai-area .ai-chat-toolbar>select{max-width:100%}
-.ai-area .ai-rename-form{flex-wrap:wrap}
-.ai-area .ai-rename-form>input{flex:1 1 130px;min-width:0}
-.ai-area .ai-chat{overscroll-behavior:contain}
+.assistant-widget button.ai-task-choice{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;text-align:left}
+.assistant-widget .ai-chat-settings-body{max-height:55vh;overflow:auto;overscroll-behavior:contain}
+.assistant-widget .ai-chat-toolbar>select{max-width:100%}
+.assistant-widget .ai-rename-form{flex-wrap:wrap}
+.assistant-widget .ai-rename-form>input{flex:1 1 130px;min-width:0}
+.assistant-widget .ai-chat{overscroll-behavior:contain}

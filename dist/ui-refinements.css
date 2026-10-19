@@ -122,8 +122,6 @@ body[data-theme="light"] :is(.overview-zone-heading,.overview-section-heading) .
 .project-editor-window { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
 .project-editor-body { min-height: 0; overflow-y: auto; }
 :is(.project-editor-form,.package-window) input { min-height: 34px; }
-.area-window :is(.mini-card,.system-widget,.project-module) { scroll-margin-top: 8px; }
-.area-window :is(.project-quick-note textarea,.project-path small) { line-height: 1.5; }
 
 /* Guides and the reference use the same focus treatment and navigation. */
 .reference-nav { display: flex; gap: 14px; margin-left: auto; }
@@ -173,11 +171,12 @@ body[data-theme="light"] :is(.overview-zone-heading,.overview-section-heading) .
   .overview-category-field select { min-height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .universal-search *, .area-window *, .app-frame * { animation-duration: .01ms !important; }
+.universal-search *,
+.app-frame *{ animation-duration: .01ms !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .universal-search-shell,.area-window,.context-menu { background: #202a32 !important; backdrop-filter: none !important; }
-  body[data-theme="light"] :is(.universal-search-shell,.area-window,.context-menu) { background: #eef2f5 !important; }
+.universal-search-shell,
+.context-menu{ background: #202a32 !important; backdrop-filter: none !important; }
 }
 .overview-home[data-overview-state="all"] .overview-notifications-widget { order: 0; }
 .overview-notifications-widget header { display: flex; justify-content: space-between; align-items: center; }
@@ -240,25 +239,10 @@ body[data-theme="light"] .universal-search .overview-home .overview-open-windows
 .overview-project-zone .overview-projects-section { display: block; overflow: visible; }
 .overview-project-zone .overview-project-grid { overflow: visible; }
 @media (max-width: 980px) { .overview-project-body { overflow: visible; flex: none; } }
-
-/* A single icon gets a single track, in every dock orientation. The old
-   Overview label/shortcut tracks survived after its label was removed. */
-.apps-zone[data-area-state] .overview-launch {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 0;
-  place-items: center;
-}
-.apps-zone[data-area-state] .overview-launch svg {
-  display: block; width: 20px; height: 20px;
-}
 .universal-search .overview-close {
   display: grid; place-items: center; padding: 0; line-height: 1;
 }
 .universal-search .overview-close svg { display: block; width: 18px; height: 18px; }
-:is(.app-frame,.area-window,.universal-search) :is(.window-key,.area-window-key,.mini-control,.project-rail-tool) > svg {
-  display: block; flex-shrink: 0;
-}
 
 /* One material well per field. Nested text inputs inherit the wrapper's
    focus engraving instead of drawing another bevel around the text. */
@@ -275,39 +259,8 @@ body[data-theme="light"] .universal-search .overview-home .overview-open-windows
   font-size: clamp(16px, 1.35vw, 20px); line-height: 1.4;
 }
 .universal-search-field > svg { display: block; width: 20px; height: 20px; }
-
-/* Headers meet the Area edge exactly, rather than extending beyond it.
-   Orientation rules still own the horizontal rail's side header. */
-.area-window[data-area-state="expanded"] { --ui-area-pad: 9px; }
-.area-window[data-area-state="rail"] { --ui-area-pad: 5px; }
-.area-window[data-area-state="expanded"][data-dock-edge] > .area-window-bar {
-  margin: -9px -9px 8px !important;
-}
-.area-window[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"]) > .area-window-bar {
-  margin: -5px -5px 5px !important;
-}
-
-/* Text actions use the available width. On a narrow vertical System Area,
-   stack the two actions instead of cutting off the Settings label. */
-.systems-zone[data-area-state="expanded"]:is([data-dock-edge="left"],[data-dock-edge="right"]) .system-launchers {
-  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
-}
-.systems-zone[data-area-state="expanded"] .system-launcher > svg { flex-shrink: 0; }
-.systems-zone[data-area-state="expanded"] .system-launcher > span {
-  white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3;
-}
 .app-frame .app-titlebar { gap: 10px; }
 .app-frame .app-identity > div { overflow: hidden; }
 .app-frame .app-identity :is(b,small) {
   overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-}
-.area-window .mini-card header > div { min-width: 0; }
-.area-window .mini-card header :is(b,small) {
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-}
-.area-window .mini-actions { flex-shrink: 0; }
-/* App artwork is the identity, not a second control inside the header. */
-:is(.app-frame,.area-window,.universal-search) .app-badge {
-  border: 0 !important; background: transparent !important;
-  box-shadow: none !important;
 }

@@ -1,6 +1,6 @@
 const desktopStorage = SpatialRetiredApps.storage(globalThis.SpatialGuide?.storage || globalThis.localStorage);
-const $ = (selector, scope = document) => scope.querySelector(selector);
-const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const $ = (selector, scope = document) => scope?.querySelector(selector) || null;
+const $$ = (selector, scope = document) => [...(scope?.querySelectorAll(selector) || [])];
 const desktopPreset = desktopStorage.getItem(SpatialWorkspaceSetup.presetKey) || (globalThis.SpatialGuide?.model.active() ? 'clean' : 'demo');
 if (desktopPreset === 'demo') { try { SpatialDemoExamples.seedWorkspaces(desktopStorage); } catch {} }
 
@@ -21,7 +21,6 @@ const toggleControlSelector = [
   "[data-overview-view]",
   "[data-category-filter]",
   "[data-overview-project]",
-  "#layoutModeToggle",
   "[data-window-action=\"maximize\"]"
 ].join(",");
 
@@ -37,9 +36,7 @@ const materialControlSelector = [
   ".overview-task",
   ".overview-window",
   ".launcher-category",
-  ".areas-reset",
-  ".overview-area-row > button",
-  ".package-mode-switch > button",
+      ".package-mode-switch > button",
   ".package-secondary",
   ".package-primary",
   ".project-path",
@@ -51,7 +48,7 @@ const materialControlSelector = [
 ].join(",");
 
 const glassMaterialSurfaceSelector = [
-  ".area-window",
+  "[data-widget-source]",
   ".universal-search",
   ".mini-card",
   ".system-widget",
@@ -94,9 +91,7 @@ const materialFieldSelector = [
 
 const materialElementSelector = [
   ".app-badge",
-  ".area-window-icon:not(button)",
-  ".area-list-icon",
-  ".universal-symbol",
+      ".universal-symbol",
   ".universal-file-icon",
   ".overview-project-icon",
   ".workspace-home-icon",
@@ -335,7 +330,7 @@ function showToast(message, { duration = 1600, projectSwitch = false, action = n
 // Recovery stores placement only: never HTML, documents, drafts, chats or
 // playback state. A later layout/context/display change makes the offer stale.
 let placementUndoEpoch = 0;
-let cancelAreaPointerInteraction = null;
+
 function placementContext() {
   return JSON.stringify([activeWorkspace, localDisplaySlot(), window.innerWidth, window.innerHeight,
     activeDisplayRoster().map(display => [display.source, display.width, display.height]),
@@ -344,24 +339,23 @@ function placementContext() {
 function capturePlacement() {
   return cloneDesktopState({
     context: placementContext(), epoch: placementUndoEpoch, workspace: activeWorkspace,
-    area: snapshotAreaLayout(), aiMode: globalThis.SpatialAIDesktop?.mode() || "expanded",
+    panels: snapshotAreaLayout(), aiMode: globalThis.SpatialAIDesktop?.mode() || "expanded",
     tiles: tileSessions, pages: desktopPages.snapshot(),
     states: { ...workspaceAppStates, [activeWorkspace]: { ...appState } },
     maximized: appMaximizedState, geometry: Object.fromEntries(windowGeometry),
     displays: workspaceDisplayAssignments, membership: windowMembership,
     projects: projectWindowSessions, project: activeProjectName,
     openProjects: workspaceOpenProjects, projectStates: workspaceProjectStates, selectedProjects: workspaceProjects,
-    autoEdges: [...autoSpatialEdgeStates], front: frontApp, focused: desktopHasWindowFocus,
+    front: frontApp, focused: desktopHasWindowFocus,
     stack: Object.fromEntries(Object.keys(appInfo).map(name => [name, frameFor(name)?.style.zIndex || ""])),
-    areaScroll: Object.fromEntries(areaPriority.map(name => {
-      const region = name === "systems" ? $(".system-scroll-region", areaFor(name)) : null;
-      return [name, region ? [region.scrollLeft, region.scrollTop] : null];
-    }))
+    widgetScroll: Object.fromEntries($$('[data-widget-source]').map(node => [node.dataset.widgetSource, [node.scrollLeft,node.scrollTop]]))
+
+
   });
 }
 function placementFingerprint(snapshot) {
   // Focusing another existing window is harmless; its contents stay live.
-  const { front, focused, stack, areaScroll, ...placement } = snapshot;
+  const { front, focused, stack, widgetScroll, ...placement } = snapshot;
   return JSON.stringify(placement);
 }
 function replacePlacementRecord(target, value) {
@@ -387,10 +381,7 @@ function restorePlacement(before) {
   windowGeometry.clear();
   Object.entries(before.geometry).forEach(([name, rect]) => windowGeometry.set(name, rect));
   globalThis.SpatialAIDesktop?.setMode(before.aiMode);
-  workspaceAreaSessions[activeWorkspace] = before.area;
-  applyAreaSession(activeWorkspace);
-  autoSpatialEdgeStates.clear();
-  before.autoEdges.forEach(([edge, state]) => autoSpatialEdgeStates.set(edge, state));
+  globalThis.SpatialPanels?.restoreSession(activeWorkspace, before.panels);
   activeProjectName = before.project || null;
   if (activeProjectName && projectSpaces[activeProjectName]) renderProjectSpace(activeProjectName);
   syncProjectAreaView();
@@ -399,8 +390,7 @@ function restorePlacement(before) {
   syncProjectWindowScopes(); syncApps();
   Object.entries(before.stack).forEach(([name, z]) => { const frame = frameFor(name); if (frame) frame.style.zIndex = z; });
   refreshIntentAreas(); layoutDockAreas(false, false); renderTileLayout(frontApp);
-  const systemScroll = $(".system-scroll-region", areaFor("systems"));
-  if (systemScroll && before.areaScroll.systems) [systemScroll.scrollLeft, systemScroll.scrollTop] = before.areaScroll.systems;
+  Object.entries(before.widgetScroll || {}).forEach(([id,scroll]) => { const node = document.querySelector('[data-widget-source="' + id + '"]'); if (node) [node.scrollLeft,node.scrollTop] = scroll; });
   saveAreaLayout(); saveDesktopPages(); saveTileSessions(); saveLayout();
   persistDisplayAssignments(); persistWorkspaceAppStates(); persistProjectState(); saveIndependentSessions();
   queueDesktopStateBroadcast(0);
@@ -423,8 +413,14 @@ function offerPlacementUndo(before, message, guard = null) {
   } });
 }
 
+const appFrameNodes = new Map();
 function frameFor(name) {
-  return document.querySelector('[data-app-frame="' + name + '"]');
+  const cached = appFrameNodes.get(name);
+  if (cached?.isConnected) return cached;
+  const frame = document.querySelector('[data-app-frame="' + name + '"]');
+  if (frame) appFrameNodes.set(name, frame);
+  else appFrameNodes.delete(name);
+  return frame;
 }
 
 /* Content limits rather than generic window-manager minimums. Each app
@@ -461,7 +457,7 @@ function clampGeometry(geometry, name = null) {
   const maximumHeight = Math.max(1, workspace.height - 16);
   /* A tiled window must obey the tile it was given. Applying the normal app
      minimum here used to enlarge narrow cells after layout, making windows
-     overlap and disappear behind the Areas. App container layouts provide a
+     overlap and disappear behind panels. App container layouts provide a
   compact presentation for these deliberately small tiles. */
   const isAutoTile = name && autoTiledWindows.has(name);
   const minWidth = Math.min(isAutoTile ? Math.max(1, geometry.width) : usable.width, maximumWidth);
@@ -594,8 +590,6 @@ let activeDesktopDrag = null;
 let tileLayoutFrame = 0;
 let tileDropPreview = null;
 let lastTileContext = "";
-let intentAreaPlan = { moves: {}, rails: {}, overlays: {}, hidden: {}, canvas: {} };
-let applyingIntentAreas = false;
 
 function tileContextKey() {
   const bond = desktopPages.selectedFullscreen?.(activeWorkspace);
@@ -628,7 +622,7 @@ function fitDesktopTiles(root = tileSession().root, preferredName = frontApp) {
   const session = tileSession();
   const workspace = workspaceBounds();
   // Float coordinates belong to the monitor; tile coordinates belong to the
-  // workspace between Areas. Only visible floats on this monitor reserve space.
+  // workspace between panels. Only visible floats on this monitor reserve space.
   const obstacles = session.fullscreen ? [] : Object.entries(session.floating)
     .filter(([name]) => appState[name] === "open" && isLocalApp(name) && name !== activeDesktopDrag?.name)
     .map(([,rect]) => ({x:rect.left-workspace.rect.left, y:rect.top-workspace.rect.top, width:rect.width, height:rect.height}));
@@ -657,7 +651,7 @@ function parkTileWindows(names, reason, announce = true) {
     appMaximizedState[name] = false;
     frame.classList.remove("is-maximized", "is-tiled");
     delete frame.dataset.maximized;
-    autoWindowAvoidance.delete(name);
+
     autoTiledWindows.delete(name);
     syncMaximizeButton(frame);
   });
@@ -678,17 +672,8 @@ function moveCoveredApps(session, mode, names) {
   if (peer.focus || peer.fullscreen) return;
   const assignments = displayAssignmentsFor(), display = activeDisplayRoster()[target - 1];
   if (!display) return;
-  const lanes = {left:0,right:0,top:0,bottom:0};
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    if (!area || area.hidden) return;
-    const saved = Number(assignments.areas[name] || 1), actual = Number(intentAreaPlan.moves[name] || saved);
-    if (saved !== target && actual !== target) return;
-    const edge = dockState[name].edge;
-    const rail = area.dataset.areaState === "rail" || intentAreaPlan.rails[name];
-    const size = rail ? 70 : Math.max(dockSizes[edge], edge === "left" || edge === "right" ? stateSideMinimum(name,"expanded") : stateHorizontalMinimum(name,"expanded"));
-    lanes[edge] = Math.max(lanes[edge], size);
-  });
+  const lanes = globalThis.SpatialPanels?.insetsFor(target) || {left:0,right:0,top:0,bottom:0};
+
   const origin = {left:8+(lanes.left ? lanes.left+8 : 0),top:8+(lanes.top ? lanes.top+8 : 0)};
   const bounds = {x:8,y:8,width:Math.max(1,display.width-origin.left-8-(lanes.right ? lanes.right+8 : 0)-16),height:Math.max(1,display.height-origin.top-8-(lanes.bottom ? lanes.bottom+8 : 0)-16)};
   const open = Object.keys(appState).filter(name => appState[name] === "open" && desktopPages.visible(activeWorkspace,name) && Number(assignments.apps[name] || 1) === target);
@@ -1343,113 +1328,10 @@ function toggleAppFullscreen(name) {
   queueDesktopStateBroadcast(0);
 }
 
-function updateFloatingYield(name, gate = null) {
+function updateFloatingYield(name) {
   const floating = tileSession().floating[name];
-  if (!floating) return;
-  const edgeClearance = edge => edge === "left" ? floating.left : edge === "right" ? window.innerWidth - floating.left - floating.width : edge === "top" ? floating.top : window.innerHeight - floating.top - floating.height;
-  const previous = new Set(floating.yieldEdges || []);
-  floating.yieldEdges = dockEdges.filter(edge => {
-    const size = gate?.preferredSizes?.[edge] ?? dockSizes[edge];
-    const clearance = edgeClearance(edge);
-    if (previous.has(edge)) return clearance < size + 64;
-    return clearance < size - 2 && (!gate || gate.passed.has(edge));
-  });
-  floating.overlayEdges = floating.yieldEdges.filter(edge => edgeClearance(edge) < 68);
-  refreshIntentAreas();
-}
-
-function manualAreaOverride(name) {
-  if (intentAreaPlan.moves[name] && intentAreaPlan.moves[name] === localDisplaySlot()) {
-    displayAssignmentsFor().areas[name] = localDisplaySlot();
-    persistDisplayAssignments();
-  }
-  const prefix = intentContextPrefix();
-  Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix)).forEach(([, session]) => {
-    Object.values(session.floating || {}).forEach(rect => { rect.excludeAreas = [...new Set([...(rect.excludeAreas || []), name])]; });
-    if (session.fullscreen) session.fullscreen.excludeAreas = [...new Set([...(session.fullscreen.excludeAreas || []), name])];
-  });
-  saveTileSessions();
-}
-
-function refreshIntentAreas() {
-  if (applyingIntentAreas || !window.SpatialIntent) return;
-  applyingIntentAreas = true;
-  try {
-    const prefix = intentContextPrefix();
-    const assignments = displayAssignmentsFor();
-    const sessions = Object.entries(tileSessions).filter(([key]) => key.startsWith(prefix));
-    const windows = [], demands = [];
-    sessions.forEach(([key, session]) => {
-      const display = Number(key.slice(prefix.length));
-      if(!Number.isInteger(display) || display < 1)return;
-      const openHere = name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && Number(assignments.apps[name] || 1) === display;
-      tileEngine.names(session.root).filter(openHere).forEach(name => windows.push({ name, display }));
-      Object.entries(session.floating || {}).filter(([name]) => openHere(name)).forEach(([name, rect]) => {
-        windows.push({ name, display, floating: true, rect });
-        if (rect.yieldEdges?.length) demands.push({ display, edges: rect.yieldEdges, overlayEdges: rect.overlayEdges, exclude: rect.excludeAreas });
-      });
-      if (session.fullscreen && !session.fullscreen.bonded && openHere(session.fullscreen.name)) demands.push({ display, fullscreen: true, edges: [...dockEdges], exclude: session.fullscreen.excludeAreas });
-    });
-    Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && !desktopPages.fullscreenBond?.(activeWorkspace,name) && !windows.some(item => item.name === name)).forEach(name => windows.push({ name, display: Number(assignments.apps[name] || 1) }));
-    const roster = activeDisplayRoster();
-    const displays = roster.map((display, index) => {
-      const session = tileSessions[prefix + (index + 1)];
-      const openNames = Object.keys(appState).filter(name => desktopPages.visible(activeWorkspace, name, Number(displayAssignmentsFor().apps[name] || 1), activeDisplayRoster().length) && appState[name] === "open" && !desktopPages.fullscreenBond?.(activeWorkspace,name) && Number(assignments.apps[name] || 1) === index + 1 && !session?.floating?.[name]);
-      const openTree = tileEngine.normalize(session?.root, openNames);
-      const minimum = window.SpatialIntent.minimumTree(openTree, minimumUsableWindowSize);
-      if (!openTree && openNames.length) {
-        minimum.width = Math.max(...openNames.map(name => minimumUsableWindowSize(name).width));
-        minimum.height = openNames.reduce((sum, name) => sum + minimumUsableWindowSize(name).height, 0) + (openNames.length - 1) * 8;
-      }
-      return { slot: index + 1, width: display.width || window.innerWidth, height: display.height || window.innerHeight, minimum };
-    });
-    const areas = areaPriority.filter(name => !areaFor(name)?.hidden).map(name => ({ name, edge: dockState[name].edge, display: Math.min(roster.length, Number(assignments.areas[name]) || 1), size: dockSizes[dockState[name].edge] }));
-    const next = window.SpatialIntent.plan({ areas, displays, windows, demands });
-    // True fullscreen transfers Areas when they fit elsewhere. Any Area left
-    // on the covered display is temporarily hidden, without changing its saved state.
-    demands.filter(demand => demand.fullscreen).forEach(demand => {
-      areas.filter(area => (next.moves[area.name] || area.display) === demand.display).forEach(area => { next.hidden[area.name] = true; delete next.overlays[area.name]; });
-    });
-    const changed = JSON.stringify(next) !== JSON.stringify(intentAreaPlan);
-    intentAreaPlan = next;
-    if (changed) {
-      areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", !isLocalArea(name)));
-      layoutDockAreas(false, false);
-      scheduleWindowTiling();
-    }
-    renderIntentAreaEdges();
-  } finally { applyingIntentAreas = false; }
-}
-
-function renderIntentAreaEdges() {
-  let shelf = $("#intentAreaEdges");
-  if (!shelf) {
-    shelf = document.createElement("nav");
-    shelf.id = "intentAreaEdges";
-    shelf.setAttribute("aria-label", "Areas available over this window");
-    $(".desktop-shell").append(shelf);
-  }
-  const names = areaPriority.filter(name => intentAreaPlan.overlays[name] && !intentAreaPlan.hidden?.[name] && isLocalArea(name));
-  const signature = names.map(name => name + ":" + dockState[name].edge).join("|");
-  if (shelf.dataset.signature !== signature) {
-    shelf.dataset.signature = signature;
-    shelf.innerHTML = names.map((name, index) => '<button class="intent-area-tab" data-intent-area="' + name + '" data-edge="' + dockState[name].edge + '" style="--tab-index:' + index + '" aria-expanded="false">' + escapeHtml(areaLabel(name)) + '</button>').join("");
-    $$('[data-intent-area]', shelf).forEach(button => button.addEventListener("click", () => {
-      const area = areaFor(button.dataset.intentArea);
-      const show = !area.classList.contains("is-intent-revealed");
-      area.classList.toggle("is-intent-revealed", show);
-      button.setAttribute("aria-expanded", String(show));
-      layoutDockAreas(false, false);
-    }));
-  }
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    const hiddenForFullscreen = Boolean(intentAreaPlan.hidden?.[name]);
-    area?.classList.toggle("is-intent-hidden", hiddenForFullscreen);
-    if (area) area.inert = hiddenForFullscreen;
-    area?.classList.toggle("is-intent-overlay", names.includes(name));
-    if (!names.includes(name)) area?.classList.remove("is-intent-revealed");
-  });
+  if (floating) { delete floating.yieldEdges; delete floating.overlayEdges; delete floating.excludeAreas; }
+  schedulePanelLayout();
 }
 
 function restoreWorkspaceWindowLayout() {
@@ -1516,9 +1398,7 @@ function syncApps() {
   if (!frontApp) desktopHasWindowFocus = false;
   updateDesktopPageUi();
   persistWorkspaceAppStates();
-  /* An otherwise empty secondary display is an Area workspace. Re-run the
-     Area layout whenever its local window occupancy changes so it can enter
-     or leave that presentation immediately. */
+  // Update panels when window occupancy changes on a linked display.
   if (windowViewportLockReady && extendedDesktopActive()) layoutDockAreas(false, false);
   if (windowViewportLockReady && !tileRendering && !tileInteraction) scheduleWindowTiling();
   globalThis.SpatialSteamOverview?.syncContext();
@@ -1544,11 +1424,7 @@ function openApp(name, dropPoint = null) {
   } else renderTileLayout(name);
   bringToFront(name);
   refreshIntentAreas();
-  if (layoutMode === "auto") {
-    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    scheduleSpatialAutoLayout();
-    scheduleWindowTiling(name);
-  }
+  scheduleWindowTiling(name);
   if (previousState !== "open") globalThis.SpatialTimelineDesktop?.record(previousState === "minimized" ? "app.restore" : "app.open", {app:name});
   queueDesktopStateBroadcast();
 }
@@ -1591,10 +1467,7 @@ function minimizeApp(name, preserveGeometry = false) {
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
   refreshIntentAreas();
-  if (layoutMode === "auto") {
-    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    scheduleSpatialAutoLayout();
-  }
+  schedulePanelLayout();
   queueDesktopStateBroadcast();
 }
 
@@ -1621,10 +1494,7 @@ function closeApp(name) {
   if (frontApp === name) frontApp = topOpenApp(name);
   syncApps();
   refreshIntentAreas();
-  if (layoutMode === "auto") {
-    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    scheduleSpatialAutoLayout();
-  }
+  schedulePanelLayout();
   showToast(appInfo[name].label + " closed");
   queueDesktopStateBroadcast();
 }
@@ -1666,41 +1536,23 @@ function toggleMaximize(name) {
     clearWindowAutoAvoidance(name);
     applyGeometry(name, maximizeRestore.get(name) || windowGeometry.get(name) || readGeometry(frame));
     syncMaximizeButton(frame);
-    if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+
     scheduleSpatialAutoLayout();
     return;
   }
   maximizeRestore.set(name, readGeometry(frame));
-  const occupiedEdges = dockEdges.filter(edge => dockGroup(edge).length);
-  let maximizeEdges = occupiedEdges;
-  if (layoutMode === "auto" && currentDisplayProfile === "dual") {
-    const shellRect = $(".desktop-shell").getBoundingClientRect();
-    const onLeftDisplay = lastDesktopPointerX < shellRect.left + shellRect.width / 2;
-    maximizeEdges = occupiedEdges.filter(edge => edge === (onLeftDisplay ? "left" : "right") || edge === "top" || edge === "bottom");
-  }
-  setWindowAutoAvoidance(name, maximizeEdges, frame);
+
+
   const workspace = workspaceBounds();
   frame.dataset.maximized = "true";
   appMaximizedState[name] = true;
   frame.classList.add("is-maximized");
-  if (layoutMode === "auto" && currentDisplayProfile === "dual") {
-    const shellRect = $(".desktop-shell").getBoundingClientRect();
-    const onLeftDisplay = lastDesktopPointerX < shellRect.left + shellRect.width / 2;
-    const targetLeft = shellRect.left + (onLeftDisplay ? 0 : shellRect.width / 2);
-    applyGeometry(name, {
-      x: targetLeft - workspace.rect.left + 8,
-      y: shellRect.top - workspace.rect.top + 8,
-      width: shellRect.width / 2 - 16,
-      height: shellRect.height - 16
-    }, false);
-    frame.dataset.maxDisplay = onLeftDisplay ? "1" : "2";
-  } else {
-    applyGeometry(name, { x: 8, y: 8, width: workspace.width - 16, height: workspace.height - 16 }, false);
-    delete frame.dataset.maxDisplay;
-  }
+  applyGeometry(name, { x: 8, y: 8, width: workspace.width - 16, height: workspace.height - 16 }, false);
+  delete frame.dataset.maxDisplay;
+
   bringToFront(name);
   syncMaximizeButton(frame);
-  if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+
 }
 
 function hotbarSlotFor(name) {
@@ -1716,7 +1568,7 @@ function miniMarkup(name) {
   const shortcut = slot === null ? "" : slot > 20 ? " · Click · slot " + slot : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = escapeHtml(info.detail || "");
-  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back onto the desktop') + ' · Available across these desktops' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back onto the desktop') + ' · Available across these desktops' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button type="button" class="surface-key mini-control" data-mini-options="' + escapeHtml(name) + '" aria-label="' + escapeHtml('Window options for ' + info.label) + '" title="Window options" aria-haspopup="menu" aria-controls="desktopContextMenu"><span aria-hidden="true">⋯</span></button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>Evening Light</b><small>Northbound · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -1743,6 +1595,14 @@ function renderMiniApps() {
   $("#miniCount").textContent = String(minimized.length);
   $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
+  $$("[data-mini-options]").forEach(button => button.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const name = button.dataset.miniOptions;
+    if (!appInfo[name] || appState[name] !== "minimized") return;
+    const rect = button.getBoundingClientRect();
+    openDesktopContextMenu({ kind: "app", name, title: appInfo[name].label }, rect.left, rect.bottom, true);
+  }));
   $$("[data-mini-card]").forEach(bindMiniDrag);
   bindMusicControls();
   bindMiniWidgets();
@@ -1853,147 +1713,8 @@ function setDropTarget(zone, active) {
   zone.classList.toggle("is-drop-target", active);
 }
 
-const AREA_BOUNDARY_RESISTANCE = 86;
-const AREA_BOUNDARY_INSET = 10;
 
-function ensureAreaBoundaryFeedback() {
-  let feedback = $("#areaBoundaryFeedback");
-  if (feedback) return feedback;
-  feedback = document.createElement("div");
-  feedback.id = "areaBoundaryFeedback";
-  feedback.className = "area-boundary-feedback";
-  feedback.setAttribute("aria-hidden", "true");
-  $(".desktop-shell").append(feedback);
-  return feedback;
-}
 
-function areaBoundaryPenetration(edge, rect, lane) {
-  if (edge === "left") return lane.right - rect.left;
-  if (edge === "right") return rect.right - lane.left;
-  if (edge === "top") return lane.bottom - rect.top;
-  return rect.bottom - lane.top;
-}
-
-function areaBoundarySpanOverlaps(edge, rect, lane) {
-  if (edge === "left" || edge === "right") {
-    return Math.min(rect.bottom, lane.bottom) - Math.max(rect.top, lane.top) > 28;
-  }
-  return Math.min(rect.right, lane.right) - Math.max(rect.left, lane.left) > 28;
-}
-
-function areaBoundaryStage(edge) {
-  return dockGroup(edge).map(name => name + ":" + (areaFor(name)?.dataset.areaState || "unknown")).join("|");
-}
-
-function edgeHasVisibleArea(edge) {
-  return dockGroup(edge).some(name => {
-    const area = areaFor(name);
-    return area && !area.classList.contains("is-auto-yielding") && !area.classList.contains("is-auto-relocated");
-  });
-}
-
-function setAreaBoundaryFeedback(hit, rect) {
-  const feedback = ensureAreaBoundaryFeedback();
-  if (!hit) {
-    feedback.classList.remove("is-visible");
-    feedback.style.removeProperty("--boundary-pressure");
-    return;
-  }
-  const shellRect = $(".desktop-shell").getBoundingClientRect();
-  const lane = hit.lane;
-  const vertical = hit.edge === "left" || hit.edge === "right";
-  const extent = vertical
-    ? Math.min(190, Math.max(72, rect.height * .42))
-    : Math.min(220, Math.max(90, rect.width * .42));
-  const center = vertical
-    ? Math.max(lane.top + extent / 2, Math.min((rect.top + rect.bottom) / 2, lane.bottom - extent / 2))
-    : Math.max(lane.left + extent / 2, Math.min((rect.left + rect.right) / 2, lane.right - extent / 2));
-  const boundary = hit.edge === "left" ? lane.right : hit.edge === "right" ? lane.left : hit.edge === "top" ? lane.bottom : lane.top;
-  const firstArea = areaFor(dockGroup(hit.edge)[0]);
-  const accent = firstArea ? getComputedStyle(firstArea).getPropertyValue("--area-header-accent").trim() : "#62c9ff";
-  feedback.dataset.edge = hit.edge;
-  feedback.style.setProperty("--boundary-pressure", hit.pressure.toFixed(3));
-  feedback.style.setProperty("--boundary-opacity", (0.28 + hit.pressure * 0.56).toFixed(3));
-  feedback.style.setProperty("--boundary-glow", Math.round(4 + hit.pressure * 8) + "px");
-  feedback.style.setProperty("--boundary-accent", accent || "#62c9ff");
-  if (vertical) {
-    feedback.style.left = Math.round(boundary - shellRect.left - 2) + "px";
-    feedback.style.top = Math.round(center - extent / 2 - shellRect.top) + "px";
-    feedback.style.width = "4px";
-    feedback.style.height = Math.round(extent) + "px";
-  } else {
-    feedback.style.left = Math.round(center - extent / 2 - shellRect.left) + "px";
-    feedback.style.top = Math.round(boundary - shellRect.top - 2) + "px";
-    feedback.style.width = Math.round(extent) + "px";
-    feedback.style.height = "4px";
-  }
-  feedback.classList.add("is-visible");
-}
-
-function resistAreaBoundaries(position, size, gate, bypass = false) {
-  if ((!areasFollowWindows() && !gate.manual) || bypass) {
-    setAreaBoundaryFeedback(null);
-    return { ...position, resisted: false };
-  }
-  const candidate = {
-    left: position.left,
-    top: position.top,
-    right: position.left + size.width,
-    bottom: position.top + size.height,
-    width: size.width,
-    height: size.height
-  };
-  const next = { ...position, resisted: false };
-  let strongest = null;
-
-  dockEdges.forEach(edge => {
-    const lane = baseDockLaneRects.get(edge);
-    if (!lane || !edgeHasVisibleArea(edge) || !areaBoundarySpanOverlaps(edge, candidate, lane)) return;
-    const penetration = areaBoundaryPenetration(edge, candidate, lane);
-    const stage = areaBoundaryStage(edge);
-    if (gate.stages.get(edge) !== stage) {
-      gate.stages.set(edge, stage);
-      gate.passed.delete(edge);
-      gate.baselines.set(edge, Math.max(0, penetration));
-    }
-    if (gate.passed.has(edge)) {
-      if (penetration < -20) {
-        gate.passed.delete(edge);
-        gate.baselines.set(edge, 0);
-      }
-      else return;
-    }
-    if (penetration <= 0) {
-      gate.baselines.set(edge, 0);
-      return;
-    }
-    const effectivePenetration = Math.max(0, penetration - (gate.baselines.get(edge) || 0));
-    if (effectivePenetration >= gate.threshold) {
-      gate.passed.add(edge);
-      gate.baselines.set(edge, 0);
-      return;
-    }
-
-    const pressure = Math.max(0, Math.min(1, effectivePenetration / gate.threshold));
-    if (edge === "left") next.left = lane.right + AREA_BOUNDARY_INSET;
-    if (edge === "right") next.left = lane.left - size.width - AREA_BOUNDARY_INSET;
-    if (edge === "top") next.top = lane.bottom + AREA_BOUNDARY_INSET;
-    if (edge === "bottom") next.top = lane.top - size.height - AREA_BOUNDARY_INSET;
-    next.resisted = true;
-    if (!strongest || pressure > strongest.pressure) strongest = { edge, pressure, lane };
-  });
-
-  const resistedRect = {
-    left: next.left,
-    top: next.top,
-    right: next.left + size.width,
-    bottom: next.top + size.height,
-    width: size.width,
-    height: size.height
-  };
-  setAreaBoundaryFeedback(strongest, resistedRect);
-  return next;
-}
 
 let cancelWindowPointerInteraction = null;
 
@@ -2184,8 +1905,8 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
   const start = !resizing && !priorFloating && frame.classList.contains("is-tiled")
     ? detachedDragRect(name, original, event, handle.getBoundingClientRect?.().height || 48)
     : original;
-  const gate = { manual: true, threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set(priorFloating?.yieldEdges || []), stages: new Map(), baselines: new Map(), preferredSizes: { ...dockSizes } };
-  dockEdges.forEach(edge => { gate.stages.set(edge, areaBoundaryStage(edge)); gate.baselines.set(edge, 0); });
+
+
   let moved = false;
   tileInteraction = true;
   bringToFront(name);
@@ -2203,35 +1924,19 @@ function beginManualWindowInteraction(event, frame, handle, resizing = false) {
     const candidate = resizing
       ? { ...start, width: start.width + pointer.clientX - startX, height: start.height + pointer.clientY - startY }
       : { ...start, left: start.left + pointer.clientX - startX, top: start.top + pointer.clientY - startY };
-    if (!resizing) {
-      const resisted = resistAreaBoundaries(candidate, candidate, gate);
-      candidate.left = resisted.left;
-      candidate.top = resisted.top;
-    } else {
-      const raw = { ...candidate, right: candidate.left + candidate.width, bottom: candidate.top + candidate.height };
-      dockEdges.forEach(edge => {
-        const lane = baseDockLaneRects.get(edge);
-        if (!lane || gate.passed.has(edge)) return;
-        const pressure = areaBoundaryPenetration(edge, raw, lane);
-        if (pressure >= gate.threshold) gate.passed.add(edge);
-        else if (pressure > 0) {
-          if (edge === "right") candidate.width = lane.left - start.left - AREA_BOUNDARY_INSET;
-          if (edge === "bottom") candidate.height = lane.top - start.top - AREA_BOUNDARY_INSET;
-        }
-      });
-    }
+
+
     const metadata = tileSession().floating[name];
     const geometry = applyFloatingGeometry(name, candidate);
     tileSession().floating[name] = { ...metadata, ...geometry };
     delete tileSession().floating[name].excludeAreas;
-    updateFloatingYield(name, gate);
+    updateFloatingYield(name);
     saveTileSessions();
     queueDesktopStateBroadcast(80);
   };
   const finish = pointer => {
     frame.classList.remove("is-dragging", "is-resizing");
     manualWindowInteraction = false;
-    setAreaBoundaryFeedback(null);
     tileInteraction = false;
     if (moved && pointer.type === "pointercancel") {
       if (priorFloating) tileSession().floating[name] = priorFloating;
@@ -2270,17 +1975,10 @@ function bindWindowDrag(frame) {
     const startRect = frame.getBoundingClientRect();
     const offsetX = event.clientX - startRect.left;
     const offsetY = event.clientY - startRect.top;
-    const appsZone = $(".apps-zone");
+    const appsZone = areaFor("apps");
     const workspace = $(".workspace-zone");
-    const boundaryGate = { threshold: AREA_BOUNDARY_RESISTANCE, passed: new Set(), stages: new Map(), baselines: new Map() };
-    if (layoutMode === "auto") {
-      dockEdges.forEach(edge => {
-        const lane = baseDockLaneRects.get(edge);
-        boundaryGate.stages.set(edge, areaBoundaryStage(edge));
-        boundaryGate.baselines.set(edge, 0);
-        if (lane && areaBoundaryPenetration(edge, startRect, lane) > 0) boundaryGate.passed.add(edge);
-      });
-    }
+
+
     frame.classList.add("is-dragging");
     frame.style.left = startRect.left + "px";
     frame.style.top = startRect.top + "px";
@@ -2294,29 +1992,19 @@ function bindWindowDrag(frame) {
         releaseBorrowedApp(name);
         if (frame.dataset.maximized === "true") focusTileWindow(name);
       }
-      const position = resistAreaBoundaries({
-        left: moveEvent.clientX - offsetX,
-        top: moveEvent.clientY - offsetY
-      }, { width: startRect.width, height: startRect.height }, boundaryGate, moveEvent.altKey);
+      const position = { left: moveEvent.clientX - offsetX, top: moveEvent.clientY - offsetY };
+
       frame.style.left = position.left + "px";
       frame.style.top = position.top + "px";
       showTileDropPreview(name, { x: moveEvent.clientX, y: moveEvent.clientY });
-      if (layoutMode === "auto") {
-        const movingRect = frame.getBoundingClientRect();
-        if (!position.resisted) refreshSpatialAutoLayout(frame, movingRect);
-        setDropTarget(appsZone, false);
-        setDropTarget(workspace, true);
-      } else {
-        setDropTarget(appsZone, pointInside(appsZone.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
-        setDropTarget(workspace, pointInside(workspace.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
-      }
+      setDropTarget(appsZone, pointInside(appsZone.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
+      setDropTarget(workspace, pointInside(workspace.getBoundingClientRect(), moveEvent.clientX, moveEvent.clientY));
     };
 
     const finish = upEvent => {
       setDropTarget(appsZone, false);
       setDropTarget(workspace, false);
-      setAreaBoundaryFeedback(null);
-      clearTileDropPreview();
+        clearTileDropPreview();
       tileInteraction = false;
       const parked = pointInside(appsZone.getBoundingClientRect(), upEvent.clientX, upEvent.clientY);
       const finalRect = frame.getBoundingClientRect();
@@ -2343,7 +2031,7 @@ function bindWindowDrag(frame) {
         return;
       }
       splitWindowIntoTile(name, { x: upEvent.clientX, y: upEvent.clientY });
-      if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
     };
 
     trackWindowPointer(event, titlebar, move, finish, { name }, placementBefore);
@@ -2386,7 +2074,7 @@ function bindResize(frame) {
         width: start.width + moveEvent.clientX - startX,
         height: start.height + moveEvent.clientY - startY
       }, false);
-      if (layoutMode === "auto") refreshSpatialAutoLayout(frame, frame.getBoundingClientRect());
+
     };
     const finish = () => {
       handle.removeEventListener("pointermove", move);
@@ -2395,7 +2083,7 @@ function bindResize(frame) {
       frame.classList.remove("is-resizing");
       windowGeometry.set(name, readGeometry(frame));
       saveLayout();
-      if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", finish);
@@ -2466,344 +2154,51 @@ function bindMiniDrag(card) {
 const zoneLayout = { apps: .25, systems: .25 };
 let zoneFitFrame;
 
-function zoneLimits() {
-  const shell = $(".desktop-shell");
-  const width = shell.clientWidth;
-  return {
-    shell,
-    width,
-    minApps: Math.max(200, width * .15),
-    minSystems: Math.max(220, width * .15),
-    maxSide: width * .45,
-    minWorkspace: Math.min(520, width * .43)
-  };
-}
-
-function fittedZonePixels() {
-  const limits = zoneLimits();
-  let apps = Math.min(limits.maxSide, Math.max(limits.minApps, zoneLayout.apps * limits.width));
-  let systems = Math.min(limits.maxSide, Math.max(limits.minSystems, zoneLayout.systems * limits.width));
-  const available = limits.width - limits.minWorkspace;
-  const overflow = apps + systems - available;
-  if (overflow > 0) {
-    const appsRoom = Math.max(0, apps - limits.minApps);
-    const systemsRoom = Math.max(0, systems - limits.minSystems);
-    const room = appsRoom + systemsRoom;
-    if (room > 0) {
-      apps -= overflow * appsRoom / room;
-      systems -= overflow * systemsRoom / room;
-    }
-  }
-  return { ...limits, apps, systems };
-}
-
-function scheduleWindowFit() {
-  cancelAnimationFrame(zoneFitFrame);
-  zoneFitFrame = requestAnimationFrame(() => {
-    $$("[data-app-frame]").forEach(frame => {
-      if (frame.hidden || frame.classList.contains("is-dragging")) return;
-      const current = readGeometry(frame);
-      const fitted = clampGeometry(current, frame.dataset.appFrame);
-      const changed = ["x", "y", "width", "height"].some(key => Math.abs(current[key] - fitted[key]) > 1);
-      if (changed) {
-        applyGeometry(frame.dataset.appFrame, fitted, false);
-        windowGeometry.set(frame.dataset.appFrame, fitted);
-      }
-    });
-    saveLayout();
-  });
-}
-
-function updateZoneAccessibility(apps, systems, width) {
-  const limits = zoneLimits();
-  const appsPercent = Math.round(apps / width * 100);
-  const systemsPercent = Math.round(systems / width * 100);
-  const workspacePercent = Math.max(0, 100 - appsPercent - systemsPercent);
-  const left = $('[data-zone-resizer="apps"]');
-  const right = $('[data-zone-resizer="systems"]');
-  left.setAttribute("aria-valuemin", Math.round(limits.minApps / width * 100));
-  left.setAttribute("aria-valuemax", Math.round(limits.maxSide / width * 100));
-  left.setAttribute("aria-valuenow", appsPercent);
-  left.setAttribute("aria-valuetext", "Apps " + appsPercent + "%, Workspace " + workspacePercent + "%");
-  right.setAttribute("aria-valuemin", Math.round(limits.minSystems / width * 100));
-  right.setAttribute("aria-valuemax", Math.round(limits.maxSide / width * 100));
-  right.setAttribute("aria-valuenow", systemsPercent);
-  right.setAttribute("aria-valuetext", "Systems " + systemsPercent + "%, Workspace " + workspacePercent + "%");
-}
-
-function applyZoneLayout(save = false) {
-  const fitted = fittedZonePixels();
-  fitted.shell.style.setProperty("--apps-width", fitted.apps + "px");
-  fitted.shell.style.setProperty("--systems-width", fitted.systems + "px");
-  zoneLayout.apps = fitted.apps / fitted.width;
-  zoneLayout.systems = fitted.systems / fitted.width;
-  updateZoneAccessibility(fitted.apps, fitted.systems, fitted.width);
-  scheduleWindowFit();
-  if (save) {
-    try {
-      desktopStorage.setItem("spatial-zone-layout-v1", JSON.stringify(zoneLayout));
-    } catch {}
-  }
-}
-
-function setZonePixels(which, requestedPixels, save = false) {
-  const fitted = fittedZonePixels();
-  if (which === "apps") {
-    const max = Math.min(fitted.maxSide, fitted.width - fitted.systems - fitted.minWorkspace);
-    zoneLayout.apps = Math.max(fitted.minApps, Math.min(requestedPixels, max)) / fitted.width;
-  } else {
-    const max = Math.min(fitted.maxSide, fitted.width - fitted.apps - fitted.minWorkspace);
-    zoneLayout.systems = Math.max(fitted.minSystems, Math.min(requestedPixels, max)) / fitted.width;
-  }
-  applyZoneLayout(save);
-}
-
-function resetZoneLayout() {
-  zoneLayout.apps = .25;
-  zoneLayout.systems = .25;
-  applyZoneLayout(true);
-  showToast("Areas reset to 25 / 50 / 25");
-}
-
-function prepareZoneResizers() {
-  try {
-    const saved = JSON.parse(desktopStorage.getItem("spatial-zone-layout-v1") || "null");
-    if (saved && Number.isFinite(saved.apps) && Number.isFinite(saved.systems)) {
-      zoneLayout.apps = saved.apps;
-      zoneLayout.systems = saved.systems;
-    }
-  } catch {}
-  applyZoneLayout(false);
-
-  $$("[data-zone-resizer]").forEach(resizer => {
-    const which = resizer.dataset.zoneResizer;
-    resizer.addEventListener("pointerdown", event => {
-      if (event.button !== 0) return;
-      event.preventDefault();
-      const shell = $(".desktop-shell");
-      resizer.setPointerCapture(event.pointerId);
-      resizer.classList.add("is-dragging");
-      shell.classList.add("is-resizing");
-
-      const move = moveEvent => {
-        const rect = shell.getBoundingClientRect();
-        const requested = which === "apps" ? moveEvent.clientX - rect.left : rect.right - moveEvent.clientX;
-        setZonePixels(which, requested, false);
-      };
-      const finish = () => {
-        resizer.removeEventListener("pointermove", move);
-        resizer.removeEventListener("pointerup", finish);
-        resizer.removeEventListener("pointercancel", finish);
-        resizer.classList.remove("is-dragging");
-        shell.classList.remove("is-resizing");
-        applyZoneLayout(true);
-      };
-      resizer.addEventListener("pointermove", move);
-      resizer.addEventListener("pointerup", finish);
-      resizer.addEventListener("pointercancel", finish);
-    });
-
-    resizer.addEventListener("keydown", event => {
-      const step = event.shiftKey ? 40 : 16;
-      let direction = 0;
-      if (event.key === "ArrowLeft") direction = which === "apps" ? -1 : 1;
-      if (event.key === "ArrowRight") direction = which === "apps" ? 1 : -1;
-      if (event.key === "Home") {
-        event.preventDefault();
-        resetZoneLayout();
-        return;
-      }
-      if (!direction) return;
-      event.preventDefault();
-      const fitted = fittedZonePixels();
-      setZonePixels(which, fitted[which] + direction * step, true);
-    });
-    resizer.addEventListener("dblclick", event => {
-      event.preventDefault();
-      resetZoneLayout();
-    });
-  });
-}
-
-const areaPriority = ["projects", "apps", "systems", "ai"];
-const dockEdges = ["left", "right"];
-const dockState = {
-  projects: { edge: "left", order: 1 },
-  apps: { edge: "left", order: 0 },
-  systems: { edge: "right", order: 0 },
-  ai: { edge: "right", order: 1 }
-};
-const dockSizes = { left: 310, right: 300, top: 250, bottom: 250 };
-const areaPreferredStates = Object.create(null);
-const areaExpandedSizes = Object.create(null);
-const areaDockShares = { left: {}, right: {}, top: {}, bottom: {} };
-const areaShareExpanded = { left: {}, right: {}, top: {}, bottom: {} };
-const areaShareHandles = new Map();
-const dockSizeManual = { left: false, right: false, top: false, bottom: false };
-let dockPreview;
-// Bounded split tiling owns the space BETWEEN Areas, never their geometry.
-// Old saved Auto sessions are treated as Manual without resetting dock sizes,
-// positions, visibility, or explicit display assignments.
-const layoutModes = tileEngine ? ["manual"] : ["auto", "manual"];
-let layoutMode = tileEngine ? "manual" : "auto";
-function areasFollowWindows() {
-  return !tileEngine && layoutMode === "auto";
-}
-let currentDisplayProfile = "desktop";
+// Compatibility names below route older content modules to native widgets.
+// There is no Area geometry, docking state, allocation or pointer controller.
+const widgetSourceNames = { apps: 'apps', projects: 'files', ai: 'assistant', systems: 'system' };
+let currentDisplayProfile = 'desktop';
 let lastDesktopPointerX = window.innerWidth / 2;
-const autoWindowAvoidance = new Map();
-const baseDockLaneRects = new Map();
-const autoSpatialEdgeStates = new Map();
-let systemRailExpansion = null;
-let baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
-let autoAvoidanceSource = null;
-let spatialLayoutFrame = 0;
 let windowViewportLockReady = false;
 let suspendWindowViewportLock = false;
 let windowViewportSaveTimer = 0;
-const workspaceAreaSessions = Object.create(null);
-let defaultAreaSession = null;
-
+let panelLayoutFrame = 0;
 function areaFor(name) {
-  return document.querySelector('[data-area-window="' + name + '"]');
+  const id = widgetSourceNames[name] || name;
+  return document.querySelector('[data-widget-source="' + id + '"]') ||
+    (id === 'system' ? document.getElementById('panel-widget-content-controls') : null);
 }
-
-function areaCanBeHidden(name) {
-  return areaPriority.includes(name);
+function widgetIdFor(name) { return widgetSourceNames[name] === 'system' ? 'controls' : (widgetSourceNames[name] || name); }
+function areaLabel(name) { return ({ apps:'Apps', projects:'Files', ai:'Assistant', systems:'System controls' })[name] || name; }
+function layoutStateLabel(state) { return state === 'rail' || state === 'compact' ? 'Compact' : state === 'hidden' ? 'Hidden' : 'Expanded'; }
+function schedulePanelLayout() {
+  if (panelLayoutFrame) return;
+  panelLayoutFrame = requestAnimationFrame(() => { panelLayoutFrame = 0; globalThis.SpatialPanels?.render(); });
 }
-
-function areaLabel(name) {
-  return name === "projects" ? "Files" : name === "apps" ? "Apps" : name === "ai" ? "Assistant" : "System";
+function layoutDockAreas() { schedulePanelLayout(); }
+function refreshIntentAreas() { schedulePanelLayout(); }
+function applyAutoAvoidance() { schedulePanelLayout(); }
+function clearWindowAutoAvoidance() { schedulePanelLayout(); }
+function clearAllAutoAvoidance() { schedulePanelLayout(); }
+function setWindowAutoAvoidance() { schedulePanelLayout(); }
+function snapshotAreaLayout() { return globalThis.SpatialPanels?.state() || null; }
+function saveAreaLayout() { /* Native panels persist every mutation themselves. */ }
+function applyAreaSession() { schedulePanelLayout(); }
+function setAreaState(name, state) {
+  const panels = globalThis.SpatialPanels, id = widgetIdFor(name);
+  if (!panels) return false;
+  if (state === 'expanded') return panels.showWidget(id, true);
+  panels.closeApplet(id);
+  return panels.updateWidget(id, { mode: state === 'hidden' ? 'hidden' : 'compact' });
 }
-
-function dockGroup(edge, includeHidden = false) {
-  return areaPriority
-    .filter(name => isLocalArea(name) && dockState[name].edge === edge && (includeHidden || !areaFor(name)?.hidden))
-    .sort((a, b) => dockState[a].order - dockState[b].order || areaPriority.indexOf(a) - areaPriority.indexOf(b));
+function showArea(name) { return setAreaState(name, 'expanded'); }
+function hideArea(name) { return setAreaState(name, 'hidden'); }
+function endSystemRailExpansion() { /* Native applets own their popup lifecycle. */ }
+function revealSystemRailWidget(selector) {
+  const value = String(selector || '').toLowerCase();
+  const id = value.includes('clipboard') ? 'clipboard' : value.includes('calendar') || value.includes('agenda') ? 'calendar' : value.includes('timer') ? 'focus' : value.includes('desktop') ? 'requests' : value.includes('project') ? 'project-plans' : value.includes('wide') ? 'workspace-alerts' : 'notifications';
+  return globalThis.SpatialPanels?.openApplet(id);
 }
-
-function normalizeDockOrder(edge) {
-  dockGroup(edge, true).forEach((name, order) => { dockState[name].order = order; });
-}
-
-function snapshotAreaLayout() {
-  const hidden = Object.fromEntries(areaPriority.map(name => [name, areaCanBeHidden(name) && Boolean(areaFor(name)?.hidden)]));
-  return {
-    orientationVersion: 1,
-    state: Object.fromEntries(areaPriority.map(name => [name, { ...dockState[name] }])),
-    sizes: { ...dockSizes },
-    preferred: { ...areaPreferredStates },
-    expanded: cloneDesktopState(areaExpandedSizes),
-    shares: cloneDesktopState(areaDockShares),
-    expandedMain: cloneDesktopState(areaShareExpanded),
-    hidden,
-    manual: { ...dockSizeManual },
-    layoutMode
-  };
-}
-
-function restoreAreaPreferences(saved) {
-  dockEdges.forEach(edge => {
-    areaDockShares[edge] = Object.fromEntries(areaPriority.filter(name => Number.isFinite(saved?.shares?.[edge]?.[name]) && saved.shares[edge][name] > 0)
-      .map(name => [name, Math.min(1e6, saved.shares[edge][name])]));
-    areaShareExpanded[edge] = Object.fromEntries(areaPriority.filter(name => Number.isFinite(saved?.expandedMain?.[edge]?.[name]) && saved.expandedMain[edge][name] > 0)
-      .map(name => [name, Math.min(1e6, saved.expandedMain[edge][name])]));
-  });
-  areaPriority.forEach(name => {
-    if (["expanded", "rail"].includes(saved?.preferred?.[name])) areaPreferredStates[name] = saved.preferred[name];
-    else delete areaPreferredStates[name];
-    areaExpandedSizes[name] = Object.fromEntries(Object.entries(saved?.expanded?.[name] || {})
-      .filter(([edge, size]) => dockEdges.includes(edge) && Number.isFinite(size) && size > 142));
-  });
-}
-function rememberExpandedAreaSizes() {
-  const states = initialAreaStates(currentDisplayProfile);
-  areaPriority.filter(isLocalArea).forEach(name => {
-    const edge = dockState[name].edge;
-    if (states[name] === "expanded" && areaStateForSize(edge, dockSizes[edge]) === "expanded") {
-      (areaExpandedSizes[name] ||= {})[edge] = dockSizes[edge];
-    }
-    areaPreferredStates[name] ||= states[name];
-  });
-  dockEdges.forEach(rememberExpandedAreaShares);
-}
-function rememberExpandedAreaShares(edge) {
-  const vertical = edge === "left" || edge === "right";
-  dockGroup(edge).forEach(name => {
-    if (areaFor(name).dataset.areaState !== "expanded") return;
-    const size = areaFor(name).getBoundingClientRect()[vertical?"height":"width"];
-    if (size > 0) areaShareExpanded[edge][name] = size;
-  });
-}
-
-function areaColumnNames(name) {
-  return isLocalArea(name) ? dockGroup(dockState[name].edge, true) : [name];
-}
-function overrideAreaColumn(name) {
-  const names = areaColumnNames(name);
-  if (names.includes("systems")) endSystemRailExpansion(false);
-  if (names.includes("projects")) globalThis.SpatialMemoryDesktop?.collapse?.(false);
-  names.filter(item => item === name || !areaFor(item)?.hidden).forEach(manualAreaOverride);
-}
-function setAreaColumnState(name, state, expandedSize = null) {
-  const edge = dockState[name].edge;
-  areaColumnNames(name).filter(item => item === name || !areaFor(item)?.hidden).forEach(item => {
-    areaPreferredStates[item] = state;
-    if (state === "expanded" && Number.isFinite(expandedSize)) (areaExpandedSizes[item] ||= {})[edge] = expandedSize;
-    if (item === "ai") globalThis.SpatialAIDesktop?.setMode(state);
-  });
-  if (state === "expanded" && Number.isFinite(expandedSize)) dockSizes[edge] = expandedSize;
-}
-function setAreaPresentation(name, state, expandedSize = null) {
-  areaPreferredStates[name] = state;
-  if (name === "ai") globalThis.SpatialAIDesktop?.setMode(state);
-  if (state === "expanded" && Number.isFinite(expandedSize)) {
-    (areaExpandedSizes[name] ||= {})[dockState[name].edge] = expandedSize;
-    dockSizes[dockState[name].edge] = expandedSize;
-  }
-}
-
-function persistAreaSessions() {
-  try {
-    desktopStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(workspaceAreaSessions));
-  } catch {}
-}
-
-function saveAreaLayout() {
-  workspaceAreaSessions[activeWorkspace] = snapshotAreaLayout();
-  persistAreaSessions();
-}
-
-function applyAreaSession(workspaceName) {
-  const source = workspaceAreaSessions[workspaceName] || defaultAreaSession || snapshotAreaLayout();
-  const saved = JSON.parse(JSON.stringify(globalThis.SpatialDemoExamples?.migrateAreaLayout(source) || source));
-  saved.state ||= {};
-  areaPriority.forEach(name => { saved.state[name] ||= {...(defaultAreaSession?.state[name] || dockState[name])}; });
-  saved.hidden ||= {};
-  workspaceAreaSessions[workspaceName] = saved;
-  restoreAreaPreferences(saved);
-  if (saved.state) areaPriority.forEach(name => {
-    if (dockEdges.includes(saved.state[name]?.edge)) {
-      dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
-    }
-  });
-  if (saved.sizes) dockEdges.forEach(edge => {
-    if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge];
-  });
-  if (saved.hidden) areaPriority.forEach(name => {
-    if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]);
-  });
-  if (saved.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
-  layoutMode = layoutModes.includes(saved.layoutMode) ? saved.layoutMode : layoutModes[0];
-  dockEdges.forEach(normalizeDockOrder);
-  autoSpatialEdgeStates.clear();
-  autoWindowAvoidance.clear();
-  autoAvoidanceSource = null;
-  layoutDockAreas(false, false);
-  applyAutoAvoidance();
-  refreshIntentAreas();
-}
-
 function captureVisibleWindowViewportRects() {
   const snapshot = new Map();
   if (!windowViewportLockReady || suspendWindowViewportLock) return snapshot;
@@ -2823,7 +2218,7 @@ function restoreWindowViewportRects(snapshot) {
     const frame = frameFor(name);
     if (!frame || frame.hidden || frame.classList.contains("is-dragging") || frame.classList.contains("is-resizing")) return;
     // Floats are fixed to the screen, not positioned inside the workspace.
-    // Subtracting Area insets here made them jump whenever an Area yielded.
+    // Screen coordinates remain stable when panel insets change.
     if (frame.classList.contains("is-floating")) {
       const session = tileSession();
       session.floating[name] = applyFloatingGeometry(name, { ...session.floating[name], ...rect });
@@ -2864,1231 +2259,7 @@ function setWorkspaceInsets(left, right, bottom, top = 12) {
   if (windowViewportLockReady && !tileRendering && !tileInteraction) scheduleWindowTiling();
 }
 
-function edgePriority(edge) {
-  const priorities = dockGroup(edge).map(name => areaPriority.indexOf(name));
-  return priorities.length ? Math.min(...priorities) : Infinity;
-}
 
-function displayProfileFor(width, height) {
-  const ratio = width / Math.max(1, height);
-  if (ratio >= 2.75 && width >= 2200) return "dual";
-  if (ratio >= 2.05 || width >= 2100) return "ultrawide";
-  if (width <= 1180 || height <= 700) return "laptop";
-  return "desktop";
-}
-
-function areaStateForSize(edge, size) {
-  const vertical = edge === "left" || edge === "right";
-  return size <= (vertical ? 152 : 142) ? "rail" : "expanded";
-}
-
-function unifyAreaColumnStates(states) {
-  // Compact describes an Area's contents, independently of a shared dock width.
-  if (!areasFollowWindows()) return states;
-  dockEdges.forEach(edge => {
-    const names = dockGroup(edge);
-    if (!names.length) return;
-    // Repair older per-Area preferences using the column's saved thickness.
-    const mixed = names.some(name => states[name] !== states[names[0]]);
-    const state = names.some(name => intentAreaPlan.rails[name]) ? "rail" : mixed ? areaStateForSize(edge, dockSizes[edge]) : states[names[0]];
-    names.forEach(name => { states[name] = state; });
-  });
-  return states;
-}
-
-function initialAreaStates(profile) {
-  let states;
-  if (!areasFollowWindows()) {
-    states = { projects: "expanded", apps: "expanded", systems: "expanded" };
-    areaPriority.forEach(name => {
-      const edge = dockState[name].edge;
-      states[name] = areaPreferredStates[name] || (name === "ai" ? globalThis.SpatialAIDesktop?.mode() : null) || areaStateForSize(edge, dockSizes[edge]);
-      if (intentAreaPlan.rails[name]) states[name] = "rail";
-    });
-    return unifyAreaColumnStates(states);
-  }
-  if (profile === "laptop") states = {
-    projects: "expanded",
-    apps: areaFor("projects")?.hidden ? "expanded" : "rail",
-    systems: "rail"
-  };
-  else if (profile === "desktop") states = { projects: "expanded", apps: "expanded", systems: "expanded" };
-  else states = { projects: "expanded", apps: "expanded", systems: "expanded" };
-  autoSpatialEdgeStates.forEach((state, edge) => {
-    dockGroup(edge, true).forEach(name => { states[name] = state; });
-  });
-  states.ai = globalThis.SpatialAIDesktop?.mode() || "expanded";
-  return unifyAreaColumnStates(states);
-}
-
-function stateSideMinimum(name, state) {
-  const values = {
-    projects: { rail: 68, expanded: 270 },
-    apps: { rail: 68, expanded: 256 },
-    systems: { rail: 70, expanded: 280 },
-    ai: { rail: 68, expanded: 300 }
-  };
-  return values[name][state];
-}
-
-function stateHorizontalMinimum(name, state) {
-  if (state === "rail") return 64;
-  return name === "projects" ? 280 : name === "apps" ? 250 : 190;
-}
-
-function edgeStateMinimum(edge, states) {
-  const names = dockGroup(edge);
-  if (!names.length) return 0;
-  const vertical = edge === "left" || edge === "right";
-  return Math.max(...names.map(name => vertical ? stateSideMinimum(name, states[name]) : stateHorizontalMinimum(name, states[name])));
-}
-
-function edgeMinimumForState(edge, state) {
-  const names = dockGroup(edge);
-  if (!names.length) return 0;
-  const states = Object.fromEntries(areaPriority.map(name => [name, state]));
-  return edgeStateMinimum(edge, states);
-}
-
-function preferredSideSize(edge, states, profile) {
-  const names = dockGroup(edge);
-  if (!names.length) return 0;
-  const minimum = edgeStateMinimum(edge, states);
-  if (names.every(name => states[name] === "rail")) return minimum;
-  return Math.min(420, Math.max(minimum, dockSizes[edge]));
-}
-
-function downgradeArea(states, name) {
-  if (states[name] !== "expanded") return false;
-  areaColumnNames(name).forEach(item => { states[item] = "rail"; });
-  return true;
-}
-
-function resolvedManualDockSizes(states) {
-  const sizes = { ...dockSizes };
-  dockEdges.forEach(edge => {
-    const names = dockGroup(edge);
-    if (!names.length) return;
-    const minimum = edgeStateMinimum(edge, states);
-    sizes[edge] = names.every(name => states[name] === "rail")
-      ? minimum
-      : Math.max(minimum, dockSizes[edge]);
-  });
-  return sizes;
-}
-
-function minimumWorkspaceWidth(profile, width) {
-  if (profile === "dual") return Math.min(width * .56, 1780);
-  if (profile === "ultrawide") return Math.min(width * .56, 1340);
-  if (profile === "laptop") return Math.min(620, width * .57);
-  return Math.min(820, width * .54);
-}
-
-function dockAxisBounds(edge, width, height) {
-  const vertical = edge === "left" || edge === "right";
-  const extent = Math.max(0, vertical ? width : height);
-  const opposite = { left: "right", right: "left", top: "bottom", bottom: "top" }[edge];
-  const rails = edgeMinimumForState(edge, "rail") + edgeMinimumForState(opposite, "rail");
-  return {
-    opposite,
-    extent,
-    maximum: Math.min(vertical ? 520 : 360, Math.floor(extent * .4)),
-    // Keep a usable canvas on normal displays; on small viewports the rails
-    // themselves also need to fit. Width and height are constrained separately.
-    workspace: Math.min(vertical ? 440 : 320, Math.floor(extent * .5), Math.max(0, extent - rails))
-  };
-}
-
-function boundDockLayout(width, height, states, requestedSizes) {
-  const sizes = { ...requestedSizes, top: 0, bottom: 0 };
-  const rail = edge => {
-    dockGroup(edge).forEach(name => { states[name] = "rail"; });
-    sizes[edge] = edgeMinimumForState(edge, "rail");
-  };
-  dockEdges.forEach(edge => {
-    if (!dockGroup(edge).length) { sizes[edge] = 0; return; }
-    const { maximum } = dockAxisBounds(edge, width, height);
-    const minimum = edgeStateMinimum(edge, states);
-    if (maximum < minimum) rail(edge);
-    else sizes[edge] = Math.min(maximum, Math.max(minimum, sizes[edge]));
-  });
-  for (const pair of [["left", "right"]]) {
-    const { extent, workspace } = dockAxisBounds(pair[0], width, height);
-    const budget = Math.max(0, extent - workspace);
-    let overflow = sizes[pair[0]] + sizes[pair[1]] - budget;
-    // This path repairs old oversized sessions and a shrinking viewport. A
-    // live resize is clamped before layout, so it never squeezes the other dock.
-    [...pair].sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
-      if (overflow <= 0 || !dockGroup(edge).length) return;
-      const before = sizes[edge];
-      const minimum = edgeStateMinimum(edge, states);
-      if (before - overflow < minimum) rail(edge);
-      else sizes[edge] = before - overflow;
-      overflow -= before - sizes[edge];
-    });
-    const total = sizes[pair[0]] + sizes[pair[1]];
-    if (total > budget) pair.forEach(edge => { sizes[edge] = Math.floor(sizes[edge] * budget / total); });
-  }
-  return sizes;
-}
-
-function boundedDockResize(edge, requested, width, height) {
-  const layout = resolvedAreaLayout(width, height);
-  const { opposite, maximum, workspace, extent } = dockAxisBounds(edge, width, height);
-  const rail = edgeMinimumForState(edge, "rail");
-  const expanded = edgeMinimumForState(edge, "expanded");
-  const limit = Math.max(0, Math.min(maximum, extent - workspace - layout.sizes[opposite]));
-  if (!Number.isFinite(requested)) return layout.sizes[edge];
-  if (areaStateForSize(edge, requested) === "rail" || limit < expanded) return Math.min(rail, limit);
-  return Math.min(limit, Math.max(expanded, requested));
-}
-
-function allocateAreaPanels(names, edge, extent, crossSize, states) {
-  const vertical = edge === "left" || edge === "right";
-  if (globalThis.SpatialCompactAreas?.allocate) {
-    const options = {names,states,axis:vertical?"vertical":"horizontal",extent,crossSize};
-    let shares = areaDockShares[edge];
-    const known = names.filter(name => Number.isFinite(shares[name]) && shares[name] > 0);
-    if (known.length && known.length < names.length) {
-      // New neighbours take their default space without erasing the ratio
-      // already chosen between existing neighbours. Projection stays read-only.
-      const defaults = globalThis.SpatialCompactAreas.allocate(options);
-      const missing = names.filter(name => !known.includes(name));
-      const added = missing.reduce((sum,name) => sum+defaults[name].extent,0);
-      const knownWeight = known.reduce((sum,name) => sum+shares[name],0);
-      shares = Object.fromEntries(names.map(name => [name,known.includes(name)
-        ? Math.max(1e-6,extent-added)*shares[name]/knownWeight : Math.max(1e-6,defaults[name].extent)]));
-    }
-    return globalThis.SpatialCompactAreas.allocate({...options,shares});
-  }
-  const legacy = vertical && globalThis.SpatialCompactAreas?.layout({names,states,width:crossSize,height:extent});
-  return Object.fromEntries(names.map((name,index) => [name, {
-    offset: legacy?.[name]?.y ?? index*extent/names.length,
-    extent: legacy?.[name]?.height ?? extent/names.length,
-    state: states[name], compactGrid: Boolean(legacy?.[name]?.compactGrid)
-  }]));
-}
-
-function makeAreaExpansionSpace(name, restore = 0) {
-  const edge = dockState[name].edge,names = dockGroup(edge);
-  if (names.length < 2) return true;
-  const shell = $(".desktop-shell"),resolved = resolvedAreaLayout(shell.clientWidth,shell.clientHeight);
-  const vertical = edge === "left" || edge === "right",axis = vertical?"vertical":"horizontal";
-  const extent = vertical?shell.clientHeight:Math.max(0,shell.clientWidth-(dockGroup("left").length?resolved.sizes.left:0)-(dockGroup("right").length?resolved.sizes.right:0));
-  const panels = allocateAreaPanels(names,edge,extent,resolved.sizes[edge],resolved.states);
-  const model = globalThis.SpatialCompactAreas;
-  const minimum = model?.expandedMinimum?.(axis,name) || (vertical?260:320);
-  if (!restore && panels[name].state === "expanded" && panels[name].extent >= minimum) return true;
-  const peers = names.filter(item => item !== name);
-  const fixedTotal = peers.reduce((sum,item) => sum+(model?.compactSize?.(axis,item) || 100),0);
-  const maximum = extent-fixedTotal;
-  if (maximum < minimum) return false;
-  const wanted = restore || areaShareExpanded[edge][name] || minimum+24;
-  const size = Math.min(maximum,Math.max(minimum,wanted));
-  const otherPanels = model?.allocate?.({
-    names:peers,states:resolved.states,axis,crossSize:resolved.sizes[edge],extent:extent-size,
-    shares:Object.fromEntries(peers.map(item => [item,Math.max(1e-6,panels[item].extent)]))
-  });
-  const mass = names.every(item => Number.isFinite(areaDockShares[edge][item]) && areaDockShares[edge][item] > 0)
-    ? names.reduce((sum,item) => sum+areaDockShares[edge][item],0) : 1;
-  const allocations = Object.fromEntries(names.map(item => [item,item===name?size:otherPanels?.[item]?.extent || model?.compactSize?.(axis,item) || 100]));
-  const sum = names.reduce((value,item) => value+allocations[item],0);
-  names.forEach(item => { areaDockShares[edge][item] = mass*allocations[item]/sum; });
-  return true;
-}
-
-function fitAreaContents(layout, height) {
-  const states = {...layout.states},sizes = {...layout.sizes};
-  dockEdges.forEach(edge => {
-    const names = dockGroup(edge);
-    if (!names.length) return;
-    const panels = allocateAreaPanels(names,edge,height,sizes[edge],states);
-    names.forEach(name => { states[name] = panels[name].state; });
-    // Content pressure can make an entire column Compact independently of
-    // its preferred width. Keep the stored width for a later roomy viewport.
-    if (names.every(name => states[name] === "rail")) sizes[edge] = Math.min(sizes[edge],edgeMinimumForState(edge,"rail"));
-  });
-  return {...layout,states,sizes};
-}
-
-function resolvedAreaLayout(width, height) {
-  const profile = displayProfileFor(width, height);
-  const states = initialAreaStates(profile);
-  if (!areasFollowWindows()) {
-    return fitAreaContents({ profile, states, sizes: boundDockLayout(width, height, states, resolvedManualDockSizes(states)), minimumWorkspace: 220 },height);
-  }
-  const gap = 0;
-  const minimumWorkspace = minimumWorkspaceWidth(profile, width);
-  const sideWidth = edge => preferredSideSize(edge, states, profile);
-  const occupiedSides = () => ["left", "right"].filter(edge => dockGroup(edge).length);
-  const required = () => occupiedSides().reduce((sum, edge) => sum + sideWidth(edge), 0) + (occupiedSides().length + 1) * gap + minimumWorkspace;
-
-  ["ai", "systems", "apps", "projects"].forEach(name => {
-    while (required() > width && downgradeArea(states, name)) {}
-  });
-
-  const sizes = { ...dockSizes };
-  sizes.left = sideWidth("left");
-  sizes.right = sideWidth("right");
-  sizes.top = Math.min(340, Math.max(edgeStateMinimum("top", states), dockSizes.top));
-  sizes.bottom = Math.min(340, Math.max(edgeStateMinimum("bottom", states), dockSizes.bottom));
-
-  let overflow = sizes.left + sizes.right + (occupiedSides().length + 1) * gap + minimumWorkspace - width;
-  ["right", "left"].sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
-    if (overflow <= 0 || !dockGroup(edge).length) return;
-    const minimum = edgeStateMinimum(edge, states);
-    const reduction = Math.min(overflow, Math.max(0, sizes[edge] - minimum));
-    sizes[edge] -= reduction;
-    overflow -= reduction;
-  });
-  return fitAreaContents({ profile, states, sizes: boundDockLayout(width, height, states, sizes), minimumWorkspace },height);
-}
-
-function layoutStateLabel(state) {
-  return state === "rail" ? "Compact" : "Expanded";
-}
-
-function syncAreaControls(states) {
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    const hidden = Boolean(area?.hidden);
-    $$('[data-overview-area-visibility="' + name + '"]').forEach(button => {
-      button.textContent = hidden ? "Show" : "Hide";
-      button.classList.toggle("is-show", hidden);
-      button.setAttribute("aria-label", (hidden ? "Show " : "Hide ") + areaLabel(name));
-    });
-    const row = $('[data-overview-area="' + name + '"]');
-    if (row) {
-      if (name === "projects") row.hidden = false;
-      row.classList.toggle("is-hidden", hidden);
-      const detail = $("small", row);
-      if (detail) detail.textContent = hidden ? "Hidden" : layoutStateLabel(states[name]);
-    }
-  });
-}
-
-function syncLayoutModeUI(profile = currentDisplayProfile) {
-  const borrowed = Object.keys(intentAreaPlan.moves).length || Object.keys(intentAreaPlan.rails).length;
-  const modeLabel = tileEngine ? (borrowed ? "Adapted" : "Fixed") : layoutMode[0].toUpperCase() + layoutMode.slice(1);
-  const profileLabel = extendedDesktopActive()
-    ? "Extended · " + localDisplayRoleLabel()
-    : profile === "dual" ? "Dual display" : profile === "ultrawide" ? "Ultrawide" : profile === "laptop" ? "Laptop" : "Desktop";
-  const control = $("#layoutModeToggle");
-  if (control) {
-    $("span", control).textContent = "Areas: " + modeLabel;
-    control.classList.toggle("is-active", areasFollowWindows());
-    if (control.matches("button")) control.setAttribute("aria-pressed", String(areasFollowWindows()));
-    control.title = tileEngine
-      ? "Left drag keeps Areas fixed · middle drag and Fullscreen may borrow Area space · " + profileLabel
-      : layoutMode === "auto"
-      ? "Auto · Areas expand, move onto the rail, yield, or move according to nearby windows · " + profileLabel
-      : "Manual · Areas stay exactly where you place them · " + profileLabel;
-  }
-  const status = $("#overviewLayoutStatus");
-  if (status) status.textContent = modeLabel + " · " + profileLabel;
-}
-
-function fitOpposingDockSizes(firstEdge, secondEdge, available, minimumWorkspace, minimumDock) {
-  const occupied = [firstEdge, secondEdge].filter(edge => dockGroup(edge).length);
-  if (!occupied.length) return;
-  let overflow = occupied.reduce((sum, edge) => sum + dockSizes[edge], 0) + minimumWorkspace - available;
-  occupied.sort((a, b) => edgePriority(b) - edgePriority(a)).forEach(edge => {
-    if (overflow <= 0) return;
-    const reduction = Math.min(overflow, Math.max(0, dockSizes[edge] - minimumDock));
-    dockSizes[edge] -= reduction;
-    overflow -= reduction;
-  });
-}
-
-function applyDockRect(name, rect) {
-  const area = areaFor(name);
-  if (!area) return;
-  area.dataset.dockEdge = dockState[name].edge;
-  area.dataset.areaJoinEdge = rect.joinEdge || "none";
-  area.style.left = Math.round(rect.x) + "px";
-  area.style.top = Math.round(rect.y) + "px";
-  area.style.width = Math.round(rect.width) + "px";
-  area.style.height = Math.round(rect.height) + "px";
-  area.style.right = "auto";
-  area.style.bottom = "auto";
-  area.style.zIndex = String(220 + areaPriority.length - areaPriority.indexOf(name));
-  const cycle = $('[data-area-auto]', area);
-  if (cycle) {
-    cycle.title = "Move dock — currently " + dockState[name].edge;
-    cycle.setAttribute("aria-label", "Move " + areaLabel(name) + " dock from " + dockState[name].edge);
-  }
-}
-
-function captureBaseDockLaneRects() {
-  const shellRect = $(".desktop-shell").getBoundingClientRect();
-  baseDockLaneRects.clear();
-  dockEdges.forEach(edge => {
-    const names = dockGroup(edge);
-    if (!names.length) return;
-    const rects = names.map(name => {
-      const area = areaFor(name);
-      const left = shellRect.left + (parseFloat(area.style.left) || 0);
-      const top = shellRect.top + (parseFloat(area.style.top) || 0);
-      const width = parseFloat(area.style.width) || area.offsetWidth;
-      const height = parseFloat(area.style.height) || area.offsetHeight;
-      return { left, top, right: left + width, bottom: top + height, width, height };
-    });
-    const left = Math.min(...rects.map(rect => rect.left));
-    const top = Math.min(...rects.map(rect => rect.top));
-    const right = Math.max(...rects.map(rect => rect.right));
-    const bottom = Math.max(...rects.map(rect => rect.bottom));
-    baseDockLaneRects.set(edge, { left, top, right, bottom, width: right - left, height: bottom - top });
-  });
-}
-
-function rectanglesOverlap(first, second, inset = 0) {
-  return first.left < second.right - inset && first.right > second.left + inset && first.top < second.bottom - inset && first.bottom > second.top + inset;
-}
-
-function clearanceFromEdge(edge, rect, shellRect) {
-  if (edge === "left") return rect.left - shellRect.left;
-  if (edge === "right") return shellRect.right - rect.right;
-  if (edge === "top") return rect.top - shellRect.top;
-  return shellRect.bottom - rect.bottom;
-}
-
-function spatialStateForClearance(edge, clearance) {
-  const expanded = edgeMinimumForState(edge, "expanded");
-  const visibleArea = areaFor(dockGroup(edge)[0]);
-  const previousState = autoSpatialEdgeStates.get(edge) || visibleArea?.dataset.areaState;
-  const previous = previousState === "rail" ? "rail" : "expanded";
-  const lane = baseDockLaneRects.get(edge);
-  const visibleBoundary = lane ? (edge === "left" || edge === "right" ? lane.width : lane.height) : 0;
-  if (previous === "expanded") {
-    if (clearance >= (visibleBoundary || expanded + 18)) return "expanded";
-    return "rail";
-  }
-  if (previous === "rail") {
-    if (clearance >= expanded + 60) return "expanded";
-    return "rail";
-  }
-  if (clearance >= expanded + 48) return "expanded";
-  return "rail";
-}
-
-function contextWindowRects(sourceFrame = null, sourceRect = null) {
-  return $$('[data-app-frame]').filter(frame => !frame.hidden && appState[frame.dataset.appFrame] === "open").map(frame => ({
-    frame,
-    rect: frame === sourceFrame && sourceRect ? sourceRect : frame.getBoundingClientRect()
-  }));
-}
-
-function refreshSpatialAutoLayout(sourceFrame = null, sourceRect = null) {
-  if (!areasFollowWindows()) return;
-  const shellRect = $(".desktop-shell").getBoundingClientRect();
-  const windows = contextWindowRects(sourceFrame, sourceRect);
-  let stateChanged = false;
-
-  dockEdges.forEach(edge => {
-    if (!dockGroup(edge).length) {
-      if (autoSpatialEdgeStates.delete(edge)) stateChanged = true;
-      return;
-    }
-    const clearance = windows.length
-      ? Math.min(...windows.map(item => clearanceFromEdge(edge, item.rect, shellRect)))
-      : Infinity;
-    const nextState = spatialStateForClearance(edge, clearance);
-    if (autoSpatialEdgeStates.get(edge) !== nextState) {
-      autoSpatialEdgeStates.set(edge, nextState);
-      stateChanged = true;
-    }
-  });
-
-  if (stateChanged) layoutDockAreas(false, false);
-
-  windows.forEach(({ frame, rect }) => {
-    if (frame.dataset.maximized === "true") return;
-    const edges = dockEdges.filter(edge => {
-      if (!dockGroup(edge).length) return false;
-      const lane = baseDockLaneRects.get(edge);
-      const visibleThickness = lane
-        ? (edge === "left" || edge === "right" ? lane.width : lane.height)
-        : edgeMinimumForState(edge, "rail");
-      return clearanceFromEdge(edge, rect, shellRect) < Math.max(0, visibleThickness - 2);
-    });
-    if (edges.length) autoWindowAvoidance.set(frame.dataset.appFrame, new Set(edges));
-    else autoWindowAvoidance.delete(frame.dataset.appFrame);
-  });
-  autoAvoidanceSource = sourceFrame;
-  applyAutoAvoidance();
-}
-
-function scheduleSpatialAutoLayout() {
-  cancelAnimationFrame(spatialLayoutFrame);
-  spatialLayoutFrame = requestAnimationFrame(() => refreshSpatialAutoLayout());
-}
-
-function desiredAutoEdges() {
-  const edges = new Set();
-  if (!areasFollowWindows()) return edges;
-  autoWindowAvoidance.forEach(windowEdges => windowEdges.forEach(edge => edges.add(edge)));
-  return edges;
-}
-
-function relocationShiftFor(edge, sourceFrame, desiredEdges) {
-  if (currentDisplayProfile !== "dual" || !["left", "right"].includes(edge)) return 0;
-  const lane = baseDockLaneRects.get(edge);
-  const shellRect = $(".desktop-shell").getBoundingClientRect();
-  if (!lane || !shellRect.width) return 0;
-  const shift = edge === "left" ? shellRect.width / 2 : -shellRect.width / 2;
-  const target = { ...lane, left: lane.left + shift, right: lane.right + shift };
-  if (target.left < shellRect.left || target.right > shellRect.right) return 0;
-  const blockedByArea = dockEdges.some(otherEdge => {
-    if (otherEdge === edge || desiredEdges.has(otherEdge)) return false;
-    const other = baseDockLaneRects.get(otherEdge);
-    return other && rectanglesOverlap(target, other, 8);
-  });
-  if (blockedByArea) return 0;
-  const blockedByWindow = $$('[data-app-frame]').some(frame => {
-    if (frame === sourceFrame || frame.hidden || appState[frame.dataset.appFrame] !== "open") return false;
-    return rectanglesOverlap(target, frame.getBoundingClientRect(), 12);
-  });
-  return blockedByWindow ? 0 : shift;
-}
-
-function applyAutoAvoidance() {
-  const desiredEdges = desiredAutoEdges();
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    if (!area) return;
-    area.classList.remove("is-auto-yielding", "is-auto-relocated");
-    area.style.removeProperty("--auto-relocate-x");
-    delete area.dataset.autoBehavior;
-  });
-
-  desiredEdges.forEach(edge => {
-    const shift = relocationShiftFor(edge, autoAvoidanceSource, desiredEdges);
-    dockGroup(edge).forEach(name => {
-      const area = areaFor(name);
-      if (!area) return;
-      if (shift) {
-        area.classList.add("is-auto-relocated");
-        area.style.setProperty("--auto-relocate-x", Math.round(shift) + "px");
-        area.dataset.autoBehavior = "moved-to-free-display";
-      } else {
-        area.classList.add("is-auto-yielding");
-        area.dataset.autoBehavior = "yielded-to-window";
-      }
-    });
-  });
-
-  setWorkspaceInsets(
-    desiredEdges.has("left") ? 0 : baseWorkspaceInsets.left,
-    desiredEdges.has("right") ? 0 : baseWorkspaceInsets.right,
-    desiredEdges.has("bottom") ? 0 : baseWorkspaceInsets.bottom,
-    desiredEdges.has("top") ? 0 : baseWorkspaceInsets.top
-  );
-  document.body.classList.toggle("is-auto-avoiding", desiredEdges.size > 0);
-}
-
-function setWindowAutoAvoidance(name, edges, sourceFrame = null) {
-  if (!areasFollowWindows()) return;
-  const next = new Set(edges);
-  if (next.size) autoWindowAvoidance.set(name, next);
-  else autoWindowAvoidance.delete(name);
-  autoAvoidanceSource = sourceFrame;
-  applyAutoAvoidance();
-}
-
-function clearWindowAutoAvoidance(name) {
-  autoWindowAvoidance.delete(name);
-  autoAvoidanceSource = null;
-  applyAutoAvoidance();
-}
-
-function clearAllAutoAvoidance() {
-  autoWindowAvoidance.clear();
-  autoAvoidanceSource = null;
-  applyAutoAvoidance();
-}
-
-function freezeCurrentAreaLayout() {
-  dockEdges.forEach(edge => {
-    const lane = baseDockLaneRects.get(edge);
-    if (!lane) return;
-    dockSizes[edge] = edge === "left" || edge === "right" ? lane.width : lane.height;
-    dockSizeManual[edge] = true;
-  });
-}
-
-function secondaryAreaCanvasNames() {
-  const intentional = intentAreaPlan.canvas[localDisplaySlot()];
-  if (intentional?.length) return intentional.filter(name => isLocalArea(name) && !areaFor(name)?.hidden);
-  if (!areasFollowWindows() || !extendedDesktopActive() || localDisplaySlot() === 1) return [];
-  const hasLocalWindow = Object.keys(appState).some(name => appState[name] === "open" && isLocalApp(name));
-  if (hasLocalWindow) return [];
-  return areaPriority.filter(name => isLocalArea(name) && !areaFor(name)?.hidden);
-}
-
-function applySecondaryAreaCanvas(names, width, height) {
-  const padding = 8;
-  const gap = 8;
-  const usableWidth = Math.max(220, width - padding * 2);
-  const usableHeight = Math.max(220, height - padding * 2);
-  const place = (name, x, y, areaWidth, areaHeight) => {
-    applyDockRect(name, {
-      x: Math.round(x),
-      y: Math.round(y),
-      width: Math.round(areaWidth),
-      height: Math.round(areaHeight)
-    });
-  };
-
-  if (names.length >= 4) {
-    const columns = width >= height ? names.length : 1;
-    const rows = Math.ceil(names.length / columns);
-    const cellWidth = (usableWidth - gap * (columns - 1)) / columns;
-    const cellHeight = (usableHeight - gap * (rows - 1)) / rows;
-    names.forEach((name, index) => place(name, padding + (index % columns) * (cellWidth + gap), padding + Math.floor(index / columns) * (cellHeight + gap), cellWidth, cellHeight));
-  } else if (names.length === 1) {
-    place(names[0], padding, padding, usableWidth, usableHeight);
-  } else if (names.length === 2) {
-    if (width >= height * 1.15) {
-      const firstWidth = Math.round((usableWidth - gap) * (names[0] === "projects" ? .54 : .5));
-      place(names[0], padding, padding, firstWidth, usableHeight);
-      place(names[1], padding + firstWidth + gap, padding, usableWidth - firstWidth - gap, usableHeight);
-    } else {
-      const firstHeight = Math.round((usableHeight - gap) * (names[0] === "projects" ? .54 : .5));
-      place(names[0], padding, padding, usableWidth, firstHeight);
-      place(names[1], padding, padding + firstHeight + gap, usableWidth, usableHeight - firstHeight - gap);
-    }
-  } else if (width >= 900) {
-    /* A whole monitor is more useful as three persistent full-height lanes
-       than as a dashboard stack. Width still reflects the desktop priority:
-       Project Space > Apps > System. */
-    const available = usableWidth - gap * 2;
-    const projectWidth = Math.round(available * .40);
-    const appsWidth = Math.round(available * .33);
-    const systemWidth = available - projectWidth - appsWidth;
-    place(names[0], padding, padding, projectWidth, usableHeight);
-    place(names[1], padding + projectWidth + gap, padding, appsWidth, usableHeight);
-    place(names[2], padding + projectWidth + appsWidth + gap * 2, padding, systemWidth, usableHeight);
-  } else {
-    const available = usableHeight - gap * 2;
-    const primaryHeight = Math.round(available * .46);
-    const appsHeight = Math.round(available * .30);
-    place(names[0], padding, padding, usableWidth, primaryHeight);
-    place(names[1], padding, padding + primaryHeight + gap, usableWidth, appsHeight);
-    place(names[2], padding, padding + primaryHeight + appsHeight + gap * 2, usableWidth, available - primaryHeight - appsHeight);
-  }
-
-  baseWorkspaceInsets = { left: 0, right: 0, bottom: 0, top: 0 };
-  captureBaseDockLaneRects();
-  applyAutoAvoidance();
-  document.body.classList.add("secondary-area-canvas", "areas-docked");
-  document.body.classList.remove("areas-freeform", "areas-auto");
-}
-
-function layoutDockAreas(save = false, fitWindows = true) {
-  const shell = $(".desktop-shell");
-  const width = shell.clientWidth;
-  const height = shell.clientHeight;
-  const gap = 0;
-  const resolved = resolvedAreaLayout(width, height);
-  const effectiveSizes = resolved.sizes;
-  const secondaryCanvasNames = secondaryAreaCanvasNames();
-  if (secondaryCanvasNames.length) {
-    secondaryCanvasNames.forEach(name => { resolved.states[name] = "expanded"; });
-  }
-  const left = dockGroup("left"), right = dockGroup("right");
-  const leftWidth = left.length ? effectiveSizes.left : 0, rightWidth = right.length ? effectiveSizes.right : 0;
-  const centerLeft = gap + (left.length ? leftWidth + gap : 0);
-  const centerRight = width - gap - (right.length ? rightWidth + gap : 0);
-  const panels = {};
-  if (!secondaryCanvasNames.length) dockEdges.forEach(edge => {
-    panels[edge] = allocateAreaPanels(dockGroup(edge),edge,height,effectiveSizes[edge],resolved.states);
-    Object.entries(panels[edge]).forEach(([name,panel]) => { resolved.states[name] = panel.state; });
-  });
-  currentDisplayProfile = resolved.profile;
-  document.body.dataset.displayProfile = resolved.profile;
-  document.body.dataset.layoutMode = layoutMode;
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    if (!area) return;
-    const state = resolved.states[name];
-    if (panels[dockState[name].edge]?.[name]?.compactGrid) area.dataset.compactLayout = "grid";
-    else delete area.dataset.compactLayout;
-    if (name === "systems" && state === "rail" && area.dataset.areaState !== "rail" && !systemRailExpansion) {
-      const region = $(".system-scroll-region", area);
-      region.scrollTop = 0;
-      region.scrollLeft = 0;
-    }
-    area.dataset.areaState = state;
-    if (areasFollowWindows()) area.dataset.autoSize = state;
-    else delete area.dataset.autoSize;
-  });
-  syncAreaControls(resolved.states);
-  syncLayoutModeUI(resolved.profile);
-  if (secondaryCanvasNames.length) {
-    syncAreaShareHandles([]);
-    applySecondaryAreaCanvas(secondaryCanvasNames, width, height);
-    if (save) saveAreaLayout();
-    return;
-  }
-  document.body.classList.remove("secondary-area-canvas");
-
-  const layoutSide = (names, edge, x, sideWidth) => {
-    if (!names.length) return;
-    names.forEach((name, index) => {
-      const panelWidth = sideWidth;
-      const panel = panels[edge][name];
-      applyDockRect(name, { x: edge === "right" ? x + sideWidth - panelWidth : x, y: gap + panel.offset, width: panelWidth, height: panel.extent, joinEdge: index ? "top" : "none" });
-    });
-  };
-  layoutSide(left, "left", gap, leftWidth);
-  layoutSide(right, "right", width - gap - rightWidth, rightWidth);
-  syncAreaShareHandles(dockEdges);
-  baseWorkspaceInsets = {
-    left: centerLeft,
-    right: width - centerRight,
-    bottom: gap,
-    top: gap
-  };
-  // A revealed edge panel expands over the current scene, without taking
-  // more tile space. Its preferred dock size remains unchanged.
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    if (!intentAreaPlan.overlays[name] || !isLocalArea(name) || !area?.classList.contains("is-intent-revealed")) return;
-    const edge = dockState[name].edge;
-    const vertical = edge === "left" || edge === "right";
-    const thickness = Math.max(vertical ? stateSideMinimum(name, "expanded") : stateHorizontalMinimum(name, "expanded"), dockSizes[edge]);
-    area.dataset.areaState = "expanded";
-    applyDockRect(name, {
-      x: edge === "right" ? width - thickness : parseFloat(area.style.left) || 0,
-      y: edge === "bottom" ? height - thickness : parseFloat(area.style.top) || 0,
-      width: vertical ? thickness : parseFloat(area.style.width) || centerWidth,
-      height: vertical ? parseFloat(area.style.height) || height : thickness
-    });
-  });
-  captureBaseDockLaneRects();
-  applyAutoAvoidance();
-  applySystemRailExpansion(width, height);
-  globalThis.SpatialMemoryDesktop?.applyRailExpansion(width, height);
-  globalThis.SpatialAIDesktop?.render();
-  document.body.classList.add("areas-docked");
-  document.body.classList.remove("areas-freeform", "areas-auto");
-  if (areasFollowWindows() && fitWindows && !windowViewportLockReady) scheduleWindowFit();
-  if (save) saveAreaLayout();
-}
-
-function setAreaState(name, state, announce = true) {
-  const area = areaFor(name);
-  if (!area || !["expanded", "rail", "hidden"].includes(state)) return;
-  const before = capturePlacement();
-  rememberExpandedAreaSizes();
-  if (name === "systems") endSystemRailExpansion(false);
-  if (name === "projects") globalThis.SpatialMemoryDesktop?.collapse?.(false);
-  manualAreaOverride(name);
-  area.hidden = state === "hidden";
-  if (state !== "hidden") {
-    const edge = dockState[name].edge;
-    const vertical = edge === "left" || edge === "right";
-    const size = state === "expanded" ? (areaStateForSize(edge, dockSizes[edge]) === "expanded" ? dockSizes[edge] : areaExpandedSizes[name]?.[edge] || Math.max(vertical ? 310 : 250, edgeMinimumForState(edge, state))) : null;
-    setAreaPresentation(name, state, size);
-    if (state === "expanded") makeAreaExpansionSpace(name);
-    dockSizeManual[edge] = true;
-  }
-  autoSpatialEdgeStates.clear();
-  layoutDockAreas(true);
-  refreshIntentAreas();
-  if (areasFollowWindows()) scheduleSpatialAutoLayout();
-  if (announce) offerPlacementUndo(before, areaLabel(name) + (state === "hidden" ? " hidden · reopen from Overview" : " · " + layoutStateLabel(state)));
-}
-function hideArea(name) { setAreaState(name, "hidden"); }
-function showArea(name, announce = true) {
-  setAreaState(name, areaPreferredStates[name] || "expanded", announce);
-}
-
-function planAreaDock(name, edge, insertion = null) {
-  const destination = dockGroup(edge).find(item => item !== name);
-  const state = areaPreferredStates[name] || initialAreaStates(currentDisplayProfile)[name];
-  const peers = dockGroup(edge, true).filter(item => item !== name);
-  const visible = peers.filter(item => !areaFor(item)?.hidden);
-  const boundary = insertion === null ? visible.length : Math.max(0,Math.min(insertion,visible.length));
-  const index = insertion === null || !visible.length ? peers.length : boundary < visible.length ? peers.indexOf(visible[boundary]) : peers.indexOf(visible.at(-1))+1;
-  peers.splice(index, 0, name);
-  const minimum = edge === "left" || edge === "right" ? stateSideMinimum(name,state) : stateHorizontalMinimum(name,state);
-  const size = state === "expanded" ? (destination ? Math.max(dockSizes[edge],minimum) : areaExpandedSizes[name]?.[edge] || dockSizes[edge]) : null;
-  return {edge,state,names:peers,size};
-}
-function setDockPosition(name, edge, insertion = null, announce = true) {
-  if (!dockEdges.includes(edge)) return;
-  const before = capturePlacement();
-  rememberExpandedAreaSizes();
-  if (name === "systems") endSystemRailExpansion(false);
-  manualAreaOverride(name);
-  const plan = planAreaDock(name,edge,insertion),previousEdge = dockState[name].edge;
-  dockState[name].edge = edge;
-  normalizeDockOrder(previousEdge);
-  plan.names.forEach((item,order) => { dockState[item].order = order; });
-  setAreaPresentation(name, plan.state, plan.size);
-  autoSpatialEdgeStates.clear();
-  layoutDockAreas(true);
-  refreshIntentAreas();
-  if (areasFollowWindows()) scheduleSpatialAutoLayout();
-  if (announce) offerPlacementUndo(before, areaLabel(name) + " docked " + edge);
-}
-
-function closestDockEdge(clientX, clientY) {
-  const rect = $(".desktop-shell").getBoundingClientRect();
-  const distances = {
-    left: Math.abs(clientX - rect.left),
-    right: Math.abs(rect.right - clientX),
-  };
-  return [...dockEdges].sort((a, b) => distances[a] - distances[b])[0];
-}
-function areaDropEdge(name, clientX, clientY) {
-  const peer = areaPriority.find(item => {
-    if (item === name || !isLocalArea(item) || areaFor(item)?.hidden) return false;
-    const rect = areaFor(item).getBoundingClientRect();
-    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-  });
-  return peer ? dockState[peer].edge : closestDockEdge(clientX, clientY);
-}
-
-function ensureDockPreview() {
-  if (dockPreview) return dockPreview;
-  dockPreview = document.createElement("div");
-  dockPreview.className = "dock-preview";
-  dockPreview.setAttribute("aria-hidden", "true");
-  $(".desktop-shell").append(dockPreview);
-  return dockPreview;
-}
-
-function dockInsertion(edge, clientX, clientY, movingName) {
-  const peers = dockGroup(edge).filter(name => name !== movingName);
-  const vertical = edge === "left" || edge === "right";
-  const point = vertical ? clientY : clientX;
-  const index = peers.findIndex(name => {
-    const rect = areaFor(name).getBoundingClientRect();
-    return point < (vertical ? rect.top + rect.height/2 : rect.left + rect.width/2);
-  });
-  return index < 0 ? peers.length : index;
-}
-function areaDockPreviewRect(name, edge, insertion) {
-  if (!dockEdges.includes(edge)) return null;
-  const shell = $(".desktop-shell"),plan = planAreaDock(name,edge,insertion);
-  const savedState = Object.fromEntries(areaPriority.map(item => [item,{...dockState[item]}])),savedSizes = {...dockSizes};
-  // Resolve the same constraints as the committed move, without rendering or
-  // saving a projected layout. Restore the model synchronously before returning.
-  try {
-    dockState[name].edge = edge;
-    plan.names.forEach((item,order) => { dockState[item].order=order; });
-    if (Number.isFinite(plan.size)) dockSizes[edge]=plan.size;
-    const resolved = resolvedAreaLayout(shell.clientWidth,shell.clientHeight),names = dockGroup(edge),index=names.indexOf(name);
-    const thickness = resolved.sizes[edge];
-    if (edge === "left" || edge === "right") {
-      const panel = allocateAreaPanels(names,edge,shell.clientHeight,thickness,resolved.states)[name];
-      return {x:edge==="left"?0:shell.clientWidth-thickness,y:panel.offset,width:thickness,height:panel.extent,joinEdge:index?"top":"none"};
-    }
-    const left = dockGroup("left").length?resolved.sizes.left:0,right = dockGroup("right").length?resolved.sizes.right:0;
-    const panel = allocateAreaPanels(names,edge,Math.max(0,shell.clientWidth-left-right),thickness,resolved.states)[name];
-    return {x:left+panel.offset,y:edge==="top"?0:shell.clientHeight-thickness,width:panel.extent,height:thickness,joinEdge:index?"left":"none"};
-  } finally {
-    areaPriority.forEach(item => Object.assign(dockState[item],savedState[item]));
-    Object.assign(dockSizes,savedSizes);
-  }
-}
-function renderAreaDockPreview(name, edge, insertion) {
-  const preview = ensureDockPreview(),rect = areaDockPreviewRect(name,edge,insertion);
-  if (!rect) return;
-  preview.dataset.edge = edge;
-  Object.assign(preview.style,{left:rect.x+"px",right:"auto",top:rect.y+"px",bottom:"auto",width:rect.width+"px",height:rect.height+"px"});
-}
-function compactSystemBelowApps() {
-  const edge = dockState.apps.edge;
-  if (!isLocalArea("apps") || areaFor("apps")?.hidden || !["left","right"].includes(edge)) return;
-  const before = capturePlacement();
-  setAreaState("apps","expanded",false);
-  setAreaState("systems","rail",false);
-  const peers = dockGroup(edge).filter(name => name !== "systems");
-  setDockPosition("systems",edge,peers.indexOf("apps")+1,false);
-  offerPlacementUndo(before,"Compact System below Apps");
-}
-
-// One owner for the gesture, including Escape, lost capture and browser blur.
-function trackAreaPointer(event, handle, move, finish) {
-  cancelAreaPointerInteraction?.();
-  const pointerId = event.pointerId;
-  let ended = false, last = event;
-  const end = pointer => {
-    pointer ||= last;
-    if (ended || (pointer.pointerId !== undefined && pointer.pointerId !== pointerId)) return;
-    ended = true;
-    handle.removeEventListener("pointermove", onMove);
-    handle.removeEventListener("pointerup", end);
-    handle.removeEventListener("pointercancel", cancel);
-    handle.removeEventListener("lostpointercapture", cancel);
-    window.removeEventListener("keydown", onKey, true);
-    window.removeEventListener("blur", cancel);
-    if (cancelAreaPointerInteraction === cancel) cancelAreaPointerInteraction = null;
-    try { handle.releasePointerCapture(pointerId); } catch {}
-    finish(pointer, pointer.type === "pointercancel");
-  };
-  const cancel = pointer => {
-    if (pointer?.pointerId !== undefined && pointer.pointerId !== pointerId) return;
-    end({ ...last, pointerId, type: "pointercancel" });
-  };
-  const onKey = key => {
-    if (key.key !== "Escape") return;
-    key.preventDefault(); key.stopImmediatePropagation(); cancel();
-  };
-  const onMove = pointer => {
-    if (pointer.pointerId !== undefined && pointer.pointerId !== pointerId) return;
-    last = pointer;
-    if (typeof pointer.buttons === "number" && !(pointer.buttons & 1)) { end(pointer); return; }
-    move(pointer);
-  };
-  cancelAreaPointerInteraction = cancel;
-  handle.addEventListener("pointermove", onMove);
-  handle.addEventListener("pointerup", end);
-  handle.addEventListener("pointercancel", cancel);
-  handle.addEventListener("lostpointercapture", cancel);
-  window.addEventListener("keydown", onKey, true);
-  window.addEventListener("blur", cancel);
-  handle.setPointerCapture(pointerId);
-}
-function bindAreaDockDrag(name, area) {
-  const handle = $("[data-area-drag-handle]", area);
-  if (!handle) return;
-  handle.addEventListener("pointerdown", event => {
-    if (event.button !== 0 || event.target.closest("button,input,select,textarea,a")) return;
-    cancelAreaPointerInteraction?.();
-    event.preventDefault();
-    const preview = ensureDockPreview();
-    let candidate = dockState[name].edge;
-    let moved = false;
-    area.classList.add("is-dock-dragging");
-    renderAreaDockPreview(name,candidate,dockInsertion(candidate,event.clientX,event.clientY,name));
-    preview.classList.add("is-visible");
-    trackAreaPointer(event, handle, pointer => {
-      if (Math.hypot(pointer.clientX - event.clientX, pointer.clientY - event.clientY) < 6 && !moved) return;
-      moved = true;
-      candidate = areaDropEdge(name,pointer.clientX,pointer.clientY);
-      renderAreaDockPreview(name,candidate,dockInsertion(candidate,pointer.clientX,pointer.clientY,name));
-    }, (pointer, cancelled) => {
-      area.classList.remove("is-dock-dragging");
-      preview.classList.remove("is-visible");
-      if (cancelled || !moved) return;
-      const transferTarget = displayTransferTarget(pointer.clientX);
-      if (transferTarget) transferAreaToDisplay(name, transferTarget, pointer.clientX < window.innerWidth / 2 ? "left" : "right");
-      else setDockPosition(name, candidate, dockInsertion(candidate, pointer.clientX, pointer.clientY, name));
-    });
-  });
-}
-function bindDockResize(name, area) {
-  const handle = $('[data-area-resize="' + name + '"]', area);
-  if (!handle) return;
-  handle.addEventListener("pointerdown", event => {
-    if (event.button !== 0) return;
-    cancelAreaPointerInteraction?.();
-    const before = capturePlacement();
-    event.preventDefault(); event.stopPropagation();
-    const edge = dockState[name].edge,vertical = edge === "left" || edge === "right";
-    rememberExpandedAreaSizes();
-    const originalStates = {...initialAreaStates(currentDisplayProfile)};
-    const names = areaColumnNames(name).filter(item => item === name || !areaFor(item)?.hidden);
-    const visibleStates = Object.fromEntries(names.map(item => [item,areaFor(item)?.dataset.areaState || originalStates[item]]));
-    const hadExpanded = names.some(item => visibleStates[item] === "expanded");
-    const expandedStates = {...originalStates};
-    names.forEach(item => { expandedStates[item] = hadExpanded?visibleStates[item]:item===name?"expanded":"rail"; });
-    const resizeStart = JSON.stringify({sizes:dockSizes,preferred:areaPreferredStates,shares:areaDockShares});
-    overrideAreaColumn(name);
-    const rect = $(".desktop-shell").getBoundingClientRect();
-    const current = resolvedAreaLayout(rect.width,rect.height).sizes[edge];
-    const rawSize = pointer => edge === "left"?pointer.clientX-rect.left:edge === "right"?rect.right-pointer.clientX:edge === "top"?pointer.clientY-rect.top:rect.bottom-pointer.clientY;
-    let anchor = Number.isFinite(rawSize(event))?rawSize(event):current;
-    // A legacy failed expansion may have left a wide, all-Compact column.
-    // Start at its actual presentation so shrinking cannot expand it again.
-    let stageState = hadExpanded?"expanded":"rail";
-    let stageSize = hadExpanded?current:edgeMinimumForState(edge,"rail");
-    const restore = stageState === "expanded"?current:areaExpandedSizes[name]?.[edge] || (vertical?310:250);
-    dockSizeManual[edge] = !areasFollowWindows(); area.classList.add("is-area-resizing");
-    trackAreaPointer(event,handle,pointer => {
-      const point = rawSize(pointer),requested = stageSize+point-anchor;
-      const layout = resolvedAreaLayout(rect.width,rect.height);
-      const bounds = dockAxisBounds(edge,rect.width,rect.height);
-      const maximum = Math.max(0,Math.min(bounds.maximum,bounds.extent-bounds.workspace-layout.sizes[bounds.opposite]));
-      const minimum = edgeStateMinimum(edge,expandedStates);
-      const result = globalThis.SpatialCompactAreas.resizeThickness({
-        state:stageState,requested,minimum,
-        compact:edgeMinimumForState(edge,"rail"),maximum,restore
-      });
-      setAreaSnapFeedback(handle,result);
-      if (maximum < minimum && result.blocked) { layoutDockAreas(false); return; }
-      const expanding = result.snapped && result.state === "expanded";
-      const previous = expanding?snapshotAreaLayout():null;
-      if (result.state === "rail" || areasFollowWindows()) setAreaColumnState(name,result.state,result.state==="expanded"?result.size:null);
-      else {
-        names.forEach(item => setAreaPresentation(item,expandedStates[item],null));
-        dockSizes[edge] = result.size;
-      }
-      if (expanding) {
-        // Width alone cannot reopen an Area whose sibling divider left a
-        // Compact-sized share. Restore usable space along the dock as well.
-        const targets = names.filter(item => expandedStates[item] === "expanded");
-        const fits = targets.every(item => makeAreaExpansionSpace(item,areaShareExpanded[edge][item]));
-        layoutDockAreas(false,false);
-        if (!fits || targets.some(item => areaFor(item).dataset.areaState !== "expanded")) {
-          restoreAreaPreferences(previous); Object.assign(dockSizes,previous.sizes);
-          if (names.includes("ai")) globalThis.SpatialAIDesktop?.setMode(previous.preferred.ai || "rail");
-          setAreaSnapFeedback(handle,{pressure:1});
-          layoutDockAreas(false,false);
-          return;
-        }
-      }
-      if (result.snapped) { anchor = point; stageSize = result.size; stageState = result.state; }
-      if (areasFollowWindows()) autoSpatialEdgeStates.set(edge,result.state);
-      layoutDockAreas(false);
-    },(pointer,cancelled) => {
-      area.classList.remove("is-area-resizing"); setAreaSnapFeedback(handle);
-      if (cancelled || JSON.stringify({sizes:dockSizes,preferred:areaPreferredStates,shares:areaDockShares}) === resizeStart) { restorePlacement(before); return; }
-      // The last meaningful Expanded thickness is a restore target, not an
-      // intermediate value produced while pressing against the snap stop.
-      names.forEach(item => {
-        if (areaPreferredStates[item] === "expanded") (areaExpandedSizes[item] ||= {})[edge] = dockSizes[edge];
-        else if (originalStates[item] === "expanded") (areaExpandedSizes[item] ||= {})[edge] = restore;
-      });
-      saveAreaLayout(); refreshIntentAreas();
-      if (areasFollowWindows()) {
-        if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-        scheduleSpatialAutoLayout();
-      }
-      offerPlacementUndo(before,areaLabel(name)+" · "+layoutStateLabel(area.dataset.areaState));
-    });
-  });
-}
-
-function areaShareSnapshot(edge) {
-  const vertical = edge === "left" || edge === "right",names = dockGroup(edge);
-  return {
-    sizes: Object.fromEntries(names.map(name => [name,areaFor(name).getBoundingClientRect()[vertical?"height":"width"]])),
-    states: Object.fromEntries(names.map(name => [name,areaFor(name).dataset.areaState || "rail"])),
-    preferred: Object.fromEntries(names.map(name => [name,areaPreferredStates[name] || initialAreaStates(currentDisplayProfile)[name]])),
-    expanded: {...areaShareExpanded[edge]}
-  };
-}
-function setAreaSnapFeedback(handle, result = {}) {
-  const pressure = result.pressure || 0;
-  handle.classList.toggle("is-snap-pressure",pressure > 0);
-  handle.style.setProperty?.("--area-snap-pressure",String(pressure));
-}
-function expandSharedArea(name) {
-  const edge = dockState[name].edge,vertical = edge === "left" || edge === "right";
-  const shell = $(".desktop-shell"),before = snapshotAreaLayout();
-  const current = resolvedAreaLayout(shell.clientWidth,shell.clientHeight);
-  const {opposite,maximum,extent,workspace} = dockAxisBounds(edge,shell.clientWidth,shell.clientHeight);
-  const limit = Math.max(0,Math.min(maximum,extent-workspace-current.sizes[opposite]));
-  const minimum = vertical?stateSideMinimum(name,"expanded"):stateHorizontalMinimum(name,"expanded");
-  if (limit < minimum) return false;
-  const size = Math.min(limit,Math.max(minimum,areaExpandedSizes[name]?.[edge] || current.sizes[edge]));
-  setAreaPresentation(name,"expanded",size);
-  if (makeAreaExpansionSpace(name,areaShareExpanded[edge][name])) {
-    layoutDockAreas(false,false);
-    if (areaFor(name).dataset.areaState === "expanded") return true;
-  }
-  restoreAreaPreferences(before); Object.assign(dockSizes,before.sizes);
-  if (name === "ai") globalThis.SpatialAIDesktop?.setMode(before.preferred.ai || "rail");
-  layoutDockAreas(false,false);
-  return false;
-}
-function resizeAreaShare(edge, first, second, delta, original) {
-  const names = dockGroup(edge),index = names.indexOf(first),model = globalThis.SpatialCompactAreas;
-  if (index < 0 || names[index+1] !== second || !Number.isFinite(delta) || !model?.resizePair) return {changed:false};
-  const vertical = edge === "left" || edge === "right",axis = vertical?"vertical":"horizontal";
-  const crossSize = areaFor(first).getBoundingClientRect()[vertical?"width":"height"];
-  const compactDock = names.every(name => original.states[name] === "rail") && crossSize < (vertical?model.thresholds.compactCrossSize:model.thresholds.horizontalGridHeight);
-  const result = model.resizePair({axis,first,second,delta,sizes:original.sizes,states:original.states,
-    expanded:original.expanded,crossSize,compactDock,
-    crossMinimums:Object.fromEntries(names.map(name => [name,vertical?stateSideMinimum(name,"expanded"):stateHorizontalMinimum(name,"expanded")]))});
-  if (result.expand && !result.snapped && expandSharedArea(result.expand)) return {...result,pressure:0,blocked:false,snapped:result.expand,changed:true};
-  const changed = [first,second].some(name => Math.abs(result.sizes[name]-original.sizes[name])>.1 || result.states[name] !== original.states[name]);
-  if (!changed) return {...result,changed:false};
-  // Embedded Compact slots remain fixed; a whole narrow Compact dock shares
-  // length continuously while leaving its outer thickness unchanged.
-  const sum = names.reduce((value,name) => value+result.sizes[name],0);
-  const mass = names.every(name => Number.isFinite(areaDockShares[edge][name]) && areaDockShares[edge][name] > 0)
-    ? names.reduce((value,name) => value+areaDockShares[edge][name],0) : 1;
-  names.forEach(name => { areaDockShares[edge][name] = mass*result.sizes[name]/Math.max(1e-6,sum); });
-  [first,second].forEach(name => setAreaPresentation(name,result.states[name]));
-  layoutDockAreas(false,false);
-  return {...result,changed:true};
-}
-function bindAreaShareHandle(handle, edge, first, second) {
-  handle.addEventListener("pointerdown", event => {
-    if (event.button !== 0) return;
-    cancelAreaPointerInteraction?.();
-    const before = capturePlacement();
-    event.preventDefault(); event.stopPropagation();
-    overrideAreaColumn(first); layoutDockAreas(false,false);
-    rememberExpandedAreaShares(edge);
-    let original = areaShareSnapshot(edge);
-    const vertical = edge === "left" || edge === "right";
-    let anchor = vertical?event.clientY:event.clientX;
-    dockSizeManual[edge] = true; handle.classList.add("is-active");
-    let moved = false;
-    trackAreaPointer(event,handle,pointer => {
-      const point = vertical?pointer.clientY:pointer.clientX;
-      const result = resizeAreaShare(edge,first,second,point-anchor,original);
-      moved = result.changed || moved; setAreaSnapFeedback(handle,result);
-      if (result.snapped) { anchor = point; original = areaShareSnapshot(edge); }
-    },(pointer,cancelled) => {
-      handle.classList.remove("is-active"); setAreaSnapFeedback(handle);
-      if (cancelled || !moved) { restorePlacement(before); return; }
-      rememberExpandedAreaShares(edge); saveAreaLayout(); refreshIntentAreas();
-      if (moved) offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
-    });
-  });
-  handle.addEventListener("keydown", event => {
-    const vertical = edge === "left" || edge === "right";
-    const direction = (vertical?{ArrowUp:-1,ArrowDown:1}:{ArrowLeft:-1,ArrowRight:1})[event.key];
-    if (!direction) return;
-    event.preventDefault(); event.stopPropagation(); cancelAreaPointerInteraction?.();
-    const before = capturePlacement();
-    overrideAreaColumn(first); layoutDockAreas(false,false); rememberExpandedAreaShares(edge);
-    const result = resizeAreaShare(edge,first,second,direction*(event.shiftKey?48:16),areaShareSnapshot(edge));
-    setAreaSnapFeedback(handle);
-    if (!result.changed) { restorePlacement(before); return; }
-    dockSizeManual[edge] = true; rememberExpandedAreaShares(edge); saveAreaLayout(); refreshIntentAreas();
-    offerPlacementUndo(before,areaLabel(first)+" / "+areaLabel(second)+" space resized");
-  });
-}
-
-function syncAreaShareHandles(edges) {
-  const visible = new Set();
-  const shell = $(".desktop-shell"),origin = shell.getBoundingClientRect();
-  edges.forEach(edge => {
-    const names = dockGroup(edge),vertical = edge === "left" || edge === "right";
-    names.slice(0,-1).forEach((first,index) => {
-      const second = names[index+1],key = edge+":"+first+":"+second;
-      visible.add(key);
-      let handle = areaShareHandles.get(key);
-      if (!handle) {
-        handle = document.createElement("div");
-        handle.className = "area-share-handle";
-        handle.dataset.axis = vertical ? "vertical" : "horizontal";
-        handle.dataset.areaShare = key;
-        handle.tabIndex = 0;
-        handle.setAttribute("role","separator");
-        handle.setAttribute("aria-orientation",vertical?"horizontal":"vertical");
-        handle.setAttribute("aria-label","Resize "+areaLabel(first)+" and "+areaLabel(second));
-        handle.title = "Drag to share space · Push past the stop to snap Compact · Pull to expand · Shift + arrow snaps at the stop";
-        bindAreaShareHandle(handle,edge,first,second);
-        areaShareHandles.set(key,handle);
-        shell.append(handle);
-      }
-      const a = areaFor(first).getBoundingClientRect(),b = areaFor(second).getBoundingClientRect();
-      const size = vertical?a.height:a.width,total = size+(vertical?b.height:b.width);
-      const model = globalThis.SpatialCompactAreas;
-      const compactDock = names.every(name => areaFor(name).dataset.areaState === "rail") && (vertical?a.width:a.height) < (vertical?model.thresholds.compactCrossSize:model.thresholds.horizontalGridHeight);
-      handle.title = compactDock
-        ? "Drag to share space · Compact Areas stop at their minimum · Use the outside border to expand the panel"
-        : "Drag to share space · Push past the stop to snap Compact · Pull to expand · Shift + arrow snaps at the stop";
-      handle.hidden = false;
-      Object.assign(handle.style,vertical
-        ? {left:(a.left-origin.left)+"px",top:(a.bottom-origin.top-4)+"px",width:a.width+"px",height:"8px"}
-        : {left:(a.right-origin.left-4)+"px",top:(a.top-origin.top)+"px",width:"8px",height:a.height+"px"});
-      handle.setAttribute("aria-valuemin","0"); handle.setAttribute("aria-valuemax","100");
-      handle.setAttribute("aria-valuenow",String(Math.round(total?100*size/total:50)));
-      handle.setAttribute("aria-valuetext",areaLabel(first)+" "+Math.round(size)+" pixels, "+areaLabel(second)+" "+Math.round(total-size)+" pixels");
-    });
-  });
-  areaShareHandles.forEach((handle,key) => { if (!visible.has(key)) handle.hidden = true; });
-}
-
-function prepareAreaWindows() {
-  // New Workspaces start from the neutral dock layout, never the last one's edits.
-  defaultAreaSession = JSON.parse(JSON.stringify(snapshotAreaLayout()));
-  let saved = null;
-  try {
-    const sessions = JSON.parse(desktopStorage.getItem("spatial-workspace-area-layouts-v1") || "{}");
-    Object.entries(sessions).forEach(([name, session]) => { workspaceAreaSessions[name] = globalThis.SpatialDemoExamples?.migrateAreaLayout(session) || session; });
-    saved = workspaceAreaSessions[activeWorkspace] || null;
-    if (!saved && activeWorkspace === "general") saved = JSON.parse(desktopStorage.getItem("spatial-dock-layout-v2") || "null");
-  } catch {}
-  if (saved) saved = globalThis.SpatialDemoExamples?.migrateAreaLayout(saved) || saved;
-  if (saved) workspaceAreaSessions[activeWorkspace] = saved;
-  restoreAreaPreferences(saved);
-  if (saved?.state) areaPriority.forEach(name => {
-    if (dockEdges.includes(saved.state[name]?.edge)) dockState[name] = { edge: saved.state[name].edge, order: Number(saved.state[name].order) || 0 };
-  });
-  if (saved?.sizes) dockEdges.forEach(edge => { if (Number.isFinite(saved.sizes[edge])) dockSizes[edge] = saved.sizes[edge]; });
-  if (saved?.hidden) areaPriority.forEach(name => { if (areaFor(name)) areaFor(name).hidden = Boolean(saved.hidden[name]); });
-  if (saved?.manual) dockEdges.forEach(edge => { dockSizeManual[edge] = Boolean(saved.manual[edge]); });
-
-  areaPriority.forEach(name => {
-    const area = areaFor(name);
-    if (!area) return;
-    bindAreaDockDrag(name, area);
-    bindDockResize(name, area);
-  });
-  $$('[data-area-hide]').forEach(button => button.addEventListener("click", event => { event.stopPropagation(); hideArea(button.dataset.areaHide); }));
-  $$('[data-area-show]').forEach(button => button.addEventListener("click", () => showArea(button.dataset.areaShow)));
-  $$('[data-overview-area-visibility]').forEach(button => button.addEventListener("click", () => {
-    const name = button.dataset.overviewAreaVisibility;
-    if (areaFor(name)?.hidden) showArea(name, false);
-    else hideArea(name);
-  }));
-  const resetAreas = $("#resetAreas");
-  if (resetAreas) resetAreas.addEventListener("click", () => {
-    const before = capturePlacement();
-    areaPriority.forEach(name => {
-      if (areaFor(name)) areaFor(name).hidden = false;
-    });
-    Object.assign(dockSizes, { left: 310, right: 300, top: 250, bottom: 250 });
-    dockEdges.forEach(edge => { areaDockShares[edge] = {}; areaShareExpanded[edge] = {}; });
-    areaPriority.forEach(name => { areaPreferredStates[name] = "expanded"; });
-    globalThis.SpatialAIDesktop?.setMode("expanded");
-    dockEdges.forEach(edge => { dockSizeManual[edge] = false; });
-    layoutMode = layoutModes[0];
-    autoSpatialEdgeStates.clear();
-    clearAllAutoAvoidance();
-    try { desktopStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
-    layoutDockAreas(true);
-    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    offerPlacementUndo(before, tileEngine ? "Desktop Areas restored · borders stay fixed" : "Desktop Areas restored to Auto");
-  });
-  $$('[data-area-auto]').forEach(button => button.addEventListener("click", event => {
-    event.stopPropagation();
-    const name = button.closest('[data-area-window]').dataset.areaWindow;
-    const current = dockEdges.indexOf(dockState[name].edge);
-    setDockPosition(name, dockEdges[(current + 1) % dockEdges.length]);
-  }));
-  dockEdges.forEach(normalizeDockOrder);
-  try {
-    const savedMode = desktopStorage.getItem("spatial-layout-mode-v1");
-    if (!saved?.layoutMode && layoutModes.includes(savedMode)) layoutMode = savedMode;
-  } catch {}
-  layoutMode = layoutModes.includes(saved?.layoutMode) ? saved.layoutMode : layoutModes.includes(layoutMode) ? layoutMode : layoutModes[0];
-  const layoutControl = $("#layoutModeToggle");
-  if (layoutControl?.matches("button") && layoutModes.length > 1) layoutControl.addEventListener("click", () => {
-    const nextMode = layoutModes[(layoutModes.indexOf(layoutMode) + 1) % layoutModes.length];
-    if (nextMode === "manual") freezeCurrentAreaLayout();
-    layoutMode = nextMode;
-    if (layoutMode === "manual") {
-      autoSpatialEdgeStates.clear();
-      clearAllAutoAvoidance();
-    } else {
-      autoSpatialEdgeStates.clear();
-    }
-    try { desktopStorage.setItem("spatial-layout-mode-v1", layoutMode); } catch {}
-    layoutDockAreas(false);
-    saveAreaLayout();
-    if (layoutMode === "auto") {
-      if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-      scheduleSpatialAutoLayout();
-    }
-    showToast(layoutMode === "auto" ? "Auto Areas · windows can claim dock space" : "Manual Areas · geometry locked");
-  });
-  layoutDockAreas(false);
-  workspaceAreaSessions[activeWorkspace] = snapshotAreaLayout();
-  persistAreaSessions();
-}
 
 const projectSpaces = desktopPreset === 'demo' ? JSON.parse(JSON.stringify(SpatialDemoExamples.projects)) : {};
 
@@ -4273,9 +2444,8 @@ function refreshProjectSessionUi(name = activeProjectName) {
   const project = name ? projectSpaces[name] : null;
   if (!project) return;
   const openCount = Object.keys(appState).filter(id => appState[id] !== "closed" && windowMembership[activeWorkspace]?.[id] === name).length;
-  const savedCount = projectSession(name)?.apps?.length || 0;
-  $("#projectRailWindowCount").textContent = openCount || savedCount;
-  $("#projectRailSession").title = "Show project desktops · " + openCount + " windows";
+
+
   if (projectColumnActive()) {
     $("#projectAreaContext").textContent = project.name + " · Project";
     $("#projectAreaContext").title = openCount + " project windows · all desktops · autosaved";
@@ -4346,7 +2516,7 @@ function syncProjectAreaView() {
   if (area.dataset.projectLibraryOpen !== String(!project)) setProjectClosedState(!project);
   if (project) {
     $("#projectAreaName").textContent = "Files";
-    $("#projectRailName").textContent = project.name;
+
     refreshProjectSessionUi();
   }
 }
@@ -4361,9 +2531,9 @@ function renderProjectSpace(name) {
   rememberWorkspaceProject();
   area.style.setProperty("--project-accent", project.accent);
   $("#projectAreaName").textContent = "Files";
-  $("#projectRailName").textContent = project.name;
-  $("#projectRailName").title = project.name;
-  $("#projectRailResourceCount").textContent = project.resources.length;
+
+
+
   renderProjectModes(name);
   $("#projectRootPath").textContent = project.root;
   const location = projectLocationMeta(project);
@@ -4519,7 +2689,7 @@ function parkProjectWindows(name, announce = true, modeId = projectModeId(name))
   saveLayout();
   persistProjectState();
   refreshProjectSessionUi(name);
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
   if (announce) showToast(project.modes[modeId].label + " mode saved · " + names.length + " window" + (names.length === 1 ? "" : "s"));
   return names.length;
 }
@@ -4553,7 +2723,7 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
   persistProjectState();
   persistDisplayAssignments();
   refreshProjectSessionUi(name);
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
   if (announce) showToast(session.apps.length + " " + projectSpaces[name].modes[modeId].label + " window" + (session.apps.length === 1 ? " restored" : "s restored"));
   return session.apps.length;
 }
@@ -4611,13 +2781,6 @@ function addProjectResource(value) {
 }
 
 function focusProjectControl(selector) {
-  // A rail command requesting an editor must expose it before moving focus.
-  manualAreaOverride("projects");
-  const edge = dockState.projects.edge;
-  const vertical = edge === "left" || edge === "right";
-  dockSizes[edge] = Math.max(dockSizes[edge], vertical ? 300 : 250);
-  dockSizeManual[edge] = true;
-  autoSpatialEdgeStates.delete(edge);
   setAreaState("projects", "expanded", false);
   refreshIntentAreas();
   requestAnimationFrame(() => {
@@ -4771,7 +2934,7 @@ function renderProjectEditor() {
     state.view = "manage";
     kicker.textContent = "PROJECT SETTINGS";
     title.textContent = project.name;
-    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or any Area to unfocus the window, then scroll up or down to change desktops. The number in the Apps header shows your current desktop.</p><label class="project-download-option"><input type="checkbox" data-project-download-toggle' + (project.downloadToProject ? ' checked' : '') + '><span>Download into this project<small>Creates <b>' + escapeHtml(project.root + '/Downloads') + '</b>. Only downloads from this project’s windows use it; Home and other standard folders stay in the workspace.</small></span></label><p class="project-download-destination">Downloads currently use <b>' + escapeHtml(SpatialHomeFolders.downloadDestination(workspaceProfiles, projectSpaces, activeWorkspace, state.projectName)) + '</b>.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
+    body.innerHTML = '<section class="project-editor-manage"><header><div><b>Project folder</b><small>' + escapeHtml(project.root) + '</small></div></header><p>Files, notes and linked resources stay together while your windows can use any desktop in this workspace. Click the desktop background or a panel to unfocus the window, then scroll up or down to change desktops. The Overview button shows your current desktop.</p><label class="project-download-option"><input type="checkbox" data-project-download-toggle' + (project.downloadToProject ? ' checked' : '') + '><span>Download into this project<small>Creates <b>' + escapeHtml(project.root + '/Downloads') + '</b>. Only downloads from this project’s windows use it; Home and other standard folders stay in the workspace.</small></span></label><p class="project-download-destination">Downloads currently use <b>' + escapeHtml(SpatialHomeFolders.downloadDestination(workspaceProfiles, projectSpaces, activeWorkspace, state.projectName)) + '</b>.</p><footer><span>Removing the Project never deletes its folder.</span><button class="surface-key project-editor-danger quiet" data-project-editor-action="delete-project"><svg><use href="#i-trash"/></svg><span>Remove project</span></button></footer></section>';
   }
   prepareMaterialSurfaces($("#projectEditorDialog"));
   prepareControlSemantics($("#projectEditorDialog"));
@@ -4793,9 +2956,6 @@ function openProjectEditor(view, options = {}) {
     setUniversalSearchOpen(false);
     const area = areaFor('projects');
     area.classList.add('is-creating-project'); area.append(dialog);
-    const edge = dockState.projects.edge;
-    dockSizes[edge] = Math.max(dockSizes[edge],320);
-    autoSpatialEdgeStates.set(edge,'expanded');
     showArea('projects',false); layoutDockAreas(false,false);
   } else { areaFor('projects').classList.remove('is-creating-project'); document.body.append(dialog); }
   renderProjectEditor();
@@ -4907,11 +3067,11 @@ function prepareProjectSpaces() {
     showArea("projects");
     setUniversalSearchOpen(false);
   });
-  $(".project-area").addEventListener("click", event => {
-    const project = event.target.closest("[data-open-area-project]");
+  areaFor("projects").addEventListener("click", event => {
+    const project = event.target.closest("[data-open-project]");
     if (project) {
-      activateProject(project.dataset.openAreaProject);
-      const rail = areaFor("projects").dataset.areaState === "rail";
+      activateProject(project.dataset.openProject);
+      const rail = areaFor("projects").dataset.widgetMode === "compact";
       if (rail) showArea("projects");
       requestAnimationFrame(() => {
         const focusTarget = $("#projectSpaceContent");
@@ -4919,33 +3079,15 @@ function prepareProjectSpaces() {
       });
       return;
     }
-    if (event.target.closest("[data-create-area-project]")) return openProjectEditor("create-project");
+    if (event.target.closest("[data-create-project]")) return openProjectEditor("create-project");
     const item = event.target.closest("[data-project-item]");
     if (item) showToast("Opening " + item.dataset.projectItem);
   });
   $("#closeProjectButton").addEventListener("click", closeActiveProject);
-  $("#projectRailClose").addEventListener("click", closeActiveProject);
   $("#projectResourceForm").addEventListener("submit", event => {
     event.preventDefault();
     addProjectResource($("#projectResourceInput").value);
     $("#projectResourceInput").value = "";
-  });
-  $("#projectRailResource").addEventListener("click", () => {
-    showArea("projects");
-    if (!activeProjectName) {
-      const firstProject = Object.keys(projectSpaces)[0];
-      if (firstProject) activateProject(firstProject, false);
-      else return openProjectEditor("create-project");
-    }
-    focusProjectControl("#projectResourceInput");
-  });
-  $("#projectRailSession").addEventListener("click", () => {
-    if (!activeProjectName) {
-      const firstProject = Object.keys(projectSpaces)[0];
-      if (firstProject) activateProject(firstProject);
-      else openProjectEditor("create-project");
-    }
-    else { setUniversalSearchOpen(true); $("#desktopColumnMap").scrollIntoView({block: "nearest"}); }
   });
   prepareProjectEditor();
   renderOverviewProjects();
@@ -5017,7 +3159,6 @@ function createWorkspaceFromEditor(label) {
   workspaceProjects[id] = null; windowMembership[id] = {};
   workspaceAreaContents[id] = {...defaultAreaContent,noteDraft:'',notifications:[],notificationsHtml:''};
   workspaceContent[id] = {note:'',apps:{}};
-  workspaceAreaSessions[id] = snapshotAreaLayout();
   try { desktopStorage.setItem(SpatialWorkspaceSetup.profilesKey,JSON.stringify(Object.fromEntries(Object.entries(workspaceProfiles).filter(([,value])=>value.custom)))); } catch {}
   renderWorkspaceTabs(); renderWorkspace(id,false);
   persistWorkspaceAppStates(); persistProjectState(); saveIndependentSessions();
@@ -5177,8 +3318,8 @@ function snapshotWorkspaceAreaContent() {
     terminalOutputHtml: $$("#terminalScreen > p").map(line => line.outerHTML).join(""),
     notificationsHtml: $("#notificationList").innerHTML,
     focus: { running: focusRunning, seconds: focusSeconds, visible: !$("#timerWidget").hidden, savedAt: Date.now() },
-    hiddenWidgets: $$(".static-widget-stack>.system-widget", areaFor("systems")).map(widget => Boolean(widget.hidden)),
-    scroll: { apps: $("#miniStack").scrollTop, systems: $(".system-scroll-region").scrollTop, projects: $("#projectSpaceContent").scrollTop }
+    hiddenWidgets: [],
+    scroll: { apps: $("#miniStack").scrollTop, systems: 0, projects: $("#projectSpaceContent").scrollTop }
   };
 }
 
@@ -5197,9 +3338,8 @@ function restoreWorkspaceAreaContent(workspaceName) {
     $("#terminalInput").closest("label").insertAdjacentHTML("beforebegin", saved.terminalOutputHtml);
   }
   $$(".notification", $("#notificationList")).forEach(item => item.classList.remove("is-leaving", "is-new-attention"));
-  areaFor("systems").classList.remove("has-notification-attention");
+  $$(".desktop-widget.has-notification-attention").forEach(widget => widget.classList.remove("has-notification-attention"));
   $("#notificationWidget").classList.remove("has-new-attention");
-  $$(".static-widget-stack>.system-widget", areaFor("systems")).forEach((widget, index) => { widget.hidden = Boolean(saved.hiddenWidgets?.[index]); });
   const timer = saved.focus || defaultAreaContent.focus;
   const elapsed = timer.running ? Math.max(0, Math.floor((Date.now() - timer.savedAt) / 1000)) : 0;
   focusSeconds = Math.max(0, timer.seconds - elapsed);
@@ -5209,7 +3349,6 @@ function restoreWorkspaceAreaContent(workspaceName) {
   syncNotifications();
   const scroll = saved.scroll || {};
   $("#miniStack").scrollTop = scroll.apps || 0;
-  $(".system-scroll-region").scrollTop = scroll.systems || 0;
   $("#projectSpaceContent").scrollTop = scroll.projects || 0;
 }
 
@@ -5325,7 +3464,6 @@ function renderWorkspace(name, announce = true) {
   const profile = workspaceProfiles[name];
   if (!profile) return;
   if (name !== activeWorkspace && !desktopSyncApplying) captureCurrentWorkspaceSession();
-  cancelAreaPointerInteraction?.();
   cancelWindowPointerInteraction?.();
   placementUndoEpoch++;
   activeWorkspace = name;
@@ -5385,7 +3523,7 @@ function renderWorkspace(name, announce = true) {
     if (activeWorkspace !== name) return;
     restoreWorkspaceWindowLayout();
     if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
-    if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
   });
   globalThis.SpatialOverviewDesktop?.refresh();
   if (globalThis.SpatialSearchScopes && $("#universalSearch").classList.contains("is-open") && $("#universalSearchInput").value.trim()) filterUniversalSearch();
@@ -5589,7 +3727,7 @@ function prepareWindows(root = document) {
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
       if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
     });
-    $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow Area space · double-click: Maximize";
+    $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow panel space · double-click: Maximize";
     frame.addEventListener("auxclick", event => {
       if (event.button === 1 && event.target.closest(".app-titlebar,.resize-handle")) event.preventDefault();
     });
@@ -5975,12 +4113,9 @@ function prepareMaterialCursor() {
     else if (target.closest(".tile-divider-y")) cursor.classList.add("is-row-resize");
     else if (target.closest('.area-share-handle[data-axis="vertical"]')) cursor.classList.add("is-row-resize");
     else if (target.closest('.area-share-handle[data-axis="horizontal"]')) cursor.classList.add("is-col-resize");
-    else if (target.closest(".zone-resizer")) cursor.classList.add("is-col-resize");
-    else if (target.closest("[data-area-resize]") && ["left", "right"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-col-resize");
-    else if (target.closest("[data-area-resize]") && ["top", "bottom"].includes(target.closest("[data-area-window]")?.dataset.dockEdge)) cursor.classList.add("is-row-resize");
     else if (target.closest(".resize-handle")) cursor.classList.add("is-diag-resize");
     else if (target.closest("textarea,[contenteditable='true'],input:not([type]),input[type='text'],input[type='search']")) cursor.classList.add("is-text");
-    else if (target.closest(".app-titlebar,.area-window-bar") && !target.closest("button,input,a")) cursor.classList.add("is-move");
+    else if (target.closest(".app-titlebar") && !target.closest("button,input,a")) cursor.classList.add("is-move");
     else if (target.closest(".mini-card header") && !target.closest("button,input,a")) cursor.classList.add((buttons & 1) ? "is-grabbing" : "is-grab");
     else if (target.closest("button,a,label,input[type='range'],select")) cursor.classList.add("is-pointer");
   };
@@ -6306,7 +4441,6 @@ function updateClock() {
   $("#overviewDayLabel").textContent = day;
   $("#overviewDateLabel").textContent = date;
   $("#overviewAgendaDay").textContent = now.getDate();
-  $("#systemRailDate").textContent = now.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   $("#monthLabel").textContent = now.toLocaleDateString("en-GB", { month: "long" });
 }
 
@@ -6340,12 +4474,6 @@ function renderCalendar() {
 
 function updateTimer() {
   $("#timerValue").textContent = formatTime(focusSeconds);
-  $("#systemRailTimerValue").textContent = formatTime(focusSeconds);
-  const railTimer = $("#systemRailTimer");
-  railTimer.setAttribute("aria-pressed", String(focusRunning));
-  railTimer.classList.toggle("is-active", focusRunning);
-  railTimer.setAttribute("aria-label", (focusRunning ? "Pause" : "Start") + " focus timer");
-  railTimer.title = (focusRunning ? "Pause" : "Start") + " focus timer · " + formatTime(focusSeconds);
   $("#timerProgress").style.width = 100 - focusSeconds / (25 * 60) * 100 + "%";
   $("#timerState").textContent = focusRunning ? "Running" : focusSeconds === 25 * 60 ? "Ready" : "Paused";
   $("#timerToggle").textContent = focusRunning ? "Pause" : "Start";
@@ -6369,8 +4497,8 @@ function positionNotificationPeek() {
   const peek = $("#notificationPeek");
   if (!peek?.classList.contains("is-visible")) return;
   const area = areaFor("systems");
-  const edge = area?.dataset.dockEdge || dockState.systems?.edge || "right";
-  const railVisible = area && !area.hidden && !area.classList.contains("is-on-other-display") && area.dataset.areaState === "rail";
+  const edge = area?.closest(".desktop-panel")?.dataset.edge || "right";
+  const railVisible = area && !area.hidden && !area.classList.contains("is-on-other-display") && area.dataset.widgetMode === "compact";
   const rect = railVisible ? area.getBoundingClientRect() : null;
   const gap = 8;
   const inset = 12;
@@ -6431,9 +4559,10 @@ function showNotificationPeek(title, detail, tone, glyph) {
 
 function drawAttentionToNotification(item, title, detail, tone, glyph) {
   if(item?.isConnected===false || item?.dataset?.notificationWorkspace && item.dataset.notificationWorkspace!==activeWorkspace)return;
-  const area = areaFor("systems");
-  const local = area && !area.hidden && !area.classList.contains("is-on-other-display") && isLocalArea("systems");
-  const expanded = local && area.dataset.areaState === "expanded" && !$("#universalSearch")?.classList.contains("is-open");
+  const id = item?.dataset?.notificationSystem ? "workspace-alerts" : "notifications";
+  const area = document.querySelector('.desktop-widget[data-widget-id="' + id + '"]');
+  const local = Boolean(area && !area.hidden && !area.closest(".desktop-panel")?.hidden);
+  const expanded = local && globalThis.SpatialPanels?.isWidgetExpanded(id) && !$("#universalSearch")?.classList.contains("is-open");
   const widget = item?.closest?.(".system-widget") || $("#notificationWidget");
   const peek = $("#notificationPeek");
   if (peek?.dataset) peek.dataset.notificationScope = item?.dataset?.notificationSystem ? "system" : "workspace";
@@ -6456,7 +4585,7 @@ function drawAttentionToNotification(item, title, detail, tone, glyph) {
     return;
   }
 
-  if (local && area.dataset.areaState === "rail") area.classList.add("has-notification-attention");
+  if (local) area.classList.add("has-notification-attention");
   showNotificationPeek(title, detail, tone, glyph);
   notificationAttentionTimer = setTimeout(() => area?.classList.remove("has-notification-attention"), 2500);
 }
@@ -6474,8 +4603,6 @@ function addNotification(title, detail, tone = "blue", glyph = "i-bell") {
 function syncNotifications() {
   const count = $$(".notification", $("#notificationList")).length;
   $("#notificationCount").textContent = count;
-  $("#systemRailNotificationCount").textContent = count || "Clear";
-  $("#systemRailNotifications").title = count + (count === 1 ? " notification" : " notifications");
   $("#overviewNotifications").hidden = count === 0;
   $("#overviewNotificationCount").textContent = count;
   $("#overviewNotificationList").innerHTML = $$(".notification", $("#notificationList")).map((item, index) => '<article class="overview-notification"'+(item.dataset.notificationId?' data-notification-id="'+escapeHtml(item.dataset.notificationId)+'"':'')+'><span><b>' + escapeHtml($("b", item)?.textContent || "Notification") + '</b><small>' + escapeHtml($("small", item)?.textContent || "") + '</small></span><button class="dismiss-button" data-overview-dismiss="' + index + '" aria-label="Dismiss ' + escapeHtml($("b", item)?.textContent || "notification") + '">×</button></article>').join("");
@@ -6500,99 +4627,7 @@ function setFocusRunning(running) {
   updateTimer();
 }
 
-// Rails use the same workspace state as their expanded widgets.
-function systemRailExpansionOwns(target) {
-  if (areaFor("systems")?.contains(target)) return true;
-  // A context menu opened by the panel is still part of its current task.
-  return Boolean(target?.closest?.("#desktopContextMenu") &&
-    (contextMenuState?.name === "systems" || areaFor("systems")?.contains(contextMenuState?.element)));
-}
 
-function endSystemRailExpansion(reflow = true) {
-  if (!systemRailExpansion) return;
-  systemRailExpansion = null;
-  const area = areaFor("systems");
-  delete area.dataset.railExpanded;
-  if (reflow) {
-    if (area.contains(document.activeElement)) document.activeElement.blur();
-    layoutDockAreas(false, false);
-  }
-}
-
-function applySystemRailExpansion(width, height) {
-  if (!systemRailExpansion) return;
-  const area = areaFor("systems");
-  const edge = dockState.systems.edge;
-  if (systemRailExpansion.workspace !== activeWorkspace || systemRailExpansion.edge !== edge ||
-      area.hidden || !isLocalArea("systems") || area.dataset.areaState !== "rail") {
-    endSystemRailExpansion(false);
-    return;
-  }
-  const vertical = edge === "left" || edge === "right";
-  const thickness = Math.min(vertical ? width : height, vertical ? 280 : 250);
-  const base = {
-    x: parseFloat(area.style.left) || 0,
-    y: parseFloat(area.style.top) || 0,
-    width: parseFloat(area.style.width),
-    height: parseFloat(area.style.height),
-    joinEdge: area.dataset.areaJoinEdge
-  };
-  area.dataset.areaState = "expanded";
-  area.dataset.railExpanded = "true";
-  applyDockRect("systems", {
-    ...base,
-    x: edge === "right" ? width - thickness : base.x,
-    y: edge === "bottom" ? height - thickness : base.y,
-    width: vertical ? thickness : base.width,
-    height: vertical ? base.height : thickness
-  });
-  area.style.zIndex = "230";
-}
-
-function revealSystemRailWidget(selector) {
-  const area = areaFor("systems");
-  if (area.hidden) showArea("systems", false);
-  if (area.dataset.areaState === "rail") {
-    systemRailExpansion = { workspace: activeWorkspace, edge: dockState.systems.edge, trigger: document.activeElement };
-    layoutDockAreas(false, false);
-  }
-  const expansion = systemRailExpansion;
-  requestAnimationFrame(() => {
-    if (expansion && expansion !== systemRailExpansion) return;
-    const widget = $(selector);
-    const focusTarget = widget && !widget.hidden ? widget : $(".system-scroll-region", area);
-    focusTarget.tabIndex = -1;
-    focusTarget.focus({ preventScroll: true });
-    focusTarget.scrollIntoView({ block: "nearest" });
-  });
-}
-
-function prepareSystemRailExpansion() {
-  const leave = event => {
-    if (systemRailExpansion && !systemRailExpansionOwns(event.target)) endSystemRailExpansion();
-  };
-  document.addEventListener("pointerdown", leave, { capture: true });
-  document.addEventListener("focusin", leave, { capture: true });
-  document.addEventListener("keydown", event => {
-    if (event.key !== "Escape" || !systemRailExpansion || !$("#desktopContextMenu").hidden) return;
-    const trigger = systemRailExpansion.trigger;
-    endSystemRailExpansion();
-    trigger?.focus({ preventScroll: true });
-    event.preventDefault();
-  });
-  window.addEventListener("blur", () => endSystemRailExpansion());
-}
-$("#systemRailNotifications").addEventListener("click", () => revealSystemRailWidget("#notificationWidget"));
-$("#systemRailCalendar").addEventListener("click", () => {
-  const month = $("#systemMonth");
-  if (month) month.open = true;
-  revealSystemRailWidget(".calendar-widget");
-});
-$("#systemRailTimer").addEventListener("click", () => {
-  if (!focusSeconds) focusSeconds = 25 * 60;
-  revealDynamicWidget($("#timerWidget"));
-  setFocusRunning(!focusRunning);
-});
 
 $("#launchTimer").addEventListener("click", () => {
   if (!focusSeconds) focusSeconds = 25 * 60;
@@ -6705,11 +4740,7 @@ function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
     };
   }
 
-  const area = target.closest("[data-area-window]");
-  if (area && (target.closest(".area-window-bar") || area.dataset.areaState === "rail" || !target.closest("button,input,textarea,a"))) {
-    const name = area.dataset.areaWindow;
-    return { kind: "area", name, title: areaLabel(name) };
-  }
+
 
   if (target.closest(".workspace-zone") && !target.closest(".app-frame")) {
     return { kind: "desktop", title: "Desktop", point: { x: clientX, y: clientY } };
@@ -6735,7 +4766,7 @@ function contextMenuEntries(context) {
       ...(state !== "closed" ? Object.entries(projectSpaces).map(([id, project]) => ({action: "move-project:" + id, icon: "i-folder", label: "Move to " + project.name})) : []),
       state !== "closed" && windowMembership[activeWorkspace]?.[context.name] ? {action: "detach-project", icon: "i-folder", label: "Take out of project · keep open"} : null,
       { action: "app-open", icon: state === "open" ? "i-right" : "i-play", label: state === "open" ? "Focus" : state === "minimized" ? "Unpark" : "Open" },
-      state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps Area" } : null,
+      state === "open" ? { action: "app-minimize", icon: "i-min", label: "Park in Apps" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-maximize", icon: "i-max", label: maximized ? "Restore / Maximize" : "Maximize", shortcut: "Alt+Enter" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-fullscreen", icon: "i-max", label: tileSession().fullscreen?.name === context.name ? "Leave Fullscreen" : "Fullscreen", shortcut: "Middle click" } : null,
       state === "open" && isLocalApp(context.name) ? { action: "app-float", icon: "i-monitor", label: tileSession().floating[context.name] ? "Return to tiling" : "Float window", shortcut: "Middle drag" } : null,
@@ -6783,18 +4814,11 @@ function contextMenuEntries(context) {
   if (context.kind === "widget") {
     const entries = [{ action: "widget-open", icon: "i-right", label: "Open" }];
     if (context.element.id === "notificationWidget") entries.push({ action: "widget-clear", icon: "i-bell", label: "Clear notifications" });
-    entries.push(separator, { action: "widget-hide", icon: "i-close", label: "Remove from System Area", danger: true });
+    entries.push(separator, { action: "widget-hide", icon: "i-close", label: "Remove widget", danger: true });
     return entries;
   }
-  if (context.kind === "area") return [
-    ...["expanded", "rail"].map(state => ({ action: "area-state:" + state, icon: state === "expanded" ? "i-max" : "i-min", label: layoutStateLabel(state), checked: !areaFor(context.name)?.hidden && areaFor(context.name)?.dataset.areaState === state })),
-    { action: "area-hide", icon: "i-close", label: "Hidden", checked: Boolean(areaFor(context.name)?.hidden) },
-    separator,
-    context.name === "systems" && isLocalArea("apps") && !areaFor("apps")?.hidden && ["left","right"].includes(dockState.apps.edge) ? { action: "area-below-apps", icon: "i-down", label: "Compact below Apps" } : null,
-    { action: "area-move", icon: "i-grid", label: dockState[context.name].edge === "left" ? "Move to right side" : "Move to left side" },
-    extendedDesktopActive() ? { action: "area-move-display", icon: "i-monitor", label: "Move to Display " + otherDisplaySlot() } : null,
-    { action: "area-reset", icon: "i-max", label: "Reset Area size" }
-  ].filter(Boolean);
+
+
   return [];
 }
 
@@ -6924,27 +4948,11 @@ function executeContextAction(action) {
   if (action === "widget-hide") {
     if (context.element.classList.contains("dynamic-widget")) concealDynamicWidget(context.element);
     else context.element.hidden = true;
-    showToast(context.title + " removed from System Area");
+    showToast(context.title + " removed");
   }
-  if (action === "area-move") {
-    const current = dockState[context.name].edge;
-    setDockPosition(context.name, dockEdges[(dockEdges.indexOf(current) + 1) % dockEdges.length]);
-  }
-  if (action === "area-below-apps") compactSystemBelowApps();
-  if (action === "area-move-display") transferAreaToDisplay(context.name, otherDisplaySlot(), "right");
-  if (action === "area-reset") {
-    const before = capturePlacement();
-    rememberExpandedAreaSizes();
-    areaPreferredStates[context.name] = "expanded";
-    areaDockShares[dockState[context.name].edge] = {};
-    areaShareExpanded[dockState[context.name].edge] = {};
-    if (context.name === "ai") globalThis.SpatialAIDesktop?.setMode("expanded");
-    dockSizeManual[dockState[context.name].edge] = false;
-    layoutDockAreas(true);
-    offerPlacementUndo(before, areaLabel(context.name) + " size reset");
-  }
-  if (action.startsWith("area-state:")) setAreaState(context.name, action.split(":")[1]);
-  if (action === "area-hide") hideArea(context.name);
+
+
+
 }
 
 function prepareContextMenus() {
@@ -7102,7 +5110,6 @@ function localDisplayRoleLabel() {
 function displayAssignmentsFor(workspaceName = activeWorkspace) {
   const saved = workspaceDisplayAssignments[workspaceName] ||= {};
   saved.apps ||= Object.fromEntries(Object.keys(appInfo).map(name => [name, 1]));
-  saved.areas ||= Object.fromEntries(areaPriority.map(name => [name, 1]));
   return saved;
 }
 
@@ -7316,6 +5323,7 @@ function updateDesktopPageUi() {
     folder.hidden = folder.dataset.desktopWorkspace !== activeWorkspace || (folder.dataset.desktopColumn || "workspace") !== column || Number(folder.dataset.desktopPage) !== page - 1;
   });
   globalThis.SpatialEmptyDesktop?.refresh();
+  globalThis.SpatialPanels?.refresh();
 }
 
 function renderDesktopContextColumns() {
@@ -7389,7 +5397,7 @@ function focusDesktop(moveKeyboardFocus = true) {
   desktopColumnWheel.reset();
   $$("[data-app-frame]").forEach(frame => frame.classList.remove("is-front"));
   updateDesktopPageUi();
-  // Keep the clicked Area control in the DOM until its normal click runs.
+  // Keep the clicked panel control in the DOM until its normal click runs.
   originalSyncRack();
   renderOverviewWindows();
   if (moveKeyboardFocus) $(".workspace-zone").focus({ preventScroll: true });
@@ -7408,10 +5416,9 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
   const previousFullscreen = desktopPages.selectedFullscreen?.(activeWorkspace)?.name || null;
   if(fullscreenName && (desktopPages.fullscreenBond(activeWorkspace,fullscreenName)?.column !== column || desktopPages.fullscreenBond(activeWorkspace,fullscreenName)?.page !== page))return false;
   if ((!horizontal && page === previous && fullscreenName === previousFullscreen) || page < 0 || page > desktopPages.last(activeWorkspace, column) || desktopPageAnimating) return false;
-  cancelAreaPointerInteraction?.();
   placementUndoEpoch++;
   // A desktop moves inside the canvas; a project moves the complete scene.
-  // Capture before changing Project Area content or window visibility.
+  // Capture before changing project content or window visibility.
   const workspace = $(".workspace-zone");
   const shell = $(".desktop-shell");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -7424,8 +5431,8 @@ function changeDesktopPage(page, animate = true, column = desktopPages.column(ac
     }
     ghost.inert = true;
     ghost.setAttribute("aria-hidden", "true");
-    [ghost, ...ghost.querySelectorAll("[id],[data-app-frame],[data-area-window]")].forEach(item => {
-      item.removeAttribute("id"); item.removeAttribute("data-app-frame"); item.removeAttribute("data-area-window");
+    [ghost, ...ghost.querySelectorAll("[id],[data-app-frame],[data-widget-source]")].forEach(item => {
+      item.removeAttribute("id"); item.removeAttribute("data-app-frame"); item.removeAttribute("data-widget-source");
     });
   }
   saveLayout();
@@ -7581,9 +5588,9 @@ function prepareDesktopPages() {
     if (!event.target.closest("[data-app-frame],.tile-divider,.desktop-folder,button,input,textarea,select,a") && !desktopNavigationBlocked()) focusDesktop();
   });
   document.addEventListener("pointerdown", event => {
-    if (!event.target.closest("[data-area-window]") || $(".desktop-shell").inert) return;
-    // Capture runs before Area handles stop propagation. Leave native focus
-    // and the control's click action to the Area rather than focusing the canvas.
+    if (!event.target.closest("[data-widget-source],.desktop-panel") || $(".desktop-shell").inert) return;
+    // Capture runs before panel handles stop propagation. Leave native focus
+    // and the control's click action to the panel rather than focusing the canvas.
     focusDesktop(false);
     const focused = document.activeElement;
     if (focused?.closest("[data-app-frame]")) focused.blur();
@@ -7627,18 +5634,19 @@ function prepareDesktopPages() {
   fullscreenPeek?.addEventListener("wheel", event => {
     if (!$(".desktop-shell").inert) onDesktopWheel(event, true);
   }, { passive: false });
-  // Area chrome and rails navigate without a preliminary click. Scrollable
+  // Panel chrome and rails navigate without a preliminary click. Scrollable
   // content keeps its wheel even at an edge; Shift+wheel switches columns
   // unless a nested horizontal scroller owns that motion.
   // Super shortcuts also work over app content. Held-window gestures stay owned
   // by the drag listener, and the shared gate suppresses trackpad momentum.
   document.addEventListener("wheel", event => {
     if ((globalThis.SpatialDemoSuper?.held() || event.metaKey || event.getModifierState?.("OS"))) { onDesktopWheel(event); return; }
-    const area = event.target?.closest("[data-area-window]");
+    const area = event.target?.closest("[data-widget-source],.desktop-panel");
     if (!area || $(".desktop-shell").inert || event.defaultPrevented || event.ctrlKey || event.altKey || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
     const delta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
     if (!delta) return;
-    for (let node = event.target; node && node !== area.parentElement; node = node.parentElement) {
+    const boundary = area.closest(".desktop-panel") || area;
+    for (let node = event.target; node && node !== boundary.parentElement; node = node.parentElement) {
       const across = event.shiftKey;
       const limit = across ? node.scrollWidth - node.clientWidth : node.scrollHeight - node.clientHeight;
       const style = window.getComputedStyle(node);
@@ -7687,10 +5695,10 @@ function isLocalApp(name) {
 }
 
 function isLocalArea(name) {
-  const bond=desktopPages.selectedFullscreen?.(activeWorkspace);
-  if(bond && Math.min(bond.display,activeDisplayRoster().length) === localDisplaySlot())return false;
-  if (globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows(name==='projects'?'project-area':name)) return false;
-  return !extendedDesktopActive() || Number(intentAreaPlan.moves[name] || displayAssignmentsFor().areas[name] || 1) === localDisplaySlot();
+  const id = widgetIdFor(name);
+  const panels = globalThis.SpatialPanels;
+  if (panels) return panels.isWidgetVisible(id);
+  return Boolean(areaFor(name));
 }
 
 function persistDisplayAssignments() {
@@ -7702,11 +5710,8 @@ function applyExtendedDesktopPartition() {
   const count = activeDisplayRoster().length;
   const slot = localDisplaySlot();
   document.body.dataset.physicalDisplay = String(slot);
-  Object.keys(appInfo).forEach(name => {
-    if (count > 1 && !isLocalApp(name)) autoWindowAvoidance.delete(name);
-  });
-  if (autoAvoidanceSource && !isLocalApp(autoAvoidanceSource.dataset.appFrame)) autoAvoidanceSource = null;
-  areaPriority.forEach(name => areaFor(name)?.classList.toggle("is-on-other-display", count > 1 && !isLocalArea(name)));
+
+
   syncApps();
   layoutDockAreas(false);
   if (count > 1) {
@@ -7731,69 +5736,12 @@ function mainDisplayWindowRects() {
   }).map(frame => ({
     frame,
     rect: frame.getBoundingClientRect(),
-    /* Bounded tile focus is not screen fullscreen. It leaves the Areas in
-       place; only a genuine fullscreen/floating app needs another display. */
+    /* Maximized tiles keep panel space; fullscreen apps use their own display. */
     maximized: frame.dataset.maximized === "true" && !frame.classList.contains("is-tiled")
   }));
 }
 
-function areaNamesForEdge(edge) {
-  return areaPriority.filter(name => dockState[name].edge === edge && !areaFor(name)?.hidden);
-}
 
-function mainDisplayFitForEdge(edge, names, windows, currentlyOnMain) {
-  if (!names.length || !windows.length) return { display: 1, state: "expanded" };
-  if (windows.some(windowInfo => windowInfo.maximized)) return { display: 2, state: "expanded" };
-  const shellRect = $(".desktop-shell").getBoundingClientRect();
-  const clearance = Math.min(...windows.map(windowInfo => clearanceFromEdge(edge, windowInfo.rect, shellRect)));
-  const vertical = edge === "left" || edge === "right";
-  const minimumFor = (name, state) => vertical
-    ? stateSideMinimum(name, state)
-    : stateHorizontalMinimum(name, state);
-  const expandedMinimum = Math.max(...names.map(name => minimumFor(name, "expanded")));
-  const railMinimum = Math.max(...names.map(name => minimumFor(name, "rail")));
-  const desiredExpanded = Math.max(expandedMinimum, Math.min(340, dockSizes[edge] || expandedMinimum));
-  const previous = autoSpatialEdgeStates.get(edge) || "expanded";
-  const containsProject = names.includes("projects");
-  const containsApps = names.includes("apps");
-  const priorityAllowance = containsProject ? 22 : containsApps ? 10 : 0;
-  /* Auto tries all useful forms on the main display before spilling the lane
-     to Display 2. Hysteresis keeps it from flickering at either boundary. */
-  const expandThreshold = desiredExpanded - priorityAllowance
-    + (previous === "rail" ? 54 : currentlyOnMain ? -10 : 8);
-  const railThreshold = railMinimum + (currentlyOnMain ? -4 : 8);
-  if (clearance >= expandThreshold) return { display: 1, state: "expanded" };
-  if (clearance >= railThreshold) return { display: 1, state: "rail" };
-  return { display: 2, state: "expanded" };
-}
-
-function rebalanceAreaDisplays() {
-  if(desktopPages.selectedFullscreen?.(activeWorkspace))return false;
-  if (!areasFollowWindows()) return false;
-  const count = activeDisplayRoster().length;
-  if (count < 2 || layoutMode !== "auto" || localDisplaySlot() !== 1) return false;
-  const assignments = displayAssignmentsFor();
-  const windows = mainDisplayWindowRects();
-  let changed = false;
-  /* Areas sharing an edge are one lane: expand it on the main display when
-     possible, use its rail when space tightens, and move the whole lane only
-     when even the rail would collide. */
-  dockEdges.forEach(edge => {
-    const names = areaNamesForEdge(edge);
-    if (!names.length) return;
-    const currentlyOnMain = names.some(name => Number(assignments.areas[name] || 1) === 1);
-    const fit = mainDisplayFitForEdge(edge, names, windows, currentlyOnMain);
-    if (fit.display === 1) autoSpatialEdgeStates.set(edge, fit.state);
-    else autoSpatialEdgeStates.delete(edge);
-    names.forEach(name => {
-      const current = Math.max(1, Math.min(count, Number(assignments.areas[name]) || 1));
-      if (fit.display !== current) changed = true;
-      assignments.areas[name] = fit.display;
-    });
-  });
-  if (changed) persistDisplayAssignments();
-  return changed;
-}
 
 function displayTransferTarget(clientX) {
   if (!extendedDesktopActive()) return 0;
@@ -7831,32 +5779,20 @@ function transferAppToDisplay(name, targetSlot, edge = "right", sourceRect = nul
   });
   persistDisplayAssignments();
   saveLayout();
-  if (layoutMode === "auto") rebalanceAreaDisplays();
+
   refreshIntentAreas();
   applyExtendedDesktopPartition();
   queueDesktopStateBroadcast(0);
   showToast(appInfo[name].label + " moved to Display " + targetSlot);
 }
 
-function transferAreaToDisplay(name, targetSlot, edge = "right") {
-  if (!areaPriority.includes(name) || !extendedDesktopActive()) return;
-  manualAreaOverride(name);
-  displayAssignmentsFor().areas[name] = targetSlot;
-  dockState[name].edge = edge === "left" ? "right" : "left";
-  persistDisplayAssignments();
-  saveAreaLayout();
-  refreshIntentAreas();
-  applyExtendedDesktopPartition();
-  queueDesktopStateBroadcast(0);
-  showToast(areaLabel(name) + " moved to Display " + targetSlot);
-}
+
 
 function captureDesktopSyncState() {
   const workspaceStates = cloneDesktopState(workspaceAppStates);
   workspaceStates[activeWorkspace] = { ...appState };
 
-  const areaSessions = cloneDesktopState(workspaceAreaSessions);
-  areaSessions[activeWorkspace] = snapshotAreaLayout();
+  const widgetPanels = globalThis.SpatialPanels?.captureSessions() || {};
 
   const windowLayouts = readDesktopStorage("spatial-workspace-window-layouts-v1");
   windowLayouts[activeWorkspace] = Object.fromEntries(windowGeometry);
@@ -7883,7 +5819,7 @@ function captureDesktopSyncState() {
     themePreference: SpatialDesktopTheme.preference,
     activeWorkspace,
     workspaceStates,
-    areaSessions,
+    widgetPanels,
     windowLayouts,
     displayAssignments: cloneDesktopState(workspaceDisplayAssignments),
     frontApp,
@@ -7932,7 +5868,7 @@ function persistIncomingDesktopState(state) {
   try {
     desktopStorage.setItem("spatial-workspace-app-states-v1", JSON.stringify(state.workspaceStates));
     desktopStorage.setItem("spatial-workspace-window-layouts-v1", JSON.stringify(state.windowLayouts));
-    desktopStorage.setItem("spatial-workspace-area-layouts-v1", JSON.stringify(state.areaSessions));
+
     desktopStorage.setItem("spatial-project-content-v1", JSON.stringify(state.projects || {}));
     desktopStorage.setItem("spatial-project-spaces-v2", JSON.stringify(state.projects || {}));
     desktopStorage.setItem("spatial-active-project-v1", state.activeProjectName || "");
@@ -7955,8 +5891,7 @@ function applyDesktopSyncState(state) {
     Object.entries(state.workspaceStates || {}).forEach(([name, saved]) => {
       if (workspaceAppStates[name] && saved) workspaceAppStates[name] = { ...workspaceAppStates[name], ...saved };
     });
-    Object.keys(workspaceAreaSessions).forEach(name => delete workspaceAreaSessions[name]);
-    Object.assign(workspaceAreaSessions, cloneDesktopState(state.areaSessions || {}));
+    if (state.widgetPanels) globalThis.SpatialPanels?.replaceSessions(state.widgetPanels);
     if (state.displayAssignments) {
       Object.keys(workspaceDisplayAssignments).forEach(name => delete workspaceDisplayAssignments[name]);
       Object.assign(workspaceDisplayAssignments, cloneDesktopState(state.displayAssignments));
@@ -8032,14 +5967,14 @@ function applyDesktopSyncState(state) {
     }
 
     requestAnimationFrame(() => {
-      const areasChanged = layoutMode === "auto" && rebalanceAreaDisplays();
+
       refreshIntentAreas();
       applyExtendedDesktopPartition();
       renderTileLayout(state.frontApp || frontApp);
       Object.entries(state.maximized || {}).forEach(([name, maximized]) => {
         const frame = frameFor(name);
         if (!frame || appState[name] !== "open" || !isLocalApp(name)) {
-          autoWindowAvoidance.delete(name);
+
           return;
         }
         if (Boolean(maximized) !== (frame.dataset.maximized === "true")) toggleMaximize(name);
@@ -8047,9 +5982,7 @@ function applyDesktopSyncState(state) {
       if (desktopHasWindowFocus && state.frontApp && appState[state.frontApp] === "open") bringToFront(state.frontApp);
       if (!desktopHasWindowFocus) focusDesktop(false);
       updateDesktopSyncPresence();
-      if (areasChanged && localDisplaySlot() === 1) {
-        setTimeout(() => queueDesktopStateBroadcast(0), 0);
-      }
+
     });
   } finally {
     requestAnimationFrame(() => { desktopSyncApplying = false; });
@@ -8100,7 +6033,7 @@ function updateDesktopSyncPresence() {
   }
   const systemArea = areaFor("systems");
   if (systemArea) {
-    systemArea.setAttribute("aria-label", count ? "System area · " + (count + 1) + " displays synced" : "System area");
+    systemArea.setAttribute("aria-label", count ? "System controls · " + (count + 1) + " displays synced" : "System controls");
     systemArea.title = count ? (count + 1) + " displays linked in this browser session" : "";
   }
   if (count && !desktopSyncAnnounced) {
@@ -8108,9 +6041,7 @@ function updateDesktopSyncPresence() {
     showToast(localDisplayRoleLabel() + " connected · extended desktop ready");
   }
   if (!count) desktopSyncAnnounced = false;
-  const changed = rebalanceAreaDisplays();
   applyExtendedDesktopPartition();
-  if (changed && slot === 1 && !desktopSyncApplying) queueDesktopStateBroadcast(0);
 }
 
 function receiveDesktopSyncMessage(packet) {
@@ -8132,7 +6063,6 @@ function receiveDesktopSyncMessage(packet) {
   desktopSyncLastStamp = packet.stamp;
   desktopSyncReady = true;
   // Finish local recovery before accepting remote placements, never after it.
-  cancelAreaPointerInteraction?.();
   cancelWindowPointerInteraction?.();
   applyDesktopSyncState(packet.state);
 }
@@ -8150,7 +6080,7 @@ function prepareCrossDisplaySync() {
     if (!event.target.closest("#universalSearch")) queueDesktopStateBroadcast(90);
   });
   window.addEventListener("pointerup", () => {
-    if (layoutMode === "auto" && rebalanceAreaDisplays()) applyExtendedDesktopPartition();
+
     queueDesktopStateBroadcast();
   });
 
@@ -8187,12 +6117,13 @@ function installInstance(id, base, bind = true) {
   appState[id] = 'closed';
   appMaximizedState[id] = false;
   $('.workspace-zone').append(frame);
+  appFrameNodes.set(id, frame);
   if (base === 'elisa') {
     let playing = false;
     frame.querySelectorAll('[data-music="play"]').forEach(button => button.addEventListener('click', () => { playing = !playing; button.innerHTML = icon(playing ? 'i-pause' : 'i-play'); button.setAttribute('aria-pressed', String(playing)); }));
   }
   if (bind) prepareWindows({querySelectorAll: selector => selector === '[data-app-frame]' ? [frame] : frame.querySelectorAll(selector)});
-  applyAppPrimaryColors();
+  applyAppPrimaryColors(frame);
 }
 Object.entries(instanceDefinitions).forEach(([id, base]) => installInstance(id, base, false));
 function createAppInstance(name) {
@@ -8242,7 +6173,7 @@ function workspaceHotbarNames() {
   // Fullscreen children keep a return icon on their originating desktop.
   // They follow visible windows, without taking a slot from their hidden rect.
   const fullscreen = names.filter(name => !ordered.includes(name) && fullscreenHotbarBond(name));
-  // Minimized windows travel with the Apps Area, including its icon-only rail.
+  // Parked windows stay available in the Apps widget.
   return [...ordered,
     ...fullscreen,
     ...names.filter(name => appState[name] === 'minimized' && (globalThis.SpatialDisplayRoleBridge?.windowInCurrentContext?.(name) ?? desktopPages.inColumn(activeWorkspace, name)))];
@@ -8504,11 +6435,8 @@ moveAppWorkspace = reversiblePlacement(moveAppWorkspace, name => appInfo[name].l
   return () => JSON.stringify(workspaceContent[destination]?.frames?.[id]) === transferred;
 });
 transferAppToDisplay = reversiblePlacement(transferAppToDisplay, name => appInfo[name].label + " moved to another display");
-transferAreaToDisplay = reversiblePlacement(transferAreaToDisplay, name => areaLabel(name) + " moved to another display");
 
 prepareNoteSync();
-prepareAreaWindows();
-prepareSystemRailExpansion();
 prepareProjectSpaces();
 prepareDesktopPages();
 prepareOverviewViews();
@@ -8535,12 +6463,11 @@ requestAnimationFrame(() => {
   restoreWorkspaceWindowLayout();
   windowViewportLockReady = true;
   if (frontApp && desktopHasWindowFocus) bringToFront(frontApp);
-  if (layoutMode === "auto") scheduleSpatialAutoLayout();
+
   scheduleWindowTiling();
 });
 
 window.addEventListener("resize", () => {
-  cancelAreaPointerInteraction?.();
   cancelWindowPointerInteraction?.();
   placementUndoEpoch++;
   suspendWindowViewportLock = true;
@@ -8551,10 +6478,7 @@ window.addEventListener("resize", () => {
   suspendWindowViewportLock = false;
   refreshIntentAreas();
   renderTileLayout(frontApp);
-  if (layoutMode === "auto") {
-    if (rebalanceAreaDisplays()) applyExtendedDesktopPartition();
-    scheduleSpatialAutoLayout();
-  }
+  schedulePanelLayout();
   positionNotificationPeek();
 });
 
@@ -8598,7 +6522,7 @@ function renderAvailableProjectLibrary() {
   if (!projectColumnActive()) $("#projectAreaContext").textContent = workspaceProfiles[activeWorkspace].label + " · " + entries.length + (entries.length === 1 ? " project available" : " projects available");
   list.innerHTML = entries.map(([id, project]) => {
     const detail = projectLocationMeta(project).label + " · " + project.resources.length + " resources";
-    return '<button type="button" class="surface-key project-library-entry" data-open-area-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';
+    return '<button type="button" class="surface-key project-library-entry" data-open-project="' + escapeHtml(id) + '" aria-label="' + escapeHtml("Open " + project.name) + '" title="' + escapeHtml(project.name + " · " + project.root) + '" style="--library-project-accent:' + escapeHtml(project.accent) + '"><span class="project-library-icon">' + icon(project.icon || "i-folder") + '</span><span class="project-library-copy"><b>' + escapeHtml(project.name) + '</b><small>' + escapeHtml(detail) + '</small></span></button>';
   }).join("") || '<div class="project-library-empty"><p>No projects yet.</p></div>';
   prepareControlSemantics(list);
 }

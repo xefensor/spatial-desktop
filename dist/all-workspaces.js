@@ -1,4 +1,4 @@
-/* Persistent notification routing; presentation lives in System and its Area. */
+/* Persistent notification routing for native widgets and the System overview. */
 (function(root){
   'use strict';
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -136,7 +136,7 @@
       const owner=desktopPages.columnOf(activeWorkspace,app);
       if(owner!=='workspace'&&!openProjectNames().includes(owner))activateProject(owner,false);else changeDesktopColumn(owner,false);
       const finish=()=>{if(workspace!==null&&activeWorkspace!==workspace)return;if(desktopPageAnimating){setTimeout(finish,60);return;}openApp(app);};finish();
-    }else revealSystemRailWidget('#notificationWidget');
+    }else root.SpatialPanels?.openApplet?.(workspace===null?'workspace-alerts':'notifications');
   }
   function setDoNotDisturb(value){notifications.setDoNotDisturb(value);if(value){if(typeof hideNotificationPeek==='function')hideNotificationPeek();document.querySelectorAll('.has-notification-attention,.has-new-attention,.is-new-attention').forEach(node=>node.classList.remove('has-notification-attention','has-new-attention','is-new-attention'));}save();return notifications.doNotDisturb();}
   function invokeAction(noteId,actionId){
@@ -162,8 +162,8 @@
   }
   const originalSaveApps=saveAppWindows;
   saveAppWindows=function(...args){checkDownloads();originalSaveApps(...args);schedule();};
-  $('#notificationList').addEventListener('click',event=>{
-    const dismiss=event.target.closest('.dismiss-button'),note=dismiss?.closest('[data-notification-id]');
+  document.addEventListener('click',event=>{
+    const dismiss=event.target.closest('#notificationList .dismiss-button,#systemWideNotificationList .dismiss-button'),note=dismiss?.closest('[data-notification-id]');
     if(note){notifications.dismiss(note.dataset.notificationId);save();}
   },true);
   window.addEventListener('storage',event=>{if(event.key===key){try{notifications.merge(JSON.parse(event.newValue||'{}'));renderLocal();schedule();listeners.forEach(listener=>listener());}catch{}}});

@@ -55,17 +55,13 @@ body[data-theme="light"] .universal-search .overview-carousel :is(.overview-proj
 .overview-carousel .overview-now-playing {grid-area:media}
 .overview-carousel .overview-connect-widget {grid-area:link;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .overview-carousel .overview-notifications-widget {grid-area:notifications}
-.overview-carousel .overview-areas-widget {grid-area:areas;align-self:start}
+.overview-carousel .overview-panels-widget {grid-area:areas;align-self:start}
 .overview-carousel .overview-widget h3 {font-size:14px;font-weight:600;line-height:1.4}
 .overview-carousel .overview-widget header {gap:10px;min-width:0}
-.overview-carousel .overview-widget :is(header small,.overview-area-row small) {font-size:12px;line-height:1.45}
 .overview-carousel .overview-quick-grid {gap:8px!important;margin-top:12px}
 .overview-carousel .overview-quick-grid .quick-toggle {min-height:42px;gap:6px;padding:8px;font-size:12px}
-.overview-carousel .overview-areas-widget>header {align-items:flex-start;margin-bottom:14px}
-.overview-carousel .overview-areas-widget>header>span {min-width:0;gap:8px}
-.overview-carousel .overview-area-row {grid-template-columns:24px minmax(0,1fr) auto;min-height:70px!important;gap:10px!important;padding:10px 0}
-.overview-carousel .overview-area-row b {font-size:12px;font-weight:600;white-space:normal;line-height:1.4}
-.overview-carousel .overview-area-row>button {min-width:48px;height:32px!important;font-size:12px}
+.overview-carousel .overview-panels-widget>header {align-items:flex-start;margin-bottom:14px}
+.overview-carousel .overview-panels-widget>header>span {min-width:0;gap:8px}
 .overview-carousel .overview-agenda-widget>button {min-height:58px;padding:10px;gap:10px;margin-top:6px}
 .overview-carousel .overview-agenda-widget>button b {font-size:12px;font-weight:600;line-height:1.5;white-space:normal}
 .overview-carousel .overview-agenda-widget>button small {font-size:11px;line-height:1.5;white-space:normal}
@@ -113,35 +109,29 @@ body[data-theme="light"] .universal-search .overview-carousel :is(.overview-proj
 .universal-search .universal-result b {font-size:13px;font-weight:600;line-height:1.4}
 .universal-search .universal-result small {font-size:12px;line-height:1.5;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 body[data-theme="light"] .universal-search button.control-toggle:is([aria-pressed="true"],[aria-selected="true"]) :is(b,span:not(:has(svg))) {color:var(--sd-glass-text)!important}
-
-/* Docked sheets: wrapping controls, readable sources and calmer empty states. */
-.area-window:not([data-area-state="rail"]) .area-window-bar {min-height:44px}
-.project-area:not([data-area-state="rail"]) .area-window-actions {gap:3px}
-.project-area:not([data-area-state="rail"]) .area-window-key {width:26px;min-width:26px;height:28px;padding:4px}
-.area-window:not([data-area-state="rail"]) .widget-heading {min-height:32px;margin-bottom:8px}
-.systems-zone:not([data-area-state="rail"]) .system-widget {padding-block:12px}
-.systems-zone:not([data-area-state="rail"]) .notification {gap:9px;padding-block:10px}
-.systems-zone:not([data-area-state="rail"]) :is(.notification small,.device-row small,.next-event small) {font-size:12px;line-height:1.45}
-.systems-zone:not([data-area-state="rail"]) .notification b {font-size:13px;line-height:1.4}
-.systems-zone:not([data-area-state="rail"]) .next-event b {font-size:12px;line-height:1.5;white-space:normal}
-.systems-zone:not([data-area-state="rail"]) .calendar-week {font-size:11px;margin-bottom:5px}
-.systems-zone:not([data-area-state="rail"]) .calendar-grid button {font-size:12px;min-height:28px}
-.project-area:not([data-area-state="rail"]) .memory-toolbar {flex-wrap:wrap;gap:8px}
-.project-area:not([data-area-state="rail"]) .memory-select b {font-size:13px;line-height:1.45}
-.project-area:not([data-area-state="rail"]) :is(.memory-scope,.memory-saved-time,.memory-source-address,.memory-help) {font-size:12px;line-height:1.5}
-.project-area:not([data-area-state="rail"]) .memory-kind {font-size:10px!important;letter-spacing:.04em}
-.project-area:not([data-area-state="rail"]) .memory-item {margin-bottom:6px}
-.project-area:not([data-area-state="rail"]) .project-library-empty {font-size:13px;line-height:1.6;padding:16px 8px}
-.apps-zone:not([data-area-state="rail"]) .mini-empty {padding:18px 12px;font-size:12px;line-height:1.6;color:var(--sd-glass-muted)}
-.ai-area:not([data-area-state="rail"]) .ai-folder {gap:8px;font-size:12px;flex-wrap:wrap}
-.ai-area:not([data-area-state="rail"]) .ai-folder select {min-width:100px;height:32px}
-.ai-area:not([data-area-state="rail"]) .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) {display:flex;flex-direction:column;justify-content:center}
-.ai-area:not([data-area-state="rail"]) .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) .ai-empty {flex-direction:column;text-align:center;align-items:center;padding:20px 10px;gap:12px}
-.ai-area .ai-empty>svg {color:var(--role-ai);width:28px;height:28px}
-.ai-area .ai-empty {font-size:13px;line-height:1.5}
-.ai-area :is(.ai-empty small,.ai-attachment p,.ai-demo-output>header,.ai-output-hint,.ai-turn-sources,.ai-composer small) {font-size:11.5px;line-height:1.5}
-.ai-area :is(.ai-request>p,.ai-demo-output>p) {font-size:13px;line-height:1.65}
-.ai-area .ai-composer textarea {min-height:64px;padding:10px 12px;line-height:1.5}
+.system-widget-content .system-widget {padding-block:12px}
+.system-widget-content .notification {gap:9px;padding-block:10px}
+.system-widget-content :is(.notification small,.device-row small,.next-event small) {font-size:12px;line-height:1.45}
+.system-widget-content .notification b {font-size:13px;line-height:1.4}
+.system-widget-content .next-event b {font-size:12px;line-height:1.5;white-space:normal}
+.system-widget-content .calendar-week {font-size:11px;margin-bottom:5px}
+.system-widget-content .calendar-grid button {font-size:12px;min-height:28px}
+.files-widget .memory-toolbar {flex-wrap:wrap;gap:8px}
+.files-widget .memory-select b {font-size:13px;line-height:1.45}
+.files-widget :is(.memory-scope,.memory-saved-time,.memory-source-address,.memory-help) {font-size:12px;line-height:1.5}
+.files-widget .memory-kind {font-size:10px!important;letter-spacing:.04em}
+.files-widget .memory-item {margin-bottom:6px}
+.files-widget .project-library-empty {font-size:13px;line-height:1.6;padding:16px 8px}
+.apps-widget .mini-empty {padding:18px 12px;font-size:12px;line-height:1.6;color:var(--sd-glass-muted)}
+.assistant-widget .ai-folder {gap:8px;font-size:12px;flex-wrap:wrap}
+.assistant-widget .ai-folder select {min-width:100px;height:32px}
+.assistant-widget .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) {display:flex;flex-direction:column;justify-content:center}
+.assistant-widget .ai-chat:has(#aiAttachments:empty):has(#aiTranscript:empty) .ai-empty {flex-direction:column;text-align:center;align-items:center;padding:20px 10px;gap:12px}
+.assistant-widget .ai-empty>svg {color:var(--role-ai);width:28px;height:28px}
+.assistant-widget .ai-empty {font-size:13px;line-height:1.5}
+.assistant-widget :is(.ai-empty small,.ai-attachment p,.ai-demo-output>header,.ai-output-hint,.ai-turn-sources,.ai-composer small) {font-size:11.5px;line-height:1.5}
+.assistant-widget :is(.ai-request>p,.ai-demo-output>p) {font-size:13px;line-height:1.65}
+.assistant-widget .ai-composer textarea {min-height:64px;padding:10px 12px;line-height:1.5}
 
 /* Opaque app interiors share the same hierarchy. */
 .app-frame[data-app-kind] :is(.app-status,.note-status,.music-library-status,.terminal-context) {font-size:11px;line-height:1.45}

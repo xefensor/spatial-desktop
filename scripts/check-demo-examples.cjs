@@ -84,118 +84,44 @@ function sceneStore(seed = {}) {
 const freshScene = sceneStore();
 assert.equal(D.seedWorkspaces(freshScene.storage), true);
 const sceneApps = freshScene.read('spatial-workspace-app-states-v1');
-const sceneAreas = freshScene.read('spatial-workspace-area-layouts-v1');
 const sceneProjects = freshScene.read('spatial-workspace-project-states-v1');
 assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin', 'notes']);
 assert.equal(sceneProjects.general.project, null);
-assert.deepEqual(sceneAreas.general.hidden, {projects:true,apps:false,systems:false,ai:true});
-assert.equal(sceneAreas.general.sizes.left,280);assert.equal(sceneAreas.general.sizes.right,70);
-assert.equal(sceneAreas.general.preferred.apps,'expanded');assert.equal(sceneAreas.general.preferred.systems,'rail');
-assert.equal(sceneAreas.general.layoutMode,'manual');
 assert.equal(sceneProjects.school.project, 'research');
-assert.equal(sceneAreas.school.state.apps.edge, 'left');
-assert.equal(sceneAreas.work.state.projects.edge, 'left');
 assert.equal(sceneProjects.work.mode, 'default');
 assert.equal(sceneApps.gaming.elisa, 'minimized');
-assert.equal(sceneAreas.gaming.sizes.right, 70);
-for (const [workspace, layout] of Object.entries(sceneAreas)) {
-  if(workspace!=='general')assert.deepEqual(layout.state, D.defaultAreaDocks, workspace + ' keeps its existing side docks');
+// The opening desktop is composed by the same native panel/widget model used
+// at runtime. Scene content never creates a second layout system.
+const Panels = require('../dist/panel-widgets.js');
+const defaultPanels = Panels.defaults(), savedDefaultPanels = copy(defaultPanels);
+assert.equal(defaultPanels.panels[0].mode,'expanded');
+assert.equal(defaultPanels.panels[1].mode,'compact');
+assert.deepEqual(defaultPanels.panels[0].widgets,['apps','clock','launcher','notifications','calendar','controls']);
+assert.deepEqual(defaultPanels.panels[1].widgets.slice(0,2),['files','assistant']);
+const defaultComposition=Panels.layout(defaultPanels,{width:1440,height:900,display:1,displays:1});
+const leftComposition=defaultComposition.panels['panel-left'];
+assert.equal(leftComposition.widgets.apps.mode,'expanded','Apps has the main expanded view');
+assert.equal(leftComposition.widgets.clock.mode,'expanded','The current time remains readable');
+for(const id of ['launcher','notifications','calendar','controls'])assert.equal(leftComposition.widgets[id].mode,'compact',id+' starts as a tray icon');
+assert.equal(leftComposition.widgets.controls.y+leftComposition.widgets.controls.height,leftComposition.height,'The system row finishes at the panel bottom');
+assert(leftComposition.widgets.apps.y+leftComposition.widgets.apps.height<leftComposition.widgets.clock.y,'Apps and the bottom controls have separate allocations');
+for(const [width,height] of [[1440,900],[920,700],[700,500]])for(const mode of ['expanded','compact']){
+ const composition=Panels.layout(Panels.updatePanel(defaultPanels,'panel-left',{mode}),{width,height,display:1,displays:1});
+ assert(composition.insets.left+composition.insets.right<width,'Panel fitting retains a desktop canvas');
+ for(const panel of Object.values(composition.panels))for(const widget of Object.values(panel.widgets)){
+  assert(widget.x>=0&&widget.y>=0,'Default widget stays within its panel');
+  assert(widget.x+widget.width<=panel.width+.01&&widget.y+widget.height<=panel.height+.01,'Default widget cannot extend beyond the panel');
+ }
 }
-const generalLeft=Object.entries(sceneAreas.general.state).filter(([name,dock])=>dock.edge==='left'&&!sceneAreas.general.hidden[name]).sort((a,b)=>a[1].order-b[1].order).map(([name])=>name);
-assert.deepEqual(generalLeft,['apps','systems'],'General starts with Compact System below Expanded Apps in one left panel');
-const compactGeneral=require('../dist/compact-area-layout.js').allocate({names:generalLeft,states:sceneAreas.general.preferred,axis:'vertical',crossSize:sceneAreas.general.sizes.left,extent:900});
-assert.equal(compactGeneral.apps.state,'expanded');assert.equal(compactGeneral.systems.state,'rail');
-assert.equal(compactGeneral.systems.offset+compactGeneral.systems.extent,900,'System finishes at the bottom of the panel');
-const oldAreaLayout = {
-  state: {apps:{edge:'left',order:0},projects:{edge:'left',order:1},systems:{edge:'right',order:0},ai:{edge:'bottom',order:0}},
-  sizes: {left:68,right:280,bottom:310}, hidden:{ai:false}, manual:{left:true,right:true,bottom:true}
-};
-const migratedAreas = D.migrateAreaLayout(oldAreaLayout);
-assert.deepEqual(migratedAreas.state, D.defaultAreaDocks);
-assert.deepEqual(migratedAreas.sizes, oldAreaLayout.sizes, 'Orientation migration keeps resized borders');
-assert.deepEqual(migratedAreas.hidden, oldAreaLayout.hidden);
-assert.equal(oldAreaLayout.state.ai.edge, 'bottom', 'Incoming layout is not mutated');
-assert.deepEqual(D.migrateAreaLayout(migratedAreas), migratedAreas, 'Orientation migration is idempotent');
-const editedAreas = copy(oldAreaLayout); editedAreas.state.projects.edge = 'top';
-assert.equal(D.migrateAreaLayout(editedAreas).state.projects.edge,'left','Retired top docking joins the left side');
-assert.equal(D.migrateAreaLayout(editedAreas).state.ai.edge,'right','Retired bottom docking joins the right side');
-const laterEdit = copy(migratedAreas); laterEdit.state.ai = {edge:'bottom',order:0};
-assert.equal(D.migrateAreaLayout(laterEdit).state.ai.edge,'right','Horizontal docking from a later session also migrates');
-
-// Removing top/bottom docking preserves the user's actual side columns and
-// app data, appends retired groups in order, and never transposes width shares.
-const customHorizontal={orientationVersion:1,
-  state:{apps:{edge:'top',order:2},projects:{edge:'left',order:7},systems:{edge:'bottom',order:1},ai:{edge:'bottom',order:0}},
-  sizes:{left:415,right:490,top:300,bottom:290},
-  preferred:{apps:'expanded',projects:'rail',systems:'rail',ai:'expanded'},hidden:{apps:false,projects:true,systems:false,ai:true},
-  shares:{left:{projects:.7},top:{apps:1},bottom:{ai:.6,systems:.4}},
-  expandedMain:{left:{projects:510},top:{apps:1000},bottom:{ai:800,systems:600}},
-  expanded:{apps:{top:300},projects:{left:415},ai:{bottom:290}},
-  contents:{note:'User note',files:['keep.txt']},manual:{left:true,right:false,top:true,bottom:false}};
-const originalHorizontal=copy(customHorizontal),sideLayout=D.migrateSideAreaLayout(customHorizontal);
-assert.deepEqual(customHorizontal,originalHorizontal,'Side migration never mutates the incoming snapshot');
-assert.deepEqual(sideLayout.state,{apps:{edge:'left',order:1},projects:{edge:'left',order:0},systems:{edge:'right',order:1},ai:{edge:'right',order:0}},'Retired groups join their matching side after existing Areas in order');
-assert.equal(sideLayout.sizes.left,415,'An existing side keeps its chosen width');
-assert.equal(sideLayout.sizes.right,300,'An empty side gets a usable vertical default rather than a retired row thickness');
-for(const key of ['preferred','hidden','contents','manual'])assert.deepEqual(sideLayout[key],originalHorizontal[key],key+' survives docking migration');
-assert.deepEqual(sideLayout.shares,{left:{projects:.7}},'Horizontal width ratios never become vertical height ratios');
-assert.deepEqual(sideLayout.expandedMain,{left:{projects:510}},'Existing vertical restore heights survive without importing horizontal widths');
-assert.deepEqual(sideLayout.expanded.apps,{left:415});assert.deepEqual(sideLayout.expanded.ai,{right:300});
-assert.deepEqual(D.migrateAreaLayout(sideLayout),sideLayout,'Migrated side layout is stable after reload');
-assert.equal(D.migrateSideAreaLayout(sideLayout),sideLayout,'A side-only layout does not need cloning or migration');
-for(const edge of ['top','bottom']){
-  const legacy={orientationVersion:1,state:Object.fromEntries(['apps','projects','systems','ai'].map((name,order)=>[name,{edge,order}])),preferred:{apps:'rail'}};
-  const converted=D.migrateAreaLayout(legacy),target=edge==='top'?'left':'right';
-  assert(Object.values(converted.state).every(dock=>dock.edge===target),'A whole retired '+edge+' row joins the '+target+' panel');
-  assert.deepEqual(Object.values(converted.state).map(dock=>dock.order),[0,1,2,3]);
-  assert.deepEqual(converted.preferred,legacy.preferred);
-}
-
-// Refresh only the former shipped General Area layout, once, without reseeding work.
-const formerGeneral=copy(D.scenarios.general.areas);
-formerGeneral.state=copy(D.defaultAreaDocks);
-Object.assign(formerGeneral.sizes,{left:68,right:280});
-Object.assign(formerGeneral.hidden,{projects:false,ai:false});
-formerGeneral.preferred={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
-formerGeneral.expanded={systems:{right:280},ai:{right:280}};
-function oldGeneralScene(general=formerGeneral,assignments={areas:{apps:1,systems:1,projects:1,ai:1}}){return sceneStore({
-  'spatial-demo-scenes-v1':'4','spatial-demo-steam-v1':'1','spatial-demo-gaming-parent-v1':'1','spatial-demo-window-order-v1':'1',
-  'spatial-workspace-area-layouts-v1':JSON.stringify({general:copy(general),work:copy(D.scenarios.work.areas)}),
-  'spatial-workspace-display-assignments-v1':JSON.stringify({general:assignments}),
-  'spatial-workspace-app-states-v1':JSON.stringify({general:{notes:'open'}})
-});}
-const generalUpgrade=oldGeneralScene();D.seedWorkspaces(generalUpgrade.storage);
-assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas);
-assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1').work,D.scenarios.work.areas);
-assert.deepEqual(generalUpgrade.read('spatial-workspace-app-states-v1'),{general:{notes:'open'}});
-const fittedGeneral=copy(formerGeneral);fittedGeneral.sizes.right=300;fittedGeneral.expanded={systems:{right:300},ai:{right:300}};
-const fittedUpgrade=oldGeneralScene(fittedGeneral);D.seedWorkspaces(fittedUpgrade.storage);
-assert.deepEqual(fittedUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas,'The former fitted default migrates too');
-const laterGeneral=generalUpgrade.read('spatial-workspace-area-layouts-v1');laterGeneral.general.sizes.left=360;
-generalUpgrade.storage.setItem('spatial-workspace-area-layouts-v1',JSON.stringify(laterGeneral));D.seedWorkspaces(generalUpgrade.storage);
-assert.deepEqual(generalUpgrade.read('spatial-workspace-area-layouts-v1'),laterGeneral,'Later resizing survives reload');
-for(const customize of [value=>value.sizes.left=340,value=>value.state.apps.edge='top',value=>value.hidden.projects=true,
-  value=>value.preferred.apps='expanded',value=>value.expanded.apps={left:400},value=>value.layoutMode='auto']){
-  const custom=copy(formerGeneral);customize(custom);const store=oldGeneralScene(custom);D.seedWorkspaces(store.storage);
-  assert.deepEqual(store.read('spatial-workspace-area-layouts-v1').general,custom,'Customized General Areas survive');
-}
-const extendedGeneral=oldGeneralScene(formerGeneral,{areas:{apps:2}});D.seedWorkspaces(extendedGeneral.storage);
-assert.deepEqual(extendedGeneral.read('spatial-workspace-area-layouts-v1').general,formerGeneral,'Explicit display placement survives');
-
-const previousOpening=copy(D.scenarios.general.areas);previousOpening.state=copy(D.defaultAreaDocks);
-function previousOpeningScene(general=previousOpening){
-  const store=oldGeneralScene(general);store.storage.setItem('spatial-demo-general-areas-v1','1');return store;
-}
-const previousOpeningUpgrade=previousOpeningScene();D.seedWorkspaces(previousOpeningUpgrade.storage);
-assert.deepEqual(previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1').general,D.scenarios.general.areas,'The previous two-panel opening updates even after its earlier migration');
-for(const customize of [value=>value.sizes.left=360,value=>value.preferred.systems='expanded',value=>value.hidden.ai=false,
-  value=>value.state.systems.order=2,value=>value.shares={left:{apps:.7}},value=>value.expanded={apps:{left:360}}]){
-  const custom=copy(previousOpening);customize(custom);const store=previousOpeningScene(custom);D.seedWorkspaces(store.storage);
-  assert.deepEqual(store.read('spatial-workspace-area-layouts-v1').general,custom,'Edited two-panel opening remains unchanged');
-}
-const afterOpening=previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1');afterOpening.general.state.systems.edge='right';
-previousOpeningUpgrade.storage.setItem('spatial-workspace-area-layouts-v1',JSON.stringify(afterOpening));D.seedWorkspaces(previousOpeningUpgrade.storage);
-assert.deepEqual(previousOpeningUpgrade.read('spatial-workspace-area-layouts-v1'),afterOpening,'The new opening migration runs once');
+assert.deepEqual(defaultPanels,savedDefaultPanels,'Fitting the demo leaves saved widget preferences unchanged');
+assert.equal(freshScene.storage.getItem('spatial-workspace-area-layouts-v1'),null,'Demo scenes no longer seed the retired Areas layout');
+assert.equal(freshScene.storage.getItem('spatial-demo-general-areas-v1'),null,'Demo scenes do not run the retired opening-layout migration');
+for(const name of ['defaultAreaDocks','migrateAreaLayout','migrateSideAreaLayout'])assert(!Object.hasOwn(D,name),'No obsolete Areas layout exports: '+name);
+for(const example of Object.values(D.scenarios))assert(!Object.hasOwn(example,'areas'),'Scene content has no retired layout configuration');
+const nativeLayout=Panels.addSpacer(Panels.updatePanel(defaultPanels,'panel-left',{edge:'bottom',size:317}),'panel-left',1);
+const existingPanels=sceneStore({'spatial-widget-panels-v1':JSON.stringify({general:nativeLayout}),'spatial-demo-scenes-v1':'4'});
+D.seedWorkspaces(existingPanels.storage);
+assert.deepEqual(existingPanels.read('spatial-widget-panels-v1'),{general:nativeLayout},'Refreshing demo content leaves the native panel layout and Spacer untouched');
 
 assert.equal(Object.keys(D.projects.research.modes).length, 1);
 const tiles = freshScene.read('spatial-split-layouts-v1');
@@ -243,9 +169,9 @@ const emptyLibrary = sceneStore({ 'spatial-project-spaces-v2': '{}' });
 D.seedWorkspaces(emptyLibrary.storage);
 assert.deepEqual(emptyLibrary.read('spatial-project-spaces-v2'), {});
 assert.equal(emptyLibrary.read('spatial-workspace-project-states-v1').school.project, null);
-assert.equal(emptyLibrary.read('spatial-workspace-area-layouts-v1').school.hidden.projects, false);
+assert.equal(emptyLibrary.storage.getItem('spatial-workspace-area-layouts-v1'),null,'An empty project library does not recreate retired layouts');
 assert.equal(D.migrateProject('plasma', { ...D.projects.plasma, root: '/home/demo/Projects/website-launch', originWorkspace: 'general' }).originWorkspace, 'work');
-console.log('Demo scenes passed: distinct activities, two General desktops, persistent Project Area, single-mode research, one-time migration, custom data and deleted library.');
+console.log('Demo scenes passed: distinct activities, two General desktops, native panel composition, single-mode research, one-time migration, custom data and deleted library.');
 
 // Exercise the actual storage adapter, including the older content-only key.
 const fs = require('node:fs');
@@ -322,7 +248,7 @@ assert.equal(vm.runInContext('normalizedWorkspaceProjects({}, "plasma", "gaming"
 vm.runInContext('delete projectSpaces.retold; const cleaned = normalizedWorkspaceProjects(workspaceProjectStates);', ctx);
 assert.equal(vm.runInContext('cleaned.work.project', ctx), null, 'Deleted Projects never reopen from a stale Workspace');
 
-// Exercise real Workspace switching, including restoration before Area/window layout.
+// Exercise real Workspace switching, including native content restoration before panel/window layout.
 const ui = storageAdapter({ 'spatial-workspace-project-states-v1': JSON.stringify({ general: { project: 'plasma', mode: 'visual' }, school: { project: null, mode: null } }) });
 const elements = new Map();
 function element(id) {
@@ -350,7 +276,7 @@ Object.assign(ui.context, {
   hideNotificationPeek() {}, syncNotifications() {}, setFocusRunning(running) { ui.context.focusRunning = running; },
   persistWorkspaceAppStates() { ui.context.workspaceAppStates[ui.context.activeWorkspace] = { ...ui.context.appState }; },
   loadLayout(name) { calls.push(['windows', name, vm.runInContext('activeProjectName', ui.context)]); },
-  applyAreaSession(name) { calls.push(['areas', name, vm.runInContext('activeProjectName', ui.context)]); },
+  applyAreaSession(name) { calls.push(['panels', name, vm.runInContext('activeProjectName', ui.context)]); },
   saveAreaLayout() {}, saveLayout() {},
   refreshWorkspaceContext() {}, workspaceFavoriteMarkup() {}, escapeHtml: x => x, icon: () => '', appArt: () => '',
   applyAppPrimaryColors() {}, prepareControlSemantics() {}, ensureBondedFullscreenDesktops() {}, syncApps() {},
@@ -367,8 +293,8 @@ ui.context.renderDesktopContextColumns = () => {}; // Real header rendering is c
 ui.context.renderFullscreenPeek = () => {}; // Real preview rendering is covered by the fullscreen integration suite.
 vm.runInContext('defaultAreaContent = snapshotWorkspaceAreaContent();', ui.context);
 element('#notificationList').innerHTML = 'General notification';
-element('.system-scroll-region').scrollTop = 120;
-widgets[1].hidden = true;
+element('#miniStack').scrollTop = 120;
+element('#projectSpaceContent').scrollTop = 64;
 ui.context.focusRunning = true;
 ui.context.focusSeconds = 1400;
 element('#timerWidget').hidden = false;
@@ -376,22 +302,23 @@ vm.runInContext('renderWorkspace("school", false);', ui.context);
 assert.equal(vm.runInContext('activeProjectName', ui.context), null);
 assert.equal(element('project').hidden, true);
 assert.equal(element('#notificationList').innerHTML, '', 'School gets its own notifications');
-assert.equal(element('.system-scroll-region').scrollTop, 0);
-assert.equal(widgets[1].hidden, false, 'General widget removal does not alter School');
+assert.equal(element('#miniStack').scrollTop, 0,'School gets its own Parked viewport position');
+assert.equal(element('#projectSpaceContent').scrollTop, 0,'School gets its own Files viewport position');
 assert.equal(ui.context.focusRunning, false, 'General timer does not become School’s timer');
-assert.deepEqual(calls.slice(0, 2), [['windows', 'school', null], ['areas', 'school', null]], 'Project context changes before restoring Areas and tiling');
+assert.deepEqual(calls.slice(0, 2), [['windows', 'school', null], ['panels', 'school', null]], 'Project context changes before restoring panels and tiling');
 element('#notificationList').innerHTML = 'School notification';
-element('.system-scroll-region').scrollTop = 24;
+element('#miniStack').scrollTop = 24;
+element('#projectSpaceContent').scrollTop = 12;
 vm.runInContext('renderWorkspace("general", false);', ui.context);
 assert.equal(vm.runInContext('activeProjectName', ui.context), 'plasma');
 assert.equal(element('#notificationList').innerHTML, 'General notification');
-assert.equal(element('.system-scroll-region').scrollTop, 120);
-assert.equal(widgets[1].hidden, true);
+assert.equal(element('#miniStack').scrollTop, 120,'General restores its own Parked viewport');
+assert.equal(element('#projectSpaceContent').scrollTop, 64,'General restores its own Files viewport');
 assert.equal(ui.context.focusRunning, true);
 assert.ok(ui.context.focusSeconds <= 1400 && ui.context.focusSeconds >= 1399);
 raf.forEach(fn => fn());
 assert.deepEqual(calls.filter(call => call[0] === 'restore'), [['restore', 'general']], 'A delayed callback from the previous Workspace cannot relayout the current one');
-console.log('Workspace sessions passed: isolated Projects/Modes, legacy migration, reload, widget visibility, notifications, timer, scroll and switch ordering.');
+console.log('Workspace sessions passed: isolated Projects/Modes, legacy migration, reload, notifications, timer, Parked/Files scroll and switch ordering.');
 
 // A sample filename rename must never rewrite a stylesheet or script URL.
 const dist = path.join(__dirname, '../dist');

@@ -57,7 +57,7 @@ function fixture(){
   assert.equal(c.localDisplaySlot(),1);assert.equal(c.extendedDesktopActive(),false);
   assert.notEqual(f.setup().signature,initial.signature,'An actually expired peer releases its monitor setup');
   assert.equal(f.bodyClasses.has('is-session-synced'),false);assert.equal(f.context.textContent,'Work workspace');
-  assert.equal(f.system.title,'');assert.equal(f.system.attributes['aria-label'],'System area');
+  assert.equal(f.system.title,'');assert.equal(f.system.attributes['aria-label'],'System controls');
 }
 {
   const f=fixture();f.presence();const initial=f.setup();

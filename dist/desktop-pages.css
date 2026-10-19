@@ -1,5 +1,5 @@
-.apps-zone .workspace-overview{--state-tone:var(--workspace-accent)}
-body[data-theme] .apps-zone .workspace-overview svg{color:var(--desktop-column-accent,var(--workspace-accent))!important}
+.apps-widget .workspace-overview{--state-tone:var(--workspace-accent)}
+body[data-theme] .apps-widget .workspace-overview svg{color:var(--desktop-column-accent,var(--workspace-accent))!important}
 
 /* One workspace/Overview control also identifies the current scroll desktop. */
 .workspace-overview #desktopPageNumber{
@@ -7,10 +7,6 @@ body[data-theme] .apps-zone .workspace-overview svg{color:var(--desktop-column-a
   font:700 9px/1 system-ui,sans-serif;color:var(--sd-glass-text)!important;
   background:var(--sd-glass-face);
 }
-.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"])>.area-window-bar{
-  flex-basis:44px;width:44px;min-width:44px;
-}
-.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar{min-height:0}
 .desktop-page-ghost{position:absolute;inset:0;pointer-events:none;z-index:100;overflow:hidden}
 .desktop-page-ghost *{pointer-events:none!important}
 .workspace-zone[data-desktop-focused="true"]{cursor:default}
@@ -79,16 +75,6 @@ body[data-theme] .desktop-context-header button.desktop-context-column:hover{bac
   --desktop-page-rail-width:24px;
   --desktop-page-rail-left-width:var(--desktop-page-rail-width);
   --desktop-page-rail-right-width:var(--desktop-page-rail-width);
-}
-/* Each edge follows its visible docked Areas on this display. A vacant edge
-   has neither a marker strip nor reserved icon space beside the windows. */
-.desktop-shell:not(:has(>[data-area-window][data-dock-edge="left"]:not([hidden],.is-on-other-display,.is-intent-hidden,.is-intent-overlay,.is-auto-yielding))){
-  --desktop-page-rail-left-width:0px;
-  --desktop-page-rail-left-display:none;
-}
-.desktop-shell:not(:has(>[data-area-window][data-dock-edge="right"]:not([hidden],.is-on-other-display,.is-intent-hidden,.is-intent-overlay,.is-auto-yielding))){
-  --desktop-page-rail-right-width:0px;
-  --desktop-page-rail-right-display:none;
 }
 html[data-desktop-markers="lines"] .desktop-shell{--desktop-page-rail-width:0px}
 html[data-guide-desktops="false"] .desktop-shell,
@@ -180,9 +166,6 @@ body[data-theme] .universal-search button.desktop-column-page.is-fullscreen-page
 .desktop-column-page.is-fullscreen-page b svg{width:13px;height:13px;flex:none;color:var(--column-accent)}
 .desktop-page-mark.is-fullscreen-mark{border-style:dashed}
 .overview-window.is-fullscreen-window .overview-window-state{color:var(--overview-app)!important;font-weight:650}
-/* Only the game and explicitly opened system overlays inhabit this page.
-   Dock preferences remain untouched, including in Manual mode. */
-body.is-fullscreen-desktop .desktop-shell > :is([data-area-window],.desktop-context-header,.desktop-page-rail,#intentAreaEdges){display:none!important}
 /* Keep the canvas measurable for the split fitter; the fullscreen game is
    reparented directly into the shell, outside this invisible canvas. */
 body.is-fullscreen-desktop .workspace-zone{visibility:hidden!important;pointer-events:none}
@@ -203,9 +186,9 @@ body[data-theme="light"] .overview-window.is-fullscreen-window .overview-window-
 body.is-fullscreen-desktop #overviewContext{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.3}
 
 /* A live return link, also visible when Apps uses its compact icon rail. */
-body[data-theme] .apps-zone .app-key > .fullscreen-hotbar-mark{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:16px;height:16px;padding:0;background:var(--sd-glass-face);color:var(--app-primary);border:1px solid currentColor;border-radius:2px;overflow:visible}
-body[data-theme="light"] .apps-zone .app-key > .fullscreen-hotbar-mark{color:color-mix(in srgb,var(--app-primary) 40%,#183019)}
-.apps-zone .fullscreen-hotbar-mark svg{width:11px;height:11px}
+body[data-theme] .apps-widget .app-key > .fullscreen-hotbar-mark{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:16px;height:16px;padding:0;background:var(--sd-glass-face);color:var(--app-primary);border:1px solid currentColor;border-radius:2px;overflow:visible}
+body[data-theme="light"] .apps-widget .app-key > .fullscreen-hotbar-mark{color:color-mix(in srgb,var(--app-primary) 40%,#183019)}
+.apps-widget .fullscreen-hotbar-mark svg{width:11px;height:11px}
 
 /* The next fullscreen surface is physically below its parent canvas. The
    resting strip has its own space; hover/focus only lifts its preview. */

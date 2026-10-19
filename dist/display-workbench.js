@@ -1,8 +1,8 @@
-/* Display control lives in the normal Assistant Area. Side space supplies a
+/* Display control lives in the Assistant widget. Side space supplies a
    scoped display permission; chat, sources and task progress keep one owner. */
 (function(root){
   'use strict';
-  const area=document.querySelector('[data-area-window="ai"]'),content=area?.querySelector('.ai-content');if(!content)return;
+  const area=document.querySelector('[data-widget-source="assistant"]'),content=area?.querySelector('.ai-content');if(!content)return;
   const host=document.createElement('section');host.className='ai-display-controls';host.hidden=true;host.setAttribute('aria-label','Assistant display control');
   host.innerHTML=`
     <section class="display-assistant-control" data-display-control>
@@ -21,7 +21,7 @@
   const available=state=>state?.role==='side';
   const allowed=state=>Boolean(state?.space?.assistant?.allowed);
   let currentKey='',examplesOpen=false,examplesListKey='',selection=null,permissionBusy=false;
-  const interactive=()=>{for(let at=content;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true'||(at===area&&(area.dataset.areaState==='rail'||area.classList.contains('is-on-other-display'))))return false;return true;};
+  const interactive=()=>{for(let at=content;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true')return false;return true;};
   function showChat(){examplesOpen=false;content.dataset.displayExamples='closed';find('[data-display-examples]').hidden=true;host.dataset.displayExamples='closed';}
   function renderControl(state){
     const task=state.space?.assistant||{},permitted=allowed(state),user=!permitted||task.control==='user'||task.status==='paused';

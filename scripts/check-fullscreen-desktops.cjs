@@ -17,7 +17,7 @@ const ctx={desktopPages:Pages.create(),activeWorkspace:'gaming',appInfo:Object.f
  displayAssignmentsFor:()=>({apps:{game:1,browser:1,notes:2,terminal:2},areas:{apps:2}}),intentAreaPlan:{moves:{}},cloneDesktopState:copy,
  frameFor:name=>frames[name],document:{body:{classList:classes()}},window:{matchMedia:()=>({matches:true}),setTimeout(){}},$:node,$$:()=>[],
  placementUndoEpoch:0,cancelAreaPointerInteraction:null,desktopPageAnimating:false,tileInteraction:false,manualWindowInteraction:false,desktopHasWindowFocus:false,frontApp:'game',windowViewportLockReady:false,
- saveDesktopPages(){},saveTileSessions(){},saveLayout(){},returnCoveredApps(){},releaseBorrowedApp(){},refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},
+ schedulePanelLayout(){},saveDesktopPages(){},saveTileSessions(){},saveLayout(){},returnCoveredApps(){},releaseBorrowedApp(){},refreshIntentAreas(){},renderTileLayout(){},queueDesktopStateBroadcast(){},
  updateDesktopPageUi(){},focusDesktop(){},renderProjectSpace(){},captureWorkspaceContent(){},endSystemRailExpansion(){},layoutDockAreas(){},topOpenApp:()=>Object.keys(ctx.appState).find(name=>ctx.isLocalApp(name)&&ctx.appState[name]==='open'),
  bringToFront(name){ctx.frontApp=name;},showToast(){},syncApps(){for(const [name,frame]of Object.entries(frames))frame.hidden=ctx.appState[name]!=='open'||!ctx.isLocalApp(name);},
  appMaximizedState:{},autoTiledWindows:new Set(),windowGeometry:new Map(),layoutMode:'manual',

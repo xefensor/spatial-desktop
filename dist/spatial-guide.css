@@ -40,17 +40,16 @@ html[data-guide-level] .desktop-context-menu {z-index:11000!important}
 html[data-guide-all="false"] :is([data-universal-group="settings"],[data-universal-group="web"],.desktop-folder,.launcher-categories){display:none!important}
 html[data-guide-all="false"] .launcher-app:not([data-open-app]):not([data-launch-app="Spatial Guide"]),
 html[data-guide-all="false"] .universal-result[data-search-launch-app]:not([data-search-launch-app="Spatial Guide"]){display:none!important}
-html[data-guide-stash="false"] [data-area-window="projects"],
+html[data-guide-stash="false"] [data-widget-source="files"],
 html[data-guide-projects="false"] .desktop-context-header,
-html[data-guide-apps="false"] :is([data-area-window="apps"],[data-app-frame]),
-html[data-guide-systems="false"] [data-area-window="systems"]{display:none!important}
+html[data-guide-apps="false"] :is([data-widget-source="apps"],[data-app-frame]),
+html[data-guide-systems="false"] [data-widget-source="system"]{display:none!important}
 html[data-guide-empty-desktop="false"] #emptyWorkspace{display:none!important}
-html[data-guide-overview="false"] #allAppsToggle{visibility:hidden;pointer-events:none}
 html[data-guide-parking="false"] :is(.mini-section,[data-window-action="minimize"]){display:none!important}
 html[data-guide-desktops="false"] :is(.desktop-page-rail,.desktop-column-map,.desktop-column-hint){display:none!important}
 html[data-guide-workspaces="false"] :is(.workspace-switcher,.workspace-switcher-actions,.workspace-context-card,.other-workspaces){visibility:hidden!important;pointer-events:none}
 html[data-guide-projects="false"] :is(.overview-project-zone,.overview-projects-section){visibility:hidden!important;pointer-events:none}
-html[data-guide-projects="false"] :is(#projectLibraryList,[data-create-area-project],.project-pack-key,#manageProjectButton){display:none!important}
+html[data-guide-projects="false"] :is(#projectLibraryList,[data-create-project],.project-pack-key,#manageProjectButton){display:none!important}
 html[data-guide-folders="false"] .workspace-home-card{visibility:hidden!important;pointer-events:none}
 @keyframes guide-arrive {from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
 @media(max-width:800px){.guide-window{left:12px;top:auto;bottom:12px;width:350px;max-height:55dvh}.guide-content{padding:16px}.guide-content h1{font-size:21px}.guide-content p{font-size:12px}}

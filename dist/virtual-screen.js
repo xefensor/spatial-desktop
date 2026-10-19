@@ -70,7 +70,7 @@
     const session=sessionFor(name);
     if(session.fullscreen?.name===name)leaveAppFullscreen(session);
     delete session.floating?.[name];if(session.focus?.name===name)session.focus=null;
-    appMaximizedState[name]=false;saveTileSessions();syncApps();refreshIntentAreas();renderTileLayout(name);
+    appMaximizedState[name]=false;saveTileSessions();syncApps();schedulePanelLayout();renderTileLayout(name);
     if(isLocalApp(name))bringToFront(name);
     saveIndependentSessions();queueDesktopStateBroadcast(0);root.SpatialSteamOverview?.syncContext();
     showToast(appInfo[name].label+' · Gamescope tiled · 2560 × 1440 unchanged');

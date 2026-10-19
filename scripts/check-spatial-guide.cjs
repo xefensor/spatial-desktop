@@ -193,57 +193,22 @@ const literalReference='Open /home/demo/Assistant/brief.md or https://example.or
 assert.equal(proseContext.guideProseMarkup(literalReference),'<p>Open /home/demo/Assistant/brief.md or https://example.org/brief.html. Keep &lt;draft&gt; &amp; its sources.</p><p>Then return to Chat.</p>');
 
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
-const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
+const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observePanelLayout:G.observePanelLayout,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
-  areaPriority:['systems','apps','projects'],dockState:{systems:{edge:'right'},apps:{edge:'left'},projects:{edge:'left'}}, dockSizes:{right:300,top:250}, areaRect:{width:300,height:500}, areaFor:name=>({getBoundingClientRect:()=>({...context.areaRect}),classList:{contains:token=>token==='is-area-resizing' ? context.dragging || context.resizingArea===name : context.dragging}}),
-  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({classList:{contains:()=>false}}), $$:selector=>selector==='.area-share-handle.is-active' && context.shareDragging ? [{}] : [], highlight(){}, activeWorkspace:'general',activeProjectName:null,
+  panelState:require('../dist/panel-widgets.js').defaults(),SpatialPanels:{state:()=>context.panelState},preparePanelLesson(){},document:{body:{dataset:{},classList:{contains:()=>context.dragging}}},
+  dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({dataset:{},classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
   appInfo:{notes:{}}, appWindowModel:()=>({notes:[{text:'My original note'}]}),
   projectSpaces:{example:{}}, updateChecklist(){}, positionGuide(){},
   openProjectNames:()=>Object.keys(context.projectSpaces),desktopPages:{current:()=>0,visible:()=>true,column:()=>context.column,columnOf:(_,name)=>context.owners[name],fullscreenBond:()=>null},owners:{},column:'workspace',projectColumnActive:()=>context.column !== 'workspace'});
 context.mark = goal=>context.model.mark(goal);
 vm.runInContext(checkSource,context); context.check();
-context.dockSizes.right=340; context.dragging=true; context.check();
-assert(!context.model.ready(), 'Resize completes only after releasing the border');
-context.dragging=false; context.check(); assert(context.model.ready());
-// The production polling block credits either dimension, once its gesture ends.
-context.model=at('resize-areas');context.dockSizes.right=300;context.check();
-assert.equal(context.model.state.areaResizeBaseline.extent,500,'Side-dock lessons remember System height');
-context.areaRect.height=523;context.check();assert(!context.model.ready(),'A small shared-space adjustment does not finish the task');
-context.areaRect.height=548;context.shareDragging=true;context.check();assert(!context.model.ready(),'A live sibling separator cannot finish the task before release');
-context.shareDragging=false;context.check();assert(context.model.ready(),'Changing System height through its sibling separator completes resizing without changing dock width');
-assert(G.create(context.model.snapshot()).ready(),'Completed shared-space resizing survives a saved lesson');
-context.model=at('resize-areas');context.check();context.dockSizes.right=340;context.resizingArea='apps';context.check();
-assert(!context.model.ready(),'A shared width drag on a different Area must also finish before credit');
-context.resizingArea=null;context.check();assert(context.model.ready(),'The completed shared width gesture still counts for System');
-context.dockState.systems.edge='top';context.areaRect={width:600,height:250};context.model=at('resize-areas');context.check();
-assert.equal(context.model.state.areaResizeBaseline.extent,600,'Top and bottom docks measure System width');
-context.areaRect.height=310;context.check();assert(!context.model.ready(),'Changing the wrong rect axis does not count as the horizontal share');
-context.areaRect.width=632;context.shareDragging=true;context.check();assert(!context.model.ready(),'Horizontal share previews also wait for release');
-context.shareDragging=false;context.check();assert(context.model.ready(),'A horizontal separator completes the same task');
-context.dockState.systems.edge='right';context.areaRect={width:340,height:500};context.model=at('resize-areas');
-context.model.state.areaResizeBaseline={edge:'right',size:340};context.check();
-assert.equal(context.model.state.areaResizeBaseline.extent,500,'Old saved baselines learn the missing extent on their first poll');
-assert(!context.model.ready(),'Adding the old baseline extent cannot claim a resize that was not observed');
-context.areaRect.height=532;context.check();assert(context.model.ready(),'A migrated baseline can credit a later sibling adjustment');
-context.model=at('resize-areas');context.model.state.areaResizeBaseline={edge:'right',size:300};context.check();
-assert(context.model.ready(),'An old saved width difference remains valid while migrating the baseline');
-context.model=at('resize-areas');context.check();context.dockState.systems.edge='top';context.areaRect.width=700;context.check();
-assert(!context.model.ready(),'Moving System to a different edge alone cannot complete resizing');
-context.dockState.systems.edge='right';
-assert(G.goalHints['area-resized'].includes('separator'),'The resize hint teaches the sibling control too');
-context.areaFor=name=>({hidden:name==='apps',classList:{contains:()=>context.dragging}});
-context.model=at('move-areas');context.check();assert(!context.model.ready());
-context.dockState.apps.edge='bottom';context.check();assert(!context.model.ready(),'Hidden, untaught Areas cannot complete docking practice');
-context.dockState.systems.edge='left';context.dragging=true;context.check();assert(!context.model.ready(),'Dock preview does not complete a move before release');
-context.dragging=false;context.check();assert(context.model.ready());
-const moveSnapshot=context.model.snapshot();assert(G.create(moveSnapshot).ready(),'Completed docking survives refresh');
-context.model.next();assert.equal(context.model.state.areaMoveBaseline,undefined,'The next task gets a fresh baseline');
-for(const edge of ['left']) {context.dockState.systems.edge='right';context.model=at('move-areas');context.check();context.dockState.systems.edge=edge;context.check();assert(context.model.ready(),edge);}
-context.dockState.systems.edge='right';
-context.model=at('area-rail'); context.areaFor=()=>({dataset:{areaState:context.railState},classList:{contains:()=>false}});
-context.railState='expanded';context.check();assert(!context.model.ready());
-context.railState='rail';context.check();assert(!context.model.ready());
-context.railState='expanded';context.check();assert(context.model.ready());
+const PanelModel=require('../dist/panel-widgets.js');
+context.panelState=PanelModel.updatePanel(context.panelState,'panel-left',{size:340});context.dragging=true;context.check();
+assert(!context.model.ready(),'A panel resize waits until its gesture finishes');
+context.dragging=false;context.check();assert(context.model.ready(),'The native panel size completes resizing');
+assert(G.create(context.model.snapshot()).ready(),'Panel progress survives a saved lesson');
+context.model=at('move-areas');context.check();context.panelState=PanelModel.updatePanel(context.panelState,'panel-left',{edge:'bottom'});context.dragging=true;context.check();assert(!context.model.ready(),'Dock previews do not finish the move');context.dragging=false;context.check();assert(context.model.ready(),'Panels can dock on the bottom edge');
+context.model=at('area-rail');context.check();context.panelState=PanelModel.updatePanel(context.panelState,'panel-left',{mode:'compact'});context.check();assert(!context.model.ready());context.panelState=PanelModel.updatePanel(context.panelState,'panel-left',{mode:'expanded'});context.check();assert(context.model.ready(),'The same Apps panel returns from compact to expanded');
 context.model=at('projects');context.check();
 context.column='example';context.activeProjectName='example';context.check();assert(!context.model.ready(), 'An existing seeded project cannot complete creation');
 context.projectSpaces.mine={};context.column='mine';context.activeProjectName='mine';context.check();assert(context.model.ready());
@@ -287,7 +252,7 @@ console.log('Guide task observers passed: modes, empty project creation, window 
 
 // Capture observes stopped click events, but must run after the control mutates state.
 const scheduled=[];let capturedClick;
-context.document={addEventListener(type,listener,capture){assert.equal(type,'click');assert.equal(capture,true);capturedClick=listener;}};
+context.document={body:{dataset:{},classList:{contains:()=>false}},addEventListener(type,listener,capture){assert.equal(type,'click');assert.equal(capture,true);capturedClick=listener;}};
 context.setTimeout=(callback)=>scheduled.push(callback);
 const clickObserver=adapter.slice(adapter.indexOf('  // Capture the selected search result'),adapter.indexOf("  document.addEventListener('pointerup'"));
 vm.runInContext(clickObserver,context);
@@ -478,9 +443,9 @@ G.observeContext(ai,{...contextScene,column:'workspace',items:[{id:'kept-reply',
 const projectContext=at('project-app');projectContext.state.practiceProject='practice';G.observeContext(projectContext,contextScene);projectContext.mark('project-app-open');
 G.observeContext(projectContext,{...contextScene,ai:{items:[{id:'other',project:'another'}],workingProject:'another'}});assert(!projectContext.ready());
 G.observeContext(projectContext,{...contextScene,ai:{items:[{id:'mine',project:'practice'}],workingProject:'practice'}});assert(projectContext.ready(),'Project context selects the real working folder');
-const hide=at('hide-areas');G.observeContext(hide,contextScene);G.observeContext(hide,{...contextScene,areas:{...contextScene.areas,ai:false}});assert(hide.state.done.includes('area-hidden'));
-G.observeContext(hide,{...contextScene,overview:true,section:'apps'});assert(!hide.ready(),'Restoring from the intended System view remains a separate action');
-G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(hide.ready());
+const hide=at('hide-areas'),hidePanels=PanelModel.defaults();G.observePanelLayout(hide,{state:hidePanels,workspace:'general'});G.observePanelLayout(hide,{state:PanelModel.updateWidget(hidePanels,'controls',{mode:'hidden'}),workspace:'general'});assert(hide.state.done.includes('area-hidden'));
+G.observeContext(hide,{...contextScene,overview:true,section:'system'});assert(!hide.ready(),'Opening Overview cannot stand in for restoring the removed widget');
+G.observePanelLayout(hide,{state:hidePanels,workspace:'general'});assert(hide.ready(),'Adding the removed tool completes recovery in the native panel layout');
 const nav=at('overview-navigation');G.observeContext(nav,contextScene);G.observeContext(nav,{...contextScene,overview:true,section:'system'});assert(!nav.ready());G.observeContext(nav,{...contextScene,overview:true});assert(!nav.ready(),'Returning to Windows alone does not finish window practice');
 const filterAction={kind:'filter',value:'parked',workspace:'general',fromOverview:true,section:'windows'};
 assert(!G.observeOverviewAction(nav,filterAction,{...contextScene,overview:true,windowFilter:'all'}),'A stale filter action is not credited');
@@ -518,11 +483,12 @@ practiceTarget.$=()=>({});assert.equal(practiceTarget.overviewPracticeTarget(),'
 practiceTarget.model=at('timeline');practiceTarget.model.state.done=['timeline-activity','timeline-event','timeline-compared'];assert.equal(practiceTarget.overviewPracticeTarget(),'#timelineLatest');
 const resumedOverview=G.create({status:'active',version:7,lessonId:'overview-navigation',done:['overview-away','overview-back']});assert(!resumedOverview.ready());assert.deepEqual(resumedOverview.state.done,['overview-away','overview-back'],'Updating the chapter preserves existing learner progress');
 const lessonNavigation=[];
-const lessonRouting=vm.createContext({model:at('apps'),setUniversalSearchOpen(open){assert.equal(open,true);},SpatialOverviewDesktop:{select(section,animate){assert.equal(animate,false);lessonNavigation.push(section);}},positionGuide(){}});
+const lessonRouting=vm.createContext({model:at('apps'),panelLayoutLessons:['resize-areas','move-areas','area-rail','hide-areas'],panelWidgetsForLesson:()=>['controls'],SpatialPanels:{showWidget(){},edit(value){lessonNavigation.push(value?'editing':'normal');}},setUniversalSearchOpen(open){assert.equal(open,true);},SpatialOverviewDesktop:{select(section,animate){assert.equal(animate,false);lessonNavigation.push(section);}},positionGuide(){}});
 vm.runInContext(adapter.slice(adapter.indexOf('  function showLessonOverview('),adapter.indexOf('  function check()')),lessonRouting);
-for(const [id,section] of [['apps','apps'],['overview','apps'],['tiling','apps'],['project-app','apps'],['folders','projects'],['overview-navigation','windows'],['temporary-desktop','windows'],['hide-areas','system'],['timeline-task','timeline']]){
+for(const [id,section] of [['apps','apps'],['overview','apps'],['tiling','apps'],['project-app','apps'],['folders','projects'],['overview-navigation','windows'],['temporary-desktop','windows'],['timeline-task','timeline']]){
   lessonRouting.model=at(id);lessonRouting.showLessonOverview(id);assert.equal(lessonNavigation.at(-1),section,'Show me routes '+id+' to '+section);
 }
+lessonRouting.model=at('hide-areas');lessonRouting.showLessonOverview('hide-areas');assert.equal(lessonNavigation.at(-1),'editing','Widget restoration teaches the actual layout editor');
 lessonRouting.model=at('timeline');lessonRouting.showLessonOverview('timeline');assert.equal(lessonNavigation.at(-1),'apps','Timeline starts by launching a tool');
 lessonRouting.model.mark('timeline-activity');lessonRouting.showLessonOverview('timeline');assert.equal(lessonNavigation.at(-1),'timeline','After making activity the lesson opens Timeline');
 assert.equal(G.goalLabels['overview-back'],'Return to Windows');

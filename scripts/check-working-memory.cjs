@@ -8,11 +8,11 @@ const M=require('../dist/working-memory.js');
   const fields=new Map(),field=name=>{if(!fields.has(name))fields.set(name,{});return fields.get(name);};
   const host={parentElement:null,querySelectorAll:()=>[],contains:()=>false},railEntry={};
   const projectTarget={prepend(item){item.parentElement=this;}},workspaceTarget={prepend(item){item.parentElement=this;}};
-  const context={desktopSyncApplying:false,dropPosition:null,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{lastElementChild:railEntry,insertBefore(){}},field,shelfViews:new Map(),filterShelf(){},itemMarkup(){},drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
+  const context={desktopSyncApplying:false,dropPosition:null,scope:()=>M.scope('work','demo'),current:'',allowed:()=>true,host,rail:{},railEntry,area:{append(item){item.parentElement=this;}},field,shelfViews:new Map(),filterShelf(){},itemMarkup(){},drafts:new Map(),selected:new Set(),editing:null,draftScope:'',lastRemoved:null,projectColumnActive:()=>true,$:name=>name==='#projectSpaceContent'?projectTarget:workspaceTarget,syncFolders(){},projectFor:()=>({name:'Demo'}),ownerFor:()=>({root:'/project'}),itemsFor:()=>[],F:{folder:owner=>owner.root+'/Stash'},signature:'',itemsSignature:'',workspaceProfiles:{work:{label:'Work'}},document:{activeElement:null},prepareControlSemantics(){}};
   vm.createContext(context);vm.runInContext(adapter.slice(adapter.indexOf('  function render(force=false){'),adapter.indexOf('  function collapse(')),context);
-  context.render(true);assert.equal(host.parentElement,projectTarget);
+  context.render(true);assert.equal(host.parentElement,context.area);
   context.projectColumnActive=()=>false;context.scope=()=>M.scope('work');context.projectFor=()=>null;
-  context.render(true);assert.equal(host.parentElement,workspaceTarget);
+  context.render(true);assert.equal(host.parentElement,context.area);
   const row={dataset:{memoryId:'note',memoryOwner:M.scope('work')},querySelector:()=>summary};
   const heading={},summary={querySelector:selector=>selector==='b'?heading:{title:'Note'},setAttribute(name,value){this[name]=value;}};
   context.expandedItems=new Set();context.itemFor=()=>({id:'note',scope:M.scope('work')});context.editItem=()=>({title:'Updated note'});context.save=()=>true;context.feedback=()=>{};
@@ -88,12 +88,10 @@ const section=(from,to)=>source.slice(source.indexOf(from),source.indexOf(to,sou
 const calls=[];const sandbox={createAppInstance:base=>{calls.push(['create',base]);return base+'--new';},navigateBrowser:(...args)=>calls.push(['navigate',...args]),renderFileLocation:(...args)=>calls.push(['folder',...args]),openAppFile:(...args)=>calls.push(['file',...args]),feedback:text=>calls.push(['message',text]),appInfo:{notes:{}}};vm.createContext(sandbox);vm.runInContext(section('function openSource(',"  host.addEventListener('submit'"),sandbox);
 sandbox.item={source:{address:'https://example.org/reference'}};vm.runInContext('openSource(item)',sandbox);assert.deepEqual(calls,[['create','browser'],['navigate','browser--new','https://example.org/reference']]);calls.length=0;
 sandbox.item={source:{address:'/home/demo/Projects/test/notes.md'}};vm.runInContext('openSource(item)',sandbox);assert.deepEqual(calls,[['create','dolphin'],['folder','dolphin--new','/home/demo/Projects/test'],['file','dolphin--new','notes.md']]);
-// Revealing rail memory changes only the project rectangle, never the shared lane.
-const railCalls=[];const railArea={hidden:false,dataset:{areaState:'rail',areaJoinEdge:'none'},style:{left:'0',top:'400',width:'64',height:'400'}};
-const railSandbox={temporaryRail:{scope:project,edge:'left'},scope:()=>project,dockState:{projects:{edge:'left'}},area:railArea,isLocalArea:()=>true,rail:{setAttribute(){}},railEntry:{setAttribute(){}},layoutDockAreas:()=>railCalls.push('layout'),applyDockRect:(name,rect)=>railCalls.push({name,rect})};
-vm.createContext(railSandbox);vm.runInContext(section('function collapse(','  function reveal('),railSandbox);vm.runInContext('applyRailExpansion(1200,800)',railSandbox);
-assert.equal(railArea.dataset.areaState,'expanded');assert.equal(railCalls[0].rect.width,340);assert.equal(railCalls[0].rect.height,400);assert.equal(railCalls[0].name,'projects');
-vm.runInContext('collapse()',railSandbox);assert.equal(railArea.dataset.memoryRailExpanded,undefined);assert.equal(railCalls.at(-1),'layout');
+// Native Files reveal delegates layout ownership to Panels and keeps the live content host.
+const widgetCalls=[],widgetSandbox={allowed:()=>true,render:()=>widgetCalls.push('render'),host:{scrollIntoView:options=>widgetCalls.push(['scroll',options.block])},requestAnimationFrame:fn=>fn(),SpatialPanels:{showWidget:(id,expanded)=>widgetCalls.push([id,expanded]),closeApplet:()=>widgetCalls.push('close')}};
+vm.createContext(widgetSandbox);vm.runInContext(section('function collapse(','  function editor('),widgetSandbox);widgetSandbox.reveal();
+assert.deepEqual(widgetCalls,['render',['files',true],['scroll','nearest']]);widgetSandbox.collapse();assert.equal(widgetCalls.at(-1),'close');
 const migrated=M.create();const migrationKey=M.scope('work','example');migrated.next(migrationKey,'Check the exit sign');migrated.promoteNext(migrationKey,'Project notes');assert.equal(migrated.items(migrationKey)[0].text,'Check the exit sign');assert.equal(migrated.nextStep(migrationKey),'');migrated.promoteNext(migrationKey);assert.equal(migrated.items(migrationKey).length,1);
 const linked=M.create();const sourceOnly=linked.add(workspace,{text:'',title:'Reference',source:{address:'https://example.org/source'}});assert.equal(linked.search('reference','work')[0].id,sourceOnly.id,'Source-only resources are searchable');
 const mergedProject={name:'Example',note:'Autosaved thought',resources:[['Existing reference','Linked · /home/demo/reference.pdf','file','i-folder']]};

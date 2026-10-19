@@ -57,8 +57,8 @@
   function invoke(){const items=pending?.workspace===activeWorkspace?pending.items:capture();pending=null;return attach(items);}
   document.addEventListener('pointerdown',event=>{
     const frame=event.target.closest('[data-app-frame]');if(local(frame))lastFrame=frame;
-    if(event.button===0&&event.target.closest('#aiAreaToggle,#aiRailChat,#aiPrompt')){const items=capture();pending={workspace:activeWorkspace,items};if(event.target===prompt){pending=null;attach(items);}}
-    else if(!event.target.closest('.ai-area,#desktopContextMenu'))pending=null;
+    if(event.button===0&&event.target.closest('.desktop-widget-summary[data-widget-id="assistant"],#aiPrompt')){const items=capture();pending={workspace:activeWorkspace,items};if(event.target===prompt){pending=null;attach(items);}}
+    else if(!event.target.closest('[data-widget-source="assistant"],#desktopContextMenu'))pending=null;
   },true);
   // Preserve normal editing context menus unless a real app selection exists.
   const descriptor=contextMenuDescriptor,entries=contextMenuEntries,execute=executeContextAction;

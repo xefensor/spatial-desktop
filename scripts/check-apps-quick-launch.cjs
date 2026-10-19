@@ -22,7 +22,7 @@ const area=new Element('aside'),region=new Element(),rack=new Element('nav'),she
 region.className='apps-scroll-region';region.append(rack);area.append(region);
 const calls=[];
 const context={
-  document:{createElement:tag=>new Element(tag),getElementById:id=>id==='appRack'?rack:null},
+  document:{querySelector:selector=>selector==='[data-widget-source="apps"]'?area:null,createElement:tag=>new Element(tag),getElementById:id=>id==='appRack'?rack:null},
   areaFor:()=>area,$:()=>shell,prepareControlSemantics(){calls.push(['prepare']);},appArt:name=>'<svg data-art="'+name+'"></svg>',
   activeWorkspace:'general',desktopPages:Pages.create(),
   workspaceProfiles:{

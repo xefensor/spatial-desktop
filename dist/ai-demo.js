@@ -19,7 +19,7 @@
     }
     if(/\b(draft|write|rewrite|napi|poznam)/.test(query))return {title:'Draft project note',text:'Working note for '+name+'\n\n'+(summary.length?summary.join('\n\n'):'Goal: finish one useful piece of work.\nNext: collect the sources, make a first pass, and review the result.')+'\n\nNext review: confirm what is ready and what still needs testing.'};
     if(summary.length)return {title:'Source summary',text:summary.join('\n\n')+(sources.length>readable.length?'\n\nOther attachments are available as references; their file contents have not been read.':'')};
-    return {title:'Context example',text:'Working folder: '+folder+'\n\n'+(sources.length?'Attached: '+sources.map(item=>item.title).join(', ')+'.\nThis demo only has the text and metadata explicitly attached.':'Drag a note, file or app into this Area to supply context.')+'\n\nTry asking for a summary, a checklist, a draft note or a comparison. Replies use fixed local rules, not an AI model.'};
+    return {title:'Context example',text:'Working folder: '+folder+'\n\n'+(sources.length?'Attached: '+sources.map(item=>item.title).join(', ')+'.\nThis demo only has the text and metadata explicitly attached.':'Drag a note, file or app into Assistant to supply context.')+'\n\nTry asking for a summary, a checklist, a draft note or a comparison. Replies use fixed local rules, not an AI model.'};
   }
   return {reply};
 });

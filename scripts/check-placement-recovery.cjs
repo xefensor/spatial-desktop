@@ -9,12 +9,12 @@ const clone = value => JSON.parse(JSON.stringify(value));
 function fixture() {
   const frames = {notes:{classList:{remove(){}},dataset:{},style:{zIndex:'20'},text:'original note'}};
   const c = {
-    areaPriority:['systems'],areaFor:()=>({}),$:()=>null,desktopHasWindowFocus:true,
+    areaPriority:['systems'],areaFor:()=>({}),$:()=>null,$$:()=>[],document:{querySelector:()=>null},desktopHasWindowFocus:true,
     activeWorkspace:'general',localDisplaySlot:()=>1,window:{innerWidth:1600,innerHeight:900},
     activeDisplayRoster:()=>[{source:'local',width:1600,height:900}],activeProjectName:null,
     workspaceOpenProjects:{general:[]},workspaceProjectStates:{general:{project:null}},workspaceProjects:{general:null},
-    cloneDesktopState:clone,area:{sizes:{left:310,right:300},preferred:{systems:'expanded'}},
-    snapshotAreaLayout(){return clone(c.area);},workspaceAreaSessions:{general:{}},
+    cloneDesktopState:clone,panels:{schema:5,panels:[{id:'left',size:310},{id:'right',size:300}],widgets:{controls:{mode:'expanded'}}},
+    snapshotAreaLayout(){return clone(c.panels);},SpatialPanels:{restoreSession(workspace,snapshot){c.panels=clone(snapshot);}},
     tileSessions:{'general:desktop:0:1':{root:T.leaf('notes'),floating:{},parked:{}}},
     desktopPages:Pages.create(), workspaceAppStates:{general:{notes:'open'},school:{notes:'closed'}},
     appState:{notes:'open'},appMaximizedState:{notes:false},appInfo:{notes:{label:'Notes'}},
@@ -22,7 +22,6 @@ function fixture() {
     workspaceDisplayAssignments:{general:{apps:{notes:1},areas:{systems:1}}},windowMembership:{general:{notes:null}},
     projectWindowSessions:{},projectSpaces:{site:{name:'Site'}},autoSpatialEdgeStates:new Map(),frontApp:'notes',
     tileLayoutFrame:0,cancelAnimationFrame(){},endSystemRailExpansion(){},
-    applyAreaSession(){c.area=clone(c.workspaceAreaSessions.general);},
     renderProjectSpace(name){c.activeProjectName=name;},syncProjectAreaView(){},
     topOpenApp:()=>Object.keys(c.appState).find(name=>c.appState[name]==='open')||null,
     syncProjectWindowScopes(){},syncApps(){},refreshIntentAreas(){},layoutDockAreas(){},renderTileLayout(){},
@@ -60,11 +59,11 @@ function fixture() {
   assert.equal(frames.notes.text,'newly edited after the move','Undo cannot overwrite new app content');
   assert.equal(c.toast.message,'Previous layout restored');
 }
-for(const mutation of ['window','area','context','display','epoch']) {
+for(const mutation of ['window','panels','context','display','epoch']) {
   const {c}=fixture();
   c.moveWindowToDesktop('notes',1);const undo=c.toast.action;
   if(mutation==='window') c.appState.notes='closed';
-  if(mutation==='area') c.area.sizes.right=370;
+  if(mutation==='panels') c.panels.panels[1].size=370;
   if(mutation==='context') c.desktopPages.go('general',1);
   if(mutation==='display') c.window.innerWidth=1500;
   if(mutation==='epoch') vm.runInContext('placementUndoEpoch++',c);
@@ -75,14 +74,14 @@ for(const mutation of ['window','area','context','display','epoch']) {
 {
   const {c}=fixture();
   const before=c.capturePlacement();
-  c.area.sizes.right=400;
+  c.panels.panels[1].size=400;
   c.appState.notes='minimized';
   c.tileSessions['general:desktop:0:1'].parked.notes={reason:'fit'};
   c.tileSessions['general:desktop:0:1'].floating.notes={left:100,top:100,width:500,height:400,excludeAreas:['systems']};
-  c.offerPlacementUndo(before,'Area resized');c.toast.action();
-  assert.equal(c.area.sizes.right,300);
-  assert.equal(c.appState.notes,'open','Area recovery reverses automatic window parking');
-  assert.deepEqual(c.tileSessions['general:desktop:0:1'].floating,{},'Area recovery reverses its automatic window exceptions');
+  c.offerPlacementUndo(before,'Panel resized');c.toast.action();
+  assert.equal(c.panels.panels[1].size,300);
+  assert.equal(c.appState.notes,'open','Panel recovery reverses automatic window parking');
+  assert.deepEqual(c.tileSessions['general:desktop:0:1'].floating,{},'Panel recovery reverses its automatic window exceptions');
 }
 {
   const {c,frames}=fixture();
@@ -122,8 +121,8 @@ for(const mutation of ['window','area','context','display','epoch']) {
 {
   const {c,frames}=fixture();
   const before=c.capturePlacement();
-  frames.notes.style.zIndex='900';c.desktopHasWindowFocus=false;c.area.sizes.left=350;
-  c.offerPlacementUndo(before,'Area changed');c.toast.action();
+  frames.notes.style.zIndex='900';c.desktopHasWindowFocus=false;c.panels.panels[0].size=350;
+  c.offerPlacementUndo(before,'Panel changed');c.toast.action();
   assert.equal(frames.notes.style.zIndex,'20','Recovery restores the original stacking order');
   assert.equal(c.desktopHasWindowFocus,true,'Recovery restores the previous focus owner');
 }

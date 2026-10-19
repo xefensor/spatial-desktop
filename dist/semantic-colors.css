@@ -27,17 +27,14 @@ body[data-theme="light"] {
   --sd-glass-muted:rgba(44,66,83,.82);
   --content-surface:#f6f9fc; --content-surface-raised:#e8eff5;
 }
-
-/* A small amount of role colour makes the four docked sheets recognizable. */
-.apps-zone {--area-role:var(--role-apps)}
-.project-area {--area-role:var(--project-accent,var(--role-projects))}
-.project-area[data-project-library-open="true"] {--area-role:var(--role-projects)}
-.systems-zone {--area-role:var(--role-systems)}
-.ai-area {--area-role:var(--role-ai)}
-.area-window,.universal-search,.all-apps-drawer,.desktop-context-menu,.desktop-glass-dialog {
-  --area-header-accent:var(--area-role,var(--workspace-accent,var(--blue)))!important;
-  --area-body-tint:var(--area-header-accent)!important;
-  --control-accent:var(--area-header-accent);
+.files-widget[data-project-library-open="true"] {--area-role:var(--role-projects)}
+.universal-search,
+.all-apps-drawer,
+.desktop-context-menu,
+.desktop-glass-dialog{
+  --widget-accent:var(--area-role,var(--workspace-accent,var(--blue)))!important;
+  --area-body-tint:var(--widget-accent)!important;
+  --control-accent:var(--widget-accent);
   --state-tone:var(--control-accent)!important;
 }
 .overview-zone-lane,.overview-apps-section,.open-windows-section,.overview-widgets {
@@ -48,93 +45,22 @@ body[data-theme="light"] {
 .overview-panel[data-overview-panel="system"] {--area-role:var(--role-systems)}
 .overview-panel[data-overview-panel="timeline"] {--area-role:var(--role-ai)}
 .system-widget {--widget-tone:var(--role-systems)!important}
-body[data-theme] .area-window .area-window-bar {
-  background:var(--sd-glass-face-deep)!important;
-  border-color:var(--sd-glass-groove)!important;
-}
-body[data-theme] .area-window .area-window-bar .area-window-identity b {color:var(--sd-glass-text)!important}
-body[data-theme] .area-window .area-window-bar .area-window-identity small {color:var(--sd-glass-muted)!important}
-body[data-theme] :is(.area-window-icon,.area-list-icon,.overview-zone-mark,.project-editor-mark,.package-mark) {
-  color:var(--area-role,var(--workspace-accent,var(--ui-neutral)))!important;background:transparent!important;
-  border-color:var(--sd-glass-groove)!important;box-shadow:none!important;
-}
-body[data-theme] .project-area[data-project-library-open="false"] .area-window-icon {color:var(--project-accent)!important}
 .overview-system-heading,.overview-zone-heading,.overview-section-heading {
   background:color-mix(in srgb,var(--area-role,var(--workspace-accent)) 10%,var(--sd-glass-face-deep))!important;color:var(--sd-glass-text)!important;
 }
 body[data-theme] :is(.overview-zone-heading,.overview-section-heading) .eyebrow {color:var(--sd-glass-muted)!important}
 .desktop-glass-dialog :is(.package-titlebar,.project-editor-titlebar) {background:var(--sd-glass-face-deep)!important}
-.project-editor-titlebar small,.package-window :is(.package-mark,.package-size,.package-mode-switch svg,.package-primary svg,.import-count),
-.overview-layout-status svg,.overview-areas-widget>header svg,.apps-zone .overview-launch svg,
-.system-launcher svg,.widget-heading svg,.launcher-category svg,.overview-area-row>button {
+.project-editor-titlebar small,
+.package-window :is(.package-mark,.package-size,.package-mode-switch svg,.package-primary svg,.import-count),
+.overview-layout-status svg,
+.overview-panels-widget>header svg,
+.apps-widget .overview-launch svg,
+.system-launcher svg,
+.widget-heading svg,
+.launcher-category svg{
   color:var(--area-role,var(--workspace-accent,var(--ui-neutral)))!important;
 }
 .package-window .package-size {background:var(--sd-glass-face-deep)!important}
-.area-resize-handle:hover,.area-window.is-area-resizing>.area-resize-handle {background:var(--area-header-accent)!important;box-shadow:0 0 5px color-mix(in srgb,var(--area-header-accent) 30%,transparent)!important}
-
-/* Adjacent Areas remain separate sheets even when their dock rectangles meet.
-   The glass edge faces the working canvas; shared seams divide dock peers. */
-body[data-theme] .area-window {
-  --area-sheet-shade:rgba(221,241,255,.035);
-  --area-seam-dark:rgba(0,8,18,.52);
-  --area-seam-light:rgba(210,239,255,.32);
-  --area-glass-edge-direction:to right;
-  --area-join-seam:linear-gradient(transparent,transparent);
-  background:linear-gradient(120deg,var(--area-sheet-shade),transparent 36% 78%,var(--area-sheet-shade)),color-mix(in srgb,var(--sd-glass-face) 96%,var(--area-header-accent) 4%)!important;
-}
-body[data-theme="light"] .area-window {
-  --area-sheet-shade:rgba(255,255,255,.18);
-  --area-seam-dark:rgba(45,45,50,.30);
-  --area-seam-light:rgba(255,255,255,.85);
-}
-body[data-theme] .area-window::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:30;
-  pointer-events:none;
-  background:
-    linear-gradient(var(--area-glass-edge-direction),var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px),
-    var(--area-join-seam);
-}
-body[data-theme] .area-window[data-dock-edge="left"] {--area-glass-edge-direction:to left}
-body[data-theme] .area-window[data-dock-edge="right"] {--area-glass-edge-direction:to right}
-body[data-theme] .area-window[data-dock-edge="top"] {--area-glass-edge-direction:to top}
-body[data-theme] .area-window[data-dock-edge="bottom"] {--area-glass-edge-direction:to bottom}
-body[data-theme] .area-window[data-area-join-edge="top"] {
-  --area-join-seam:linear-gradient(to bottom,var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px);
-}
-body[data-theme] .area-window[data-area-join-edge="left"] {
-  --area-join-seam:linear-gradient(to right,var(--area-seam-dark) 0 1px,var(--area-seam-light) 1px 2px,transparent 2px);
-}
-body[data-theme] .area-window>.area-window-bar {
-  background:linear-gradient(110deg,color-mix(in srgb,var(--area-header-accent) 24%,var(--sd-glass-face)),color-mix(in srgb,var(--area-header-accent) 10%,var(--sd-glass-face)))!important;
-  border-bottom:1px solid color-mix(in srgb,var(--area-header-accent) 28%,var(--sd-glass-groove))!important;
-  box-shadow:inset 0 1px var(--sd-glass-highlight)!important;
-}
-body[data-theme] .area-window>.area-window-bar::after {content:none}
-
-/* Rail labels distinguish Area roles alongside the icons and coloured tools. */
-.area-window[data-area-state="rail"] .area-window-identity {
-  flex-direction:column;
-  gap:2px;
-}
-.area-window[data-area-state="rail"] .area-window-identity::after {
-  display:block;
-  color:var(--sd-glass-text);
-  font:650 10px/12px system-ui,sans-serif;
-}
-.apps-zone[data-area-state="rail"] .area-window-identity::after {content:"Apps"}
-.project-area[data-area-state="rail"] .area-window-identity::after {content:"Workspace\A& Projects";white-space:pre-line;text-align:center;font-size:9px}
-.systems-zone[data-area-state="rail"] .area-window-identity::after {content:"System"}
-.area-window[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar {
-  flex-basis:60px;
-  min-height:60px;
-}
-.apps-zone[data-area-state="rail"]:is([data-dock-edge="left"],[data-dock-edge="right"])>.area-window-bar {
-  flex:0 0 auto;
-  min-height:94px;
-}
 
 /* Coloured state lights remain distinct from ordinary momentary buttons. */
 button:is(.material-glass-button,.material-abs-button) {--state-tone:var(--control-accent,var(--workspace-accent,var(--blue)))!important;--glass-key-tone:var(--state-tone)!important}
@@ -147,8 +73,6 @@ body[data-theme] :where(button,a,input,textarea,select,[tabindex]):focus-visible
 .calendar-grid button.is-today {color:var(--sd-glass-text)!important;background:color-mix(in srgb,var(--role-systems) 16%,var(--sd-glass-face-deep))!important;box-shadow:inset 0 -2px var(--role-systems)!important}
 .next-event>i,.timer-progress i,.equalizer i,.overview-track i {background:var(--control-accent,var(--workspace-accent))!important;box-shadow:none!important}
 input[type="range"] {accent-color:var(--control-accent,var(--workspace-accent,var(--blue)))!important}
-body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-webkit-slider-runnable-track {background:linear-gradient(to right,var(--control-accent,var(--workspace-accent)) var(--range-progress,0%),var(--sd-glass-groove) var(--range-progress,0%))!important;box-shadow:none!important}
-body[data-theme] :is(.area-window,.universal-search) input[type="range"].material-glass-field::-moz-range-progress {background:var(--control-accent,var(--workspace-accent))!important;box-shadow:none!important}
 
 /* Entity colour identifies launchers, workspaces and projects. */
 button[data-open-app] {--state-tone:var(--app-primary)!important;--glass-key-tone:var(--app-primary)!important}
@@ -164,7 +88,7 @@ button[data-workspace] {--state-tone:var(--tab-color,var(--workspace-accent))!im
 
 /* Parked app identity is a full top light strip. Reset both axes: legacy
    side-strip width/right/bottom values otherwise shrink it to a tiny dot. */
-.apps-zone .mini-card[data-mini-card]::after {
+.apps-widget .mini-card[data-mini-card]::after {
   content:"";
   position:absolute;
   inset:0 9px auto;
@@ -211,15 +135,6 @@ body[data-theme] .app-frame :where(button,a,input,textarea,select,[tabindex]):fo
 .app-frame :where(input,textarea) {caret-color:var(--app-primary)}
 .app-frame input[type="range"] {accent-color:var(--app-primary)!important}
 .app-frame .equalizer i {background:var(--app-primary)!important}
-
-/* Local colour at interactive points; the rest of the material stays calm. */
-body[data-theme] .area-window button[data-open-app]:hover {
-  background:color-mix(in srgb,var(--app-primary) 14%,transparent)!important;
-}
-body[data-theme] .area-window .quick-toggle[aria-pressed="true"] {
-  background:color-mix(in srgb,var(--role-systems) 12%,var(--sd-glass-face-deep))!important;
-  border-color:color-mix(in srgb,var(--role-systems) 24%,var(--sd-glass-groove))!important;
-}
 body[data-theme] .universal-search .overview-section-tab[aria-pressed="true"] {
   background:color-mix(in srgb,var(--workspace-accent) 12%,transparent);
   border-color:color-mix(in srgb,var(--workspace-accent) 26%,var(--sd-glass-groove));
@@ -247,10 +162,3 @@ button.project-editor-danger,.context-menu-item.is-danger {
 .context-menu-item.is-danger svg {color:var(--action-danger)!important}
 /* Closing a window is an ordinary action; destructive dialogs stay red. */
 .app-frame .window-key.danger {color:var(--muted)!important;background:linear-gradient(var(--control-top),var(--control-bottom))!important;border-color:var(--control-edge)!important}
-
-@media(prefers-reduced-transparency:reduce) {
-  body[data-theme] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#142332!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  body[data-theme="light"] :is(.area-window,.universal-search,.desktop-glass-dialog) {background:#eff5fa!important}
-  body[data-theme] .area-window {--sd-glass-face:#142332;background:linear-gradient(var(--area-sheet-shade),var(--area-sheet-shade)),var(--sd-glass-face)!important}
-  body[data-theme="light"] .area-window {--sd-glass-face:#eff5fa}
-}

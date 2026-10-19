@@ -12,7 +12,9 @@ These instructions apply to the whole repository.
 
 ## Project conventions
 
-- Editable website source is in `dist/`; there is no build step or npm dependency installation. Automated checks are in `scripts/`.
+- Panels and widgets are the canonical desktop. Do not restore the retired Areas layout, headers, rails, resize engine or settings. Legacy lesson/storage identifiers may remain solely to preserve saved progress and data.
+
+- Editable website source is in `dist/`; there is no website build step. Run `npm ci` for the development-only DOM test dependency before verification. Automated checks are in `scripts/`.
 - Keep demo labels, names and help text in English. The digital assistant's visible name is **Assistant**. Existing internal `ai` identifiers, filenames and storage keys are compatibility details; a label change must not reset saved chats or Guide progress.
 - Keep prototype limitations explicit: Assistant replies are scripted and local, and native OS integration remains future work.
 - `dist/philosophy.html` is Xef's own unfinished design philosophy. Preserve his authored text unless he asks to edit it. `dist/philosophy-record.html` and dated screenshots/audits preserve earlier designs.
@@ -20,7 +22,7 @@ These instructions apply to the whole repository.
 
 ## Verification
 
-Run the checks used by GitHub Pages before publishing:
+Run `npm ci`, then the checks used by GitHub Pages before publishing:
 
 ```sh
 for file in dist/*.js; do node --check "$file" || exit 1; done

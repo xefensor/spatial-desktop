@@ -1,6 +1,6 @@
 /* Desktop utilities belong to the same acrylic plane as Overview and Areas. */
 .desktop-glass-dialog {
-  --area-header-accent: var(--workspace-accent);
+  --widget-accent: var(--workspace-accent);
   --state-tone: var(--workspace-accent);
   color: var(--sd-glass-text) !important;
   border: 1px solid var(--sd-glass-edge) !important;
@@ -11,7 +11,7 @@
   backdrop-filter: blur(23px) saturate(1.08) !important;
   -webkit-backdrop-filter: blur(23px) saturate(1.08) !important;
 }
-.project-editor-window.desktop-glass-dialog { --area-header-accent: var(--violet); --state-tone: var(--violet); }
+.project-editor-window.desktop-glass-dialog { --widget-accent: var(--violet); --state-tone: var(--violet); }
 .desktop-glass-dialog :is(button,input,textarea,select,label,section,header,footer,.import-tree>span,.package-content-row>span) {
   border-radius: 0 !important;
   corner-shape: square !important;
@@ -19,7 +19,7 @@
 .desktop-glass-dialog :is(.package-titlebar,.project-editor-titlebar) {
   position: static;
   flex: 0 0 auto;
-  background: color-mix(in srgb,var(--area-header-accent) 10%,transparent) !important;
+  background: color-mix(in srgb,var(--widget-accent) 10%,transparent) !important;
   border-bottom: 1px solid var(--sd-glass-groove);
   box-shadow: none;
   backdrop-filter: none;

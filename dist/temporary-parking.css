@@ -1,5 +1,5 @@
 /* An owner-colored glass enclosure keeps each automatic return set together. */
-.apps-zone .temporary-park-group{display:flex;flex-direction:column;gap:0;min-width:0;border:1px solid color-mix(in srgb,var(--temporary-park-accent) 36%,var(--sd-glass-groove));border-left:3px solid var(--temporary-park-accent);background:color-mix(in srgb,var(--temporary-park-accent) 4%,var(--sd-glass-face));box-shadow:inset 0 1px var(--sd-glass-highlight)}
+.apps-widget .temporary-park-group{display:flex;flex-direction:column;gap:0;min-width:0;border:1px solid color-mix(in srgb,var(--temporary-park-accent) 36%,var(--sd-glass-groove));border-left:3px solid var(--temporary-park-accent);background:color-mix(in srgb,var(--temporary-park-accent) 4%,var(--sd-glass-face));box-shadow:inset 0 1px var(--sd-glass-highlight)}
 .temporary-park-group+.temporary-park-group{margin-top:8px}
 .temporary-park-heading{display:flex;flex-direction:column;gap:9px;padding:10px;border-bottom:1px solid color-mix(in srgb,var(--temporary-park-accent) 24%,var(--sd-glass-groove));background:color-mix(in srgb,var(--temporary-park-accent) 9%,var(--sd-glass-face))}
 .temporary-park-kind{display:flex;align-items:center;font-size:10px;font-weight:700;color:var(--text);letter-spacing:.02em}
@@ -14,9 +14,6 @@
 .temporary-park-ordinary-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;padding:12px 2px 4px;border-top:2px solid var(--sd-glass-groove)}
 .temporary-park-ordinary-heading h3{margin:0;font-size:13px;font-weight:700}
 .temporary-park-ordinary-heading>span{font-size:11px;color:var(--muted)}
-.apps-zone .temporary-park-arrow{display:inline-grid!important;place-items:center;flex:none;width:17px;height:17px;font:700 17px/1 system-ui,sans-serif;color:var(--muted)}
-.apps-zone .temporary-park-group .temporary-park-arrow{color:var(--temporary-park-accent)}
-.apps-zone .app-key>.temporary-park-arrow{position:absolute;right:2px;bottom:2px;width:15px;height:15px;font-size:13px;line-height:1;background:var(--sd-glass-face);border:1px solid var(--sd-glass-groove);pointer-events:none}
-/* Horizontal docks keep each group readable and its full cards reachable. */
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .temporary-park-group{flex:0 0 300px;max-width:100%;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.apps-zone[data-area-state="expanded"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .temporary-park-group>:is(.temporary-park-heading,.temporary-park-cards){flex:none}
+.apps-widget .temporary-park-arrow{display:inline-grid!important;place-items:center;flex:none;width:17px;height:17px;font:700 17px/1 system-ui,sans-serif;color:var(--muted)}
+.apps-widget .temporary-park-group .temporary-park-arrow{color:var(--temporary-park-accent)}
+.apps-widget .app-key>.temporary-park-arrow{position:absolute;right:2px;bottom:2px;width:15px;height:15px;font-size:13px;line-height:1;background:var(--sd-glass-face);border:1px solid var(--sd-glass-groove);pointer-events:none}

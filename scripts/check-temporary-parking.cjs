@@ -63,7 +63,7 @@ const context={activeWorkspace:'work',desktopPages:actualPages,appState:{browser
   tileEngine:T,frontApp:'browser',tileSession:()=>sessionState,reconcileTileTree:()=>sessionState,frameFor:id=>frames[id],
   isLocalApp:id=>actualPages.visible('work',id,1),windowGeometry:new Map(),autoWindowAvoidance:new Set(),autoTiledWindows:new Set(),
   readGeometry:()=>({}),syncMaximizeButton(){},syncApps(){},showToast(){},queueDesktopStateBroadcast(){},renderTileLayout(){},
-  releaseBorrowedApp(){},moveCoveredApps(){},returnCoveredApps(){},saveTileSessions(){},refreshIntentAreas(){},
+  schedulePanelLayout(){},releaseBorrowedApp(){},moveCoveredApps(){},returnCoveredApps(){},saveTileSessions(){},refreshIntentAreas(){},
   removeOffPageWindowTiles(){},clearWindowAutoAvoidance(){},layoutMode:'manual',topOpenApp:()=>null,
   window:{},globalThis:{},$$:()=>[]};
 vm.createContext(context);

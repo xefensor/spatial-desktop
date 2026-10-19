@@ -220,92 +220,37 @@
   };
   const closedApps = { dolphin: "closed", elisa: "closed", browser: "closed", terminal: "closed", notes: "closed", steam: "closed", game: "closed" };
   const leaf = name => ({ kind: "window", name });
-  const defaultAreaDocks = {
-    apps: {edge:"left",order:0}, projects: {edge:"left",order:1},
-    systems: {edge:"right",order:0}, ai: {edge:"right",order:1}
-  };
-  // Upgrade only recognisable shipped defaults, retaining edited layouts and sizes.
-  function migrateAreaLayout(session) {
-    if (!session || session.orientationVersion === 1) return migrateSideAreaLayout(session);
-    const next = JSON.parse(JSON.stringify(session));
-    const oldDefaults = [
-      {apps:["left",0],projects:["left",1],systems:["right",0]},
-      {apps:["left",1],projects:["left",0],systems:["right",0]},
-      {apps:["left",0],projects:["right",1],systems:["right",0]},
-      {apps:["right",0],projects:["left",0],systems:["right",1]}
-    ];
-    const state = next.state;
-    const oldAI = !state?.ai || (state.ai.edge === "bottom" && state.ai.order === 0);
-    if (state && oldAI && oldDefaults.some(layout => Object.entries(layout).every(([name,[edge,order]]) => state[name]?.edge === edge && state[name]?.order === order))) {
-      next.state = JSON.parse(JSON.stringify(defaultAreaDocks));
-    }
-    next.orientationVersion = 1;
-    return migrateSideAreaLayout(next);
-  }
-  // Retired top/bottom docks join the matching side after its existing Areas.
-  // Horizontal lengths are not usable vertical shares or restore heights.
-  function migrateSideAreaLayout(session) {
-    const names = Object.keys(defaultAreaDocks);
-    const moved = names.filter(name => ["top","bottom"].includes(session?.state?.[name]?.edge));
-    if (!moved.length) return session;
-    const next = JSON.parse(JSON.stringify(session));
-    const order = name => Number(next.state[name]?.order) || 0;
-    const sorted = list => list.sort((a,b) => order(a)-order(b) || names.indexOf(a)-names.indexOf(b));
-    for (const [oldEdge,edge,width] of [["top","left",310],["bottom","right",300]]) {
-      const incoming = sorted(moved.filter(name => next.state[name].edge === oldEdge));
-      if (!incoming.length) continue;
-      const existing = sorted(names.filter(name => next.state[name]?.edge === edge));
-      next.sizes = {...next.sizes};
-      if (!existing.length || !Number.isFinite(next.sizes[edge])) next.sizes[edge] = width;
-      [...existing,...incoming].forEach((name,index) => { next.state[name] = {...next.state[name],edge,order:index}; });
-      incoming.forEach(name => {
-        if (next.shares?.[edge]) delete next.shares[edge][name];
-        if (next.expandedMain?.[edge]) delete next.expandedMain[edge][name];
-        if (next.expanded?.[name]) {
-          delete next.expanded[name].top; delete next.expanded[name].bottom;
-          if (!Number.isFinite(next.expanded[name][edge])) next.expanded[name][edge] = next.sizes[edge];
-        }
-      });
-    }
-    for (const key of ["shares","expandedMain"]) if (next[key]) {
-      delete next[key].top; delete next[key].bottom;
-    }
-    return next;
-  }
-  const scene = (project, mode, apps, sizes, tree, extras = {}) => ({
-    project, mode, apps: { ...closedApps, ...apps }, tree,
-    areas: { orientationVersion: 1, state: JSON.parse(JSON.stringify(defaultAreaDocks)), sizes: { left: 280, right: 280, top: 250, bottom: 250, ...sizes },
-      hidden: { projects: false, apps: false, systems: false, ai: false },
-      manual: { left: true, right: true, top: true, bottom: true }, layoutMode: "manual" }, ...extras
+  const scene = (project, mode, apps, tree, extras = {}) => ({
+    project, mode, apps: { ...closedApps, ...apps }, tree, ...extras
   });
   const scenarios = {
     general: scene(null, null, { dolphin: "open" },
-      { left: 68, right: 280 }, leaf("dolphin"), {
+      leaf("dolphin"), {
         note: "Personal notes\n\nBook the train tickets.\nBack up the holiday photographs.",
         folder: "Home", files: [["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Pictures", "231 items", "folder"], ["Music", "18 albums", "folder"], ["Projects", "7 items", "folder"]],
         browser: { title: "Your day", subtitle: "Personal start page", intro: "Mail, the weather and the next trip — a quiet place for everyday browsing.", links: ["Mail", "Weather", "Train tickets", "Reading list"] },
-        notifications: [], hiddenWidgets: [false, false]
+        notifications: []
       }),
     school: scene("research", "study", { browser: "open" },
-      { left: 280, right: 280, bottom: 96 }, leaf("browser"), {
+      leaf("browser"), {
         note: "Field observations\n\nRiverside A: 75% shade, 8 species.\nRiverside B: 60% shade, 7 species.\nCourtyard A: 20% shade, 4 species.\nCourtyard B: 35% shade, 5 species.\nCheck watering and ground cover before attributing differences to shade.",
         folder: "Documents/Biology", files: [["Field guide.pdf", "4.2 MiB", "document"], ["Course notes", "12 files", "folder"], ["Reading list.md", "3 KiB", "document"]],
         browser: { title: "Urban habitats & biodiversity", subtitle: "Biology · course reading", intro: "Habitat structure, shade and soil moisture influence the species found in urban green spaces. Compare sites using the same survey method, then record the limits of your sample.", links: ["Course reading", "Sampling methods", "Citation guide", "Assignment brief"] },
-        notifications: [["Feedback available", "Biology · your field survey outline", "amber", "i-graduation"]], focus: { running: false, seconds: 1500, visible: true }, hiddenWidgets: [false, true]
+        notifications: [["Feedback available", "Biology · your field survey outline", "amber", "i-graduation"]], focus: { running: false, seconds: 1500, visible: true }
       }),
     work: scene("plasma", "prototype", { browser: "open", terminal: "open", dolphin: "minimized" },
-      { left: 68, right: 300, bottom: 96 }, { kind: "split", axis: "y", ratio: .58, a: leaf("browser"), b: leaf("terminal") }, {
+      { kind: "split", axis: "y", ratio: .58, a: leaf("browser"), b: leaf("terminal") }, {
         note: projects.plasma.note,
         folder: "Projects/website-launch", files: [["src", "24 files", "folder"], ["public", "18 files", "folder"], ["package.json", "2 KiB", "document"], ["README.md", "4 KiB", "document"]],
         browser: { title: "Northstar Studio", subtitle: "Website Launch · local preview", intro: "A compact keyboard for everyday work. A comfortable layout, readable legends and one quiet place for every key. Explore the keyboard and find the layout that fits your desk.", links: ["Explore the keyboard", "Layouts & specifications", "Contact", "Preview checklist"] },
-        notifications: [["Review in 15 minutes", "Website Launch · bring the staging preview", "violet", "i-calendar"]], hiddenWidgets: [false, true]
+        notifications: [["Review in 15 minutes", "Website Launch · bring the staging preview", "violet", "i-calendar"]]
       }),
     gaming: scene(null, null, { browser: "open", elisa: "minimized" },
-      { left: 300, right: 70 }, leaf("browser"), {
+      leaf("browser"), {
         note: "Game night\n\nMeet in voice chat at 20:00.\nPick a co-op game everyone has installed.",
         folder: "Captures", files: [["Friday co-op.webm", "812 MiB", "document"], ["Screenshots", "28 images", "folder"], ["Highlights", "6 clips", "folder"]],
         browser: { title: "Tonight's co-op", subtitle: "Games and friends", intro: "Three friends are ready for the next session. Choose a game, check the shared notes and keep the music controls nearby while you play.", links: ["Game library", "Friends", "Voice chat", "Recent captures"] },
-        notifications: [["Jamie invited you", "Co-op lobby · 3 friends online", "green", "i-gamepad"]], hiddenWidgets: [true, false]
+        notifications: [["Jamie invited you", "Co-op lobby · 3 friends online", "green", "i-gamepad"]]
       })
   };
 
@@ -342,17 +287,10 @@
   for (const [workspace, example] of Object.entries(scenarios)) {
     example.project = openProjects[workspace][0] || null;
     example.mode = example.project ? "default" : null;
-    example.areas.hidden.projects = false;
     example.windows = [{column:"workspace", windows:workspaceWindows[workspace]}, ...openProjects[workspace].map(column=>({column, windows:projectWindows[column]}))];
     example.apps = {...closedApps};
     example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
   }
-  Object.assign(scenarios.general.areas.sizes,{left:280,right:70});
-  scenarios.general.areas.state.systems={edge:'left',order:2};
-  Object.assign(scenarios.general.areas.hidden,{projects:true,ai:true});
-  scenarios.general.areas.preferred={apps:'expanded',projects:'expanded',systems:'rail',ai:'rail'};
-  scenarios.school.areas.sizes = {left:280,right:280,top:250,bottom:250};
-  scenarios.work.areas.sizes = {left:280,right:280,top:250,bottom:250};
   scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
 
   function demoWindowTree(windows) {
@@ -380,8 +318,8 @@
 
   function seedWorkspaces(storage) {
     const versionKey = "spatial-demo-scenes-v1";
-    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); seedGamingParent(storage); seedGeneralAreas(storage); return false; }
-    const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-area-layouts-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
+    if (storage.getItem(versionKey) === "4") { migrateDemoWindowOrder(storage); seedGamingOverlay(storage); seedGamingParent(storage); return false; }
+    const keys = ["spatial-workspace-app-states-v1", "spatial-workspace-project-states-v1", "spatial-workspace-area-contents-v1", "spatial-split-layouts-v1", "spatial-workspace-window-layouts-v1", "spatial-workspace-display-assignments-v1", "spatial-desktop-pages-v1", "spatial-open-projects-v1", "spatial-independent-sessions-v1", "spatial-project-window-sessions-v1"];
     const backup = Object.fromEntries(keys.map(key=>[key,storage.getItem(key)]));
     const values = Object.fromEntries(keys.map(key=>[key,JSON.parse(storage.getItem(key)||"{}") ]));
     const rawProjects = storage.getItem("spatial-project-spaces-v2");
@@ -418,7 +356,7 @@
       if (fileFields && oldDefaultPaths.includes(fileFields[0]?.value)) fileFields[0].value = workspaceWindows[workspace].find(w=>w.base==="dolphin")?.content.folder || "/home/demo/Workspaces/" + workspace[0].toUpperCase() + workspace.slice(1);
       const browserFields = content?.frames?.browser;
       if (browserFields && ["Search the web", "localhost:5173 · Northstar Studio", example.browser.subtitle].includes(browserFields[0]?.value)) browserFields[0].value = workspaceWindows[workspace].find(w=>w.base==="browser")?.content.address || "Search the web";
-      values["spatial-workspace-area-contents-v1"][workspace] = {noteDraft:personalNote ?? workspaceWindows[workspace].find(w=>w.base==="notes")?.content.note ?? example.note, notifications:example.notifications, focus:{running:false,seconds:1500,visible:Boolean(example.focus?.visible),savedAt:Date.now()}, hiddenWidgets:example.hiddenWidgets, scroll:{apps:0,systems:0,projects:0}};
+      values["spatial-workspace-area-contents-v1"][workspace] = {noteDraft:personalNote ?? workspaceWindows[workspace].find(w=>w.base==="notes")?.content.note ?? example.note, notifications:example.notifications, focus:{running:false,seconds:1500,visible:Boolean(example.focus?.visible),savedAt:Date.now()}, scroll:{apps:0,projects:0}};
       for (const key of Object.keys(values["spatial-split-layouts-v1"])) if (key.startsWith(workspace+":")) delete values["spatial-split-layouts-v1"][key];
       for (const column of columns) {
         for (const window of column.windows) {
@@ -435,13 +373,12 @@
         }
       }
       values["spatial-workspace-app-states-v1"][workspace]=apps;
-      values["spatial-workspace-area-layouts-v1"][workspace]=JSON.parse(JSON.stringify(example.areas));
       values["spatial-workspace-project-states-v1"][workspace]={project,mode:project ? savedProjects[project].activeMode : null};
       values["spatial-open-projects-v1"][workspace]=columns.filter(c=>c.column!=="workspace").map(c=>c.column);
       values["spatial-desktop-pages-v1"][workspace]={active:0,activeColumn,windows:pages,owners,columns:Object.fromEntries(columns.filter(c=>c.column!=="workspace").map(c=>[c.column,{active:0}])),migrated:true,columnsMigrated:true};
       independent.projects[workspace]=project;
       delete values["spatial-workspace-window-layouts-v1"][workspace];
-      values["spatial-workspace-display-assignments-v1"][workspace]={areas:{projects:1,apps:1,systems:1},apps:Object.fromEntries(Object.keys(apps).map(id=>[id,1]))};
+      values["spatial-workspace-display-assignments-v1"][workspace]={apps:Object.fromEntries(Object.keys(apps).map(id=>[id,1]))};
       for (const key of Object.keys(values["spatial-project-window-sessions-v1"])) if (key.startsWith(workspace+":")) delete values["spatial-project-window-sessions-v1"][key];
     }
     // Retain the complete previous session before refreshing built-in scenes.
@@ -452,38 +389,8 @@
     storage.setItem(versionKey,"4");
     seedGamingOverlay(storage);
     seedGamingParent(storage);
-    seedGeneralAreas(storage);
-    return true;
-  }
 
-  // Adopt the new General opening layout once, retaining deliberate edits.
-  function seedGeneralAreas(storage) {
-    const marker='spatial-demo-general-areas-v1',key='spatial-workspace-area-layouts-v1';
-    if(storage.getItem(marker)==='2')return false;
-    const layouts=JSON.parse(storage.getItem(key)||'{}'),saved=layouts.general;
-    const previousSizes={left:68,right:280,top:250,bottom:250};
-    const previousStates={apps:'rail',projects:'rail',systems:'expanded',ai:'expanded'};
-    const assignments=JSON.parse(storage.getItem('spatial-workspace-display-assignments-v1')||'{}').general?.areas||{};
-    const original=!saved || saved.layoutMode==='manual'
-      && Object.entries(defaultAreaDocks).every(([name,dock])=>saved.state?.[name]?.edge===dock.edge&&saved.state[name].order===dock.order&&!saved.hidden?.[name])
-      && Object.entries(previousSizes).every(([edge,size])=>(saved.sizes?.[edge]===size||edge==='right'&&saved.sizes?.right===300)&&saved.manual?.[edge]===true)
-      && Object.entries(saved.preferred||{}).every(([name,state])=>previousStates[name]===state)
-      // The Assistant's minimum width fitted the former 280px dock to 300px.
-      && Object.values(saved.expanded||{}).every(edges=>Object.entries(edges).every(([edge,size])=>edge==='right'&&[280,300].includes(size)));
-    const previousOpening=saved?.layoutMode==='manual'
-      && Object.entries(defaultAreaDocks).every(([name,dock])=>saved.state?.[name]?.edge===dock.edge&&saved.state[name].order===dock.order)
-      && Object.entries(scenarios.general.areas.hidden).every(([name,hidden])=>saved.hidden?.[name]===hidden)
-      && Object.entries(scenarios.general.areas.sizes).every(([edge,size])=>saved.sizes?.[edge]===size&&saved.manual?.[edge]===true)
-      && Object.entries(scenarios.general.areas.preferred).every(([name,state])=>saved.preferred?.[name]===state)
-      && Object.entries(saved.expanded||{}).every(([name,edges])=>name==='apps'&&Object.entries(edges).every(([edge,size])=>edge==='left'&&size===280))
-      && Object.values(saved.shares||{}).every(shares=>!Object.keys(shares).length);
-    const adopt=(original||previousOpening)&&Object.values(assignments).every(display=>display===1);
-    if(adopt){
-      layouts.general=JSON.parse(JSON.stringify(scenarios.general.areas));
-      storage.setItem(key,JSON.stringify(layouts));
-    }
-    storage.setItem(marker,'2');
-    return Boolean(adopt);
+    return true;
   }
 
   // Change only the shipped opening view once. User-chosen later pages,
@@ -505,7 +412,7 @@
   }
 
   // Add only the new Gaming examples to an existing demo. Never reseed its
-  // other windows, projects, page selection, notes, or Area preferences.
+  // other windows, projects, page selection, notes, or panel preferences.
   function seedGamingOverlay(storage) {
     const key="spatial-demo-steam-v1";
     if(storage.getItem(key))return false;
@@ -729,6 +636,6 @@
     return value === legacyNote ? note : value;
   }
 
-  return { projects, assistantWorkflows, reviewNotes, scenarios, projectWindows, workspaceWindows, seedWorkspaces, defaultAreaDocks, migrateAreaLayout, migrateSideAreaLayout, note, migrateProject, migrateNote, migrateBrowserPage };
+  return { projects, assistantWorkflows, reviewNotes, scenarios, projectWindows, workspaceWindows, seedWorkspaces, note, migrateProject, migrateNote, migrateBrowserPage };
 });
 

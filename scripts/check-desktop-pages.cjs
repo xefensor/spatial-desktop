@@ -84,7 +84,7 @@ assert.equal(e.prevented, undefined, 'Browser zoom is preserved');
 nodes['#desktopContextMenu'].hidden = false;
 clock = 800; e = event(); listeners['.workspace-zone:wheel'](e);
 assert.equal(e.prevented, undefined, 'Menus block desktop navigation');
-// All three Areas release app focus, including headers and interactive fields.
+// Native widget sources release app focus, including headers and interactive fields.
 // The capture listener must leave their native click/focus actions intact.
 nodes['#desktopContextMenu'].hidden = true;
 let workspaceFocusCalls = 0;
@@ -95,17 +95,17 @@ for (const areaName of ['apps', 'projects', 'systems']) {
     let blurred = false;
     ctx.document.activeElement = { closest: () => ({}), blur: () => { blurred = true; } };
     const areaEvent = {
-      target: { closest: selector => selector === '[data-area-window]' ? { areaName, control } : null },
+      target: { closest: selector => selector === '[data-widget-source],.desktop-panel' ? { areaName, control } : null },
       preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; }
     };
     listeners['document:pointerdown'](areaEvent);
     assert.equal(ctx.desktopHasWindowFocus, false, areaName + ' ' + control + ' releases window focus');
     assert.equal(blurred, true, 'The previous app field loses keyboard focus');
-    assert.equal(areaEvent.prevented, undefined, 'Area control default actions are preserved');
-    assert.equal(areaEvent.stopped, undefined, 'Area dragging and resize handlers receive the event');
+    assert.equal(areaEvent.prevented, undefined, 'Panel control default actions are preserved');
+    assert.equal(areaEvent.stopped, undefined, 'Panel dragging and resize handlers receive the event');
   }
 }
-assert.equal(workspaceFocusCalls, 0, 'Area clicks do not steal focus into the canvas');
+assert.equal(workspaceFocusCalls, 0, 'Panel clicks do not steal focus into the canvas');
 ctx.desktopHasWindowFocus = true;
 listeners['document:pointerdown']({ target: { closest: () => null } });
 assert.equal(ctx.desktopHasWindowFocus, true, 'Clicking inside an app does not release its focus');
@@ -307,15 +307,15 @@ assert.equal(e.prevented,true);assert.equal(ctx.desktopPages.current('work'),1,'
 clock+=500;e=event();e.shiftKey=true;listeners['document:wheel'](e);
 assert.equal(ctx.desktopPages.column('work'),'site','F2+Shift+wheel selects a Project');
 delete ctx.SpatialDemoSuper;
-console.log('Win wheel passed: focused app/Area capture, project axis, OS alias, line deltas, momentum, duplicate/Overview prevention and input/menu/drag guards.');
+console.log('Win wheel passed: focused app/panel capture, project axis, OS alias, line deltas, momentum, duplicate/Overview prevention and input/menu/drag guards.');
 
 // Hovered Areas navigate without clicking or stealing their keyboard focus.
 nodes['.desktop-shell'].inert=false;
 ctx.window={getComputedStyle:element=>({overflowY:element.overflowY || 'visible',overflowX:element.overflowX || 'visible'})};
 const areaTarget=(name,scroll={},editing=false)=>{
-  const area={dataset:{areaWindow:name},parentElement:null,clientHeight:800,scrollHeight:800};
+  const area={dataset:{widgetSource:name},parentElement:null,clientHeight:800,scrollHeight:800,closest:()=>null};
   const target={parentElement:area,clientHeight:200,scrollHeight:200,scrollTop:0,...scroll};
-  target.closest=selector=>selector==='[data-area-window]'?area:editing?target:null;
+  target.closest=selector=>selector==='[data-widget-source],.desktop-panel'?area:editing?target:null;
   return target;
 };
 const areaEvent=(target,delta=80,options={})=>Object.assign(event(delta),{target},options);
@@ -394,7 +394,7 @@ resetAreaWheel();e=areaEvent(areaTarget('apps'),3,{deltaMode:1});listeners['docu
 assert.equal(ctx.desktopPages.current('work'),1,'Area wheels normalize line-mode deltas');
 resetAreaWheel();e=areaEvent(areaTarget('apps'),1,{deltaMode:2});listeners['document:wheel'](e);
 assert.equal(ctx.desktopPages.current('work'),1,'Area wheels normalize page-mode deltas');
-console.log('Area wheel passed: all four Areas, hover/focus, shared momentum, both list edges, nested overflow, Shift projects, native inputs, modals, drag and normalized deltas.');
+console.log('Panel wheel passed: all native widget sources, hover/focus, shared momentum, both list edges, nested overflow, Shift projects, native inputs, modals, drag and normalized deltas.');
 
 // Exercise the actual window-owned pointer gesture rather than global navigation.
 const dragListeners={},carried=[];

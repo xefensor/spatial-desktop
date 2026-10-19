@@ -1,0 +1,79 @@
+/* Apps: readable launch names and window identity,
+with controls held aside. */
+.apps-widget .apps-quick-launch-key{
+  min-height:72px;height:auto;gap:5px;padding:6px 3px;
+}
+.apps-widget .apps-quick-launch-key>span{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  white-space:normal;overflow-wrap:anywhere;line-height:1.3;min-height:2.6em;
+}
+.apps-widget .mini-card header{align-items:flex-start;gap:6px}
+.apps-widget .mini-card header>div:first-child{flex:1;min-width:0;align-items:center}
+.apps-widget .mini-card header>div:first-child>span:last-child{flex:1;min-width:0}
+.apps-widget .mini-card header b{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  white-space:normal;overflow-wrap:anywhere;line-height:1.3;
+}
+.apps-widget .mini-actions{flex:0 0 auto}
+.apps-widget .mini-stack{flex:1 1 0;min-height:0}
+.apps-widget .section-heading{flex:0 0 auto;height:auto;align-items:baseline;min-height:0;gap:8px;padding-bottom:8px}
+.apps-widget :is(.apps-quick-launch>h2,#minimizedTitle,.background-apps-heading h2){font-size:12px;line-height:1.4}
+.apps-widget :is(.apps-quick-launch-scope,#parkedScope,.background-apps-heading p){font-size:11px;line-height:1.4}
+/* Working material: search stays usable,
+file names wrap,
+and pins have a
+   consistent visual identity in both the compact card and narrow strip. */
+.files-widget :is(.project-space-content,.project-library){padding-inline:2px 4px}
+.files-widget .working-memory{padding-inline:4px}
+.files-widget .memory-toolbar{align-items:center;gap:8px;margin-block:10px}
+.files-widget .memory-toolbar :is(button,.memory-text-action){min-height:32px}
+.files-widget .memory-browse{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.files-widget .memory-browse .library-search{min-width:0;width:auto}
+.files-widget .memory-browse input{width:100%;min-width:0}
+.files-widget .memory-browse select{max-width:88px}
+.files-widget .project-root-module .project-items b{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  white-space:normal;overflow-wrap:anywhere;
+}
+.system-widget-content .system-scope-heading{gap:8px;padding-inline:3px}
+.system-widget-content .system-scope-heading>span{letter-spacing:.06em}
+.system-widget-content .system-scope-heading>b{min-width:0}
+.system-widget-content .system-desktop-request{min-height:40px}
+/* Assistant: bound inspectable context,
+leave the composer reachable,
+and
+   give long conversation names room without sacrificing the action buttons. */
+.assistant-widget .ai-chat-toolbar{flex-wrap:wrap;row-gap:6px}
+.assistant-widget .ai-chat-toolbar>select{flex:1 1 120px;max-width:100%}
+.assistant-widget .ai-rename-form{flex-wrap:wrap}
+.assistant-widget .ai-rename-form>input{flex:1 1 100px}
+.assistant-widget .ai-content>.ai-input-details{
+  flex:0 1 auto;min-height:0;max-height:min(180px,30%);overscroll-behavior:contain;
+}
+.assistant-widget .ai-chat-settings-body{width:min(240px,calc(100vw - 36px));max-height:min(320px,60vh);overflow:auto;overscroll-behavior:contain}
+.assistant-widget .ai-composer textarea{min-height:52px;padding:8px 9px}
+.assistant-widget .ai-content>.ai-context-sources{min-height:0;max-height:30%;overflow:auto;overscroll-behavior:contain}
+.assistant-widget .ai-direct-context .ai-context-chip{min-height:34px}
+.assistant-widget .ai-direct-context .ai-context-chip>span{min-width:0}
+@container assistant-widget (max-height:340px){.ai-content{gap:4px}
+.ai-content .ai-chat-toolbar{row-gap:4px}
+.ai-content .ai-chat-toolbar>select{height:30px}
+.ai-content .ai-chat-toolbar>button{min-height:30px;padding-block:4px}
+.ai-content>.ai-input-details{flex:0 0 52px;min-height:52px;max-height:52px}
+.ai-content .ai-direct-context{padding-block:2px}
+.ai-content .ai-direct-context .ai-context-chip{min-height:30px;padding:4px 7px}
+.ai-content .ai-composer textarea{height:44px;min-height:44px;padding:5px 8px;font-size:12px;line-height:1.35}
+.ai-content .ai-composer small{font-size:10px;margin-top:3px}
+}
+/* Widget sources provide content; native panels own material,
+geometry and interaction. */
+.widget-source{position:relative;inset:auto;display:flex;flex-direction:column;flex:1 1 auto;width:100%;height:100%;min-width:0;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden;backdrop-filter:none}
+.widget-source[hidden]{display:none!important}
+.apps-widget-body,
+.apps-scroll-region{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:0;overflow:hidden}
+.widget-source :is(button,summary,input,select,textarea):focus-visible{outline:2px solid var(--widget-accent,var(--workspace-accent));outline-offset:-2px}
+.widget-source :is(.mini-stack,.project-space-content,.project-library,.ai-chat){overscroll-behavior:contain;scroll-padding-block:8px}
+.apps-widget .apps-quick-launch{flex:0 0 auto;max-height:none;overflow:visible}
+.apps-widget .apps-quick-launch-grid{overflow:visible}
+.apps-widget .mini-stack{flex:1 1 0;min-height:0;overflow:auto}
+.assistant-widget .ai-content{height:100%;width:100%;min-height:0}

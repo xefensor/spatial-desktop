@@ -147,24 +147,19 @@ for (const filename of fs.readdirSync(dist).filter(name => name.endsWith('.html'
 console.log(`${localReferences} local HTML asset/navigation references passed.`);
 console.log('Desktop workflows passed: 19 resource cases, shared terminal commands, project/resource search, safe markup, duplicate system toggles, keyboard events and Escape priority.');
 
-// Project rail actions must reveal the editor rather than focus hidden content.
+// Files actions reveal their native widget before focusing an editor.
 for (const edge of ['left', 'right', 'top', 'bottom']) {
   let focused = false, scrolled = false, shown = false;
   const rail = vm.createContext({
-    dockState: { projects: { edge } }, dockSizes: { [edge]: 64 }, dockSizeManual: {},
-    autoSpatialEdgeStates: new Map([[edge, 'rail']]), manualAreaOverride() {},
     setAreaState(name,state,announce) { assert.equal(name, 'projects'); assert.equal(state,'expanded'); assert.equal(announce,false); shown = true; }, refreshIntentAreas() {},
     requestAnimationFrame: callback => callback(),
     $: () => ({ focus() { focused = true; }, scrollIntoView() { scrolled = true; } })
   });
   vm.runInContext(slice('function focusProjectControl(', 'const projectAccentPalette'), rail);
   rail.focusProjectControl('#projectQuickNote');
-  assert(rail.dockSizes[edge] >= (edge === 'left' || edge === 'right' ? 300 : 250));
-  assert.equal(rail.dockSizeManual[edge], true);
-  assert.equal(rail.autoSpatialEdgeStates.has(edge), false);
   assert(shown && focused && scrolled);
 }
-console.log('Project rail editors passed: all four dock edges expand before focus.');
+console.log('Files editors passed: native widgets reveal before focus on all four panel edges.');
 
 // Seeded mixed open/close/resize/persist sequences, including narrow and ultrawide workspaces.
 const minimums = { dolphin: { width: 440, height: 340 }, elisa: { width: 460, height: 360 }, browser: { width: 420, height: 320 }, terminal: { width: 390, height: 300 }, notes: { width: 400, height: 300 } };

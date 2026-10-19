@@ -1,0 +1,98 @@
+/* Everyday status comes first. The same controls remain available on a rail;
+   the month grid takes space only when its native disclosure is open. */
+.system-widget-content>.system-scroll-region{gap:9px}
+.system-widget-content>.system-scroll-region>*{order:0}
+.system-widget-content>.system-scroll-region>.rail-group{display:none!important}
+.system-widget-content .time-block{
+  min-height:46px;
+  align-items:center;
+  gap:12px;
+  padding:2px 3px 8px;
+  margin:0;
+}
+.system-widget-content .time-block>.live-time{
+  font-size:34px;
+  line-height:1;
+  font-weight:350;
+  letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums;
+}
+.system-widget-content .time-block b{font-size:12px}
+.system-widget-content .time-block small{font-size:11px;margin-top:3px}
+.system-widget-content>.system-scroll-region>.quick-settings{
+  flex:0 0 auto;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:5px;
+  margin:0;
+}
+.system-widget-content .quick-toggle{
+  min-width:0;
+  height:46px;
+  min-height:46px;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  padding:5px 1px 8px;
+}
+.system-widget-content .quick-toggle>span:not(.theme-dot){font-size:10px;line-height:1.1}
+.system-widget-content .system-launchers{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px;
+  margin:0;
+}
+.system-widget-content .system-launcher{min-height:30px;height:30px;gap:6px;padding:4px 8px}
+.system-widget-content .system-launcher>span{font-size:11px}
+.system-widget-content .layout-mode-status{padding:4px 2px;min-height:30px;gap:5px;font-size:10px}
+.system-widget-content .layout-mode-status{grid-column:auto}
+.system-widget-content>.system-scroll-region>.static-widget-stack{
+  margin:0;
+  padding:0;
+  border:0;
+  gap:0;
+  align-content:start;
+}
+.system-widget-content .system-widget{padding:10px}
+.system-widget-content .calendar-widget:not([hidden]){display:block}
+.system-widget-content .system-widget[hidden]{display:none!important}
+.system-widget-content .widget-heading{height:auto;min-height:25px;align-items:center;gap:8px;margin-bottom:4px}
+.system-widget-content .widget-heading h2{font-size:12px}
+.system-widget-content .calendar-widget .next-event{
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:7px 8px;
+  gap:9px;
+  text-align:left;
+  color:var(--text);
+  border:0;
+  cursor:pointer;
+}
+.system-widget-content .next-event>span{flex:1;min-width:0}
+.system-widget-content .next-event>svg{width:14px;height:14px;flex:0 0 14px;color:var(--muted)}
+.system-widget-content .next-event small{font-size:11px;line-height:1.4}
+.system-widget-content .system-month{margin-top:6px;border-top:1px solid var(--line)}
+.system-widget-content .system-month>summary{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:30px;
+  padding:5px 2px;
+  list-style:none;
+  cursor:pointer;
+  font-size:11px;
+  color:var(--muted);
+}
+.system-widget-content .system-month>summary::-webkit-details-marker{display:none}
+.system-widget-content .system-month>summary>span:first-child{flex:1;color:var(--text)}
+.system-widget-content .system-month>summary>svg{width:13px;height:13px;transform:rotate(90deg);transition:transform 120ms ease}
+.system-widget-content .system-month[open]>summary>svg{transform:rotate(-90deg)}
+.system-widget-content .system-month>summary:hover{color:var(--text);background:var(--ui-quiet-hover)}
+.system-widget-content .system-month>summary:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.system-widget-content .notification{padding-block:8px}
+.system-widget-content .notification b{font-size:12px}
+.system-widget-content .notification small{font-size:11px}
+.system-widget-content .system-device-stack{padding-top:2px}
+@media(prefers-reduced-motion:reduce){.system-widget-content .system-month>summary>svg{transition:none}}

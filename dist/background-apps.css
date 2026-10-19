@@ -1,16 +1,13 @@
 /* Quick launch starts Apps; parked work follows; shared activity stays below. */
-.apps-zone .background-apps{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;padding:7px 3px 0;border-top:1px solid var(--soft-line);max-height:112px;overflow:auto;overscroll-behavior:contain}
-.apps-zone .background-apps[hidden]{display:none!important}
-.apps-zone .background-apps-heading{display:flex;flex:0 0 100%;min-width:0;flex-direction:column;align-items:flex-start;gap:3px;padding:0 0 3px;margin:0}
-.apps-zone .background-apps-heading h2{margin:0;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
-.apps-zone .background-apps-heading p{margin:0;color:var(--muted);font-size:10px;font-weight:400;line-height:1.4}
-body[data-theme] .apps-zone .background-app-icon{position:relative;display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:5px;border:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:var(--background-accent);cursor:pointer}
-.apps-zone .background-app-icon .app-art{width:24px;height:24px}
-.apps-zone .background-app-icon>i{position:absolute;bottom:1px;left:7px;right:7px;height:2px;background:linear-gradient(to right,var(--background-accent) var(--background-progress),var(--soft-line) var(--background-progress))}
-body[data-theme] .apps-zone .background-app-icon:is(:hover,:focus-visible){border-color:var(--background-accent);background:color-mix(in srgb,var(--background-accent) 12%,transparent);outline:none}
-.apps-zone[data-area-state="rail"] .background-apps{flex-direction:column;flex-wrap:nowrap;max-height:30%;padding:5px 0 0;margin-top:4px;align-items:center}
-.apps-zone[data-area-state="rail"] .background-apps-heading{display:none}
-.apps-zone[data-area-state="rail"]:is([data-dock-edge="top"],[data-dock-edge="bottom"]) .background-apps{flex-direction:row;flex-wrap:nowrap;max-height:none;max-width:30%;margin:0 0 0 8px;padding:0 0 0 7px;border-top:0;border-left:1px solid var(--soft-line)}
+.apps-widget .background-apps{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;padding:7px 3px 0;border-top:1px solid var(--soft-line);max-height:112px;overflow:auto;overscroll-behavior:contain}
+.apps-widget .background-apps[hidden]{display:none!important}
+.apps-widget .background-apps-heading{display:flex;flex:0 0 100%;min-width:0;flex-direction:column;align-items:flex-start;gap:3px;padding:0 0 3px;margin:0}
+.apps-widget .background-apps-heading h2{margin:0;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
+.apps-widget .background-apps-heading p{margin:0;color:var(--muted);font-size:10px;font-weight:400;line-height:1.4}
+body[data-theme] .apps-widget .background-app-icon{position:relative;display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:5px;border:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:var(--background-accent);cursor:pointer}
+.apps-widget .background-app-icon .app-art{width:24px;height:24px}
+.apps-widget .background-app-icon>i{position:absolute;bottom:1px;left:7px;right:7px;height:2px;background:linear-gradient(to right,var(--background-accent) var(--background-progress),var(--soft-line) var(--background-progress))}
+body[data-theme] .apps-widget .background-app-icon:is(:hover,:focus-visible){border-color:var(--background-accent);background:color-mix(in srgb,var(--background-accent) 12%,transparent);outline:none}
 .steam-demo-download{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px;padding:12px;border:1px solid #405569;background:#172331;font-size:11px;color:#c7d5e0}
 .steam-demo-download>div{flex:1;min-width:140px;display:grid;gap:4px}
 .steam-demo-download b{color:#b8de8c}
