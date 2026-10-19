@@ -86,4 +86,21 @@ function harness(){
   assert.equal(renames,1);assert.equal(selectedKey.prevented,true);assert.equal(demoSuperHeld,false,'File Rename intercepts F2 before the browser Super emulation can become held');
   selected=[];const overviewKey=event();handler(overviewKey);assert.equal(overviewKey.stopped,undefined,'F2 without file selection continues to Overview');assert.equal(renames,1);
 }
+{
+  const source=fs.readFileSync(require.resolve('../dist/desktop-files.js'),'utf8'),between=(first,last)=>source.slice(source.indexOf(first),source.indexOf(last,source.indexOf(first)));
+  const fields=new Map(),controls=Array.from({length:5},()=>({disabled:false})),places=[{pressed:true,classList:{remove(){this.active=false;}},setAttribute(name,value){if(name==='aria-pressed')this.pressed=value;}}],messages=[],visits=[];
+  const field=selector=>{if(!fields.has(selector))fields.set(selector,{value:'',textContent:'',innerHTML:'',hidden:false,disabled:false,readOnly:false});return fields.get(selector);};
+  const frame={dataset:{fileLocation:'/home/work/Downloads',fileWorkspace:'work'},querySelector:field,querySelectorAll:selector=>selector==='[data-home-folder]'?places:controls};
+  let entries=[{id:'trash-one',name:'Review.md',path:'/home/work/Downloads/Review.md',deletedAt:1000,items:[{kind:'document'}]}];
+  const runtime=vm.createContext({frameFor:()=>frame,activeWorkspace:'work',workspaceProfiles:{work:{home:'/home/work'}},selections:new Map(),selection:()=>[],escapeHtml:String,icon:()=>'',parent:Files.parent,Date,
+    files:{trashList:()=>entries,read:address=>['/home/work/Downloads','/home/work'].includes(address)?{kind:'folder'}:null},feedback:(id,message)=>messages.push(message),
+    previousRender(id,address){visits.push(address);frame.dataset.fileLocation=address;field('.address-bar input').value=address;field('.file-breadcrumbs').innerHTML=address;},
+    renderFileLocation(id,address){runtime.renderAppFiles(id,address);},decorate(){runtime.trashControls(frame,frame.dataset.desktopTrash==='true');}});
+  vm.runInContext(between('function trashControls(', 'function decorate(')+between('function perform(', 'function showTrash(')+between('function showTrash(', 'newAppFolder=function')+between('renderAppFiles=function', 'function selection('),runtime);
+  runtime.showTrash('files');assert.equal(field('.address-bar input').value,'Trash');assert.equal(field('.address-bar input').disabled,true);assert.match(field('.file-breadcrumbs').innerHTML,/Trash/);assert(controls.every(control=>control.disabled));assert.equal(places[0].pressed,'false');assert.match(field('.app-status').innerHTML,/1 item in/);assert.doesNotMatch(field('.app-status').innerHTML,/1 items/);
+  runtime.perform('files','new-folder');assert.deepEqual(messages,['Return to files before using this action.'],'A stale create action cannot create a folder in the hidden previous location');
+  entries=[];runtime.showTrash('files');assert.equal(frame.dataset.trashPreviousDirectory,'/home/work/Downloads','Refreshing Trash retains its original return folder');assert.match(field('.app-status').innerHTML,/0 items/);
+  runtime.perform('files','home');assert.deepEqual(visits,['/home/work/Downloads']);assert(controls.every(control=>!control.disabled));assert.equal(field('.address-bar input').disabled,false);assert.equal(field('.address-bar input').readOnly,false);assert.equal(frame.dataset.trashPreviousDirectory,undefined);assert.equal(field('.address-bar input').value,'/home/work/Downloads');
+  runtime.showTrash('files');frame.dataset.trashPreviousWorkspace='other';runtime.perform('files','home');assert.equal(visits.at(-1),'/home/work','A stale previous Workspace path never becomes the return destination');
+}
 console.log('Desktop files passed: scoped real text and retained bytes, stable file/directory identities, descendants, atomic conflicts and quota rollback, safe replace/Trash/restore, projection masks, reload/sync metadata, clipboard scope and guarded Undo.');

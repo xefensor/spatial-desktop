@@ -15,7 +15,7 @@ body[data-theme] .parked-owned-dialog-restore:is(:hover,:focus-visible){backgrou
 .owned-dialog-heading{display:flex;min-width:0;overflow-wrap:anywhere;gap:10px;align-items:center}
 .owned-dialog-heading>.app-art-compact{width:28px;height:28px;flex:none}
 .owned-dialog-heading small,.owned-dialog-heading b{display:block}
-.owned-dialog-heading small{font-size:11px;color:var(--app-primary);margin-bottom:3px}
+.owned-dialog-heading small{font-size:11px;color:var(--muted);margin-bottom:3px}
 .owned-dialog-heading b{font-size:17px}
 .owned-app-dialog label{display:flex;flex-direction:column;gap:6px;font-size:12px}
 .owned-app-dialog input{width:100%;min-width:0;padding:9px;font-size:13px;color:var(--text);background:var(--well);border:1px solid var(--line);border-radius:0}
@@ -27,7 +27,7 @@ body[data-theme] .parked-owned-dialog-restore:is(:hover,:focus-visible){backgrou
 .owned-app-dialog p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}
 .owned-dialog-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .owned-dialog-actions button{min-height:36px;padding:7px 18px;font-size:12px;color:var(--text);background:var(--shell);border:1px solid var(--line);border-radius:0}
-.owned-dialog-actions button[type=submit]{border-color:var(--app-primary);color:var(--app-primary)}
+.owned-dialog-actions button[type=submit]{border-color:var(--app-primary);color:var(--text);font-weight:600}
 .firefox-menu .firefox-save-page{display:block;width:100%;padding:8px;text-align:left;font-size:12px}
 .note-file-actions{display:flex;flex:none;gap:5px;padding:3px 14px 7px;flex-wrap:wrap}
 .note-file-actions>button.surface-key{font-size:11px;min-height:29px;padding:4px 8px}

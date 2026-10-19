@@ -45,7 +45,7 @@
   }
   function focusDialog(id) {
     const frame=frameFor(id);
-    if(appState[id]==='open' && isLocalApp(id) && !frame.hidden)frame.querySelector('[data-owned-dialog] input')?.focus({preventScroll:true});
+    if(appState[id]==='open' && isLocalApp(id) && !frame.hidden)(frame.querySelector('[data-owned-dialog] input')||frame.querySelector('[data-owned-dialog] select')||frame.querySelector('[data-owned-dialog] button'))?.focus({preventScroll:true});
   }
   const isNote=id=>(appInfo[id]?.base||id)==='notes';
   const editableName=value=>/\.(md|markdown|txt)$/i.test(value);

@@ -218,7 +218,6 @@ function observeMaterialInheritance() {
 }
 
 const appInfo = {
-  ...globalThis.SpatialDesktopApps?.definitions,
   settings: { label: "Settings", icon: "i-settings", tone: "violet", primary: "#a483ff", detail: "Preferences", singleInstance: true, parkingWidget: false, audio: false },
   dolphin: { label: SpatialAppNames.label("Dolphin"), icon: "i-folder", tone: "blue", primary: "#2a9fff", detail: "Downloads" },
   elisa: { label: SpatialAppNames.label("Elisa"), icon: "i-music", tone: "violet", primary: "#a483ff", detail: "Evening Light" },
@@ -226,7 +225,8 @@ const appInfo = {
   terminal: { label: SpatialAppNames.label("Konsole"), icon: "i-terminal", tone: "green", primary: "#64d782", detail: "demo@desktop" },
   notes: { label: SpatialAppNames.label("Notes"), icon: "i-note", tone: "amber", primary: "#ffb553", detail: "Meeting notes" },
   steam: { label: "Steam", icon: "i-gamepad", tone: "blue", primary: "#79bfec", detail: "Friends & game tools", singleInstance: true, parkingWidget: false },
-  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true }
+  game: { label: "Fallout 4", icon: "i-gamepad", tone: "green", primary: "#b8d59a", detail: "Sanctuary Hills", singleInstance: true, borderlessFullscreen: true, gamescope: true },
+  ...globalThis.SpatialDesktopApps?.definitions
 };
 
 const appState = { ...Object.fromEntries(Object.keys(appInfo).map(id => [id,'closed'])), ...(desktopPreset === 'demo' ? SpatialDemoExamples.scenarios.general.apps : {}) };

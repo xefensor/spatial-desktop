@@ -229,7 +229,7 @@ function refreshBoundNote(note) {
   const context=noteFileContext(note);
   if(context.error){note.fileError=context.error;return;}
   if(note.fileDirty){
-    if(context.file.content!==note.fileText)note.fileError='The file changed elsewhere. Copy your unsaved text before reopening it.';
+    note.fileError=context.file.content!==note.fileText?'The file changed elsewhere. Copy your unsaved text before reopening it.':'';
     return;
   }
   note.title=context.file.name;note.text=String(context.file.content||'');note.fileText=note.text;note.fileError='';
@@ -307,7 +307,17 @@ globalThis.SpatialNoteFiles={
     renderNotes(id);saveAppWindows();return true;
   },
   flush:flushBoundNoteHistory,
-  refresh(id){const note=SpatialAppTools.activeNote(appWindowModel(id));refreshBoundNote(note);renderNotes(id);return !note.fileError;}
+  refresh(id){const note=SpatialAppTools.activeNote(appWindowModel(id));refreshBoundNote(note);renderNotes(id);return !note.fileError;},
+  refreshAll(){
+    let count=0;
+    for(const id of Object.keys(appInfo)){
+      if((appInfo[id].base||id)!=='notes'||appState[id]==='closed'||frameFor(id)?.dataset.appReadyWorkspace!==activeWorkspace)continue;
+      const model=appWindowModel(id);for(const note of model.notes)refreshBoundNote(note);
+      renderNotes(id);count++;
+    }
+    if(count)saveAppWindows(false);
+    return count;
+  }
 };
 function readBrowserPage(frame) {
   const page = $('.demo-reading-page', frame);
@@ -534,7 +544,7 @@ function executeParkedAppAction(id, action) {
     renderFileLocation(id,SpatialHomeFolders.folder(workspaceProfiles,activeWorkspace,action==='file-home'?'Home':'Downloads'));
     openApp(id);
   } else if(action==='file-new-folder'){
-    newAppFolder(id);showToast('Folder created in '+SpatialAppTools.current(model.navigation));
+    newAppFolder(id);
   } else if(action==='note-new'){
     SpatialAppTools.addNote(model);renderNotes(id);openApp(id);
     const title=$('[data-note-title]',frameFor(id));title.focus();title.select();

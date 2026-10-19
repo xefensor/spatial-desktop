@@ -177,7 +177,7 @@
     try{
       for(const item of detail.items||[]){for(const file of item.items||[item]){if(file.kind==='folder'||!file.itemId)continue;root.SpatialItemHistoryDesktop?.capture?.({id:file.itemId,itemId:file.itemId,title:file.name,text:file.content||'',attachment:file.attachment,address:file.path,workspace:file.workspace||detail.workspace,project:file.project||null,source:{workspace:file.workspace||detail.workspace,project:file.project||null,address:file.path,label:'Files',app:'dolphin'}},{workspace:file.workspace||detail.workspace,project:file.project||null,action:detail.action,detail:'File '+detail.action});}}
       for(const [id,info]of Object.entries(appInfo)){if((info.base||id)!=='dolphin'||appState[id]==='closed')continue;const frame=frameFor(id);if(frame?.dataset.fileWorkspace===activeWorkspace&&frame.dataset.fileLocation){if(frame.dataset.desktopTrash==='true')showTrash(id);else renderAppFiles(id,frame.dataset.fileLocation,{history:false});}}
-      memory?.render(true);root.SpatialProjectRail?.render();root.SpatialAIDesktop?.render();
+      memory?.render(true);root.SpatialProjectRail?.render();root.SpatialAIDesktop?.render();root.SpatialNoteFiles?.refreshAll();
       queueDesktopStateBroadcast(0);root.dispatchEvent(new CustomEvent('spatial-files-change',{detail}));
     }finally{refreshing=false;}
   }
@@ -198,6 +198,7 @@
   };
   files.download=async(address,options={})=>{const workspace=options.workspace||activeWorkspace,file=files.read(address,{workspace});if(!file)throw error('missing','This file is no longer available.');const blob=await files.blob(address,{workspace});if(activeWorkspace!==workspace)throw error('scope','The Workspace changed. Download the file again here.');const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=file.name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return file;};
   root.SpatialDesktopFiles=files;
+  root.SpatialNoteFiles?.refreshAll();
   if(root.SpatialAssistantDesktop)root.SpatialAssistantDesktop.fileContext=function(address,workspace=activeWorkspace){let file;try{file=files.read(address,{workspace});}catch{return null;}if(!file||file.kind==='folder')return null;return {id:file.itemId,itemId:file.itemId,title:file.name,filename:file.name,kind:file.attachment?.kind||'file',text:file.content||'',address:file.path,attachment:file.attachment,workspace:file.workspace,project:file.project,source:{workspace:file.workspace,project:file.project,address:file.path,label:'File Browser'}};};
   const previousRows=appFileRows;
   appFileRows=function(id,address){const frame=frameFor(id),workspace=frame?.dataset.fileWorkspace||activeWorkspace;if(!scope(path(address),workspace))return previousRows(id,address);return files.filterRows(address,previousRows(id,address),{workspace});};
@@ -205,13 +206,22 @@
   fileLocationRows=function(frame,address){const workspace=frame?.dataset?.fileWorkspace||activeWorkspace;const rows=previousLocationRows(frame,address);return scope(path(address),workspace)?files.filterRows(address,rows,{workspace}):rows;};
   /* File Browser controls are ordinary app controls; no native disk access. */
   const previousRender=renderAppFiles,selections=new Map(),selectionObservers=new WeakMap();
-  renderAppFiles=function(id,address,options){const frame=frameFor(id);if(frame)delete frame.dataset.desktopTrash;const result=previousRender(id,address,options);decorate(id);return result;};
+  renderAppFiles=function(id,address,options){const frame=frameFor(id);if(frame){delete frame.dataset.desktopTrash;delete frame.dataset.trashPreviousDirectory;delete frame.dataset.trashPreviousWorkspace;}const result=previousRender(id,address,options);decorate(id);return result;};
   function selection(id){const frame=frameFor(id);if(frame?.dataset.desktopTrash==='true')return selections.get(id)||[];const model=appWindowModel(id);return (model.selections?.length?model.selections:[model.selected].filter(Boolean)).map(name=>frame.dataset.fileLocation.replace(/\/$/,'')+'/'+name);}
   function button(action,label,disabled=false){return '<button type="button" class="surface-key" data-file-operation="'+action+'"'+(disabled?' disabled':'')+'>'+escapeHtml(label)+'</button>';}
+  function trashControls(frame,active){
+    for(const control of frame.querySelectorAll('[data-app-action="file-new-folder"],[data-app-action="file-search"],[data-app-action="file-view"],[data-file-sort],[data-file-filter]'))control.disabled=active;
+    const location=frame.querySelector('.address-bar input');if(location){location.disabled=active;location.readOnly=active;if(active)location.value='Trash';}
+    if(!active)return;
+    frame.querySelector('.file-breadcrumbs').innerHTML='<span aria-current="page">Trash</span>';
+    frame.querySelectorAll('[data-home-folder]').forEach(place=>{place.setAttribute('aria-pressed','false');place.classList.remove('is-active');});
+    frame.querySelector('.file-filter').hidden=true;
+  }
   function decorate(id){
     const frame=frameFor(id);if(!frame||(appInfo[id]?.base||id)!=='dolphin')return;
     let toolbar=frame.querySelector('.desktop-file-actions');if(!toolbar){toolbar=document.createElement('div');toolbar.className='desktop-file-actions';toolbar.setAttribute('aria-label','File actions');frame.querySelector('.file-navigation')?.after(toolbar);}
     const inTrash=frame.dataset.desktopTrash==='true',picked=selection(id).length;
+    trashControls(frame,inTrash);
     toolbar.innerHTML=inTrash?button('home','Back to files')+button('restore','Restore',!picked):button('copy','Copy',!picked)+button('cut','Cut',!picked)+button('paste','Paste',!files.clipboard())+button('rename','Rename',picked!==1)+button('trash','Move to Trash',!picked)+button('show-trash','Trash');
     let feedback=frame.querySelector('.desktop-file-feedback');if(!feedback){feedback=document.createElement('p');feedback.className='desktop-file-feedback';feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');frame.querySelector('.desktop-file-actions')?.after(feedback);}
     const list=frame.querySelector('.file-list');if(list&&!selectionObservers.has(list)){const observer=new MutationObserver(()=>decorate(id));observer.observe(list,{subtree:true,attributes:true,attributeFilter:['aria-selected']});selectionObservers.set(list,observer);}
@@ -220,6 +230,7 @@
   const modal=document.createElement('dialog');modal.className='desktop-files-dialog';modal.setAttribute('aria-label','File action');document.body.append(modal);
   const previousNavigationBlocked=desktopNavigationBlocked;desktopNavigationBlocked=function(...args){return modal.open||previousNavigationBlocked(...args);};
   for(const type of ['keydown','keyup'])root.addEventListener(type,event=>{if(modal.open){root.SpatialDemoSuper?.cancel?.();event.stopImmediatePropagation();}},true);
+  root.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='f'&&event.target.closest('[data-app-frame]')?.dataset.desktopTrash==='true'){event.preventDefault();event.stopImmediatePropagation();}},true);
   // F2 also emulates Super in browsers. A selected file reserves this plain
   // key before that document-level handler can set its held-key state.
   root.addEventListener('keydown',event=>{
@@ -240,7 +251,8 @@
     const frame=frameFor(id),workspace=activeWorkspace,address=frame.dataset.fileLocation,picked=selection(id);
     try{
       if(operation==='show-trash'){showTrash(id);return;}
-      if(operation==='home'){delete frame.dataset.desktopTrash;renderFileLocation(id,workspaceProfiles[workspace].home);return;}
+      if(operation==='home'){let previous=frame.dataset.trashPreviousWorkspace===workspace?frame.dataset.trashPreviousDirectory:'';try{if(files.read(previous,{workspace})?.kind!=='folder')previous='';}catch{previous='';}delete frame.dataset.desktopTrash;renderFileLocation(id,previous||workspaceProfiles[workspace].home);return;}
+      if(frame.dataset.desktopTrash==='true'&&!['restore','undo'].includes(operation)){feedback(id,'Return to files before using this action.');return;}
       if(operation==='copy'||operation==='cut'){files[operation](picked,{workspace});feedback(id,picked.length+' item'+(picked.length===1?'':'s')+(operation==='cut'?' ready to move.':' copied.'));decorate(id);return;}
       if(operation==='paste'){files.paste(address,{workspace,collision:choice});feedback(id,'Files pasted.');return;}
       if(operation==='trash'){files.trash(picked,{workspace});appWindowModel(id).selections=[];appWindowModel(id).selected=null;renderAppFiles(id,address,{history:false});feedback(id,'Moved to Trash.');return;}
@@ -255,9 +267,9 @@
     }
   }
   function showTrash(id){
-    const frame=frameFor(id),workspace=activeWorkspace;frame.dataset.desktopTrash='true';selections.set(id,[]);const entries=files.trashList({workspace});
+    const frame=frameFor(id),workspace=activeWorkspace;if(frame.dataset.desktopTrash!=='true'){frame.dataset.trashPreviousDirectory=frame.dataset.fileLocation;frame.dataset.trashPreviousWorkspace=workspace;}frame.dataset.desktopTrash='true';selections.set(id,[]);const entries=files.trashList({workspace});
     frame.querySelector('.file-list').innerHTML=entries.map(entry=>'<button type="button" class="content-row" role="option" aria-selected="false" data-trash-id="'+escapeHtml(entry.id)+'"><span>'+icon(entry.items[0]?.kind==='folder'?'i-folder':'i-note')+'<b>'+escapeHtml(entry.name)+'</b></span><small>'+escapeHtml(parent(entry.path))+'</small><small>'+new Date(entry.deletedAt).toLocaleDateString()+'</small></button>').join('')||'<p class="file-folder-empty">Trash is empty.</p>';
-    frame.querySelector('.file-head').innerHTML='<span>Name</span><span>Original folder</span><span>Removed</span>';frame.querySelector('.file-preview').hidden=true;frame.querySelector('.app-identity small').textContent='Trash';frame.querySelector('.app-status').innerHTML='<span>'+entries.length+' items in this Workspace’s Trash</span><span>Restore keeps the original location</span>';decorate(id);
+    frame.querySelector('.file-head').innerHTML='<span>Name</span><span>Original folder</span><span>Removed</span>';frame.querySelector('.file-preview').hidden=true;frame.querySelector('.app-identity small').textContent='Trash';frame.querySelector('.app-status').innerHTML='<span>'+entries.length+' item'+(entries.length===1?'':'s')+' in this Workspace’s Trash</span><span>Restore keeps the original location</span>';decorate(id);
   }
   newAppFolder=function(id){return perform(id,'new-folder');};
   const previousOpen=openAppFile;openAppFile=function(id,name){
