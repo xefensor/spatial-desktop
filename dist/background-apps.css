@@ -1,10 +1,10 @@
 /* Quick launch starts Apps; parked work follows; shared activity stays below. */
-.apps-widget .background-apps{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;padding:7px 3px 0;border-top:1px solid var(--soft-line);max-height:112px;overflow:auto;overscroll-behavior:contain}
+.apps-widget .background-apps{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;padding:7px 3px 0;border-top:1px solid var(--soft-line);max-height:none;overflow:visible;overscroll-behavior:contain}
 .apps-widget .background-apps[hidden]{display:none!important}
 .apps-widget .background-apps-heading{display:flex;flex:0 0 100%;min-width:0;flex-direction:column;align-items:flex-start;gap:3px;padding:0 0 3px;margin:0}
 .apps-widget .background-apps-heading h2{margin:0;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
 .apps-widget .background-apps-heading p{margin:0;color:var(--muted);font-size:10px;font-weight:400;line-height:1.4}
-body[data-theme] .apps-widget .background-app-icon{position:relative;display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;padding:5px;border:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:var(--background-accent);cursor:pointer}
+body[data-theme] .apps-widget .background-app-icon{position:relative;display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;padding:5px;border:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;color:var(--background-accent);cursor:pointer}
 .apps-widget .background-app-icon .app-art{width:24px;height:24px}
 .apps-widget .background-app-icon>i{position:absolute;bottom:1px;left:7px;right:7px;height:2px;background:linear-gradient(to right,var(--background-accent) var(--background-progress),var(--soft-line) var(--background-progress))}
 body[data-theme] .apps-widget .background-app-icon:is(:hover,:focus-visible){border-color:var(--background-accent);background:color-mix(in srgb,var(--background-accent) 12%,transparent);outline:none}
@@ -18,9 +18,9 @@ body[data-theme] .apps-widget .background-app-icon:is(:hover,:focus-visible){bor
 .background-app-popup[hidden]{display:none!important}
 .background-app-popup>header{display:flex;justify-content:space-between;gap:14px;align-items:start;border-bottom:1px solid var(--sd-glass-groove);padding-bottom:10px}
 .background-app-popup h2{font-size:16px;margin:5px 0 0}
-.background-app-popup header small{font-size:9px;letter-spacing:.08em;color:var(--muted)}
+.background-app-popup header small{font-size:11px;letter-spacing:.025em;color:var(--muted)}
 .background-app-popup p{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
-.background-app-popup button{border:1px solid var(--sd-glass-groove);padding:7px 10px;color:var(--text);background:var(--sd-glass-face);font-size:11px;cursor:pointer}
+.background-app-popup button{border:1px solid var(--sd-glass-groove);padding:7px 10px;color:var(--text);background:var(--sd-glass-face);min-height:36px;font:inherit;font-size:13px;line-height:1.4;cursor:pointer}
 .background-app-popup button:focus-visible{outline:2px solid var(--workspace-accent);outline-offset:2px}
 .background-app-popup progress{width:100%;height:7px;accent-color:var(--cyan);margin-bottom:10px}
 .background-transport,.background-popup-actions{display:flex;gap:7px;flex-wrap:wrap}

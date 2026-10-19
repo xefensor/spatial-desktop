@@ -78,6 +78,8 @@ for(const version of [1,2,3]){
 for(const malformed of [null,{}, {panels:[]},{panels:[null,false]},{panels:[{id:'__proto__',widgets:['__proto__','apps','apps']}]}])complete(M.normalize(malformed));
 const repaired=M.normalize({panels:[{id:'same',widgets:['apps']},{id:'same',mode:'hidden',widgets:['apps','clock']}],widgets:{calendar:{mode:'hidden',size:193}}});
 complete(repaired);assert.equal(new Set(repaired.panels.map(panel=>panel.id)).size,2);assert.equal(repaired.widgets.calendar.mode,'hidden');assert.deepEqual(M.normalize(repaired),repaired);
+const longDuplicateId='saved-'.padEnd(64,'x'),longDuplicatePanels=M.normalize({panels:[{id:longDuplicateId,widgets:['apps']},{id:longDuplicateId,widgets:['clock']},{id:longDuplicateId,widgets:[]}]});
+assert.equal(new Set(longDuplicatePanels.panels.map(panel=>panel.id)).size,3);for(const panel of longDuplicatePanels.panels)assert.ok(panel.id.length<=64);assert.deepEqual(M.normalize(longDuplicatePanels),longDuplicatePanels,'Repairing duplicate maximum-length panel IDs is stable across reloads');
 let moved=M.moveWidget(initial,'calendar','panel-right',0);complete(moved);assert.equal(moved.panels[1].widgets[0],'calendar');assert.equal(JSON.stringify(initial),before);
 assert.deepEqual(M.moveWidget(initial,'missing','panel-left',0),initial);assert.deepEqual(M.moveWidget(initial,'apps','missing',0),initial);
 let added=M.addPanel(moved,'bottom'),extra=added.panels.at(-1).id;added=M.moveWidget(added,'calendar',extra,0);complete(added);assert.equal(M.removePanel(added,extra).panels.length,2);
@@ -279,6 +281,26 @@ const opened=bounded(pair,{...options,height:620,widgetSizes:{files:320,assistan
 const unfitCross=bounded(M.updatePanel(initial,'panel-left',{edge:'bottom',size:100}),{...options,widgetSizes:{apps:{vertical:380,horizontal:100000}}}).panels['panel-left'];assert.equal(unfitCross.widgets.apps.mode,'compact','Unfit cross-axis measurement sentinel opens content via icon');
 const compactFits=bounded(compactLeft,{...options,compactSizes:{apps:400}}).panels['panel-left'];assert.equal(compactFits.widgets.apps.compactView,'apps');assert.ok(compactFits.widgets.apps.height>=400);
 const compactOverflow=bounded(compactLeft,{...options,height:400,compactSizes:{apps:{vertical:400,minSize:400}}}).panels['panel-left'];assert.equal(compactOverflow.widgets.apps.compactView,'icon');assert.equal(compactOverflow.widgets.apps.width,44);assert.equal(compactOverflow.widgets.apps.height,44);assert.deepEqual(compactLeft.widgets,initial.widgets);
+
+// Optional spacing must yield before a readable widget disappears. This
+// applies both to bare panel gaps and repeated empty Spacer instances.
+const fittingOnlyLeft=M.updatePanel(initial,'panel-right',{mode:'hidden'});
+for(const height of [232,236,240,248]){
+  const rect=bounded(fittingOnlyLeft,{width:1440,height}).panels['panel-left'];
+  assert.equal(rect.widgets.apps.mode,'expanded','Apps stays readable when its content fits without decorative gaps');
+  assert.equal(rect.widgets.clock.mode,'expanded','Clock stays readable when optional spacing is the only shortage');
+  assert.ok(rect.widgets.apps.height>=140-epsilon);assert.ok(rect.widgets.clock.height>=48-epsilon);
+}
+let zeroSpacePressure=fittingOnlyLeft;for(let i=0;i<12;i++)zeroSpacePressure=M.addSpacer(zeroSpacePressure,'panel-left',1);
+const fitThroughSpaces=bounded(zeroSpacePressure,{width:1440,height:232}).panels['panel-left'];
+assert.equal(fitThroughSpaces.widgets.apps.mode,'expanded');assert.equal(fitThroughSpaces.widgets.clock.mode,'expanded');
+for(const id of zeroSpacePressure.panels[0].widgets.filter(M.isSpacer))assert.equal(fitThroughSpaces.widgets[id].extent,0,'Empty Spacers yield before content');
+const compactGapPressure=M.updatePanel(fittingOnlyLeft,'panel-left',{mode:'compact'}),compactGapFit=bounded(compactGapPressure,{width:1440,height:320,compactSizes:{apps:{vertical:144,minSize:144}}}).panels['panel-left'];
+assert.equal(compactGapFit.widgets.apps.compactView,'apps','A compact task manager does not become an icon just to preserve optional gaps');assert.ok(compactGapFit.widgets.apps.extent>=144-epsilon);
+const fitSnapshot=JSON.stringify(zeroSpacePressure),beforePressure=M.layout(zeroSpacePressure,{width:1440,height:900});M.layout(zeroSpacePressure,{width:1440,height:120});assert.equal(JSON.stringify(zeroSpacePressure),fitSnapshot);assert.deepEqual(M.layout(zeroSpacePressure,{width:1440,height:900}),beforePressure,'Growing a panel restores its stored expanded preferences after temporary fitting');assert.deepEqual(M.normalize(zeroSpacePressure),zeroSpacePressure);
+const axisMinimums={apps:{vertical:144,horizontal:144,minSize:{vertical:144,horizontal:2000}}};
+assert.equal(bounded(compactGapPressure,{width:1440,height:320,compactSizes:axisMinimums}).panels['panel-left'].widgets.apps.compactView,'apps');
+assert.equal(bounded(M.updatePanel(compactGapPressure,'panel-left',{edge:'bottom'}),{width:1440,height:320,compactSizes:axisMinimums}).panels['panel-left'].widgets.apps.compactView,'icon','Horizontal compact content uses its own measured fixed-control minimum');
 
 // Apps reserves fixed launcher/background controls; only the Parked viewport
 // is flexible. A long Parked list must not collapse a viable task manager.

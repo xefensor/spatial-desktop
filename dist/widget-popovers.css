@@ -1,7 +1,5 @@
-/* Temporary Area panels keep their acrylic material when content is moved out
-   of a dock. Scope the sheet and its controls; document previews retain their
-   own opaque content,
-and application windows keep their ABS material. */
+/* Temporary widget popovers keep the panel's acrylic sheet and controls.
+   Document previews and application windows retain their opaque content. */
 .background-app-popup{--popover-accent:var(--role-apps)}
 .workspace-notification-popup{--popover-accent:var(--notification-workspace-accent)}
 body[data-theme] :is(.background-app-popup,.workspace-notification-popup).material-surface-glass{
@@ -93,4 +91,18 @@ body[data-theme] :is(.background-app-popup,.workspace-notification-popup) button
 body[data-theme="light"] :is(.background-app-popup,.workspace-notification-popup).material-surface-glass{
     background:#eff5fa!important;
   }
+}
+
+/* Shared service and notification popovers adapt without tiny action rows. */
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup) {box-sizing:border-box;max-width:calc(100vw - 16px);scroll-padding:12px;scrollbar-width:thin}
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup)>header {flex-wrap:wrap;align-items:center;gap:8px}
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup)>header>div {flex:1 1 140px;min-width:0}
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup)>header :is(h2,strong) {overflow-wrap:anywhere}
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup) button {min-height:36px;min-width:36px;font-size:13px;line-height:1.4}
+body[data-theme] :is(.background-app-popup,.workspace-notification-popup) :is(button,input,select,textarea,summary):focus-visible {outline:2px solid var(--popover-accent,var(--workspace-accent));outline-offset:-2px}
+body[data-theme] .workspace-notification-popup :is(.workspace-notification-actions,footer) {flex-wrap:wrap}
+body[data-theme] .workspace-notification-popup footer small {min-width:120px}
+@media (max-height:360px) {
+  body[data-theme] .workspace-notification-popup {overflow-y:auto;overscroll-behavior:contain}
+  body[data-theme] .workspace-notification-popup .workspace-notification-list {flex:none;max-height:none;overflow:visible}
 }

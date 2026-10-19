@@ -24,7 +24,9 @@
       return css;
     };
     const visible = (node, source) => {
-      if (node === source) return true; // A compact widget's original content is hidden.
+      // Only whole native app sources are hidden by panel placement. A system
+      // widget's own hidden flag still means that its native content is absent.
+      if (node === source) return !node.hidden || Boolean(node.matches?.('.widget-source'));
       if (node.hidden || node.matches?.('.panel-secondary-copy,.sr-only,.app-rack,.display-side-legacy')) return false;
       const css = style(node);
       return css.display !== 'none' && css.visibility !== 'hidden' && css.position !== 'absolute' && css.position !== 'fixed';
@@ -40,7 +42,9 @@
       const line = number(css.lineHeight) || font * 1.5;
       let children = Array.from(node.children || []).filter(child => visible(child, source));
       if (node.tagName === 'DETAILS' && !node.open) children = children.filter(child => child.tagName === 'SUMMARY');
-      const tag = node.tagName || '';
+      const tag = String(node.tagName || '').toUpperCase();
+      const ratio = String(css.aspectRatio || '').split('/').map(Number);
+      const aspectHeight = ratio.length === 2 && ratio[0] > 0 && ratio[1] > 0 ? innerWidth * ratio[1] / ratio[0] : 0;
       if (tag === 'SVG' || tag === 'IMG' || tag === 'CANVAS') return clamp(number(css.height) || 20, 16, 64);
       if (/^(INPUT|SELECT|TEXTAREA)$/.test(tag)) {
         // An input's value is not a demand to grow its viewport forever.
@@ -53,7 +57,7 @@
         // Leaf scrollHeight catches actual font/wrapping. Containers deliberately
         // never use it: a flex-stretched container would feed its allocation back.
         const measured = node === source || number(css.flexGrow) > 0 ? 0 : Math.min(240, number(node.scrollHeight));
-        return Math.max(lines * line + padding, measured, number(css.minHeight), tag === 'BUTTON' || tag === 'SUMMARY' ? 28 : 0);
+        return Math.max(lines * line + padding, aspectHeight + padding, measured, number(css.minHeight), tag === 'BUTTON' || tag === 'SUMMARY' ? 28 : 0);
       }
       const gap = number(css.rowGap || css.gap);
       let height;
@@ -75,31 +79,32 @@
       // outside it. Short lists use their actual content height.
       if (node.matches?.('.ai-chat')) height = clamp(height, 140, 220);
       else if (node.matches?.('#miniStack,.memory-items,.folder-directory,#notificationList,.desktop-clipboard-list')) height = Math.min(360, height);
-      return Math.max(height + padding, /^(BUTTON|SUMMARY)$/.test(tag) ? Math.max(28, number(css.minHeight)) : 0);
+      return Math.max(height + padding, aspectHeight + padding, /^(BUTTON|SUMMARY)$/.test(tag) ? Math.max(28, number(css.minHeight)) : 0);
     }
 
     function appsDimensions(entry, width) {
       const source = entry.source;
-      let fixed = 24; // Native sheet inset; Overview has its own icon widget.
+      let fixed = 24; // Two 12px native sheet insets; Overview has its own icon widget.
       const quick = source.querySelector?.('#appsQuickLaunch');
       const launchers = Array.from(quick?.querySelectorAll('[data-quick-launch-app]') || []).filter(node => !node.hidden);
       if (launchers.length) {
-        const columns = Math.max(1, Math.floor((Math.max(64, width - 24) + 4) / 68));
+        const columns = Math.max(1, Math.floor((Math.max(72, width - 24) + 4) / 76));
         const rows = Math.ceil(launchers.length / columns);
-        fixed += 25 + rows * 68 + Math.max(0, rows - 1) * 8;
+        fixed += 25 + rows * 72 + Math.max(0, rows - 1) * 8;
       }
       const parked = Array.from(source.querySelectorAll?.('#miniStack [data-mini-card]') || []).filter(node => !node.hidden);
       const background = source.querySelector?.('#backgroundApps');
       if (background && !background.hidden) {
         const icons = background.querySelectorAll('.background-app-icon').length || background.querySelectorAll('button').length;
-        const rows = Math.max(1, Math.ceil(icons / Math.max(1, Math.floor((width - 24) / 38))));
-        fixed += 16 + 25 + rows * 34 + Math.max(0, rows - 1) * 4;
+        const rows = Math.max(1, Math.ceil(icons / Math.max(1, Math.floor((width - 24 + 4) / 40))));
+        fixed += 16 + 21 + rows * 36 + Math.max(0, rows - 1) * 4;
       }
       // Quick launch and Background never scroll. Only Parked receives a
       // bounded, useful viewport, so forty cards do not shrink these controls
       // or turn the entire Apps widget into an icon.
-      const min = Math.max(floors.apps, fixed + (parked.length ? 37 + 120 : 0));
-      const preferred = Math.max(min, fixed + (parked.length ? 37 + (parked.length > 1 ? 160 : 120) : 0));
+      const firstCard = parked.length ? clamp(Math.ceil(intrinsic(parked[0], Math.max(72, width - 24), source, { count: 800 })), 120, 320) : 0;
+      const min = Math.max(floors.apps, fixed + (parked.length ? 37 + firstCard : 0));
+      const preferred = Math.max(min, fixed + (parked.length ? 37 + firstCard + (parked.length > 1 ? 40 : 0) : 0));
       return { min, preferred };
     }
 
@@ -185,7 +190,7 @@
     }
     if (typeof Resize === 'function') {
       const observer = new Resize(schedule);
-      for (const [, entry] of entries()) observer.observe(entry.source);
+      for (const node of new Set(entries().flatMap(([, entry]) => entry.nodes || [entry.source]))) observer.observe(node);
       observers.push(observer);
     }
     document?.addEventListener?.('input', schedule, true);

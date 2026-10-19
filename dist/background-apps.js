@@ -70,7 +70,18 @@
       if(!activity(service))services.remove(service.id);
     }
   }
-  function closePopup(focus=true){popup.hidden=true;popup.inert=true;popupId='';popup.querySelector('[data-background-popup-content]').replaceChildren();if(focus&&origin?.isConnected)origin.focus({preventScroll:true});origin=null;}
+  function syncPopupButtons(){for(const button of document.querySelectorAll('[data-background-open]'))button.setAttribute('aria-expanded',String(!popup.hidden&&button.dataset.backgroundOpen===popupId));}
+  function closePopup(focus=true){popup.hidden=true;popup.inert=true;popupId='';popup.querySelector('[data-background-popup-content]').replaceChildren();syncPopupButtons();if(focus&&origin?.isConnected)origin.focus({preventScroll:true});origin=null;}
+  function positionPopup(){
+    if(popup.hidden)return;
+    if(!origin||origin.isConnected===false||document.contains&&!document.contains(origin)){closePopup(false);return;}
+    const viewportWidth=Math.max(1,Number(root.innerWidth)||1),viewportHeight=Math.max(1,Number(root.innerHeight)||1);
+    const inset=Math.min(12,Math.floor(Math.min(viewportWidth,viewportHeight)/4)),availableWidth=Math.max(1,viewportWidth-inset*2),availableHeight=Math.max(1,viewportHeight-inset*2),width=Math.min(340,availableWidth);
+    popup.style.boxSizing='border-box';popup.style.minWidth='0px';popup.style.minHeight='0px';popup.style.width=width+'px';popup.style.maxWidth=availableWidth+'px';popup.style.maxHeight=availableHeight+'px';
+    popup.style.padding=Math.min(15,Math.max(0,(Math.min(width,availableHeight)-2)/2))+'px';
+    const rect=origin.getBoundingClientRect(),height=Math.min(availableHeight,popup.offsetHeight||popup.getBoundingClientRect().height||0);
+    popup.style.left=Math.max(inset,Math.min(viewportWidth-width-inset,rect.right))+'px';popup.style.top=Math.max(inset,Math.min(viewportHeight-height-inset,rect.top))+'px';
+  }
   function renderPopup(){
     if(!popupId)return;const service=services.get(popupId);if(!service){closePopup(false);return;}
     popup.querySelector('h2').textContent=service.label;popup.querySelector('[data-background-popup-status]').textContent=activity(service);
@@ -79,11 +90,12 @@
     const toggle=content.querySelector('[data-background-control="toggle"]');
     if(service.kind==='elisa'){content.querySelector('[data-background-track]').textContent=service.model.previewHidden?'Preview hidden':service.model.tracks?.[service.model.index]?.title||'Music';toggle.textContent=service.model.playing?'Pause':'Play';}
     else{const download=service.model.download,progress=content.querySelector('progress');progress.hidden=!download;toggle.hidden=!download||download.received>=download.total;if(download){progress.max=download.total;progress.value=download.received;toggle.textContent=download.active?'Pause download':'Resume download';}}
+    positionPopup();
   }
   function openPopup(id,button){
-    if(popupId===id&&!popup.hidden){closePopup();return;}if(!services.get(id))return;
-    closePopup(false);popupId=id;origin=button;popup.hidden=false;popup.inert=false;renderPopup();
-    const rect=button.getBoundingClientRect(),width=Math.min(340,innerWidth-24);popup.style.width=width+'px';popup.style.left=Math.max(12,Math.min(innerWidth-width-12,rect.right))+'px';popup.style.top=Math.max(12,Math.min(innerHeight-popup.offsetHeight-12,rect.top))+'px';popup.querySelector('[data-background-popup-close]').focus({preventScroll:true});
+    if(popupId===id&&!popup.hidden){closePopup();return;}if(!services.get(id)||!button?.getBoundingClientRect)return;
+    closePopup(false);popupId=id;origin=button;popup.hidden=false;popup.inert=false;renderPopup();syncPopupButtons();
+    if(!popup.hidden)popup.querySelector('[data-background-popup-close]').focus({preventScroll:true});
   }
   function restore(id){
     const service=services.get(id);if(!service)return;
@@ -116,7 +128,7 @@
       const label=service.label+' · '+scopeLabel+' · '+activity(service)+' · Click for controls · Middle click to force quit';button.title=label;button.setAttribute('aria-label',label);button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',popup.id);button.style.setProperty('--background-accent',appInfo[service.kind]?.primary||'#8aa4b8');button.style.setProperty('--background-progress',service.model.download?.active?Math.floor(service.model.download.received/service.model.download.total*100)+'%':'100%');
     }
     for(const button of document.querySelectorAll('[data-window-action="close"],[data-mini-close]'))button.title='Left click: close window; needed activity keeps running system-wide. Middle click: force quit and stop its activity.';
-    prepareSteam();renderPopup();schedule();const next=JSON.stringify(items.map(item=>[item.id,item.kind]));if(next!==availability){availability=next;root.SpatialSteamOverview?.syncContext();}
+    prepareSteam();renderPopup();syncPopupButtons();schedule();const next=JSON.stringify(items.map(item=>[item.id,item.kind]));if(next!==availability){availability=next;root.SpatialSteamOverview?.syncContext();}
   }
   root.SpatialBackgroundApps={...api,running:id=>services.items().some(item=>item.kind===kind(id)),players:()=>services.items().filter(item=>item.kind==='elisa').map(item=>item.model),snapshot:()=>services.snapshot(),restore,stop:force,render};
   const originalSave=saveAppWindows;saveAppWindows=function(...args){normalize();flush();return originalSave(...args);};
@@ -128,9 +140,9 @@
   const originalHydrate=hydrateAppWindow;hydrateAppWindow=function(...args){const result=originalHydrate(...args);prepareSteam();return result;};
   const originalOverview=setUniversalSearchOpen;setUniversalSearchOpen=function(...args){closePopup(false);return originalOverview(...args);};
   const originalWorkspace=renderWorkspace;renderWorkspace=function(...args){closePopup(false);return originalWorkspace(...args);};
-  const originalDescriptor=contextMenuDescriptor;contextMenuDescriptor=function(target,...args){const button=target.closest?.('[data-background-open]'),service=button&&services.get(button.dataset.backgroundOpen);return service?{kind:'app',name:service.kind,title:service.label,background:true,backgroundService:service.id}:originalDescriptor(target,...args);};
+  const originalDescriptor=contextMenuDescriptor;contextMenuDescriptor=function(target,...args){const button=target.closest?.('[data-background-open]'),service=button&&services.get(button.dataset.backgroundOpen);return service?{kind:'app',name:service.kind,title:service.label,background:true,backgroundService:service.id,backgroundAnchor:button}:originalDescriptor(target,...args);};
   const originalEntries=contextMenuEntries;contextMenuEntries=function(context){if(context.background)return [{info:'System-wide background app'},{action:'app-open',icon:'i-settings',label:'Show controls'},{action:'background-open-window',icon:'i-right',label:'Open window here',detail:'On the current desktop'},{separator:true},{action:'app-force-quit',icon:'i-close',label:'Force quit',danger:true}];const entries=originalEntries(context).map(item=>item.action==='app-close'?{...item,label:'Close window',shortcut:'Left click ×'}:item);if(context.kind==='app'&&appState[context.name]!=='closed')entries.push({action:'app-force-quit',icon:'i-close',label:'Force quit',shortcut:'Middle click ×',danger:true});return entries;};
-  const originalAction=executeContextAction;executeContextAction=function(action){const context=contextMenuState;if(context?.background){if(action==='app-open')openPopup(context.backgroundService,row.querySelector('[data-background-open="'+context.backgroundService+'"]'));if(action==='background-open-window')restore(context.backgroundService);if(action==='app-force-quit')force(context.backgroundService);return;}if(action==='app-force-quit'){closeApp(context.name,{force:true});return;}return originalAction(action);};
+  const originalAction=executeContextAction;executeContextAction=function(action){const context=contextMenuState;if(context?.background){if(action==='app-open')openPopup(context.backgroundService,context.backgroundAnchor&&document.contains(context.backgroundAnchor)?context.backgroundAnchor:row.querySelector('[data-background-open="'+context.backgroundService+'"]'));if(action==='background-open-window')restore(context.backgroundService);if(action==='app-force-quit')force(context.backgroundService);return;}if(action==='app-force-quit'){closeApp(context.name,{force:true});return;}return originalAction(action);};
   document.addEventListener('click',event=>{
     const button=event.target.closest('[data-background-open]');if(button){event.preventDefault();event.stopImmediatePropagation();openPopup(button.dataset.backgroundOpen,button);return;}
     if(event.target.closest('[data-background-popup-close]'))return closePopup();
@@ -145,7 +157,7 @@
   const originalCapture=captureDesktopSyncState;captureDesktopSyncState=function(){flush(false);return {...originalCapture(),backgroundServices:services.snapshot()};};
   const originalIncoming=persistIncomingDesktopState;persistIncomingDesktopState=function(state){if(state.backgroundServices)services.merge(state.backgroundServices);const result=originalIncoming(state);render();return result;};
   root.addEventListener('storage',event=>{if(event.key===key){try{services.merge(JSON.parse(event.newValue||'{}'));render();}catch{}}});
-  root.addEventListener('resize',()=>closePopup(false));root.addEventListener('blur',()=>closePopup(false));
+  root.addEventListener('resize',positionPopup);root.addEventListener('blur',()=>closePopup(false));
   for(const service of services.items())if(service.model.download)advance(service.model.download,Date.now());
   render();
 })(typeof globalThis!=='undefined'?globalThis:this);

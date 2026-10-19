@@ -10,6 +10,10 @@ Panels have Expanded, Compact and Hidden presentations. Compact keeps the expand
 
 Individual widgets have Icon and Expanded appearances. A compact panel remembers the widgets' expanded preferences. If space is temporarily insufficient, content can fall back to an icon and recover when space returns. Controls, drafts and models survive these changes.
 
+Spacing contracts before readable content falls back to an icon. Quick launch names wrap onto two lines, and Parked card actions wrap beneath their identity in narrow panels. Changes to favorites keep the existing focused launcher where possible. Compact actions follow the same Guide restrictions and native availability as their expanded controls.
+
+Temporary widget content sizes to its live contents within the viewport. Notifications follow their own widget when it moves. Changing Workspace, display or fullscreen ownership dismisses layout menus and cancels unfinished drags; resizing the viewport keeps an open menu reachable without moving focus out of its fields.
+
 ## Arrangement
 
 Right-click a panel → **Edit layout**. The edit toolbar offers Panels, Widgets, Add panel, Undo, Reset layout, Help and Done. Panels and widgets have no title bars or panel footers, and no editing button permanently occupies the desktop.
@@ -19,6 +23,8 @@ In edit mode, drag a widget to reorder it or move it between panels. Click it fo
 Use **Panels → Move** to drag a whole panel to another edge. Panel options select its display, presentation and name. Drag the panel border to change its thickness; panels sharing an edge can also change their share of that edge. Widgets have no individual resize handles. Escape or pointer cancellation restores the starting arrangement. Done restores normal controls.
 
 Removing a widget retains its content. Removing a panel transfers its widgets to another panel. Hidden panels can be recovered from the widget picker. Reset layout affects the current Workspace, without clearing documents, chats or app sessions.
+
+The Panels menu also offers **Show** for hidden panels. Unavailable reorder directions and Add panel at the panel limit are disabled. The temporary edit toolbar wraps on narrow screens so Done remains reachable.
 
 ## Widgets and ownership
 

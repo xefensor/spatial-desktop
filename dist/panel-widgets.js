@@ -102,7 +102,10 @@
       let id = validId(raw.id) ? raw.id : 'panel-' + (index + 1);
       const prefix = id;
       let suffix = 2;
-      while (seenPanels.has(id)) id = prefix + '-' + suffix++;
+      while (seenPanels.has(id)) {
+        const ending = '-' + suffix++;
+        id = prefix.slice(0, 64 - ending.length) + ending;
+      }
       seenPanels.add(id);
       const side = edge(raw.edge);
       const widgets = (Array.isArray(raw.widgets) ? raw.widgets : []).filter(function (id) {
@@ -266,7 +269,8 @@
       const compact = compactDefinitions[item.id];
       const raw = own(settings, item.id) ? settings[item.id] : null;
       const custom = record(raw) ? raw : {};
-      const minimum = number(custom.minSize, compact.minSize, 0, 20000);
+      const minimumValue = record(custom.minSize) ? custom.minSize[vertical ? 'vertical' : 'horizontal'] : custom.minSize;
+      const minimum = number(minimumValue, compact.minSize, 0, 20000);
       const measured = measuredSize(settings, item.id, vertical);
       const natural = item.id === 'apps' && item.setting.size ? item.setting.size : compact[vertical ? 'vertical' : 'horizontal'];
       const extent = Math.max(minimum, measured === null ? natural : measured);
@@ -278,7 +282,7 @@
     // Further Parked tasks scroll inside the remaining live task viewport;
     // its preferred length must never turn the complete applet into an icon.
     const apps = items.find(function (item) { return item.view === 'apps'; });
-    if (apps && apps.min + items.reduce(function (sum, item) { return sum + (item === apps ? 0 : item.min); }, 0) + Math.max(0, items.length - 1) * ICON_GAP > available) {
+    if (apps && apps.min + items.reduce(function (sum, item) { return sum + (item === apps ? 0 : item.min); }, 0) > available) {
       apps.view = 'icon'; apps.extent = ICON; apps.min = 28; apps.grow = 0;
     }
     const minimum = items.reduce(function (sum, item) { return sum + item.min; }, 0);
@@ -367,7 +371,9 @@
       return bands;
     }
     let bands = bandsFor();
-    const totalMinimum = function () { return bands.reduce(function (sum, band) { return sum + band.min; }, Math.max(0, bands.length - 1) * GAP); };
+    // Spacing is optional. Give it up before replacing readable content with
+    // icons, including when zero-length Spacers separate the content bands.
+    const totalMinimum = function () { return bands.reduce(function (sum, band) { return sum + band.min; }, 0); };
     items.filter(function (item) { return item.mode === 'expanded' && !isSpacer(item.id); }).sort(function (a, b) {
       const impossible = function (item) { return Math.max(item.definition.minSize, item.measured ? item.measured.min : 0) + (vertical ? widgetHeaderSize : 0) > available ? 1 : 0; };
       return impossible(b) - impossible(a) || a.priority - b.priority || b.index - a.index;
@@ -376,9 +382,8 @@
       item.mode = 'compact';
       bands = bandsFor();
     });
-    let gap = bands.length > 1 ? Math.min(GAP, available / (bands.length - 1)) : 0;
     const minimumSum = bands.reduce(function (sum, band) { return sum + band.min; }, 0);
-    if (minimumSum + gap * Math.max(0, bands.length - 1) > available) gap = 0;
+    const gap = bands.length > 1 ? Math.min(GAP, Math.max(0, (available - minimumSum) / (bands.length - 1))) : 0;
     const gaps = Math.max(0, bands.length - 1) * gap;
     const total = bands.reduce(function (sum, band) { return sum + band.extent; }, gaps);
     if (minimumSum + gaps > available) {

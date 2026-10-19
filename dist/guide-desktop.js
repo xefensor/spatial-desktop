@@ -245,6 +245,9 @@
     globalThis.SpatialMemoryDesktop?.render();
     filterLauncher();
     globalThis.SpatialOverviewDesktop?.refresh();
+    // Refresh the original controls before compact views copy their disabled
+    // state. A Guide transition need not otherwise change any open windows.
+    globalThis.SpatialAppsQuickLaunch?.refresh();
     globalThis.SpatialPanels?.render(); scheduleWindowTiling();
     preparePanelLesson();
   }

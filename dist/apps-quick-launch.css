@@ -1,12 +1,12 @@
 /* Launchers stay at the start; parked work retains the larger scrolling space. */
-.apps-widget .apps-quick-launch{display:flex;flex-direction:column;flex:0 0 auto;min-width:0;min-height:0;max-height:35%;padding:3px 0 8px;overflow:hidden}
+.apps-widget .apps-quick-launch{display:flex;flex-direction:column;flex:0 0 auto;min-width:0;min-height:0;max-height:none;padding:3px 0 8px;overflow:visible}
 .apps-widget .apps-quick-launch[hidden]{display:none!important}
 .apps-quick-launch>h2{flex:none;margin:0 3px 4px;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
 .apps-quick-launch-scope{flex:none;min-width:0;margin:0 3px 8px;color:var(--muted);font-size:11px;line-height:1.45}
-.apps-quick-launch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,68px),1fr));align-content:start;gap:4px;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.apps-widget .apps-quick-launch-key{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:66px;width:100%;padding:7px 3px;color:var(--text);border:0;border-radius:0!important;background:transparent!important;box-shadow:none!important;font:inherit;cursor:pointer}
+.apps-quick-launch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,72px),1fr));align-content:start;gap:8px 4px;min-width:0;min-height:0;overflow:visible;overscroll-behavior:contain;scrollbar-width:thin}
+.apps-widget .apps-quick-launch-key{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:72px;width:100%;padding:7px 3px;color:var(--text);border:0;border-radius:0!important;background:transparent!important;box-shadow:none!important;font:inherit;cursor:pointer}
 .apps-widget .apps-quick-launch-key>.app-art{width:30px;height:30px;flex:none;margin:0}
-.apps-quick-launch-key>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;overflow:hidden;overflow-wrap:anywhere;text-align:center;font-size:11px;line-height:1.35}
+.apps-quick-launch-key>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;overflow:hidden;overflow-wrap:anywhere;text-align:center;font-size:13px;line-height:1.3}
 .apps-widget .apps-quick-launch-key:hover{background:var(--sd-glass-hover)!important}
 .apps-widget .apps-quick-launch-key:active{background:var(--sd-glass-down)!important}
 .apps-widget .apps-quick-launch-key:focus-visible{outline:2px solid var(--workspace-accent);outline-offset:-2px}

@@ -196,7 +196,12 @@ for (const state of ['closed', 'open', 'minimized']) for (const shift of [false,
 compareQuick('settings', 'open', true); assert.deepEqual(calls.at(-1), ['launch', 'settings'], 'Settings keeps the native no-duplicate policy even with Shift');
 compareQuick('steam', 'open', true); assert.deepEqual(calls.map(call => call[0]), ['desktop', 'open'], 'Single-instance launcher returns to its owning desktop before opening');
 sandbox.appState.browser = 'minimized'; sandbox.appState.elisa = 'minimized'; api.sync();
-const parked = taskButtons().find(node => node.dataset.panelTask === 'browser'); calls.length = 0; clickApps(parked, true);
+const parked = taskButtons().find(node => node.dataset.panelTask === 'browser');
+const nativeRestoreBrowser=miniStack.querySelector('[data-mini-restore="browser"]');
+nativeRestoreBrowser.disabled=true;api.sync();calls.length=0;
+assert(parked.disabled,'Compact Parked reflects its disabled native restore control');clickApps(parked,true);
+assert.equal(calls.length,0,'A disabled native Unpark action never falls back to opening a window');
+nativeRestoreBrowser.disabled=false;api.sync();calls.length=0;clickApps(parked,true);
 assert.deepEqual(calls, [['open', 'browser']]); assert.equal(sourceRestores, 1, 'Compact clicks the original expanded Unpark button; Shift keeps the same primary action');
 assert.equal(taskButtons().some(node => node.dataset.panelTask === 'browser'), false, 'Restored window disappears from Parked rather than becoming an alternate open-window taskbar');
 assert.equal(launchButtons().some(node => node.dataset.panelLaunch === 'browser'), true);
@@ -242,6 +247,12 @@ assert.equal(backgroundContent.querySelector('progress').value, 84);
 assert.equal(calls.length, 0, 'Viewing background controls does not create an extra window');
 const context = sandbox.contextMenuDescriptor(compactBackground(steamService));
 assert.equal(context.backgroundService, steamService); assert.equal(context.background, true, 'Native context commands retain the actual service identity');
+assert.equal(context.backgroundAnchor,compactBackground(steamService),'Background context commands retain the actual compact anchor rather than its concealed native source');
+assert.equal(compactBackground(steamService).getAttribute('aria-expanded'),'true');
+compactBackground(steamService).click();assert.equal(compactBackground(steamService).getAttribute('aria-expanded'),'false');
+const compactAnchor=compactBackground(steamService);compactAnchor.getBoundingClientRect=()=>({left:310,top:210,right:350,bottom:250,width:40,height:40});
+sandbox.contextMenuState=context;sandbox.executeContextAction('app-open');
+assert.equal(backgroundPopup.style.left,'350px','Show controls from a compact context menu positions the popup beside the clicked compact icon');
 sandbox.activeWorkspace = 'work'; sandbox.renderWorkspace(); api.sync();
 assert.equal(backgroundPopup.hidden, true, 'Changing Workspace closes native controls before another session action');
 assert.equal(backgroundButtons().length, 2, 'System-wide background activity remains visible across Workspaces');
@@ -355,6 +366,12 @@ assert.equal(api.measure('apps', true), beforeMinimumOnly.preferred, 'Replacing 
 assert.equal(api.measureMin('apps', true), beforeMinimumOnly.minimum + 44);
 assert.equal(layoutChanges, beforeMinimumOnly.callbacks + 1, 'A minimum-only change still requests layout');
 const clockButton = clockHost.children[0]; assert.equal(clockButton.querySelector('.panel-compact-time').textContent, '12:34');
+permitted=false;api.sync();const guardedClockOpenings=openedWidgets.length;
+assert(clockButton.disabled);assert.equal(clock.getAttribute('aria-disabled'),'true');clockButton.click();clock.click();
+assert.equal(openedWidgets.length,guardedClockOpenings,'Both Clock presentations respect the Guide system gate');
+permitted=true;shell.inert=true;api.sync();clockButton.click();clock.click();
+assert.equal(openedWidgets.length,guardedClockOpenings,'Both Clock presentations respect a modal-inert desktop');
+shell.inert=false;api.sync();assert(!clockButton.disabled);
 const beforeClockLayouts = layoutChanges;
 liveTime.textContent = '13:05'; api.sync(); assert.equal(clockButton.querySelector('.panel-compact-time').textContent, '13:05');
 assert.equal(layoutChanges, beforeClockLayouts, 'Clock and label refreshes do not request strip layout updates');
@@ -364,10 +381,26 @@ clock.click(); assert.equal(openedWidgets.at(-1)[0], 'calendar'); assert.equal(o
 for (const key of ['Enter', ' ']) { let prevented = false; clock.events.keydown[0]({key, preventDefault() { prevented = true; }, stopPropagation() {}}); assert(prevented); assert.equal(openedWidgets.at(-1)[0], 'calendar'); }
 assert.equal(controlHost.children.length, 0, 'Controls use the generic applet opening unchanged native content');
 assert.equal(wifi.getAttribute('aria-pressed'), 'true'); assert.equal(sound.getAttribute('aria-pressed'), 'true', 'Rendering compact Controls cannot mute or toggle anything');
-assert.equal(api.measure('clock', true), 48); assert.equal(api.measure('clock', false), 76); assert.equal(api.measure('controls', true), 44); assert.equal(api.measure('controls', false), 44);
-assert.equal(api.measureMin('clock', true), 48); assert.equal(api.measureMin('clock', false), 76); assert.equal(api.measureMin('controls', true), 44);
+assert.equal(api.measure('clock', true), 48); assert.equal(api.measure('clock', false), 80); assert.equal(api.measure('controls', true), 44); assert.equal(api.measure('controls', false), 44);
+assert.equal(api.measureMin('clock', true), 48); assert.equal(api.measureMin('clock', false), 80); assert.equal(api.measureMin('controls', true), 44);
 const clockObservation = observations.find(observer => observer.targets.some(entry => entry.node === clock));
 clockObservation.callback(); clockObservation.callback(); assert.equal(frames.size, 1);
 for (const [id, callback] of frames) { frames.delete(id); callback(); }
 api.destroy(); assert(observations.every(observer => observer.disconnected)); assert.equal(appHost.children.length, 0); assert.equal(clock.getAttribute('role'), null); assert.equal(clock.events.click.length, 0); assert.equal(windowListeners.filter(listener => listener.type === 'wheel').length, 0, 'Destroy removes its capture listener');
+// Real DOM moves blur a retained button. Compact projections must retain the
+// keyboard user's active control when native favorite order changes.
+const {JSDOM}=require(process.env.SPATIAL_DOM_TEST_MODULE||'jsdom');
+const focusDom=new JSDOM('<!doctype html><main class="desktop-shell"><aside data-widget-source="apps"><nav id="appsQuickLaunch"><button data-quick-launch-app="one">One</button><button data-quick-launch-app="two">Two</button></nav><div id="miniStack"></div><nav id="backgroundApps" hidden></nav></aside><div id="compactHost"></div></main>',{runScripts:'outside-only',pretendToBeVisual:true});
+const focusWindow=focusDom.window,focusDocument=focusWindow.document;
+Object.assign(focusWindow,{activeWorkspace:'general',appInfo:{one:{label:'One'},two:{label:'Two'}},appState:{one:'closed',two:'closed'},appArt:()=>'<svg aria-hidden="true"></svg>'});
+vm.runInContext(fs.readFileSync(require.resolve('../dist/panel-compact.js'),'utf8'),focusDom.getInternalVMContext());
+const focusApi=focusWindow.SpatialPanelCompact.create({registry:new Map([['apps',{source:focusDocument.querySelector('[data-widget-source="apps"]')}]]),document:focusDocument});
+focusApi.mount('apps',focusDocument.querySelector('#compactHost'));
+const compactTwo=focusDocument.querySelector('[data-panel-launch="two"]');compactTwo.focus();
+const favoriteList=focusDocument.querySelector('#appsQuickLaunch');favoriteList.insertBefore(favoriteList.lastElementChild,favoriteList.firstElementChild);focusApi.sync();
+assert.equal(focusDocument.querySelector('[data-panel-launch="two"]'),compactTwo);
+assert.equal(focusDocument.activeElement,compactTwo,'Reordering native favorites retains keyboard focus on the same connected compact icon');
+favoriteList.querySelector('[data-quick-launch-app="two"]').remove();focusApi.sync();
+assert.equal(compactTwo.isConnected,false);assert.notEqual(focusDocument.activeElement,compactTwo,'A removed compact action does not regain focus');
+focusApi.destroy();focusDom.window.close();
 console.log('Compact parity passed: native Quick launch/Parked commands and order, retained background sessions across Workspaces, fixed launchers/background plus a bounded 0/1/40-item Parked viewport, preferred/minimum layout callbacks, shared Clock and generic Controls.');

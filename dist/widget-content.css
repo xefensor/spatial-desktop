@@ -1,5 +1,4 @@
-/* Apps: readable launch names and window identity,
-with controls held aside. */
+/* Readable native widget content; the panel sheet owns its material. */
 .apps-widget .apps-quick-launch-key{
   min-height:72px;height:auto;gap:5px;padding:6px 3px;
 }
@@ -19,10 +18,7 @@ with controls held aside. */
 .apps-widget .section-heading{flex:0 0 auto;height:auto;align-items:baseline;min-height:0;gap:8px;padding-bottom:8px}
 .apps-widget :is(.apps-quick-launch>h2,#minimizedTitle,.background-apps-heading h2){font-size:12px;line-height:1.4}
 .apps-widget :is(.apps-quick-launch-scope,#parkedScope,.background-apps-heading p){font-size:11px;line-height:1.4}
-/* Working material: search stays usable,
-file names wrap,
-and pins have a
-   consistent visual identity in both the compact card and narrow strip. */
+/* File names wrap while search retains the available inline space. */
 .files-widget :is(.project-space-content,.project-library){padding-inline:2px 4px}
 .files-widget .working-memory{padding-inline:4px}
 .files-widget .memory-toolbar{align-items:center;gap:8px;margin-block:10px}
@@ -39,10 +35,7 @@ and pins have a
 .system-widget-content .system-scope-heading>span{letter-spacing:.06em}
 .system-widget-content .system-scope-heading>b{min-width:0}
 .system-widget-content .system-desktop-request{min-height:40px}
-/* Assistant: bound inspectable context,
-leave the composer reachable,
-and
-   give long conversation names room without sacrificing the action buttons. */
+/* Keep the composer reachable and let conversation names wrap around controls. */
 .assistant-widget .ai-chat-toolbar{flex-wrap:wrap;row-gap:6px}
 .assistant-widget .ai-chat-toolbar>select{flex:1 1 120px;max-width:100%}
 .assistant-widget .ai-rename-form{flex-wrap:wrap}

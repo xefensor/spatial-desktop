@@ -142,18 +142,25 @@ body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] #appRack {disp
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-widget-body {position:relative;display:flex!important;flex:1 1 0!important;flex-direction:column;min-width:0;min-height:0;overflow:hidden!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-scroll-region {display:contents!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch {flex:none!important;min-height:0!important;max-height:none!important;padding:0;overflow:visible!important}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-grid {flex:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,64px),1fr));gap:8px 4px;overflow:visible!important}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key {min-height:68px;padding:2px;gap:4px}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key>.app-art {width:26px;height:26px}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key>span {font-size:13px;line-height:1.3}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-grid {flex:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,72px),1fr));gap:8px 4px;overflow:visible!important}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key {min-height:72px;height:auto;padding:2px;gap:4px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key>.app-art {width:28px;height:28px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch-key>span {max-width:100%;min-height:2.6em;font-size:13px;line-height:1.3;word-break:normal;overflow-wrap:break-word}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] :is(.apps-quick-launch>h2,.section-heading h2) {margin:0;font-size:12px;font-weight:600;line-height:1.4;color:var(--panel-muted)}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch>h2 {margin-bottom:8px}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] :is(.apps-quick-launch-scope,#parkedScope) {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 body.panel-desktop-preview .panel-secondary-copy {position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-section {display:flex!important;flex:1 1 0!important;flex-direction:column;min-height:0;max-height:none;margin-top:12px;overflow:hidden!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-section>.section-heading {flex:none;min-height:25px;padding:0 0 8px}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-stack {display:flex!important;flex-direction:column;flex:1 1 0!important;min-height:0;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding:8px}
-body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-card {flex:none!important;width:100%;min-width:0;max-height:none;overflow:visible}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-stack {display:flex!important;flex-direction:column;flex:1 1 0!important;min-height:0;max-height:none!important;padding:2px 2px 8px;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding:8px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-card {flex:none!important;width:100%;min-width:0;max-height:none;padding:10px;overflow:visible}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-card header {display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-card header>div:first-child {flex:1 1 144px;min-width:0;gap:7px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-card header b {font-size:13px;line-height:1.35;color:var(--panel-ink)}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-actions {flex:0 0 auto;gap:4px;margin-inline-start:auto}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .mini-control {width:32px;height:32px;min-width:32px;min-height:32px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .parked-preview-caption {flex-wrap:wrap;row-gap:3px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .parked-preview-caption small {font-size:11px;line-height:1.4;text-align:start}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .background-apps {flex:none!important;min-height:0;max-height:none!important;max-width:none!important;padding:7px 0 0;overflow:visible!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .background-apps-heading {gap:0;padding:0 0 4px}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .background-apps-heading h2 {font-size:12px;line-height:17px}
@@ -296,7 +303,7 @@ body.panel-desktop-preview .desktop-widget[data-widget-id="clock"][data-widget-m
 body.panel-desktop-preview .desktop-widget[data-widget-id="clock"][data-widget-mode="expanded"] .time-block>.live-time {font-size:28px!important}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-settings {
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(54px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,72px),1fr));
   align-content:start;
   gap:5px;
   margin:0;
@@ -304,9 +311,9 @@ body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-
   width:100%;
   min-width:0;
 }
-body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle {display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:46px;padding:6px 3px!important;gap:5px}
-body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle>span:not(.theme-dot) {display:block;font-size:12px!important;line-height:1.2}
-body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle svg {width:18px;height:18px}
+body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle {display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;height:auto;min-height:56px;padding:7px 4px!important;gap:5px}
+body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle>span:not(.theme-dot) {display:block;max-width:100%;font-size:12px!important;line-height:1.3;overflow-wrap:break-word;text-align:center}
+body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle svg {width:18px;height:18px;flex:none}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launchers {display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;border:0}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launcher {flex:1 1 100px;width:auto;min-height:34px;justify-content:center;font-size:12px}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launcher>span {font-size:12px;white-space:normal;line-height:1.3}
@@ -361,7 +368,10 @@ body.panel-desktop-preview .panel-compact-app>.app-art {width:28px;height:28px;f
 body.panel-desktop-preview .panel-compact-shortcut {position:absolute;top:1px;right:2px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--panel-ink);font:inherit;font-size:10px;line-height:1.1;pointer-events:none}
 body.panel-desktop-preview .panel-native-clock-action {cursor:pointer}
 body.panel-desktop-preview .panel-native-clock-action:focus-visible {outline:2px solid var(--panel-accent);outline-offset:-2px}
-body.panel-desktop-preview :is(.panel-compact-app,.panel-compact-clock):hover {background:var(--sd-glass-hover)}
+body.panel-desktop-preview :is(.panel-compact-app,.panel-compact-clock):not(:disabled):hover {background:var(--sd-glass-hover)}
+body.panel-desktop-preview :is(.panel-compact-app,.panel-compact-clock):disabled,
+body.panel-desktop-preview .panel-native-clock-action[aria-disabled="true"] {opacity:.45;cursor:default}
+body.panel-desktop-preview .panel-compact-tasks>.panel-compact-app {max-width:100%}
 /* Compact keeps the same three regions: pinned launchers at the start,
    a flexible Parked viewport, and Background fixed at the end. */
 body.panel-desktop-preview .panel-compact-apps {display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;padding:2px 0}
@@ -381,6 +391,7 @@ body.panel-desktop-preview .panel-compact-date {font-size:11px;line-height:1.2;c
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) .panel-compact-apps {flex-direction:row;padding:0 2px}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) :is(.panel-compact-pins,.panel-compact-tasks,.panel-compact-background) {flex-direction:row;padding:0 0 0 var(--panel-group-inset);border-top:0;border-left:var(--panel-group-border) solid var(--panel-cut)}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) .panel-compact-tasks {overflow-x:auto;overflow-y:hidden}
+body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) .panel-compact-tasks>.panel-compact-app {max-width:none;max-height:100%}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) .panel-compact-background {margin-top:0;margin-left:auto}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"]) .panel-compact-time {font-size:18px}
 body.panel-desktop-preview :is(.panel-compact-app,.panel-compact-clock):focus-visible {outline:2px solid var(--panel-accent);outline-offset:-2px}
@@ -390,10 +401,12 @@ body.panel-desktop-preview .panel-applet-popup.desktop-widget {position:fixed;z-
 body.panel-desktop-preview .panel-applet-popup[data-widget-id="assistant"] {max-width:min(420px,calc(100vw - 16px))}
 body.panel-desktop-preview .panel-applet-popup[hidden] {display:none!important}
 body.panel-desktop-preview .panel-applet-popup-header {display:flex;align-items:center;gap:8px;flex:none;min-height:44px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--panel-cut);color:var(--panel-ink)}
-body.panel-desktop-preview .panel-applet-popup-header :is(h2,h3,strong) {flex:1;min-width:0;margin:0;font-size:14px;line-height:1.4;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body.panel-desktop-preview .panel-applet-popup-header button {display:flex;align-items:center;justify-content:center;flex:none;min-width:30px;min-height:30px;margin:0;padding:5px 7px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--panel-ink);font:inherit;font-size:12px;line-height:1.4;cursor:pointer}
+body.panel-desktop-preview .panel-applet-popup-header :is(h2,h3,strong) {flex:1;min-width:0;margin:0;font-size:14px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
+body.panel-desktop-preview .panel-applet-popup-header button {display:flex;align-items:center;justify-content:center;flex:none;min-width:36px;min-height:36px;margin:0;padding:7px 8px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--panel-ink);font:inherit;font-size:12px;line-height:1.4;cursor:pointer}
 body.panel-desktop-preview .panel-applet-popup-header button:hover {background:var(--sd-glass-hover)}
 body.panel-desktop-preview .panel-applet-popup-header button svg {width:16px;height:16px}
+body.panel-desktop-preview .panel-applet-popup-header button[data-panel-action="pin-widget"] {flex:0 1 auto;max-width:112px;white-space:normal;text-wrap:balance}
+body.panel-desktop-preview .panel-applet-popup-header button[data-panel-action="close-applet"] {font-size:20px;line-height:1}
 body.panel-desktop-preview .panel-applet-popup-content {display:flex;flex-direction:column;flex:1;position:relative;min-width:0;min-height:0;overflow:hidden}
 body.panel-desktop-preview .panel-applet-popup-content>.desktop-widget-content {position:relative!important;inset:auto!important;display:block;flex:1 1 0;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;--widget-header-size:0px}
 body.panel-desktop-preview .panel-applet-popup :is(button,input,select,textarea,summary,[tabindex]):focus-visible {outline:2px solid var(--panel-accent);outline-offset:-2px}
@@ -465,7 +478,7 @@ body.panel-desktop-preview :is(.panel-layout-launcher,.panel-layout-toolbar) {to
 body.panel-desktop-preview .panel-layout-launcher {display:flex;align-items:center;gap:8px;min-height:36px;padding:7px 12px;cursor:pointer;white-space:nowrap}
 body.panel-desktop-preview .panel-layout-launcher svg {width:17px;height:17px;flex:none;color:var(--panel-accent)}
 body.panel-desktop-preview>.panel-layout-launcher {top:auto;bottom:8px;left:auto;right:8px;transform:none}
-body.panel-desktop-preview .panel-layout-toolbar {display:flex;align-items:center;gap:4px;padding:4px;overflow-x:auto;scrollbar-width:thin}
+body.panel-desktop-preview .panel-layout-toolbar {display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;width:max-content;min-width:0;max-height:calc(100dvh - 16px);padding:4px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 body.panel-desktop-preview .panel-layout-toolbar>span {padding:0 9px;color:var(--panel-muted);white-space:nowrap;font-size:12px}
 body.panel-desktop-preview :is(.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) button {
   border:0;
@@ -490,7 +503,7 @@ body.panel-desktop-preview :is(.panel-layout-launcher,.panel-layout-toolbar)[hid
 body.panel-desktop-preview :is(.panel-widget-picker,.panel-context-menu)>header {display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 0 8px;border-bottom:1px solid var(--panel-cut);margin-bottom:5px}
 body.panel-desktop-preview :is(.panel-widget-picker,.panel-context-menu) :is(h2,h3) {font-size:14px;line-height:1.4;margin:2px 0 7px;font-weight:600}
 body.panel-desktop-preview :is(.panel-widget-picker,.panel-context-menu) p {margin:7px 0;color:var(--panel-muted);font-size:12px;line-height:1.5}
-body.panel-desktop-preview .panel-widget-choice {display:grid;grid-template-columns:minmax(0,1fr) auto 28px;align-items:center;gap:7px 10px;width:100%;min-height:48px;padding:10px 4px;border-bottom:1px solid var(--panel-cut)}
+body.panel-desktop-preview .panel-widget-choice {display:grid;grid-template-columns:minmax(0,1fr) auto 36px;align-items:center;gap:7px 10px;width:100%;min-height:48px;padding:10px 4px;border-bottom:1px solid var(--panel-cut)}
 body.panel-desktop-preview .panel-widget-choice>svg {width:21px;height:21px;color:var(--panel-accent);flex:none}
 body.panel-desktop-preview .panel-widget-choice>span {min-width:0;flex:1}
 body.panel-desktop-preview .panel-widget-choice-label {display:grid;grid-column:1;grid-row:1;grid-template-columns:22px minmax(0,1fr);column-gap:9px;align-items:center}
@@ -500,11 +513,11 @@ body.panel-desktop-preview .panel-widget-choice b {display:block;font-size:13px;
 body.panel-desktop-preview .panel-widget-choice small {display:block;color:var(--panel-muted);font-size:12px;line-height:1.4;margin-top:3px}
 body.panel-desktop-preview .panel-widget-choice button {flex:none;min-width:56px;padding-inline:7px}
 body.panel-desktop-preview .panel-widget-choice>button:not(.panel-widget-choice-options) {grid-column:2;grid-row:1}
-body.panel-desktop-preview .panel-widget-choice>.panel-widget-choice-options {grid-column:3;grid-row:1;width:28px;min-width:28px;padding:4px;font-size:18px;line-height:1}
+body.panel-desktop-preview .panel-widget-choice>.panel-widget-choice-options {grid-column:3;grid-row:1;width:36px;min-width:36px;padding:4px;font-size:18px;line-height:1}
 body.panel-desktop-preview .panel-widget-choice button[aria-pressed="true"] {color:var(--panel-accent);box-shadow:inset 0 -2px var(--panel-accent)}
 body.panel-desktop-preview .panel-widget-choice>select {grid-column:1/-1;grid-row:2}
 /* Panel movement and mode controls live in the temporary Panels menu. */
-body.panel-desktop-preview .panel-choice {display:grid;grid-template-columns:minmax(0,1fr) 76px 34px 30px;align-items:center;gap:5px;min-width:0;padding:8px 0;border-bottom:1px solid var(--panel-cut)}
+body.panel-desktop-preview .panel-choice {display:grid;grid-template-columns:minmax(0,1fr) 76px 36px 36px;align-items:center;gap:5px;min-width:0;padding:8px 0;border-bottom:1px solid var(--panel-cut)}
 body.panel-desktop-preview .panel-choice:last-child {border-bottom:0}
 body.panel-desktop-preview .panel-choice-label {display:grid;gap:3px;min-width:0;padding-right:3px}
 body.panel-desktop-preview .panel-choice-label :is(b,strong) {font-size:13px;font-weight:550;line-height:1.35;overflow-wrap:anywhere}
@@ -513,14 +526,14 @@ body.panel-desktop-preview .panel-choice>.panel-move-handle {display:flex;align-
 body.panel-desktop-preview .panel-choice>.panel-move-handle:active {cursor:grabbing}
 body.panel-desktop-preview .panel-choice>.panel-move-handle :is(svg,i) {width:17px;height:17px;opacity:1;color:var(--panel-muted)}
 body.panel-desktop-preview .panel-choice>button {min-height:34px;padding:7px 6px;white-space:nowrap}
-body.panel-desktop-preview .panel-choice>.panel-choice-compact {display:grid;place-items:center;width:34px;min-width:34px;padding:7px;font-size:12px}
+body.panel-desktop-preview .panel-choice>.panel-choice-compact {display:grid;place-items:center;width:36px;min-width:36px;padding:7px;font-size:12px}
 body.panel-desktop-preview .panel-choice>.panel-choice-compact svg {width:17px;height:17px}
 body.panel-desktop-preview .panel-choice>.panel-choice-compact[aria-pressed="true"] {color:var(--panel-accent);box-shadow:inset 0 -2px var(--panel-accent)}
-body.panel-desktop-preview .panel-choice>button:last-child {width:30px;min-width:30px;padding:5px;font-size:18px;line-height:1}
+body.panel-desktop-preview .panel-choice>button:last-child {width:36px;min-width:36px;padding:5px;font-size:18px;line-height:1}
 body.panel-desktop-preview .panel-choice>button:last-child svg {width:16px;height:16px}
 body.panel-desktop-preview .panel-context-menu>button {display:block;width:100%;text-align:left}
 body.panel-desktop-preview .panel-context-menu label {display:grid;gap:6px;padding:8px 2px;font-size:12px;line-height:1.4}
-body.panel-desktop-preview :is(.panel-context-menu,.panel-widget-picker) :is(select,input:not([type="range"])) {min-width:0;max-width:100%;width:100%;min-height:34px;padding:6px 8px;border:1px solid var(--panel-cut);background:var(--sd-glass-face-deep);color:var(--panel-ink);font:inherit;font-size:13px;border-radius:0}
+body.panel-desktop-preview :is(.panel-context-menu,.panel-widget-picker) :is(select,input:not([type="range"])) {box-sizing:border-box;min-width:0;max-width:100%;width:100%;min-height:34px;padding:6px 8px;border:1px solid var(--panel-cut);background:var(--sd-glass-face-deep);color:var(--panel-ink);font:inherit;font-size:13px;border-radius:0}
 body.panel-desktop-preview :is(.panel-context-menu,.panel-widget-picker) select option {background:var(--shell);color:var(--text)}
 body.panel-desktop-preview .panel-context-menu input[type="range"] {width:100%;min-width:0;accent-color:var(--panel-accent);margin:5px 0}
 body.panel-desktop-preview .panel-context-menu .danger {color:var(--action-danger,#ff9d94)}
@@ -530,7 +543,7 @@ body.panel-desktop-preview .panel-menu-note {display:block;font-size:12px;line-h
 body.panel-desktop-preview .panel-menu-subtitle {display:block;font-size:13px;line-height:1.4;margin:13px 0 5px}
 body.panel-desktop-preview :is(.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) button:disabled {opacity:.42;cursor:default;box-shadow:none}
 body.panel-desktop-preview :is(.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) button:disabled:hover {background:transparent}
-body.panel-desktop-preview :is(.desktop-panel,.panel-layout-launcher,.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) :is(button,input,select,[tabindex]):focus-visible,
+body.panel-desktop-preview :is(.desktop-panel,.panel-layout-launcher,.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) :is(button,input,select,textarea,summary,[tabindex]):focus-visible,
 body.panel-desktop-preview .panel-layout-launcher:focus-visible {outline:2px solid var(--panel-accent);outline-offset:-2px}
 
 @container desktop-widget (max-width:230px) {
@@ -543,6 +556,28 @@ body.panel-desktop-preview .panel-layout-launcher:focus-visible {outline:2px sol
 @container desktop-widget (max-width:200px) {
   body.panel-desktop-preview .desktop-widget[data-widget-id="clock"] .time-block>.live-time {font-size:24px!important}
   body.panel-desktop-preview .desktop-widget[data-widget-id="clock"] #dayLabel {display:none}
+}
+/* The temporary editor stays fully reachable at narrow sizes. Its controls
+   wrap as one toolbar instead of hiding Done beyond a horizontal scrollbar. */
+@media (max-width:480px) {
+  body.panel-desktop-preview .panel-layout-toolbar>.panel-layout-title {display:none}
+  body.panel-desktop-preview .panel-layout-toolbar button {padding-inline:8px}
+}
+@media (max-width:320px) {
+  body.panel-desktop-preview .panel-choice {grid-template-columns:minmax(0,1fr) 36px 36px 36px}
+  body.panel-desktop-preview .panel-choice>.panel-move-handle {width:36px;min-width:36px}
+  body.panel-desktop-preview .panel-choice>.panel-move-handle span {display:none}
+  body.panel-desktop-preview .panel-widget-choice {gap:7px 5px}
+  body.panel-desktop-preview .panel-widget-choice-label {column-gap:6px}
+}
+@media (pointer:coarse) {
+  body.panel-desktop-preview .desktop-panel-resizer {width:10px}
+  body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"])>.desktop-panel-resizer {width:auto;height:10px}
+}
+@media (forced-colors:active) {
+  body.panel-desktop-preview :is(.desktop-panel,.panel-applet-popup,.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu) {border:1px solid CanvasText}
+  body.panel-desktop-preview :is(.desktop-widget-summary,.panel-compact-app,.panel-compact-clock):focus-visible {outline-color:Highlight}
+  body.panel-desktop-preview :is(.panel-compact-state,.panel-widget-drop-marker) {background:Highlight;forced-color-adjust:none}
 }
 @media (prefers-reduced-transparency:reduce) {
   body.panel-desktop-preview :is(.desktop-panel,.panel-layout-launcher,.panel-layout-toolbar,.panel-widget-picker,.panel-context-menu,.panel-widget-tooltip,.panel-applet-popup,.panel-widget-edit-cover) {background:var(--shell);-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -558,4 +593,4 @@ body.panel-desktop-preview[data-panel-editing="true"] .desktop-panel:is([data-ed
 body.panel-desktop-preview[data-panel-editing="true"] .desktop-panel:is([data-edge="left"],[data-edge="right"])>.desktop-panel-length-resizer::after{left:calc(50% - 16px)}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"])>.desktop-panel-length-resizer{top:0;bottom:0;right:0;width:6px;cursor:col-resize}
 body.panel-desktop-preview .desktop-panel:is([data-edge="top"],[data-edge="bottom"])>.desktop-panel-length-resizer::after{left:2px;bottom:auto;top:calc(50% - 16px);width:1px;height:32px}
-body.panel-desktop-preview .desktop-panel-length-resizer:is(:hover,:focus-visible){background:var(--accent,#56baff)}
+body.panel-desktop-preview .desktop-panel-length-resizer:is(:hover,:focus-visible){background:color-mix(in srgb,var(--panel-accent) 22%,transparent)}

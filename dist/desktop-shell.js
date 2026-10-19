@@ -4496,35 +4496,43 @@ function concealDynamicWidget(widget) {
 function positionNotificationPeek() {
   const peek = $("#notificationPeek");
   if (!peek?.classList.contains("is-visible")) return;
-  const area = areaFor("systems");
-  const edge = area?.closest(".desktop-panel")?.dataset.edge || "right";
-  const railVisible = area && !area.hidden && !area.classList.contains("is-on-other-display") && area.dataset.widgetMode === "compact";
-  const rect = railVisible ? area.getBoundingClientRect() : null;
+  const id = peek.dataset.notificationScope === "system" ? "workspace-alerts" : "notifications";
+  const widget = document.querySelector('.desktop-panel .desktop-widget[data-widget-id="' + id + '"]');
+  const popup = document.querySelector('.panel-applet-popup[data-widget-id="' + id + '"]');
+  const visible = element => {
+    if (!element || element.closest('[hidden],.is-on-other-display')) return false;
+    const style = window.getComputedStyle(element), bounds = element.getBoundingClientRect();
+    return style.display !== 'none' && style.visibility !== 'hidden' && bounds.width > 0 && bounds.height > 0;
+  };
+  // Notification sources are moved out of the hidden system bank. Follow the
+  // actual local widget, including its popup, rather than that retired source.
+  const anchor = visible(popup) ? popup : visible(widget) ? widget : null;
+  const edge = anchor && widget?.closest(".desktop-panel")?.dataset.edge || "right";
+  const rect = anchor?.getBoundingClientRect();
   const gap = 8;
-  const inset = 12;
-  const width = Math.min(292, Math.max(224, window.innerWidth - inset * 2));
-  const height = peek.offsetHeight || 58;
-  const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
-  let left;
-  let top;
-
+  const viewportWidth = Math.max(1, window.innerWidth), viewportHeight = Math.max(1, window.innerHeight);
+  const inset = Math.min(12, viewportWidth / 4, viewportHeight / 4);
+  const width = Math.min(292, viewportWidth - inset * 2), availableHeight = viewportHeight - inset * 2;
   peek.style.width = width + "px";
+  peek.style.maxHeight = availableHeight + "px";
+  peek.style.minHeight = Math.min(56, availableHeight) + "px";
+  const height = Math.min(peek.offsetHeight || 58, availableHeight);
+  const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+  let left = viewportWidth - width - inset;
+  let top = viewportHeight - height - inset;
+
   peek.dataset.edge = edge;
-  if (edge === "left") {
-    left = rect ? rect.right + gap : inset;
-    top = rect ? clamp(rect.top + 58, inset, window.innerHeight - height - inset) : clamp(window.innerHeight * .28, inset, window.innerHeight - height - inset);
-  } else if (edge === "right") {
-    left = rect ? rect.left - width - gap : window.innerWidth - width - inset;
-    top = rect ? clamp(rect.top + 58, inset, window.innerHeight - height - inset) : clamp(window.innerHeight * .28, inset, window.innerHeight - height - inset);
-  } else if (edge === "top") {
-    left = rect ? clamp(rect.right - width - 8, inset, window.innerWidth - width - inset) : window.innerWidth - width - inset;
-    top = rect ? rect.bottom + gap : inset;
-  } else {
-    left = rect ? clamp(rect.right - width - 8, inset, window.innerWidth - width - inset) : window.innerWidth - width - inset;
-    top = rect ? rect.top - height - gap : window.innerHeight - height - inset;
+  if (rect) {
+    if (edge === "left" || edge === "right") {
+      left = edge === "left" ? rect.right + gap : rect.left - width - gap;
+      top = rect.top + (rect.height - height) / 2;
+    } else {
+      left = rect.left + (rect.width - width) / 2;
+      top = edge === "top" ? rect.bottom + gap : rect.top - height - gap;
+    }
   }
-  peek.style.left = clamp(left, inset, window.innerWidth - width - inset) + "px";
-  peek.style.top = clamp(top, inset, window.innerHeight - height - inset) + "px";
+  peek.style.left = clamp(left, inset, viewportWidth - width - inset) + "px";
+  peek.style.top = clamp(top, inset, viewportHeight - height - inset) + "px";
 }
 
 function hideNotificationPeek() {
@@ -4689,9 +4697,9 @@ function contextMenuDescriptor(target, clientX = 0, clientY = 0) {
 
   if (target.closest(".desktop-page-rail")) return { kind: "desktop-markers", title: "Desktop indicators · System-wide" };
 
-  const appControl = target.closest("[data-open-app],[data-overview-open-app],[data-search-open-app],[data-mini-card]");
+  const appControl = target.closest("[data-open-app],[data-overview-open-app],[data-search-open-app],[data-mini-card],[data-panel-task]");
   if (appControl) {
-    const name = appControl.dataset.openApp || appControl.dataset.overviewOpenApp || appControl.dataset.searchOpenApp || appControl.dataset.miniCard;
+    const name = appControl.dataset.openApp || appControl.dataset.overviewOpenApp || appControl.dataset.searchOpenApp || appControl.dataset.miniCard || appControl.dataset.panelTask;
     if (appInfo[name]) return { kind: "app", name, title: appInfo[name].label };
   }
 

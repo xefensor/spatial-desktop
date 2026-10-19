@@ -5,6 +5,7 @@
   if(!M||!shell||!registry.size)return;
   const storage=typeof desktopStorage!=='undefined'?desktopStorage:root.localStorage,key='spatial-widget-panels-v1';
   let saved={};try{saved=JSON.parse(storage.getItem(key)||'{}');}catch{}
+  if(!saved||typeof saved!=='object'||Array.isArray(saved))saved={};
   const sessions=Object.create(null);for(const [id,value]of Object.entries(saved))if(id!=='__proto__')sessions[id]=M.normalize(value);
   const clone=value=>JSON.parse(JSON.stringify(value));
   const owner=()=>typeof activeWorkspace==='string'?activeWorkspace:'general';
@@ -19,7 +20,7 @@
   const node=(tag,className,text)=>{const value=document.createElement(tag);if(className)value.className=className;if(text!==undefined)value.textContent=text;return value;};
   const button=(label,action,className='surface-key')=>{const value=node('button',className);value.type='button';value.setAttribute('aria-label',label);value.title=label;value.dataset.panelAction=action;return value;};
   const announce=text=>{live.textContent=text;};
-  let editing=false,rendering=false,pending=0,lastInsets='',lastWorkspace='',menu=null,menuOrigin=null,appletPopup=null,drag=null,fitPending=0,suppressedPanelClick=null,suppressedWidgetClick=null;
+  let editing=false,rendering=false,pending=0,lastInsets='',lastWorkspace='',menu=null,menuOrigin=null,menuScope=null,appletPopup=null,drag=null,fitPending=0,suppressedPanelClick=null,suppressedWidgetClick=null;
   let compactPanels=null,widgetFit=null;
   const popupAnchors=new WeakMap();
   document.body.classList.add('panel-desktop-preview');document.body.dataset.panelEditing='false';
@@ -50,7 +51,7 @@
     try{const session=tileSession();if(session?.fullscreen&&!session.fullscreen.bonded)return localSlot();const bond=desktopPages.selectedFullscreen?.(owner());if(bond)return Math.min(bond.display,displayCount());}catch{}return 0;
   }
   function layoutOptions(){
-    const full=fullDisplay(),compactSizes={};if(compactPanels)for(const id of ['apps','clock'])compactSizes[id]={vertical:compactPanels.measure(id,true),horizontal:compactPanels.measure(id,false),minSize:compactPanels.measureMin?.(id,true)};
+    const full=fullDisplay(),compactSizes={};if(compactPanels)for(const id of ['apps','clock'])compactSizes[id]={vertical:compactPanels.measure(id,true),horizontal:compactPanels.measure(id,false),minSize:{vertical:compactPanels.measureMin?.(id,true),horizontal:compactPanels.measureMin?.(id,false)}};
     const options={width:shell.clientWidth||root.innerWidth||1440,height:shell.clientHeight||root.innerHeight||900,display:localSlot(),displays:displayCount(),fullscreen:Boolean(full),fullscreenDisplay:full||1,headerSize:0,footerSize:0,compactToolboxSize:0,compactSizes,widgetHeaderSize:0,preferredWidget:preferredWidgets[owner()]};
     if(widgetFit){const geometry=M.layout(state(),options),widgetSizes={},measure=(id,vertical,cross)=>widgetFit.measureRange?.(id,vertical,cross)??widgetFit.measure(id,vertical,cross);for(const panel of state().panels){const rect=geometry.panels[panel.id];if(!rect||rect.compact)continue;for(const id of panel.widgets)if(!isSpacer(id)&&state().widgets[id]?.mode==='expanded'){widgetSizes[id]=rect.vertical?{vertical:measure(id,true,rect.width)}:{horizontal:measure(id,false,Math.max(0,rect.height-rect.bodyOffset-rect.bodyEnd-options.widgetHeaderSize))};}}options.widgetSizes=widgetSizes;}
     return options;
@@ -104,6 +105,8 @@
   function render(){
     if(rendering)return;rendering=true;
     try{
+      if(drag&&(drag.workspace!==owner()||drag.display!==localSlot()||drag.fullscreen!==fullDisplay()))drag.cancel();
+      if(menuScope&&(menuScope.workspace!==owner()||menuScope.display!==localSlot()||menuScope.fullscreen!==fullDisplay()))closeMenu(false);
       for(const [part,value]of editInert)part.inert=value;editInert.clear();
       const current=state();for(const id of Object.keys(current.widgets))if(!frames.has(id)&&definitionFor(id))createWidgetFrame(id);for(const [id,frame]of frames)if(!current.widgets[id]){frame.element.remove();frames.delete(id);}
       const width=shell.clientWidth||root.innerWidth||1440,height=shell.clientHeight||root.innerHeight||900;
@@ -124,8 +127,9 @@
         frame.element.style.setProperty('--panel-toolbox-size',(rect.toolboxSize||0)+'px');
         frame.element.dataset.edge=panel.edge;frame.element.dataset.mode=rect.compact?'compact':'expanded';frame.element.setAttribute('aria-label',panel.label);
         Object.assign(frame.element.style,{left:rect.x+'px',top:rect.y+'px',width:rect.width+'px',height:rect.height+'px'});
-        frame.resize.setAttribute('aria-orientation',rect.vertical?'vertical':'horizontal');frame.resize.setAttribute('aria-valuenow',String(Math.round(rect.vertical?rect.width:rect.height)));frame.resize.setAttribute('aria-valuemin','56');frame.resize.setAttribute('aria-valuemax',String(rect.vertical?width-300:height-220));
-        frame.lengthResize.hidden=current.panels.filter(item=>item.edge===panel.edge&&layout.panels[item.id]).length<2;frame.lengthResize.setAttribute('aria-orientation',rect.vertical?'horizontal':'vertical');frame.lengthResize.setAttribute('aria-valuenow',String(Math.round(rect.vertical?rect.height:rect.width)));
+        const thickness=Math.round(rect.vertical?rect.width:rect.height),maxThickness=Math.max(thickness,Math.min(640,Math.max(56,rect.vertical?width-300:height-220)));
+        frame.resize.setAttribute('aria-orientation',rect.vertical?'vertical':'horizontal');frame.resize.setAttribute('aria-valuenow',String(thickness));frame.resize.setAttribute('aria-valuemin',String(Math.min(56,thickness)));frame.resize.setAttribute('aria-valuemax',String(maxThickness));
+        frame.lengthResize.hidden=current.panels.filter(item=>item.edge===panel.edge&&layout.panels[item.id]).length<2;frame.lengthResize.setAttribute('aria-orientation',rect.vertical?'horizontal':'vertical');frame.lengthResize.setAttribute('aria-valuenow',String(Math.round(rect.vertical?rect.height:rect.width)));frame.lengthResize.setAttribute('aria-valuemin','0');frame.lengthResize.setAttribute('aria-valuemax',String(Math.max(Math.round(rect.vertical?rect.height:rect.width),rect.vertical?height-layout.insets.top-layout.insets.bottom:width)));
         for(const id of panel.widgets){
           const widget=frames.get(id),allocation=rect.widgets[id];if(!widget)continue;
           if(widget.element.parentElement!==frame.body)frame.body.append(widget.element);
@@ -153,10 +157,12 @@
       if(stamp!==lastInsets){lastInsets=stamp;setWorkspaceInsets(insets.left,insets.right,insets.bottom,insets.top);}
       for(const [selector,side]of [['#desktopPageRail','left'],['#desktopPageRailRight','right']]){const rail=document.querySelector(selector);shell.style.setProperty('--desktop-page-rail-'+side+'-display',insets[side]?'flex':'none');shell.style.setProperty('--desktop-page-rail-'+side+'-width',insets[side]?'var(--desktop-page-rail-width)':'0px');if(rail){rail.hidden=!insets[side];rail.style.display=insets[side]?'flex':'none';}}
       const undoButton=toolbar.querySelector('[data-panel-action="undo"]');undoButton.disabled=!undo.some(item=>item.workspace===owner());
+      toolbar.querySelector('[data-panel-action="add-panel"]').disabled=current.panels.length>=24;
       refreshSummaries();if(widgetFit?.sync())schedule();lastWorkspace=owner();
       if(tooltipAnchor&&(tooltipAnchor.hidden||tooltipAnchor.closest('.desktop-widget')?.hidden||tooltipAnchor.closest('.desktop-widget')?.dataset.widgetMode!=='compact'))hideTooltip();
       if(appletPopup){const anchorPanel=appletPopup.anchor?.closest('.desktop-panel');if(anchorPanel?.hidden||appletPopup.anchor?.closest('.desktop-widget')?.hidden||appletPopup.anchor?.closest('[hidden]'))closeApplet(false,false);}
       if(appletPopup)positionApplet();
+      if(menu)finishPopup(menu,false);
       if(editing)for(const frame of frames.values())for(const part of [frame.content,frame.summary,frame.compactContent]){editInert.set(part,Boolean(part.inert));part.inert=true;}
     }finally{rendering=false;}
   }
@@ -166,7 +172,8 @@
   const usableFocus=element=>Boolean(element?.isConnected&&!element.hidden&&!element.closest('[hidden]'));
   function layoutAnchor(id){const preferred=panels.get(id)?.body;return usableFocus(preferred)?preferred:[...panels.values()].find(frame=>usableFocus(frame.body))?.body||shell;}
   function positionApplet(){
-    if(!appletPopup)return;const {element,anchor,id}=appletPopup,width=Math.min(id==='assistant'?420:380,Math.max(1,root.innerWidth-16)),height=Math.min(id==='clock'?240:id==='controls'?380:600,Math.max(1,root.innerHeight-16)),rect=anchor?.getBoundingClientRect?.()||{left:8,top:8,right:52,bottom:52},panel=anchor?.closest('.desktop-panel'),edge=panel?.dataset.edge||'bottom';
+    if(!appletPopup)return;const {element,anchor,id}=appletPopup,width=Math.min(id==='assistant'?420:380,Math.max(1,root.innerWidth-16));element.style.width=width+'px';
+    const css=getComputedStyle(element),borders=(parseFloat(css.borderTopWidth)||0)+(parseFloat(css.borderBottomWidth)||0),chrome=(element.querySelector('.panel-applet-popup-header')?.getBoundingClientRect().height||0)+borders,natural=widgetFit?.measure(id,true,width-(parseFloat(css.borderLeftWidth)||0)-(parseFloat(css.borderRightWidth)||0)),preferred=Number.isFinite(natural)&&natural>0?natural+chrome:id==='controls'?380:600,height=Math.min(Math.max(chrome,preferred),Math.max(1,root.innerHeight-16)),rect=anchor?.getBoundingClientRect?.()||{left:8,top:8,right:52,bottom:52},panel=anchor?.closest('.desktop-panel'),edge=panel?.dataset.edge||'bottom';
     let left=edge==='left'?rect.right+8:edge==='right'?rect.left-width-8:rect.left,top=edge==='top'?rect.bottom+8:edge==='bottom'?rect.top-height-8:rect.top;
     Object.assign(element.style,{left:Math.max(8,Math.min(root.innerWidth-width-8,left))+'px',top:Math.max(8,Math.min(root.innerHeight-height-8,top))+'px',width:width+'px',height:height+'px'});
   }
@@ -194,19 +201,20 @@
     if(registry.get(id)){const source=registry.get(id).source;if(registry.get(id).kind==='widget')source.hidden=false;source.inert=false;source.dataset.widgetMode='expanded';source.dataset.panelEdge='left';}if(id==='assistant')root.SpatialAIDesktop?.render?.();if(id==='files')restoreFilesContent();
     frame.summary.setAttribute('aria-expanded','true');if(anchor?.hasAttribute('aria-haspopup'))anchor.setAttribute('aria-expanded','true');if(id==='calendar'&&anchor?.matches('.panel-compact-clock,.time-block,.desktop-widget-summary[data-widget-id="clock"]')){const month=frame.content.querySelector('#systemMonth');if(month)month.open=true;}positionApplet();element.focus({preventScroll:true});root.dispatchEvent(new CustomEvent('spatial-panel-applet-change',{detail:{id,open:true}}));
   }
-  function closeMenu(restoreFocus=true){if(!menu)return;const origin=menuOrigin;menu.remove();menu=null;menuOrigin=null;if(restoreFocus){const fallback=editing?toolbar.querySelector('[data-panel-action="widgets"]'):layoutAnchor();(usableFocus(origin)?origin:fallback)?.focus({preventScroll:true});}}
-  function finishPopup(container){
+  function closeMenu(restoreFocus=true){if(!menu)return;const origin=menuOrigin;menu.remove();menu=null;menuOrigin=null;menuScope=null;if(restoreFocus){const fallback=editing?toolbar.querySelector('[data-panel-action="widgets"]'):layoutAnchor();(usableFocus(origin)?origin:fallback)?.focus({preventScroll:true});}}
+  function finishPopup(container,focus=true){
     if(menu!==container)return;
-    const anchor=popupAnchors.get(container)||{left:8,top:8,bottom:8},margin=8,viewportWidth=root.innerWidth||1440,viewportHeight=root.innerHeight||900;
+    const savedAnchor=popupAnchors.get(container),anchor=usableFocus(savedAnchor?.element)?savedAnchor.element.getBoundingClientRect():savedAnchor?.rect||{left:8,top:8,bottom:8},margin=8,viewportWidth=root.innerWidth||1440,viewportHeight=root.innerHeight||900;
     container.style.maxHeight=Math.max(0,viewportHeight-margin*2)+'px';
     const measured=container.getBoundingClientRect(),width=Math.min(measured.width||300,Math.max(0,viewportWidth-margin*2)),height=Math.min(measured.height||260,Math.max(0,viewportHeight-margin*2)),below=anchor.bottom+6,above=(anchor.top??anchor.bottom)-height-6;
     const top=below+height<=viewportHeight-margin?below:above>=margin?above:Math.max(margin,viewportHeight-height-margin);
-    Object.assign(container.style,{left:Math.max(margin,Math.min(viewportWidth-width-margin,anchor.left))+'px',top:top+'px',maxHeight:Math.max(0,viewportHeight-top-margin)+'px'});container.focus({preventScroll:true});
+    Object.assign(container.style,{left:Math.max(margin,Math.min(viewportWidth-width-margin,anchor.left))+'px',top:top+'px',maxHeight:Math.max(0,viewportHeight-top-margin)+'px'});if(focus)container.focus({preventScroll:true});
   }
   function popup(title,anchor,wide=false){
     const anchorRect=anchor?.getBoundingClientRect?.(),origin=usableFocus(anchor)&&!menu?.contains(anchor)?anchor:menuOrigin;closeMenu(false);closeApplet(false);hideTooltip();menu=node('section',wide?'panel-widget-picker':'panel-context-menu');menuOrigin=origin||layoutAnchor();menu.setAttribute('role','dialog');menu.setAttribute('aria-label',title);menu.tabIndex=-1;
+    menuScope={workspace:owner(),display:localSlot(),fullscreen:fullDisplay()};
     const heading=node('header','panel-menu-heading');heading.append(node('strong','',title));const close=button('Close','close-menu');close.textContent='×';heading.append(close);menu.append(heading);document.body.append(menu);
-    const rect=anchorRect||{left:root.innerWidth/2-160,top:24,bottom:48};popupAnchors.set(menu,rect);Object.assign(menu.style,{left:Math.max(8,Math.min(root.innerWidth-(wide?356:300)-8,rect.left))+'px',top:'8px'});return menu;
+    const rect=anchorRect||{left:root.innerWidth/2-160,top:24,bottom:48};popupAnchors.set(menu,{rect,element:anchor?.isConnected?anchor:null});Object.assign(menu.style,{left:Math.max(8,Math.min(root.innerWidth-(wide?356:300)-8,rect.left))+'px',top:'8px'});return menu;
   }
   function field(container,label,control){const row=node('label','panel-menu-field');row.append(node('span','',label),control);container.append(row);return control;}
   function select(options,current,changeHandler){const value=document.createElement('select');for(const [id,label]of options){const option=node('option','',label);option.value=id;value.append(option);}value.value=String(current);value.addEventListener('change',()=>changeHandler(value.value));return value;}
@@ -216,7 +224,7 @@
       const row=node('div','panel-choice');row.dataset.panelId=panel.id;
       const label=node('span','panel-choice-label');label.append(node('strong','',panel.label),node('small','',panel.edge[0].toUpperCase()+panel.edge.slice(1)+' · Display '+panel.display));row.append(label);
       const move=button('Move '+panel.label,'move-panel','panel-move-handle surface-key');move.dataset.panelId=panel.id;move.innerHTML=svg('i-menu')+'<span>Move</span>';move.title='Drag to move '+panel.label;move.disabled=panel.mode==='hidden';row.append(move);
-      const compact=button(panel.mode==='compact'?'Expand '+panel.label:'Make '+panel.label+' compact','compact-panel','panel-choice-compact surface-key');compact.dataset.panelId=panel.id;compact.innerHTML=svg(panel.mode==='compact'?'i-max':'i-min');compact.setAttribute('aria-expanded',String(panel.mode!=='compact'));compact.setAttribute('aria-pressed',String(panel.mode==='compact'));compact.disabled=panel.mode==='hidden';row.append(compact);
+      const compact=button(panel.mode==='hidden'?'Show '+panel.label:panel.mode==='compact'?'Expand '+panel.label:'Make '+panel.label+' compact',panel.mode==='hidden'?'show-panel':'compact-panel','panel-choice-compact surface-key');compact.dataset.panelId=panel.id;compact.innerHTML=svg(panel.mode==='compact'||panel.mode==='hidden'?'i-max':'i-min');compact.setAttribute('aria-expanded',String(panel.mode==='expanded'));compact.setAttribute('aria-pressed',String(panel.mode==='compact'));row.append(compact);
       const options=button(panel.label+' options','panel-options');options.dataset.panelId=panel.id;options.textContent='⋯';options.setAttribute('aria-haspopup','dialog');row.append(options);container.append(row);
     }
     container.append(node('small','panel-menu-note','Drag Move to dock a panel on another edge. Resize its border directly.'));
@@ -226,11 +234,12 @@
     const panel=state().panels.find(item=>item.id===id);if(!panel)return;const container=popup(panel.label,anchor),edit=button('Edit panel and widget layout','edit');edit.textContent='Edit layout';container.append(edit);const name=document.createElement('input');name.value=panel.label;name.maxLength=60;name.addEventListener('change',()=>{change(M.updatePanel(state(),id,{label:name.value}));closeMenu();});field(container,'Panel name',name);
     field(container,'Dock',select(['left','right','top','bottom'].map(edge=>[edge,edge[0].toUpperCase()+edge.slice(1)]),panel.edge,edge=>{change(M.updatePanel(state(),id,{edge}),'Panel moved to '+edge);closeMenu();}));
     field(container,'Display',select(Array.from({length:displayCount()},(_,index)=>[index+1,'Display '+(index+1)]),Math.min(panel.display,displayCount()),display=>{change(M.updatePanel(state(),id,{display:Number(display)}),'Panel moved to display '+display);closeMenu();}));
-    const appearance=button(panel.mode==='compact'?'Expand panel':'Make panel compact',panel.mode==='compact'?'expand-panel':'collapse-panel');appearance.dataset.panelId=id;appearance.textContent=panel.mode==='compact'?'Expand panel':'Make panel compact';container.append(appearance);
-    if(state().panels.filter(item=>item.edge===panel.edge&&item.mode!=='hidden').length>1){const length=document.createElement('input');length.type='range';length.min='.1';length.max='5';length.step='.1';length.value=panel.share;length.setAttribute('aria-label','Panel length');length.addEventListener('change',()=>change(M.updatePanel(state(),id,{share:Number(length.value)})));field(container,'Panel length',length);}
+    const appearance=button(panel.mode==='hidden'?'Show panel':panel.mode==='compact'?'Expand panel':'Make panel compact',panel.mode==='hidden'?'show-panel':panel.mode==='compact'?'expand-panel':'collapse-panel');appearance.dataset.panelId=id;appearance.textContent=panel.mode==='hidden'?'Show panel':panel.mode==='compact'?'Expand panel':'Make panel compact';container.append(appearance);
+    const effectiveDisplay=item=>item.display<=displayCount()?item.display:1;
+    if(state().panels.filter(item=>item.edge===panel.edge&&item.mode!=='hidden'&&effectiveDisplay(item)===effectiveDisplay(panel)).length>1){const length=document.createElement('input');length.type='range';length.min='.1';length.max='5';length.step='.1';length.value=panel.share;length.setAttribute('aria-label','Panel length');length.addEventListener('change',()=>change(M.updatePanel(state(),id,{share:Number(length.value)})));field(container,'Panel length',length);}
     const widgets=button('Choose widgets','widgets');widgets.textContent='Choose widgets';widgets.dataset.targetPanel=id;container.append(widgets);
 
-    const hide=button('Hide panel','hide-panel');hide.dataset.panelId=id;hide.textContent='Hide panel';container.append(hide);
+    const hide=button('Hide panel','hide-panel');hide.dataset.panelId=id;hide.textContent='Hide panel';hide.disabled=panel.mode==='hidden';container.append(hide);
     const remove=button('Remove panel','remove-panel');remove.dataset.panelId=id;remove.textContent='Remove panel';remove.disabled=state().panels.length===1;container.append(remove,node('small','panel-menu-note','Widgets move to another panel when this panel is removed.'));finishPopup(container);
   }
   function showWidgetMenu(id,anchor){
@@ -238,7 +247,7 @@
     field(container,'Panel',select(current.panels.map(item=>[item.id,item.label]),panel.id,destination=>{change(M.moveWidget(state(),id,destination),definition.title+' moved');closeMenu();}));
     if(!isSpacer(id)&&id!=='launcher')field(container,'Appearance',select([['expanded','Expanded widget'],['compact','Icon']],current.widgets[id].mode,mode=>{if(mode==='expanded')ensureVisible(id);else change(M.updateWidget(state(),id,{mode}));closeMenu();}));
 
-    const ordering=node('div','panel-widget-order');for(const [label,step]of [['Move earlier',-1],['Move later',1]]){const move=button(label,'reorder-widget');move.textContent=label;move.dataset.widgetId=id;move.dataset.step=String(step);ordering.append(move);}container.append(ordering);
+    const ordering=node('div','panel-widget-order'),position=panel.widgets.indexOf(id);for(const [label,step]of [['Move earlier',-1],['Move later',1]]){const move=button(label,'reorder-widget');move.textContent=label;move.dataset.widgetId=id;move.dataset.step=String(step);move.disabled=position+step<0||position+step>=panel.widgets.length;ordering.append(move);}container.append(ordering);
     if(!isSpacer(id)&&id!=='launcher'){const auto=button('Fit content automatically','auto-widget');auto.textContent='Fit content automatically';auto.dataset.widgetId=id;container.append(auto,node('small','panel-menu-note',registry.get(id)?.sourceMetadata?.scope||'Workspace'));}
     if(id==='notifications'){const clear=button('Clear notifications','clear-notifications');clear.textContent='Clear notifications';clear.disabled=!document.querySelector('#notificationWidget .notification');container.append(clear);}
     const remove=button('Remove '+definition.title+' from panel','remove-widget');remove.textContent='Remove widget';remove.dataset.widgetId=id;container.append(remove);finishPopup(container);
@@ -262,7 +271,7 @@
   document.addEventListener('pointerout',event=>{const anchor=event.target.closest('.desktop-widget-summary');if(anchor&&!anchor.contains(event.relatedTarget)&&document.activeElement!==anchor)hideTooltip();});
   document.addEventListener('focusin',event=>{const anchor=event.target.closest('.desktop-widget-summary');if(anchor)showTooltip(anchor);});
   document.addEventListener('focusout',event=>{if(event.target.closest('.desktop-widget-summary'))hideTooltip();});
-  document.addEventListener('pointerdown',event=>{if(appletPopup&&!appletPopup.element.contains(event.target)&&!appletPopup.anchor?.contains(event.target))closeApplet(false);},true);
+  document.addEventListener('pointerdown',event=>{if(menu&&!menu.contains(event.target))closeMenu(false);if(appletPopup&&!appletPopup.element.contains(event.target)&&!appletPopup.anchor?.contains(event.target))closeApplet(false);},true);
   document.addEventListener('click',event=>{const panel=suppressedPanelClick,widget=suppressedWidgetClick;suppressedPanelClick=null;suppressedWidgetClick=null;if(event.detail!==0&&(panel&&event.target.closest('.desktop-panel')?.dataset.panelId===panel.id||widget&&event.target.closest('.desktop-widget')?.dataset.widgetId===widget.id)){event.preventDefault();event.stopImmediatePropagation();}},true);
 
   document.addEventListener('click',event=>{
@@ -281,7 +290,7 @@
     else if(action==='expand-widget'){hideTooltip();openApplet(widget==='clock'?'calendar':widget,target);if(widget==='assistant'&&appletPopup?.id==='assistant')root.SpatialAssistantDesktop?.invoke?.();}
     else if(action==='remove-widget'){change(isSpacer(widget)?M.removeSpacer(state(),widget):M.updateWidget(state(),widget,{mode:'hidden'}));closeMenu();layoutAnchor()?.focus({preventScroll:true});}
     else if(action==='toggle-widget'){let next=state(),mode=next.widgets[widget].mode==='hidden'?'compact':'hidden';if(target.dataset.targetPanel&&mode!=='hidden')next=M.moveWidget(next,widget,target.dataset.targetPanel);change(M.updateWidget(next,widget,{mode}));showPicker(layoutAnchor(),target.dataset.targetPanel);menu?.querySelector('[data-panel-action="toggle-widget"][data-widget-id="'+widget+'"]')?.focus({preventScroll:true});}
-    else if(action==='show-panel')change(M.updatePanel(state(),id,{mode:'expanded'}));
+    else if(action==='show-panel'){closeMenu(false);change(M.updatePanel(state(),id,{mode:'expanded'}));layoutAnchor(id)?.focus({preventScroll:true});}
     else if(action==='hide-panel'){change(M.updatePanel(state(),id,{mode:'hidden'}));closeMenu(false);layoutAnchor()?.focus({preventScroll:true});}
     else if(action==='add-panel'){const next=M.addPanel(state(),'left');change(next,'New panel added');setEditing(true);showPanelMenu(next.panels.at(-1).id,target);}
     else if(action==='remove-panel'){change(M.removePanel(state(),id),'Panel removed; its widgets were kept');closeMenu();}
@@ -315,12 +324,12 @@
     const panel=state().panels.find(item=>kind==='widget'?item.widgets.includes(id):item.id===id);if(!panel)return;
     event.preventDefault();event.stopImmediatePropagation();closeMenu(false);closeApplet(false);hideTooltip();
     const before=clone(state()),panelFrame=panels.get(panel.id),initialRect=panelFrame.element.getBoundingClientRect();
-    drag={kind,id,before,workspace:owner(),pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,panel,changed:false,extent:['left','right'].includes(panel.edge)?initialRect.width:initialRect.height};
+    drag={kind,id,before,workspace:owner(),display:localSlot(),fullscreen:fullDisplay(),pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,panel,changed:false,extent:['left','right'].includes(panel.edge)?initialRect.width:initialRect.height};
     if(kind==='panel-length')drag.extent=['left','right'].includes(panel.edge)?initialRect.height:initialRect.width;
     document.body.classList.add('panel-is-dragging');const ghost=node('div','panel-drag-label',kind==='widget'?definitionFor(id).title:panel.label),marker=node('div','panel-widget-drop-marker');marker.setAttribute('aria-hidden','true');document.body.append(ghost);
     const matchesPointer=pointer=>drag&&(drag.pointerId==null||pointer.pointerId==null||drag.pointerId===pointer.pointerId);
     const move=pointer=>{
-      if(!matchesPointer(pointer))return;if(owner()!==drag.workspace){finish(pointer,true);return;}
+      if(!matchesPointer(pointer))return;if(owner()!==drag.workspace||localSlot()!==drag.display||fullDisplay()!==drag.fullscreen){finish(pointer,true);return;}
       if(Math.hypot(pointer.clientX-drag.startX,pointer.clientY-drag.startY)<5&&!drag.changed)return;drag.changed=true;
       Object.assign(ghost.style,{left:pointer.clientX+14+'px',top:pointer.clientY+14+'px'});
       if(kind==='widget'){
@@ -336,7 +345,7 @@
     const finish=(pointer,cancelled=false)=>{
       if(!drag)return;const current=drag;drag=null;document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',up,true);document.removeEventListener('pointercancel',cancel,true);document.removeEventListener('keydown',escape,true);ghost.remove();marker.remove();document.body.classList.remove('panel-is-dragging');frames.get(id)?.element.classList.remove('is-dragging');for(const frame of panels.values())frame.element.classList.remove('is-drop-target');
       let next=sessions[current.workspace];sessions[current.workspace]=before;
-      const accepted=!cancelled&&current.changed&&owner()===current.workspace&&(kind!=='widget'||current.drop);
+      const accepted=!cancelled&&current.changed&&owner()===current.workspace&&localSlot()===current.display&&fullDisplay()===current.fullscreen&&(kind!=='widget'||current.drop);
       if(accepted){if(kind==='widget'){next=M.moveWidget(before,id,current.drop.panel,current.drop.index);}change(next,kind==='widget'?'Widget moved':'Panel updated');}else render();fit();
       if(current.changed){if(kind==='widget')suppressedWidgetClick={id};else suppressedPanelClick={id};}
       if(kind==='widget'&&editing&&owner()===current.workspace)frames.get(id)?.editCover.focus({preventScroll:true});
@@ -366,7 +375,7 @@
     menuOrigin=panel?.querySelector('.desktop-panel-body')||layoutAnchor();
   },true);
   document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'){if(drag)return;if(appletPopup){closeApplet();event.preventDefault();event.stopImmediatePropagation();}else if(menu){closeMenu();event.preventDefault();}else if(editing){setEditing(false);event.preventDefault();}return;}
+    if(event.key==='Escape'){if(drag)return;if(appletPopup){closeApplet();event.preventDefault();event.stopImmediatePropagation();}else if(menu){closeMenu();event.preventDefault();event.stopImmediatePropagation();}else if(editing){setEditing(false);event.preventDefault();event.stopImmediatePropagation();}return;}
     const handle=event.target.closest('.desktop-panel-resizer,.desktop-panel-length-resizer');if(!handle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)||handle.getAttribute('aria-disabled')==='true')return;
     const panel=state().panels.find(item=>item.id===handle.dataset.panelId),vertical=['left','right'].includes(panel.edge),length=handle.classList.contains('desktop-panel-length-resizer'),alongY=length?vertical:!vertical;
     if(event.key.startsWith('Arrow')&&!(alongY?['ArrowUp','ArrowDown']:['ArrowLeft','ArrowRight']).includes(event.key))return;
@@ -389,12 +398,14 @@
     const full=fullDisplay();return {...M.layout(state(),{...layoutOptions(),display,fullscreen:Boolean(full),fullscreenDisplay:full||1}).insets};
   }
   function replaceSessions(snapshot){
-    if(!snapshot||typeof snapshot!=='object')return false;
+    if(!snapshot||typeof snapshot!=='object'||Array.isArray(snapshot))return false;
+    if(Object.hasOwn(snapshot,owner())){drag?.cancel();closeMenu(false);closeApplet(false,false);hideTooltip();}
     for(const [workspace,value]of Object.entries(snapshot))if(workspace!=='__proto__')sessions[workspace]=M.normalize(value);
     save();schedule();return true;
   }
   function restoreSession(workspace,snapshot){
     if(!workspace||workspace==='__proto__')return false;
+    if(workspace===owner()){drag?.cancel();closeMenu(false);closeApplet(false,false);hideTooltip();}
     if(snapshot)sessions[workspace]=M.normalize(snapshot);else delete sessions[workspace];
     save();schedule();return true;
   }

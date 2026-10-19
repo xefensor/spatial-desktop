@@ -9,6 +9,7 @@ const assistantSource = d.querySelector('#assistant');
 assistantSource.className = 'widget-source assistant-widget'; assistantSource.dataset.widgetMode = 'expanded';
 const content = d.createElement('div'); content.className = 'ai-content'; content.append(...assistantSource.children); assistantSource.append(content);
 d.body.insertAdjacentHTML('beforeend', '<aside class="widget-source files-widget" data-widget-mode="expanded" id="files"><div id="workingMemory"><h3>Workspace files</h3><section style="display:flex;flex-direction:column;gap:8px">' + '<button style="min-height:40px">A workspace folder with its title</button>'.repeat(8) + '</section></div></aside>');
+d.body.insertAdjacentHTML('beforeend','<section id="controls" style="display:grid;grid-template-columns:100px 100px"><button style="min-height:56px">Wi-Fi</button><button style="min-height:56px">Bluetooth</button></section><nav id="systemShortcuts"><button style="min-height:40px">Devices & session</button></nav><button id="nativeSettings" style="min-height:36px">Settings</button><section id="workspaceAlerts" hidden><p>Inactive Workspace alert</p></section><section id="systemAlerts"><p style="min-height:100px">Update ready</p></section>');
 const sheet = d.createElement('style'); sheet.textContent = '.ai-content{display:flex;flex-direction:column;gap:8px}'; d.head.append(sheet);
 const frames = new Map(), observations = [], resizeObservations = [];
 let frameId = 0, changes = 0, clicks = 0;
@@ -18,10 +19,19 @@ w.MutationObserver = class { constructor(callback) { this.callback = callback; o
 w.ResizeObserver = class { constructor(callback) { this.callback = callback; resizeObservations.push(this); } observe() {} disconnect() { this.disconnected = true; } };
 vm.runInContext(fs.readFileSync(require.resolve('../dist/panel-fit.js'), 'utf8'), dom.getInternalVMContext());
 const registry = new Map(['apps', 'notifications', 'assistant', 'files', 'clock', 'generic'].map(id => [id, { source: d.getElementById(id), kind: ['apps', 'assistant', 'files'].includes(id) ? 'widget' : 'system' }]));
+registry.set('controls',{source:d.querySelector('#controls'),nodes:[d.querySelector('#controls'),d.querySelector('#systemShortcuts'),d.querySelector('#nativeSettings')]});
+registry.set('workspace-alerts',{source:d.querySelector('#workspaceAlerts'),nodes:[d.querySelector('#workspaceAlerts'),d.querySelector('#systemAlerts')]});
 const api = w.SpatialPanelFit.create({ registry, document: d, onChange: () => changes++ });
 const flush = () => { const queued = [...frames]; frames.clear(); for (const [, callback] of queued) callback(); };
 assert.equal(api.measure('missing'), undefined);
 assert.equal(api.measure('spacer-1'), undefined);
+const controlHeight=api.measure('controls',true,232);
+d.querySelector('#systemShortcuts').hidden=d.querySelector('#nativeSettings').hidden=true;
+assert(api.measure('controls',true,232)<controlHeight,'System controls measure their mounted shortcut and Settings siblings, not only quick settings');
+d.querySelector('#systemShortcuts').hidden=d.querySelector('#nativeSettings').hidden=false;
+assert(observations[0].targets.some(({target})=>target===d.querySelector('#systemAlerts')),'A secondary system alert source is observed for later content growth');
+assert.equal(api.measure('workspace-alerts',true,232),120,'A hidden other-Workspace source contributes no content while a visible sibling keeps all system alerts readable');
+
 assert.equal(api.measure('clock', true, 232), 48, 'Clock includes both day/date lines and its native vertical inset');
 assert.equal(api.measure('clock', true, 160), 60, 'A narrow Clock has room when the date wraps below its time');
 for (const id of ['assistant', 'files']) {
@@ -36,6 +46,7 @@ for (const id of ['assistant', 'files']) {
 }
 const normal = api.measure('apps', true, 232), narrow = api.measure('apps', true, 160);
 assert(narrow > normal, 'Launcher rows grow with actual panel width instead of being cut to their old allocation');
+assert.equal(api.measure('apps',true,247)-api.measure('apps',true,248),80,'Three 72px launcher columns fit at the exact 248px panel breakpoint, including 4px gaps and 12px insets');
 api.measure('apps', true, 232);
 const background = d.querySelector('#backgroundApps'); background.hidden = false;
 assert(api.measure('apps', true, 232) > normal, 'Visible background applications add their native section to the readable minimum');
@@ -44,6 +55,9 @@ const parked = d.createElement('article'); parked.dataset.miniCard = 'browser'; 
 d.querySelector('#miniStack').append(parked);
 assert(api.measure('apps', true, 232) > normal, 'Parking a window grows Apps to include its live card');
 const oneParked = api.measure('apps', true, 232), oneRange = api.measureRange('apps', true, 232);
+const tallNote=d.createElement('textarea');tallNote.rows=9;tallNote.style.minHeight='190px';parked.append(tallNote);
+assert(api.measureRange('apps',true,232).min>oneRange.min,'A tall native parked card receives a usable first-card viewport rather than a hard-coded 120px cut');
+tallNote.remove();
 const extraParked = [];
 for (let index = 0; index < 39; index++) { const card = parked.cloneNode(true); card.dataset.miniCard = 'parked-' + index; extraParked.push(card); d.querySelector('#miniStack').append(card); }
 const fortyParked = api.measure('apps', true, 232), fortyRange = api.measureRange('apps', true, 232);
@@ -89,6 +103,10 @@ const longChat = api.measure('assistant', true, 232);
 assert(longChat <= 520 && longChat >= 280, 'Long transcripts retain a bounded, readable chat viewport');
 assert.equal(api.measure('assistant', false, 80), 100000, 'A thin horizontal strip falls back to a popup instead of clipping a full conversation');
 assert(api.measure('assistant', false, 520) <= 640, 'A sufficiently deep horizontal panel can expand its content');
+const ratioSource=d.createElement('section');ratioSource.style.aspectRatio='16 / 10';
+const ratioChild=d.createElement('canvas');ratioChild.style.position='absolute';ratioSource.append(ratioChild);d.body.append(ratioSource);
+registry.set('ratio',{source:ratioSource});
+assert.equal(api.measure('ratio',true,240),170,'A parked preview aspect-ratio viewport contributes its full width-derived height even when its pixels are absolutely positioned');
 const generic = d.querySelector('#generic'); Object.defineProperty(generic, 'scrollHeight', { get: () => 2000 });
 assert(api.measure('generic', true, 232) < 100, 'A text-only source does not mistake its allocated height for natural content');
 observations[0].callback([]); assert.equal(frames.size, 1); api.destroy();

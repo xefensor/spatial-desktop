@@ -13,6 +13,7 @@
     const states = () => typeof appState === 'object' ? appState : {};
     const source = id => registry.get(id)?.source;
     const text = node => (node?.textContent || '').trim();
+    const nativeDisabled = node => Boolean(node?.disabled || node?.getAttribute?.('aria-disabled') === 'true');
     const allowed = id => {
       if (document?.querySelector('.desktop-shell')?.inert || root.SpatialDesktopSystem?.blocked?.()) return false;
       const feature = (info()[id]?.base || id) === 'settings' ? 'systems' : 'apps';
@@ -39,7 +40,9 @@
       const scoped = typeof workspaceHotbarNames === 'function' ? new Set(workspaceHotbarNames()) : null;
       return [...new Set(names)].filter(id => info()[id] && states()[id] === 'minimized' && (!scoped || scoped.has(id)) && belongs(id) && (!info()[id].workspace || info()[id].workspace === workspace()));
     };
-    const pinNames = () => root.SpatialAppsQuickLaunch?.names?.() || nativeLaunchers().map(button => button.dataset.quickLaunchApp);
+    const pinNames = () => (root.SpatialAppsQuickLaunch?.names?.() || nativeLaunchers().map(button => button.dataset.quickLaunchApp)).filter(id => info()[id] && (!info()[id].workspace || info()[id].workspace === workspace()));
+    const nativeRestore = id => Array.from(source('apps')?.querySelectorAll('[data-mini-restore]') || []).find(button => button.dataset.miniRestore === id);
+    const appAllowed = id => allowed(id) && !(typeof desktopNavigationBlocked === 'function' && desktopNavigationBlocked());
     const element = (tag, className) => { const node = document.createElement(tag); if (className) node.className = className; return node; };
     const glyph = name => typeof icon === 'function' ? icon(name) : '<svg aria-hidden="true"><use href="#' + name + '"/></svg>';
     const art = id => typeof appArt === 'function' ? appArt(id) : glyph('i-grid');
@@ -51,7 +54,7 @@
     const expandedClock = source('clock');
     let restoreExpandedClock = () => {};
     if (expandedClock && !['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(expandedClock.tagName)) {
-      const attributes = ['role', 'tabindex', 'aria-label', 'aria-haspopup'];
+      const attributes = ['role', 'tabindex', 'aria-label', 'aria-haspopup', 'aria-disabled'];
       const previous = new Map(attributes.map(name => [name, expandedClock.getAttribute(name)]));
       const previousTitle = expandedClock.title, previousClass = expandedClock.classList.contains('panel-native-clock-action');
       expandedClock.setAttribute('role', 'button'); expandedClock.setAttribute('tabindex', '0'); expandedClock.setAttribute('aria-haspopup', 'dialog');
@@ -66,9 +69,10 @@
       };
     }
     function reconcile(group, nodes) {
-      const keep = new Set(nodes);
+      const focused = document.activeElement, keep = new Set(nodes);
       for (const child of Array.from(group.children)) if (!keep.has(child)) child.remove();
       nodes.forEach((node, index) => { if (group.children[index] !== node) group.insertBefore(node, group.children[index] || null); });
+      if (focused?.isConnected && group.contains(focused) && document.activeElement !== focused) focused.focus({preventScroll: true});
     }
     function interact(event) { event.preventDefault(); event.stopPropagation(); }
     function buildApps(container) {
@@ -85,13 +89,13 @@
         interact(event);
         if (view.workspace !== workspace()) { sync(); return; }
         const id = target.dataset.panelTask || target.dataset.panelLaunch, task = Boolean(target.dataset.panelTask);
-        if (!allowed(id) || !info()[id] || (typeof desktopNavigationBlocked === 'function' && desktopNavigationBlocked())) return;
+        if (nativeDisabled(target) || !appAllowed(id) || !info()[id]) return;
         if (task) {
           if (!parkedNames().includes(id)) { sync(); return; }
-          const restore = Array.from(source('apps')?.querySelectorAll('[data-mini-restore]') || []).find(button => button.dataset.miniRestore === id);
+          const restore = nativeRestore(id);
           // This is the expanded parked card's primary action. Shift does not
           // turn Unpark into a different command in the expanded view either.
-          if (restore) restore.click();
+          if (restore) { if (!nativeDisabled(restore)) restore.click(); }
           else if (typeof openApp === 'function') openApp(id);
         } else {
           if (!pinNames().includes(id)) { sync(); return; }
@@ -118,6 +122,7 @@
       entry.node.dataset.windowState = status; if (entry.state) entry.state.dataset.windowState = status;
       entry.node.classList.toggle('is-parked', status === 'minimized');
       entry.node.style.setProperty('--app-primary', model.primary || 'var(--workspace-accent)');
+      entry.node.disabled = !allowed(id) || nativeDisabled(task ? nativeRestore(id) : nativeLaunchers().find(button => button.dataset.quickLaunchApp === id));
       if (task) {
         const slot = typeof hotbarSlotFor === 'function' ? hotbarSlotFor(id) : typeof workspaceHotbarNames === 'function' ? workspaceHotbarNames().indexOf(id) + 1 : null;
         const digit = slot % 10, bank = Math.floor((slot - 1) / 10);
@@ -149,6 +154,7 @@
       }
       const entry = view.buttons.get(key), download = service.model?.download;
       entry.node.dataset.backgroundKind = service.kind || '';
+      entry.node.disabled = !allowed(service.kind || service.id) || nativeDisabled(native);
       entry.node.style.setProperty('--app-primary', info()[service.kind]?.primary || 'var(--workspace-accent)');
       entry.node.style.setProperty('--background-progress', download?.active ? Math.floor(download.received / download.total * 100) + '%' : '100%');
       const label = native?.getAttribute('aria-label') || (service.label || info()[service.kind]?.label || service.kind || 'Background app') + ' · Running across all Workspaces · Click for controls · Middle click to force quit';
@@ -169,18 +175,24 @@
       const view = {id: 'clock', root: button('panel-compact-clock', 'Open Calendar')};
       view.time = element('strong', 'panel-compact-time'); view.date = element('small', 'panel-compact-date');
       view.root.append(view.time, view.date); view.root.setAttribute('aria-haspopup', 'dialog');
-      view.root.addEventListener('click', event => { interact(event); options.openWidget?.('calendar', view.root); });
+      view.root.addEventListener('click', event => { interact(event); if (allowed('settings')) options.openWidget?.('calendar', view.root); });
       container.append(view.root); return view;
     }
     function syncClock(view) {
       const now = new Date(), clock = source('clock');
       const time = text(clock?.querySelector('.live-time')) || now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-      const date = now.toLocaleDateString([], {day: 'numeric', month: 'short'});
-      setText(view.time, time); setText(view.date, date); setLabel(view.root, time + ' · ' + date + ' · Open Calendar');
+      const date = now.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+      const nativeDate = [text(clock?.querySelector('#dayLabel')), text(clock?.querySelector('#dateLabel'))].filter(Boolean).join(' · ') || date;
+      view.root.disabled = !allowed('settings');
+      setText(view.time, time); setText(view.date, date); setLabel(view.root, time + ' · ' + nativeDate + ' · Open Calendar');
     }
     function sync() {
       if (disposed) return;
-      if (expandedClock?.classList.contains('panel-native-clock-action')) setLabel(expandedClock, text(expandedClock.querySelector('.live-time')) + ' · Open Calendar');
+      if (expandedClock?.classList.contains('panel-native-clock-action')) {
+        const detail = [text(expandedClock.querySelector('.live-time')), text(expandedClock.querySelector('#dayLabel')), text(expandedClock.querySelector('#dateLabel'))].filter(Boolean).join(' · ');
+        setLabel(expandedClock, detail + ' · Open Calendar');
+        expandedClock.setAttribute('aria-disabled', String(!allowed('settings')));
+      }
       for (const view of views.values()) {
         if (view.id === 'apps') syncApps(view);
         else if (view.id === 'clock') syncClock(view);
@@ -223,7 +235,7 @@
       const observe = (node, settings) => { if (node) { const observer = new root.MutationObserver(schedule); observer.observe(node, settings); observers.push(observer); } };
       observe(document?.querySelector('.workspace-zone'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class']});
       observe(source('apps')?.querySelector('#appsQuickLaunch'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'aria-label']});
-      observe(source('apps')?.querySelector('#miniStack'), {childList: true, subtree: true});
+      observe(source('apps')?.querySelector('#miniStack'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled']});
       observe(source('apps')?.querySelector('#backgroundApps'), {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'aria-label', 'title', 'style']});
       observe(source('clock'), {childList: true, subtree: true});
     }
@@ -234,7 +246,7 @@
       views.set(container, view); sync(); return true;
     }
     function measure(id, vertical) {
-      if (id === 'clock') return vertical ? 48 : 76;
+      if (id === 'clock') return vertical ? 48 : 80;
       if (id === 'apps') return measureApps(3);
       return 44;
     }

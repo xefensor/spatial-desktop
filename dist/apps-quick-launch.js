@@ -16,7 +16,7 @@
   const grid = document.createElement('div'); grid.className = 'apps-quick-launch-grid';
   nav.append(heading, scope, grid); region.insertBefore(nav, rack);
   let signature = '';
-  const allowed = name => !root.SpatialGuide?.model.active() || SpatialGuide.model.allows(name === 'settings' ? 'systems' : 'apps');
+  const allowed = name => !root.SpatialGuide?.model?.active?.() || root.SpatialGuide.model.allows(name === 'settings' ? 'systems' : 'apps');
   const available = name => Boolean(appInfo[name] && !appInfo[name].base && (!appInfo[name].workspace || appInfo[name].workspace === activeWorkspace));
   function names() {
     const profile = workspaceProfiles[activeWorkspace];
@@ -34,16 +34,28 @@
     const launchers = names();
     const next = JSON.stringify([activeWorkspace, launchers.map(name => [name, appInfo[name].label, appInfo[name].primary])]);
     nav.hidden = !launchers.length;
+    nav.dataset.workspace = activeWorkspace;
     if (signature !== next) {
       signature = next;
-      grid.replaceChildren(...launchers.map(name => {
-        const button = document.createElement('button');
-        button.type = 'button'; button.className = 'apps-quick-launch-key material-glass-button control-push';
-        button.dataset.quickLaunchApp = name; button.style.setProperty('--app-primary', appInfo[name].primary);
-        button.innerHTML = appArt(name);
-        const label = document.createElement('span'); label.textContent = appInfo[name].label; button.append(label);
+      const focused = document.activeElement;
+      const existing = new Map(Array.from(grid.querySelectorAll('[data-quick-launch-app]'), button => [button.dataset.quickLaunchApp, button]));
+      const nodes = launchers.map(name => {
+        let button = existing.get(name);
+        if (!button) {
+          button = document.createElement('button');
+          button.type = 'button'; button.className = 'apps-quick-launch-key material-glass-button control-push';
+          button.dataset.quickLaunchApp = name;
+          button.innerHTML = appArt(name);
+          button.append(document.createElement('span'));
+        }
+        button.style.setProperty('--app-primary', appInfo[name].primary);
+        button.querySelector('span').textContent = appInfo[name].label;
         return button;
-      }));
+      });
+      const keep = new Set(nodes);
+      for (const child of Array.from(grid.children)) if (!keep.has(child)) child.remove();
+      nodes.forEach((button, index) => { if (grid.children[index] !== button) grid.insertBefore(button, grid.children[index] || null); });
+      if (focused && grid.contains(focused) && document.activeElement !== focused) focused.focus({preventScroll: true});
       prepareControlSemantics(nav);
     }
     // State changes update the action hint without replacing a focused launcher.
@@ -52,6 +64,7 @@
       const detail = action === 'return' ? 'Return to existing app on its desktop' : action === 'new' ? 'New window on this desktop' : 'Open on this desktop';
       const label = appInfo[name].label + ' · ' + detail + (appInfo[name].singleInstance ? '' : ' · Shift-click for a new window');
       button.setAttribute('aria-label', label); button.title = label + ' · Workspace favorite';
+      button.disabled = !allowed(name);
     }
   }
   function activate(name, shiftKey = false) {
@@ -69,7 +82,8 @@
   }
   nav.addEventListener('click', event => {
     const button = event.target.closest('[data-quick-launch-app]');
-    if (!button || !nav.contains(button) || nav.hidden || area.hidden || area.inert) return;
+    if (!button || !nav.contains(button) || button.disabled || nav.hidden || area.hidden || area.inert) return;
+    if (nav.dataset.workspace !== activeWorkspace) { refresh(); return; }
     activate(button.dataset.quickLaunchApp, event.shiftKey);
   });
   // Expanded buttons and compact projections use one validated command. Only

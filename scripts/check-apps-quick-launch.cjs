@@ -7,12 +7,13 @@ const Pages = require('../dist/desktop-pages.js');
 class Element {
   constructor(tag='div') { this.tagName=tag;this.children=[];this.dataset={};this.attrs={};this.listeners={};this.hidden=false;this.inert=false;this.className='';this.style={setProperty(name,value){this[name]=value;}}; }
   append(...nodes) { for(const node of nodes){node.parentElement=this;this.children.push(node);} }
-  insertBefore(node,anchor) { const index=this.children.indexOf(anchor);assert(index>=0);this.children.splice(index,0,node);node.parentElement=this; }
+  insertBefore(node,anchor) { node.remove();const index=anchor?this.children.indexOf(anchor):this.children.length;assert(index>=0);this.children.splice(index,0,node);node.parentElement=this; }
+  remove() { if(this.parentElement)this.parentElement.children.splice(this.parentElement.children.indexOf(this),1);this.parentElement=null; }
   replaceChildren(...nodes) { this.replacements=(this.replacements||0)+1;for(const node of this.children)node.parentElement=null;this.children=[];this.append(...nodes); }
   setAttribute(name,value) { this.attrs[name]=String(value); }
   getAttribute(name) { return this.attrs[name]??null; }
   contains(node) { for(let at=node;at;at=at.parentElement)if(at===this)return true;return false; }
-  matches(selector) { if(selector==='[data-quick-launch-app]')return Object.hasOwn(this.dataset,'quickLaunchApp');return selector.startsWith('.')&&this.className.split(' ').includes(selector.slice(1)); }
+  matches(selector) { if(selector==='[data-quick-launch-app]')return Object.hasOwn(this.dataset,'quickLaunchApp');if(selector.startsWith('.'))return this.className.split(' ').includes(selector.slice(1));return selector.toLowerCase()===this.tagName.toLowerCase(); }
   closest(selector) { for(let at=this;at;at=at.parentElement)if(at.matches(selector))return at;return null; }
   querySelectorAll(selector) { return this.children.flatMap(node=>[...(node.matches(selector)?[node]:[]),...node.querySelectorAll(selector)]); }
   querySelector(selector) { return this.querySelectorAll(selector)[0]||null; }
@@ -79,6 +80,12 @@ const sameButtons=buttons(),sameReplacements=grid.replacements;context.frontApp=
 assert.equal(grid.replacements,sameReplacements);assert.equal(button('browser'),sameButtons[0],'Focus updates preserve the actual launcher nodes');
 context.appState.browser='open';refresh();assert.equal(button('browser'),sameButtons[0],'Launch policy changes update a hint without replacing a focused button');
 assert(button('browser').getAttribute('aria-label').includes('New window on this desktop'));
+const retainedBrowser=button('browser');
+context.workspaceProfiles.general.favorites=[['notes'],['browser']];context.appInfo.browser.label='Firefox with a renamed profile';refresh();
+assert.equal(button('browser'),retainedBrowser,'Favorite reordering and renamed labels preserve the actual launcher and keyboard focus');
+assert.equal(button('browser').children[0].textContent,'Firefox with a renamed profile');
+const staleWorkspaceCount=calls.length;context.activeWorkspace='custom';click('browser');
+assert(calls.slice(staleWorkspaceCount).every(call=>call[0]==='prepare'),'A launcher rendered for the previous Workspace only refreshes when clicked after a context change');
 context.activeWorkspace='custom';refresh();assert.deepEqual(ids(),['notes','browser'],'A Workspace without runnable favorites falls back to its runnable base rack');
 context.activeWorkspace='gaming';refresh();assert.deepEqual(ids(),['steam','game','browser']);
 context.desktopPages.assign('gaming','steam',2,'game-project');context.appState.steam='open';context.desktopPages.select('gaming','workspace');refresh();
@@ -141,4 +148,15 @@ assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Rendering icons lea
 rackContext.appState.parked='open';rackContext.renderInstanceRack();
 assert(parkedRack.hidden);assert.equal(parkedRack.innerHTML,'','An entirely unparked desktop has no compatibility task metadata');
 assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Open windows retain their shortcut slots without requiring icons');
+// A real DOM verifies focus: moving a retained button within its parent
+// can blur it even when its identity and native listeners were preserved.
+const {JSDOM}=require(process.env.SPATIAL_DOM_TEST_MODULE||'jsdom');
+const focusDom=new JSDOM('<!doctype html><main class="desktop-shell"><aside data-widget-source="apps"><div class="apps-scroll-region"><nav id="appRack"></nav></div></aside></main>',{runScripts:'outside-only'});
+const focusWindow=focusDom.window;
+Object.assign(focusWindow,{activeWorkspace:'general',workspaceProfiles:{general:{favorites:[['browser'],['notes']],rack:[]}},appInfo:{browser:{label:'Firefox',primary:'#ff7139'},notes:{label:'Note Editor',primary:'#ffb553'}},appState:{browser:'closed',notes:'closed'},appArt:name=>'<svg aria-hidden="true"></svg>',prepareControlSemantics(){}});
+vm.runInContext(fs.readFileSync(require.resolve('../dist/apps-quick-launch.js'),'utf8'),focusDom.getInternalVMContext());
+const focusDocument=focusWindow.document,retainedFocus=focusDocument.querySelector('[data-quick-launch-app="browser"]');
+retainedFocus.focus();focusWindow.workspaceProfiles.general.favorites=[['notes'],['browser']];focusWindow.appInfo.browser.label='Renamed profile';focusWindow.SpatialAppsQuickLaunch.refresh();
+assert.equal(focusDocument.activeElement,retainedFocus,'Favorite reordering restores keyboard focus to the actual retained native launcher');
+assert.equal(retainedFocus.querySelector('span').textContent,'Renamed profile');focusDom.window.close();
 console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, current-desktop Settings, Guide/modal guards and hidden compatibility metadata without duplicate native task UI or shortcut renumbering.');

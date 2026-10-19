@@ -10,7 +10,7 @@ const cancelled={kind:'steam',background:true,download:{active:true,received:20}
 assert(!cancelled.background&&!cancelled.download.active);assert.equal(cancelled.download.received,20,'Force quit stops work while preserving already received data');
 
 const Services=require('../dist/background-services.js');
-const storage=new Map(),events={},opened=[],closed=[],timeouts=[],nodes=new Map();let sequence=0;
+const storage=new Map(),events={},windowEvents={},opened=[],closed=[],timeouts=[],nodes=new Map();let sequence=0;
 class Node {
   constructor(key='node'){this.key=key;this.dataset={};this.children=[];this.style={setProperty(){}};this.attrs={};this.hidden=false;this.isConnected=true;this.offsetHeight=200;}
   set innerHTML(value){this.html=value;this.children=value?[new Node('content')]:[];}get innerHTML(){return this.html||'';}
@@ -25,7 +25,7 @@ const store=A.create(),models={};let saves=0;
 const context=vm.createContext({SpatialBackgroundServices:Services,SpatialAppTools:A,appInfo:{},appState:{},activeWorkspace:'gaming',appWindowStore:store,workspaceAppStates:{gaming:{},work:{}},workspaceProfiles:{gaming:{label:'Gaming',icon:'i-gamepad'},work:{label:'Work',icon:'i-note'}},
   appWindowModel:id=>store.get(context.activeWorkspace,id,()=>models[id]||{kind:context.appInfo[id]?.base||id}),
   document:{getElementById:id=>id==='backgroundApps'?row:id==='backgroundAppPopup'?popup:null,querySelectorAll:()=>[],createElement:tag=>new Node(tag),addEventListener:(type,fn)=>events[type]=fn},
-  desktopStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},crypto:{randomUUID:()=>String(++sequence)},innerWidth:1200,innerHeight:800,addEventListener(){},queueDesktopStateBroadcast(){},captureDesktopSyncState:()=>({}),persistIncomingDesktopState(){},
+  desktopStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},crypto:{randomUUID:()=>String(++sequence)},innerWidth:1200,innerHeight:800,addEventListener(type,callback){windowEvents[type]=callback;},queueDesktopStateBroadcast(){},captureDesktopSyncState:()=>({}),persistIncomingDesktopState(){},
   frameFor:()=>null,prepareControlSemantics(){},appArt:id=>'<svg>'+id+'</svg>',desktopPageAnimating:false,desktopPages:{column:()=> 'workspace'},windowMembership:{},instanceSequence:0,instanceDefinitions:{},installInstance(id,base){context.appInfo[id]={...context.appInfo[base],base};context.appState[id]='closed';},saveIndependentSessions(){},
   renderWorkspace:workspace=>{context.workspaceAppStates[context.activeWorkspace]={...context.appState};context.activeWorkspace=workspace;context.appState={...context.workspaceAppStates[workspace]};},
   saveAppWindows(){saves++;},closeApp:id=>{closed.push(id);context.appState[id]='closed';},openApp:id=>{opened.push(id);context.appState[id]='open';},
@@ -37,7 +37,7 @@ const heading=row.children.find(node=>node.className==='background-apps-heading'
 assert(heading);assert.equal(heading.children[0].textContent,'Background');assert.equal(heading.children[1].textContent,'Running across all Workspaces');
 assert.equal(row.attrs['aria-label'],'Background · Running across all Workspaces','Background section describes its shared scope even when the visual helper is hidden on a rail');
 function add(id,kind,model){context.appInfo[kind]||={label:kind,primary:'#abc'};context.appInfo[id]={base:kind,label:id,primary:'#abc'};context.appState[id]='open';models[id]={kind,...model};return context.appWindowModel(id);}
-const player=add('player','elisa',{playing:true,index:0,position:12,tracks:[{title:'One',duration:100}]}),sibling=add('player--2','elisa',{playing:true}),idle=add('idle','elisa',{playing:false});
+const player=add('player','elisa',{playing:true,index:0,position:12,tracks:[{title:'One',duration:100},{title:'A very long music title that wraps across several lines in the compact background controls',duration:120}]}),sibling=add('player--2','elisa',{playing:true}),idle=add('idle','elisa',{playing:false});
 context.closeApp('player');
 assert.equal(context.appState.player,'closed');assert(!player.background&&!player.playing,'Background playback is detached from the old Workspace model');
 assert.equal(row.hidden,false);const serviceId=icons()[0].dataset.backgroundOpen;
@@ -55,8 +55,25 @@ assert.equal(icons()[0].parent,row,'Service buttons stay direct children for the
 assert.match(icons()[0].title,/Running across all Workspaces/);assert(!icons()[0].title.includes('Gaming'));assert.equal(row.children.find(node=>node.className==='background-apps-heading'),heading,'Workspace switching does not replace the global Background helper');
 events.click({target:{closest:selector=>selector==='[data-background-open]'?icons()[0]:null},preventDefault(){},stopImmediatePropagation(){}});
 assert.equal(context.activeWorkspace,'work');assert.equal(popup.hidden,false,'Click shows global controls without navigating');
+// Near the bottom edge, changing to a longer track can grow the open popup.
+icons()[0].getBoundingClientRect=()=>({right:1190,top:740});context.SpatialBackgroundApps.render();
+assert.equal(popup.style.top,'588px');
+const trackNode=popup.querySelector('[data-background-popup-content]').querySelector('[data-background-track]');
+Object.defineProperty(popup,'offsetHeight',{configurable:true,get:()=>trackNode.textContent.length>20?360:200});
+events.click({target:{closest:selector=>selector==='[data-background-control]'?{dataset:{backgroundControl:'next'}}:null}});
+assert.equal(popup.style.top,'428px','A taller next-track popup is re-clamped after the live content update');
+assert(Number.parseFloat(popup.style.top)+popup.offsetHeight<=context.innerHeight-12);
+context.innerWidth=180;context.innerHeight=120;windowEvents.resize();
+assert(!popup.hidden,'Viewport resize repositions the existing background controls instead of losing the open session');
+assert.equal(popup.style.width,'156px');assert.equal(popup.style.maxHeight,'96px');assert.equal(popup.style.top,'12px','Small viewports constrain the whole overlay and leave its internal content scrollable');
+context.innerWidth=40;context.innerHeight=36;context.SpatialBackgroundApps.render();
+assert.equal(popup.style.width,'22px');assert.equal(popup.style.maxHeight,'18px');assert.equal(popup.style.top,'9px','Tiny viewports use a reduced inset and positive constrained dimensions');
+context.innerWidth=1200;context.innerHeight=800;icons()[0].isConnected=false;context.SpatialBackgroundApps.render();
+assert(popup.hidden&&popup.inert,'Removing the retained origin closes the popup instead of anchoring it to stale geometry');
+icons()[0].isConnected=true;
+
 const openedId=context.SpatialBackgroundApps.restore(serviceId);
-assert.equal(context.activeWorkspace,'work');assert.equal(context.appState[openedId],'open');assert.equal(context.appWindowModel(openedId).position,12);assert(context.appWindowModel(openedId).playing);assert(row.hidden,'Restoring removes the background-only service');
+assert.equal(context.activeWorkspace,'work');assert.equal(context.appState[openedId],'open');assert.equal(context.appWindowModel(openedId).position,0);assert.equal(context.appWindowModel(openedId).index,1,'Restore retains the track selected through the live background popup');assert(context.appWindowModel(openedId).playing);assert(row.hidden,'Restoring removes the background-only service');
 assert(!player.playing,'Restoring here does not revive the old window');
 context.closeApp(openedId);const restoredService=icons()[0].dataset.backgroundOpen;
 events.auxclick({button:1,target:{closest:()=>icons()[0]},preventDefault(){},stopImmediatePropagation(){}});
