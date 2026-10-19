@@ -6192,7 +6192,9 @@ function fullscreenHotbarBond(name) {
 }
 function renderInstanceRack() {
   const names = workspaceHotbarNames();
-  $('#appRack').hidden = !names.some(name=>appState[name]==='minimized');
+  // Native Apps already renders these windows in Parked and its compact view.
+  // Keep this compatibility rack out of the layout, including after parking.
+  $('#appRack').hidden = true;
   const order=JSON.stringify(names.map(name=>[name,appState[name],fullscreenHotbarBond(name)]));
   if($('#appRack').dataset.layoutOrder===order){applyAppPrimaryColors($('#appRack'));return;}
   $('#appRack').dataset.layoutOrder=order;

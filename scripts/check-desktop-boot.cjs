@@ -3,6 +3,7 @@
 // check; layout, pointer geometry and visual appearance have separate checks.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {JSDOM,VirtualConsole}=require('jsdom');
+const CSSOM=require('rrweb-cssom');
 const directory=path.resolve(__dirname,'../dist'),html=fs.readFileSync(path.join(directory,'index.html'),'utf8');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function boot(practice=false){
@@ -52,10 +53,31 @@ async function boot(practice=false){
    const leftWidth=P.state().panels.find(panel=>panel.id==='panel-left').size;P.updatePanel('panel-left',{size:leftWidth+40});
    vm.runInContext("renderWorkspace('work',false)",dom.getInternalVMContext(),{timeout:10000});await delay(20);assert.notEqual(P.state().panels.find(panel=>panel.id==='panel-left').size,leftWidth+40,'Workspace has independent panel layout');
    vm.runInContext("renderWorkspace('general',false)",dom.getInternalVMContext(),{timeout:10000});await delay(20);assert.equal(P.state().panels.find(panel=>panel.id==='panel-left').size,leftWidth+40,'Returning restores panel layout');
-   w.openApp('notes');w.minimizeApp('notes');w.openApp('notes');w.closeApp('notes');
+   // The retired compact rack remains a model adapter for hotbar shortcuts.
+   // Parking must never expose its duplicate icons beside the native cards.
+   const rack=d.querySelector('#appRack'),parkedNotes=()=>d.querySelectorAll('#miniStack [data-mini-card="notes"]');
+   const assertRackHidden=stage=>assert.equal(rack.hidden,true,'Retired app rack stays hidden '+stage);
+   const rackRules=[...d.querySelectorAll('link[rel="stylesheet"][href]')].flatMap(link=>{
+    const filename=link.getAttribute('href').split('?')[0];
+    return [...CSSOM.parse(fs.readFileSync(path.join(directory,filename),'utf8')).cssRules];
+   }).filter(rule=>rule.selectorText?.includes('#appRack')&&rack.matches(rule.selectorText));
+   assert(rackRules.some(rule=>rule.style.getPropertyValue('display')==='none'&&rule.style.getPropertyPriority('display')==='important'),'Loaded styles permanently conceal the retired rack independently of its model updates');
+   w.openApp('notes');await delay(20);assertRackHidden('after opening Notes');
+   w.minimizeApp('notes');await delay(20);assertRackHidden('after parking Notes');
+   assert.equal(parkedNotes().length,1,'Notes has one actual native Parked card');
+   assert.equal(d.querySelectorAll('#miniStack [data-mini-restore="notes"]').length,1,'Only the native card provides the visible Notes restore action');
+   const parkedSlot=vm.runInContext("hotbarSlotFor('notes')",dom.getInternalVMContext());assert(parkedSlot>0,'Parked Notes keeps its canonical shortcut slot');
+   const parkedShortcut=parkedSlot<=10?String(parkedSlot%10):parkedSlot<=20?'⇧'+parkedSlot%10:String(parkedSlot);
+   assert.equal(parkedNotes()[0].querySelector('.mini-hotkey').textContent,parkedShortcut,'Native Parked card displays the canonical hotbar number');
+   vm.runInContext("renderWorkspace('work',false)",dom.getInternalVMContext(),{timeout:10000});await delay(20);assertRackHidden('after leaving the Notes Workspace');
+   vm.runInContext("renderWorkspace('general',false)",dom.getInternalVMContext(),{timeout:10000});await delay(20);assertRackHidden('after returning to the Notes Workspace');assert.equal(parkedNotes().length,1,'Workspace restoration does not duplicate the Notes Parked card');
+   vm.runInContext("activateHotbarSlot(hotbarSlotFor('notes'))",dom.getInternalVMContext());await delay(20);assertRackHidden('after restoring Notes by its shortcut command');assert.equal(vm.runInContext('appState.notes',dom.getInternalVMContext()),'open','The canonical shortcut still restores the actual Notes window');assert.equal(parkedNotes().length,0);
+   w.minimizeApp('notes');await delay(20);assertRackHidden('after parking Notes again');assert.equal(parkedNotes().length,1);
+   parkedNotes()[0].querySelector('[data-mini-restore="notes"]').click();await delay(20);assertRackHidden('after the native Unpark action');assert.equal(parkedNotes().length,0);
+   w.closeApp('notes');assertRackHidden('after closing Notes');
    w.openApp('settings');assert(d.querySelector('[data-app-frame="settings"]'),'Settings opens as an ordinary app');
   }
   await delay(40);assert.deepEqual(errors,[],'Widget, Workspace and app actions have no script/event errors');
  }finally{w.close();}
 }
-(async()=>{await boot();await boot(true);console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, app controls, Settings and first-run Guide.');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await boot();await boot(true);console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, permanently hidden legacy rack, unique Parked cards and canonical shortcut restoration, app controls, Settings and first-run Guide.');})().catch(error=>{console.error(error);process.exitCode=1;});

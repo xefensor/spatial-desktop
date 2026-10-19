@@ -138,6 +138,7 @@ body.panel-desktop-preview .desktop-widget[data-widget-id] .desktop-widget-conte
 
 /* Native content uses one inset and one type scale inside the shared sheet.
    Launchers and Background remain visible; only Parked owns a scroll viewport. */
+body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] #appRack {display:none!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-widget-body {position:relative;display:flex!important;flex:1 1 0!important;flex-direction:column;min-width:0;min-height:0;overflow:hidden!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-scroll-region {display:contents!important}
 body.panel-desktop-preview .desktop-widget[data-widget-id="apps"] .apps-quick-launch {flex:none!important;min-height:0!important;max-height:none!important;padding:0;overflow:visible!important}

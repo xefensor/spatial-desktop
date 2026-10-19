@@ -113,7 +113,7 @@ delete context.SpatialGuide;
 context.activeWorkspace='empty';refresh();assert(nav.hidden);assert.deepEqual(ids(),[],'Do not manufacture a generic launcher for an empty profile');
 const outside=new Element();outside.dataset.quickLaunchApp='browser';const count=calls.length;nav.listeners.click({target:outside});assert.equal(calls.length,count,'Only actual launchers inside this nav own its delegated action');
 
-// Exercise the real window shortcut ordering and parked-only rail renderer.
+// Exercise real shortcut ordering and the hidden compatibility metadata rack.
 // Removing open-window icons must not renumber a parked window's shortcut.
 const shellSource=fs.readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
 const parkedRack=new Element('nav'),positions={open1:0,open2:300,parked:600};
@@ -132,13 +132,13 @@ const shortcutNames=()=>Array.from(rackContext.workspaceShortcutNames());
 const parkedMarkup=()=>[...parkedRack.innerHTML.matchAll(/data-open-app="([^"]+)"/g)].map(match=>match[1]);
 assert.deepEqual(shortcutNames(),['open1','open2','parked']);
 rackContext.renderInstanceRack();
-assert(!parkedRack.hidden);assert.deepEqual(parkedMarkup(),['parked'],'The Apps rail renders only parked windows');
+assert(parkedRack.hidden,'Parking never reveals the retired rack');assert.deepEqual(parkedMarkup(),['parked'],'Hidden metadata retains the parked shortcut binding');
 assert(parkedRack.innerHTML.includes('data-hotbar-slot="3"'));
 assert(parkedRack.innerHTML.includes('aria-keyshortcuts="Meta+3"'),'Its slot still counts the two open windows ahead of it');
 assert(!parkedRack.innerHTML.includes('app-rack-open'),'No open-window mirror remains in Apps');
 const firstMarkup=parkedRack.innerHTML;rackContext.renderInstanceRack();assert.equal(parkedRack.innerHTML,firstMarkup,'A repeat render keeps the same parked state');
 assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Rendering icons leaves the shared keyboard ordering untouched');
 rackContext.appState.parked='open';rackContext.renderInstanceRack();
-assert(parkedRack.hidden);assert.equal(parkedRack.innerHTML,'','An entirely unparked desktop has no task icons in the Apps rail');
+assert(parkedRack.hidden);assert.equal(parkedRack.innerHTML,'','An entirely unparked desktop has no compatibility task metadata');
 assert.deepEqual(shortcutNames(),['open1','open2','parked'],'Open windows retain their shortcut slots without requiring icons');
-console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, current-desktop Settings, Guide/modal guards and parked-only rail rendering without shortcut renumbering.');
+console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, current-desktop Settings, Guide/modal guards and hidden compatibility metadata without duplicate native task UI or shortcut renumbering.');
