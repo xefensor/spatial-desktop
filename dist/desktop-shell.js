@@ -5650,7 +5650,7 @@ function prepareDesktopPages() {
   // by the drag listener, and the shared gate suppresses trackpad momentum.
   document.addEventListener("wheel", event => {
     if ((globalThis.SpatialDemoSuper?.held() || event.metaKey || event.getModifierState?.("OS"))) { onDesktopWheel(event); return; }
-    const area = event.target?.closest("[data-widget-source],.desktop-panel");
+    const area = event.target?.closest("[data-widget-source],.desktop-panel") || event.target?.closest(".desktop-page-rail");
     if (!area || $(".desktop-shell").inert || event.defaultPrevented || event.ctrlKey || event.altKey || event.target.closest("input,textarea,select,[contenteditable=true]")) return;
     const delta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
     if (!delta) return;

@@ -65,7 +65,21 @@
   function guideTargets(selector){
     if(!selector)return [];
     const matches=$$(selector),targets=matches.filter(visibleTarget);
-    if(!targets.length)return [...new Set(matches.flatMap(element=>{const widget=element.closest('.desktop-widget');return widget?$$('.desktop-widget-summary,[data-panel-action="open-overview"],[data-compact-window]',widget):[];}).filter(visibleTarget))];
+    if(!targets.length)return [...new Set(matches.flatMap(element=>{
+      const widget=element.closest('.desktop-widget');if(!widget)return [];
+      if(widget.dataset.widgetId==='apps'){
+        let projected=[];
+        if(element.closest('#appsQuickLaunch')){
+          const id=element.closest('[data-quick-launch-app]')?.dataset.quickLaunchApp;
+          projected=$$('[data-panel-launch]',widget).filter(button=>!id||button.dataset.panelLaunch===id);
+        }else if(element.closest('#miniStack,.mini-section')){
+          const id=element.closest('[data-mini-restore]')?.dataset.miniRestore||element.closest('[data-mini-card]')?.dataset.miniCard;
+          projected=$$('[data-panel-task]',widget).filter(button=>!id||button.dataset.panelTask===id);
+        }
+        const visible=projected.filter(visibleTarget);if(visible.length)return visible;
+      }
+      return $$('.desktop-widget-summary,[data-panel-action="open-overview"],.panel-compact-clock',widget);
+    }).filter(visibleTarget))];
     return targets;
   }
   function panelTargetContext(){
@@ -265,11 +279,11 @@
       return parts;
     }).map(paragraph=>'<p>'+escapeHtml(paragraph)+'</p>').join('');
   }
-  function lessonContentMarkup(lesson, explanation = lesson.text) {
-    const details=lesson.details?'<details class="guide-more"><summary>More details</summary>'+guideProseMarkup(lesson.details)+'</details>':'';
-    const sections=(lesson.referenceSections||[]).map(section=>'<details class="guide-more"><summary>'+escapeHtml(section.title)+'</summary>'+guideProseMarkup(section.text)+'</details>').join('');
-    const example=lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'';
-    return '<p class="guide-explanation">'+escapeHtml(explanation)+'</p>'+details+sections+example;
+  function lessonContentMarkup(lesson, explanation = lesson.text, {includeExplanation=true}={}) {
+    const details=lesson.details?'<details class="guide-more" data-guide-help="details"><summary>More details</summary>'+guideProseMarkup(lesson.details)+'</details>':'';
+    const sections=(lesson.referenceSections||[]).map((section,index)=>'<details class="guide-more" data-guide-help="reference-'+index+'"><summary>'+escapeHtml(section.title)+'</summary>'+guideProseMarkup(section.text)+'</details>').join('');
+    const example=lesson.usage?'<details class="guide-more guide-usage" data-guide-help="usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'';
+    return (includeExplanation?'<p class="guide-explanation">'+escapeHtml(explanation)+'</p>':'')+details+sections+example;
   }
   function chapterLabel(lesson=model.lesson) {
     const chapter=guide.chapters.find(chapter=>chapter.id===lesson.chapter);
@@ -322,23 +336,32 @@
   function render() {
     const content = $('.guide-content', window);
     if (model.active() && model.state.exitStatus) return renderExitChoices();
+    const sameLesson=model.active()&&content.dataset.guideLesson===model.lesson.id;
+    const openHelp=sameLesson?$$('[data-guide-help][open]',content).map(element=>element.dataset.guideHelp):[];
+    const focusedHelp=sameLesson&&document.activeElement?.closest('[data-guide-help]');
+    const focusKey=focusedHelp&&content.contains(focusedHelp)?focusedHelp.dataset.guideHelp:null;
+    const scroll=sameLesson?content.scrollTop:0;
     clearHighlight(); lastSignature = ''; manuallyExpanded=false;
     window.classList.remove('is-compact','was-moved');
     $('.guide-key[data-guide-action="compact"]',window).setAttribute('aria-pressed','false'); window.style.left = ''; window.style.top = ''; window.style.bottom = '';
     window.classList.toggle('is-reference', !model.active());
-    if (!model.active()) { content.innerHTML = referenceMarkup(); prepareControlSemantics(window); setCompact(guide.view === 'compact'); return; }
+    if (!model.active()) { delete content.dataset.guideLesson; content.innerHTML = referenceMarkup(); prepareControlSemantics(window); setCompact(guide.view === 'compact'); return; }
     const lesson = model.lesson, index = model.state.index, welcome = index === 0, complete = lesson.id === 'complete';
     const introduction = complete && model.state.skipped?.length ? 'Your introduction is finished. You can revisit any skipped topic or practice an individual chapter in Desktop Guide anytime.' : lesson.text;
     window.classList.toggle('is-lesson', !welcome);
     window.classList.toggle('is-display-lesson', lesson.id === 'two-displays');
     const chapterIndex=guide.chapters.findIndex(chapter=>chapter.id===lesson.chapter);
     const label=welcome?'WELCOME':complete?'READY TO GO':model.state.chapter?'PRACTICE':'CHAPTER '+(chapterIndex+1)+' OF '+guide.chapters.length+' · '+chapterLabel();
-    content.innerHTML='<div class="guide-step-meta"><span>'+escapeHtml(label)+'</span><button class="guide-text-action" data-guide-action="leave">'+(welcome?'Skip introduction':model.state.chapter?'Leave practice':'Leave introduction')+'</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="'+(guide.lessons.length-1)+'" aria-valuenow="'+index+'"><i style="width:'+(index/(guide.lessons.length-1)*100)+'%"></i></div><h1 tabindex="-1">'+escapeHtml(lesson.title)+'</h1><p class="guide-explanation">'+escapeHtml(introduction)+'</p><div class="guide-task"><span class="eyebrow">'+(complete?'COME BACK ANYTIME':welcome?'AT YOUR OWN PACE':'TRY THIS')+'</span><p class="guide-current-mission" aria-live="polite">'+escapeHtml(lesson.task)+'</p><p class="guide-current-hint"></p><small class="guide-mission-count"></small>'+(lesson.id==='two-displays'?'<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button>':'')+'<span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">'+(welcome?'Start exploring':complete?'Choose my desktop':model.state.chapter?'Finish step':'Continue')+icon('i-right')+'</button>'+(!welcome&&!complete&&!lesson.challenge?'<button class="guide-text-action" data-guide-action="show">Show me</button>':'')+'</div>'+(!welcome&&!complete&&!model.state.chapter?'<button class="guide-text-action guide-skip" data-guide-action="skip">'+(lesson.optional?'Skip two-display practice':'Skip this step')+'</button>':'')+(lesson.details?'<details class="guide-more"><summary>More details</summary><p>'+escapeHtml(lesson.details)+'</p></details>':'')+(lesson.usage?'<details class="guide-more guide-usage"><summary>When is this useful?</summary><b>'+escapeHtml(lesson.usage.title)+'</b><p>'+escapeHtml(lesson.usage.text)+'</p></details>':'')+(welcome?'<p class="guide-footnote">Progress saves automatically. Find us again in Overview → Apps → Help.</p>':'');
+    content.innerHTML='<div class="guide-step-meta"><span>'+escapeHtml(label)+'</span><button class="guide-text-action" data-guide-action="leave">'+(welcome?'Skip introduction':model.state.chapter?'Leave practice':'Leave introduction')+'</button></div><div class="guide-progress" role="progressbar" aria-label="Introduction progress" aria-valuemin="0" aria-valuemax="'+(guide.lessons.length-1)+'" aria-valuenow="'+index+'"><i style="width:'+(index/(guide.lessons.length-1)*100)+'%"></i></div><h1 tabindex="-1">'+escapeHtml(lesson.title)+'</h1><p class="guide-explanation">'+escapeHtml(introduction)+'</p><div class="guide-task"><span class="eyebrow">'+(complete?'COME BACK ANYTIME':welcome?'AT YOUR OWN PACE':'TRY THIS')+'</span><p class="guide-current-mission" aria-live="polite">'+escapeHtml(lesson.task)+'</p><p class="guide-current-hint"></p><small class="guide-mission-count"></small>'+(lesson.id==='two-displays'?'<button class="surface-key guide-display-open" data-guide-action="open-display">Open second practice display</button>':'')+'<span id="guideTaskStatus" role="status" aria-live="polite"></span><div class="guide-recovery" hidden><p></p><button class="guide-text-action" data-guide-action="recover"></button></div></div><div class="guide-step-actions"><button class="surface-key guide-primary" data-guide-action="next">'+(welcome?'Start exploring':complete?'Choose my desktop':model.state.chapter?'Finish step':'Continue')+icon('i-right')+'</button>'+(!welcome&&!complete&&!lesson.challenge?'<button class="guide-text-action" data-guide-action="show">Show me</button>':'')+'</div>'+(!welcome&&!complete&&!model.state.chapter?'<button class="guide-text-action guide-skip" data-guide-action="skip">'+(lesson.optional?'Skip two-display practice':'Skip this step')+'</button>':'')+lessonContentMarkup(lesson,introduction,{includeExplanation:false})+(welcome?'<p class="guide-footnote">Progress saves automatically. Find us again in Overview → Apps → Help.</p>':'');
+    content.dataset.guideLesson=lesson.id;
+    for(const help of $$('[data-guide-help]',content))help.open=openHelp.includes(help.dataset.guideHelp);
     prepareControlSemantics(window); highlight();
     if (!welcome) setCompact(guide.view === 'compact');
     if (tileSession().fullscreen && guide.shouldCompact(guide.view,window.getBoundingClientRect(),frameFor(tileSession().fullscreen.name).getBoundingClientRect())) setCompact(true);
     check();
     positionGuide();
+    content.scrollTop=scroll;
+    if(focusKey&&!window.classList.contains('is-compact'))$$('[data-guide-help]',content).find(help=>help.dataset.guideHelp===focusKey)?.querySelector('summary')?.focus({preventScroll:true});
   }
   function mark(goal) {
     if (model.mark(goal)) { guide.save(); lastSignature = ''; }
@@ -575,12 +598,16 @@
     if(selected)queueOverviewPracticeAction('window',selected.dataset.overviewOpenApp);
     else if(event.target.closest('#timelineLatest'))queueOverviewPracticeAction('latest');
   },true);
+  function openedSearchTargets(){
+    const names=Object.keys(appState).filter(name=>appState[name]==='open'&&isLocalApp(name));
+    return [...new Set([...names,...names.map(name=>appInfo[name]?.base||name),...(window.hidden?[]:['Spatial Guide'])])];
+  }
   // Capture the selected search result, then validate after the app's own action.
   document.addEventListener('click', event => {
     const result = event.target.closest('[data-search-open-app],[data-search-launch-app="Spatial Guide"]');
     const search = result && {query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp)),launch:result.dataset.searchOpenApp || result.dataset.searchLaunchApp};
     setTimeout(() => {
-      if (model.active() && search && guide.observeSearch(model,{...search,opened:Object.keys(appState).filter(name=>appState[name] === 'open' && isLocalApp(name)).map(name=>appInfo[name].base || name).concat(window.hidden ? [] : ['Spatial Guide'])})) {guide.save();lastSignature = '';}
+      if (model.active() && search && guide.observeSearch(model,{...search,opened:openedSearchTargets()})) {guide.save();lastSignature = '';}
       check();
     },0);
   }, true);

@@ -253,3 +253,56 @@ console.log('Open-project header passed: zero/one/multiple projects, all labels,
   assert.equal(visibilityChecks,3);
   console.log('Scene animations passed: vertical canvas only, horizontal whole scene, old Area snapshot, tab-order direction, cleanup, cancellation, navigation guard and reduced motion.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// The native Project strip must reserve real workspace height. Its old
+// Areas-only selector left the strip over the centers of app title-bar buttons.
+{
+  const {JSDOM}=require('jsdom');
+  const desktopCSS=fs.readFileSync(require.resolve('../dist/desktop-shell.css'),'utf8');
+  const workspaceRule=desktopCSS.match(/\.desktop-shell>\.workspace-zone\{[^}]*\}/)?.[0];
+  assert(workspaceRule);
+  const layoutDOM=new JSDOM('<!doctype html><body class="panel-desktop-preview"><main class="desktop-shell"><header class="desktop-context-header" hidden><span class="desktop-context-workspace"></span><nav id="desktopContextColumns"></nav></header><section class="workspace-zone"></section></main></body>');
+  const browser=layoutDOM.window,document=browser.document,shell=document.querySelector('.desktop-shell'),workspace=document.querySelector('.workspace-zone'),header=document.querySelector('.desktop-context-header');
+  const style=document.createElement('style');style.textContent=workspaceRule+'\n'+fs.readFileSync(require.resolve('../dist/desktop-pages.css'),'utf8');document.head.append(style);
+  let projects=[],column='workspace',retiles=0;
+  const cssPixels=(element,property)=>{
+    const value=browser.getComputedStyle(element).getPropertyValue(property).replace(/var\((--[\w-]+)(?:,([^)]*))?\)/g,(_,name,fallback)=>browser.getComputedStyle(shell).getPropertyValue(name).trim()||fallback||'0px');
+    const terms=value.replace(/^calc\((.*)\)$/,'$1').replace(/px/g,'').match(/[+-]?\s*\d+(?:\.\d+)?/g)||[];
+    return terms.reduce((sum,term)=>sum+Number(term.replace(/\s/g,'')),0);
+  };
+  workspace.getBoundingClientRect=()=>{
+    const left=cssPixels(workspace,'left'),top=cssPixels(workspace,'top'),width=1280-left-cssPixels(workspace,'right'),height=800-top-cssPixels(workspace,'bottom');
+    return {left,top,width,height,right:left+width,bottom:top+height};
+  };
+  Object.defineProperty(workspace,'clientWidth',{get:()=>workspace.getBoundingClientRect().width});Object.defineProperty(workspace,'clientHeight',{get:()=>workspace.getBoundingClientRect().height});
+  const layout=vm.createContext({
+    $:(selector,root=document)=>root.querySelector(selector),$$:(selector,root=document)=>[...root.querySelectorAll(selector)],
+    activeWorkspace:'general',workspaceProfiles:{general:{label:'General',icon:'i-grid',accent:'#5af'}},projectSpaces:{site:{name:'Usability test',icon:'i-folder',accent:'#fa5'}},
+    openProjectNames:()=>projects,desktopPages:{column:()=>column},desktopColumnLabel:id=>id==='workspace'?'Workspace':'Usability test',icon:()=>'<svg></svg>',escapeHtml:value=>String(value),prepareControlSemantics(){},
+    windowViewportLockReady:true,tileInteraction:false,tileRendering:false,manualWindowInteraction:false,
+    captureVisibleWindowViewportRects:()=>new Map(),scheduleWindowTiling(){retiles++;}
+  });
+  vm.runInContext(slice('function workspaceBounds(', 'function readGeometry(')+slice('function tileBounds(', 'function saveTileSessions(')+slice('function setWorkspaceInsets(', 'const projectSpaces =')+slice('function renderDesktopContextColumns(', 'function renderDesktopPageRail('),layout);
+  assert(!document.body.classList.contains('areas-docked'),'The native panel desktop has no retired Areas body state');
+  for(const [name,insets]of [['left',[232,56,0,0]],['top',[0,56,0,248]],['hidden',[0,0,0,0]]]){
+    projects=[];column='workspace';layout.setWorkspaceInsets(...insets);layout.renderDesktopContextColumns();
+    const without=layout.workspaceBounds();assert.equal(without.rect.top,insets[3]);
+    projects=['site'];layout.renderDesktopContextColumns();
+    const withProject=layout.workspaceBounds(),stripTop=cssPixels(header,'top'),stripBottom=stripTop+cssPixels(header,'height');
+    assert.equal(header.hidden,false);assert.equal(withProject.rect.top,stripBottom,name+' panels reserve the Project strip before placing apps');
+    assert.equal(withProject.height,without.height-32,'Opening a Project reduces usable height exactly once');
+    for(const root of [T.leaf('music'),{kind:'split',axis:'x',ratio:.5,a:T.leaf('music'),b:T.leaf('browser')}]){
+      for(const rect of T.layout(root,layout.tileBounds()).windows.values()){
+        const buttonCenterY=withProject.rect.top+rect.y+8+29/2;
+        assert(buttonCenterY>stripBottom,'Park and maximize button centers remain below the Project strip');
+        assert(withProject.rect.top+rect.y>=stripBottom,'The entire title bar starts inside the reserved work area');
+      }
+    }
+    column='site';layout.renderDesktopContextColumns();assert.equal(layout.workspaceBounds().rect.top,stripBottom,'Project and ordinary columns share the same safe bounds');
+    projects=[];column='workspace';layout.renderDesktopContextColumns();
+    assert.equal(header.hidden,true);assert.equal(layout.workspaceBounds().rect.top,without.rect.top,'Closing the final Project returns its strip space');
+  }
+  assert(retiles>0,'Showing and hiding the Project strip schedules the native window layout');
+  browser.close();
+}
+console.log('Project strip geometry passed: native panel CSS, Left/Top/hidden panels, app-control centers, Project/Workspace columns, exact height reservation and closing recovery.');

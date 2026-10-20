@@ -22,7 +22,7 @@ A browser prototype designed by Xef, exploring Workspaces, Projects, tiled windo
 
 **System → Devices & session** adds network choice, device pairing, sound, a sample USB transfer and session controls. **Do Not Disturb** quiets alerts while retaining them.
 
-Settings is a normal app window, available from Quick launch, search and the System gear. Desktop Guide introduces the interactions through short lessons and searchable, expandable topics.
+Settings is a normal app window, available from Quick launch, search and the System gear. Desktop Guide introduces the interactions through short lessons and searchable topics. Lessons keep their main task visible, with expandable help for details and examples. The introduction uses a practice desktop and offers to restore your earlier session when you finish.
 
 ## Useful details
 

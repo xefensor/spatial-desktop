@@ -396,6 +396,47 @@ resetAreaWheel();e=areaEvent(areaTarget('apps'),1,{deltaMode:2});listeners['docu
 assert.equal(ctx.desktopPages.current('work'),1,'Area wheels normalize page-mode deltas');
 console.log('Panel wheel passed: all native widget sources, hover/focus, shared momentum, both list edges, nested overflow, Shift projects, native inputs, modals, drag and normalized deltas.');
 
+// Real marker DOM lives beside panels and the workspace, not inside either.
+// Exercise the production document capture route with both rails and children.
+{
+  const {JSDOM}=require('jsdom');
+  const markerDOM=new JSDOM('<!doctype html><body><div class="desktop-page-rail" id="left"><span class="desktop-page-mark"><svg></svg></span></div><div class="desktop-page-rail desktop-page-rail-right" id="right"><span class="desktop-page-mark"><svg></svg></span></div></body>');
+  const markerDocument=markerDOM.window.document;
+  for(const rail of markerDocument.querySelectorAll('.desktop-page-rail'))for(const target of [rail,rail.querySelector('svg')]){
+    resetAreaWheel();let blurred=false;
+    ctx.document.activeElement={closest:()=>({}),blur(){blurred=true;}};
+    const before=changes.length;e=areaEvent(target);listeners['document:wheel'](e);
+    assert.equal(e.prevented,true,'A marker rail or its icon routes into native desktop navigation');
+    assert.equal(e.stopped,true);assert.equal(ctx.desktopPages.current('work'),1);
+    assert.equal(ctx.desktopHasWindowFocus,false);assert(blurred,'Hovering a rail releases the previously focused app');
+    assert.equal(workspaceFocusCalls,0,'Marker scrolling does not steal focus into the canvas');
+    clock+=15;listeners['document:wheel'](areaEvent(target));listeners['.workspace-zone:wheel'](e);
+    assert.equal(changes.length,before+1,'Rails share the same momentum gate and cannot process the event twice');
+    clock+=500;listeners['document:wheel'](areaEvent(target,-80));
+    assert.equal(ctx.desktopPages.current('work'),0,'A fresh reverse gesture returns from the next desktop');
+  }
+  const rail=markerDocument.querySelector('#left'),marker=rail.querySelector('.desktop-page-mark');
+  resetAreaWheel();e=areaEvent(marker,80,{shiftKey:true});listeners['document:wheel'](e);
+  assert.equal(ctx.desktopPages.column('work'),'site','Shift+wheel on a marker rail switches Project columns');
+  for(const options of [{ctrlKey:true},{altKey:true},{defaultPrevented:true},{deltaX:160}]){
+    resetAreaWheel();e=areaEvent(marker,80,options);listeners['document:wheel'](e);
+    assert.equal(e.prevented,undefined,'Native modifiers and already consumed marker input keep their owners');
+    assert.equal(ctx.desktopHasWindowFocus,true);
+  }
+  for(const guard of ['menu','inert']){
+    resetAreaWheel();nodes['#desktopContextMenu'].hidden=guard!=='menu';nodes['.desktop-shell'].inert=guard==='inert';
+    e=areaEvent(marker);listeners['document:wheel'](e);
+    assert.equal(e.prevented,undefined,'Modal and menu gates also cover marker rails');
+  }
+  nodes['#desktopContextMenu'].hidden=true;nodes['.desktop-shell'].inert=false;
+  Object.defineProperty(rail,'scrollHeight',{value:400,configurable:true});Object.defineProperty(rail,'clientHeight',{value:100,configurable:true});rail.overflowY='auto';
+  resetAreaWheel();e=areaEvent(marker);listeners['document:wheel'](e);
+  assert.equal(e.prevented,undefined,'An overflowing rail keeps native scrolling so all marker groups remain reachable');
+  assert.equal(ctx.desktopPages.current('work'),0);
+  markerDOM.window.close();
+}
+console.log('Marker rail wheel passed: real sibling DOM, both rails/icons, focus release, reverse and Project gestures, shared momentum and native overflow/modifier/menu guards.');
+
 // Exercise the actual window-owned pointer gesture rather than global navigation.
 const dragListeners={},carried=[];
 const held=vm.createContext({

@@ -42,7 +42,7 @@ assert(arrangement.details.includes('Right-click a panel → Edit layout → Pan
  G.observePanelLayout(guide,scene(M.updatePanel(compact,'panel-left',{mode:'expanded'})));assert(guide.ready(),'Panels → Expand panel restores the saved expanded Apps view');
  assert(G.panelTarget('area-rail','apps-expanded',{compactAppsPanel:true,appsPanel:'panel-left'}).includes('.desktop-panel-body'),'Panel presentation starts with right-clicking the visible panel');
  assert(G.panelTarget('area-rail','apps-expanded',{editing:true,compactAppsPanel:true,appsPanel:'panel-left'}).includes('[data-panel-action="compact-panel"][data-panel-id="panel-left"]'),'Edit mode targets the Apps panel’s presentation control');
- const copy=G.lessons.find(lesson=>lesson.id==='area-rail').referenceSections.map(section=>section.text).join(' ');assert(copy.includes('temporary applet popup'));assert(copy.includes('Keep expanded'));assert(copy.includes('Expand panel'));
+ const copy=G.lessons.find(lesson=>lesson.id==='area-rail').referenceSections.map(section=>section.text).join(' ');assert(copy.includes('temporary applet popup'));assert(copy.includes('Keep expanded'));assert(copy.includes('panel’s expand control'));
 }
 {
  const guide=model('move-areas'),start=M.defaults();G.observePanelLayout(guide,scene(start));G.observePanelLayout(guide,scene(M.moveWidget(start,'controls','panel-right')));assert(!guide.ready(),'A widget assignment is not a whole-panel move');
