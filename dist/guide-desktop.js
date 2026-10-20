@@ -472,6 +472,9 @@
     highlight(); positionGuide();
   }
   function start(chapter = null) {
+    // The reference DOM remains mounted until reload. Suspend its observers
+    // before activating practice so the same click cannot inspect it as a task.
+    guide.settingUp = true;
     captureCurrentWorkspaceSession(); captureWorkspaceContent();
     guide.clearPractice(); model.start('repeat',chapter); guide.save(); location.reload();
   }

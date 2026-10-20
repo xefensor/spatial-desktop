@@ -59,5 +59,37 @@ assert.equal(holder.querySelector('summary').textContent, 'More details');
 assert.equal(holder.querySelector('[data-guide-help="reference-0"] summary').textContent, 'Where <files> go', 'Help labels remain escaped literal text');
 assert.equal(holder.querySelector('draft,files'), null);
 assert(holder.textContent.includes('/home/demo/Assistant/brief.md.'));
+
+// Starting practice changes the model before reload replaces reference help.
+// Run the actual click/start/check path, including its bubbled and queued work,
+// while deliberately keeping the old reference DOM mounted until reload.
+const transitionErrors=[];dom.virtualConsole.on('jsdomError',error=>transitionErrors.push(error));
+const captures=[],saved=[],reloads=[],pendingChecks=[];
+sandbox.captureCurrentWorkspaceSession=()=>captures.push(['session',model.active(),sandbox.guide.settingUp]);
+sandbox.captureWorkspaceContent=()=>captures.push(['content',model.active(),sandbox.guide.settingUp]);
+sandbox.guide.clearPractice=()=>captures.push(['clear',model.active(),sandbox.guide.settingUp]);
+sandbox.guide.save=()=>saved.push(model.snapshot());
+sandbox.location={reload:()=>reloads.push(model.snapshot())};
+sandbox.preparePanelLesson=()=>assert.fail('Reference DOM cannot be inspected as an initialized practice scene');
+vm.runInContext(source.slice(source.indexOf('  function referenceMarkup('),source.indexOf('  function setCompact('))+source.slice(source.indexOf('  function start('),source.indexOf('  function renderExitChoices('))+source.slice(source.indexOf('  function check()'),source.indexOf('  function start(')),context,{filename:'guide-reference-practice-transition.js'});
+const clickStart=source.indexOf("  window.addEventListener('click', async event => {");
+vm.runInContext(source.slice(clickStart,source.indexOf("  window.addEventListener('input'",clickStart)),context,{filename:'guide-reference-click-actions.js'});
+d.addEventListener('click',()=>pendingChecks.push(()=>sandbox.check()),true);
+d.addEventListener('click',()=>sandbox.check());
+for(const [selector,chapter]of [['[data-guide-chapter="park"]','park'],['[data-guide-action="start"]',null]]){
+  model.leave('completed');sandbox.guide.settingUp=false;sandbox.render();
+  assert.equal(content.querySelector('.guide-progress'),null,'The real reference screen has no active-task progress element');
+  const control=content.querySelector(selector);assert(control);
+  const before=reloads.length;control.click();
+  assert.equal(model.active(),true);assert.equal(model.state.chapter||null,chapter);
+  assert.equal(sandbox.guide.settingUp,true,'Observers are suspended before the model becomes active');
+  assert.equal(reloads.length,before+1);assert.equal(saved.at(-1).chapter||null,chapter,'The requested practice target is saved before reload');
+  assert.equal(content.querySelector('.guide-progress'),null,'The regression keeps old reference DOM present through the event bubble');
+  for(const check of pendingChecks.splice(0))assert.doesNotThrow(check,'Queued checks also wait for the new practice page');
+  assert.doesNotThrow(()=>sandbox.check(),'Polling cannot inspect the stale reference screen');
+  control.click();assert.equal(reloads.length,before+1,'A second click during reload cannot start another practice session');
+}
+assert(captures.every(([,active,settingUp])=>!active&&settingUp),'Real desktop content is captured before practice activates, with observers already suspended');
+assert.deepEqual(transitionErrors,[],'Starting either an individual step or the whole Guide emits no reference-DOM browser error');
 w.close();
-console.log('Guide help passed: active optional reference sections, concise initial mission, same-step disclosure/focus/scroll recovery and unchanged reference labels.');
+console.log('Guide help passed: active optional sections, concise missions, disclosure/focus/scroll recovery, escaped reference labels and coherent reference-to-practice transitions.');
