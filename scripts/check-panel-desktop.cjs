@@ -87,6 +87,17 @@ test('malformed saved session containers recover without blocking desktop startu
  const expected=JSON.parse(JSON.stringify(w.SpatialPanelWidgets.defaults()));for(const saved of ['null','[]','true','27','"invalid sessions"','{broken']){const restored=reloadLayout(saved);assert.deepEqual(restored.state,expected,'Recover malformed persisted sessions: '+saved);assert.equal(restored.popup,false);}const custom=JSON.parse(JSON.stringify(expected));custom.panels[0].label='Keep my valid dock';assert.equal(reloadLayout(JSON.stringify({general:custom})).state.panels[0].label,'Keep my valid dock','Valid sessions retain their saved custom layout');
 });
 test('panels and widgets have no header or footer chrome in either edit state',()=>{P.reset();for(const editing of [false,true]){P.edit(editing);for(const mode of ['expanded','compact']){P.updatePanel('panel-left',{mode});for(const frame of d.querySelectorAll('.desktop-panel:not([hidden])')){assert.equal(frame.querySelector('.desktop-panel-header,.panel-normal-controls'),null,'Panel chrome is absent');for(const variable of ['--panel-header-size','--panel-footer-size','--panel-toolbox-size'])assert.equal(frame.style.getPropertyValue(variable),'0px',variable+' reserves no space');const bounds=frame.getBoundingClientRect(),body=frame.querySelector('.desktop-panel-body').getBoundingClientRect();for(const key of ['left','top','right','bottom','width','height'])assert.equal(body[key],bounds[key],'Panel content uses the full available '+key);}for(const frame of d.querySelectorAll('.desktop-widget')){assert.equal(frame.querySelector('.desktop-widget-header'),null,'Widget heading is absent');if(!frame.hidden)assert.equal(frame.style.getPropertyValue('--widget-header-size'),'0px','Visible '+frame.dataset.widgetId+' reserves no title space');}bounded();}}assert.equal(d.querySelector('#panelLayoutLauncher'),null,'No floating layout button is created');P.edit(false);P.reset();});
+test('panel edge resizers stay above Edit covers in a bounded content stacking context',()=>{
+ const base='body.panel-desktop-preview ',body=cssRule(base+'.desktop-panel-body'),thickness=cssRule(base+'.desktop-panel-resizer'),length=cssRule(base+'.desktop-panel-length-resizer'),editCover=cssRule(base+'.panel-widget-edit-cover');
+ assert.equal(body.position,'absolute');assert.notEqual(body['z-index'],undefined,'Panel content must establish its own stacking context');assert.notEqual(body['z-index'],'auto');
+ const contentLayer=Number(body['z-index']);assert(Number.isFinite(contentLayer));
+ for(const control of [thickness,length]){assert.equal(control.position,'absolute');assert(Number(control['z-index'])>contentLayer,'Both edge controls paint above the entire content context, including any widget cover');}
+ assert(Number(editCover['z-index'])>contentLayer,'Edit covers remain above their native widget controls inside that isolated content plane');
+ assert.equal(cssRule(base+'.desktop-panel').isolation,'isolate','Panel-local hit surfaces never escape over menus or applets');
+ P.reset();P.edit(true);const spacer=addSpacer();
+ for(const mode of ['expanded','compact'])for(const edge of ['left','right','top','bottom']){P.updatePanel('panel-left',{mode,edge});const frame=panel('panel-left'),content=frame.querySelector('.desktop-panel-body');assert(content.contains(cover(spacer)),'Spacer stays draggable inside the content plane');for(const selector of ['.desktop-panel-resizer','.desktop-panel-length-resizer'])assert.equal(frame.querySelector(selector).parentElement,frame,'Edge controls remain siblings above the content plane');}
+ P.edit(false);P.reset();
+});
 test('panel context menu opens editing in both presentations without a floating launcher',()=>{
  P.reset();
  for(const mode of ['expanded','compact'])for(const edge of ['left','bottom']){
@@ -275,6 +286,27 @@ test('replacing an active saved session dismisses stale controls before applying
 });
 test('native source state and lifecycle follow temporary applets',()=>{
  P.reset();const events=[],listener=event=>events.push(event.detail);w.addEventListener('spatial-panel-applet-change',listener);try{P.openApplet('assistant');assert(P.isAppletOpen('assistant'));assert(P.isWidgetExpanded('assistant'));assert.equal(registry.get('assistant').source.dataset.widgetMode,'expanded');P.closeApplet('files');assert(P.isAppletOpen('assistant'),'Unrelated close request preserves the applet');P.closeApplet('assistant');assert(!P.isAppletOpen('assistant'));assert.equal(registry.get('assistant').source.dataset.widgetMode,'compact');assert.deepEqual(events.map(event=>[event.id,event.open]),[['assistant',true],['assistant',false]]);}finally{w.removeEventListener('spatial-panel-applet-change',listener);P.reset();}
+});
+test('Overview transitions refresh native panel projections immediately without a timer',()=>{
+ const keys=['$','setUniversalSearchOpen','universalLastFocus','currentDisplayProfile','setOverviewView','filterUniversalSearch'],previous=new Map(keys.map(key=>[key,{present:Object.hasOwn(w,key),value:w[key]}]));
+ const overlay=d.createElement('section');overlay.id='universalSearch';overlay.innerHTML='<input id="universalSearchInput">';overlay.inert=true;d.body.append(overlay);
+ try{
+  w.$=selector=>d.querySelector(selector);w.universalLastFocus=null;w.currentDisplayProfile='desktop';w.setOverviewView=()=>{};w.filterUniversalSearch=()=>{};
+  const source=fs.readFileSync(path.join(root,'desktop-shell.js'),'utf8'),start=source.indexOf('function setUniversalSearchOpen(open)'),end=source.indexOf('$("#universalSearchInput").addEventListener',start);
+  vm.runInContext(source.slice(start,end),context,{filename:'native-overview-transition.js'});
+  P.edit(false);for(const workspace of ['work','general']){w.activeWorkspace=workspace;P.reset();P.updatePanel('panel-left',{mode:'compact'});}
+  const compactLaunchers=()=>[...widget('apps').querySelectorAll('[data-panel-launch]')],clock=()=>widget('clock').querySelector('.panel-compact-clock'),launcher=()=>widget('launcher').querySelector('.desktop-widget-summary');
+  assert(compactLaunchers().length);assert(compactLaunchers().every(button=>!button.disabled));
+  w.setUniversalSearchOpen(true);
+  assert(d.querySelector('.desktop-shell').inert);assert(compactLaunchers().every(button=>button.disabled));assert(clock().disabled);assert.equal(launcher().getAttribute('aria-expanded'),'true');
+  w.activeWorkspace='work';P.render();assert(clock().disabled,'Workspace rendering while Overview is open retains its modal gate');
+  w.setUniversalSearchOpen(false);
+  assert.equal(d.querySelector('.desktop-shell').inert,false);assert(compactLaunchers().every(button=>!button.disabled),'Every compact favorite unlocks synchronously after closing Overview');assert.equal(clock().disabled,false);assert.equal(registry.get('clock').source.getAttribute('aria-disabled'),'false');assert.equal(launcher().getAttribute('aria-expanded'),'false');
+  w.setUniversalSearchOpen(true);w.activeWorkspace='general';P.render();w.setUniversalSearchOpen(false);
+  assert(compactLaunchers().every(button=>!button.disabled),'Returning to the original Workspace also unlocks without waiting for a timer');assert.equal(clock().disabled,false);assert.equal(launcher().getAttribute('aria-expanded'),'false');
+ }finally{
+  flush();overlay.remove();d.querySelector('.desktop-shell').inert=false;d.body.classList.remove('universal-search-open');nativeOverviewOpen=false;syncNativeOverview();for(const workspace of ['work','general']){w.activeWorkspace=workspace;P.reset();}for(const [key,old]of previous)if(old.present)w[key]=old.value;else delete w[key];
+ }
 });
 test('Desktop Guide keeps its original entry point',()=>{P.reset();const before=guideOpenCalls;w.SpatialGuide.open();assert.equal(guideOpenCalls,before+1,'Layout help must not replace full Desktop Guide');});
 flush();test('no jsdom event errors after interactions',()=>assert.deepEqual(errors,[]));

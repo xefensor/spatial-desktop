@@ -4000,6 +4000,7 @@ function setUniversalSearchOpen(open) {
     universalLastFocus = null;
   }
   globalThis.SpatialSteamOverview?.overviewChanged(open);
+  globalThis.SpatialPanels?.render();
 }
 
 $("#universalSearchInput").addEventListener("input", filterUniversalSearch);

@@ -51,6 +51,8 @@ body.panel-desktop-preview .panel-move-handle :is(span,b) {overflow:hidden;text-
 body.panel-desktop-preview .panel-move-handle :is(svg,i) {flex:none;width:14px;height:14px;opacity:.7}
 body.panel-desktop-preview .desktop-panel-body {
   position:absolute;
+  /* Keep widget Edit covers in the content plane below both panel edges. */
+  z-index:0;
   inset:0;
   min-width:0;
   min-height:0;
