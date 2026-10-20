@@ -102,3 +102,21 @@ assert.equal(contextual.project,'website','AI working ownership comes from the s
 const contextReload=C.create(restored.snapshot(),env).session('general').items.find(item=>item.id==='saved-context');
 assert.deepEqual(contextReload.source,contextual.source);assert.equal(contextReload.why,contextual.why);assert.equal(contextReload.savedAt,123);
 console.log('AI Stash provenance passed: saved location and original source remain distinct, including reminder and timestamp across reload.');
+
+// Every request advertised in the real UI must reach its documented engine.
+{
+  const {JSDOM}=require('jsdom'),dom=new JSDOM(fs.readFileSync(require.resolve('../dist/index.html'),'utf8'));
+  const document=dom.window.document,help=document.getElementById('aiDemoRequests'),button=document.getElementById('aiDemoHelp');
+  assert.equal(button.getAttribute('aria-controls'),help.id);assert.equal(button.type,'button');assert(help.hidden);
+  assert.equal(help.parentElement.getAttribute('aria-label'),'Assistant conversation','Long help scrolls inside chat instead of pushing the composer out');
+  const requests=Object.fromEntries([...help.querySelectorAll('[data-ai-demo-request]')].map(node=>[node.dataset.aiDemoRequest,node.textContent]));
+  assert.equal(Object.keys(requests).length,6);
+  const items=[{title:'First note',text:'Review the desktop panels and test the Guide.',kind:'text'},{title:'Second note',text:'Test the desktop with a new participant.',kind:'text'}];
+  const expected={summary:'Source summary',checklist:'Suggested checklist',draft:'Draft project note',compare:'Source comparison'},engine=require('../dist/ai-demo.js');
+  for(const [id,title]of Object.entries(expected))assert.equal(engine.reply(requests[id],{items}).title,title,title+' is reached by its visible example');
+  const converter=require('../dist/assistant-files.js');
+  for(const [id,destination]of [['html','Documents/Converted'],['webp','Images/Web']]){const command=converter.parse(requests[id]);assert.equal(command.format,id);assert.equal(command.destination,destination);}
+  assert.equal(engine.reply('Make a checklist.').title,'Suggested checklist','The always-visible starter also works before attaching anything');
+  assert(document.getElementById('aiDemoNotice').textContent.includes('Make a checklist.'));dom.window.close();
+  console.log('Visible Assistant requests passed: all six prompts reach the documented local paths, the starter works without context and help stays outside the draft form flow.');
+}

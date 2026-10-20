@@ -57,6 +57,20 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .assistant-widget .ai-chat:has(>.ai-empty:not([hidden])) {display:flex;flex-direction:column;justify-content:center}
 .assistant-widget .ai-chat:has(>.ai-empty:not([hidden])) .ai-empty {flex-direction:column;align-items:center;text-align:center;padding:18px 8px}
 .assistant-widget .ai-chat-toolbar [hidden],.assistant-widget .ai-rename-form[hidden] {display:none!important}
+
+/* Help uses the conversation's scroll viewport, keeping the draft reachable. */
+.ai-demo-requests[hidden]{display:none!important}
+.ai-demo-requests{min-width:0;padding:4px 0 12px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.ai-demo-requests h3{margin:0 0 8px;font-size:14px;line-height:1.4}
+.ai-demo-requests p{margin:0 0 12px;color:var(--muted)}
+.ai-demo-requests dl{margin:0 0 14px}
+.ai-demo-requests dt{margin:12px 0 3px;color:var(--text)}
+.ai-demo-requests code{font:inherit;font-weight:550;user-select:text}
+.ai-demo-requests dd{margin:0;color:var(--muted)}
+.ai-composer .ai-demo-help{min-height:30px;padding:4px 0;border:0;background:transparent;color:var(--text);font:inherit;font-size:12px;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.ai-demo-help:focus-visible{outline:2px solid var(--workspace-accent,var(--blue));outline-offset:2px}
+.assistant-widget .ai-chat:has(>.ai-demo-requests:not([hidden])){display:block}
+.assistant-widget .ai-chat:has(>.ai-demo-requests:not([hidden]))>.ai-empty{display:none}
 .assistant-widget .ai-turn-sources {margin-top:6px}
 
 /* The copy destination remains readable over a narrow rail and never catches drops. */

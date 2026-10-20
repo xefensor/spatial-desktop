@@ -86,6 +86,9 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   const openQuick=()=>documentHandlers.keydown.forEach(fn=>fn({metaKey:true,code:'KeyA',preventDefault(){},stopPropagation(){}}));
   area.inert=true;openQuick();area.inert=false;assert.equal(quick.hidden,false,'Compact content is inert while its native icon remains available');assert.equal(document.activeElement,node('#aiPrompt'));assert.deepEqual(areaTransitions,[],'A quick invocation opens the native applet without committing layout changes');
   node('#aiPrompt').value='Keep my quick draft';node('#aiPrompt').listeners.input();assert.equal(area.dataset.hasDraft,'true');
+  const help=node('#aiDemoRequests'),helpButton=node('#aiDemoHelp'),beforeHelp=JSON.stringify(api.snapshot());help.hidden=true;
+  helpButton.listeners.click();assert.equal(help.hidden,false);assert.equal(node('.ai-chat').scrollTop,0);
+  helpButton.listeners.click();assert.equal(help.hidden,true);assert.equal(node('#aiPrompt').value,'Keep my quick draft');assert.equal(JSON.stringify(api.snapshot()),beforeHelp,'Opening supported requests cannot send a turn, replace a draft or mutate saved chat state');
   nativePanels.closeApplet();assert.equal(api.snapshot().sessions.general.chats[initial].draft,'Keep my quick draft');openQuick();assert.equal(node('#aiPrompt').value,'Keep my quick draft');
   node('#aiPrompt').listeners.keydown({key:'Escape',stopPropagation(){}});assert.equal(quick.hidden,true,'Composer Escape closes its native popup');
   modalOpen=true;openQuick();assert.equal(quick.hidden,true,'Assistant cannot open above a modal');modalOpen=false;

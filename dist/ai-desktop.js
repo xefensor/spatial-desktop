@@ -34,6 +34,11 @@
     requestAnimationFrame(()=>{if(revision!==followRevision||followingChat!==key||conversationKey()!==key)return;chat.scrollTop=chat.scrollHeight;requestAnimationFrame(()=>{if(revision!==followRevision||followingChat!==key||conversationKey()!==key)return;chat.scrollTop=chat.scrollHeight;followingChat='';});});
   }
   const conversation=$('.ai-chat',content);conversation.addEventListener('wheel',stopFollowingConversation,{passive:true});conversation.addEventListener('pointerdown',stopFollowingConversation,{passive:true});conversation.addEventListener('keydown',event=>{if(['PageUp','PageDown','Home','End','ArrowUp','ArrowDown'].includes(event.key))stopFollowingConversation();});
+  $('#aiDemoHelp').addEventListener('click',()=>{
+    const help=$('#aiDemoRequests'),open=help.hidden;
+    help.hidden=!open;$('#aiDemoHelp').setAttribute('aria-expanded',String(open));
+    if(open){stopFollowingConversation();conversation.scrollTop=0;}
+  });
   function currentDisplayTask(){
     const state=displayTask,task=state?.space?.assistant,context=task?.context;
     const visibleRole=state?.role==='side';

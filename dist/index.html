@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="spatial-guide.css?v=b3a5fbd8de29">
   <link rel="stylesheet" href="workspace-setup.css?v=2074b0a3a2a7">
   <link rel="stylesheet" href="working-memory.css?v=70ae96f29a8c">
-  <link rel="stylesheet" href="assistant-widget.css?v=735b30df0688">
+  <link rel="stylesheet" href="assistant-widget.css?v=b5fbfb1f3385">
   <link rel="stylesheet" href="overview-carousel.css?v=72ebb909360d">
   <link rel="stylesheet" href="desktop-background.css?v=04e77fa50d3e">
   <link rel="stylesheet" href="control-refinements.css?v=443083bca97a">
@@ -54,7 +54,7 @@
   <script src="demo-super-key.js?v=0d51c763ae38"></script>
   <script src="desktop-markers.js?v=73adb4eef74c"></script>
   <script src="workspace-setup.js?v=76bcea86773e"></script>
-  <script src="spatial-guide.js?v=be90ab4381aa"></script>
+  <script src="spatial-guide.js?v=c47b71fc4190"></script>
   
   <link rel="stylesheet" href="apps-quick-launch.css?v=8c15488a66c5">
   <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
@@ -276,8 +276,24 @@
         <form id="aiRenameForm" class="ai-rename-form" hidden><label class="sr-only" for="aiChatName">Chat name</label><input id="aiChatName" aria-label="Chat name" maxlength="80" required><button class="surface-key" type="submit">Save</button><button class="surface-key" id="aiCancelRename" type="button">Cancel</button></form>
 
         <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
-        <div class="ai-chat" aria-label="Assistant conversation"><p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Drop files or text here to use them in this chat.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div></div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Ask Assistant…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiDemoNotice" class="ai-demo-notice">Scripted local demo · no AI service connected</small><small id="aiStatus" role="status"></small></form>
+        <div class="ai-chat" aria-label="Assistant conversation">
+          <section id="aiDemoRequests" class="ai-demo-requests" aria-label="Supported demo requests" hidden>
+            <h3>Supported demo requests</h3>
+            <p>Replies follow local keyword rules, so similar wording also works. Attach text or files to give the reply context.</p>
+            <dl>
+              <dt><code data-ai-demo-request="summary">Summarize this source.</code></dt><dd>Attach readable text. Returns excerpts from that text.</dd>
+              <dt><code data-ai-demo-request="checklist">Make a checklist from this text.</code></dt><dd>Returns a scripted review checklist. Attached text adds context.</dd>
+              <dt><code data-ai-demo-request="draft">Write a draft note from this text.</code></dt><dd>Returns a template note using the attached excerpts.</dd>
+              <dt><code data-ai-demo-request="compare">Compare these two sources.</code></dt><dd>Attach two sources. Shows their excerpts and shared terms.</dd>
+              <dt><code data-ai-demo-request="html">Convert selected files to HTML in Documents/Converted</code></dt><dd>Select or attach saved text files. Review the destination, then choose Convert to create copies.</dd>
+              <dt><code data-ai-demo-request="webp">Convert selected files to WebP in Images/Web</code></dt><dd>Select or attach saved image files. Review the destination, then choose Convert to create copies.</dd>
+            </dl>
+            <p>Image descriptions and audio transcription are explanatory placeholders. General questions use a source or context fallback.</p>
+            <p>Side space has three separate guided workflows: a launch checklist, image conversion and text-version comparison. Open Examples there and choose Run example; typing their sample prompts does not start them.</p>
+          </section>
+          <p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Drop files or text here to use them in this chat.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div>
+        </div>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Try: Make a checklist." autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiDemoNotice" class="ai-demo-notice">Scripted demo. Try “Make a checklist.”</small><button id="aiDemoHelp" class="ai-demo-help" type="button" aria-controls="aiDemoRequests" aria-expanded="false">Supported requests</button><small id="aiStatus" role="status"></small></form>
       </div>
     </aside>
     <aside class="widget-source files-widget" data-widget-source="files" aria-label="Files widget">
@@ -686,7 +702,7 @@
 <script src="apps-quick-launch.js?v=765200e694c6"></script>
 <script src="working-memory-desktop.js?v=5c8707451104"></script>
 <script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
-<script src="ai-desktop.js?v=661e27ca4bbd"></script>
+<script src="ai-desktop.js?v=4489e72f262f"></script>
 <script src="overview-desktop.js?v=fe8fc4c0e944"></script>
   <script src="steam-overview.js?v=71bf946de330"></script>
 <script src="all-workspaces.js?v=be1912614455"></script>
@@ -722,7 +738,7 @@
 <script src="desktop-surface-files.js?v=87a921c31279"></script>
 <script>SpatialRetiredApps.installSyncGuards();</script>
   <script src="panel-widgets.js?v=fb5b04e7eab6"></script>
-  <script src="panel-content.js?v=0620f9cd3730"></script>
+  <script src="panel-content.js?v=b826d3dab425"></script>
   <script src="panel-compact.js?v=90982ebdf67c"></script>
   <script src="panel-fit.js?v=ab4a012edc82"></script>
   <script src="panel-desktop.js?v=c6ab58955cc5"></script>

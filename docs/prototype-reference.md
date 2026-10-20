@@ -34,6 +34,10 @@ Settings is a regular app, available through Overview/search and the labeled Set
 
 Assistant retains conversations, selected inputs and working files in their Workspace or Project. Ask Assistant attaches selected text or files. Reviewed transformations create real browser-local files in the context's Assistant folder.
 
+Replies follow fixed local rules rather than an AI model. Attach text and try `Summarize this note.`, `Make a checklist from this note.` or `Draft a note from this text.` Attach two sources for `Compare these two sources.` Wording can vary; keywords select a response template. Summaries quote attached excerpts, while checklists and drafts use templates. Image-description and audio-transcription requests only show an explanation of those unconnected workflows.
+
+For a saved text file, try `Convert selected files to HTML in Converted`; for an image with its original bytes, try `Convert selected files to WebP in Converted`. Review the input and Save in destination, then choose **Convert** to create copies. The separate guided display examples use bundled sample inputs for a launch checklist, a WebP conversion or a comparison of two text versions.
+
 Extended workspace follows desktop and Project navigation. Side space retains its Workspace-owned windows while the main display changes desktop or Project. Both use normal panels and widgets.
 
 **Allow Assistant to use this display** belongs to the specific display and Workspace. Chat and manual tools remain usable while permission is off. Take over pauses a running example; Continue resumes it. Turning permission off pauses work without clearing files, windows or drafts. Stop abandons remaining steps and keeps completed work. A context or display change interrupts unfinished scripted work and requires a fresh run.
