@@ -2948,26 +2948,22 @@ function openProjectEditor(view, options = {}) {
     modeId: options.modeId || null,
     returnFocus: document.activeElement
   };
-  const inline = view === 'create-project';
-  dialog.classList.toggle('is-inline',inline);
-  dialog.setAttribute('role',inline ? 'region' : 'dialog');
-  dialog.setAttribute('aria-modal',String(!inline));
-  if (inline) {
-    setUniversalSearchOpen(false);
-    const area = areaFor('projects');
-    area.classList.add('is-creating-project'); area.append(dialog);
-    showArea('projects',false); layoutDockAreas(false,false);
-  } else { areaFor('projects').classList.remove('is-creating-project'); document.body.append(dialog); }
+  // Files may share a narrow panel with other widgets. Keep its editor outside
+  // that clipped content viewport, using the same modal surface as management.
+  dialog.classList.remove('is-inline');
+  dialog.setAttribute('role','dialog');
+  dialog.setAttribute('aria-modal','true');
+  areaFor('projects').classList.remove('is-creating-project');
+  document.body.append(dialog);
   renderProjectEditor();
   dialog.hidden = false;
   dialog.inert = false;
   dialog.setAttribute("aria-hidden", "false");
-  if (!inline) {
-    $('.desktop-shell').inert = true;
-    $('#universalSearch').inert = true;
-    document.body.classList.add('project-editor-open');
-  }
+  $('.desktop-shell').inert = true;
+  $('#universalSearch').inert = true;
+  document.body.classList.add('project-editor-open');
   requestAnimationFrame(() => {
+    if (dialog.hidden || dialog.inert) return;
     dialog.classList.add("is-open");
     const preferred = $("input", dialog) || $("button", $("#projectEditorBody"));
     preferred?.focus({ preventScroll: true });
@@ -2978,7 +2974,6 @@ function closeProjectEditor() {
   const dialog = $("#projectEditorDialog");
   if (!dialog || dialog.hidden) return;
   const returnFocus = projectEditorState?.returnFocus;
-  const inline = dialog.classList.contains("is-inline");
   areaFor("projects").classList.remove("is-creating-project");
   dialog.classList.remove("is-open");
   dialog.setAttribute("aria-hidden", "true");
@@ -2988,8 +2983,7 @@ function closeProjectEditor() {
   $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("project-editor-open");
   projectEditorState = null;
-  if (inline) dialog.hidden = true;
-  else setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
+  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
   returnFocus?.focus?.({ preventScroll: true });
 }
 
@@ -3172,10 +3166,8 @@ function setWorkspaceCreateOpen(open) {
   if (open) { form.reset(); requestAnimationFrame(()=>$('#workspaceName').focus()); }
 }
 
-// Existing and new Workspaces expose Settings alongside their own favorites.
 // Every workspace exposes the same standard Home folders, alongside its extras.
 Object.values(workspaceProfiles).forEach(profile => {
-  SpatialWorkspaceSetup.includeSettingsFavorite(profile);
   const extras = profile.folders.filter(([name]) => !SpatialHomeFolders.standard.includes(name));
   profile.folders = [...SpatialHomeFolders.standard.map(name => [name, "Workspace folder", "folder"]), ...extras];
 });

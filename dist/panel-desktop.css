@@ -305,7 +305,7 @@ body.panel-desktop-preview .desktop-widget[data-widget-id="clock"][data-widget-m
 body.panel-desktop-preview .desktop-widget[data-widget-id="clock"][data-widget-mode="expanded"] .time-block>.live-time {font-size:28px!important}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-settings {
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(min(100%,72px),1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   align-content:start;
   gap:5px;
   margin:0;
@@ -313,9 +313,14 @@ body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-
   width:100%;
   min-width:0;
 }
-body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle {display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;height:auto;min-height:56px;padding:7px 4px!important;gap:5px}
-body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle>span:not(.theme-dot) {display:block;max-width:100%;font-size:12px!important;line-height:1.3;overflow-wrap:break-word;text-align:center}
+body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle {display:flex;flex-direction:row;align-items:center;justify-content:flex-start;min-width:0;height:auto;min-height:40px;padding:6px!important;gap:6px}
+body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle>span:not(.theme-dot) {display:block;min-width:0;max-width:100%;font-size:12px!important;line-height:1.3;overflow-wrap:break-word;text-align:left}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .quick-toggle svg {width:18px;height:18px;flex:none}
+body.panel-desktop-preview .desktop-widget[data-widget-id="controls"] .desktop-system-shortcuts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding-top:6px}
+body.panel-desktop-preview .desktop-widget[data-widget-id="controls"] .desktop-system-shortcuts button {display:flex;align-items:center;gap:7px;min-width:0;min-height:32px;padding:5px 8px;font-size:12px;line-height:1.35;white-space:normal;overflow-wrap:anywhere;text-align:left}
+body.panel-desktop-preview .desktop-widget[data-widget-id="controls"] .desktop-system-shortcuts [data-desktop-system-open="network"] {grid-column:1/-1;justify-content:space-between}
+body.panel-desktop-preview .desktop-widget[data-widget-id="controls"] [data-system-network-status] {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.panel-desktop-preview .desktop-widget[data-widget-id="controls"] .panel-system-settings svg {width:17px;height:17px;flex:none}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launchers {display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;border:0}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launcher {flex:1 1 100px;width:auto;min-height:34px;justify-content:center;font-size:12px}
 body.panel-desktop-preview .desktop-widget-content.system-widget-content .system-launcher>span {font-size:12px;white-space:normal;line-height:1.3}

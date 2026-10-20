@@ -59,6 +59,14 @@ function legacy(version){
 const initial=M.defaults(),before=JSON.stringify(initial);complete(initial);
 assert.equal(initial.schema,5);assert.deepEqual(initial.panels[0].widgets,['apps','clock','launcher','notifications','calendar','controls']);
 const oldFour=clone(initial);oldFour.schema=4;assert.deepEqual(M.normalize(oldFour),initial);const customFour=clone(oldFour);customFour.panels[0].size=311;customFour.widgets.assistant.mode='expanded';assert.equal(M.normalize(customFour).panels[0].size,311);assert.equal(M.normalize(customFour).widgets.assistant.mode,'expanded');
+for(const schema of [4,5]){
+  const previous=clone(initial);previous.schema=schema;previous.panels[0].size=232;
+  assert.deepEqual(M.normalize(previous),initial,'Only the untouched previous default adopts the narrower layout');
+  for(const change of [state=>state.panels[0].size=296,state=>state.panels[0].label='Personal',state=>state.panels[0].widgets.reverse(),state=>state.widgets.controls.mode='expanded',state=>state.widgets.apps.size=480]){
+    const customized=clone(previous);change(customized);assert.equal(M.migrateDefaults(customized),customized,'Custom panel layouts are not reset by the default update');
+    const normalized=M.normalize(customized);assert.equal(normalized.panels[0].size,customized.panels[0].size);assert.equal(normalized.widgets.controls.mode,customized.widgets.controls.mode);
+  }
+}
 assert.equal(initial.widgets.clock.mode,'expanded');assert.equal(initial.widgets.assistant.mode,'compact');assert.deepEqual(M.normalize(initial),initial);
 assert.equal(initial.widgets.launcher.mode,'compact');assert.equal(M.definitions.launcher.title,'Overview');assert.equal(M.definitions.launcher.minSize,44);assert.equal(M.definitions.launcher.preferredSize,44);assert.equal(M.compactDefinitions.launcher.minSize,44);
 assert.equal(M.updateWidget(initial,'launcher',{mode:'expanded'}).widgets.launcher.mode,'compact','Overview remains a single icon');
@@ -217,11 +225,11 @@ assert.equal(editThin.bodyOffset,30);assert.equal(editThin.toolboxSize,28);asser
 assert.equal(JSON.stringify(compactLeft),compactSnapshot,'Edit geometry does not alter the saved layout');
 
 // Normal panels reserve just their small footer; edit controls reserve both.
-assert.equal(initial.panels[0].size,232);assert.equal(initial.panels[1].size,280);assert.equal(initial.panels[1].mode,'compact');
+assert.equal(initial.panels[0].size,224);assert.equal(initial.panels[1].size,280);assert.equal(initial.panels[1].mode,'compact');
 assert.equal(initial.widgets.files.mode,'expanded','Whole-panel restore retains the Files widget state');
-const center=M.layout(initial,{...options,width:1200});assert.equal(1200-center.insets.left-center.insets.right,912);
+const center=M.layout(initial,{...options,width:1200});assert.equal(1200-center.insets.left-center.insets.right,920);
 const restored=M.layout(M.updatePanel(initial,'panel-right',{mode:'expanded'}),options).panels['panel-right'];assert.equal(restored.width,280);assert.equal(restored.widgets.files.mode,'expanded');
-for(const width of [600,699,700]){const result=bounded(initial,{...options,width});assert.equal(result.panels['panel-left'].width,232);assert.equal(result.panels['panel-left'].compact,false,'Actual capacity permits the panel below the old breakpoint');}
+for(const width of [600,699,700]){const result=bounded(initial,{...options,width});assert.equal(result.panels['panel-left'].width,224);assert.equal(result.panels['panel-left'].compact,false,'Actual capacity permits the panel below the old breakpoint');}
 for(const headerSize of [0,30])for(const edge of ['left','right','top','bottom']){
   let state=M.updatePanel(initial,'panel-left',{edge,mode:'compact'});const result=bounded(state,{...options,headerSize}),rect=result.panels['panel-left'];
   assert.equal(rect.bodyOffset,headerSize);assert.equal(rect.bodyEnd,0);assert.equal(rect.toolboxSize,28);

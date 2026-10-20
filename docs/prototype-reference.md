@@ -28,7 +28,7 @@ Project ZIP packing gathers the Project folder and linked local resources, dedup
 
 System groups current desktop requests, Project plans, Workspace content and shared controls. Notification history and other Workspace unread badges retain their scopes. Previews require an explicit action and do not switch Workspace automatically. Do Not Disturb quiets delivery while retaining notifications.
 
-Settings is a regular app, available through Quick launch, Overview/search and System controls. **Panels & widgets** describes the current arrangement controls. Preferences retain their System, Workspace or Project scope.
+Settings is a regular app, available through Overview/search and the labeled Settings action in System controls. Explicit custom Settings favorites remain supported. **Panels & widgets** describes the current arrangement controls. Preferences retain their System, Workspace or Project scope.
 
 ## Assistant and displays
 

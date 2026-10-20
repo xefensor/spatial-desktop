@@ -175,8 +175,18 @@
         const shortcuts = select('.desktop-system-shortcuts');
         const settings = systemSources?.querySelector('[data-open-settings]');
         const context = systemSources?.querySelector('#systemAreaContext');
-        if (shortcuts) nodes.push(shortcuts);
-        if (settings) nodes.push(settings);
+        if (shortcuts) {
+          // Keep the original Settings action with the other system links,
+          // rather than leaving an unlabeled gear on its own widget row.
+          if (settings) {
+            const label = document.createElement('span');
+            label.textContent = 'Settings';
+            settings.classList.add('panel-system-settings');
+            settings.append(label);
+            shortcuts.append(settings);
+          }
+          nodes.push(shortcuts);
+        } else if (settings) nodes.push(settings);
         if (context) nodes.push(context);
       }
       if (definition.id === 'workspace-alerts') {

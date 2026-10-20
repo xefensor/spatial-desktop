@@ -62,7 +62,7 @@
     return {
       schema: 5,
       panels: [
-        {id: 'panel-left', label: 'Left panel', edge: 'left', size: 232, share: 1, mode: 'expanded', display: 1, widgets: leftWidgets.slice()},
+        {id: 'panel-left', label: 'Left panel', edge: 'left', size: 224, share: 1, mode: 'expanded', display: 1, widgets: leftWidgets.slice()},
         {id: 'panel-right', label: 'Right panel', edge: 'right', size: 280, share: 1, mode: 'compact', display: 1, widgets: rightWidgets.slice()}
       ],
       widgets: Object.fromEntries(contentCatalog.map(function (item) { return [item.id, {mode: item.defaultMode, size: 0}]; }))
@@ -88,7 +88,10 @@
         widgets: Object.fromEntries(contentCatalog.filter(function (item) { return item.id !== 'launcher'; }).map(function (item) { return [item.id, {mode: item.id === 'clock' && version < 3 ? 'compact' : item.id === 'assistant' && version === 1 ? 'expanded' : item.defaultMode, size: 0}]; }))
       };
     }
-    return equalState(input, legacy(1)) || equalState(input, legacy(2)) || equalState(input, legacy(3)) ? defaults() : input;
+    const previous = defaults();
+    previous.panels[0].size = 232;
+    const previousDefaults = [4, 5].some(function (version) { previous.schema = version; return equalState(input, previous); });
+    return previousDefaults || equalState(input, legacy(1)) || equalState(input, legacy(2)) || equalState(input, legacy(3)) ? defaults() : input;
   }
 
   function normalize(input) {

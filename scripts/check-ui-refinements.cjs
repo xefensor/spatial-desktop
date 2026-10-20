@@ -53,7 +53,7 @@ for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'mat
 }
 console.log('UI checks passed: filename/Unicode search, live workspace context, category parity, unique IDs, separate window and launcher destinations and project-relative navigation.');
 // Project dialogs must isolate the background and restore its previous role.
-for (const overviewOpen of [true, false]) {
+for (const view of ['create-project', 'manage']) for (const overviewOpen of [true, false]) {
   let focusReturned = false;
   const classes = new Set();
   const dialog = { hidden: true, inert: true, classList: { add: v => classes.add(v), remove: v => classes.delete(v), contains: v => classes.has(v), toggle: (v,on) => on ? classes.add(v) : classes.delete(v) }, setAttribute() {} };
@@ -69,7 +69,7 @@ for (const overviewOpen of [true, false]) {
     requestAnimationFrame: callback => callback(), setTimeout: callback => callback()
   });
   vm.runInContext(source.slice(source.indexOf('function openProjectEditor('), source.indexOf('function prepareProjectEditor(')), ctx);
-  ctx.openProjectEditor('manage');
+  ctx.openProjectEditor(view);
   assert.equal(desktop.inert, true);
   assert.equal(overview.inert, true);
   assert.equal(dialog.inert, false);
