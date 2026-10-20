@@ -57,22 +57,31 @@ function legacy(version){
   ],widgets:Object.fromEntries(content.filter(item=>item.id!=='launcher').map(item=>[item.id,{mode:item.id==='clock'&&version<3?'compact':item.id==='assistant'&&version===1?'expanded':item.defaultMode,size:0}]))};
 }
 const initial=M.defaults(),before=JSON.stringify(initial);complete(initial);
-assert.equal(initial.schema,5);assert.deepEqual(initial.panels[0].widgets,['apps','clock','launcher','notifications','calendar','controls']);
-const oldFour=clone(initial);oldFour.schema=4;assert.deepEqual(M.normalize(oldFour),initial);const customFour=clone(oldFour);customFour.panels[0].size=311;customFour.widgets.assistant.mode='expanded';assert.equal(M.normalize(customFour).panels[0].size,311);assert.equal(M.normalize(customFour).widgets.assistant.mode,'expanded');
-for(const schema of [4,5]){
-  const previous=clone(initial);previous.schema=schema;previous.panels[0].size=232;
-  assert.deepEqual(M.normalize(previous),initial,'Only the untouched previous default adopts the narrower layout');
-  for(const change of [state=>state.panels[0].size=296,state=>state.panels[0].label='Personal',state=>state.panels[0].widgets.reverse(),state=>state.widgets.controls.mode='expanded',state=>state.widgets.apps.size=480]){
-    const customized=clone(previous);change(customized);assert.equal(M.migrateDefaults(customized),customized,'Custom panel layouts are not reset by the default update');
-    const normalized=M.normalize(customized);assert.equal(normalized.panels[0].size,customized.panels[0].size);assert.equal(normalized.widgets.controls.mode,customized.widgets.controls.mode);
+assert.equal(initial.schema,6);assert.deepEqual(initial.panels[0].widgets,['launcher','apps','clock','notifications','calendar','controls']);
+const previousLeftOrder=['apps','clock','launcher','notifications','calendar','controls'];
+for(const schema of [4,5])for(const width of [232,224]){
+  const previous=clone(initial);previous.schema=schema;previous.panels[0].size=width;previous.panels[0].widgets=previousLeftOrder.slice();
+  assert.deepEqual(M.normalize(previous),initial,'Untouched schema '+schema+' default at '+width+' pixels adopts the current layout');
+  for(const change of [state=>state.panels[0].size=296,state=>state.panels[0].label='Personal',state=>state.panels[0].share=2,state=>state.panels[0].mode='compact',state=>state.panels[0].display=2,state=>state.panels[1].size=390,state=>state.widgets.controls.mode='expanded',state=>state.widgets.assistant.mode='expanded',state=>state.widgets.apps.size=480]){
+    const customized=clone(previous);change(customized);const snapshot=clone(customized),expected=clone(customized);expected.schema=6;expected.panels[0].widgets=initial.panels[0].widgets.slice();
+    assert.deepEqual(M.normalize(customized),expected,'Only default Overview placement changes; unrelated preferences are retained');
+    assert.deepEqual(customized,snapshot,'Migrating Overview never mutates the saved input');
+    assert.deepEqual(M.normalize(expected),expected,'The migrated layout is stable across reloads');
   }
+  for(const change of [state=>state.panels[0].widgets.reverse(),state=>state.widgets.launcher.mode='hidden',state=>state.widgets.launcher.size=77,state=>state.panels[0].edge='top',state=>state.panels[0].id='personal-left',state=>{state.panels[0].widgets.splice(2,0,'spacer-1');state.widgets['spacer-1']={mode:'expanded',size:31};},state=>{state.panels[0].widgets=state.panels[0].widgets.filter(id=>id!=='launcher');state.panels[1].widgets.splice(1,0,'launcher');}]){
+    const customized=clone(previous);change(customized);const expected=clone(customized);expected.schema=6;
+    assert.equal(M.migrateDefaults(customized),customized,'Explicit Overview placement, visibility, size or spacing is preserved');
+    assert.deepEqual(M.normalize(customized),expected,'Custom Overview arrangements survive normalization');
+  }
+  const savedAfterMigration=clone(previous);savedAfterMigration.schema=6;
+  assert.deepEqual(M.normalize(savedAfterMigration),savedAfterMigration,'A schema 6 layout can deliberately retain the earlier Overview position');
 }
 assert.equal(initial.widgets.clock.mode,'expanded');assert.equal(initial.widgets.assistant.mode,'compact');assert.deepEqual(M.normalize(initial),initial);
 assert.equal(initial.widgets.launcher.mode,'compact');assert.equal(M.definitions.launcher.title,'Overview');assert.equal(M.definitions.launcher.minSize,44);assert.equal(M.definitions.launcher.preferredSize,44);assert.equal(M.compactDefinitions.launcher.minSize,44);
 assert.equal(M.updateWidget(initial,'launcher',{mode:'expanded'}).widgets.launcher.mode,'compact','Overview remains a single icon');
 let savedBeforeLauncher=M.addSpacer(initial,'panel-left',2);savedBeforeLauncher=M.updatePanel(savedBeforeLauncher,'panel-left',{size:317,share:2});savedBeforeLauncher=M.updateWidget(savedBeforeLauncher,'apps',{size:491});savedBeforeLauncher=M.updateWidget(savedBeforeLauncher,'calendar',{mode:'expanded',size:211});
 savedBeforeLauncher.panels[0].widgets=savedBeforeLauncher.panels[0].widgets.filter(id=>id!=='launcher');delete savedBeforeLauncher.widgets.launcher;
-const addedLauncher=M.normalize(savedBeforeLauncher);complete(addedLauncher);assert.deepEqual(addedLauncher.panels[0].widgets,['apps','clock','spacer-1','launcher','notifications','calendar','controls']);
+const addedLauncher=M.normalize(savedBeforeLauncher);complete(addedLauncher);assert.deepEqual(addedLauncher.panels[0].widgets,['launcher','apps','spacer-1','clock','notifications','calendar','controls']);
 assert.deepEqual(addedLauncher.panels.map(panel=>({...panel,widgets:panel.widgets.filter(id=>id!=='launcher')})),savedBeforeLauncher.panels,'Adding Overview preserves saved panel state, order and Spacer instances');
 assert.deepEqual(Object.fromEntries(Object.entries(addedLauncher.widgets).filter(([id])=>id!=='launcher')),savedBeforeLauncher.widgets,'Adding Overview preserves every existing widget preference');assert.deepEqual(M.normalize(addedLauncher),addedLauncher);
 const placedLauncher=M.updateWidget(M.moveWidget(initial,'launcher','panel-right',1),'launcher',{mode:'hidden',size:77});assert.deepEqual(M.normalize(placedLauncher),placedLauncher,'Existing Overview placement and hidden preference survive normalization');
@@ -97,8 +106,8 @@ for(const height of [768,900]){
   const result=bounded(initial,{...options,height}),left=result.panels['panel-left'],right=result.panels['panel-right'];
   assert.equal(left.widgets.apps.mode,'expanded');assert.equal(left.widgets.clock.mode,'expanded');assert.equal(left.widgets.clock.height-left.widgets.clock.headerSize,56,'Clock keeps its natural expanded size');
   assert.equal(right.widgets.files.mode,'compact');assert.equal(right.widgets.assistant.mode,'compact');
-  assert.equal(left.widgets.launcher.x,0);assert.equal(left.widgets.launcher.y,left.widgets.notifications.y);assert.equal(left.widgets.notifications.y,left.widgets.calendar.y);assert.equal(left.widgets.calendar.y,left.widgets.controls.y,'Overview and the existing bottom icons share one row');
-  assert.equal(left.widgets.launcher.width,44);assert.equal(left.widgets.launcher.height,44);assert.equal(left.widgets.notifications.x-left.widgets.launcher.x,48);
+  assert.equal(left.widgets.launcher.x,0);assert.equal(left.widgets.launcher.y,0,'Overview is the top-left entry');assert.ok(left.widgets.apps.y>=left.widgets.launcher.y+44,'Quick launch follows Overview');assert.equal(left.widgets.notifications.y,left.widgets.calendar.y);assert.equal(left.widgets.calendar.y,left.widgets.controls.y,'System icons retain their bottom row');
+  assert.equal(left.widgets.launcher.width,44);assert.equal(left.widgets.launcher.height,44);assert.equal(left.widgets.notifications.x,0);
   assert.equal(left.widgets.calendar.x-left.widgets.notifications.x,48);assert.equal(left.widgets.controls.x-left.widgets.calendar.x,48);
   assert.equal(left.widgets.notifications.width,44);assert.equal(left.contentExtent,left.bodyExtent);
   assert.ok(left.widgets.apps.height>left.widgets.clock.height*3,'Apps uses the remaining panel space');
@@ -206,6 +215,7 @@ for(const mode of ['expanded','compact']) {
   assert.ok(short.unusedExtent>0);
   if(mode==='compact')assert.equal(short.widgets.apps.height,280,'Compact native Apps honors the same stored preference');
   const noApps=M.updateWidget(state,'apps',{mode:'hidden'}),onlySystem=bounded(noApps,options).panels['panel-left'];
+  assert.equal(onlySystem.widgets.launcher.section,'main');assert.equal(onlySystem.widgets.launcher.y,0,'Overview remains at the top with Apps hidden in '+mode);
   assert.equal(onlySystem.widgets.clock.section,'footer');
   assert.deepEqual(onlySystem.widgets.clock,rect.widgets.clock,'Hiding native Apps preserves the footer in '+mode);
 }
@@ -257,7 +267,7 @@ assert.deepEqual(M.addSpacer(initial,'missing',0),initial);assert.deepEqual(M.re
 let twoSpaces=M.addSpacer(withSpace,'panel-left'),secondId=twoSpaces.panels[0].widgets.at(-1);assert.notEqual(secondId,spaceId);complete(twoSpaces);
 const movedSpace=M.moveWidget(twoSpaces,spaceId,'panel-right',1);assert.equal(movedSpace.panels[1].widgets[1],spaceId);assert.ok(!movedSpace.panels[0].widgets.includes(spaceId));assert.equal(movedSpace.widgets[spaceId].mode,'expanded');complete(movedSpace);
 const movedContent=M.moveWidget(withSpace,'clock','panel-right',0);assert.equal(movedContent.panels[0].widgets[1],spaceId,'A real Spacer stays at its original position when its following content moves');
-let migrated=clone(initial);migrated.schema=4;migrated.panels[0].spaceBefore=['clock','calendar','clock','bogus','files','$end'];migrated.widgets.clock.size=71;
+let migrated=clone(initial);migrated.schema=4;migrated.panels[0].widgets=previousLeftOrder.slice();migrated.panels[0].spaceBefore=['clock','calendar','clock','bogus','files','$end'];migrated.widgets.clock.size=71;
 const legacySpaces=M.normalize(migrated);assert.deepEqual(legacySpaces.panels[0].widgets,['apps','spacer-1','clock','launcher','notifications','spacer-2','calendar','controls','spacer-3']);assert.equal(legacySpaces.widgets.clock.size,71);assert.deepEqual(M.normalize(legacySpaces),legacySpaces);complete(legacySpaces);
 const colliding=clone(withSpace);colliding.panels[0].spaceBefore=['clock'];assert.ok(M.normalize(colliding).panels[0].widgets.includes('spacer-2'),'Migration avoids existing instance IDs');
 const malformedDynamic=M.normalize({panels:[{widgets:['apps','spacer','spacer-0','spacer-1','spacer-1','spacer-99']}],widgets:{'spacer-99':{mode:'expanded',size:17},'spacer-70':{mode:'expanded',size:0}}});complete(malformedDynamic);assert.equal(Object.hasOwn(malformedDynamic.widgets,'spacer-70'),false);assert.equal(malformedDynamic.widgets['spacer-99'].size,17);
@@ -293,14 +303,14 @@ const compactOverflow=bounded(compactLeft,{...options,height:400,compactSizes:{a
 // Optional spacing must yield before a readable widget disappears. This
 // applies both to bare panel gaps and repeated empty Spacer instances.
 const fittingOnlyLeft=M.updatePanel(initial,'panel-right',{mode:'hidden'});
-for(const height of [232,236,240,248]){
+for(const height of [276,280,284,292]){
   const rect=bounded(fittingOnlyLeft,{width:1440,height}).panels['panel-left'];
   assert.equal(rect.widgets.apps.mode,'expanded','Apps stays readable when its content fits without decorative gaps');
   assert.equal(rect.widgets.clock.mode,'expanded','Clock stays readable when optional spacing is the only shortage');
   assert.ok(rect.widgets.apps.height>=140-epsilon);assert.ok(rect.widgets.clock.height>=48-epsilon);
 }
 let zeroSpacePressure=fittingOnlyLeft;for(let i=0;i<12;i++)zeroSpacePressure=M.addSpacer(zeroSpacePressure,'panel-left',1);
-const fitThroughSpaces=bounded(zeroSpacePressure,{width:1440,height:232}).panels['panel-left'];
+const fitThroughSpaces=bounded(zeroSpacePressure,{width:1440,height:276}).panels['panel-left'];
 assert.equal(fitThroughSpaces.widgets.apps.mode,'expanded');assert.equal(fitThroughSpaces.widgets.clock.mode,'expanded');
 for(const id of zeroSpacePressure.panels[0].widgets.filter(M.isSpacer))assert.equal(fitThroughSpaces.widgets[id].extent,0,'Empty Spacers yield before content');
 const compactGapPressure=M.updatePanel(fittingOnlyLeft,'panel-left',{mode:'compact'}),compactGapFit=bounded(compactGapPressure,{width:1440,height:320,compactSizes:{apps:{vertical:144,minSize:144}}}).panels['panel-left'];

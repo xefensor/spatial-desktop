@@ -6,9 +6,9 @@ const {JSDOM,VirtualConsole}=require('jsdom');
 const CSSOM=require('rrweb-cssom');
 const directory=path.resolve(__dirname,'../dist'),html=fs.readFileSync(path.join(directory,'index.html'),'utf8');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function boot(practice=false){
+async function boot(practice=false,chapter=null){
  const errors=[],virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',error=>errors.push(error.message));
- const dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://spatial.test/',virtualConsole}),w=dom.window,d=w.document;
+ const dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://spatial.test/'+(chapter?'?guide=chapter&chapter='+chapter:''),virtualConsole}),w=dom.window,d=w.document;
  w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;
  w.getComputedStyle=element=>new Proxy(element.style,{get(style,key){if(key===Symbol.iterator)return function*(){for(let index=0;index<style.length;index++)yield style.item(index);};if(key==='getPropertyValue')return name=>style.getPropertyValue(name);if(key==='display')return element.hidden?'none':style.display||'block';if(key==='visibility')return style.visibility||'visible';const value=style[key];return typeof value==='function'?value.bind(style):value||'';}});
  // CSSStyleDeclaration iteration is not supplied by every jsdom/cssstyle
@@ -16,7 +16,7 @@ async function boot(practice=false){
  // custom properties copied into native parked-window previews.
  const styleProbe=d.createElement('div');styleProbe.style.setProperty('--computed-style-probe','retained');Object.defineProperty(styleProbe.style,Symbol.iterator,{value:undefined,configurable:true});
  const computedProbe=w.getComputedStyle(styleProbe);assert.deepEqual([...computedProbe],['--computed-style-probe']);assert.equal(computedProbe.getPropertyValue('--computed-style-probe'),'retained');
- if(!practice)w.localStorage.setItem('spatial-guide-v1',JSON.stringify({status:'skipped',index:0,version:9}));
+ if(!practice||chapter)w.localStorage.setItem('spatial-guide-v1',JSON.stringify({status:'skipped',index:0,version:9}));
  w.matchMedia=query=>({matches:query.includes('reduced-motion'),addEventListener(){},removeEventListener(){}});
  w.ResizeObserver=class{observe(){}disconnect(){}};w.IntersectionObserver=class{observe(){}disconnect(){}};
  w.BroadcastChannel=class{postMessage(){}addEventListener(){}close(){}};
@@ -42,6 +42,24 @@ async function boot(practice=false){
    assert(w.SpatialGuide.model.active(),'First-run Guide starts');assert.equal(d.querySelector('#spatialGuide').hidden,false,'Guide opens after panels are ready');
    assert(d.querySelector('[data-panel-action="open-overview"]'),'Overview remains available during practice');
    const realKeys=Object.keys(w.localStorage).filter(key=>key==='spatial-widget-panels-v1');assert.equal(realKeys.length,0,'Guide practice never writes normal panel layout');
+   if(chapter==='projects'){
+    assert.equal(w.SpatialGuide.model.lesson.id,'projects');
+    const dialog=d.querySelector('#projectEditorDialog'),open=async()=>{d.querySelector('[data-create-project]').click();await delay(20);assert.equal(dialog.hidden,false);assert.equal(dialog.inert,false);assert.equal(dialog.parentElement,d.body);};
+    await open();
+    const name=d.querySelector('#projectEditorBody [name="name"]'),root=d.querySelector('#projectEditorBody [name="root"]'),download=d.querySelector('#projectEditorBody [name="downloadToProject"]');
+    assert.equal(d.activeElement,name,'Guide Project dialog receives its own focus');
+    for(const control of [name,root,download,d.querySelector('[data-project-editor-action="close"]')]){
+     const event=new w.MouseEvent('pointerdown',{bubbles:true,cancelable:true});control.dispatchEvent(event);assert.equal(event.defaultPrevented,false,'Guide capture permits '+(control.name||'Cancel'));
+    }
+    name.value='Guide cancelled project';name.dispatchEvent(new w.Event('input',{bubbles:true}));download.click();assert.equal(download.checked,true);
+    d.querySelector('[data-project-editor-action="close"]').click();assert.equal(dialog.inert,true,'Cancel works during the Projects lesson');
+    await open();d.querySelector('#closeProjectEditor').click();assert.equal(dialog.inert,true,'The Project dialog close button works during the Guide');
+    await open();d.querySelector('#projectEditorBody [name="name"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(dialog.inert,true,'Escape closes the Guide Project dialog');
+    await open();d.querySelector('#projectEditorBody [name="name"]').value='Guide pointer check';d.querySelector('#projectEditorBody [name="root"]').value='/home/demo/Projects/guide-pointer-check';d.querySelector('#projectEditorBody [name="downloadToProject"]').click();d.querySelector('#projectEditorBody [type="submit"]').click();await delay(60);
+    assert.equal(dialog.inert,true,'Create project submits during the Guide');
+    assert(vm.runInContext("Object.values(projectSpaces).some(project=>project.name==='Guide pointer check'&&project.downloadToProject)",dom.getInternalVMContext()),'The actual form creates the named Project with its selected option');
+    assert(w.SpatialGuide.model.state.done.includes('project-created'),'Guide observes actual Project creation');
+   }
   }else{
    const body=d.querySelector('.desktop-panel:not([hidden]) .desktop-panel-body'),state=JSON.stringify(P.state());
    body.dispatchEvent(new w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:20,clientY:100}));
@@ -85,4 +103,4 @@ async function boot(practice=false){
   await delay(40);assert.deepEqual(errors,[],'Widget, Workspace and app actions have no script/event errors');
  }finally{w.close();}
 }
-(async()=>{await boot();await boot(true);console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, permanently hidden legacy rack, unique Parked cards and canonical shortcut restoration, app controls, Settings and first-run Guide.');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await boot();await boot(true);await boot(true,'projects');console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, permanently hidden legacy rack, unique Parked cards and canonical shortcut restoration, app controls, Settings, first-run Guide and body-level Guide Project form pointer/Cancel/close/Escape/Create interactions.');})().catch(error=>{console.error(error);process.exitCode=1;});

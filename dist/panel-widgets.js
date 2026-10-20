@@ -37,7 +37,8 @@
     return [item.id, Object.freeze({view: view, vertical: item.id === 'clock' ? 48 : 44, horizontal: item.id === 'clock' ? 80 : 44, minSize: ['apps', 'launcher'].includes(item.id) ? 44 : view === 'icon' ? 28 : 32, grow: item.id === 'apps' ? definitions.apps.grow : 0})];
   })));
 
-  const leftWidgets = ['apps', 'clock', 'launcher', 'notifications', 'calendar', 'controls'];
+  const previousLeftWidgets = ['apps', 'clock', 'launcher', 'notifications', 'calendar', 'controls'];
+  const leftWidgets = ['launcher', 'apps', 'clock', 'notifications', 'calendar', 'controls'];
   const rightWidgets = ['files', 'assistant', 'clipboard', 'focus', 'devices', 'requests', 'project-plans', 'workspace-alerts'];
   const own = function (object, key) { return Object.prototype.hasOwnProperty.call(object, key); };
   const record = function (value) { return value && typeof value === 'object' && !Array.isArray(value); };
@@ -60,7 +61,7 @@
 
   function defaults() {
     return {
-      schema: 5,
+      schema: 6,
       panels: [
         {id: 'panel-left', label: 'Left panel', edge: 'left', size: 224, share: 1, mode: 'expanded', display: 1, widgets: leftWidgets.slice()},
         {id: 'panel-right', label: 'Right panel', edge: 'right', size: 280, share: 1, mode: 'compact', display: 1, widgets: rightWidgets.slice()}
@@ -89,9 +90,20 @@
       };
     }
     const previous = defaults();
-    previous.panels[0].size = 232;
-    const previousDefaults = [4, 5].some(function (version) { previous.schema = version; return equalState(input, previous); });
-    return previousDefaults || equalState(input, legacy(1)) || equalState(input, legacy(2)) || equalState(input, legacy(3)) ? defaults() : input;
+    previous.panels[0].widgets = previousLeftWidgets.slice();
+    const previousDefaults = [4, 5].some(function (version) {
+      previous.schema = version;
+      return [232, 224].some(function (width) { previous.panels[0].size = width; return equalState(input, previous); });
+    });
+    if (previousDefaults || equalState(input, legacy(1)) || equalState(input, legacy(2)) || equalState(input, legacy(3))) return defaults();
+    // Update only an untouched launcher position, retaining unrelated panel and
+    // widget preferences. Deliberately moved, hidden or spaced layouts stay put.
+    const launcher = record(input) && record(input.widgets) && input.widgets.launcher;
+    if (record(input) && [4, 5].includes(input.schema) && Array.isArray(input.panels) && record(launcher) && launcher.mode === 'compact' && launcher.size === 0) {
+      const panel = input.panels.find(function (item) { return record(item) && item.id === 'panel-left' && item.edge === 'left' && equalState(item.widgets, previousLeftWidgets) && !item.spaceBefore?.length; });
+      if (panel) return Object.assign({}, input, {panels: input.panels.map(function (item) { return item === panel ? Object.assign({}, item, {widgets: leftWidgets.slice()}) : item; })});
+    }
+    return input;
   }
 
   function normalize(input) {
@@ -132,11 +144,10 @@
       const preferredSide = leftWidgets.includes(item.id) ? 'left' : 'right';
       const owner = panels.find(function (panel) { return panel.edge === preferredSide; }) || panels[0];
       if (item.id === 'launcher') {
-        // Add the new system entry beside the existing tray without resetting
+        // Add the navigation entry before Apps without resetting
         // saved panel dimensions, widget preferences or Spacer positions.
-        const clock = owner.widgets.indexOf('clock');
-        const tray = owner.widgets.findIndex(function (id, index) { return index > clock && ['notifications', 'calendar', 'controls'].includes(id); });
-        const position = tray >= 0 ? tray : clock >= 0 ? clock + 1 : owner.widgets.length;
+        const apps = owner.widgets.indexOf('apps');
+        const position = apps >= 0 ? apps : 0;
         owner.widgets.splice(position, 0, item.id);
       } else owner.widgets.push(item.id);
     });
@@ -159,7 +170,7 @@
       const widgetMode = mode(raw.mode, item.defaultMode);
       return [id, {mode: id === 'launcher' && widgetMode === 'expanded' ? 'compact' : widgetMode, size: number(raw.size, 0, 0, 20000)}];
     }));
-    return {schema: 5, panels: panels, widgets: widgets};
+    return {schema: 6, panels: panels, widgets: widgets};
   }
 
   function addSpacer(input, panelId, index) {
@@ -243,7 +254,7 @@
   function logicalItems(state, panel) {
     const ids = panel.widgets.filter(function (id) { return state.widgets[id].mode !== 'hidden'; });
     let lastMain = -1;
-    ids.forEach(function (id, index) { if (['apps', 'files', 'assistant'].includes(id)) lastMain = index; });
+    ids.forEach(function (id, index) { if (['apps', 'files', 'assistant'].includes(id) || (index === 0 && id === 'launcher')) lastMain = index; });
     // Keep the user's sequence intact. The trailing system tools form the same
     // footer in both widths; native app/file/Assistant controls stay in main.
     return ids.map(function (id, index) { return {id: id, index: index, definition: definition(id), setting: state.widgets[id], section: index <= lastMain ? 'main' : 'footer'}; });

@@ -1852,7 +1852,9 @@ body[data-theme="light"] .launcher-category.is-active{color:#fff;background:#187
   position:fixed;
   left:0;
   top:0;
-  z-index:10000;
+  /* The Guide raises Project dialogs above its own window. The pointer must
+     stay above those dialogs and the desktop map while remaining hit-transparent. */
+  z-index:20000;
   width:22px;
   height:28px;
   display:none;

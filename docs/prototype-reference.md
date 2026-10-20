@@ -24,7 +24,7 @@ Project ZIP packing gathers the Project folder and linked local resources, dedup
 
 ## Overview and Settings
 
-**Super / F2** opens Overview and search. Its system sections are Windows, Apps, Projects & Files, Timeline and System. App-contributed tabs such as Steam are separated from system sections. **Meta+Tab / F2+Tab** opens the desktop map. Overview is the first icon in the left panel's bottom row.
+**Super / F2** opens Overview and search. Its system sections are Windows, Apps, Projects & Files, Timeline and System. App-contributed tabs such as Steam are separated from system sections. **Meta+Tab / F2+Tab** opens the desktop map. Overview is the first widget at the top of the left panel, above Quick launch.
 
 System groups current desktop requests, Project plans, Workspace content and shared controls. Notification history and other Workspace unread badges retain their scopes. Previews require an explicit action and do not switch Workspace automatically. Do Not Disturb quiets delivery while retaining notifications.
 

@@ -4,7 +4,7 @@ Panels and live widgets are the desktop's canonical interface. The earlier Areas
 
 ## Normal use
 
-The default left panel is 224 pixels wide and contains Apps, a readable Clock and a bottom row with Overview, Notifications, Calendar and System controls. General starts with File Browser, Firefox, Music Player and Note Editor in Quick launch. Files and Assistant start in the compact right panel. Overview is its own icon, separate from Apps. Only an untouched earlier default adopts the new width; custom panel arrangements keep their dimensions and widget preferences.
+The default left panel is 224 pixels wide and starts with Overview above Quick launch, followed by Apps, a readable Clock and bottom tools for Notifications, Calendar and System controls. General starts with File Browser, Firefox, Music Player and Note Editor in Quick launch. Files and Assistant start in the compact right panel. Overview is its own icon, separate from Apps. Only an untouched earlier default adopts the new width. An unchanged former Overview position moves to the top while other panel and widget preferences stay intact; custom widget orders, Spacers and explicitly moved or hidden Overview remain as saved.
 
 Expanded System controls uses a compact two-by-two grid for Wi-Fi, Bluetooth, Sound and theme, followed by network status and the labeled Devices & session and Settings actions. Files keeps New project beside its folder content without an empty reserved region. Creating or managing a Project opens a separate dialog above the panels, with focus returning to the initiating control when it closes.
 

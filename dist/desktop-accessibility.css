@@ -6,6 +6,6 @@ body[data-reading-size]:not([data-reading-size="normal"]) :is(.content-row b,.fo
 body[data-reading-size]:not([data-reading-size="normal"]) :is(.content-row,.settings-row){min-height:calc(38px * var(--reading-scale));height:auto}
 body[data-pointer-style="large"] .material-cursor{width:33px;height:42px}
 body[data-pointer-style="system"] .material-cursor{display:none!important}
-body[data-pointer-style="system"] .desktop-shell,body[data-pointer-style="system"] .desktop-shell *{cursor:revert!important}
+body[data-pointer-style="system"] :is(.desktop-shell,.universal-search,.package-overlay,.project-editor-overlay),body[data-pointer-style="system"] :is(.desktop-shell,.universal-search,.package-overlay,.project-editor-overlay) *{cursor:revert!important}
 body[data-motion="reduced"] *,body[data-motion="reduced"] *::before,body[data-motion="reduced"] *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}

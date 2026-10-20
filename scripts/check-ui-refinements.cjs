@@ -81,6 +81,31 @@ for (const view of ['create-project', 'manage']) for (const overviewOpen of [tru
 }
 console.log('Project dialog checks passed: background isolation and focus return from desktop and Overview.');
 
+// A Guide lesson raises Create project above the Guide window. Its overlay
+// hides the native pointer, so the Material pointer must remain above it.
+{
+  const {JSDOM}=require('jsdom'),CSSOM=require('rrweb-cssom');
+  const pointerDom=new JSDOM('<!doctype html><html data-guide-level="projects"><body><section class="project-editor-overlay is-open" id="projectEditorDialog"><input aria-label="Project name"></section><div class="desktop-map-overlay"></div><div class="material-cursor" id="materialCursor"><svg><path></path></svg></div></body></html>');
+  const doc=pointerDom.window.document,style=doc.createElement('style');
+  const selectors=new Set(['.material-cursor','.project-editor-overlay','html[data-guide-level] #projectEditorDialog','.desktop-map-overlay']);
+  style.textContent=['desktop-shell.css','spatial-guide.css','desktop-map.css'].flatMap(filename=>[...CSSOM.parse(fs.readFileSync(path.join(__dirname,'../dist',filename),'utf8')).cssRules].filter(rule=>selectors.has(rule.selectorText)).map(rule=>rule.cssText)).join('\n');
+  doc.head.append(style);
+  const computed=element=>pointerDom.window.getComputedStyle(element),cursor=doc.querySelector('#materialCursor');
+  for(const overlay of doc.querySelectorAll('#projectEditorDialog,.desktop-map-overlay'))assert(Number(computed(cursor).zIndex)>Number(computed(overlay).zIndex),'Pointer remains visible above '+overlay.className);
+  assert.equal(computed(cursor).pointerEvents,'none','The visible pointer never intercepts project controls');
+  // Apply the fine-pointer rules explicitly; jsdom does not evaluate media
+  // queries. System-pointer mode must undo their native-pointer suppression
+  // even when the modal is a body sibling of the desktop.
+  const finePointerRules=[...CSSOM.parse(fs.readFileSync(path.join(__dirname,'../dist/desktop-shell.css'),'utf8')).cssRules].filter(rule=>rule.media?.mediaText==='(pointer:fine)').flatMap(rule=>[...rule.cssRules]);
+  style.textContent+='\n'+finePointerRules.map(rule=>rule.cssText).join('\n')+'\n'+fs.readFileSync(path.join(__dirname,'../dist/desktop-accessibility.css'),'utf8');
+  assert.equal(computed(doc.querySelector('input')).cursor,'none');
+  doc.body.dataset.pointerStyle='system';
+  assert.equal(computed(cursor).display,'none');
+  assert.notEqual(computed(doc.querySelector('input')).cursor,'none','System pointer remains available inside the body-level Project dialog');
+  pointerDom.window.close();
+}
+console.log('Modal pointer checks passed: the hit-transparent cursor remains above Guide Project dialogs and the desktop map, and System pointer mode works inside body-level modals.');
+
 // Material inheritance must match desktop utility surfaces even when a saved
 // or newly inserted node still carries an obsolete ABS class.
 const materialCtx = vm.createContext({});

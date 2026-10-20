@@ -96,13 +96,14 @@ const Panels = require('../dist/panel-widgets.js');
 const defaultPanels = Panels.defaults(), savedDefaultPanels = copy(defaultPanels);
 assert.equal(defaultPanels.panels[0].mode,'expanded');
 assert.equal(defaultPanels.panels[1].mode,'compact');
-assert.deepEqual(defaultPanels.panels[0].widgets,['apps','clock','launcher','notifications','calendar','controls']);
+assert.deepEqual(defaultPanels.panels[0].widgets,['launcher','apps','clock','notifications','calendar','controls']);
 assert.deepEqual(defaultPanels.panels[1].widgets.slice(0,2),['files','assistant']);
 const defaultComposition=Panels.layout(defaultPanels,{width:1440,height:900,display:1,displays:1});
 const leftComposition=defaultComposition.panels['panel-left'];
 assert.equal(leftComposition.widgets.apps.mode,'expanded','Apps has the main expanded view');
 assert.equal(leftComposition.widgets.clock.mode,'expanded','The current time remains readable');
-for(const id of ['launcher','notifications','calendar','controls'])assert.equal(leftComposition.widgets[id].mode,'compact',id+' starts as a tray icon');
+for(const id of ['launcher','notifications','calendar','controls'])assert.equal(leftComposition.widgets[id].mode,'compact',id+' starts as an icon');
+assert.equal(leftComposition.widgets.launcher.y,0,'Overview starts above Quick launch');
 assert.equal(leftComposition.widgets.controls.y+leftComposition.widgets.controls.height,leftComposition.height,'The system row finishes at the panel bottom');
 assert(leftComposition.widgets.apps.y+leftComposition.widgets.apps.height<leftComposition.widgets.clock.y,'Apps and the bottom controls have separate allocations');
 for(const [width,height] of [[1440,900],[920,700],[700,500]])for(const mode of ['expanded','compact']){
