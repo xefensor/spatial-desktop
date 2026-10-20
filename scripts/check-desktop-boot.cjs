@@ -10,7 +10,12 @@ async function boot(practice=false){
  const errors=[],virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',error=>errors.push(error.message));
  const dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://spatial.test/',virtualConsole}),w=dom.window,d=w.document;
  w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;
- w.getComputedStyle=element=>new Proxy(element.style,{get(style,key){if(key==='getPropertyValue')return name=>style.getPropertyValue(name);if(key==='display')return element.hidden?'none':style.display||'block';if(key==='visibility')return style.visibility||'visible';const value=style[key];return typeof value==='function'?value.bind(style):value||'';}});
+ w.getComputedStyle=element=>new Proxy(element.style,{get(style,key){if(key===Symbol.iterator)return function*(){for(let index=0;index<style.length;index++)yield style.item(index);};if(key==='getPropertyValue')return name=>style.getPropertyValue(name);if(key==='display')return element.hidden?'none':style.display||'block';if(key==='visibility')return style.visibility||'visible';const value=style[key];return typeof value==='function'?value.bind(style):value||'';}});
+ // CSSStyleDeclaration iteration is not supplied by every jsdom/cssstyle
+ // combination. Browser computed styles enumerate property names, including
+ // custom properties copied into native parked-window previews.
+ const styleProbe=d.createElement('div');styleProbe.style.setProperty('--computed-style-probe','retained');Object.defineProperty(styleProbe.style,Symbol.iterator,{value:undefined,configurable:true});
+ const computedProbe=w.getComputedStyle(styleProbe);assert.deepEqual([...computedProbe],['--computed-style-probe']);assert.equal(computedProbe.getPropertyValue('--computed-style-probe'),'retained');
  if(!practice)w.localStorage.setItem('spatial-guide-v1',JSON.stringify({status:'skipped',index:0,version:9}));
  w.matchMedia=query=>({matches:query.includes('reduced-motion'),addEventListener(){},removeEventListener(){}});
  w.ResizeObserver=class{observe(){}disconnect(){}};w.IntersectionObserver=class{observe(){}disconnect(){}};
