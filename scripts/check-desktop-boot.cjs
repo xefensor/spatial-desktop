@@ -44,7 +44,16 @@ async function boot(practice=false,chapter=null){
    const realKeys=Object.keys(w.localStorage).filter(key=>key==='spatial-widget-panels-v1');assert.equal(realKeys.length,0,'Guide practice never writes normal panel layout');
    if(chapter==='projects'){
     assert.equal(w.SpatialGuide.model.lesson.id,'projects');
-    const dialog=d.querySelector('#projectEditorDialog'),open=async()=>{d.querySelector('[data-create-project]').click();await delay(20);assert.equal(dialog.hidden,false);assert.equal(dialog.inert,false);assert.equal(dialog.parentElement,d.body);};
+    const settled=(ready,message)=>new Promise((resolve,reject)=>{
+     const observer=new w.MutationObserver(check),deadline=setTimeout(()=>{observer.disconnect();reject(new Error(message));},5000);
+     function check(){if(ready()){observer.disconnect();clearTimeout(deadline);resolve();}}
+     observer.observe(d.body,{subtree:true,attributes:true,childList:true,characterData:true});check();
+    });
+    const dialog=d.querySelector('#projectEditorDialog'),open=async()=>{
+     d.querySelector('[data-create-project]').click();
+     await settled(()=>!dialog.hidden&&!dialog.inert&&dialog.classList.contains('is-open')&&d.activeElement===dialog.querySelector('[name="name"]'),'Project dialog did not open and focus its name field');
+     assert.equal(dialog.parentElement,d.body);
+    },closed=()=>settled(()=>dialog.hidden&&dialog.inert,'Project dialog did not finish closing');
     await open();
     const name=d.querySelector('#projectEditorBody [name="name"]'),root=d.querySelector('#projectEditorBody [name="root"]'),download=d.querySelector('#projectEditorBody [name="downloadToProject"]');
     assert.equal(d.activeElement,name,'Guide Project dialog receives its own focus');
@@ -52,10 +61,10 @@ async function boot(practice=false,chapter=null){
      const event=new w.MouseEvent('pointerdown',{bubbles:true,cancelable:true});control.dispatchEvent(event);assert.equal(event.defaultPrevented,false,'Guide capture permits '+(control.name||'Cancel'));
     }
     name.value='Guide cancelled project';name.dispatchEvent(new w.Event('input',{bubbles:true}));download.click();assert.equal(download.checked,true);
-    d.querySelector('[data-project-editor-action="close"]').click();assert.equal(dialog.inert,true,'Cancel works during the Projects lesson');
-    await open();d.querySelector('#closeProjectEditor').click();assert.equal(dialog.inert,true,'The Project dialog close button works during the Guide');
-    await open();d.querySelector('#projectEditorBody [name="name"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(dialog.inert,true,'Escape closes the Guide Project dialog');
-    await open();d.querySelector('#projectEditorBody [name="name"]').value='Guide pointer check';d.querySelector('#projectEditorBody [name="root"]').value='/home/demo/Projects/guide-pointer-check';d.querySelector('#projectEditorBody [name="downloadToProject"]').click();d.querySelector('#projectEditorBody [type="submit"]').click();await delay(60);
+    d.querySelector('[data-project-editor-action="close"]').click();assert.equal(dialog.inert,true,'Cancel works during the Projects lesson');await closed();
+    await open();d.querySelector('#closeProjectEditor').click();assert.equal(dialog.inert,true,'The Project dialog close button works during the Guide');await closed();
+    await open();d.querySelector('#projectEditorBody [name="name"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(dialog.inert,true,'Escape closes the Guide Project dialog');await closed();
+    await open();d.querySelector('#projectEditorBody [name="name"]').value='Guide pointer check';d.querySelector('#projectEditorBody [name="root"]').value='/home/demo/Projects/guide-pointer-check';d.querySelector('#projectEditorBody [name="downloadToProject"]').click();d.querySelector('#projectEditorBody [type="submit"]').click();await settled(()=>dialog.inert&&w.SpatialGuide.model.state.done.includes('project-created'),'Guide did not observe Project creation');
     assert.equal(dialog.inert,true,'Create project submits during the Guide');
     assert(vm.runInContext("Object.values(projectSpaces).some(project=>project.name==='Guide pointer check'&&project.downloadToProject)",dom.getInternalVMContext()),'The actual form creates the named Project with its selected option');
     assert(w.SpatialGuide.model.state.done.includes('project-created'),'Guide observes actual Project creation');

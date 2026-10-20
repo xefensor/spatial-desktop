@@ -39,9 +39,9 @@ const classes=new Set(['is-inline']),attributes={};let parent,focused=false,retu
 const dialog={hidden:true,inert:true,classList:{add:v=>classes.add(v),remove:v=>classes.delete(v),contains:v=>classes.has(v),toggle:(v,on)=>on?classes.add(v):classes.delete(v)},setAttribute:(key,value)=>{attributes[key]=value;}};
 const area={classList:{add(){},remove(){}},append:()=>{throw Error('Project editor must not consume folder height');}};
 const shell={inert:false},overview={inert:true,classList:{contains:()=>false}},frames=[];
-const editor=vm.createContext({projectEditorState:null,activeProjectName:null,document:{activeElement:{focus(){returned=true;}},body:{append:node=>{assert.equal(node,dialog,'The same live editor node is moved');parent='body';},classList:{add(){},remove(){}}}},
+const editor=vm.createContext({projectEditorState:null,projectEditorCloseTimer:null,activeProjectName:null,document:{activeElement:{focus(){returned=true;}},body:{append:node=>{assert.equal(node,dialog,'The same live editor node is moved');parent='body';},classList:{add(){},remove(){}}}},
  $:selector=>selector==='#projectEditorDialog'?dialog:selector==='.desktop-shell'?shell:selector==='#universalSearch'?overview:{focus:()=>{focused=true;}},
- areaFor:()=>area,renderProjectEditor(){},requestAnimationFrame:cb=>frames.push(cb),setTimeout:cb=>cb()
+ areaFor:()=>area,renderProjectEditor(){},requestAnimationFrame:cb=>frames.push(cb),setTimeout:cb=>cb(),clearTimeout(){}
 });
 vm.runInContext(source.slice(source.indexOf('function openProjectEditor('),source.indexOf('function prepareProjectEditor(')),editor);
 for(const view of ['create-project','manage']){

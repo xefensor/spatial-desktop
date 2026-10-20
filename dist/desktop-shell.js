@@ -2305,6 +2305,7 @@ function restoreWorkspaceProject(workspaceName) {
 }
 const projectWindowSessions = {};
 let projectEditorState = null;
+let projectEditorCloseTimer = null;
 
 function validProject(project) {
   return project && typeof project.name === "string" && project.name.trim() && project.modes && typeof project.modes === "object" && Object.keys(project.modes).length;
@@ -2942,7 +2943,11 @@ function renderProjectEditor() {
 
 function openProjectEditor(view, options = {}) {
   const dialog = $("#projectEditorDialog");
-  projectEditorState = {
+  if (projectEditorCloseTimer !== null) {
+    clearTimeout(projectEditorCloseTimer);
+    projectEditorCloseTimer = null;
+  }
+  const editor = projectEditorState = {
     view,
     projectName: options.projectName || activeProjectName || null,
     modeId: options.modeId || null,
@@ -2963,7 +2968,7 @@ function openProjectEditor(view, options = {}) {
   $('#universalSearch').inert = true;
   document.body.classList.add('project-editor-open');
   requestAnimationFrame(() => {
-    if (dialog.hidden || dialog.inert) return;
+    if (projectEditorState !== editor || dialog.hidden || dialog.inert) return;
     dialog.classList.add("is-open");
     const preferred = $("input", dialog) || $("button", $("#projectEditorBody"));
     preferred?.focus({ preventScroll: true });
@@ -2983,7 +2988,11 @@ function closeProjectEditor() {
   $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("project-editor-open");
   projectEditorState = null;
-  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 110);
+  if (projectEditorCloseTimer !== null) clearTimeout(projectEditorCloseTimer);
+  projectEditorCloseTimer = setTimeout(() => {
+    projectEditorCloseTimer = null;
+    if (!projectEditorState && !dialog.classList.contains("is-open")) dialog.hidden = true;
+  }, 110);
   returnFocus?.focus?.({ preventScroll: true });
 }
 

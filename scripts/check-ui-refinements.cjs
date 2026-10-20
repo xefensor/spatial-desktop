@@ -65,8 +65,8 @@ for (const view of ['create-project', 'manage']) for (const overviewOpen of [tru
     // Compatibility lookup resolves to the native Files source, not an Area shell.
     areaFor:()=>({classList:{remove(){}}}),
     document: { activeElement: returnFocus, body: { append(){}, classList: { add() {}, remove() {} } } },
-    activeProjectName: 'custom', projectEditorState: null, renderProjectEditor() {},
-    requestAnimationFrame: callback => callback(), setTimeout: callback => callback()
+    activeProjectName: 'custom', projectEditorState: null, projectEditorCloseTimer: null, renderProjectEditor() {},
+    requestAnimationFrame: callback => callback(), setTimeout: callback => callback(), clearTimeout() {}
   });
   vm.runInContext(source.slice(source.indexOf('function openProjectEditor('), source.indexOf('function prepareProjectEditor(')), ctx);
   ctx.openProjectEditor(view);
@@ -80,6 +80,24 @@ for (const view of ['create-project', 'manage']) for (const overviewOpen of [tru
   assert.equal(focusReturned, true);
 }
 console.log('Project dialog checks passed: background isolation and focus return from desktop and Overview.');
+
+// A previous close can finish after another opening starts, before its frame
+// paints. Neither that timer nor the old opening's frame owns the new editor.
+{
+  const {JSDOM}=require('jsdom'),dom=new JSDOM('<main class="desktop-shell"></main><section id="universalSearch"></section><section id="projectEditorDialog" hidden><div id="projectEditorBody"><input></div></section>');
+  const d=dom.window.document,dialog=d.querySelector('#projectEditorDialog'),frames=[],timers=new Map(),cancelled=[];
+  let nextTimer=0,focusCalls=0;d.querySelector('input').focus=()=>{focusCalls++;};
+  const ctx=vm.createContext({$: (selector,root=d)=>root.querySelector(selector),document:d,areaFor:()=>({classList:{remove(){}}}),activeProjectName:null,projectEditorState:null,projectEditorCloseTimer:null,renderProjectEditor(){},requestAnimationFrame:callback=>frames.push(callback),setTimeout:callback=>{const id=++nextTimer;timers.set(id,callback);return id;},clearTimeout:id=>cancelled.push(id)});
+  vm.runInContext(source.slice(source.indexOf('function openProjectEditor('),source.indexOf('function prepareProjectEditor(')),ctx);
+  ctx.openProjectEditor('create-project');ctx.closeProjectEditor();const oldClose=timers.get(1);
+  ctx.openProjectEditor('create-project');assert(cancelled.includes(1),'Reopening cancels the previous close timer');
+  oldClose();assert.equal(dialog.hidden,false,'A stale close callback cannot hide the newly opening dialog');
+  frames.shift()();assert.equal(dialog.classList.contains('is-open'),false,'An old opening frame cannot reveal the new editor');assert.equal(focusCalls,0);
+  frames.shift()();assert.equal(dialog.classList.contains('is-open'),true);assert.equal(dialog.inert,false);assert.equal(focusCalls,1,'Only the current editor receives focus');
+  ctx.closeProjectEditor();timers.get(2)();assert.equal(dialog.hidden,true,'The current close still hides the dialog');
+  dom.window.close();
+}
+console.log('Project reopen checks passed: stale close timers and opening frames cannot hide or focus a newer editor.');
 
 // A Guide lesson raises Create project above the Guide window. Its overlay
 // hides the native pointer, so the Material pointer must remain above it.
