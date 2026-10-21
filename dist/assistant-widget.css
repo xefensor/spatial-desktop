@@ -128,7 +128,8 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .assistant-widget .ai-voice-toolbar button:disabled{opacity:.45;cursor:default}
 .ai-voice-options{flex:1;min-width:90px;font-size:11px}
 .ai-voice-options>summary{cursor:pointer;padding:6px 0;color:var(--muted);width:max-content;max-width:100%}
-.ai-voice-settings{max-height:190px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:8px 0 5px;border-block:1px solid var(--sd-glass-groove);margin-top:3px;line-height:1.5}
+.ai-composer:has(.ai-voice-options){position:relative}
+.ai-voice-settings{position:absolute;z-index:5;inset-inline:0;bottom:calc(100% + 6px);box-sizing:border-box;max-height:min(300px,max(90px,calc(100cqh - 200px)));overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:12px;border:1px solid var(--sd-glass-edge);background:var(--shell);box-shadow:0 8px 24px #0003;line-height:1.5}
 .ai-voice-settings>label:first-child{display:block;margin-bottom:4px;color:var(--muted)}
 .assistant-widget .ai-voice-settings>select{box-sizing:border-box;max-width:100%;width:100%;font:inherit;font-size:12px;padding:6px;background:var(--sd-glass-face-deep);border:1px solid var(--sd-glass-groove);color:var(--text)}
 .ai-voice-settings option{background:var(--shell);color:var(--text)}
@@ -137,8 +138,5 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .ai-voice-settings .ai-permission>span{font-size:11px}
 .ai-composer .ai-voice-status{padding-left:7px;border-left:2px solid var(--workspace-accent,var(--blue));color:var(--text)}
 .ai-composer .ai-voice-transcript{font-style:italic;overflow-wrap:anywhere;max-height:4.5em;overflow:auto}
-.ai-voice-toolbar:has(.ai-voice-options[open]){align-items:flex-start}
-.ai-voice-options[open]{flex-basis:calc(100% - 76px)}
-.ai-voice-toolbar:has(.ai-voice-options[open])>.ai-voice-stop{margin-left:auto}
 
 .assistant-widget .ai-voice-settings>.ai-voice-install{font:inherit;font-size:11px;min-height:28px;padding:5px 8px;margin:0 0 7px}
