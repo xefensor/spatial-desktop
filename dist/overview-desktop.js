@@ -13,7 +13,7 @@
   const plannerKey='spatial-workspace-planner-v1',planner=SpatialTimeline.createPlanner(read(plannerKey));
   const sessionNotesKey='spatial-timeline-session-notes-v1',sessionNotes=SpatialTimeline.createSessionNotes(read(sessionNotesKey)),groupingKey='spatial-timeline-grouping-v1';
   const expandedSessions=new Set();let groupActivity=read(groupingKey).mode!=='events';
-  let preferred=preferences(),active='windows',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
+  let preferred=preferences(),active='windows',panelOrder='',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
   function allowed(){return [...SpatialTimeline.sections,...[...providers].filter(([,provider])=>provider.available()).map(([id])=>id)].filter(id=>!globalThis.SpatialGuide?.model.active()||['windows','apps'].includes(id)||SpatialGuide.model.allows(({projects:'projects',timeline:'timeline',system:'overview-system'})[id]||'all'));}
@@ -50,7 +50,17 @@
   }
   // Rotate existing panels, never clone their interactive controls or IDs.
   function keepNeighbours(panel){
-    const nodes=[...track.children].filter(node=>allowed().includes(node.dataset.overviewPanel)),index=nodes.indexOf(panel);
+    const visible=allowed(),order=JSON.stringify(visible);
+    if(order!==panelOrder){
+      // A hidden provider can sit between rotated built-in panels. Restore
+      // the logical cycle without moving the focused panel's controls.
+      const current=visible.includes(active)?panels.get(active):panel,index=visible.indexOf(current.dataset.overviewPanel),before=current.offsetLeft,position=track.scrollLeft;
+      if(visible.length>1)track.insertBefore(panels.get(visible[(index+visible.length-1)%visible.length]),current);
+      for(let offset=1;offset<visible.length-1;offset++)track.append(panels.get(visible[(index+offset)%visible.length]));
+      panelOrder=order;
+      track.scrollTo({left:position+current.offsetLeft-before,behavior:'instant'});
+    }
+    const nodes=[...track.children].filter(node=>visible.includes(node.dataset.overviewPanel)),index=nodes.indexOf(panel);
     if(nodes.length<3||index>0&&index<nodes.length-1)return;
     const current=panels.get(active),before=current.offsetLeft,position=track.scrollLeft;
     if(index===0)track.prepend(nodes.at(-1));else track.append(nodes[0]);
@@ -106,7 +116,7 @@
       let id=preferred[activeWorkspace]||'windows';
       if(globalThis.SpatialGuide?.model.active()){const lesson=SpatialGuide.model.lesson.id;id=['folders','return'].includes(lesson)?'projects':['timeline','timeline-task'].includes(lesson)&&SpatialGuide.model.state.done.includes('timeline-activity')||lesson==='timeline-task'?'timeline':active;if(!allowed().includes(id))id='windows';}
       if(!allowed().includes(id))id='windows';
-      if(!scrolling||id!==active)select(id,false);
+      if(!scrolling||id!==active||panelOrder!==JSON.stringify(allowed()))select(id,false);
     });
   }
   function step(direction){const id=SpatialTimeline.neighbour(active,direction,allowed());if(id&&id!==active)select(id);}

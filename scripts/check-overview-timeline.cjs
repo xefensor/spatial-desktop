@@ -83,10 +83,11 @@ const nodes=new Map(),make=(key)=>{
   nodes.set(key,n);return n;
 };
 const panelNodes=T.sections.map(id=>{const n=make(id);n.dataset.overviewPanel=id;n.offsetWidth=800;return n;});
-let scrollWrites=0,resizeCallback;
+let scrollWrites=0,resizeCallback;const panelMoves=[];
 const track=make('#overviewSectionTrack');Object.assign(track,{clientWidth:1000,scrollLeft:0,children:[...panelNodes],
-  prepend(n){this.children=this.children.filter(x=>x!==n);this.children.unshift(n);},
-  append(n){this.children=this.children.filter(x=>x!==n);this.children.push(n);},scrollTo({left}){scrollWrites++;this.scrollLeft=left;}});
+  prepend(n){panelMoves.push(n);this.children=this.children.filter(x=>x!==n);this.children.unshift(n);},
+  append(n){panelMoves.push(n);this.children=this.children.filter(x=>x!==n);this.children.push(n);},
+  insertBefore(n,before){panelMoves.push(n);this.children=this.children.filter(x=>x!==n);this.children.splice(this.children.indexOf(before),0,n);},scrollTo({left}){scrollWrites++;this.scrollLeft=left;}});
 panelNodes.forEach(n=>Object.defineProperty(n,'offsetLeft',{get:()=>100+track.children.indexOf(n)*824}));
 const tabs=T.sections.map(id=>{const n=make('tab:'+id);n.dataset.overviewSection=id;return n;});
 const dayButtons=[-1,1].map(direction=>{const n=make('day:'+direction);n.dataset.timelineDayStep=String(direction);return n;});
@@ -345,6 +346,28 @@ assert.equal(contributed.registerSection('apps',{available:()=>true}),false,'An 
 assert.equal(contributed.registerSection('absent',{available:()=>true}),false,'An absent panel cannot be registered');
 contributed.registerSection('steam',{label:'Steam',available:()=>context.activeWorkspace==='gaming'&&context.steamOpen!==false});
 contributed.select('steam',false);assert.equal(contributed.active(),'windows');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden);
+// Start from markup order and rotate while Steam is hidden, then make it
+// available. Its retained DOM position must not split Timeline from System.
+track.children=[...panelNodes];contributed.select('windows',false);contributed.select('timeline',false);
+const physicalCycle=()=>{
+  const visible=track.children.filter(node=>!node.hidden).map(node=>node.dataset.overviewPanel),start=visible.indexOf('windows');
+  return [...visible.slice(start),...visible.slice(0,start)];
+};
+context.activeWorkspace='gaming';contributed.refresh();contributed.select('timeline',false);
+assert.deepEqual(physicalCycle(),[...T.sections,'steam'],'Opening Steam preserves the same canonical cycle as the section tabs');
+const physicalNeighbour=direction=>{
+  const visible=track.children.filter(node=>!node.hidden),index=visible.findIndex(node=>node.dataset.overviewPanel===contributed.active());
+  return visible[(index+direction+visible.length)%visible.length].dataset.overviewPanel;
+};
+assert.equal(physicalNeighbour(1),'system','Timeline previews System before Steam');assert.equal(edges[1].attrs['aria-label'],'Next section: System');
+contributed.step(1);assert.equal(contributed.active(),'system');assert.equal(physicalNeighbour(1),'steam');
+contributed.select('timeline',true);const beforeAvailabilityMoves=panelMoves.length;context.steamOpen=false;contributed.refresh();
+assert.equal(contributed.active(),'timeline','Removing a provider during a snap retains the selected built-in section');
+assert.deepEqual(physicalCycle(),T.sections,'Closing Steam restores the five-section cycle');
+context.steamOpen=true;contributed.refresh();assert.equal(contributed.active(),'timeline');
+assert.deepEqual(physicalCycle(),[...T.sections,'steam'],'Reopening Steam during a snap restores its canonical position');
+assert(!panelMoves.slice(beforeAvailabilityMoves).includes(make('timeline')),'Changing provider availability never reparents the focused Timeline panel');
+assert.equal(new Set(track.children).size,6,'Availability changes move existing panels without duplicating controls');
 context.activeWorkspace='gaming';contributed.refresh();contributed.select('steam',false);assert.equal(contributed.active(),'steam');assert(!steamPanel.hidden&&!steamTab.hidden&&!providerGroup.hidden);assert.equal(steamPanel.inert,false);
 contributed.step(1);assert.equal(contributed.active(),'windows','The contributed section wraps back to the first built-in section');contributed.step(-1);assert.equal(contributed.active(),'steam');assert.equal(track.children.length,6,'The provider joins five built-in panels without cloning controls');
 context.steamOpen=false;contributed.refresh();assert.equal(contributed.active(),'windows');assert(steamPanel.hidden&&steamTab.hidden&&providerGroup.hidden,'Closing the provider removes it from navigation and layout');
