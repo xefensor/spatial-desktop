@@ -64,6 +64,17 @@ The composer has a microphone button and **Voice options**. **Manual** dictation
 
 **Examples** below the message field lists supported requests, with **Desktop tasks** for guided file workflows and **Sample conversation** for the illustrative exchange.
 
+## Planned Assistant interaction: voice and shared material
+
+Requested interaction requirement; this section describes intended behavior, not functionality already implemented in the browser demo.
+
+- Keep text entry, paste, Send and attachment controls usable throughout an active voice conversation. Users can send text, code, screenshots and other supported files without ending the voice session.
+- Put spoken messages and explicitly submitted material in the same Workspace/Project conversation. Assistant can use a submitted example together with the user's spoken explanation in the ongoing task.
+- Treat microphone listening, reply playback and composer input as independent controls. Typing, pasting or sending material must not require stopping or restarting the voice session.
+- Preserve unsent drafts and pending attachments. Voice recognition must not overwrite them or automatically submit typed material; typed content is submitted only through an explicit Send action. The existing automatic-mode draft guard describes the current demo, not a restriction of this intended interaction.
+- Support staged input: when the user says to wait for more material, keep the conversation open and wait for an explicit instruction to proceed with the dependent task.
+- Keep existing context boundaries: switching Workspace or Project must not transfer an unfinished utterance, draft or attachment to the new conversation.
+
 ## Development and checks
 
 The buildless site lives in `dist/`. Install the pinned development-only dependency with `npm ci`, then run the README's syntax and regression commands. DOM checks cover real widget actions, ownership, cancellation, popup bounds, live node identity and Guide targets. Model stress cases cover small viewports, displays, icon packing and saved layouts. Refresh content hashes with `node scripts/refresh-site-assets.cjs` before publication.
