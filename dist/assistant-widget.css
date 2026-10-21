@@ -102,3 +102,15 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .ai-live-task-steps ol{margin:3px 0 0;padding-left:18px}.ai-live-task-steps li{margin:0 0 8px;padding-left:2px}.ai-live-task-steps li>b{font-weight:500;color:var(--text)}.ai-live-task-steps li>span{display:block;overflow-wrap:anywhere;margin-top:2px}
 .ai-live-task[data-stage="complete"],.ai-live-task[data-stage="review"]{border-left-color:var(--sd-glass-groove);margin-top:0}
 .ai-live-task [hidden],.ai-live-task[hidden]{display:none!important}
+
+/* Access is explicit and independent for the current Workspace / Project. */
+.ai-permissions{flex:none;min-width:0;font-size:11px;line-height:1.4;border-bottom:1px solid var(--sd-glass-groove);padding-bottom:7px}
+.ai-scope-label{display:block;color:var(--muted);overflow-wrap:anywhere;margin-bottom:5px}
+.ai-permission{display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:pointer;min-width:0}
+.ai-permission>input{flex:none;margin:2px 0 0;accent-color:var(--workspace-accent,var(--blue));width:15px;height:15px}
+.ai-permission>span{min-width:0;font-size:12px}.ai-permission small{display:block;color:var(--muted);font-size:10px;margin-top:2px;overflow-wrap:anywhere}
+.ai-permission:has(input:disabled){opacity:.6;cursor:default}
+.ai-automatic-context{font-size:11px;margin-top:3px}.ai-automatic-context>summary{padding:5px 0;cursor:pointer}
+.ai-automatic-context ul{list-style:none;padding:0;margin:0;max-height:130px;overflow:auto;scrollbar-width:thin}
+.ai-automatic-context li{padding:5px 0;border-top:1px solid var(--sd-glass-groove);overflow-wrap:anywhere}.ai-automatic-context li small{display:block;color:var(--muted);font-size:10px}
+.ai-context-limit{color:var(--muted);font-size:10px}

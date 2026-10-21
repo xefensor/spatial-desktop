@@ -195,3 +195,35 @@ assert.equal(legacy.space('gaming',2).assistant.allowed,false,'Explicit revocati
 assert.equal(legacy.space('new',2).assistant.allowed,false,'Legacy setup cannot grant permission to a new Workspace');
 assert.deepEqual(legacy.space('work',2).windows,['legacy-note']);assert.equal(legacy.space('work',2).note,'Retained');assert.equal(legacy.space('work',2).assistant.context.chatId,'legacy-chat');
 const migrated=Displays.create(legacy.snapshot());migrated.connect(pair);assert.deepEqual(migrated.snapshot(),legacy.snapshot(),'Migration is stable across reloads');
+
+// Display control is a separate permission for each setup, Workspace, Project
+// and display. Task state and persistent Side-space content never grant it.
+{
+const scoped=Displays.create();scoped.connect(pair);scoped.setRole(2,'side');
+const setup=Displays.signature(pair),workspaceScope={setup,project:null},siteScope={setup,project:'site'};
+assert.equal(scoped.permission('work',2,workspaceScope).allowed,false);
+scoped.setDisplayControl('work',2,true,workspaceScope);
+assert.equal(scoped.permission('work',2,workspaceScope).allowed,true);
+assert.equal(scoped.permission('work',2,siteScope).allowed,false,'Workspace consent is never inherited into a Project');
+scoped.setDisplayControl('work',2,true,siteScope);
+scoped.setDisplayControl('work',2,false,workspaceScope);
+assert.equal(scoped.permission('work',2,siteScope).allowed,true,'Project consent survives a separate Workspace revocation');
+assert.equal(scoped.permission('work',2,{setup,project:'other'}).allowed,false);
+assert.equal(scoped.permission('gaming',2,siteScope).allowed,false);
+assert.equal(scoped.permission('work',1,siteScope).allowed,false);
+assert.equal(scoped.permission('work',2,{setup:'different-setup',project:'site'}).allowed,false);
+const permissionRevision=scoped.permission('work',2,siteScope).revision;
+scoped.setAssistant('work',2,{status:'paused',control:'user',task:'Keep this original task'});
+assert.equal(scoped.permission('work',2,siteScope).revision,permissionRevision,'Runtime Take over does not edit permission');
+scoped.setDisplayControl('work',2,false,siteScope);scoped.setDisplayControl('work',2,true,siteScope);
+assert.equal(scoped.space('work',2).assistant.control,'user','Granting display control does not clear Take over');
+assert.equal(scoped.space('work',2).assistant.task,'Keep this original task');
+const scopedReload=Displays.create(scoped.snapshot());scopedReload.connect(pair);
+assert.deepEqual(scopedReload.permission('work',2,siteScope),scoped.permission('work',2,siteScope));
+const permissionView=scopedReload.permission('work',2,siteScope);permissionView.allowed=false;
+assert.equal(scopedReload.permission('work',2,siteScope).allowed,true,'Permission views cannot mutate saved consent');
+assert.equal(migrated.permission('work',2,{setup,project:null}).allowed,true,'Old Workspace permission remains in its saved setup');
+assert.equal(migrated.permission('work',2,siteScope).allowed,false,'Old Workspace permission never grants a new Project');
+assert.equal(migrated.permission('work',2,{setup:'new-monitor-setup',project:null}).allowed,false,'Legacy permission cannot grant another monitor setup');
+console.log('Scoped display control passed: setup/Workspace/Project/display isolation, safe legacy migration, runtime independence and persistence.');
+}

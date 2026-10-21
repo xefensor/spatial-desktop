@@ -192,7 +192,7 @@
   // They are recipes, not fabricated completed conversations or file operations.
   const assistantWorkflows = {
     plasma: [
-      {title:"Review the homepage copy", steps:["On Desktop 1, highlight the homepage paragraph in Firefox.","Right-click → Ask Assistant, or hold F2 and press A. Ask for a checklist.","Review the reply, then choose Save to Stash. Its Details keeps the selected input."], prompt:"Make a review checklist from this text."},
+      {title:"Review the homepage copy", steps:["In Website Launch, turn on Use workspace context beside Assistant to include open notes and browser text. You can also highlight a specific homepage paragraph in Firefox.","Send a checklist request with workspace context on, or right-click selected text → Ask Assistant (F2+A).","Review the reply, then choose Save to Stash. Its Details keeps the selected input."], prompt:"Make a review checklist from this text."},
       {title:"Prepare an image for the web", steps:["In Stash, open its folder in File Browser and select Product photo.jpg.","Choose Ask Assistant and send the request below. Review Save in, then choose Convert.","Use Open or Show in folder. Output History is in Details; the original stays in Stash."], prompt:"Convert selected files to WebP in Images/Web"}
     ],
     retold: [
@@ -208,7 +208,7 @@
       {title:"Convert a saved note", steps:["Keep a note in Stash, then open its folder in File Browser and select the Markdown file.","Choose Ask Assistant and request an HTML copy in Documents/Converted.","Review Save in and choose Convert. Open the result or Show in folder."], prompt:"Convert selected files to HTML in Documents/Converted"}
     ],
     work: [
-      {title:"Separate studio planning from project work", steps:["On Desktop 2, select the meeting reminders in Studio planning and choose Ask Assistant.","Ask for a checklist and save the useful result in this Workspace’s Stash.","Switch to Website Launch or Short Film for that Project’s materials. The chat stays in Work; check the input chip before sending another request."], prompt:"Make a checklist from these meeting reminders."}
+      {title:"Separate studio planning from project work", steps:["On Desktop 2, select the meeting reminders in Studio planning and choose Ask Assistant.","Ask for a checklist and save the useful result in this Workspace’s Stash.","Switch to Website Launch or Short Film for that Project’s materials. Assistant opens that Project’s remembered chat; returning to Work restores your planning chat and draft."], prompt:"Make a checklist from these meeting reminders."}
     ],
     school: [
       {title:"Prepare for the seminar", steps:["On Desktop 2, select the reminders in Class planning and choose Ask Assistant.","Ask for a checklist and keep it in the School Workspace’s Stash.","Switch to Urban Ecology for the four-plot observations and Project-specific examples."], prompt:"Make a checklist from these class reminders."}

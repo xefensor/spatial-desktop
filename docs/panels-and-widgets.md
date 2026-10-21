@@ -35,7 +35,7 @@ The Panels menu also offers **Show** for hidden panels. Unavailable reorder dire
 | Overview | Native Overview/search action and current desktop |
 | Apps | Workspace Quick launch and Parked, shared Background apps |
 | Files | Workspace or Project folders, resources and Stash |
-| Assistant | Scoped chats, attachments, working files and display permission |
+| Assistant | Workspace/Project chats, automatic-context and display-control switches, attachments and saved outputs |
 | Clock | Shared time and date |
 | Calendar | Workspace plans and month view |
 | Notifications | Workspace notifications and history |
@@ -52,7 +52,9 @@ System controls use glass in the panel and popup. App content uses opaque ABS. E
 
 Fullscreen temporarily hides panels on a single display. With another connected display, panels move there as whole panels and return after exit. A disconnected display assignment falls back to the available display. Extended workspace and Side space use the same panel implementation.
 
-Assistant's display permission is explicit and belongs to the display and Workspace. Opening or arranging a widget never grants it. Assistant examples remain scripted local demonstrations; native OS control is future work.
+Assistant shows its Workspace and Project beside chat. Each context remembers its last conversation and draft; first entry starts a chat, and returning restores the previous one. Opening another app, switching virtual desktops or changing the widget's appearance keeps that conversation.
+
+**Use workspace context** and **Allow display control** are separate switches beside chat. Both start off in a new context. The first includes readable demo content from open apps and documents in that context when you send, with an automatic-context summary separate from manually attached references. The second grants scripted control only of the selected Side-space display in that Workspace/Project and display setup. Opening or arranging a widget never grants either permission. **Take over** and **Continue** pause and resume a task separately from permission. Changing context interrupts unfinished scripted work and retains its captured inputs and original scope in its chat. Assistant examples remain scripted local demonstrations; native OS control is future work.
 
 ## Development and checks
 

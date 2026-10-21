@@ -373,12 +373,12 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
 {
   const {c,created,fileLocations,notes,listeners}=fixture();const B=c.SpatialDisplayRoleBridge;
   assert.throws(()=>B.runAssistantTask('briefing'),/connected Side space/);
-  B.setRole(2,'side');c.localSlot=2;assert.throws(()=>B.runAssistantTask('briefing'),/Allow Assistant/);assert.throws(()=>B.assistantControl('resume'),/Allow Assistant/);
+  B.setRole(2,'side');c.localSlot=2;assert.throws(()=>B.runAssistantTask('briefing'),/Allow display control/);assert.throws(()=>B.assistantControl('resume'),/Allow display control/);
   B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop={workingFolder:()=>'/Work/Documents'};
   const mainBefore=c.appState.browser;
   let result=B.runAssistantTask('briefing');
   assert.equal(result.status,'done');assert.equal(result.control,'assistant');assert.equal(result.kind,'briefing');
-  assert.deepEqual(clone(result.context),{workspace:'work',setup:'displays:1|2',slot:2,folder:'/Work/Documents'});
+  assert.deepEqual(clone(result.context),{workspace:'work',setup:'displays:1|2',slot:2,folder:'/Work/Documents',project:null});
   assert.deepEqual(created.map(window=>window.kind),['notes','dolphin'],'Briefing opens actual Note Editor and folder windows immediately');
   assert.equal(fileLocations.at(-1).path,'/Work/Documents');assert(notes[created[0].id].text.includes('Editor'));assert(!notes[created[0].id].text.includes('Firefox'),'Briefing only includes windows on the delegated display');
   assert.deepEqual(clone(result.outputs),created.map(window=>window.id));
@@ -454,7 +454,39 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
   B.assistantControl('resume');update('complete',{outputs:[{path:'/Work/Web/photo.webp'}]});assert.equal(B.state().space.assistant.status,'done');
 }
 
-console.log('Display-role integration: native panel bounds and Assistant reveal, saved Side content preservation, stable Side windows, scoped references, Project-independent tiling, Workspace isolation, sync focus, conversion progress and reconnect recovery passed');
+{
+  const {c}=fixture(3),B=c.SpatialDisplayRoleBridge;
+  assert.equal(B.displayControl().available,false,'A normal display cannot receive Assistant control');
+  B.setRole(2,'side');B.setRole(3,'side');
+  const workspace=B.displayControl();assert.equal(workspace.slot,2);assert.equal(workspace.allowed,false);
+  B.setDisplayControl(true,workspace);assert.equal(B.displayControl().allowed,true);
+  c.localSlot=3;assert.equal(B.displayControl().slot,3,'A local Side space is the selected target');assert.equal(B.displayControl().allowed,false);
+  c.localSlot=1;c.desktopPages.go('work',1);
+  assert.equal(B.displayControl().contextKey,workspace.contextKey,'Virtual desktop navigation preserves permission context');
+  c.activeProjectName='other';assert.equal(B.displayControl().project,null,'The actual desktop column defines scope rather than a remembered Project name');
+  c.projectSpaces.site={name:'Website',root:'/Work/Projects/Website'};c.desktopPages.select('work','site');
+  assert.throws(()=>B.setDisplayControl(false,workspace),/Workspace, Project or display changed/,'A stale checkbox cannot revoke another scope');
+  const project=B.displayControl();assert.equal(project.project,'site');assert.equal(project.scopeLabel,'Website Project');assert.equal(project.allowed,false);
+  c.projectSpaces.other={name:'Other',root:'/Work/Projects/Other'};c.localSlot=2;c.contextMenuEntries({kind:'desktop'});c.desktopPages.select('work','other');c.executeContextAction('display-assistant-toggle');
+  assert.equal(B.displayControl().allowed,false,'A stale right-click permission item cannot grant the newly selected Project');c.desktopPages.select('work','site');c.localSlot=1;
+  B.setDisplayControl(true,project);assert.equal(B.displayControl().allowed,true);
+  c.desktopPages.select('work','workspace');assert.equal(B.displayControl().allowed,true,'Returning restores Workspace consent');
+  B.setDisplayControl(false,B.displayControl());c.desktopPages.select('work','site');assert.equal(B.displayControl().allowed,true,'Workspace revocation does not revoke Project consent');
+  const captured=B.displayControl();B.setRole(2,'extended');assert.throws(()=>B.setDisplayControl(false,captured),/connected Side space/,'A changed role invalidates captured consent');
+  B.setRole(2,'side');const setup=B.displayControl();c.roster=c.roster.map(display=>({...display,screenWidth:1920,screenHeight:1080}));
+  assert.throws(()=>B.setDisplayControl(false,setup),/Workspace, Project or display changed/,'A new monitor setup rejects old controls');
+}
+{
+  const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'side');B.setDisplayControl(true,B.displayControl());
+  c.projectSpaces.site={name:'Website',root:'/Work/Projects/Website'};c.desktopPages.select('work','site');B.setDisplayControl(true,B.displayControl());
+  const stale=clone(c.captureDesktopSyncState()),remote=clone(stale),remoteModel=Roles.create(remote.displayRoles);remoteModel.connect(c.roster);
+  remoteModel.setDisplayControl('work',2,false,{setup:B.state().setupKey,project:null});remote.displayRoles=remoteModel.snapshot();
+  c.applyDesktopSyncState(remote);assert.equal(B.displayControl().allowed,true,'A remote Workspace edit cannot change current Project permission');
+  c.desktopPages.select('work','workspace');assert.equal(B.displayControl().allowed,false,'The remote Workspace revocation is retained separately');
+  c.applyDesktopSyncState(stale);assert.equal(B.displayControl().allowed,false,'A stale Project snapshot cannot resurrect another scope permission');
+  c.desktopPages.select('work','site');assert.equal(B.displayControl().allowed,true,'The unrelated Project consent remains intact');
+}
+console.log('Display-role integration: native panel bounds and Assistant reveal, saved Side content preservation, stable Side windows, scoped references, Project-independent tiling, Workspace isolation, sync focus, conversion progress, scoped permission API and reconnect recovery passed');
 
 // Older role-specific sessions migrate using the formerly visible role, even
 // when both historical layouts exist. No pins, notes or chat scope are reset.

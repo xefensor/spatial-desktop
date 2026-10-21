@@ -51,6 +51,9 @@ async function displayChecks(){
   const stalePermissionScope=first.querySelector('[data-display-assistant-allowed]').dataset.displayContext;
   h.state.workspace='Gaming';await h.permission(first,false,2,stalePermissionScope);assert.equal(h.permissions.length,1,'A stale Workspace control cannot change the newly active Workspace');h.state.windowActivity='unrelated';h.api.refresh();
   assert.equal(options.htmlWrites,renders,'Unrelated bridge activity does not replace focused monitor controls');assert.match(first.querySelector('[data-display-permission-scope]').textContent,/Gaming Workspace only/);
+  const staleProjectScope=first.querySelector('[data-display-assistant-allowed]').dataset.displayContext;
+  h.state.project='site';h.state.scopeLabel='Website Project';await h.permission(first,false,2,staleProjectScope);assert.equal(h.permissions.length,1,'A stale Project control cannot edit the new context');h.api.refresh();
+  assert.match(first.querySelector('[data-display-permission-scope]').textContent,/Website Project only/);h.state.project=null;h.state.scopeLabel='Gaming Workspace';h.api.refresh();
   first.events.click[0]({target:{closest:selector=>selector==='[data-display-select]'?{dataset:{displaySelect:'1'}}:null}});
   await h.change(first,'side',2);await h.permission(first,false,2);assert.equal(h.permissions.length,1,'A permission control for another selected monitor cannot grant access');assert.equal(h.writes.length,1,'A control rendered for another selected monitor cannot change this one');
   h.api.mount(first,2);first.hidden=true;await h.change(first,'side');await h.permission(first,false);assert.equal(h.permissions.length,1,'A hidden editor cannot change permission');

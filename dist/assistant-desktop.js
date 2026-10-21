@@ -124,7 +124,7 @@
       chatCheck(workspace,chatId);
       if(!helper)return;
       const current=globalThis.SpatialDisplayRoleBridge?.state?.();
-      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||delegated&&(current.space?.assistant?.allowed!==true||current.space?.assistant?.control==='user'))throw Error('Conversion stopped because display control changed. Allow Assistant to use this display and choose Continue before running it again.');
+      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||current.project!==initial.project||delegated&&(current.space?.assistant?.allowed!==true||current.space?.assistant?.control==='user'))throw Error('Conversion stopped because display control changed. Turn on Allow display control and choose Continue before running it again.');
     };
   }
   function reportAction(workspace,chatId,turnId,action){

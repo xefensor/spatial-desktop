@@ -398,7 +398,7 @@
       if (guide.observeSearch(model,{query:$('#universalSearchInput').value,results:$$('[data-search-open-app],[data-search-launch-app="Spatial Guide"]').map(button=>(button.dataset.searchOpenApp || button.dataset.searchLaunchApp))})) {guide.save();lastSignature = '';}
     }
     if(['project-stash','ai-context','project-app','overview-navigation','timeline','timeline-task'].includes(id)){
-      const history=globalThis.SpatialTimelineDesktop?.snapshot()||{},ai=globalThis.SpatialAIDesktop?.snapshot().sessions?.[activeWorkspace];
+      const history=globalThis.SpatialTimelineDesktop?.snapshot()||{},ai=globalThis.SpatialAIDesktop?.current?.();
       if(guide.observeContext(model,{workspace:activeWorkspace,column,items:globalThis.SpatialMemoryDesktop?.items()||[],expandedStash:$$('#workingMemory details[open][data-memory-id]').map(row=>row.dataset.memoryId),ai,
         activity:history.activity||[],plans:history.plans||[],overview:$('#universalSearch').classList.contains('is-open'),section:globalThis.SpatialOverviewDesktop?.active(),
         filter:$('#timelineType').value,query:$('#timelineQuery').value,day:$('#timelineDay').value,activityDay:model.state.timelineActivity?SpatialTimeline.dayKey(model.state.timelineActivity.time):''})) {guide.save();lastSignature='';}

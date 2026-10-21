@@ -191,23 +191,29 @@ function savedResult(chat,file,sources){
     assert.equal(c.workspaceDownloads.list(source.directory).find(file=>file.name===source.name).content,'# Later source edit\n\n- A different task added after capture.\n','Assistant never rewrites the user\'s later source edit');
   }
   {
-    const {c,B,chats,start,complete}=fixture();
+    const {c,B,chats,start,complete,until,advance}=fixture();
     c.projectSpaces.site={name:'Site',root:'/Work/Projects/Site'};
     c.projectSpaces.other={name:'Other',root:'/Work/Projects/Other'};
     c.openProjectNames=()=>['site','other'];
+    c.desktopPages.select('work','site');
+    assert.equal(B.displayControl().allowed,false,'Workspace consent never grants a Project display control');
+    B.setDisplayControl(true,B.displayControl());
     chats.folder('work','site');
     const task=start('checklist');
-    c.desktopPages.select('work','other');
-    const result=await complete(task,'simple');
-    assert.equal(result.status,'done');assert.equal(chats.session('work').workingProject,'site');
-    assert.equal(chats.workingFolder('work'),'/Work/Projects/Site/Assistant');
-    assert(c.workspaceDownloads.list('/Work/Projects/Site/Assistant').length===2,'The task retains its chat Project despite a main-desktop Project switch');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'a captured Project question');
+    const before=clone(c.workspaceDownloads.snapshot()),originalChat=chats.session('work').id;
+    c.desktopPages.select('work','other');c.updateDesktopPageUi();
+    await until(()=>task.settled,'Project interruption');await task.pending;
+    assert.equal(task.error,null);assert.equal(task.result.activity.stage,'interrupted');
+    assert.equal(B.displayControl().allowed,false,'A second Project starts without display permission');
+    assert.equal(chats.session('work').id,originalChat,'The display bridge never moves the old task into another conversation');
+    assert.deepEqual(clone(c.workspaceDownloads.snapshot()),before,'Context switches cannot publish into the newly selected Project');
     assert.equal(c.workspaceDownloads.list('/Work/Projects/Other/Assistant').length,0);
-    assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,0);
-    assert(c.workspaceDownloads.snapshot().files.every(file=>file.project==='site'));
+    c.desktopPages.select('work','site');c.updateDesktopPageUi();
+    assert.equal(B.displayControl().allowed,true,'Returning to a Project restores only its own permission');
+    assert.equal(B.state().space.assistant.context.project,'site');
     assert.equal(B.state().space.assistant.context.folder,'/Work/Projects/Site/Assistant');
-    const saved=c.workspaceDownloads.snapshot(),reloaded=Home.create(saved);
-    assert.deepEqual(reloaded.list('/Work/Projects/Site/Assistant'),c.workspaceDownloads.list('/Work/Projects/Site/Assistant'),'Assistant results are ordinary persisted folder files');
+    assert.equal(B.state().space.assistant.activity.stage,'interrupted');
   }
   {
     const {c,start,complete,chats,bytes,created}=fixture(),result=await complete(start('image'));
@@ -230,9 +236,9 @@ function savedResult(chat,file,sources){
     assert.equal(B.state().space.assistant.control,'assistant');assert.deepEqual(clone(B.state().space.assistant.activity),review.activity);assert.deepEqual(clone(B.state().space.assistant.context),review.context);
     assert.deepEqual(clone(c.workspaceDownloads.snapshot()),files);assert.deepEqual(clone(chats.session('work')),chat,'Review permission changes never replay the example or duplicate its input');
     // The same restoration must work when permission is changed from Main.
-    const remoteOff=clone(c.captureDesktopSyncState());remoteOff.displayRoles.workspaces.work.displays[2].assistant.allowed=false;remoteOff.displayRoles.workspaces.work.displays[2].assistant.revision++;
+    const remoteOff=clone(c.captureDesktopSyncState());remoteOff.displayRoles.workspaces.work.displays[2].assistant.allowed=false;remoteOff.displayRoles.workspaces.work.displays[2].assistant.revision++;remoteOff.displayRoles.workspaces.work.displays[2].assistant.permissions[JSON.stringify([B.state().setupKey,null])]={allowed:false,revision:remoteOff.displayRoles.workspaces.work.displays[2].assistant.revision};
     c.applyDesktopSyncState(remoteOff);assert.equal(B.state().space.assistant.status,'paused');
-    const remoteOn=clone(c.captureDesktopSyncState());remoteOn.displayRoles.workspaces.work.displays[2].assistant.allowed=true;remoteOn.displayRoles.workspaces.work.displays[2].assistant.revision++;
+    const remoteOn=clone(c.captureDesktopSyncState());remoteOn.displayRoles.workspaces.work.displays[2].assistant.allowed=true;remoteOn.displayRoles.workspaces.work.displays[2].assistant.revision++;remoteOn.displayRoles.workspaces.work.displays[2].assistant.permissions[JSON.stringify([B.state().setupKey,null])]={allowed:true,revision:remoteOn.displayRoles.workspaces.work.displays[2].assistant.revision};
     c.applyDesktopSyncState(remoteOn);assert.equal(B.state().space.assistant.status,'needs-you','Remote regrant also restores the pending review');
     for(const [action,status,stage] of [['complete','done','complete'],['failed','error','error'],['cancelled','idle','stopped']]){
       B.setAssistantAllowed(2,false);
@@ -256,8 +262,8 @@ function savedResult(chat,file,sources){
     assert.deepEqual(off.context,waiting.context);assert.deepEqual(off.activity,waiting.activity,'Permission off retains the exact pending question');
     assert.equal(B.state().role,'side');assert.equal(B.state().displays[1].assistantAllowed,false);
     assert.throws(()=>B.answerAssistantExample('simple',answer),/current question/);
-    assert.throws(()=>B.assistantControl('resume'),/Allow Assistant/);
-    await assert.rejects(complete(start('compare')),/Allow Assistant/);
+    assert.throws(()=>B.assistantControl('resume'),/Allow display control/);
+    await assert.rejects(complete(start('compare')),/Allow display control/);
     for(let i=0;i<4;i++)await advance();
     assert.equal(task.settled,false);assert.deepEqual(clone(c.workspaceDownloads.snapshot()),files);assert.equal(created.length,windows);assert.deepEqual(clone(chats.session('work')),conversation,'Revoking permission cannot edit the conversation or create files');
     B.setAssistantAllowed(2,true);assert.equal(B.state().space.assistant.status,'needs-you');
@@ -285,12 +291,12 @@ function savedResult(chat,file,sources){
     const waiting=clone(B.state().space.assistant),stale=clone(c.captureDesktopSyncState()),revoked=clone(stale);
     // The main display may know only older task metadata. Its newer permission
     // change is accepted without replacing the owner's operation or question.
-    revoked.displayRoles.workspaces.work.displays[2].assistant={allowed:false,revision:waiting.revision+1,status:'idle',activity:null,context:null};
+    revoked.displayRoles.workspaces.work.displays[2].assistant={allowed:false,permissions:{[JSON.stringify([B.state().setupKey,null])]:{allowed:false,revision:waiting.revision+1}},revision:waiting.revision+1,status:'idle',activity:null,context:null};
     c.applyDesktopSyncState(revoked);
     assert.equal(B.state().space.assistant.allowed,false);assert.equal(B.state().space.assistant.status,'paused');assert.deepEqual(clone(B.state().space.assistant.activity),waiting.activity);assert.deepEqual(clone(B.state().space.assistant.context),waiting.context);
     c.applyDesktopSyncState(stale);assert.equal(B.state().space.assistant.allowed,false,'A stale whole-desktop echo cannot restore revoked permission');
     for(let i=0;i<3;i++)await advance();assert.equal(task.settled,false);
-    const resumed=clone(stale);resumed.displayRoles.workspaces.work.displays[2].assistant={allowed:true,revision:B.state().space.assistant.revision+1,status:'idle',activity:null,context:null};
+    const resumed=clone(stale);resumed.displayRoles.workspaces.work.displays[2].assistant={allowed:true,permissions:{[JSON.stringify([B.state().setupKey,null])]:{allowed:true,revision:B.state().space.assistant.revision+1}},revision:B.state().space.assistant.revision+1,status:'idle',activity:null,context:null};
     c.applyDesktopSyncState(resumed);assert.equal(B.state().space.assistant.allowed,true);assert.equal(B.state().space.assistant.status,'needs-you');await complete(task,'simple');
   }
   {
@@ -306,13 +312,14 @@ function savedResult(chat,file,sources){
     B.setAssistantAllowed(2,false);assert.equal(B.stopAssistantExample(),true,'Stop remains an explicit user cancellation even with permission off');
     await complete(task);assert.equal(B.state().space.assistant.allowed,false);assert.equal(B.state().space.assistant.activity.stage,'stopped');assert.equal(B.state().space.assistant.activity.question,null);
   }
-  for(const change of ['chat','workspace','role','setup','stop']){
+  for(const change of ['chat','workspace','project','role','setup','stop']){
     const {c,B,chats,bytes,created,start,until,advance}=fixture(),task=start('checklist');
     await until(()=>Boolean(B.state().space.assistant.activity?.question),'a cancellable question');
     const current=clone(B.state().space.assistant),saved=clone(c.workspaceDownloads.snapshot()),windows=created.length;
     const answer={questionId:current.activity.question.id,operationId:current.context.operationId};
     if(change==='chat')chats.newChat('work');
     if(change==='workspace')c.activeWorkspace='gaming';
+    if(change==='project'){c.projectSpaces.site={name:'Site',root:'/Work/Projects/Site'};c.desktopPages.select('work','site');}
     if(change==='role')B.setRole(2,'extended');
     if(change==='setup')c.roster.push({slot:3,source:'new-display',width:1440,height:900});
     if(change==='stop')B.stopAssistantExample();
@@ -359,13 +366,14 @@ function savedResult(chat,file,sources){
     assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,1,'Continue publishes the same original once');
     assert.equal(bytes.size,1);
   }
-  for(const change of ['chat','workspace','role','setup','stop']){
+  for(const change of ['chat','workspace','project','role','setup','stop']){
     const {c,B,chats,bytes,start,until,complete}=fixture();let release;
     c.fetch=()=>new Promise(resolve=>{release=resolve;});
     const task=start('image');await until(()=>Boolean(release),'image loading');
     const selected=chats.session('work').id,saved=clone(c.workspaceDownloads.snapshot());
     if(change==='chat')chats.newChat('work');
     if(change==='workspace')c.activeWorkspace='gaming';
+    if(change==='project'){c.projectSpaces.site={name:'Site',root:'/Work/Projects/Site'};c.desktopPages.select('work','site');}
     if(change==='role')B.setRole(2,'extended');
     if(change==='setup')c.roster.push({slot:3,source:'new-display',width:1440,height:900});
     if(change==='stop')B.stopAssistantExample();
@@ -444,7 +452,7 @@ function savedResult(chat,file,sources){
   {
     const {c,B,start,complete}=fixture();await complete(start('checklist'),'simple');
     const completed=clone(B.state().space.assistant),stale=clone(c.captureDesktopSyncState()),off=clone(stale);
-    off.displayRoles.workspaces.work.displays[2].assistant.allowed=false;off.displayRoles.workspaces.work.displays[2].assistant.revision=completed.revision+1;
+    off.displayRoles.workspaces.work.displays[2].assistant.allowed=false;off.displayRoles.workspaces.work.displays[2].assistant.revision=completed.revision+1;off.displayRoles.workspaces.work.displays[2].assistant.permissions[JSON.stringify([B.state().setupKey,null])]={allowed:false,revision:completed.revision+1};
     c.applyDesktopSyncState(off);assert.equal(B.state().space.assistant.allowed,false,'A newer remote permission toggle works after completion too');
     assert.equal(B.state().space.assistant.result,completed.result);assert.deepEqual(clone(B.state().space.assistant.outputs),completed.outputs);
     c.applyDesktopSyncState(stale);assert.equal(B.state().space.assistant.allowed,false,'A completed job tombstone also rejects stale permission echoes');
@@ -499,7 +507,7 @@ function savedResult(chat,file,sources){
   {
     const {c,B,start,complete,created}=fixture();
     c.localSlot=1;await assert.rejects(complete(start('checklist')),/connected Side space/);
-    c.localSlot=2;B.setAssistantAllowed(2,false);await assert.rejects(complete(start('checklist')),/Allow Assistant/);
+    c.localSlot=2;B.setAssistantAllowed(2,false);await assert.rejects(complete(start('checklist')),/Allow display control/);
     B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';
     await assert.rejects(complete(start('checklist')),/this Workspace/);
     assert.equal(c.workspaceDownloads.snapshot().files.length,0);assert.equal(created.length,0);

@@ -73,5 +73,29 @@ assert(!model.ready(), 'A window left on another desktop or display does not cou
 model = search('Spatial Guide', () => {sandbox.window.hidden = false;}, {launchGuide: true});
 assert(model.ready(), 'The explicit Guide search action remains supported');
 model = search('Spatial Guide', () => {}, {launchGuide: true}); assert(!model.ready(), 'A hidden Guide cannot count as opened');
+
+// The live observer receives the selected bound conversation, rather than the
+// Workspace snapshot's compatibility working-folder and attachment fields.
+const AssistantContext = require('../dist/ai-context.js');
+const chats = AssistantContext.create({}, {workspaces: () => ({general: {home: '/home/demo'}}), projects: () => ({practice: {root: '/home/demo/Projects/practice'}})});
+chats.scope('general');
+for (const [id, value] of [['timelineType', 'all'], ['timelineQuery', ''], ['timelineDay', '2026-10-21']]) {
+  const input = d.createElement('input'); input.id = id; input.value = value; d.body.append(input);
+}
+sandbox.guide.observeContext = G.observeContext;
+sandbox.model = G.create({status: 'active', version: 9, lessonId: 'project-app', done: []});
+sandbox.model.state.practiceProject = 'practice';
+sandbox.activeWorkspace = 'general'; sandbox.column = 'workspace'; sandbox.id = 'project-app';
+sandbox.SpatialAIDesktop = {current: () => chats.session('general'), snapshot() {throw Error('Use the active bound chat for Guide validation');}};
+sandbox.SpatialMemoryDesktop = {items: () => []};
+sandbox.SpatialOverviewDesktop = {active: () => 'windows'};
+const contextObserver = source.slice(source.indexOf("    if(['project-stash','ai-context','project-app','overview-navigation','timeline','timeline-task'].includes(id)){"), source.indexOf("    if(id==='timeline'&&model.state.timelineActivity"));
+const observeChat = () => vm.runInContext(contextObserver, context, {filename: 'guide-selected-chat-adapter.js'});
+observeChat();
+sandbox.column = 'practice'; chats.scope('general', 'practice'); sandbox.model.mark('project-app-open');
+observeChat(); assert(!sandbox.model.ready(), 'Entering a Project with its own chat still requires an explicit source');
+chats.contextPreference('general', 'practice', true); observeChat(); assert(!sandbox.model.ready(), 'Automatic context is optional for the manual Guide exercise');
+chats.add('general', {id: 'my-project-note', title: 'Project note', text: 'A useful source.', workspace: 'general', project: 'practice'});
+observeChat(); assert(sandbox.model.ready(), 'The production adapter credits a real manual attachment in the selected Project chat');
 w.close();
-console.log('Guide adapter passed: compact native target projection, inert controls, independent search-result identity, local successful launches and Guide visibility.');
+console.log('Guide adapter passed: compact targets, search-result identity, local launches, Guide visibility and selected immutable Project chats.');

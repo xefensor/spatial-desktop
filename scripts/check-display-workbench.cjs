@@ -7,13 +7,13 @@ assert.doesNotMatch(css,/display-workbench-width|display-workbench-panel|workspa
 
 function harness(initialAllowed=true){
   const elements=new Map(),listeners={},permissions=[],controls=[],examples=[],folders=[],opened=[],settings=[],chat={taskStates:[],attachments:[],notices:[]};
-  let workspace='work',localSlot=2,captureItems=[],workingFolder='',blockedFolder=false,currentChat='chat-1';
+  let workspace='work',project=null,localSlot=2,captureItems=[],workingFolder='',blockedFolder=false,currentChat='chat-1';
   let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
   const model=Roles.create();model.connect(roster);model.setRole(2,'side');model.setAssistantAllowed('work',2,initialAllowed);
   const document={activeElement:null};
   function element(){return {hidden:false,inert:false,value:'',textContent:'',dataset:{},events:{},children:[],attributes:{},classList:{contains:()=>false,toggle(){}},focus(){document.activeElement=this;},replaceChildren(...children){this.children=children;},append(...children){this.children.push(...children);for(const child of children)child.parentNode=this;},insertBefore(child){this.children.unshift(child);child.parentNode=this;},querySelectorAll(selector){const all=node=>node.children.flatMap(child=>[child,...all(child)]);return selector==='[data-display-example]'?all(this).filter(child=>child.dataset.displayExample):[];},setAttribute(name,value){this.attributes[name]=value;},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
   const area=element(),content=element();area.dataset.widgetMode='expanded';content.parentNode=area;area.querySelector=()=>content;
-  const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,space:model.space(workspace,localSlot)});
+  const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,project,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,space:model.space(workspace,localSlot)});
   const browser={addEventListener(type,fn){listeners[type]=fn;},SpatialDisplayRoleBridge:{state,
     setAssistantAllowed(slot,allowed){permissions.push({workspace,slot,allowed});const result=model.setAssistantAllowed(workspace,slot,allowed);browser.SpatialDisplayWorkbench.refresh();return result;},
     assistantControl(action){controls.push({workspace,slot:localSlot,action});model.setAssistant(workspace,localSlot,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});browser.SpatialDisplayWorkbench.refresh();},
@@ -27,15 +27,15 @@ function harness(initialAllowed=true){
   const event=(attribute,value)=>({target:{closest(selector){return selector==='['+attribute+']'?{dataset:{[attribute==='data-display-example'?'displayExample':'displayAction']:value}}:null;}}});
   return {model,area,content,host,menu,elements,listeners,permissions,controls,examples,folders,opened,settings,chat,state,refresh,document,
     action:name=>content.events.click(event('data-display-action',name)),example:id=>content.events.click(event('data-display-example',id)),
-    permission(allowed){content.events.change({target:{closest:selector=>selector==='[data-display-assistant-allowed]'?{checked:allowed}:null}});},
+    permission(allowed){model.setAssistantAllowed(workspace,localSlot,allowed);refresh();},
     selectionDown(){content.events.pointerdown({target:{closest:selector=>selector.includes('.ai-chat-settings>summary')?{}:null}});},capture(items){captureItems=items;},folder(value){workingFolder=value;},blockFolder(value){blockedFolder=value;},
     reveal(detail={}){listeners['spatial-assistant-display-reveal']({detail});},
-    switchWorkspace(value,render=true){workspace=value;if(render)refresh();},role(value,render=true){model.setRole(localSlot,value);if(render)refresh();},moveDisplay(value,render=true){localSlot=value;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'side');if(render)refresh();},chatId(value){currentChat=value;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:value}});}};
+    switchWorkspace(value,render=true){workspace=value;if(render)refresh();},switchProject(value,render=true){project=value;if(render)refresh();},role(value,render=true){model.setRole(localSlot,value);if(render)refresh();},moveDisplay(value,render=true){localSlot=value;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'side');if(render)refresh();},chatId(value){currentChat=value;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:value}});}};
 }
 {
   const h=harness();
   assert.equal(h.host.parentNode,h.content,'Controls are native children of the ordinary Assistant content');
-  assert.doesNotMatch(h.host.innerHTML,/display-workbench-panel|display-assistant-chat|data-display-side|display-tool-tabs|display-clock|display-parked/,'No special panel, duplicate chat, References tabs, clock or parked list');
+  assert.doesNotMatch(h.host.innerHTML,/data-display-assistant-allowed|display-workbench-panel|display-assistant-chat|data-display-side|display-tool-tabs|display-clock|display-parked/,'No special panel, duplicate chat, References tabs, clock or parked list');
   assert.doesNotMatch(source,/mountDisplay|unmountDisplay|SpatialDisplaySideTools/,'Assistant never portals chat or owns the Files shelf');
   assert.match(h.elements.get('[data-display-permission-scope]').textContent,/Display 2.*all windows.*Work Workspace only/);
   const focus={label:'Editor focus'};h.document.activeElement=focus;h.refresh();assert.equal(h.document.activeElement,focus,'Routine task updates do not steal focus');
@@ -44,9 +44,9 @@ function harness(initialAllowed=true){
   h.action('resume');assert.equal(h.elements.get('[data-display-control-status]').textContent,'Ready');
   h.model.setAssistant('work',2,{status:'working'});h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Working');
   h.model.setAssistant('work',2,{status:'needs-you'});h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input');
-  h.permission(false);assert.deepEqual(h.permissions.at(-1),{workspace:'work',slot:2,allowed:false});assert.equal(h.elements.get('[data-display-assistant-allowed]').checked,false);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,true);
+  h.permission(false);assert.equal(h.state().space.assistant.allowed,false);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,true);
   const count=h.controls.length;h.action('resume');h.action('takeover');assert.equal(h.controls.length,count,'Permission off cannot resume control');
-  h.switchWorkspace('gaming');assert.equal(h.elements.get('[data-display-assistant-allowed]').checked,false,'Workspace permission remains independent');h.permission(true);h.switchWorkspace('work');assert.equal(h.elements.get('[data-display-assistant-allowed]').checked,false);
+  h.switchWorkspace('gaming');assert.equal(h.state().space.assistant.allowed,false,'Workspace permission remains independent');h.permission(true);h.switchWorkspace('work');assert.equal(h.state().space.assistant.allowed,false);
   h.role('extended');assert.equal(h.host.hidden,true);assert.equal(h.menu.hidden,true);assert.equal(h.chat.taskStates.at(-1),null,'Leaving Side role clears the local task adapter');
 }
 for(const initialAllowed of [false,true]){
@@ -70,13 +70,13 @@ for(const initialAllowed of [false,true]){
 }
 {
   const h=harness(false),selection=[{id:'selected',text:'Old selection'}];h.capture(selection);h.selectionDown();h.capture([]);h.selectionDown();h.action('selection');assert.equal(h.chat.attachments.length,0,'Reopening Chat options without a selection clears old capture');
-  h.area.dataset.widgetMode='expanded';h.area.inert=false;h.area.parentNode={hidden:false,inert:false,dataset:{widgetMode:'expanded'}};h.permission(true);assert.equal(h.permissions.length,1,'Native Compact quick chat retains its display permission controls');
+  h.area.dataset.widgetMode='expanded';h.area.inert=false;h.area.parentNode={hidden:false,inert:false,dataset:{widgetMode:'expanded'}};h.action('examples');h.action('examples-delegate');assert.equal(h.permissions.length,1,'Native Compact quick chat can enable control from the scripted examples');
 }
-for(const transition of ['workspace','role','setup','display','hidden','inert','compact','remote-panel','hidden-ancestor','inert-ancestor']){
+for(const transition of ['workspace','project','role','setup','display','hidden','inert','compact','remote-panel','hidden-ancestor','inert-ancestor']){
   const h=harness();h.capture([{id:'work-only',text:'Saved selection'}]);h.selectionDown();h.action('examples');
-  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='role')h.role('extended',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
+  if(transition==='workspace')h.switchWorkspace('gaming',false);if(transition==='project')h.switchProject('site',false);if(transition==='role')h.role('extended',false);if(transition==='setup')h.changeSetup(false);if(transition==='display')h.moveDisplay(1,false);
   if(transition==='hidden')h.area.hidden=true;if(transition==='inert')h.area.inert=true;if(transition==='compact'){h.area.dataset.widgetMode='compact';h.area.inert=true;}if(transition==='remote-panel')h.area.hidden=true;if(transition==='hidden-ancestor')h.area.parentNode={hidden:true};if(transition==='inert-ancestor')h.area.parentNode={inert:true};
-  h.permission(false);for(const action of ['note','working-folder','settings','selection','takeover','resume'])h.action(action);h.example('checklist');
+  h.action('examples-delegate');for(const action of ['note','working-folder','settings','selection','takeover','resume'])h.action(action);h.example('checklist');
   for(const result of [h.permissions,h.opened,h.folders,h.settings,h.chat.attachments,h.controls,h.examples])assert.equal(result.length,0,transition+': stale or unavailable controls cannot act');
 }
 {
@@ -88,6 +88,11 @@ for(const transition of ['workspace','role','setup','display','hidden','inert','
 }
 // Pinned Side windows may be on another Project/page, while remaining local
 // to this display and Workspace. Their selected text is still an input source.
+{
+  const h=harness();h.model.setAssistant('work',2,{status:'needs-you',context:{workspace:'work',project:'site',setup:h.state().setupKey,slot:2,folder:'/Work/Projects/Site/Assistant'},activity:{stage:'review',label:'Old Project review'}});h.refresh();
+  assert.equal(h.elements.get('[data-display-control-status]').textContent,'Ready','An old Project review is not presented as a request in the current Workspace');
+  h.switchProject('site');assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input','Returning to the original Project reveals its retained state');
+}
 {
   const adapter=fs.readFileSync(path.join(__dirname,'../dist/assistant-desktop.js'),'utf8');
   const between=(start,end)=>adapter.slice(adapter.indexOf(start),adapter.indexOf(end,adapter.indexOf(start)));

@@ -7,7 +7,7 @@ for(const id of ['system','apps','overview','tiling','park','unpark','desktops',
 assert.equal(G.chapters.length,14);assert.equal(G.chapters.find(chapter=>chapter.id==='areas').title,'Panels & widgets');
 for(const id of ['apps','overview','tiling','project-app','timeline'])assert.equal(G.lessons.find(lesson=>lesson.id===id).target,'[data-panel-action="open-overview"]','Overview lessons point at the visible launcher');
 assert(G.lessons.find(lesson=>lesson.id==='overview').details.includes('top-left'));assert(G.goalHints['app-open'].includes('top-left'));assert.equal(G.panelFeature('launcher'),'overview');
-assert(G.lessons.find(lesson=>lesson.id==='two-displays').referenceSections.some(section=>section.text.includes('Allow Assistant to use this display')),'Keep scoped monitor permission guidance');
+assert(G.lessons.find(lesson=>lesson.id==='two-displays').referenceSections.some(section=>section.text.includes('Allow display control')&&section.text.includes('current Workspace and Project')),'Keep scoped display-control guidance');
 for(const lesson of G.lessons){
  const copy=[lesson.title,lesson.text,lesson.task,lesson.details,...(lesson.referenceSections||[]).flatMap(section=>[section.title,section.text])].filter(Boolean).join(' ');
  assert(!/\bAreas?\b/.test(copy),'Guide copy teaches only the current panels and widgets: '+lesson.id);

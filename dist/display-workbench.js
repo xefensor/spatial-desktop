@@ -6,35 +6,37 @@
   const host=document.createElement('section');host.className='ai-display-controls';host.hidden=true;host.setAttribute('aria-label','Assistant display control');
   host.innerHTML=`
     <section class="display-assistant-control" data-display-control>
-      <label class="display-assistant-permission"><input type="checkbox" role="switch" data-display-assistant-allowed aria-describedby="displayAssistantPermissionScope"><span>Allow Assistant to use this display</span></label>
       <small class="display-permission-scope" id="displayAssistantPermissionScope" data-display-permission-scope></small>
       <div class="display-control-heading"><span class="display-control-indicator" aria-hidden="true"></span><strong data-display-control-status role="status" aria-live="polite"></strong><button type="button" class="surface-key" data-display-action="takeover">Take over</button><button type="button" class="surface-key" data-display-action="resume" hidden>Continue</button><button type="button" class="surface-key" data-display-action="examples">Examples</button></div>
     </section>
-    <section class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">Follow a file task from start to saved result. Each example starts a new chat.</p><p class="display-examples-local">Scripted examples · no AI service connected</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Allow Assistant</button></div><div class="display-examples-list" data-display-examples-list></div></section>
+    <section class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">Follow a file task from start to saved result. Each example starts a new chat.</p><p class="display-examples-local">Scripted examples · no AI service connected</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Allow display control</button></div><div class="display-examples-list" data-display-examples-list></div></section>
     <p class="display-assistant-feedback" role="status" data-display-feedback></p>`;
   content.insertBefore(host,content.firstChild);
   const menu=document.createElement('div');menu.className='ai-display-tools';menu.hidden=true;
   menu.innerHTML='<button type="button" class="surface-key" data-display-action="selection">Use selection</button><button type="button" class="surface-key" data-display-action="note">New note here</button><button type="button" class="surface-key" data-display-action="working-folder">Open working folder</button><button type="button" class="surface-key" data-display-action="settings">Display settings</button>';
   content.querySelector('.ai-chat-settings-body')?.append(menu);
   const find=selector=>host.querySelector(selector),bridge=()=>root.SpatialDisplayRoleBridge;
-  const context=state=>[state?.setupKey,state?.workspaceId,state?.localSlot,state?.role].join('|');
+  const context=state=>[state?.setupKey,state?.workspaceId,state?.project||'workspace',state?.localSlot,state?.role].join('|');
   const available=state=>state?.role==='side';
   const allowed=state=>Boolean(state?.space?.assistant?.allowed);
+  function taskState(state){
+    const task=state.space?.assistant||{};
+    return task.context&&(task.context.project||null)!==(state.project||null)?{...task,status:task.control==='user'?'paused':'idle',activity:null}:task;
+  }
   let currentKey='',examplesOpen=false,examplesListKey='',selection=null,permissionBusy=false;
   const interactive=()=>{for(let at=content;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true')return false;return true;};
   function showChat(){examplesOpen=false;content.dataset.displayExamples='closed';find('[data-display-examples]').hidden=true;host.dataset.displayExamples='closed';}
   function renderControl(state){
-    const task=state.space?.assistant||{},permitted=allowed(state),user=!permitted||task.control==='user'||task.status==='paused';
-    const input=find('[data-display-assistant-allowed]');input.checked=permitted;input.disabled=permissionBusy;
-    find('[data-display-permission-scope]').textContent='Display '+state.localSlot+' · all windows here · '+state.workspace+' Workspace only';
+    const task=taskState(state),permitted=allowed(state),user=!permitted||task.control==='user'||task.status==='paused';
+    find('[data-display-permission-scope]').textContent='Display '+state.localSlot+' · all windows here · '+(state.scopeLabel||state.workspace+' Workspace')+' only';
     find('[data-display-control-status]').textContent=user?'You’re in control':task.status==='working'?'Working':task.status==='needs-you'||task.status==='error'?'Needs your input':'Ready';
     find('[data-display-control]').dataset.control=user?'user':task.status==='working'?'working':'assistant';
     find('[data-display-action="takeover"]').hidden=!permitted||user;find('[data-display-action="resume"]').hidden=!permitted||!user;
   }
   function renderExamples(state){
     host.dataset.displayExamples=examplesOpen?'open':'closed';content.dataset.displayExamples=examplesOpen?'open':'closed';find('[data-display-examples]').hidden=!examplesOpen;if(!examplesOpen)return;
-    const task=state.space?.assistant||{},paused=task.control==='user'||task.status==='paused',working=task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage),canRun=allowed(state)&&!paused&&!working;
-    find('[data-display-examples-access]').hidden=canRun;find('[data-display-examples-access-text]').textContent=!allowed(state)?'Allow Assistant to run an example.':paused?'You’re in control. Choose Continue to let Assistant run an example.':'Assistant is working. Wait for this task to finish before starting another example.';
+    const task=taskState(state),paused=task.control==='user'||task.status==='paused',working=task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage),canRun=allowed(state)&&!paused&&!working;
+    find('[data-display-examples-access]').hidden=canRun;find('[data-display-examples-access-text]').textContent=!allowed(state)?'Turn on Allow display control to run a scripted example on this display.':paused?'You’re in control. Choose Continue to let Assistant run an example.':'Assistant is working. Wait for this task to finish before starting another example.';
     find('[data-display-action="examples-delegate"]').hidden=allowed(state);
     const examples=bridge()?.assistantExamples?.()||[],key=JSON.stringify(examples);
     if(key!==examplesListKey){examplesListKey=key;find('[data-display-examples-list]').replaceChildren(...examples.map(example=>{
@@ -55,11 +57,10 @@
   function setPermission(permitted){
     const state=bridge()?.state(),key=context(state);if(permissionBusy||!available(state)||key!==currentKey||!interactive())return;
     permissionBusy=true;renderControl(state);
-    try{if(bridge().setAssistantAllowed(state.localSlot,permitted)===false)throw Error('Assistant access could not be changed.');}
-    catch(error){if(context(bridge()?.state())===key)find('[data-display-feedback]').textContent=error.message||'Assistant access could not be changed.';}
+    try{if(bridge().setAssistantAllowed(state.localSlot,permitted,state.contextKey?{contextKey:state.contextKey}:null)===false)throw Error('Display control could not be changed.');}
+    catch(error){if(context(bridge()?.state())===key)find('[data-display-feedback]').textContent=error.message||'Display control could not be changed.';}
     finally{permissionBusy=false;refresh();}
   }
-  content.addEventListener('change',event=>{const input=event.target.closest('[data-display-assistant-allowed]');if(input)setPermission(Boolean(input.checked));});
   content.addEventListener('pointerdown',event=>{
     const opening=event.target.closest('.ai-chat-settings>summary');
     if(!opening&&!event.target.closest('[data-display-action="selection"]'))return;
@@ -71,7 +72,7 @@
     const state=bridge()?.state();if(host.hidden||!available(state)||context(state)!==currentKey||!interactive())return;
     const example=event.target.closest('[data-display-example]');
     if(example){
-      const task=state.space?.assistant||{};if(!examplesOpen||!allowed(state)||task.control==='user'||task.status==='paused'||task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage))return;
+      const task=taskState(state);if(!examplesOpen||!allowed(state)||task.control==='user'||task.status==='paused'||task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage))return;
       const id=example.dataset.displayExample;if(!(bridge().assistantExamples?.()||[]).some(item=>item.id===id))return;
       const key=context(state);showChat();try{Promise.resolve(bridge().runAssistantExample(id)).catch(error=>{if(context(bridge()?.state())===key)find('[data-display-feedback]').textContent=error.message||'This example could not complete.';});}catch(error){find('[data-display-feedback]').textContent=error.message||'This example could not complete.';}return;
     }
