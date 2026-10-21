@@ -1,0 +1,44 @@
+{
+  "captured": "2026-10-21",
+  "source": "https://xefensor.github.io/spatial-desktop/",
+  "source_commit": "582edc4a016cf7fe20fa863e90192fe512ad94a2",
+  "kind": "Actual browser prototype screenshots",
+  "notes": "Application content and Assistant replies are simulated. Timeline entries labelled Example are seeded demonstration data. Historical images remain in images/philosophy.",
+  "images": [
+    {
+      "file": "desktop-project.jpg",
+      "alt": "Two tiled windows in the Website Launch project, with a browser preview and launch checklist between Apps and Files panels.",
+      "caption": "Website Launch keeps its browser preview, checklist and project files in one environment. The context strip above the windows leads to the other open project."
+    },
+    {
+      "file": "parked-note.jpg",
+      "alt": "The launch checklist remains editable in a parked card on the left while the browser uses the main desktop.",
+      "caption": "The checklist is parked on the left and still editable. The browser takes the available window space; the project files remain accessible on the right."
+    },
+    {
+      "file": "project-files.jpg",
+      "alt": "An expanded Project note.md in the Files panel, alongside the website preview and a parked checklist.",
+      "caption": "Project notes are ordinary files. Here a text file is expanded directly in Files, alongside the project folder and its other materials."
+    },
+    {
+      "file": "overview-windows.jpg",
+      "alt": "Overview shows Work, its project desktop columns, and windows on the current and other desktops.",
+      "caption": "Overview brings the workspace map and running windows together. Website Launch and Short Film each have their own desktop column."
+    },
+    {
+      "file": "timeline-sessions.jpg",
+      "alt": "Timeline with work sessions beside a scheduled staging review, using the same time scale.",
+      "caption": "Recorded activity and planned events share a time scale. The entries marked Example are seeded demonstration data, not a record of the author\u2019s day."
+    },
+    {
+      "file": "assistant-context.jpg",
+      "alt": "Assistant in the Website Launch project with separate Context and Display control switches and a scripted conversation.",
+      "caption": "Assistant belongs to the current project. Context and Display control are separate permissions; the conversation shown here is scripted."
+    },
+    {
+      "file": "desktop-general.jpg",
+      "alt": "General workspace with a left panel, a tiled Firefox start page and personal notes.",
+      "caption": "General has its own personal browsing and notes, with only the left panel in its default layout. Work uses a separate project environment."
+    }
+  ]
+}

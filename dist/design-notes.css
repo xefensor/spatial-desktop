@@ -1,0 +1,143 @@
+/* The article follows the desktop: opaque rounded content, square glass panels. */
+.design-notes-page {
+  --note-accent:#b9d2ac;
+  --note-title:linear-gradient(180deg,#454e49,#303936);
+  --note-title-text:#edf4ed;
+}
+.design-notes-page[data-theme="oled"] {
+  --note-title:linear-gradient(180deg,#303b34,#202a24);
+}
+.design-notes-page[data-theme="light"] {
+  --note-accent:#456846;
+  --note-title:linear-gradient(180deg,#e3eadc,#c9d5c0);
+  --note-title-text:#243027;
+}
+.design-notes-page .guide-layout {
+  max-width:1510px;
+  grid-template-columns:232px minmax(0,1fr);
+  gap:28px;
+  padding-top:28px;
+}
+.design-notes-page .guide-header {min-height:76px;}
+.design-notes-page .guide-header>div {gap:22px;}
+.design-notes-page .open-desktop {color:var(--text);}
+.design-notes-page #main {
+  max-width:1020px;
+  padding:0 clamp(24px,4vw,58px) 30px;
+  border-radius:24px;
+  overflow:hidden;
+}
+.design-notes-page .reading-titlebar {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 calc(-1 * clamp(24px,4vw,58px)) 36px;
+  padding:13px 24px;
+  color:var(--note-title-text);
+  background:var(--note-title);
+  border-bottom:1px solid var(--line);
+  box-shadow:inset 0 1px 0 #ffffff21;
+  font-size:13px;
+  font-weight:650;
+}
+.design-notes-page .reading-document {font-size:21px;font-weight:400;}
+.design-notes-page .reading-status {
+  margin-left:auto;
+  font:10px ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.08em;
+  opacity:.8;
+}
+.design-notes-page h1 {font-size:clamp(2.5rem,4.6vw,4rem);letter-spacing:-.045em;}
+.design-notes-page h2 {max-width:28ch;line-height:1.23;}
+.design-notes-page .guide-intro {padding-bottom:12px;}
+.design-notes-page .guide-intro>.eyebrow {color:var(--note-accent);}
+.design-notes-page p {font-size:1.06rem;line-height:1.8;max-width:70ch;}
+.design-notes-page p.lede {font-size:1.22rem;line-height:1.75;}
+.design-notes-page .scope-note {
+  font-size:.87rem;
+  line-height:1.65;
+  padding:12px 16px;
+  margin:24px 0;
+  background:color-mix(in srgb,var(--abs) 45%,transparent);
+  border-left:2px solid var(--note-accent);
+}
+.design-notes-page .intro-links {align-items:center;gap:18px;margin:24px 0 12px;}
+.design-notes-page .intro-links a {font-size:.9rem;}
+.design-notes-page .primary-link {
+  display:inline-flex;
+  padding:9px 16px;
+  background:var(--abs);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--text);
+  text-decoration:none;
+  box-shadow:inset 0 1px #ffffff26,0 2px 3px #0002;
+}
+.design-notes-page .primary-link:hover {background:var(--surface);}
+.design-notes-page .chapter {padding:38px 0 30px;}
+.design-notes-page .chapter-number {
+  font:11px ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.11em;
+  color:var(--note-accent);
+  margin:0 0 16px;
+}
+.design-notes-page .story-figure {margin:28px 0 6px;}
+.design-notes-page .hero-figure {margin:16px 0 42px;}
+.design-notes-page .image-label {font-size:10px;letter-spacing:.09em;}
+.design-notes-page .image-link {
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 6px 20px #0002;
+  transition:box-shadow .15s;
+}
+.design-notes-page .image-link:hover {box-shadow:0 6px 24px #0004;}
+.design-notes-page .image-link img {width:100%;height:auto;}
+.design-notes-page .story-figure figcaption {font-size:.87rem;max-width:75ch;}
+.design-notes-page .image-credit {font-size:.72rem;margin-top:8px;}
+.design-notes-page .guide-sidebar {padding:20px 14px;}
+.design-notes-page .guide-sidebar .eyebrow {font:11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;margin:2px 8px 18px;}
+.design-notes-page .guide-sidebar nav a {font-size:.87rem;padding:10px 8px;gap:12px;}
+.design-notes-page .guide-sidebar nav a[aria-current="true"] {border-bottom-color:var(--note-accent);}
+.design-notes-page .guide-sidebar .sidebar-note {font-size:.74rem;line-height:1.7;}
+.design-notes-page .guide-sidebar .material-link {font-size:.75rem;line-height:1.7;}
+.design-notes-page .guide-footer {font-size:.78rem;padding-top:22px;}
+.design-notes-page .anchor-alias {display:block;scroll-margin-top:110px;}
+@media(max-width:1100px) {
+  .design-notes-page .guide-layout {grid-template-columns:194px minmax(0,1fr);gap:20px;padding-left:24px;padding-right:24px;}
+  .design-notes-page p {font-size:1rem;}
+}
+@media(max-width:900px) {
+  .design-notes-page .guide-layout {grid-template-columns:minmax(0,1fr);gap:16px;}
+  .design-notes-page .guide-sidebar {position:static;max-height:none;}
+  .design-notes-page .guide-sidebar nav {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 12px;}
+  .design-notes-page .guide-sidebar nav a {padding:8px 0;font-size:.8rem;}
+  .design-notes-page .guide-sidebar .eyebrow {margin:0 0 12px;}
+  .design-notes-page .guide-sidebar .sidebar-note {display:none;}
+  .design-notes-page .guide-sidebar .material-link {margin:14px 0 0;}
+}
+@media(max-width:600px) {
+  .design-notes-page .guide-layout {padding:12px 12px 24px;}
+  .design-notes-page .guide-header {padding:12px 16px;gap:10px;}
+  .design-notes-page .guide-header>div {gap:14px;}
+  .design-notes-page .guide-header .desktop-link {font-size:.78rem;}
+  .design-notes-page .brand {font-size:.9rem;}
+  .design-notes-page .guide-sidebar nav {grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;}
+  .design-notes-page #main {padding:0 20px 24px;border-radius:20px;}
+  .design-notes-page .reading-titlebar {margin:0 -20px 26px;padding:11px 18px;}
+  .design-notes-page .reading-status {font-size:8px;letter-spacing:.04em;}
+  .design-notes-page p.lede {font-size:1.08rem;}
+  .design-notes-page h1 {font-size:2.5rem;}
+  .design-notes-page h2 {font-size:1.65rem;}
+  .design-notes-page .chapter {padding:30px 0 22px;}
+  .design-notes-page .image-credit {line-height:1.6;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .design-notes-page .image-link {transition:none;}
+}
+@media print {
+  .design-notes-page .reading-titlebar {display:none;}
+  .design-notes-page #main {padding:0;overflow:visible;}
+  .design-notes-page p {font-size:11pt;}
+  .design-notes-page .image-link {box-shadow:none;}
+  .design-notes-page .chapter-number {color:#333;}
+}

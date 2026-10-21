@@ -3,113 +3,97 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0c1218">
-  <meta name="description" content="Spatial Desktop design philosophy, written by Xef one topic at a time. Author’s draft in progress.">
-  <title>Spatial Desktop — Design Philosophy by Xef</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080a0b'/%3E%3Crect x='7' y='10' width='16' height='44' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2312191d' stroke='%23299fff' stroke-width='2'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#161a1c">
+  <meta name="description" content="Why Xef is building Spatial Desktop: visible windows, project files, Overview, Timeline, separate Workspaces and an integrated Assistant. An illustrated browser experiment inspired by Scott Jenson.">
+  <title>Spatial Desktop — Design notes by Xef</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23161a1c'/%3E%3Crect x='7' y='10' width='16' height='44' fill='%2321272a'/%3E%3Crect x='27' y='10' width='30' height='44' rx='8' fill='%2330363a' stroke='%23a8c8a2' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="philosophy.css?v=184">
   <link rel="stylesheet" href="material-shapes.css?v=15">
-  <script src="philosophy.js?v=154" defer></script>
   <link rel="stylesheet" href="ui-refinements.css?v=179">
-  <style>.app-area-detail .image-link{aspect-ratio:350/340;overflow:hidden}.app-area-detail .image-link img{aspect-ratio:350/470;object-fit:cover;object-position:left top;max-height:none}.app-area-examples{align-items:start}.app-area-examples figcaption{font-size:.95rem}.focused-hotbar .image-link{max-width:350px}.focused-game-hotbar .image-link{max-width:600px;aspect-ratio:640/60;overflow:hidden}.focused-game-hotbar .image-link img{width:200%;max-width:none;aspect-ratio:1280/60;object-fit:cover;object-position:center bottom;margin-left:-50%}.focused-rail{display:grid;grid-template-columns:68px minmax(0,1fr);gap:.6rem 1.5rem;align-items:center}.focused-rail .image-label{grid-column:1/-1}.focused-rail figcaption{margin:0;max-width:55ch}.focused-rail .image-link{width:68px}.focused-layout .image-link img{height:auto;object-fit:contain}@media(max-width:600px){.focused-rail{gap:.6rem 1rem}}</style>
-  
+  <link rel="stylesheet" href="design-notes.css?v=1">
+  <script src="philosophy.js?v=154" defer></script>
 </head>
-<body class="philosophy-page">
+<body class="philosophy-page design-notes-page">
 <script src="desktop-theme.js?v=1"></script>
-<a class="skip-link" href="#main">Skip to design explanation</a>
-<header class="guide-header"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>Spatial Desktop</a><div><a class="desktop-link" href="philosophy-record.html">Earlier AI design record</a><a class="desktop-link" href="./">Open desktop</a><button id="guideTheme" type="button" aria-label="Color theme: Auto — follows system. Change color theme"><span>Auto</span></button></div></header>
-<div class="guide-layout"><aside class="guide-sidebar"><p class="eyebrow">AUTHOR’S DRAFT</p><nav aria-label="Design chapters"><a href="#app-area"><span>01</span>App area</a><a href="#desktop-and-windows"><span>02</span>Desktop and windows</a></nav><a class="material-link" href="philosophy-record.html">Earlier AI design record &amp; screenshots</a><p class="sidebar-note">Written by Xef<br>Draft · October 2026</p></aside><main id="main"><header class="guide-intro"><p class="eyebrow">SPATIAL DESKTOP · WRITTEN BY XEF</p><h1>Design philosophy.</h1><p class="lede">A new edition, written one topic at a time.</p><p class="scope-note">Author’s draft · in progress. Chapters will be added as their text is written. <a href="philosophy-record.html">The earlier AI design record and its historical screenshots remain available.</a></p></header><section id="app-area" class="chapter">
-<p class="chapter-number">01 / APP AREA</p>
-<h2>App area.</h2>
-<section id="parking-apps">
-<h3>Parking apps</h3>
-<p>On a conventional panel, I find it difficult to tell which apps are minimized and which are open, because they are all next to each other.</p>
-<p>Here, open apps are always visible in front of you on the desktop, and appear at the top of the App area. Parked apps sit below them.</p>
-<p>One important thing about parked apps is that they stay in the App area when you switch desktops. That makes them ideal for use as widgets.</p>
-
-<div class="story-gallery app-area-examples">
-<figure class="story-figure app-area-detail">
-<span class="image-label">DESKTOP EXAMPLE · DESKTOP 2</span>
-<a class="image-link" href="images/philosophy/app-area-parked-desktop-2.jpg" aria-label="Open full screenshot: File Browser open, Note Editor parked on Desktop 2"><img src="images/philosophy/app-area-parked-desktop-2.jpg" alt="App area on Desktop 2: File Browser at the top, with an editable Meeting notes card in Parked below" width="1056" height="470" loading="lazy" decoding="async"></a>
-<figcaption>The File Browser is open at the top. Note Editor is parked below it, and the note can still be edited in its card.</figcaption>
+<a class="skip-link" href="#main">Skip to design notes</a>
+<header class="guide-header"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>Spatial Desktop</a><div><a class="desktop-link" href="https://github.com/xefensor/spatial-desktop">GitHub</a><a class="desktop-link open-desktop" href="./">Open desktop <span aria-hidden="true">↗</span></a><button id="guideTheme" type="button" aria-label="Color theme: Auto — follows system. Change color theme"><span>Auto</span></button></div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><p class="eyebrow">DESIGN NOTES</p><nav aria-label="Design chapters"><a href="#windows"><span>01</span>Windows and parking</a>
+<a href="#projects"><span>02</span>Projects and files</a>
+<a href="#overview"><span>03</span>Overview</a>
+<a href="#timeline"><span>04</span>Timeline</a>
+<a href="#workspaces"><span>05</span>Workspaces</a>
+<a href="#assistant"><span>06</span>Assistant</a>
+<a href="#fullscreen"><span>07</span>Fullscreen</a>
+<a href="#experiment"><span>08</span>The experiment</a></nav><a class="material-link" href="philosophy-record.html">Earlier design record <span aria-hidden="true">↗</span></a><p class="sidebar-note">Written by Xef<br>Work in progress · October 2026</p></aside>
+<main id="main">
+<div class="reading-titlebar"><span class="reading-document" aria-hidden="true">▤</span><span>Design notes</span><span class="reading-status">WORK IN PROGRESS</span></div>
+<header class="guide-intro"><p class="eyebrow">A DESKTOP EXPERIMENT BY XEF</p><h1>Spatial Desktop</h1><p class="lede">I started Spatial Desktop after watching <a href="https://media.ccc.de/v/kde2026-7-are_we_really_going_to_use_the_same_desktop_ux_forever">Scott Jenson’s talk</a>. It inspired me to explore how a desktop could support everyday work through spatial, associative, and episodic memory: finding work by where it is, what it relates to, or when it happened.</p>
+<p>My own frustrations with managing overlapping windows shaped the design. I wanted to explore how a desktop could keep windows, files, and related materials together when I switch activities or return after an interruption. I also want an integrated Assistant that works alongside me using the same windows and ordinary files.</p>
+<p>The question I want to test is whether these connections make everyday work easier to follow and resume, while keeping the effort of organizing it low.</p>
+<p class="scope-note">This is a browser prototype for exploring the design. Applications and operating system behavior are simulated, and Assistant responses are scripted. Native desktop integration remains future work.</p>
+<p class="intro-links"><a class="primary-link" href="./">Open the demo</a> · <a href="https://github.com/xefensor/spatial-desktop">View the project on GitHub</a></p></header>
+<figure class="story-figure hero-figure">
+<span class="image-label">CURRENT PROTOTYPE · DESKTOP</span>
+<a class="image-link" href="images/design-notes/desktop-project.jpg" aria-label="Open full screenshot: Two tiled windows in the Website Launch project, with a browser preview and launch checklist between Apps and Files panels."><img src="images/design-notes/desktop-project.jpg" alt="Two tiled windows in the Website Launch project, with a browser preview and launch checklist between Apps and Files panels." width="1363" height="936" loading="eager" decoding="async" fetchpriority="high"></a>
+<figcaption>Website Launch keeps its browser preview, checklist and project files in one environment. The context strip above the windows leads to the other open project. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
 </figure>
-<figure class="story-figure app-area-detail">
-<span class="image-label">DESKTOP EXAMPLE · DESKTOP 1</span>
-<a class="image-link" href="images/philosophy/app-area-parked-desktop-1.jpg" aria-label="Open full screenshot: the same parked note on Desktop 1"><img src="images/philosophy/app-area-parked-desktop-1.jpg" alt="App area on Desktop 1: Web Browser and Terminal at the top, with the same editable Meeting notes card still in Parked below" width="1056" height="470" loading="lazy" decoding="async"></a>
-<figcaption>After switching desktops, Web Browser and Terminal appear at the top. The same parked note stays below them.</figcaption>
-</figure>
-</div>
-<p class="source-note">Captured from the working prototype on 11 October 2026. These are details of the App area; click either image to see its desktop context. <a href="./">Try the desktop</a>: park a window, then switch desktops.</p>
-</section>
-<section id="the-hotbar">
-<h3>The hotbar</h3>
-<p>On today’s desktops, quick app switching usually means Alt+Tab or an app overview. I find that clunky. That is why I borrow the numbered hotbar from games for quick switching between apps.</p>
-<p>To make this work without taking my hand off the mouse, I use a mouse button to activate the hotbar. Since many desktops already use Win/Super for app-switching shortcuts, I use the same key here. That lets me switch quickly between apps.</p>
-
-<figure class="story-figure focused-hotbar">
-<span class="image-label">DESKTOP EXAMPLE · NUMBERED APP SLOTS</span>
-<a class="image-link" href="images/philosophy/focused-app-hotbar.jpg" aria-label="Open detail: numbered app icons"><img src="images/philosophy/focused-app-hotbar.jpg" alt="Numbered hotbar detail: File Browser has number 1 and Note Editor has number 2" width="350" height="135" loading="lazy" decoding="async"></a>
-<figcaption>In this example, <kbd>Super + 1</kbd> selects File Browser and <kbd>Super + 2</kbd> selects Note Editor. The number is shown on each app icon.<span class="image-credit">Spatial Desktop prototype · captured 12 October 2026 · <a href="./">Open the desktop</a>.</span></figcaption>
-</figure>
-<p class="source-note">In the browser demo, <kbd>Alt + number</kbd> is also available when the operating system intercepts Super shortcuts. Activating the hotbar from a mouse button is the intended setup; the web prototype does not configure mouse-button mappings.</p>
-<figure class="story-figure focused-game-hotbar">
-<span class="image-label">GAME REFERENCE · DIRECT SLOT SELECTION</span>
-<a class="image-link" href="images/philosophy/game-hotbar.jpg" aria-label="Open larger image: historical Minetest hotbar"><img src="images/philosophy/game-hotbar.jpg" alt="Historical Minetest screenshot with a row of item slots along the bottom of the game" width="1280" height="720" loading="lazy" decoding="async"></a>
-<figcaption>This detail of the bottom item row shows the game hotbar idea. Luanti, formerly Minetest, documents number keys 0–9 for selecting hotbar items directly. This is a reference for direct slot selection; the historical screenshot itself does not show number labels.<span class="image-credit"><a href="https://docs.luanti.org/for-players/controls/">Luanti controls</a> · Screenshot by Kotolegokot · <a href="https://commons.wikimedia.org/wiki/File:Minetest_screenshot_2.png">Original source</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a> · Resized and converted to JPEG.</span></figcaption>
-</figure>
-<aside class="source-note"><strong>Related desktop reference.</strong> Windows already supports <kbd>Win + number</kbd> to launch or switch to the app at that taskbar position. <a href="https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows">Microsoft’s keyboard shortcut reference</a> documents this under Taskbar keyboard shortcuts.</aside>
-</section>
-<section id="order-and-visibility">
-<h3>Order and visibility</h3>
-<p>Apps are ordered from left to right, then from top to bottom, following the reading order of left-to-right languages such as English.</p>
-<p>Open apps are shown in the App area only on the desktop they belong to. This avoids confusion and prevents accidentally switching desktops when selecting an app that is not on the active one.</p>
-<p>Parked apps always come after open apps, both in their position in the App area and in the hotbar numbering. This keeps the order consistent and easy to use.</p>
-
-<p class="source-note">The <a href="#the-hotbar">hotbar detail</a> shows File Browser as 1 and Note Editor as 2. The <a href="#automatic-tiling">tiling illustration below</a> shows one possible tiled arrangement. The <a href="#parking-apps">parking comparison</a> shows that the open app list changes with the desktop while the parked note remains available.</p>
-</section>
-<section id="expanded-area-and-rail">
-<h3>Expanded area and rail</h3>
-<p>Rail mode gives the user more space for app windows while keeping useful panels available — in this case, the app panel.</p>
-<p>It also preserves the familiarity of Windows, KDE and similar desktop setups.</p>
-
-
-
-<figure class="story-figure focused-rail"><span class="image-label">PROTOTYPE DETAIL · APP RAIL</span><a class="image-link" href="images/philosophy/focused-app-rail.jpg" aria-label="Open rail detail: File Browser open at the top and Note Editor parked below"><img src="images/philosophy/focused-app-rail.jpg" alt="Only the App rail: open File Browser at the top, parked Note Editor lower down" width="68" height="370" loading="lazy" decoding="async"></a><figcaption>The rail keeps the app controls within reach. Open File Browser is at the top; parked Note Editor is separated below it.</figcaption></figure>
-</section>
-</section><section id="desktop-and-windows" class="chapter">
-<p class="chapter-number">02 / DESKTOP AND WINDOWS</p>
-<h2>Desktop and windows.</h2>
-<section id="automatic-tiling">
-<h3>Automatic tiling</h3>
-<p>I think the biggest reason most people, including me, use one maximized window is that constantly rearranging windows and keeping them neatly beside each other is a bother. Within a single hour, I might switch between dozens of different windows. Keeping them all aligned takes more effort than maximizing one window and switching clumsily between them with Alt+Tab.</p>
-<p>That is why I borrow the system used by tiling window managers and make it convenient to use with a mouse. You can drag windows to reorder them, park them, or float them when you want to place a window in the centre of the screen for easier reading, for example.</p>
-<p>One important rule is that windows never overlap one another. Two floating windows are the only exception. This makes it easier to find the window I want.</p>
-
-<p class="source-note"><strong>Related reference:</strong> the <a href="https://i3wm.org/docs/userguide.html#_opening_terminals_and_moving_around">i3 User’s Guide</a> shows automatic placement of new windows beside existing ones and documents a separate floating mode. It provides context for the tiling approach; Spatial Desktop’s mouse interactions and overlap rule are its own design.</p>
-
-<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · TILING AND FLOATING</span><a class="image-link" href="images/philosophy/focused-tiling-layout.svg" aria-label="Open larger illustration: Two tiled windows compared with a tiled File Browser and one floating Note Editor"><img src="images/philosophy/focused-tiling-layout.svg" alt="Two tiled windows compared with a tiled File Browser and one floating Note Editor" width="740" height="276" loading="lazy" decoding="async"></a><figcaption>Left: the windows share the desktop as tiles. Right: Note Editor has a floating position, and File Browser uses the remaining space. The square side strips represent Areas.</figcaption></figure>
-</section>
-<section id="maximize-and-fullscreen">
-<h3>Maximize and Fullscreen</h3>
-<p>When you need more space for an app but still want to keep your Areas, you can maximize its window, just as on a conventional desktop.</p>
-<p>The difference is that the other open apps are temporarily parked, following our rule that windows do not overlap. They are restored when the maximized window returns to its normal size. Alternatively, they move to a second monitor if one is available and has enough space for them.</p>
-<p>Middle-clicking the maximize button selects the other option: Fullscreen. This makes the app take the entire screen, including the space normally occupied by the Areas. If a second monitor is available, the Areas move there.</p>
-
-<p class="source-note">To compare the modes in the <a href="./">prototype</a>, left-click a window’s maximize button, restore it, then middle-click the same button for Fullscreen.</p>
-
-<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · MAXIMIZE AND FULLSCREEN</span><a class="image-link" href="images/philosophy/focused-window-modes.svg" aria-label="Open larger illustration: Maximize keeps Areas visible; Fullscreen takes the whole display"><img src="images/philosophy/focused-window-modes.svg" alt="Maximize keeps Areas visible; Fullscreen takes the whole display" width="740" height="300" loading="lazy" decoding="async"></a><figcaption>Maximize fills the space between Areas and temporarily parks the other window. Fullscreen includes the Area space.</figcaption></figure>
-<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · TWO DISPLAYS</span><a class="image-link" href="images/philosophy/focused-extended-layout.svg" aria-label="Open larger illustration: File Browser fullscreen on Display 1; Note Editor and Areas on Display 2"><img src="images/philosophy/focused-extended-layout.svg" alt="File Browser fullscreen on Display 1; Note Editor and Areas on Display 2" width="740" height="300" loading="lazy" decoding="async"></a><figcaption>File Browser occupies Display 1. Note Editor and the Areas remain available on Display 2. This diagram follows the behaviour observed in the linked browser prototype.</figcaption></figure>
-</section>
-<section id="multiple-desktops">
-<h3>Multiple desktops</h3>
-<p>Sometimes one desktop is not enough for all the apps you need for your workflow. Parked apps help with this, but they are not always enough. Virtual desktops are another way to solve it, and they have existed in desktop environments for a long time.</p>
-<p>The problem, for me, is that switching between virtual desktops is not very intuitive. You often have to remember a three-key shortcut. Instead, I chose simple mouse-wheel scrolling when no app is focused. This works well for quick switching.</p>
-<p>Another problem is that it is not always easy to tell which desktop you are on. I considered keeping the edge of the next desktop visible on the current one. Instead, I chose to leave more space for the apps and added small lines at the sides of the desktop to show which one is active.</p>
-<p>Desktops are always stacked vertically. With vertical Areas, they slide in and out between them, keeping the flow. You do not have to remember which cell in a grid contains an app; you can simply scroll through the desktops.</p>
-
-<p class="source-note"><strong>Related reference:</strong> GNOME’s <a href="https://help.gnome.org/gnome-help/shell-workspaces-switch.html">workspace switching guide</a> documents both shortcuts and choosing an adjacent workspace from Overview. Its term “workspace” refers to virtual desktops; Spatial Desktop reserves “workspace” for its broader environment.</p>
-
-<figure class="story-figure focused-layout"><span class="image-label">LAYOUT ILLUSTRATION · VERTICAL DESKTOPS</span><a class="image-link" href="images/philosophy/focused-desktop-scroll.svg" aria-label="Open larger illustration: Two vertically ordered desktops with fixed Area positions and a longer line marking the current desktop"><img src="images/philosophy/focused-desktop-scroll.svg" alt="Two vertically ordered desktops with fixed Area positions and a longer line marking the current desktop" width="740" height="590" loading="lazy" decoding="async"></a><figcaption>Only the desktop content changes. The Areas keep their positions, and the longer position line identifies the current desktop.</figcaption></figure>
-</section>
-</section>
-<footer class="guide-footer"><span>Spatial Desktop · Author’s Draft · Xef</span><a href="#main">Back to top</a></footer></main></div></body></html>
+<section id="windows" class="chapter"><span id="app-area" class="anchor-alias"></span><span id="desktop-and-windows" class="anchor-alias"></span><p class="chapter-number">01 / WINDOWS AND PARKING</p><h2>Keeping windows visible</h2><p>When I work on a Jira request, I might have an editor, the request itself, email, Teams, and several other windows open. At seven or ten windows, keeping track of everything becomes a task of its own. I often end up maximizing one window because arranging several beside each other takes too much effort.</p>
+<p>Spatial Desktop uses automatic tiling to keep windows visible without constant rearranging. It is designed around mouse use: I can move windows into place and scroll between a vertical stack of desktops. Edge markers show the desktops and the applications open on them. Floating windows provide an exception when a task needs it.</p>
+<p>Parking gives windows a visible place when I set them aside. A parked window can retain useful content or controls, so a note or music player can remain useful in its smaller form. Parked windows stay available as I move through the desktops of the current project or ordinary workspace column.</p>
+<p>The numbered app hotbar provides direct access to individual windows, including separate instances of the same application. Together, these choices are meant to help me keep a visual map of my work as the number of windows grows.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · PARKED NOTE</span>
+<a class="image-link" href="images/design-notes/parked-note.jpg" aria-label="Open full screenshot: The launch checklist remains editable in a parked card on the left while the browser uses the main desktop."><img src="images/design-notes/parked-note.jpg" alt="The launch checklist remains editable in a parked card on the left while the browser uses the main desktop." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>The checklist is parked on the left and still editable. The browser takes the available window space; the project files remain accessible on the right. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="projects" class="chapter"><p class="chapter-number">02 / PROJECTS AND FILES</p><h2>Giving an activity its own place</h2><p>I personally use one project for each Jira request. Someone editing a video might use a project for the entire video, even though it involves many separate tasks. The size of a project depends on the work.</p>
+<p>A project brings together its folder, related resources, windows, and its own column of desktops. I can move between requests while keeping their environments separate. The ordinary workspace also supports working without a project.</p>
+<p>The materials belong to the activity as a whole. One request might involve code, screenshots, reference pages, notes, and a finished document. I want to reach those materials while working on any of its outputs.</p>
+<p>Ordinary files are the foundation. The Files panel makes project and workspace files accessible, including text notes that can be expanded in the panel. The same files can be used by different applications and by the Assistant. Where the prototype records an item’s origin, versions, or links to other items, those connections help explain how a result was made.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · PROJECT FILES</span>
+<a class="image-link" href="images/design-notes/project-files.jpg" aria-label="Open full screenshot: An expanded Project note.md in the Files panel, alongside the website preview and a parked checklist."><img src="images/design-notes/project-files.jpg" alt="An expanded Project note.md in the Files panel, alongside the website preview and a parked checklist." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>Project notes are ordinary files. Here a text file is expanded directly in Files, alongside the project folder and its other materials. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="overview" class="chapter"><p class="chapter-number">03 / OVERVIEW</p><h2>Finding work through Overview</h2><p>Overview brings several ways of finding work into one place. I can locate an open window, launch an application, find a project or file, or look back through Timeline.</p>
+<p>These views address different things I might remember. Sometimes I know which application I was using. Sometimes I remember the project or recognize a material. Sometimes I only remember when I was working on it.</p>
+<p>For example, I might return to a request through its open windows, through its project files, or through an earlier session in Timeline. Each route provides a different starting point for picking up the work.</p>
+<p>This is the role I want Overview to have: making those routes accessible together, so I can use whichever clue I still have.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · OVERVIEW WINDOWS</span>
+<a class="image-link" href="images/design-notes/overview-windows.jpg" aria-label="Open full screenshot: Overview shows Work, its project desktop columns, and windows on the current and other desktops."><img src="images/design-notes/overview-windows.jpg" alt="Overview shows Work, its project desktop columns, and windows on the current and other desktops." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>Overview brings the workspace map and running windows together. Website Launch and Short Film each have their own desktop column. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="timeline" class="chapter"><p class="chapter-number">04 / TIMELINE</p><h2>Remembering the work around a file</h2><p>I often find my place by reviewing files and leaving myself a simple text note. Timeline adds another way back.</p>
+<p>It brings recorded activity together with calendar events, tasks, and reminders. If I remember opening a document before a meeting, the meeting gives me a point from which to explore nearby activity. Past work and future plans share the same time view.</p>
+<p>The prototype groups recorded activity into sessions using time gaps and changes of project or workspace. Sessions can have notes and links to related files, pages, and other recorded items. This provides a way to reopen the relevant materials; it does not restore a complete historical state of the computer.</p>
+<p>The question is how much history helps. A long list of window switches can become another thing to search through. I want Timeline to make it easier to recognize a useful session and reach its materials. Clearer session summaries and less repetition are the next improvements I want to explore.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · TIMELINE SESSIONS</span>
+<a class="image-link" href="images/design-notes/timeline-sessions.jpg" aria-label="Open full screenshot: Timeline with work sessions beside a scheduled staging review, using the same time scale."><img src="images/design-notes/timeline-sessions.jpg" alt="Timeline with work sessions beside a scheduled staging review, using the same time scale." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>Recorded activity and planned events share a time scale. The entries marked Example are seeded demonstration data, not a record of the author’s day. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="workspaces" class="chapter"><p class="chapter-number">05 / WORKSPACES</p><h2>Separating work and personal life</h2><p>I use the same computer for work and personal things. Their files, accounts, and notifications can easily get mixed together. A personal notification appearing during a work screen share is one obvious example.</p>
+<p>Workspaces aim to provide a separation similar to different user environments, with quick switching inside the desktop. Each has its own home folder and context for application data, clipboard, and notifications. Documents and downloads should land in the appropriate place by default. Browser data is one example of this broader separation.</p>
+<p>Some things belong to the computer as a whole. The demo shares system appearance, hardware connections, and master sound settings. Its workspace separation is a model of the intended experience, rather than implemented operating system security isolation.</p>
+<p>I also want deliberate movement between environments to remain possible. Taking a music player from a personal workspace into a work workspace can be useful. The boundary should support intentional transfers while keeping everyday activity separate.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · DESKTOP GENERAL</span>
+<a class="image-link" href="images/design-notes/desktop-general.jpg" aria-label="Open full screenshot: General workspace with a left panel, a tiled Firefox start page and personal notes."><img src="images/design-notes/desktop-general.jpg" alt="General workspace with a left panel, a tiled Firefox start page and personal notes." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>General has its own personal browsing and notes, with only the left panel in its default layout. Work uses a separate project environment. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="assistant" class="chapter"><p class="chapter-number">06 / ASSISTANT</p><h2>Working alongside an Assistant</h2><p>I want the Assistant to work in the desktop alongside me. It could open a browser, show information, work with files, and use ordinary application windows while I watch and intervene.</p>
+<p>While developing Spatial Desktop, for example, I could keep a website preview on another display and explain what I want changed. The Assistant would work on the page and show the result there. The shared environment would make it easier to discuss the work as it changes.</p>
+<p>Projects and workspaces provide a place for this collaboration. In the demo, each has its own Assistant folder for outputs when no other destination is specified, together with its own conversation context. Results remain ordinary files that I can open and continue working on.</p>
+<p>Access to readable context and permission to control a display are separate choices. I want to be able to follow the Assistant’s work, pause it, and take over. These interactions are explored through scripted behavior in the prototype.</p>
+<p>Voice is another way to participate. The demo explores manual dictation, a wake phrase, and ongoing conversation, with spoken replies controlled separately. I also want to combine conversation with pasted text, code, and attachments without ending the voice session; that is a planned interaction.</p>
+<p>This could help people who find visual navigation or mouse use difficult, including blind users. That potential needs to be developed and tested with the people who would use it.</p><figure class="story-figure">
+<span class="image-label">CURRENT PROTOTYPE · ASSISTANT CONTEXT</span>
+<a class="image-link" href="images/design-notes/assistant-context.jpg" aria-label="Open full screenshot: Assistant in the Website Launch project with separate Context and Display control switches and a scripted conversation."><img src="images/design-notes/assistant-context.jpg" alt="Assistant in the Website Launch project with separate Context and Display control switches and a scripted conversation." width="1363" height="936" loading="lazy" decoding="async"></a>
+<figcaption>Assistant belongs to the current project. Context and Display control are separate permissions; the conversation shown here is scripted. <span class="image-credit">Captured from the browser prototype · 21 October 2026 · Select the image to view it at full size.</span></figcaption>
+</figure></section>
+<section id="fullscreen" class="chapter"><p class="chapter-number">07 / FULLSCREEN</p><h2>Moving between fullscreen and other work</h2><p>Fullscreen applications, especially games, should fit into the same environment. I want to be able to bring a game into a tile, check a note or another application, and return to fullscreen with little disruption.</p>
+<p>The demo illustrates this transition. Gamescope is the intended direction for exploring it with real games. Whether it behaves reliably across games and display setups needs to be tested in a native prototype.</p></section>
+<section id="experiment" class="chapter"><p class="chapter-number">08 / THE EXPERIMENT</p><h2>What I want to learn from the experiment</h2><p>Spatial Desktop combines familiar ideas: tiling, virtual desktops, project folders, activity history, and customizable panels. I want to see what changes when they support the same work together.</p>
+<p>My design uses explicit projects and desktop columns to provide structure. Jenson’s spatial experiment explores a more organic arrangement. That difference raises a useful question: does the structure help people keep their place, and how much effort does maintaining it require?</p>
+<p>The next test is a whole activity: gather materials, make something, get interrupted, and return later. Can someone recognize the work, find its sources, and continue without much explanation? Can they also work comfortably without organizing everything into a project?</p>
+<p>The browser demo lets me explore these questions before building a native desktop prototype. I want feedback on where the connections help, where they get in the way, and what the design still asks people to remember.</p></section>
+<footer class="guide-footer"><span>Spatial Desktop · Design notes by Xef</span><a href="#main">Back to top ↑</a></footer>
+</main></div>
+</body></html>
