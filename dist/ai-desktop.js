@@ -4,6 +4,10 @@
   const C=SpatialAIContext,D=SpatialAIDemo,F=SpatialStashFiles,key='spatial-ai-context-v1';
   const model=C.create(readDesktopStorage(key,{}),{workspaces:()=>workspaceProfiles,projects:()=>projectSpaces});
   const area=document.querySelector('[data-widget-source="assistant"]'),content=$('.ai-content',area),prompt=$('#aiPrompt'),folder=$('#aiWorkingFolder'),attachments=$('#aiAttachments'),transcript=$('#aiTranscript'),status=$('#aiStatus');
+  const sampleConversation=document.getElementById?.('aiSampleConversation');
+  const replyAnnouncement=document.getElementById?.('aiReplyAnnouncement');
+  const messageRoots=()=>[transcript,sampleConversation].filter(Boolean);
+  const turnDetails=selector=>messageRoots().flatMap(root=>$$(selector,root));
   let current='',signature='',chatContext='',sourceDrag=null,owner=null,scopeAvailable=true,rendering=false;const views=new Map();
   const chatSelect=$('#aiChatSelect'),chatName=$('#aiChatName'),renameForm=$('#aiRenameForm'),send=$('#aiSend');
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
@@ -55,15 +59,15 @@
     $('#aiScopeLabel').textContent=scopeLabel();contextToggle.checked=enabled;contextToggle.disabled=!scopeAvailable;
     displayToggle.checked=permission?.allowed===true;displayToggle.disabled=!permission?.available||!scopeAvailable;
     displayToggle._context=permission||null;
-    $('#aiDisplayControlHint').textContent=permission?.available?'Display '+permission.slot+' · '+(permission.roleLabel||({main:'Main workspace',extended:'Extended workspace',side:'Side space'}[permission.role])||'This display')+' · '+permission.scopeLabel+'. Scripted examples can open and arrange windows here.':'Display control is unavailable while this display is disconnected.';
+    $('#aiDisplayControlHint').textContent=permission?.available?'Display '+permission.slot+' · '+(permission.roleLabel||({main:'Main workspace',extended:'Extended workspace',side:'Side space'}[permission.role])||'This display')+' · '+permission.scopeLabel+'. Allows scripted window actions.':'Display control is unavailable while this display is disconnected.';
     const summary=$('#aiAutomaticContext'),list=$('#aiAutomaticSources');summary.hidden=!enabled;
-    $('#aiAutomaticSummary').textContent=inputs.length?'Automatic context · '+inputs.length+' open source'+(inputs.length===1?'':'s'):'Automatic context · No open sources';
-    const markup=inputs.slice(0,24).map(item=>'<li>'+escapeHtml(item.title)+'<small>'+escapeHtml(C.representation(item))+'</small></li>').join('')+'<li class="ai-context-limit">Captured when you send · Up to 24 inputs including attachments.</li>';
+    $('#aiAutomaticSummary').textContent=inputs.length+' source'+(inputs.length===1?'':'s');
+    const markup=inputs.slice(0,24).map(item=>'<li>'+escapeHtml(item.title)+'<small>'+escapeHtml(C.representation(item))+'</small></li>').join('')+'<li class="ai-context-limit">Saved on send · 24 inputs maximum.</li>';
     if(list.innerHTML!==markup)list.innerHTML=markup;
-    $('.ai-empty span',content).textContent=!scopeAvailable?'This Workspace holds 50 chats. Return to an existing context to continue.':enabled?'Open apps in '+scopeLabel()+' supply context when you send.':'Turn on workspace context, or drop files and text here.';
+    $('.ai-empty span',content).textContent=!scopeAvailable?'This Workspace holds 50 chats. Return to an existing context to continue.':enabled?'Context is on. Ask a question.':'Ask a question or drop a file.';
   }
-  contextToggle.addEventListener('change',()=>{model.contextPreference(activeWorkspace,currentProject(),contextToggle.checked);persist();renderPermissions();status.textContent=contextToggle.checked?'Open sources in '+scopeLabel()+' will be captured when you send.':'Automatic context is off. Attached inputs and earlier request snapshots are kept.';});
-  displayToggle.addEventListener('change',()=>{try{const accepted=globalThis.SpatialDisplayRoleBridge?.setDisplayControl?.(displayToggle.checked,displayToggle._context);if(accepted===false)throw Error('The display or context changed. Try the switch again.');status.textContent=displayToggle.checked?'Display control allowed for '+scopeLabel()+'.':'Display control is off.';}catch(error){status.textContent=error.message||'The display permission could not change.';}renderPermissions();});
+  contextToggle.addEventListener('change',()=>{status.textContent='';model.contextPreference(activeWorkspace,currentProject(),contextToggle.checked);persist();renderPermissions();});
+  displayToggle.addEventListener('change',()=>{try{const accepted=globalThis.SpatialDisplayRoleBridge?.setDisplayControl?.(displayToggle.checked,displayToggle._context);if(accepted===false)throw Error('The display or context changed. Try the switch again.');status.textContent='';}catch(error){status.textContent=error.message||'The display permission could not change.';}renderPermissions();});
   window.addEventListener('spatial-display-role-change',()=>{renderPermissions();syncVoiceContext();});
   let permissionRefresh=null;
   function refreshPermissionPreview(){
@@ -130,7 +134,7 @@
     folder.disabled=true;folder.title='This chat saves in '+model.workingFolder(activeWorkspace)+'. Switch Workspace or Project to change context.';
     const latest=model.session(activeWorkspace).turns.at(-1),finishedHere=!task?.context?.turnId||task.context.turnId===latest?.id;
     const show=Boolean(activity&&(ongoing||['error','interrupted','stopped'].includes(activity.stage)||(finishedHere&&(activity.entries||[]).length))),next=JSON.stringify([show,task?.allowed,task?.status,task?.control,task?.context?.operationId,activity]);
-    $('.ai-empty',content).hidden=show||Boolean(model.session(activeWorkspace).items.length||model.session(activeWorkspace).turns.length);
+    $('.ai-empty',content).hidden=show||Boolean(model.session(activeWorkspace).items.length||model.session(activeWorkspace).turns.some(turn=>!turn.example));
     if(next===taskSignature)return;const follow=shouldFollowConversation();taskSignature=next;taskPanel.hidden=!show;
     if(!show){taskQuestionKey='';return;}
     taskPanel.dataset.stage=activity.stage;
@@ -254,15 +258,16 @@
     return '<section class="ai-turn'+(turn.action?' ai-file-turn':'')+'" data-ai-turn="'+escapeHtml(turn.id)+'"'+(turn.presentation?' data-ai-presentation="'+turn.presentation+'"':'')+'>'+(turn.assistantOnly?'':'<div class="ai-request"><small>'+(turn.example?'Example request':'You')+'</small><p>'+escapeHtml(turn.request)+'</p></div>')+'<article class="ai-demo-output" data-ai-turn-output="'+escapeHtml(turn.id)+'"'+(ordinary?' draggable="true" tabindex="0" data-ai-demo-turn="'+escapeHtml(turn.id)+'"':'')+' aria-label="Assistant: '+escapeHtml(turn.title)+'"'+(turn.action?' hidden':'')+'><header>'+icon('i-ai')+'<span>Assistant</span></header><b>'+escapeHtml(turn.title)+'</b><p>'+escapeHtml(turn.text)+'</p>'+outputCards+'</article><div class="ai-turn-actions">'+(ordinary?'<button class="surface-key ai-save-output" data-ai-save-output="'+escapeHtml(turn.id)+'">Save to Files</button>':'')+'<details class="ai-turn-sources" data-ai-turn-details="'+escapeHtml(turn.id)+'"><summary>Details</summary><small>Scripted local reply · '+turn.sources.length+' saved input'+(turn.sources.length===1?'':'s')+'</small><small class="ai-turn-folder">Working folder: '+escapeHtml(turn.folder)+'</small>'+saved.map(output=>'<small class="ai-turn-folder">'+escapeHtml(output.path)+'</small>').join('')+(references?'<ul>'+references+'</ul>':'')+(ordinary?'<small>Drag the reply into Files to keep it with its input history.</small>':'')+'</details></div></section>';
   }
   function exampleMarkup(examples){
-    if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return examples.length?'<details class="ai-examples"><summary>Earlier sample replies</summary>'+examples.map(turnMarkup).join('')+'</details>':'';
+    if(desktopPreset!=='demo'||globalThis.SpatialGuide?.model.active())return examples.length?'<details class="ai-examples"><summary>Sample conversation</summary>'+examples.map(turnMarkup).join('')+'</details>':'';
     const actualProject=currentProject(),builtIn=SpatialDemoExamples.projects[actualProject],project=projectSpaces[actualProject];
     const context=builtIn&&project?.name===builtIn.name&&project?.root===builtIn.root?actualProject:actualProject?null:activeWorkspace;
     const workflows=SpatialDemoExamples.assistantWorkflows?.[context]||[];
     const recipes=workflows.map(recipe=>'<section class="ai-example-recipe"><b>'+escapeHtml(recipe.title)+'</b><ol>'+recipe.steps.map(step=>'<li>'+escapeHtml(step)+'</li>').join('')+'</ol>'+(recipe.prompt?'<p class="ai-example-prompt">'+escapeHtml(recipe.prompt)+'</p>':'')+'</section>').join('');
     const earlier=examples.length?'<details class="ai-earlier-examples"><summary>Earlier sample replies</summary>'+examples.map(turnMarkup).join('')+'</details>':'';
-    return recipes||earlier?'<details class="ai-examples"><summary>Examples</summary>'+recipes+(recipes?'<p class="ai-example-note">Try these with your selection. Replies are scripted locally; supported file conversions create real copies in the demo.</p>':'')+earlier+'</details>':'';
+    return recipes||earlier?'<details class="ai-examples"><summary>Sample conversation</summary>'+recipes+(recipes?'<p class="ai-example-note">Replies are scripted. File conversions create local copies.</p>':'')+earlier+'</details>':'';
   }
   function submitRequest(){
+    if(replyAnnouncement)replyAnnouncement.textContent='';
     const request=prompt.value.trim();if(!request){status.textContent='Write a request first.';return false;}
     if(!conversationVisible()||quickBlocked())return false;
     const task=currentDisplayTask();
@@ -282,15 +287,16 @@
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:inputs,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}),{sources:inputs});
     if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return false;}
     recordInputs(turn,session.id);
-    model.draft(activeWorkspace,'');prompt.value='';persist();render();
+    model.draft(activeWorkspace,'');prompt.value='';status.textContent='';persist();render();
     const sources=$('.ai-context-sources',content);if(sources){sources.open=false;sources.hidden=true;}
     followConversation();
-    status.textContent='Reply ready';speakTurn(turn);return true;
+    if(replyAnnouncement)replyAnnouncement.textContent='Reply ready.';
+    speakTurn(turn);return true;
   }
   function rememberView(){
     if(!current)return;
     views.set(current,{scroll:$('.ai-chat',content).scrollTop||0,sources:$('.ai-context-sources',content).open,
-      expanded:$$('[data-ai-source-detail][open]',attachments).map(node=>node.dataset.aiSourceDetail),turnDetails:$$('[data-ai-turn-details][open]',transcript).map(node=>node.dataset.aiTurnDetails)});
+      expanded:$$('[data-ai-source-detail][open]',attachments).map(node=>node.dataset.aiSourceDetail),turnDetails:turnDetails('[data-ai-turn-details][open]').map(node=>node.dataset.aiTurnDetails),sampleSections:sampleConversation?$$('details',sampleConversation).flatMap((node,index)=>node.open?[index]:[]):[]});
   }
   function render(){
     if(rendering)return;rendering=true;try{renderChat();}finally{rendering=false;}
@@ -302,18 +308,20 @@
     const next=JSON.stringify([activeWorkspace,currentProject(),scopeAvailable,activeProjectName,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
     if($('#aiAreaContext'))$('#aiAreaContext').textContent=project?.name||workspaceLabel(activeWorkspace)+' workspace';
     if(dropPosition)showDropTarget(dropPosition);
-    const follow=!switched&&shouldFollowConversation();if(switched)stopFollowingConversation();renderDisplayTask();if(next===signature)return;const focusedSummary=!switched&&transcript.contains(document.activeElement)&&document.activeElement?.matches?.('summary')?document.activeElement:null,focusedDetails=focusedSummary?.closest?.('[data-ai-turn-details]')?.dataset.aiTurnDetails;rememberView();signature=next;
+    const follow=!switched&&shouldFollowConversation();if(switched)stopFollowingConversation();renderDisplayTask();if(next===signature)return;const focusedSummary=!switched&&messageRoots().some(root=>root.contains(document.activeElement))&&document.activeElement?.matches?.('summary')?document.activeElement:null,focusedDetails=focusedSummary?.closest?.('[data-ai-turn-details]')?.dataset.aiTurnDetails;rememberView();signature=next;
     if(switched){current=nextKey;prompt.value=session.draft;renameForm.hidden=true;status.textContent='';}owner={workspace:activeWorkspace,project:currentProject(),chatId:session.id};
     chatSelect.innerHTML=chats.map(chat=>'<option value="'+escapeHtml(chat.id)+'">'+escapeHtml(chat.title)+'</option>').join('');chatSelect.value=session.id;chatSelect.title=session.title;
     prompt.disabled=!scopeAvailable;send.disabled=!scopeAvailable||!prompt.value.trim()||session.turns.length>=60;
     chatSelect.disabled=!scopeAvailable;$('#aiNewChat').disabled=!scopeAvailable;$('#aiRenameChat').disabled=!scopeAvailable;
     if(!scopeAvailable)status.textContent='This Workspace holds 50 chats. Return to an existing context to continue.';
     folder.innerHTML='<option value="">'+escapeHtml(workspaceLabel(activeWorkspace)+' · '+workspaceProfiles[activeWorkspace].home+'/Assistant')+'</option>'+options.map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(projectSpaces[id].name+' · '+projectSpaces[id].root+'/Assistant')+'</option>').join('');folder.value=session.workingProject||'';folder.title=model.workingFolder(activeWorkspace);
-    attachments.innerHTML=session.items.map(itemMarkup).join('');const examples=session.turns.filter(turn=>turn.example),replies=session.turns.filter(turn=>!turn.example);transcript.innerHTML=exampleMarkup(examples)+replies.map(turnMarkup).join('');transcript.hidden=!scopeAvailable;$('.ai-empty',content).hidden=scopeAvailable&&(session.items.length>0||session.turns.length>0||!taskPanel.hidden);
+    attachments.innerHTML=session.items.map(itemMarkup).join('');const examples=session.turns.filter(turn=>turn.example),replies=session.turns.filter(turn=>!turn.example),sampleMarkup=exampleMarkup(examples);
+    if(sampleConversation){sampleConversation.innerHTML=sampleMarkup;sampleConversation.hidden=!sampleMarkup;}transcript.innerHTML=(sampleConversation?'':sampleMarkup)+replies.map(turnMarkup).join('');transcript.hidden=!scopeAvailable;$('.ai-empty',content).hidden=scopeAvailable&&(session.items.length>0||replies.length>0||!taskPanel.hidden);
     const sources=$('.ai-context-sources',content),view=views.get(nextKey);sources.open=view?.sources??false;sources.hidden=!scopeAvailable||!session.items.length||!sources.open;sources.querySelector('summary').textContent='Details';
     $$('[data-ai-source-detail]',attachments).forEach(node=>{node.open=Boolean(view?.expanded?.includes(node.dataset.aiSourceDetail));});
-    $$('[data-ai-turn-details]',transcript).forEach(node=>{node.open=Boolean(view?.turnDetails?.includes(node.dataset.aiTurnDetails));});
-    if(focusedDetails&&(document.activeElement===focusedSummary||focusedSummary.isConnected===false))$$('[data-ai-turn-details]',transcript).find(node=>node.dataset.aiTurnDetails===focusedDetails)?.querySelector('summary')?.focus?.({preventScroll:true});
+    if(sampleConversation)$$('details',sampleConversation).forEach((node,index)=>{node.open=Boolean(view?.sampleSections?.includes(index));});
+    turnDetails('[data-ai-turn-details]').forEach(node=>{node.open=Boolean(view?.turnDetails?.includes(node.dataset.aiTurnDetails));});
+    if(focusedDetails&&(document.activeElement===focusedSummary||focusedSummary.isConnected===false))turnDetails('[data-ai-turn-details]').find(node=>node.dataset.aiTurnDetails===focusedDetails)?.querySelector('summary')?.focus?.({preventScroll:true});
     if(switched)$('.ai-chat',content).scrollTop=view?.scroll??$('.ai-chat',content).scrollHeight??0;else if(follow)followConversation();
     prepareControlSemantics(area);
     const detail={workspace:activeWorkspace,chatId:session.id,folder:model.workingFolder(activeWorkspace)},context=JSON.stringify(detail);
@@ -349,7 +357,7 @@
   $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();voice?.stop('Microphone stopped before sending.');submitRequest();});
   folder.addEventListener('change',()=>{folder.value=model.session(activeWorkspace).workingProject||'';status.textContent='Switch Workspace or Project to use its chat and save location.';});
   attachments.addEventListener('click',event=>{const inspect=event.target.closest('[data-ai-inspect]');if(inspect){inspectInput(model.session(activeWorkspace).items.find(item=>item.id===inspect.dataset.aiInspect),'Attached input');return;}const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
-  transcript.addEventListener('click',async event=>{
+  async function handleTurnClick(event){
     const outputButton=event.target.closest('[data-ai-result-open],[data-ai-result-folder]');
     if(outputButton){
       if(!conversationVisible()||quickBlocked())return;
@@ -358,7 +366,8 @@
     }
     const save=event.target.closest('[data-ai-save-output]');if(save){const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===save.dataset.aiSaveOutput);if(!turn||turn.presentation||turn.assistantOnly||turn.outputs?.length||!globalThis.SpatialMemoryDesktop)return;const workspace=activeWorkspace,chatId=model.session(workspace).id,key=JSON.stringify([workspace,turn.project&&projectSpaces[turn.project]?turn.project:null]);save.disabled=true;const kept=await SpatialMemoryDesktop.keepContext(outputContext(turn),key,{folder:turn.folder||model.workingFolder(workspace)});save.disabled=false;if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent=kept?'Saved in '+(turn.folder||model.workingFolder(workspace))+' with its input versions.':'Could not save this draft. Check the Files and try again.';return;}
     const citation=event.target.closest('[data-ai-input]');if(!citation)return;const turn=model.session(activeWorkspace).turns.find(turn=>turn.id===citation.dataset.aiInputTurn);inspectInput(turn?.sources[Number(citation.dataset.aiInput)],'Request input · '+(turn?.title||'Reply'));
-  });
+  }
+  transcript.addEventListener('click',handleTurnClick);sampleConversation?.addEventListener('click',handleTurnClick);
   document.addEventListener('keydown',event=>{if((globalThis.SpatialDemoSuper?.held()||event.metaKey||event.getModifierState?.('OS'))&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&event.code==='KeyA'&&(!globalThis.SpatialGuide?.model.active()||SpatialGuide.model.allows('ai'))){event.preventDefault();event.stopPropagation();superKeyAlone=false;if(!globalThis.SpatialAssistantDesktop?.invoke())toggle();}},true);
 
   function baseSource(target){
@@ -498,7 +507,16 @@
       if(project!==currentProject())return false;
       render();
     }
-    model.draft(activeWorkspace,prompt.value);if(!model.select(activeWorkspace,chatId))return false;closeInput();persist();render();expand(false);if(turnId)$$('[data-ai-turn]',transcript).find(node=>node.dataset.aiTurn===turnId)?.scrollIntoView?.({block:'center'});return true;
+    model.draft(activeWorkspace,prompt.value);if(!model.select(activeWorkspace,chatId))return false;closeInput();persist();render();expand(false);
+    if(turnId){
+      const turn=messageRoots().flatMap(root=>$$('[data-ai-turn]',root)).find(node=>node.dataset.aiTurn===turnId);
+      if(turn){
+        if(sampleConversation?.contains(turn)){$('#aiDemoRequests').hidden=false;$('#aiDemoHelp').setAttribute('aria-expanded','true');}
+        for(let at=turn.parentElement;at&&at!==transcript&&at!==sampleConversation;at=at.parentElement)if(at.tagName==='DETAILS')at.open=true;
+        turn.scrollIntoView?.({block:'center'});rememberView();
+      }
+    }
+    return true;
   }
   function startExample({title='Assistant example',folder:targetFolder,items=[],workspace=activeWorkspace,chatId}={}){
     // Validate before selecting a new conversation. An example must never
@@ -573,10 +591,10 @@
     mode.value=state.mode;mode.disabled=state.installing===true;const install=$('#aiVoiceInstallPack');if(install){install.hidden=state.mode!=='wake'||!state.wakeInstallSupported||state.wakePackAvailable===true;install.disabled=state.installing===true;install.textContent=state.installing?'Installing…':'Install English pack';}const wake=mode.querySelector('option[value="wake"]');if(wake){wake.disabled=!state.wakeSupported;wake.textContent=state.wakeSupported?'Wake phrase':'Wake phrase · unavailable';}
     read.checked=state.readAloud;read.disabled=!state.synthesisSupported;
     $('#aiVoiceStopSpeech').hidden=!state.speaking;
-    $('#aiVoiceModeHint').textContent=state.mode==='manual'?'Dictate in English, then review and send the message.':state.mode==='wake'?'Say “Hey Assistant”, followed by a request in English. Each request sends after a pause. On-device recognition and an installed English language pack are required. Use Install English pack when available, then press Speak.':'Speak in English without an activation phrase. Each message sends automatically after a pause. Say “Stop listening” to mute.';
+    $('#aiVoiceModeHint').textContent=!state.supported?'Voice input is unavailable in this browser. You can still type.':state.mode==='manual'?'Dictate in English, then review and send the message.':state.mode==='wake'?'Say “Hey Assistant”, followed by a request in English. Each request sends after a pause. On-device recognition and an installed English language pack are required. Use Install English pack when available, then press Speak.':'Speak in English without an activation phrase. Each message sends automatically after a pause. Say “Stop listening” to mute.';
     $('#aiVoiceProcessing').textContent=state.mode==='wake'?'Wake phrase is processed on this device. This browser must support on-device recognition and have the English language pack installed. Assistant replies remain scripted.':'Your browser transcribes speech and may send audio to its online recognition service. Voice activates only when you press Speak. Assistant replies remain scripted.'+(!state.wakeSupported?' Wake phrase is unavailable here because this browser does not support on-device recognition.':'');
-    message.textContent=voiceNotice||(!state.supported?'Voice input is unavailable in this browser. You can still type.':state.status||'');
-    message.hidden=!message.textContent||state.supported&&!state.active&&!state.speaking&&!state.error&&!voiceNotice&&/^(microphone is off|microphone off|ready|voice input is off)[.!]?$/i.test(message.textContent);
+    message.textContent=voiceNotice||state.status||'';
+    message.hidden=!message.textContent||!state.active&&!state.speaking&&!state.installing&&!state.error&&!voiceNotice;
     area.dataset.voiceActive=String(state.active);area.dataset.voiceSpeaking=String(state.speaking);
     if(state.error&&state.mode!=='manual'&&state.transcript){preview.textContent=state.transcript;preview.hidden=false;}
     else if(!state.active){preview.hidden=true;preview.textContent='';}

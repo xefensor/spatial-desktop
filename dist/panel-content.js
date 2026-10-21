@@ -125,7 +125,7 @@
     const emptyHint = assistant?.querySelector('.ai-empty small');
     if (emptyHint) emptyHint.textContent = 'Ask a question or drop a file here.';
     const notice = assistant?.querySelector('#aiDemoNotice');
-    if (notice) { notice.textContent = 'Scripted demo. Try “Make a checklist.”'; notice.title = 'No AI model is connected. Supported requests lists the local examples.'; }
+    if (notice) { notice.textContent = 'Scripted demo'; notice.title = 'No AI model is connected. Open Examples for supported requests.'; }
     const folderLabel = assistant?.querySelector('.ai-folder label');
     if (folderLabel) folderLabel.textContent = 'Save to';
     const chatOptions = assistant?.querySelector('.ai-chat-settings > summary');

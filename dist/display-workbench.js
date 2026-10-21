@@ -6,10 +6,10 @@
   const host=document.createElement('section');host.className='ai-display-controls';host.hidden=true;host.setAttribute('aria-label','Assistant display control');
   host.innerHTML=`
     <section class="display-assistant-control" data-display-control>
-      <small class="display-permission-scope" id="displayAssistantPermissionScope" data-display-permission-scope></small>
-      <div class="display-control-heading"><span class="display-control-indicator" aria-hidden="true"></span><strong data-display-control-status role="status" aria-live="polite"></strong><button type="button" class="surface-key" data-display-action="takeover">Take over</button><button type="button" class="surface-key" data-display-action="resume" hidden>Continue</button><button type="button" class="surface-key" data-display-action="examples">Examples</button></div>
+      <small class="display-permission-scope" id="displayAssistantPermissionScope" data-display-permission-scope hidden></small>
+      <div class="display-control-heading"><span class="display-control-indicator" aria-hidden="true"></span><strong data-display-control-status role="status" aria-live="polite" aria-describedby="displayAssistantPermissionScope"></strong><button type="button" class="surface-key" data-display-action="takeover">Take over</button><button type="button" class="surface-key" data-display-action="resume" hidden>Continue</button></div>
     </section>
-    <section class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">Follow a file task from start to saved result. Each example starts a new chat.</p><p class="display-examples-local">Scripted examples · no AI service connected</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Allow display control</button></div><div class="display-examples-list" data-display-examples-list></div></section>
+    <section id="displayAssistantExamples" class="display-assistant-examples" data-display-examples hidden aria-labelledby="displayExamplesHeading"><div class="display-examples-heading"><button type="button" class="surface-key" data-display-action="examples-back">← Back to chat</button><h2 id="displayExamplesHeading">Assistant examples</h2></div><p class="display-examples-intro">Follow a file task from start to saved result. Each example starts a new chat.</p><p class="display-examples-local">Scripted examples · no AI service connected</p><div class="display-examples-access" data-display-examples-access hidden><p data-display-examples-access-text></p><button type="button" class="surface-key" data-display-action="examples-delegate">Allow display control</button></div><div class="display-examples-list" data-display-examples-list></div></section>
     <p class="display-assistant-feedback" role="status" data-display-feedback></p>`;
   content.insertBefore(host,content.firstChild);
   const menu=document.createElement('div');menu.className='ai-display-tools';menu.hidden=true;
@@ -22,20 +22,31 @@
   function taskState(state){
     const task=state.space?.assistant||{};
     const owner=task.context,mismatch=owner&&(owner.workspace!==state.workspaceId||owner.setup!==state.setupKey||Number(owner.slot)!==Number(state.localSlot)||(owner.project||null)!==(state.project||null)||owner.role&&owner.role!==state.role||state.role!=='side'&&Number.isInteger(owner.page)&&owner.page!==state.page);
-    return mismatch?{...task,status:task.control==='user'?'paused':'idle',activity:null}:task;
+    return mismatch?{...task,status:task.control==='user'?'paused':'idle',task:'',result:'',activity:null}:task;
   }
+  const examplesButton=document.createElement('button');examplesButton.type='button';examplesButton.className='surface-key';examplesButton.dataset.displayAction='examples';examplesButton.textContent='Desktop tasks';examplesButton.setAttribute('aria-controls','displayAssistantExamples');
+  (content.querySelector('#aiDemoRequests')||content.querySelector('.ai-chat-settings-body')||menu).append(examplesButton);
   let currentKey='',examplesOpen=false,examplesListKey='',selection=null,permissionBusy=false;
   const interactive=()=>{for(let at=content;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true')return false;return true;};
-  function showChat(){examplesOpen=false;content.dataset.displayExamples='closed';find('[data-display-examples]').hidden=true;host.dataset.displayExamples='closed';}
+  function showChat(){
+    if(examplesOpen){
+      const help=content.querySelector('#aiDemoRequests');if(help)help.hidden=true;
+      content.querySelector('#aiDemoHelp')?.setAttribute('aria-expanded','false');
+    }
+    examplesOpen=false;content.dataset.displayExamples='closed';find('[data-display-examples]').hidden=true;host.dataset.displayExamples='closed';examplesButton.setAttribute('aria-expanded','false');
+  }
   function renderControl(state){
-    const task=taskState(state),permitted=allowed(state),user=!permitted||task.control==='user'||task.status==='paused';
-    find('[data-display-permission-scope]').textContent='Display '+state.localSlot+' · all windows here · '+(state.scopeLabel||state.workspace+' Workspace')+' only';
-    find('[data-display-control-status]').textContent=user?'You’re in control':task.status==='working'?'Working':task.status==='needs-you'||task.status==='error'?'Needs your input':'Ready';
-    find('[data-display-control]').dataset.control=user?'user':task.status==='working'?'working':'assistant';
-    find('[data-display-action="takeover"]').hidden=!permitted||user;find('[data-display-action="resume"]').hidden=!permitted||!user;
+    const task=taskState(state),permitted=allowed(state),paused=task.control==='user'||task.status==='paused',ongoing=['working','needs-you'].includes(task.status);
+    const scope='Display '+state.localSlot+' · all windows here · '+(state.scopeLabel||state.workspace+' Workspace')+' only';
+    const section=find('[data-display-control]'),heading=find('.display-control-heading');
+    section.hidden=!permitted&&!paused&&!task.task&&!task.activity&&!['working','needs-you','error'].includes(task.status);
+    heading.title=scope;find('[data-display-permission-scope]').textContent=scope;
+    find('[data-display-control-status]').textContent='Display '+state.localSlot+' · '+(task.status==='error'?'Task failed':paused?'Paused':task.status==='working'?'Working':task.status==='needs-you'?'Needs input':'Ready');
+    section.dataset.control=task.status==='error'?'error':paused||!permitted?'user':task.status==='working'?'working':'assistant';
+    find('[data-display-action="takeover"]').hidden=!permitted||paused||!ongoing;find('[data-display-action="resume"]').hidden=!permitted||!paused;
   }
   function renderExamples(state){
-    host.dataset.displayExamples=examplesOpen?'open':'closed';content.dataset.displayExamples=examplesOpen?'open':'closed';find('[data-display-examples]').hidden=!examplesOpen;if(!examplesOpen)return;
+    host.dataset.displayExamples=examplesOpen?'open':'closed';content.dataset.displayExamples=examplesOpen?'open':'closed';find('[data-display-examples]').hidden=!examplesOpen;examplesButton.setAttribute('aria-expanded',String(examplesOpen));if(!examplesOpen)return;
     const task=taskState(state),paused=task.control==='user'||task.status==='paused',working=task.status==='working'||['plan','source','question','output'].includes(task.activity?.stage),canRun=allowed(state)&&!paused&&!working;
     find('[data-display-examples-access]').hidden=canRun;find('[data-display-examples-access-text]').textContent=!allowed(state)?'Turn on Allow display control to run a scripted example on this display.':paused?'You’re in control. Choose Continue to let Assistant run an example.':'Assistant is working. Wait for this task to finish before starting another example.';
     find('[data-display-action="examples-delegate"]').hidden=allowed(state);
@@ -49,7 +60,7 @@
     for(const button of find('[data-display-examples-list]').querySelectorAll('[data-display-example]'))button.disabled=!canRun;
   }
   function refresh(){
-    const state=bridge()?.state(),key=context(state),changed=key!==currentKey;host.hidden=menu.hidden=!available(state);
+    const state=bridge()?.state(),key=context(state),changed=key!==currentKey;host.hidden=menu.hidden=examplesButton.hidden=!available(state);
     if(changed){showChat();selection=null;find('[data-display-feedback]').textContent='';}currentKey=key;
     root.SpatialAIDesktop?.setDisplayTask?.(available(state)?state:null);
     if(host.hidden)return;renderControl(state);renderExamples(state);
@@ -68,7 +79,7 @@
     const state=bridge()?.state(),items=available(state)&&interactive()?root.SpatialAssistantDesktop?.capture()||[]:[];
     if(opening||items.length)selection=items.length?{key:context(state),items}:null;
   });
-  content.addEventListener('keydown',event=>{if(event.key==='Escape'&&examplesOpen){event.preventDefault();event.stopPropagation();showChat();find('[data-display-action="examples"]').focus?.({preventScroll:true});}});
+  content.addEventListener('keydown',event=>{if(event.key==='Escape'&&examplesOpen){event.preventDefault();event.stopPropagation();showChat();(content.querySelector('#aiDemoHelp')||examplesButton).focus?.({preventScroll:true});}});
   content.addEventListener('click',event=>{
     const state=bridge()?.state();if(host.hidden||!available(state)||context(state)!==currentKey||!interactive())return;
     const example=event.target.closest('[data-display-example]');
@@ -81,7 +92,7 @@
     const options=content.querySelector('.ai-chat-settings');if(options)options.open=false;
     try{
       if(action==='examples'){examplesOpen=true;renderExamples(state);find('[data-display-action="examples-back"]').focus?.({preventScroll:true});return;}
-      if(action==='examples-back'){showChat();return;}
+      if(action==='examples-back'){showChat();content.querySelector('#aiPrompt')?.focus?.({preventScroll:true});return;}
       if(action==='examples-delegate'){if(examplesOpen&&!allowed(state))setPermission(true);return;}
       if(action==='takeover'||action==='resume'){if(allowed(state))bridge().assistantControl(action==='takeover'?'takeover':'resume');return;}
       if(action==='settings'){bridge().openDisplays(state.localSlot);return;}

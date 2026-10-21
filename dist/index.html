@@ -54,7 +54,7 @@
   <script src="demo-super-key.js?v=0d51c763ae38"></script>
   <script src="desktop-markers.js?v=73adb4eef74c"></script>
   <script src="workspace-setup.js?v=76bcea86773e"></script>
-  <script src="spatial-guide.js?v=14dcbbefb55a"></script>
+  <script src="spatial-guide.js?v=95f7b7847193"></script>
   
   <link rel="stylesheet" href="apps-quick-launch.css?v=8c15488a66c5">
   <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
@@ -72,7 +72,7 @@
   <link rel="stylesheet" href="display-assistant.css?v=30ebf31c9bf3">
   <link rel="stylesheet" href="widget-popovers.css?v=30ec9c64e133">
   <link rel="stylesheet" href="widget-content.css?v=b2a795aaa0bc">
-  <link rel="stylesheet" href="panel-desktop.css?v=8b706a912662">
+  <link rel="stylesheet" href="panel-desktop.css?v=595dfd6f00bf">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=d91b0dc8bebd"></script>
@@ -277,29 +277,51 @@
         <form id="aiRenameForm" class="ai-rename-form" hidden><label class="sr-only" for="aiChatName">Chat name</label><input id="aiChatName" aria-label="Chat name" maxlength="80" required><button class="surface-key" type="submit">Save</button><button class="surface-key" id="aiCancelRename" type="button">Cancel</button></form>
         <div class="ai-permissions" role="group" aria-label="Assistant access">
           <small id="aiScopeLabel" class="ai-scope-label">General Workspace</small>
-          <label class="ai-permission"><input type="checkbox" role="switch" id="aiUseWorkspaceContext" aria-describedby="aiWorkspaceContextHint"><span>Use workspace context<small id="aiWorkspaceContextHint">Open app text and selected documents in this Workspace or Project.</small></span></label>
-          <label class="ai-permission"><input type="checkbox" role="switch" id="aiAllowDisplayControl" aria-describedby="aiDisplayControlHint"><span>Allow display control<small id="aiDisplayControlHint">Control this display in the current Workspace or Project, including your Main workspace.</small></span></label>
+          <div class="ai-permission-controls">
+          <label class="ai-permission" title="Use open app text and selected documents in this Workspace or Project"><input type="checkbox" role="switch" id="aiUseWorkspaceContext" aria-label="Use workspace context" aria-describedby="aiWorkspaceContextHint"><span>Context<small id="aiWorkspaceContextHint" class="sr-only">Open app text and selected documents in this Workspace or Project.</small></span></label>
+          <label class="ai-permission" title="Allow Assistant to open and arrange windows on this display"><input type="checkbox" role="switch" id="aiAllowDisplayControl" aria-label="Allow display control" aria-describedby="aiDisplayControlHint"><span>Display control<small id="aiDisplayControlHint" class="sr-only">Control this display in the current Workspace or Project, including your Main workspace.</small></span></label>
+          </div>
           <details id="aiAutomaticContext" class="ai-automatic-context" hidden><summary id="aiAutomaticSummary">Automatic context</summary><ul id="aiAutomaticSources"></ul></details>
         </div>
         <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
         <div class="ai-chat" aria-label="Assistant conversation">
           <section id="aiDemoRequests" class="ai-demo-requests" aria-label="Supported demo requests" hidden>
-            <h3>Supported demo requests</h3>
-            <p>Replies follow local keyword rules, so similar wording also works. Turn on Use workspace context for open app text and selected documents in this Workspace or Project, or attach specific inputs. Details keeps the exact inputs used by each reply.</p>
+            <h3>Try a request</h3>
+            <p>Local scripted replies. Attach text or turn on Context.</p>
             <dl>
-              <dt><code data-ai-demo-request="summary">Summarize this source.</code></dt><dd>Attach readable text. Returns excerpts from that text.</dd>
-              <dt><code data-ai-demo-request="checklist">Make a checklist from this text.</code></dt><dd>Returns a scripted review checklist. Attached text adds context.</dd>
-              <dt><code data-ai-demo-request="draft">Write a draft note from this text.</code></dt><dd>Returns a template note using the attached excerpts.</dd>
-              <dt><code data-ai-demo-request="compare">Compare these two sources.</code></dt><dd>Attach two sources. Shows their excerpts and shared terms.</dd>
-              <dt><code data-ai-demo-request="html">Convert selected files to HTML in Documents/Converted</code></dt><dd>Select or attach saved text files. Review the destination, then choose Convert to create copies.</dd>
-              <dt><code data-ai-demo-request="webp">Convert selected files to WebP in Images/Web</code></dt><dd>Select or attach saved image files. Review the destination, then choose Convert to create copies.</dd>
+              <dt><code data-ai-demo-request="summary">Summarize this source.</code></dt><dd>Excerpts from attached text.</dd>
+              <dt><code data-ai-demo-request="checklist">Make a checklist from this text.</code></dt><dd>A review checklist.</dd>
+              <dt><code data-ai-demo-request="draft">Write a draft note from this text.</code></dt><dd>A note using attached excerpts.</dd>
+              <dt><code data-ai-demo-request="compare">Compare these two sources.</code></dt><dd>Excerpts and shared terms.</dd>
+              <dt><code data-ai-demo-request="html">Convert selected files to HTML in Documents/Converted</code></dt><dd>Text copies. Review the destination, then Convert.</dd>
+              <dt><code data-ai-demo-request="webp">Convert selected files to WebP in Images/Web</code></dt><dd>Image copies. Review the destination, then Convert.</dd>
             </dl>
-            <p>Image descriptions and audio transcription are explanatory placeholders. General questions use a source or context fallback.</p>
-            <p>Allow display control works on Main workspace, Extended workspace and Side space. Open Examples in Assistant and choose Run example for a launch checklist, image conversion or text-version comparison; typing their sample prompts does not start these workflows.</p>
+            <div id="aiSampleConversation"></div>
+            <details class="ai-demo-about"><summary>About this demo</summary><p>No AI model is connected. Image descriptions and audio transcription are placeholders. Desktop tasks are guided workflows: use Run example to start them; typing their sample requests does not run them.</p></details>
           </section>
-          <p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Turn on workspace context, or drop files and text here.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div>
+          <p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Ask a question or drop a file.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div>
         </div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Try: Make a checklist." autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><div class="ai-voice-toolbar" role="group" aria-label="Assistant voice"><button class="surface-key ai-voice-mic" id="aiVoiceMic" type="button" aria-label="Start voice input" aria-pressed="false" aria-describedby="aiVoiceStatus"><svg aria-hidden="true"><use href="#i-microphone"/></svg><span>Speak</span></button><details id="aiVoiceOptions" class="ai-voice-options"><summary>Voice options</summary><div class="ai-voice-settings"><label for="aiVoiceMode">Activation</label><select id="aiVoiceMode"><option value="manual">Manual</option><option value="wake">Wake phrase</option><option value="continuous">Continuous</option></select><p id="aiVoiceModeHint">Dictate a message, then review and send it.</p><button id="aiVoiceInstallPack" class="surface-key ai-voice-install" type="button" aria-describedby="aiVoiceModeHint aiVoiceStatus" hidden>Install English pack</button><label class="ai-permission"><input id="aiVoiceReadAloud" type="checkbox" role="switch"><span>Read replies aloud</span></label><p id="aiVoiceProcessing">Speech recognition depends on your browser and may use its online service. Wake phrase requires on-device recognition. Assistant replies remain scripted.</p><p>While reading aloud, the microphone pauses to avoid hearing its own reply. Stop speaking resumes an active voice session.</p></div></details><button class="surface-key ai-voice-stop" id="aiVoiceStopSpeech" type="button" hidden>Stop speaking</button></div><small id="aiVoiceStatus" class="ai-voice-status" role="status" aria-live="polite" hidden></small><small id="aiVoiceTranscript" class="ai-voice-transcript" hidden></small><small id="aiDemoNotice" class="ai-demo-notice">Scripted demo. Try “Make a checklist.”</small><button id="aiDemoHelp" class="ai-demo-help" type="button" aria-controls="aiDemoRequests" aria-expanded="false">Supported requests</button><small id="aiStatus" role="status"></small></form>
+        <form id="aiComposer" class="ai-composer">
+          <label for="aiPrompt" class="ai-input-label">Message Assistant</label>
+          <div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Message Assistant…" autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div>
+          <div class="ai-composer-tools">
+            <div class="ai-voice-toolbar" role="group" aria-label="Assistant voice">
+              <button class="surface-key ai-voice-mic" id="aiVoiceMic" type="button" aria-label="Start voice input" aria-pressed="false" aria-describedby="aiVoiceStatus"><svg aria-hidden="true"><use href="#i-microphone"/></svg><span class="sr-only">Speak</span></button>
+              <details id="aiVoiceOptions" class="ai-voice-options"><summary title="Voice options" aria-label="Voice options"><svg aria-hidden="true"><use href="#i-settings"/></svg><span class="sr-only">Voice options</span></summary><div class="ai-voice-settings">
+                <label for="aiVoiceMode">Activation</label><select id="aiVoiceMode"><option value="manual">Manual</option><option value="wake">Wake phrase</option><option value="continuous">Continuous</option></select>
+                <p id="aiVoiceModeHint">Dictate a message, then review and send it.</p>
+                <button id="aiVoiceInstallPack" class="surface-key ai-voice-install" type="button" aria-describedby="aiVoiceModeHint aiVoiceStatus" hidden>Install English pack</button>
+                <label class="ai-permission"><input id="aiVoiceReadAloud" type="checkbox" role="switch"><span>Read replies aloud</span></label>
+                <p id="aiVoiceProcessing">Speech recognition depends on your browser and may use its online service. Wake phrase requires on-device recognition. Assistant replies remain scripted.</p>
+                <p>The microphone pauses while Assistant speaks.</p>
+              </div></details>
+              <button class="surface-key ai-voice-stop" id="aiVoiceStopSpeech" type="button" hidden>Stop speaking</button>
+            </div>
+            <small id="aiDemoNotice" class="ai-demo-notice" title="No AI model is connected. Open Examples for supported requests.">Scripted demo</small>
+            <button id="aiDemoHelp" class="ai-demo-help" type="button" aria-controls="aiDemoRequests" aria-expanded="false">Examples</button>
+          </div>
+          <small id="aiVoiceStatus" class="ai-voice-status" role="status" aria-live="polite" hidden></small><small id="aiVoiceTranscript" class="ai-voice-transcript" hidden></small><small id="aiStatus" role="status"></small><small id="aiReplyAnnouncement" class="sr-only" role="status" aria-live="polite"></small>
+        </form>
       </div>
     </aside>
     <aside class="widget-source files-widget" data-widget-source="files" aria-label="Files widget">
@@ -709,7 +731,7 @@
 <script src="working-memory-desktop.js?v=5c8707451104"></script>
 <script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
 <script src="assistant-voice.js?v=e8b446834b8c"></script>
-<script src="ai-desktop.js?v=1c370a843705"></script>
+<script src="ai-desktop.js?v=d3e4b104d04a"></script>
 <script src="overview-desktop.js?v=fe8fc4c0e944"></script>
   <script src="steam-overview.js?v=71bf946de330"></script>
 <script src="all-workspaces.js?v=be1912614455"></script>
@@ -736,7 +758,7 @@
 <script src="display-role-desktop.js?v=7fcadb12ffee"></script>
 <script src="display-side-tools.js?v=2c3557844248"></script>
 <script src="display-side-legacy.js?v=add0cce1cf52"></script>
-<script src="display-workbench.js?v=5900ebbdd877"></script>
+<script src="display-workbench.js?v=6051b427cc1e"></script>
 <script src="settings-app-desktop.js?v=e7b4d9b4dc6c"></script>
 <script src="desktop-files.js?v=86b2a850faaa"></script>
 <script src="desktop-clipboard.js?v=aff213447c00"></script>
@@ -745,7 +767,7 @@
 <script src="desktop-surface-files.js?v=87a921c31279"></script>
 <script>SpatialRetiredApps.installSyncGuards();</script>
   <script src="panel-widgets.js?v=53858aa3a17b"></script>
-  <script src="panel-content.js?v=b826d3dab425"></script>
+  <script src="panel-content.js?v=09f4e7376fe9"></script>
   <script src="panel-compact.js?v=90982ebdf67c"></script>
   <script src="panel-fit.js?v=ab4a012edc82"></script>
   <script src="panel-desktop.js?v=e38e63bed202"></script>

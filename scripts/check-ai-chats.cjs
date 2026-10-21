@@ -111,6 +111,7 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   node('#aiPrompt').value='Keep my quick draft';node('#aiPrompt').listeners.input();assert.equal(area.dataset.hasDraft,'true');
   const help=node('#aiDemoRequests'),helpButton=node('#aiDemoHelp'),beforeHelp=JSON.stringify(api.snapshot());help.hidden=true;
   helpButton.listeners.click();assert.equal(help.hidden,false);assert.equal(node('.ai-chat').scrollTop,0);
+  assert.equal(node('#aiPrompt').value,'Keep my quick draft');assert.equal(api.current().turns.length,0,'Opening Examples neither fills nor sends a request');
   helpButton.listeners.click();assert.equal(help.hidden,true);assert.equal(node('#aiPrompt').value,'Keep my quick draft');assert.equal(JSON.stringify(api.snapshot()),beforeHelp,'Opening supported requests cannot send a turn, replace a draft or mutate saved chat state');
   nativePanels.closeApplet();assert.equal(api.snapshot().sessions.general.chats[initial].draft,'Keep my quick draft');openQuick();assert.equal(node('#aiPrompt').value,'Keep my quick draft');
   node('#aiPrompt').listeners.keydown({key:'Escape',stopPropagation(){}});assert.equal(quick.hidden,true,'Composer Escape closes its native popup');
@@ -151,6 +152,7 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   node('#aiComposer').listeners.submit({preventDefault(){}});
   assert.equal(api.snapshot().sessions.general.chats[initial].turns.length,1);assert.equal(api.snapshot().sessions.general.chats[next].turns.length,0);
   assert.equal(node('#aiPrompt').value,'');assert.equal(node('.ai-context-sources').open,false);
+  assert.equal(node('#aiStatus').textContent,'','A completed reply does not leave a redundant success paragraph');
   const remote=C.create(api.snapshot(),env);remote.select('general',next);remote.draft('general','Remote draft',next);
   api.merge(remote.snapshot());assert.equal(api.snapshot().sessions.general.activeChat,initial,'Another display cannot move input into a different chat');
   // Real pointer transfers from Project shelf buttons (not synthetic native
@@ -329,9 +331,10 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   Object.assign(boot.appInfo,{notes:{label:'Note Editor'},projectNotes:{base:'notes',label:'Project Note'},closedNotes:{base:'notes',label:'Closed Note'}});
   Object.assign(boot.appState,{notes:'open',projectNotes:'open',closedNotes:'closed'});
   Object.assign(appFrames,{notes:noteFrame('Workspace note',noteText),projectNotes:noteFrame('Private Project note',foreignText),closedNotes:noteFrame('Closed note',closedText)});appColumns.projectNotes='site';
-  api.render();assert.equal(node('#aiUseWorkspaceContext').checked,false);assert.equal(node('#aiAllowDisplayControl').checked,false);assert.equal(api.automaticInputs().length,0,'Automatic access starts off even while apps are open');
+  api.render();assert.equal(node('#aiUseWorkspaceContext').checked,false);assert.equal(node('#aiAllowDisplayControl').checked,false);assert.equal(api.automaticInputs().length,0,'Automatic access starts off even while apps are open');assert.equal(node('.ai-empty span').textContent,'Ask a question or drop a file.');
   node('#aiPrompt').value='Summarize this source';node('#aiComposer').listeners.submit({preventDefault(){}});assert.equal(api.current().turns.at(-1).sources.length,0,'Off means open apps are excluded from requests');
   const captureCount=captures;node('#aiUseWorkspaceContext').checked=true;node('#aiUseWorkspaceContext').listeners.change();
+  assert.equal(node('#aiStatus').textContent,'','Changing context access is reflected by the switch without a success paragraph');assert.equal(node('#aiAutomaticSummary').textContent,'1 source');assert.equal(node('.ai-empty span').textContent,'Context is on. Ask a question.');
   assert.equal(captures,captureCount,'Turning on context and showing the source summary does not save history yet');assert.equal(node('#aiAutomaticContext').hidden,false);assert(node('#aiAutomaticSources').innerHTML.includes('Workspace note'));assert(!node('#aiAutomaticSources').innerHTML.includes('Private Project note'));assert(!node('#aiAutomaticSources').innerHTML.includes('Closed note'));
   noteText.value='Edited immediately before Send';node('#aiPrompt').value='Summarize this source';node('#aiComposer').listeners.submit({preventDefault(){}});
   const automaticTurn=api.current().turns.at(-1);assert.equal(automaticTurn.sources.length,1);assert.equal(automaticTurn.sources[0].origin,'automatic');assert.equal(automaticTurn.sources[0].text,'Edited immediately before Send');assert(automaticTurn.text.includes('Edited immediately before Send'),'Reply uses actual newly captured text');assert.equal(api.current().items.length,0,'Automatic sources do not become permanent manual attachments');
@@ -352,8 +355,11 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   assert.equal(displayPermissions.size,0,'An obsolete descriptor cannot grant permission after a Project change');assert(node('#aiStatus').textContent.includes('context changed'));assert.equal(displayWrites.length,1);
   api.render();assert.notEqual(api.current().id,workspaceAutoChat);assert.equal(node('#aiUseWorkspaceContext').checked,false,'Each new Project starts with context access off');assert.equal(node('#aiAllowDisplayControl').checked,false);
   node('#aiAllowDisplayControl').checked=true;node('#aiAllowDisplayControl').listeners.change();assert.equal(displayPermissions.get('film'),true);assert.equal(node('#aiUseWorkspaceContext').checked,false,'Display control does not enable workspace context');assert.equal(displayWrites.at(-1)[1].project,'film');
+  assert.equal(node('#aiStatus').textContent,'','Display permission success does not duplicate the switch state');
   sourceProject='workspace';api.render();assert.equal(api.current().id,workspaceAutoChat);assert.equal(node('#aiUseWorkspaceContext').checked,true,'Returning restores this context preference');assert.equal(node('#aiAllowDisplayControl').checked,false,'Another Project permission never carries into the Workspace');
-  node('#aiUseWorkspaceContext').checked=false;node('#aiUseWorkspaceContext').listeners.change();delete boot.appInfo.notes;delete boot.appInfo.projectNotes;delete boot.appInfo.closedNotes;
+  node('#aiUseWorkspaceContext').checked=false;node('#aiUseWorkspaceContext').listeners.change();
+  const savedStorageWrite=boot.desktopStorage.setItem;boot.desktopStorage.setItem=()=>{throw Error('Storage blocked');};node('#aiUseWorkspaceContext').checked=true;node('#aiUseWorkspaceContext').listeners.change();assert.match(node('#aiStatus').textContent,/could not be saved/,'Real storage failures remain visible when routine success notices are removed');boot.desktopStorage.setItem=savedStorageWrite;node('#aiUseWorkspaceContext').checked=false;node('#aiUseWorkspaceContext').listeners.change();
+  delete boot.appInfo.notes;delete boot.appInfo.projectNotes;delete boot.appInfo.closedNotes;
   console.log('AI scoped access passed: fresh and restored context chats/drafts, stable desktop/focus navigation, default-off automatic inputs, exact Send snapshots, manual precedence, closed/foreign source exclusion, immutable provenance, independent display permission and stale descriptor rejection.');
   while(Object.keys(api.snapshot().sessions.general.chats).length<50)api.startExample({folder:profiles.general.home,title:'Capacity check'});
   node('#aiPrompt').value='Keep this at the chat limit';const full=JSON.stringify(api.snapshot());assert.throws(()=>api.startExample({folder:profiles.general.home}),/50 chats/);assert.equal(JSON.stringify(api.snapshot()),full);assert.equal(node('#aiPrompt').value,'Keep this at the chat limit','A full chat list rejects the example without consuming the current draft');

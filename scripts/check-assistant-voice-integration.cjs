@@ -20,7 +20,21 @@ const changeMode=value=>{mode.value=value;mode.dispatchEvent(new w.Event('change
 const latest=()=>instances.at(-1),turns=()=>api.current().turns;
 (async()=>{try{
  assert.equal(instances.length,0,'Loading the composer never opens the microphone');assert.equal(mic.getAttribute('aria-pressed'),'false');
+ assert.equal(status.hidden,true,'An idle composer does not show a permanent microphone-status paragraph');
+ // Drive the real presentation boundary with unavailable, idle and operational
+ // states. These checks keep compact UI from hiding actionable failures.
+ {
+  const adapter=fs.readFileSync(path.join(root,'ai-desktop.js'),'utf8'),start=adapter.indexOf('  function renderVoice(state){'),end=adapter.indexOf('  function initializeVoice()',start);
+  const presentation={scopeAvailable:true,voiceNotice:'',area:d.querySelector('[data-widget-source="assistant"]'),$:selector=>d.querySelector(selector)};
+  vm.createContext(presentation);vm.runInContext(adapter.slice(start,end),presentation);
+  const idle={mode:'manual',supported:true,synthesisSupported:true,wakeSupported:true,active:false,speaking:false,installing:false,error:'',status:'Microphone off',transcript:'',readAloud:false};
+  presentation.renderVoice({...idle,supported:false});assert.equal(status.hidden,true,'Unsupported idle voice is explained in options instead of a permanent warning');assert.match(mic.title,/unavailable/);assert.match(d.querySelector('#aiVoiceModeHint').textContent,/unavailable/);assert.equal(mic.disabled,true);
+  presentation.renderVoice({...idle,installing:true,status:'Installing English speech pack…'});assert.equal(status.hidden,false,'Requested speech-pack installation remains visible');
+  presentation.renderVoice({...idle,error:'Microphone access denied.',status:'Microphone access denied.'});assert.equal(status.hidden,false,'A real microphone error remains visible');
+  presentation.renderVoice(idle);assert.equal(status.hidden,true);assert.equal(mic.disabled,false);
+ }
  input('Typed introduction');mic.click();await tick();latest().results('with dictated words',false);assert.equal(prompt.value,'Typed introduction with dictated words','Manual interim dictation is reviewable and retained beside the typed draft');assert.equal(turns().length,0,'Manual dictation never sends automatically');
+ assert.equal(status.hidden,false,'Active dictation retains visible feedback');
  const late=latest().onresult;mic.click();await tick();assert.equal(mic.getAttribute('aria-pressed'),'false');assert.equal(prompt.value,'Typed introduction with dictated words','Mute preserves visible dictated text');late({results:[Object.assign([{transcript:'stale replacement'}],{isFinal:true})]});assert.equal(prompt.value,'Typed introduction with dictated words','A late result cannot overwrite the draft after Mute');
  changeMode('continuous');mic.click();await tick();assert.equal(mic.getAttribute('aria-pressed'),'false');assert.match(status.textContent,/Send or clear your draft/,'Automatic speech cannot consume an existing typed draft');
  input('');mic.click();await tick();latest().results('Make a checklist');await tick(900);await tick();assert.equal(turns().length,1,'A continuous utterance enters the actual request path once');assert.equal(turns()[0].request,'Make a checklist');assert.equal(prompt.value,'');assert.equal(mic.getAttribute('aria-pressed'),'true');
@@ -38,7 +52,7 @@ const latest=()=>instances.at(-1),turns=()=>api.current().turns;
  // cannot race it or send a second request after the context changes.
  changeMode('continuous');let resolveConversion,calls=0;w.SpatialAssistantDesktop={submitVoiceRequest:()=>{calls++;return new Promise(resolve=>{resolveConversion=resolve;});}};
  mic.click();await tick();latest().results('Convert selected files to HTML');await tick(900);const before=turns().length;assert.equal(calls,1);assert.equal(prompt.value,'Convert selected files to HTML');column='workspace';api.render();resolveConversion(null);await tick();assert.equal(turns().length,3,'A late conversion fallback cannot send into the newly active Workspace chat');assert.equal(mic.getAttribute('aria-pressed'),'false');
- input('');mic.click();await tick();latest().results('A request interrupted by a browser failure',false);latest().onerror({error:'network'});assert.equal(d.querySelector('#aiVoiceTranscript').hidden,false,'A failed automatic request keeps its visible transcript for review');assert.equal(d.querySelector('#aiVoiceTranscript').textContent,'A request interrupted by a browser failure');assert.equal(mic.getAttribute('aria-pressed'),'false');
+ input('');mic.click();await tick();latest().results('A request interrupted by a browser failure',false);latest().onerror({error:'network'});assert.equal(status.hidden,false,'A failed operation keeps its actual voice error visible');assert.equal(d.querySelector('#aiVoiceTranscript').hidden,false,'A failed automatic request keeps its visible transcript for review');assert.equal(d.querySelector('#aiVoiceTranscript').textContent,'A request interrupted by a browser failure');assert.equal(mic.getAttribute('aria-pressed'),'false');
  assert(d.querySelector('#aiVoiceProcessing').textContent.includes('may send audio'),'Browser-service processing is stated honestly');
  console.log('Assistant voice integration passed: actual composer controls, retained manual/interim drafts, typed-edit/Mute behavior, automatic send gating, new-reply-only synthesis, half-duplex Stop speech/resume, wake stripping/local-only recognition, async conversion routing and Workspace/Project/display context isolation.');
  }finally{w.dispatchEvent(new w.Event('pagehide'));dom.window.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

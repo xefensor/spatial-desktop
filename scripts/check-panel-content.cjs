@@ -188,7 +188,7 @@ try {
   observers.find(observer => observer.targets.some(entry => entry.target === displayControl)).callback();
   assert.equal(access.querySelector('.panel-assistant-access-state').textContent, 'Allowed');
   assert.equal(prompt.value, 'My unsent draft'); assert.equal(transcript.textContent, 'Existing conversation');
-  assert.equal(notice.textContent, 'Scripted demo. Try “Make a checklist.”');
+  assert.equal(notice.textContent, 'Scripted demo');
   assert(quickLaunchScope.classList.contains('panel-secondary-copy')); assert(parkedScope.classList.contains('panel-secondary-copy'));
   assert.equal(apps.dataset.panelParkedEmpty, 'true'); parkedCount.textContent = '1';
   observers.find(observer => observer.targets.some(entry => entry.target === parkedCount)).callback();

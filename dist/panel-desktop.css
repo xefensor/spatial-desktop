@@ -221,10 +221,10 @@ body.panel-desktop-preview .panel-assistant-access>summary {display:flex;align-i
 body.panel-desktop-preview .panel-assistant-access>summary::-webkit-details-marker {display:none}
 body.panel-desktop-preview .panel-assistant-access-state {font-size:12px;font-weight:550;color:var(--panel-ink)}
 body.panel-desktop-preview .panel-assistant-access[open]>.display-assistant-permission {padding:6px 0;border:0;background:transparent}
-body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-toolbar:has(.ai-chat-settings[open]) {flex-wrap:wrap;align-items:flex-start}
-body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-settings[open] {flex:1 0 100%}
+body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-toolbar {position:relative;flex-wrap:nowrap;align-items:center}
+body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-settings {position:static;flex:none}
 body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-settings[open]>summary {text-align:right}
-body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-settings-body {position:relative;inset:auto;width:100%;max-width:100%;max-height:none;margin-top:4px;padding:8px 0;border:0;border-block:1px solid var(--panel-cut);background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
+body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-chat-settings-body {position:absolute;inset:calc(100% + 4px) 0 auto auto;width:100%;max-width:260px;max-height:min(320px,55vh);margin:0;padding:12px;border:1px solid var(--panel-cut);background:var(--shell);box-shadow:0 8px 24px #0003;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:auto;overscroll-behavior:contain}
 /* Assistant keeps a useful conversation viewport. Auxiliary details grow in
    the same outer viewport, rather than adding several tiny nested scrollers. */
 body.panel-desktop-preview .desktop-widget[data-widget-id="assistant"] .ai-content {display:flex!important;flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
@@ -410,6 +410,35 @@ body.panel-desktop-preview :is(.panel-compact-app,.panel-compact-clock):focus-vi
 /* Applet popups reuse the live widget content without adding a saved mode. */
 body.panel-desktop-preview .panel-applet-popup.desktop-widget {position:fixed;z-index:9000;display:flex;flex-direction:column;min-width:0;min-height:0;max-width:min(380px,calc(100vw - 16px));max-height:min(620px,calc(100dvh - 16px));margin:0;padding:0;border:1px solid var(--sd-glass-edge);border-radius:0;background:var(--sd-glass-face);box-shadow:0 14px 38px #0004;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);overflow:hidden;container-type:size;--widget-header-size:0px}
 body.panel-desktop-preview .panel-applet-popup[data-widget-id="assistant"] {max-width:min(420px,calc(100vw - 16px))}
+
+/* Assistant keeps routine controls compact; explanations open on demand. */
+body.panel-desktop-preview .assistant-widget .ai-permissions {padding-bottom:6px}
+body.panel-desktop-preview .assistant-widget .ai-scope-label {margin:0 0 3px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.panel-desktop-preview .assistant-widget .ai-permission-controls {display:flex;align-items:center;gap:5px 14px;flex-wrap:wrap}
+body.panel-desktop-preview .assistant-widget .ai-permission-controls>.ai-permission {align-items:center;gap:6px;padding:4px 0}
+body.panel-desktop-preview .assistant-widget .ai-permission-controls>.ai-permission>input {margin:0}
+body.panel-desktop-preview .assistant-widget .ai-permission-controls>.ai-permission>span {font-size:12px;line-height:1.4}
+body.panel-desktop-preview .assistant-widget .ai-automatic-context {margin-top:2px}
+body.panel-desktop-preview .assistant-widget .ai-automatic-context>summary {padding:3px 0}
+body.panel-desktop-preview .assistant-widget .ai-empty {font-size:13px;line-height:1.5;color:var(--panel-muted)}
+body.panel-desktop-preview .assistant-widget .ai-composer-tools {display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px;min-width:0}
+body.panel-desktop-preview .assistant-widget .ai-composer-tools>.ai-voice-toolbar {flex:none;gap:2px;flex-wrap:nowrap;margin:0}
+body.panel-desktop-preview .assistant-widget .ai-voice-toolbar>.ai-voice-mic {width:28px;height:28px;min-height:28px;display:grid;place-items:center;padding:5px}
+body.panel-desktop-preview .assistant-widget .ai-voice-options {flex:none;min-width:0}
+body.panel-desktop-preview .assistant-widget .ai-voice-options>summary {box-sizing:border-box;display:grid;place-items:center;width:28px;height:28px;padding:5px;list-style:none;color:var(--panel-muted)}
+body.panel-desktop-preview .assistant-widget .ai-voice-options>summary::-webkit-details-marker {display:none}
+body.panel-desktop-preview .assistant-widget .ai-voice-options>summary>svg {width:15px;height:15px}
+body.panel-desktop-preview .assistant-widget .ai-voice-options[open]>summary {background:var(--sd-glass-hover);color:var(--panel-ink)}
+body.panel-desktop-preview .assistant-widget .ai-composer-tools>.ai-demo-notice {flex:1;min-width:68px;margin:0;text-align:right;font-size:11px;line-height:1.4;color:var(--panel-muted)}
+body.panel-desktop-preview .assistant-widget .ai-composer-tools>.ai-demo-help {flex:none;min-height:28px;padding:4px 6px;font-size:12px;line-height:1.4;text-decoration:none}
+body.panel-desktop-preview .assistant-widget .ai-demo-help[aria-expanded="true"] {background:var(--sd-glass-hover)}
+body.panel-desktop-preview .assistant-widget .ai-demo-requests {padding:4px 0 14px}
+body.panel-desktop-preview .assistant-widget .ai-demo-requests h3 {font-size:14px;margin-bottom:5px}
+body.panel-desktop-preview .assistant-widget .ai-demo-requests dd {font-size:11px}
+body.panel-desktop-preview .assistant-widget .ai-demo-about {font-size:11px;color:var(--panel-muted);margin-top:10px}
+body.panel-desktop-preview .assistant-widget .ai-demo-about>summary {cursor:pointer;padding:5px 0}
+body.panel-desktop-preview .assistant-widget .ai-demo-about p {margin-top:6px}
+body.panel-desktop-preview .assistant-widget .display-assistant-control[data-control="error"] .display-control-indicator {background:var(--amber)}
 body.panel-desktop-preview .panel-applet-popup[hidden] {display:none!important}
 body.panel-desktop-preview .panel-applet-popup-header {display:flex;align-items:center;gap:8px;flex:none;min-height:44px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--panel-cut);color:var(--panel-ink)}
 body.panel-desktop-preview .panel-applet-popup-header :is(h2,h3,strong) {flex:1;min-width:0;margin:0;font-size:14px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
