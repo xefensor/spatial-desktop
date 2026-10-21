@@ -59,8 +59,8 @@
 .file-preview small {font-size:11px;color:var(--muted);margin-top:3px}
 .file-preview pre {margin:0;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;flex:1;font:13px/1.65 ui-monospace,monospace;user-select:text}
 .app-frame[data-app-kind="notes"] {grid-template-rows:44px minmax(0,1fr)}
-.app-frame[data-app-kind="notes"] .notes-layout {grid-template-columns:156px minmax(0,1fr);min-height:0;gap:0;padding:0}
-.app-frame[data-app-kind="notes"] .notes-layout nav {display:flex;flex-direction:column;padding:10px 8px;gap:5px;min-width:0;overflow:auto;border-right:1px solid var(--line)}
+.app-frame[data-app-kind="notes"] .notes-layout {grid-template-columns:156px minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-height:0;gap:0;padding:0}
+.app-frame[data-app-kind="notes"] .notes-layout nav {display:flex;flex-direction:column;padding:10px 8px;gap:5px;min-width:0;overflow:auto;border-right:1px solid var(--line);border-bottom:0}
 .app-frame[data-app-kind="notes"] .notes-layout .nav-choice {min-height:34px;height:34px;width:100%;padding:0 7px;flex-shrink:0}
 .app-frame[data-app-kind="notes"] .notes-layout .nav-choice>span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px}
 .note-new {display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;margin-top:auto;flex-shrink:0;font-size:12px}

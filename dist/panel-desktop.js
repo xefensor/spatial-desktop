@@ -9,7 +9,9 @@
   const sessions=Object.create(null);for(const [id,value]of Object.entries(saved))if(id!=='__proto__')sessions[id]=M.normalize(value);
   const clone=value=>JSON.parse(JSON.stringify(value));
   const owner=()=>typeof activeWorkspace==='string'?activeWorkspace:'general';
-  const state=()=>sessions[owner()]||=(M.defaults());
+  const demoContext=()=>typeof desktopPreset==='string'&&desktopPreset==='demo'&&!(typeof workspaceProfiles!=='undefined'&&workspaceProfiles[owner()]?.custom);
+  const defaultState=()=>demoContext()?M.demoDefaults():M.defaults();
+  const state=()=>sessions[owner()]||=defaultState();
   const preferredWidgets=Object.create(null);
   const frames=new Map(),panels=new Map(),undo=[];
   const editInert=new Map();
@@ -52,7 +54,7 @@
   }
   function layoutOptions(){
     const full=fullDisplay(),compactSizes={};if(compactPanels)for(const id of ['apps','clock'])compactSizes[id]={vertical:compactPanels.measure(id,true),horizontal:compactPanels.measure(id,false),minSize:{vertical:compactPanels.measureMin?.(id,true),horizontal:compactPanels.measureMin?.(id,false)}};
-    const options={width:shell.clientWidth||root.innerWidth||1440,height:shell.clientHeight||root.innerHeight||900,display:localSlot(),displays:displayCount(),fullscreen:Boolean(full),fullscreenDisplay:full||1,headerSize:0,footerSize:0,compactToolboxSize:0,compactSizes,widgetHeaderSize:0,preferredWidget:preferredWidgets[owner()]};
+    const options={width:shell.clientWidth||root.innerWidth||1440,height:shell.clientHeight||root.innerHeight||900,display:localSlot(),displays:displayCount(),fullscreen:Boolean(full),fullscreenDisplay:full||1,headerSize:0,footerSize:0,compactToolboxSize:0,compactSizes,widgetHeaderSize:0,preferredWidget:preferredWidgets[owner()],demo:demoContext()};
     if(widgetFit){const geometry=M.layout(state(),options),widgetSizes={},measure=(id,vertical,cross)=>widgetFit.measureRange?.(id,vertical,cross)??widgetFit.measure(id,vertical,cross);for(const panel of state().panels){const rect=geometry.panels[panel.id];if(!rect||rect.compact)continue;for(const id of panel.widgets)if(!isSpacer(id)&&state().widgets[id]?.mode==='expanded'){widgetSizes[id]=rect.vertical?{vertical:measure(id,true,rect.width)}:{horizontal:measure(id,false,Math.max(0,rect.height-rect.bodyOffset-rect.bodyEnd-options.widgetHeaderSize))};}}options.widgetSizes=widgetSizes;}
     return options;
   }
@@ -299,7 +301,7 @@
     else if(action==='remove-panel'){change(M.removePanel(state(),id),'Panel removed; its widgets were kept');closeMenu();}
     else if(action==='reorder-widget'){const panel=state().panels.find(item=>item.widgets.includes(widget));change(M.moveWidget(state(),widget,panel.id,panel.widgets.indexOf(widget)+Number(target.dataset.step)));closeMenu();}
     else if(action==='auto-widget'){preferredWidgets[owner()]=widget;change(M.updateWidget(state(),widget,{size:0}));closeMenu();}
-    else if(action==='reset'){delete preferredWidgets[owner()];change(M.defaults(),'Default panel layout restored');closeMenu();}
+    else if(action==='reset'){delete preferredWidgets[owner()];change(defaultState(),'Default panel layout restored');closeMenu();}
     else if(action==='undo'){const index=undo.findLastIndex(item=>item.workspace===owner());if(index>=0){sessions[owner()]=undo.splice(index,1)[0].state;save();render();announce('Panel layout restored');}}
     event.stopPropagation();
   });
@@ -419,7 +421,7 @@
   root.SpatialPanels={
     state:()=>clone(state()),sessions:()=>clone(sessions),captureSessions:()=>clone(sessions),replaceSessions,restoreSession,insetsFor,
     render,refresh:schedule,edit:setEditing,openApplet,closeApplet,isAppletOpen:id=>appletPopup?.id===id,hasWidget:id=>registry.has(id),isWidgetVisible,isWidgetExpanded,
-    reset:()=>{closeApplet(false,false);delete preferredWidgets[owner()];return change(M.defaults(),'Default panel layout restored');},
+    reset:()=>{closeApplet(false,false);delete preferredWidgets[owner()];return change(defaultState(),'Default panel layout restored');},
     moveWidget:(id,panel,index)=>change(M.moveWidget(state(),id,panel,index)),
     updateWidget:(id,patch)=>{let next=M.updateWidget(state(),id,patch);if(patch?.mode==='expanded'){preferredWidgets[owner()]=id;const panel=next.panels.find(item=>item.widgets.includes(id));if(panel)next=M.updatePanel(next,panel.id,{mode:'expanded'});}return change(next);},
     updatePanel:(id,patch)=>change(M.updatePanel(state(),id,patch)),addPanel:edge=>change(M.addPanel(state(),edge)),removePanel:id=>change(M.removePanel(state(),id)),

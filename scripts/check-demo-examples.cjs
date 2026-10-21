@@ -85,7 +85,7 @@ const freshScene = sceneStore();
 assert.equal(D.seedWorkspaces(freshScene.storage), true);
 const sceneApps = freshScene.read('spatial-workspace-app-states-v1');
 const sceneProjects = freshScene.read('spatial-workspace-project-states-v1');
-assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin', 'notes']);
+assert.deepEqual(Object.entries(sceneApps.general).filter(([, state]) => state === 'open').map(([name]) => name), ['dolphin', 'browser', 'notes']);
 assert.equal(sceneProjects.general.project, null);
 assert.equal(sceneProjects.school.project, 'research');
 assert.equal(sceneProjects.work.mode, 'default');
@@ -147,7 +147,41 @@ for(const changed of [{active:1},{activeColumn:'my-project'},{owners:{game:'my-p
   assert.deepEqual(edited.read('spatial-desktop-pages-v1').gaming,gaming,'Do not change a user-selected page or Project');
 }
 assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
-assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'terminal--demo-site-server']);
+assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'notes--demo-site-checklist']);
+// Every fresh desktop has one focused activity, with the paired materials
+// actually readable at the demo's 1366px panel footprint. Use the production
+// app minima here so changing a window's requirements cannot silently park it.
+const SeedTiling=require('../dist/spatial-tiling.js');
+const sizeLiteral=require('node:fs').readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8').match(/const windowUsableSizes = (\{[\s\S]*?\n\});/)[1];
+const appMinima=Function('return ('+sizeLiteral+')')();
+const pageState=freshScene.read('spatial-desktop-pages-v1');
+assert.deepEqual(SeedTiling.names(tiles['general:desktop:0:1'].root),['browser','notes'],'The first General desktop pairs browsing with a personal plan');
+assert.deepEqual(SeedTiling.names(tiles['general:desktop:1:1'].root),['dolphin'],'File organisation has a separate desktop');
+assert.equal(D.workspaceWindows.general.find(w=>w.base==='dolphin').content.folder,'/home/demo/Documents','The organisation desktop does not duplicate the panel Home view');
+assert.deepEqual(SeedTiling.names(tiles['work:project-column:plasma:desktop:1:1'].root),['terminal--demo-site-server','dolphin--demo-site-files']);
+assert.deepEqual(SeedTiling.names(tiles['gaming:desktop:0:1'].root),['game'],'The game opens alone on its parent desktop');
+assert.deepEqual(SeedTiling.names(tiles['gaming:desktop:1:1'].root),['browser','notes'],'Social planning stays beside the game rather than squeezing it');
+for(const [workspace,example] of Object.entries(D.scenarios))for(const column of example.windows){
+ for(const page of new Set(column.windows.map(w=>w.page))){
+  const open=column.windows.filter(w=>w.page===page&&w.state==='open');assert(open.length<=2,'Demo desktops contain at most two relevant open windows');
+  const prefix=column.column==='workspace'?workspace+':desktop:':workspace+':project-column:'+column.column+':desktop:';
+  const panelLayout=Panels.layout(Panels.demoDefaults(),{width:1366,height:900,display:1,displays:1});
+  const tileWidth=1366-panelLayout.insets.left-panelLayout.insets.right-64; // two 24px desktop rails plus 16px tile padding
+  const root=tiles[prefix+page+':1'].root,placed=SeedTiling.layout(root,{x:0,y:0,width:tileWidth,height:700}).windows;
+  for(const window of open){const rect=placed.get(window.id),minimum=appMinima[window.base]||{width:400,height:300};assert(rect);assert(rect.width>=minimum.width-1,window.id+' has readable width on a 1366px demo');assert(rect.height>=minimum.height-1,window.id+' has readable height');}
+ }
+}
+for(const name of ['general','school','work','gaming'])assert.equal(pageState[name].active,0,'Fresh contexts begin on their first desktop');
+const currentShell=require('node:fs').readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8');
+const profileLiteral=currentShell.slice(currentShell.indexOf('const workspaceProfiles = {')+'const workspaceProfiles = '.length,currentShell.indexOf('\n\nconst gamingWorkspaceProfile')).trim().replace(/;$/,'');
+const defaultProfiles=Function('return ('+profileLiteral+')')();
+for(const [workspace,profile] of Object.entries(defaultProfiles))for(const [id] of profile.favorites){assert(Object.hasOwn(D.scenarios[workspace].apps,id),'The '+workspace+' default launcher opens a working app: '+id);if(workspace!=='gaming')assert(!['game','steam'].includes(id),'Game launchers belong to Gaming');}
+const resumedScene=sceneStore(Object.fromEntries(freshScene.data));
+resumedScene.storage.setItem('spatial-demo-window-order-v1','1');
+resumedScene.storage.setItem('spatial-workspace-app-states-v1',JSON.stringify({general:{notes:'open',browser:'closed'}}));
+resumedScene.storage.setItem('spatial-split-layouts-v1',JSON.stringify({'general:desktop:0:1':{root:{kind:'window',name:'notes'},floating:{},parked:{}}}));
+resumedScene.storage.setItem('spatial-ai-context-v1',JSON.stringify({custom:'Keep my chats and drafts'}));
+const retainedScene=Object.fromEntries(resumedScene.data);assert.equal(D.seedWorkspaces(resumedScene.storage),false);assert.deepEqual(Object.fromEntries(resumedScene.data),retainedScene,'Revisiting a version-4 demo never reseeds existing windows, tiling, files or chats');
 freshScene.storage.setItem('spatial-workspace-app-states-v1', JSON.stringify({ general: { notes: 'open' } }));
 assert.equal(D.seedWorkspaces(freshScene.storage), false);
 assert.deepEqual(freshScene.read('spatial-workspace-app-states-v1'), { general: { notes: 'open' } });
@@ -364,7 +398,7 @@ for (const [workspace,example] of Object.entries(D.scenarios)) {
     }
   }
 }
-assert.equal(columnPages.pageOf('work','notes--demo-site-checklist'),1);
+assert.equal(columnPages.pageOf('work','notes--demo-site-checklist'),0);
 assert.equal(columnPages.columnOf('work','notes--demo-film-cut'),'retold');
 assert.notEqual(D.projectWindows.plasma.find(w=>w.base==='notes').content.note,D.projectWindows.retold.find(w=>w.base==='notes').content.note);
 assert.equal(sceneApps.work['elisa--demo-film-soundtrack'],'minimized');

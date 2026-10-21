@@ -70,6 +70,18 @@
     };
   }
 
+  // The populated demo exposes its files while keeping the app canvas wide
+  // enough for a browser and note together. Clean and user layouts stay lean.
+  function demoDefaults() {
+    const state = defaults();
+    state.panels[0].size = 200;
+    state.panels[1].size = 248;
+    state.panels[1].mode = 'expanded';
+    return state;
+  }
+
+  function isDemoDefault(input) { return equalState(normalize(input), normalize(demoDefaults())); }
+
   function equalState(a, b) {
     if (a === b) return true;
     if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(function (value, i) { return equalState(value, b[i]); });
@@ -474,7 +486,11 @@
       }
       if (display === currentDisplay) groups[panel.edge].push(panel);
     });
-    const forcedCompact = {left: false, right: false, top: false, bottom: false};
+    const curated = options.demo === true && isDemoDefault(state);
+    // Render-only fallbacks protect the seeded two-window scenes. Any saved
+    // customization opts out, and growing the viewport restores both panels.
+    // Reserve 64px for desktop rails/tile padding and 848px for the widest pair.
+    const forcedCompact = {left: curated && width < 1180, right: curated && width < 1360, top: false, bottom: false};
     const compactThickness = function (side) { return side === 'left' || side === 'right' ? COMPACT : COMPACT + headerSize; };
     const compactFor = function (panel) { return panel.mode === 'compact' || forcedCompact[panel.edge]; };
     const requested = function (panel) { return compactFor(panel) ? compactThickness(panel.edge) : Math.max(panel.edge === 'left' || panel.edge === 'right' ? 160 : 100, panel.size); };
@@ -587,5 +603,5 @@
     return state;
   }
 
-  return Object.freeze({catalog: catalog, definition: definition, isSpacer: isSpacer, addSpacer: addSpacer, removeSpacer: removeSpacer, compactDefinitions: compactDefinitions, definitions: Object.freeze(definitions), defaults: defaults, migrateDefaults: migrateDefaults, normalize: normalize, setSpace: setSpace, moveWidget: moveWidget, addPanel: addPanel, removePanel: removePanel, updatePanel: updatePanel, updateWidget: updateWidget, resizeWidget: resizeWidget, resizeLimits: resizeLimits, layout: layout});
+  return Object.freeze({catalog: catalog, definition: definition, isSpacer: isSpacer, addSpacer: addSpacer, removeSpacer: removeSpacer, compactDefinitions: compactDefinitions, definitions: Object.freeze(definitions), defaults: defaults, demoDefaults: demoDefaults, isDemoDefault: isDemoDefault, migrateDefaults: migrateDefaults, normalize: normalize, setSpace: setSpace, moveWidget: moveWidget, addPanel: addPanel, removePanel: removePanel, updatePanel: updatePanel, updateWidget: updateWidget, resizeWidget: resizeWidget, resizeLimits: resizeLimits, layout: layout});
 });

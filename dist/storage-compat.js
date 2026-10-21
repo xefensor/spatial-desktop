@@ -1,6 +1,16 @@
-/* Preserve files and preferences created by the earlier hosted panel preview. */
+/* Browser compatibility and preserved files from the earlier panel preview. */
 (function(root){
   'use strict';
+  // UUID is a secure-context API; local HTTP previews still have the native
+  // cryptographic random source. Keep their ordinary file IDs working too.
+  if(root.crypto&&typeof root.crypto.randomUUID!=='function'&&typeof root.crypto.getRandomValues==='function'){
+    try{Object.defineProperty(root.crypto,'randomUUID',{configurable:true,writable:true,value(){
+      const bytes=new Uint8Array(16);root.crypto.getRandomValues(bytes);
+      bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+      const hex=Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('');
+      return hex.slice(0,8)+'-'+hex.slice(8,12)+'-'+hex.slice(12,16)+'-'+hex.slice(16,20)+'-'+hex.slice(20);
+    }});}catch{}
+  }
   const prefix='spatial-panels-experiment:',marker='spatial-widget-storage-compat-v1';
   let useLegacyFiles=false;
   try{

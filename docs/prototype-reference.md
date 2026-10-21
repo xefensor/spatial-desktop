@@ -8,9 +8,29 @@ Windows tile automatically and show their hotbar numbers. Multiple instances kee
 
 Desktop pages stack vertically. Projects have their own column of desktops; Workspaces separate wider contexts. Parked windows belong to the whole current column. Desktop indicators and the desktop map show location and open windows without including parked or closed windows.
 
+## Demo starting scenes
+
+Fresh demo sessions give each desktop a purpose. School first selects Urban Ecology, and Work first selects Website Launch; their ordinary Workspace tabs keep everyday planning separate.
+
+| Context | Desktop 1 | Desktop 2 |
+| --- | --- | --- |
+| General Workspace | Your day in Firefox + Personal notes | Documents in File Browser |
+| School Workspace | Student portal + Class planning | Available for more work |
+| Urban Ecology Project | Field guide + Observations | Survey evidence in File Browser |
+| Work Workspace | Studio desk + Studio planning | Available for more work |
+| Website Launch Project | Preview + Launch checklist | Dev server + Source files |
+| Short Film Project | Footage + Edit notes | Cut feedback, with Soundtrack parked |
+| Gaming Workspace | Fallout 4, with Steam and Game-night mix parked | Game library + Co-op planning |
+
+The game starts alone on its ordinary desktop; **F2+F** demonstrates fullscreen. Settings stays available through System controls and Overview instead of occupying a starting tile. Default Quick launch lists use runnable demo apps; saved custom favorites remain unchanged.
+
+New seeds and explicit **Explore demo** resets use these scenes. Existing saved sessions retain their windows, desktop placement, favorites and panel layouts. **Reset layout** changes only the current Workspace’s panel arrangement; it does not reload the demo app scenes. Desktop Guide practice and a clean desktop remain separate from the populated demo.
+
 ## Panels and widgets
 
 Right-click a panel → **Edit layout** to move widgets, add Spacers or arrange whole panels. Compact and expanded presentations retain the same grouping and actions. Icons open temporary live content; **Keep expanded** pins it. Panel borders resize panels. Apps keeps Quick launch and Background visible, while only Parked scrolls.
+
+The populated demo starts with a 200-pixel expanded left panel for Overview, Apps, Clock and system icons, and a 248-pixel expanded right panel for Files with compact Assistant. An untouched demo arrangement temporarily compacts the right panel below 1360 pixels and both panels below 1180, restoring them when space returns without saving different modes. Deliberate layout edits opt out. Existing saved layouts are retained. Clean desktops and new custom Workspaces use a 224-pixel expanded left panel and compact right panel.
 
 Panels and widgets have no headers or panel footers. Widget movement is available in edit mode. The former Areas layout, shared-column controls and independent rail engines are retired. Historical lesson identifiers remain only for saved progress compatibility.
 

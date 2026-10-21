@@ -100,3 +100,25 @@ try{
   const invalid=transfer({'application/unknown':'ignored'});assert.equal(event('drop',filesIcon(),invalid).defaultPrevented,false);assert.equal(w.__fileCaptures.length,captures);
   console.log('Native Files widget passed: actual source/destination paths, linked-file opening, drag provenance, live popup identity/listeners/drafts, original drop/File objects, unchanged layout and Guide/edit/modal gates.');
 }finally{w.close();}
+
+// The actual retained Project modules are hidden by the canonical folder UI.
+// Their flex parent must not split the live folder into the widget's bottom
+// half. Load the real index markup and every local production stylesheet.
+(()=>{
+ const {JSDOM,VirtualConsole}=require('jsdom'),directory=path.join(__dirname,'../dist');
+ const probe=new JSDOM(fs.readFileSync(path.join(directory,'index.html'),'utf8'),{virtualConsole:new VirtualConsole()});
+ try{
+  const v=probe.window,document=v.document,source=document.querySelector('[data-widget-source="files"]'),surface=document.getElementById('projectSpaceContent');document.body.classList.add('panel-desktop-preview');
+  const frame=document.createElement('section'),body=document.createElement('div');frame.className='desktop-widget';frame.dataset.widgetId='files';body.className='desktop-widget-content';body.append(source);frame.append(body);document.body.append(frame);source.dataset.panelEdge='right';
+  const loaded=[];for(const link of document.querySelectorAll('link[rel="stylesheet"]')){const file=link.getAttribute('href').split('?')[0];if(!/^(?!https?:).*\.css$/.test(file))continue;const style=document.createElement('style');style.textContent=fs.readFileSync(path.join(directory,file),'utf8');document.head.append(style);loaded.push(file);}assert(loaded.includes('folder-files.css')&&loaded.includes('panel-desktop.css'));
+  // This is the live Project state after working-memory-desktop initializes:
+  // retained Resources is hidden; the root module is hidden by folder-files.css.
+  const rootModule=surface.querySelector('.project-root-module'),resources=surface.querySelector('.project-resources-module');assert(rootModule&&resources,'The fixture retains the actual index Project modules');resources.hidden=true;surface.hidden=false;
+  const folder=document.createElement('section'),draft=document.createElement('textarea');folder.id='workingMemory';draft.value='Retained folder draft';folder.append(draft);source.append(folder);
+  assert.equal(v.getComputedStyle(rootModule).display,'none');assert.equal(v.getComputedStyle(resources).display,'none');assert.equal(v.getComputedStyle(surface).display,'none','The compatibility-only Project shell reserves no layout slot');assert.equal(surface.hidden,false,'Rendering does not rewrite the Project visibility model');assert.equal(folder.querySelector('textarea'),draft);assert.equal(draft.value,'Retained folder draft');
+  const content=document.createElement('button');content.textContent='Custom Project action';let calls=0;content.addEventListener('click',()=>calls++);surface.append(content);
+  assert.equal(v.getComputedStyle(surface).display,'flex','Late meaningful Project content becomes visible again');content.click();assert.equal(calls,1,'Existing custom controls retain their listeners');
+  content.hidden=true;assert.equal(v.getComputedStyle(surface).display,'none','Hidden custom controls do not leave another blank flex column');content.hidden=false;assert.equal(v.getComputedStyle(surface).display,'flex');content.remove();assert.equal(v.getComputedStyle(surface).display,'none','Removing the last visible control collapses the compatibility shell again');assert.equal(surface.querySelector('.project-root-module'),rootModule);assert.equal(surface.querySelector('.project-resources-module'),resources);assert.equal(folder.querySelector('textarea'),draft);assert.equal(draft.value,'Retained folder draft');
+  console.log('Project Files shell passed: actual index modules and complete production CSS, no compatibility-only flex space, visible late controls restored, native IDs/draft nodes/listeners preserved.');
+ }finally{probe.window.close();}
+})();

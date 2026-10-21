@@ -111,3 +111,70 @@ assert.equal(A.browserSelectTab(tabReload,'missing'),false);assert.equal(A.brows
 const sibling={navigation:A.navigation({title:'Other window'})};A.browserTabs(sibling);assert.equal(A.current(sibling.navigation).title,'Other window');
 while(firefox.tabs.length<20)A.browserAddTab(firefox,{address:'about:newtab',title:'New Tab'});assert.equal(A.browserAddTab(firefox,{title:'Beyond limit'}),null);assert.equal(firefox.tabs.length,20);
 console.log('Firefox tabs passed: legacy migration, independent history, reload, selection, closing, separate windows, and bounds.');
+
+// Reproduce first Workspace entry with real cloned app DOM: the window model
+// can hydrate before renderWorkspaceExample writes its scene content.
+{
+ const {JSDOM}=require('jsdom'),D=require('../dist/demo-examples.js');
+ const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://spatial.test/'}),w=dom.window,d=w.document,context=dom.getInternalVMContext(),frames={};
+ const specs=D.scenarios.work.windows.flatMap(column=>column.windows);
+ for(const spec of specs){const frame=d.querySelector('[data-app-frame="'+spec.base+'"]').cloneNode(true);frame.dataset.appFrame=spec.id;d.body.append(frame);frames[spec.id]=frame;}
+ Object.assign(w,{SpatialAppTools:A,SpatialDemoExamples:D,desktopPreset:'demo',activeWorkspace:'general',workspaceProfiles:profiles,projectSpaces:D.projects,
+  frameFor:id=>frames[id],appInfo:Object.fromEntries(specs.map(spec=>[spec.id,{base:spec.base,label:spec.base}])),appState:Object.fromEntries(specs.map(spec=>[spec.id,spec.state])),
+  desktopPages:{columnOf:(workspace,id)=>D.scenarios[workspace]?.windows.find(column=>column.windows.some(spec=>spec.id===id))?.column||'workspace'},
+  $:(selector,root=d)=>root.querySelector(selector),$$:(selector,root=d)=>[...root.querySelectorAll(selector)],escapeHtml:value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),icon:()=>'',prepareControlSemantics(){},refreshDownloadUi(){},refreshBoundNote(){},
+  renderFileLocation(){},renderTerminal(){},renderAppMusic(){},musicPosition:0,musicPlaying:false,desktopStorage:{setItem(){}},queueDesktopStateBroadcast(){}});
+ vm.runInContext(ui.slice(0,ui.indexOf('function appFileRows(')),context);
+ vm.runInContext(slice(ui,'function renderNotes(', 'function noteFileContext('),context);
+ vm.runInContext(slice(ui,'function readBrowserPage(', 'function navigateBrowser('),context);
+ vm.runInContext('appWindowStore=SpatialAppTools.create();',context);
+ const preview='browser--demo-site-preview',checklist='notes--demo-site-checklist';
+ // Early hydration occurs while General is active and these clones still
+ // contain the base New Tab/Meeting notes template.
+ w.hydrateAppWindow(preview,true);w.hydrateAppWindow(checklist,true);
+ w.activeWorkspace='work';w.hydrateAppWindow(preview,true);w.hydrateAppWindow(checklist,true);
+ assert.equal(frames[preview].querySelector('.browser-toolbar input').value,'http://localhost:5173/','First Work entry hydrates the exact Project preview address');
+ assert.equal(frames[preview].querySelector('.demo-reading-page h2').textContent,'Northstar Studio');
+ assert.match(frames[preview].querySelector('.demo-reading-page p').textContent,/compact keyboard/);
+ assert.equal(frames[checklist].querySelector('[data-note-title]').value,'Launch checklist','The actual editor title comes from this instance, not its base clone');
+ assert.equal(frames[checklist].querySelector('.notes-layout textarea').value,D.projects.plasma.note);
+ const noteModel=w.appWindowModel(checklist),browserModel=w.appWindowModel(preview);
+ noteModel.notes[0].title='My edited review';noteModel.notes[0].text='Keep my own project checklist';
+ A.browserAddTab(browserModel,{address:'https://example.test/review',title:'My review tab',subtitle:'Saved',intro:'Keep this page',detail:'My page notes',links:[]});
+ // The production demo renderer can run on return; the saved model remains
+ // authoritative over the DOM it writes before hydrateAppWindow runs again.
+ vm.runInContext(slice(shell,'function renderDemoAppExample(', 'function renderWorkspaceExample('),context);
+ for(const id of [preview,checklist]){w.renderDemoAppExample(id,specs.find(spec=>spec.id===id).content);w.hydrateAppWindow(id,true);}
+ assert.equal(frames[checklist].querySelector('[data-note-title]').value,'My edited review');
+ assert.equal(frames[checklist].querySelector('.notes-layout textarea').value,'Keep my own project checklist');
+ assert.equal(frames[preview].querySelector('.browser-toolbar input').value,'https://example.test/review');assert.equal(browserModel.tabs.length,2,'Returning preserves the extra browser tab and active history');
+ assert.equal(w.appWindowModel('terminal--demo-site-server').cwd,D.projects.plasma.root);assert(w.appWindowModel('terminal--demo-site-server').lines.some(line=>line.includes('Build completed')));
+ assert.equal(A.current(w.appWindowModel('dolphin--demo-site-files').navigation),D.projects.plasma.root);
+ const soundtrack=w.appWindowModel('elisa--demo-film-soundtrack');assert.equal(soundtrack.tracks[0].title,'Station ambience');assert.equal(soundtrack.playing,false);
+ // Legacy/partial imports can retain DOM field snapshots without app models.
+ // Rendering a scene before restore must not replace those saved drafts.
+ frames.notes=d.querySelector('[data-app-frame="notes"]');w.appInfo.notes={};w.appState.notes='open';
+ const generalNote=D.scenarios.general.windows.flatMap(column=>column.windows).find(spec=>spec.id==='notes').content;
+ for(const draft of ['My saved legacy draft','']){
+  w.activeWorkspace='general';w.workspaceContent={general:{note:draft}};w.workspaceAreaContents={general:{noteDraft:'Older area draft'}};
+  vm.runInContext('appWindowStore=SpatialAppTools.create();',context);
+  w.renderDemoAppExample('notes',generalNote);w.hydrateAppWindow('notes',true);
+  assert.equal(frames.notes.querySelector('.notes-layout textarea').value,draft,'A saved base draft, including a deliberately empty one, wins over the scene');
+ }
+ for(const draft of ['Area-only saved draft','']){
+  w.workspaceContent={};w.workspaceAreaContents={general:{noteDraft:draft}};
+  vm.runInContext('appWindowStore=SpatialAppTools.create();',context);w.hydrateAppWindow('notes',true);
+  assert.equal(frames.notes.querySelector('.notes-layout textarea').value,draft,'An area-only draft survives a missing app model');
+ }
+ for(const savedFields of [[{value:'Legacy Project draft'}],[{value:'Retained Project title'},{value:''}]]){
+  w.activeWorkspace='work';w.workspaceContent={work:{note:'Workspace draft must not leak',frames:{[checklist]:savedFields}}};w.workspaceAreaContents={work:{noteDraft:'Area draft must not leak'}};
+  vm.runInContext('appWindowStore=SpatialAppTools.create();',context);w.hydrateAppWindow(checklist,true);
+  assert.equal(frames[checklist].querySelector('.notes-layout textarea').value,savedFields.at(-1).value,'Project field snapshots retain their own draft independently of the Workspace draft');
+  if(savedFields.length>1)assert.equal(frames[checklist].querySelector('[data-note-title]').value,'Retained Project title');
+ }
+ w.workspaceContent={work:{frames:{[preview]:[{value:'https://example.test/retained'}],['dolphin--demo-site-files']:[{value:D.projects.plasma.root+'/src'}]}}};
+ vm.runInContext('appWindowStore=SpatialAppTools.create();',context);w.hydrateAppWindow(preview,true);
+ assert.equal(frames[preview].querySelector('.browser-toolbar input').value,'https://example.test/retained','A saved address survives before legacy field restoration runs');
+ assert.equal(A.current(w.appWindowModel('dolphin--demo-site-files').navigation),D.projects.plasma.root+'/src','The saved File Browser location wins over its opening scene');
+ w.close();console.log('Demo app hydration passed: exact first-entry Project content, retained model edits/tabs, and legacy field/area drafts (including empty text) survive independently.');
+}

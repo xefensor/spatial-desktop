@@ -204,14 +204,14 @@
       {title:"Keep a readable report note", steps:["Open the Project’s Stash folder and select Project note.md.","Ask for an HTML copy, review its destination and choose Convert.","Show in folder reveals the copy. This does not submit the assignment or change the original note."], prompt:"Convert selected files to HTML in Report"}
     ],
     general: [
-      {title:"Plan the next trip", steps:["Go to Desktop 2 and highlight the train-ticket and photo-backup reminders in Personal notes.","Choose Ask Assistant and ask for a checklist.","Review the reply and Save to Stash. It stays in General across its desktops."], prompt:"Make a checklist from these reminders."},
+      {title:"Plan the next trip", steps:["On Desktop 1, highlight the train-ticket and photo-backup reminders in Personal notes beside Firefox.","Choose Ask Assistant and ask for a checklist.","Review the reply and Save to Stash. It stays in General across its desktops."], prompt:"Make a checklist from these reminders."},
       {title:"Convert a saved note", steps:["Keep a note in Stash, then open its folder in File Browser and select the Markdown file.","Choose Ask Assistant and request an HTML copy in Documents/Converted.","Review Save in and choose Convert. Open the result or Show in folder."], prompt:"Convert selected files to HTML in Documents/Converted"}
     ],
     work: [
-      {title:"Separate studio planning from project work", steps:["On Desktop 2, select the meeting reminders in Studio planning and choose Ask Assistant.","Ask for a checklist and save the useful result in this Workspace’s Stash.","Switch to Website Launch or Short Film for that Project’s materials. Assistant opens that Project’s remembered chat; returning to Work restores your planning chat and draft."], prompt:"Make a checklist from these meeting reminders."}
+      {title:"Separate studio planning from project work", steps:["In the Work Workspace column, select the meeting reminders in Studio planning beside Studio desk and choose Ask Assistant.","Ask for a checklist and save the useful result in this Workspace’s Stash.","Switch to Website Launch or Short Film for that Project’s materials. Assistant opens that Project’s remembered chat; returning to Work restores your planning chat and draft."], prompt:"Make a checklist from these meeting reminders."}
     ],
     school: [
-      {title:"Prepare for the seminar", steps:["On Desktop 2, select the reminders in Class planning and choose Ask Assistant.","Ask for a checklist and keep it in the School Workspace’s Stash.","Switch to Urban Ecology for the four-plot observations and Project-specific examples."], prompt:"Make a checklist from these class reminders."}
+      {title:"Prepare for the seminar", steps:["In the School Workspace column, select the reminders in Class planning beside the student portal and choose Ask Assistant.","Ask for a checklist and keep it in the School Workspace’s Stash.","Switch to Urban Ecology for the four-plot observations and Project-specific examples."], prompt:"Make a checklist from these class reminders."}
     ],
     gaming: [
       {title:"Get ready for co-op", steps:["Go to Desktop 2, highlight the Game night note and choose Ask Assistant.","Ask for a checklist and keep it in Gaming’s Stash.","Return to Desktop 1. F2+F switches Fallout’s Gamescope window between fullscreen and tiling; F2 alone opens Overview while the game stays available."], prompt:"Make a checklist from this game-night plan."},
@@ -260,9 +260,9 @@
   const projectWindows = {
     plasma: [
       windowSpec("browser--demo-site-preview", "browser", 0, {shortTitle:"Preview", browser: scenarios.work.browser, address:"http://localhost:5173/"}),
-      windowSpec("terminal--demo-site-server", "terminal", 0, {shortTitle:"Dev server", terminal:{path:projects.plasma.root, command:"npm run dev", output:"Northstar Studio · development preview\nBuild completed · no errors\nLocal: http://localhost:5173/\nWatching source files for changes…"}}),
-      windowSpec("dolphin--demo-site-files", "dolphin", 1, {shortTitle:"Source files", folder:projects.plasma.root, files:scenarios.work.files}),
-      windowSpec("notes--demo-site-checklist", "notes", 1, {shortTitle:"Launch checklist", note:projects.plasma.note})
+      windowSpec("notes--demo-site-checklist", "notes", 0, {shortTitle:"Launch checklist", note:projects.plasma.note}),
+      windowSpec("terminal--demo-site-server", "terminal", 1, {shortTitle:"Dev server", terminal:{path:projects.plasma.root, command:"npm run dev", output:"Northstar Studio · development preview\nBuild completed · no errors\nLocal: http://localhost:5173/\nWatching source files for changes…"}}),
+      windowSpec("dolphin--demo-site-files", "dolphin", 1, {shortTitle:"Source files", folder:projects.plasma.root, files:scenarios.work.files})
     ],
     retold: [
       windowSpec("dolphin--demo-film-footage", "dolphin", 0, {shortTitle:"Footage", folder:projects.retold.root, files:projects.retold.files}),
@@ -277,10 +277,10 @@
     ]
   };
   const workspaceWindows = {
-    general: [windowSpec("dolphin", "dolphin", 0, {shortTitle:"Home", folder:"/home/demo", files:scenarios.general.files}), windowSpec("notes", "notes", 1, {shortTitle:"Personal notes", note:scenarios.general.note})],
-    school: [windowSpec("browser", "browser", 0, {shortTitle:"Student portal", address:"School · student portal", browser:reading("This week at school", "School · student portal", "Course announcements, assignment dates and the timetable live in your workspace. Urban Ecology has its own desktops.", ["Timetable", "Assignments", "Course announcements", "Library"], "Biology report due Friday. Bring the field observations to Thursday’s seminar.")}), windowSpec("notes", "notes", 1, {shortTitle:"Class planning", note:"Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology project."})],
-    work: [windowSpec("browser", "browser", 0, {shortTitle:"Studio desk", address:"Work · studio desk", browser:reading("Studio desk", "Work · daily administration", "Keep everyday studio planning here. Website Launch and Short Film are open beside this workspace, each with its own windows and desktops.", ["Meeting agenda", "Studio inbox", "Shared calendar", "Invoices"], "10:00 — weekly planning. 14:30 — website review. 16:00 — film feedback. Switch project tabs to return to the relevant work.")}), windowSpec("notes", "notes", 1, {shortTitle:"Studio planning", note:"Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their projects."})],
-    gaming: [windowSpec("browser", "browser", 0, {shortTitle:"Game library", address:"Gaming · game library", browser:scenarios.gaming.browser}), windowSpec("elisa", "elisa", 0, {shortTitle:"Game-night mix", music:{title:"Evening Light", artist:"Northbound · game-night mix", tracks:["Evening Light", "City Lights", "Blue Horizon"]}}, "minimized"), windowSpec("notes", "notes", 1, {shortTitle:"Co-op planning", note:scenarios.gaming.note})]
+    general: [windowSpec("browser", "browser", 0, {shortTitle:"Your day", address:"General · personal start page", browser:scenarios.general.browser}), windowSpec("notes", "notes", 0, {shortTitle:"Personal notes", note:scenarios.general.note}), windowSpec("dolphin", "dolphin", 1, {shortTitle:"Documents", folder:"/home/demo/Documents", files:[["Trips", "Travel plans", "folder"],["Receipts", "Personal records", "folder"],["Reference", "Saved reading", "folder"]]})],
+    school: [windowSpec("browser", "browser", 0, {shortTitle:"Student portal", address:"School · student portal", browser:reading("This week at school", "School · student portal", "Course announcements, assignment dates and the timetable live in your workspace. Urban Ecology has its own desktops.", ["Timetable", "Assignments", "Course announcements", "Library"], "Biology report due Friday. Bring the field observations to Thursday’s seminar.")}), windowSpec("notes", "notes", 0, {shortTitle:"Class planning", note:"Class planning\n\nThursday — biology seminar.\nFriday — submit the Urban Ecology report.\n\nResearch notes stay in the Urban Ecology project."})],
+    work: [windowSpec("browser", "browser", 0, {shortTitle:"Studio desk", address:"Work · studio desk", browser:reading("Studio desk", "Work · daily administration", "Keep everyday studio planning here. Website Launch and Short Film are open beside this workspace, each with its own windows and desktops.", ["Meeting agenda", "Studio inbox", "Shared calendar", "Invoices"], "10:00 — weekly planning. 14:30 — website review. 16:00 — film feedback. Switch project tabs to return to the relevant work.")}), windowSpec("notes", "notes", 0, {shortTitle:"Studio planning", note:"Studio planning\n\nWebsite review — 14:30.\nShort Film feedback — 16:00.\n\nKeep project checklists in their projects."})],
+    gaming: [windowSpec("browser", "browser", 1, {shortTitle:"Game library", address:"Gaming · game library", browser:scenarios.gaming.browser}), windowSpec("elisa", "elisa", 0, {shortTitle:"Game-night mix", music:{title:"Evening Light", artist:"Northbound · game-night mix", tracks:["Evening Light", "City Lights", "Blue Horizon"]}}, "minimized"), windowSpec("notes", "notes", 1, {shortTitle:"Co-op planning", note:scenarios.gaming.note})]
   };
   const openProjects = {general:[], school:["research"], work:["plasma","retold"], gaming:[]};
   workspaceWindows.gaming.unshift(windowSpec("game", "game", 0, {shortTitle:"Sanctuary Hills"}), windowSpec("steam", "steam", 0, {shortTitle:"Friends & game tools"}, "minimized"));
@@ -290,11 +290,17 @@
     example.windows = [{column:"workspace", windows:workspaceWindows[workspace]}, ...openProjects[workspace].map(column=>({column, windows:projectWindows[column]}))];
     example.apps = {...closedApps};
     example.windows.forEach(column=>column.windows.forEach(window=>{example.apps[window.id]=window.state;}));
+    const opening = example.windows.find(column=>column.column===example.project) || example.windows[0];
+    example.tree = demoWindowTree(opening.windows.filter(window=>window.page===0 && window.state==="open"));
   }
   scenarios.work.notifications = [["Website review · 14:30", "Website Launch · preview and checklist", "violet", "i-calendar"], ["Rough cut ready", "Short Film · feedback on Desktop 2", "green", "i-video"]];
 
   function demoWindowTree(windows) {
-    return tiling.rowMajor(windows.map(window => window.id), {width:1000,height:900}, () => ({width:400,height:300}));
+    // Match the content limits used by the live desktop, so a File Browser
+    // receives a little more width than a note instead of parking at startup.
+    const widths = {browser:420,notes:400,dolphin:440,terminal:390,elisa:460};
+    if (windows.length === 2) return {kind:"split",axis:"x",ratio:(widths[windows[0].base]||400)/((widths[windows[0].base]||400)+(widths[windows[1].base]||400)),a:leaf(windows[0].id),b:leaf(windows[1].id)};
+    return tiling.rowMajor(windows.map(window => window.id), {width:1000,height:900}, window => ({width:widths[windows.find(item=>item.id===window)?.base]||400,height:300}));
   }
 
   function migrateDemoWindowOrder(storage) {

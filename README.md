@@ -24,7 +24,9 @@ A browser prototype designed by Xef, exploring Workspaces, Projects, tiled windo
 
 **System → Devices & session** adds network choice, device pairing, sound, a sample USB transfer and session controls. **Do Not Disturb** quiets alerts while retaining them.
 
-Settings is a normal app window, available from System controls and Overview/search. General starts with four everyday Quick launch favorites; saved custom favorites remain intact. Desktop Guide introduces the interactions through short lessons and searchable topics. Lessons keep their main task visible, with expandable help for details and examples. The introduction uses a practice desktop and offers to restore your earlier session when you finish.
+The populated demo starts General with Firefox and Personal notes together, with Documents on Desktop 2. School opens its Urban Ecology research project; Work opens Website Launch with its preview and checklist. Gaming keeps the game on Desktop 1 and planning tools on Desktop 2. The demo panel layout exposes Apps on the left and Files on the right, with Assistant one click away; narrower viewports compact these panels to leave room for windows. Clean desktops use the simpler panel layout. New demo sessions and explicit **Explore demo** resets get these scenes; existing saved sessions and custom layouts stay as saved.
+
+Settings opens as a normal app window from System controls or Overview/search. Desktop Guide introduces interactions through short lessons and searchable topics, with optional help for details and examples. Its introduction uses a practice desktop and offers to restore your earlier session when you finish.
 
 ## Useful details
 

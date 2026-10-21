@@ -57,6 +57,24 @@ function legacy(version){
   ],widgets:Object.fromEntries(content.filter(item=>item.id!=='launcher').map(item=>[item.id,{mode:item.id==='clock'&&version<3?'compact':item.id==='assistant'&&version===1?'expanded':item.defaultMode,size:0}]))};
 }
 const initial=M.defaults(),before=JSON.stringify(initial);complete(initial);
+// Curated demo panels expose useful files without consuming the central
+// browser/note scene. The clean default and every explicit edit stay separate.
+const demo=M.demoDefaults(),demoSnapshot=JSON.stringify(demo);complete(demo);
+assert.equal(demo.panels[0].size,200);assert.equal(demo.panels[1].size,248);assert.equal(demo.panels[1].mode,'expanded');assert.equal(demo.widgets.files.mode,'expanded');assert.equal(demo.widgets.assistant.mode,'compact');assert(M.isDemoDefault(demo));
+for(const [width,leftCompact,rightCompact]of [[1440,false,false],[1366,false,false],[1360,false,false],[1359,false,true],[1280,false,true],[1180,false,true],[1179,true,true],[1024,true,true],[900,true,true],[420,true,true]]){
+  const placed=bounded(demo,{...options,width,demo:true}),left=placed.panels['panel-left'],right=placed.panels['panel-right'];
+  assert.equal(left.compact,leftCompact,'Demo left panel mode at '+width);assert.equal(right.compact,rightCompact,'Demo right panel mode at '+width);
+  // The two desktop icon rails reserve 24px each; tileBounds adds 8px on
+  // either edge. The largest seeded pair needs 440 + 400 + 8 = 848px.
+  if(width>=1024)assert(width-placed.insets.left-placed.insets.right-64>=848,'The actual tiled canvas fits the largest seeded pair at '+width);
+  if(width===1280)assert(width-placed.insets.left-placed.insets.right>=1024,'Compact Files leaves room for the seeded pair on a narrow laptop');
+  assert.equal(JSON.stringify(demo),demoSnapshot,'Responsive fallback never rewrites the saved demo layout');
+}
+assert.equal(M.layout(demo,{...options,width:1280}).panels['panel-right'].compact,false,'Responsive curation requires the demo context');
+for(const change of [state=>state.panels[0].size=224,state=>state.panels[1].size=300,state=>state.panels[1].mode='compact',state=>state.panels[0].widgets.reverse(),state=>state.widgets.assistant.mode='expanded',state=>state.widgets.files.size=300]){
+  const custom=clone(demo);change(custom);const snapshot=JSON.stringify(custom);assert(!M.isDemoDefault(custom),'A deliberate edit opts out of demo adaptation');const placed=bounded(custom,{...options,width:1280,demo:true});assert.equal(placed.panels['panel-right'].compact,custom.panels[1].mode==='compact','Explicit panel preferences win over responsive defaults');assert.equal(JSON.stringify(custom),snapshot);
+}
+assert.equal(M.normalize(demo).panels[1].mode,'expanded');assert.equal(initial.panels[0].size,224);assert.equal(initial.panels[1].mode,'compact','Clean defaults retain their simpler compact Files panel');
 assert.equal(initial.schema,6);assert.deepEqual(initial.panels[0].widgets,['launcher','apps','clock','notifications','calendar','controls']);
 const previousLeftOrder=['apps','clock','launcher','notifications','calendar','controls'];
 for(const schema of [4,5])for(const width of [232,224]){

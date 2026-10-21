@@ -11,19 +11,38 @@ function saveAppWindows(broadcast = true) {
 function appWindowModel(id) {
   const frame = frameFor(id), kind = appInfo[id]?.base || id;
   const model=appWindowStore.get(activeWorkspace, id, () => {
+    // Instances can hydrate before their Workspace restores its DOM. Retained
+    // legacy fields take precedence over a scene; otherwise use this exact
+    // scene identity rather than a cloned sibling's generic content. Existing
+    // models, tabs and edits bypass this factory and remain authoritative.
+    const example=desktopPreset==='demo'?globalThis.SpatialDemoExamples?.scenarios?.[activeWorkspace]?.windows?.flatMap(column=>column.windows).find(window=>window.id===id)?.content:null;
+    const retained=typeof workspaceContent==='undefined'?null:workspaceContent[activeWorkspace];
+    const fields=retained?.frames?.[id];
     if (kind === 'game' || kind === 'steam' || kind === 'settings') return {kind};
-    if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
+    if (kind === 'dolphin') return {kind, navigation: SpatialAppTools.navigation(fields?.[0]?.value || example?.folder || frame.dataset.fileLocation || workspaceProfiles[activeWorkspace].home), query: '', search: false, grid: false, sort: 'name', selected: null};
     if (kind === 'notes') {
-      const title = $('.app-identity small', frame).textContent || 'Notes';
-      return {kind, active: 'main', sequence: 1, notes: [{id:'main', title, text:$('.notes-layout textarea', frame).value}]};
+      // Older snapshots contain only the textarea; newer ones also have the
+      // title input. Only the base editor owns the Workspace-wide draft.
+      const draft=id==='notes'?(retained?.note ?? (typeof workspaceAreaContents==='undefined'?undefined:workspaceAreaContents[activeWorkspace]?.noteDraft)):undefined;
+      const title=fields?.length>1?fields[0]?.value:example?.note!==undefined?example.shortTitle:$('.app-identity small',frame).textContent || 'Notes';
+      const text=draft ?? fields?.[fields.length>1?1:0]?.value ?? example?.note ?? $('.notes-layout textarea',frame).value;
+      return {kind, active:'main', sequence:1, notes:[{id:'main',title,text}]};
     }
-    if (kind === 'browser') return {kind, navigation: SpatialAppTools.navigation(readBrowserPage(frame))};
+    if (kind === 'browser') {
+      let page=example?.browser?{...example.browser,address:example.address||example.browser.subtitle,detail:example.browser.detail||example.browser.intro}:readBrowserPage(frame);
+      const address=fields?.[0]?.value;
+      if(address&&address!==page.address){
+        let external='';try{const url=new URL(address.includes('://')?address:'https://'+address);if(['https:','http:'].includes(url.protocol)&&(address.includes('://')||/^[\w-]+\.[\w.-]+(?:\/.*)?$/.test(address)))external=url.href;}catch{}
+        page={address,title:address,subtitle:workspaceProfiles[activeWorkspace].label+' · Web preview',intro:external?'This address opens outside the desktop prototype.':address+' · local demonstration page',detail:'Restored from this window’s saved address.',links:[],external};
+      }
+      return {kind,navigation:SpatialAppTools.navigation(page)};
+    }
     if (kind === 'terminal') {
       const owner = desktopPages.columnOf(activeWorkspace, id);
-      return {kind, cwd: projectSpaces[owner]?.root || workspaceProfiles[activeWorkspace].home,
-        history: [], historyIndex: 0, draft: '', lines: $$('.terminal-screen > p', frame).map(line => line.textContent)};
+      return {kind, cwd: example?.terminal?.path || projectSpaces[owner]?.root || workspaceProfiles[activeWorkspace].home,
+        history: [], historyIndex: 0, draft: '', lines:example?.terminal?['demo@desktop:'+example.terminal.path+'$ '+example.terminal.command,...String(example.terminal.output).split('\n')]:$$('.terminal-screen > p', frame).map(line => line.textContent)};
     }
-    const tracks = $$('.playlist .content-row', frame).map(row => {
+    const tracks = example?.music?example.music.tracks.map(title=>({title,artist:example.music.artist,duration:218})):$$('.playlist .content-row', frame).map(row => {
       const duration = row.lastElementChild.textContent.split(':').map(Number);
       return {title: $('span', row).textContent.replace(/^\s*\d+[\s·]+/, '').trim(), artist: $('small', row)?.textContent || 'Northbound', duration: duration[0] * 60 + duration[1] || 218};
     });

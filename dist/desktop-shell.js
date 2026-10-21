@@ -3126,7 +3126,7 @@ const workspaceProfiles = {
     context: "Everyday files and personal tools", meta: "Personal desktop · no project open",
     folders: [["Desktop", "8 items", "folder"], ["Documents", "124 items", "folder"], ["Downloads", "31 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["dolphin", "elisa", "browser", "terminal", "notes"],
-    favorites: [["dolphin", "Dolphin"], ["browser", "Firefox"], ["elisa", "Elisa"], ["notes", "Notes"], ["i-mail", "Thunderbird"]],
+    favorites: [["browser", "Firefox"], ["notes", "Notes"], ["dolphin", "Dolphin"], ["elisa", "Elisa"]],
     agenda: ["Personal", "Walk by the river", "18:00 · personal calendar"]
   },
   school: {
@@ -3134,7 +3134,7 @@ const workspaceProfiles = {
     context: "Read, compare and take field notes", meta: "Urban Ecology · research session",
     folders: [["Desktop", "4 items", "folder"], ["Documents", "6 courses", "folder"], ["Downloads", "12 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "dolphin", "notes"],
-    favorites: [["browser", "Firefox"], ["i-office", "Writer"], ["i-calendar", "Kalendar"], ["i-note", "Okular"], ["dolphin", "Dolphin"]],
+    favorites: [["browser", "Firefox"], ["notes", "Notes"], ["dolphin", "Dolphin"]],
     agenda: ["School", "Biology field report", "Due tomorrow · 16:00"]
   },
   work: {
@@ -3142,7 +3142,7 @@ const workspaceProfiles = {
     context: "Build a website and review its preview", meta: "Website Launch · Desktop",
     folders: [["Desktop", "3 items", "folder"], ["Documents", "42 items", "folder"], ["Downloads", "7 items", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["browser", "terminal", "dolphin", "notes"],
-    favorites: [["terminal", "Konsole"], ["i-code", "Kate"], ["browser", "Firefox"], ["dolphin", "Dolphin"], ["i-mail", "Mail"]],
+    favorites: [["browser", "Firefox"], ["notes", "Notes"], ["terminal", "Konsole"], ["dolphin", "Dolphin"]],
     agenda: ["Work", "Staging review", "15:15 · Website Launch"]
   },
   gaming: {
@@ -3150,7 +3150,7 @@ const workspaceProfiles = {
     context: "Friends, games and background music", meta: "Co-op night · no project needed",
     folders: [["Desktop", "6 shortcuts", "folder"], ["Games", "23 installed", "folder"], ["Captures", "64 videos", "folder"], ["Projects", "Default project location", "folder"], [".spatial-workspace.toml", "Editable workspace settings", "config"]],
     rack: ["game", "steam", "browser", "elisa", "dolphin", "terminal"],
-    favorites: [["steam", "Steam"], ["game", "Fallout 4"], ["i-web", "Discord"], ["i-monitor", "MangoHud"], ["dolphin", "Dolphin"]],
+    favorites: [["steam", "Steam"], ["game", "Fallout 4"], ["browser", "Firefox"], ["elisa", "Elisa"], ["dolphin", "Dolphin"]],
     agenda: ["Gaming", "Co-op session", "20:00 · voice chat"]
   }
 };
