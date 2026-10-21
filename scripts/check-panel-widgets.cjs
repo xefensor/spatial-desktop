@@ -75,6 +75,14 @@ for(const change of [state=>state.panels[0].size=224,state=>state.panels[1].size
   const custom=clone(demo);change(custom);const snapshot=JSON.stringify(custom);assert(!M.isDemoDefault(custom),'A deliberate edit opts out of demo adaptation');const placed=bounded(custom,{...options,width:1280,demo:true});assert.equal(placed.panels['panel-right'].compact,custom.panels[1].mode==='compact','Explicit panel preferences win over responsive defaults');assert.equal(JSON.stringify(custom),snapshot);
 }
 assert.equal(M.normalize(demo).panels[1].mode,'expanded');assert.equal(initial.panels[0].size,224);assert.equal(initial.panels[1].mode,'compact','Clean defaults retain their simpler compact Files panel');
+const generalDemo=M.demoDefaults('general');complete(generalDemo);assert(M.isDemoDefault(generalDemo));
+for(const width of [1440,1280,1024]){
+  const placed=bounded(generalDemo,{...options,width,demo:true});
+  assert.equal(placed.insets.right,0,'General reserves no space for a right panel at '+width);
+  assert(!placed.panels['panel-right'],'General has no right panel or icon rail');
+  assert.equal(placed.panels['panel-left'].compact,width<1180,'General keeps responsive left panel fitting');
+}
+for(const workspace of ['school','work','gaming'])assert.deepEqual(M.demoDefaults(workspace),demo,'Other demo Workspaces keep both panels');
 assert.equal(initial.schema,6);assert.deepEqual(initial.panels[0].widgets,['launcher','apps','clock','notifications','calendar','controls']);
 const previousLeftOrder=['apps','clock','launcher','notifications','calendar','controls'];
 for(const schema of [4,5])for(const width of [232,224]){

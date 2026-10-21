@@ -9,8 +9,20 @@
   const sessions=Object.create(null);for(const [id,value]of Object.entries(saved))if(id!=='__proto__')sessions[id]=M.normalize(value);
   const clone=value=>JSON.parse(JSON.stringify(value));
   const owner=()=>typeof activeWorkspace==='string'?activeWorkspace:'general';
-  const demoContext=()=>typeof desktopPreset==='string'&&desktopPreset==='demo'&&!(typeof workspaceProfiles!=='undefined'&&workspaceProfiles[owner()]?.custom);
-  const defaultState=()=>demoContext()?M.demoDefaults():M.defaults();
+  const demoContext=(workspace=owner())=>typeof desktopPreset==='string'&&desktopPreset==='demo'&&!(typeof workspaceProfiles!=='undefined'&&workspaceProfiles[workspace]?.custom);
+  const defaultState=()=>demoContext()?M.demoDefaults(owner()):M.defaults();
+  // Upgrade untouched General layouts once. Later explicit panel changes,
+  // custom arrangements and clean desktops keep their saved presentation.
+  try{
+    const migrationKey='spatial-demo-general-left-panel-v1';
+    if(demoContext('general')&&storage.getItem(migrationKey)!=='1'){
+      const general=sessions.general;
+      if(general&&(M.isDemoDefault(general)||JSON.stringify(general)===JSON.stringify(M.normalize(M.defaults())))){
+        sessions.general=M.demoDefaults('general');storage.setItem(key,JSON.stringify(sessions));
+      }
+      storage.setItem(migrationKey,'1');
+    }
+  }catch{}
   const state=()=>sessions[owner()]||=defaultState();
   const preferredWidgets=Object.create(null);
   const frames=new Map(),panels=new Map(),undo=[];

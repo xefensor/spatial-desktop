@@ -70,17 +70,17 @@
     };
   }
 
-  // The populated demo exposes its files while keeping the app canvas wide
-  // enough for a browser and note together. Clean and user layouts stay lean.
-  function demoDefaults() {
+  // General starts with just the left panel. Other demo Workspaces expose
+  // their files alongside the app canvas; clean and user layouts stay lean.
+  function demoDefaults(workspace) {
     const state = defaults();
     state.panels[0].size = 200;
     state.panels[1].size = 248;
-    state.panels[1].mode = 'expanded';
+    state.panels[1].mode = workspace === 'general' ? 'hidden' : 'expanded';
     return state;
   }
 
-  function isDemoDefault(input) { return equalState(normalize(input), normalize(demoDefaults())); }
+  function isDemoDefault(input) { return [demoDefaults(), demoDefaults('general')].some(function (state) { return equalState(normalize(input), normalize(state)); }); }
 
   function equalState(a, b) {
     if (a === b) return true;

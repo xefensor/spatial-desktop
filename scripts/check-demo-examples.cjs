@@ -165,7 +165,7 @@ for(const [workspace,example] of Object.entries(D.scenarios))for(const column of
  for(const page of new Set(column.windows.map(w=>w.page))){
   const open=column.windows.filter(w=>w.page===page&&w.state==='open');assert(open.length<=2,'Demo desktops contain at most two relevant open windows');
   const prefix=column.column==='workspace'?workspace+':desktop:':workspace+':project-column:'+column.column+':desktop:';
-  const panelLayout=Panels.layout(Panels.demoDefaults(),{width:1366,height:900,display:1,displays:1});
+  const panelLayout=Panels.layout(Panels.demoDefaults(workspace),{width:1366,height:900,display:1,displays:1});
   const tileWidth=1366-panelLayout.insets.left-panelLayout.insets.right-64; // two 24px desktop rails plus 16px tile padding
   const root=tiles[prefix+page+':1'].root,placed=SeedTiling.layout(root,{x:0,y:0,width:tileWidth,height:700}).windows;
   for(const window of open){const rect=placed.get(window.id),minimum=appMinima[window.base]||{width:400,height:300};assert(rect);assert(rect.width>=minimum.width-1,window.id+' has readable width on a 1366px demo');assert(rect.height>=minimum.height-1,window.id+' has readable height');}
