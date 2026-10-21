@@ -158,8 +158,23 @@
     const sentDraft=prompt.value,request=sentDraft.trim(),workspace=activeWorkspace,chatId=A.current().id;let parsed;
     try{parsed=T.parse(request);}catch(error){event.preventDefault();event.stopImmediatePropagation();A.notify(error.message);return;}
     if(!parsed)return;
-    event.preventDefault();event.stopImmediatePropagation();if(busy||!allowed())return;
+    event.preventDefault();event.stopImmediatePropagation();if(busy||!allowed())return;A.stopVoice?.('Microphone stopped before sending.');
     busy=true;try{await propose(request,parsed);A.consumeDraft?.(sentDraft,{workspace,chatId});}catch(error){A.notify(error.message);}finally{busy=false;}
+  }
+  // Voice uses the same reviewed converter as typed requests. The caller owns
+  // microphone state; this guard binds every asynchronous read to its chat.
+  async function submitVoiceRequest(request,{workspace=activeWorkspace,chatId=A.current().id,isCurrent}={}){
+    if(A.taskActive?.())return null;
+    const current=()=>activeWorkspace===workspace&&A.current().id===chatId&&(!isCurrent||isCurrent());
+    if(!current())return false;
+    const sentDraft=prompt.value;request=String(request||'').trim();if(!request||sentDraft.trim()!==request)return false;
+    let parsed;try{parsed=T.parse(request);}catch(error){A.notify(error.message);return false;}
+    if(!parsed)return null;
+    if(busy||!allowed())return false;
+    busy=true;
+    try{await propose(request,parsed,{workspace,chatId,isCurrent:()=>current()&&allowed()});if(!current())return false;A.consumeDraft?.(sentDraft,{workspace,chatId});return true;}
+    catch(error){if(current())A.notify(error.message);return false;}
+    finally{busy=false;}
   }
   document.addEventListener('submit',event=>{if(event.target.id==='aiComposer')return intercept(event);},true);
   document.addEventListener('keydown',event=>{if(event.target===prompt&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing)return intercept(event);},true);
@@ -235,5 +250,5 @@
   // No interrupted task resumes itself after a reload. It must be reviewed again.
   for(const turn of A.current().turns)if(turn.action?.status==='running')A.setAction(activeWorkspace,A.current().id,turn.id,{...turn.action,status:'failed',error:'Interrupted. Review the output folder before retrying.'});
   window.addEventListener('pagehide',()=>{for(const url of urls)URL.revokeObjectURL(url);});
-  globalThis.SpatialAssistantDesktop={invoke,fileContext,capture,drawCards,proposeExampleConversion};drawCards();
+  globalThis.SpatialAssistantDesktop={invoke,fileContext,capture,drawCards,proposeExampleConversion,submitVoiceRequest};drawCards();
 })();

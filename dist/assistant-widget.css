@@ -119,3 +119,26 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .ai-automatic-context ul{list-style:none;padding:0;margin:0;max-height:130px;overflow:auto;scrollbar-width:thin}
 .ai-automatic-context li{padding:5px 0;border-top:1px solid var(--sd-glass-groove);overflow-wrap:anywhere}.ai-automatic-context li small{display:block;color:var(--muted);font-size:10px}
 .ai-context-limit{color:var(--muted);font-size:10px}
+
+/* Voice input stays beside the composer; configuration opens on demand. */
+.assistant-widget .ai-voice-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:4px}
+.assistant-widget .ai-voice-toolbar>button{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;min-height:28px;padding:4px 6px;flex:none}
+.ai-voice-mic svg{width:15px;height:15px;flex:none}
+.assistant-widget .ai-voice-mic[aria-pressed="true"]{color:var(--workspace-accent,var(--blue));background:color-mix(in srgb,var(--workspace-accent,var(--blue)) 14%,transparent);box-shadow:inset 0 -2px var(--workspace-accent,var(--blue))}
+.assistant-widget .ai-voice-toolbar button:disabled{opacity:.45;cursor:default}
+.ai-voice-options{flex:1;min-width:90px;font-size:11px}
+.ai-voice-options>summary{cursor:pointer;padding:6px 0;color:var(--muted);width:max-content;max-width:100%}
+.ai-voice-settings{max-height:190px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:8px 0 5px;border-block:1px solid var(--sd-glass-groove);margin-top:3px;line-height:1.5}
+.ai-voice-settings>label:first-child{display:block;margin-bottom:4px;color:var(--muted)}
+.assistant-widget .ai-voice-settings>select{box-sizing:border-box;max-width:100%;width:100%;font:inherit;font-size:12px;padding:6px;background:var(--sd-glass-face-deep);border:1px solid var(--sd-glass-groove);color:var(--text)}
+.ai-voice-settings option{background:var(--shell);color:var(--text)}
+.ai-voice-settings>p{font-size:10px;color:var(--muted);line-height:1.5;margin:7px 0;overflow-wrap:anywhere}
+.ai-voice-settings .ai-permission{align-items:center;padding:4px 0}
+.ai-voice-settings .ai-permission>span{font-size:11px}
+.ai-composer .ai-voice-status{padding-left:7px;border-left:2px solid var(--workspace-accent,var(--blue));color:var(--text)}
+.ai-composer .ai-voice-transcript{font-style:italic;overflow-wrap:anywhere;max-height:4.5em;overflow:auto}
+.ai-voice-toolbar:has(.ai-voice-options[open]){align-items:flex-start}
+.ai-voice-options[open]{flex-basis:calc(100% - 76px)}
+.ai-voice-toolbar:has(.ai-voice-options[open])>.ai-voice-stop{margin-left:auto}
+
+.assistant-widget .ai-voice-settings>.ai-voice-install{font:inherit;font-size:11px;min-height:28px;padding:5px 8px;margin:0 0 7px}

@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="spatial-guide.css?v=b3a5fbd8de29">
   <link rel="stylesheet" href="workspace-setup.css?v=2074b0a3a2a7">
   <link rel="stylesheet" href="working-memory.css?v=70ae96f29a8c">
-  <link rel="stylesheet" href="assistant-widget.css?v=def3a1bebd02">
+  <link rel="stylesheet" href="assistant-widget.css?v=821b623e9397">
   <link rel="stylesheet" href="overview-carousel.css?v=72ebb909360d">
   <link rel="stylesheet" href="desktop-background.css?v=04e77fa50d3e">
   <link rel="stylesheet" href="control-refinements.css?v=443083bca97a">
@@ -54,7 +54,7 @@
   <script src="demo-super-key.js?v=0d51c763ae38"></script>
   <script src="desktop-markers.js?v=73adb4eef74c"></script>
   <script src="workspace-setup.js?v=76bcea86773e"></script>
-  <script src="spatial-guide.js?v=f5895814ef6c"></script>
+  <script src="spatial-guide.js?v=bdabe9f9e741"></script>
   
   <link rel="stylesheet" href="apps-quick-launch.css?v=8c15488a66c5">
   <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
@@ -126,6 +126,7 @@
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M9 2h6M12 5v3M12 13l4-2"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18"/></symbol>
+    <symbol id="i-microphone" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 10v2a6 6 0 0 0 12 0v-2M12 18v3M8 21h8"/></symbol>
     <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9l5 6m0-6-5 6"/></symbol>
     <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9c2 2 2 4 0 6M19 6c4 4 4 8 0 12"/></symbol>
     <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9c5-5 13-5 18 0M6 13c3-3 9-3 12 0M9 17c2-2 4-2 6 0"/><circle cx="12" cy="20" r="1"/></symbol>
@@ -298,7 +299,7 @@
           </section>
           <p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Turn on workspace context, or drop files and text here.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div>
         </div>
-        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Try: Make a checklist." autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><small id="aiDemoNotice" class="ai-demo-notice">Scripted demo. Try “Make a checklist.”</small><button id="aiDemoHelp" class="ai-demo-help" type="button" aria-controls="aiDemoRequests" aria-expanded="false">Supported requests</button><small id="aiStatus" role="status"></small></form>
+        <form id="aiComposer" class="ai-composer"><label for="aiPrompt" class="ai-input-label">Message Assistant</label><div class="ai-compose-row"><textarea id="aiPrompt" aria-label="Message Assistant" aria-describedby="aiDemoNotice aiStatus" maxlength="4000" rows="2" placeholder="Try: Make a checklist." autocomplete="off"></textarea><button class="surface-key" id="aiSend" type="submit" aria-label="Send message" title="Send message · Enter">Send</button></div><div class="ai-voice-toolbar" role="group" aria-label="Assistant voice"><button class="surface-key ai-voice-mic" id="aiVoiceMic" type="button" aria-label="Start voice input" aria-pressed="false" aria-describedby="aiVoiceStatus"><svg aria-hidden="true"><use href="#i-microphone"/></svg><span>Speak</span></button><details id="aiVoiceOptions" class="ai-voice-options"><summary>Voice options</summary><div class="ai-voice-settings"><label for="aiVoiceMode">Activation</label><select id="aiVoiceMode"><option value="manual">Manual</option><option value="wake">Wake phrase</option><option value="continuous">Continuous</option></select><p id="aiVoiceModeHint">Dictate a message, then review and send it.</p><button id="aiVoiceInstallPack" class="surface-key ai-voice-install" type="button" aria-describedby="aiVoiceModeHint aiVoiceStatus" hidden>Install English pack</button><label class="ai-permission"><input id="aiVoiceReadAloud" type="checkbox" role="switch"><span>Read replies aloud</span></label><p id="aiVoiceProcessing">Speech recognition depends on your browser and may use its online service. Wake phrase requires on-device recognition. Assistant replies remain scripted.</p><p>While reading aloud, the microphone pauses to avoid hearing its own reply. Stop speaking resumes an active voice session.</p></div></details><button class="surface-key ai-voice-stop" id="aiVoiceStopSpeech" type="button" hidden>Stop speaking</button></div><small id="aiVoiceStatus" class="ai-voice-status" role="status" aria-live="polite" hidden></small><small id="aiVoiceTranscript" class="ai-voice-transcript" hidden></small><small id="aiDemoNotice" class="ai-demo-notice">Scripted demo. Try “Make a checklist.”</small><button id="aiDemoHelp" class="ai-demo-help" type="button" aria-controls="aiDemoRequests" aria-expanded="false">Supported requests</button><small id="aiStatus" role="status"></small></form>
       </div>
     </aside>
     <aside class="widget-source files-widget" data-widget-source="files" aria-label="Files widget">
@@ -707,7 +708,8 @@
 <script src="apps-quick-launch.js?v=765200e694c6"></script>
 <script src="working-memory-desktop.js?v=5c8707451104"></script>
 <script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
-<script src="ai-desktop.js?v=01a50d075bcc"></script>
+<script src="assistant-voice.js?v=e8b446834b8c"></script>
+<script src="ai-desktop.js?v=1c370a843705"></script>
 <script src="overview-desktop.js?v=fe8fc4c0e944"></script>
   <script src="steam-overview.js?v=71bf946de330"></script>
 <script src="all-workspaces.js?v=be1912614455"></script>
@@ -723,7 +725,7 @@
 <script src="scoped-actions.js?v=456a2d990146"></script>
 <script src="temporary-parking.js?v=0df17801747f"></script>
 <script src="temporary-parking-desktop.js?v=2d203cab5432"></script>
-<script src="assistant-desktop.js?v=b9458de1028f"></script>
+<script src="assistant-desktop.js?v=0e8bbd0b06b2"></script>
 <script src="desktop-map.js?v=d204b9dd5344"></script>
 <script src="desktop-map-desktop.js?v=0ac465b11826"></script>
 <script src="window-audio.js?v=ed03b6644984"></script>

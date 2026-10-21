@@ -46,6 +46,22 @@ Extended workspace follows desktop and Project navigation. Side space retains it
 
 **Allow display control** belongs to the chosen display, display setup and exact Workspace/Project context; a grant in the ordinary Workspace does not grant control in its Projects. Chat and manual tools remain usable while permission is off. This permission is separate from **Use workspace context**: display examples can use manually supplied sources with automatic context off. **Take over** pauses a running example; **Continue** resumes a paused example when its original permission is available. Turning permission off pauses work without clearing files, windows or drafts. **Stop** abandons remaining steps and keeps completed work. Changing context interrupts unfinished scripted work safely. On Main or Extended workspace, changing desktops also interrupts display steps; Side space keeps its windows in place across desktop navigation. The captured inputs, original scope and completed steps remain in the original chat; the task never gains access to a new context or desktop.
 
+### Voice
+
+Choose **Speak** beside the composer to start input and **Mute** to stop. **Voice options → Activation** selects how speech becomes a message:
+
+| Mode | Input behavior |
+| --- | --- |
+| **Manual** | Dictation adds its transcript to the current draft. Review or edit it, then choose Send. |
+| **Wake phrase** | Waits for “Hey Assistant”, then captures and sends the request after you finish speaking. The phrase itself is omitted from the message. |
+| **Continuous** | Sends completed utterances after a pause, without requiring the activation phrase. |
+
+Wake phrase and Continuous require an empty draft before starting. Editing the composer stops input and preserves the text. **Read replies aloud** independently reads new Assistant replies; opening a chat does not read its history. **Stop speaking** cancels playback. Recognition pauses during read-aloud to avoid an audio feedback loop, then resumes only within the same active voice session and captured context.
+
+Activation mode and read-aloud preference are remembered per Workspace. Microphone activation is session-only and always begins with an explicit action; reloading never starts listening. The visible microphone state identifies whether input is waiting, listening or paused. Switching Workspace, Project or chat, changing the display setup or role, hiding the tab or leaving the page stops listening and discards unsent recognition. Saved drafts, attachments and previous replies remain intact. Voice input obeys the existing context and display-control permissions.
+
+Voice input uses the browser’s speech-recognition support and is unavailable when that support is missing. Wake phrase requires on-device recognition and an available language pack; it never silently falls back to online recognition. With Wake phrase selected, supported browsers offer **Install English pack** in Voice options. This downloads the local pack only when you choose it. Installation does not start the microphone; choose Speak afterward. Manual and Continuous recognition may send audio to the browser’s recognition service. Read-aloud uses browser speech synthesis. These speech features do not connect an AI model: Assistant replies and display workflows still use the same local scripted rules. Dictating a live message is separate from transcribing an attached audio file, which remains an unconnected workflow.
+
 ## Desktop Guide
 
 Open Desktop Guide through search or the README's direct link. It teaches controls, Apps, tiling, floating, Overview, maximize/fullscreen, parking, desktops, Files/Stash, Assistant, Projects, Workspaces, panel arrangement and displays. Practice uses isolated state; finishing offers a clean desktop or demo content. Skipping and reopening preserve progress.

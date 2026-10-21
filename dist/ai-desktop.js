@@ -9,6 +9,7 @@
   const workspaceLabel=id=>workspaceProfiles[id]?.label||id;
   const contextToggle=$('#aiUseWorkspaceContext'),displayToggle=$('#aiAllowDisplayControl');
   const currentProject=()=>{const column=desktopPages.column(activeWorkspace);return projectSpaces[column]?column:null;};
+  let voice=null,voiceWorkspace='',voiceContextOwner='',voiceManualBase='',voiceManualText='',voiceNotice='';
   const scopeLabel=()=>currentProject()?projectSpaces[currentProject()].name+' Project':workspaceLabel(activeWorkspace)+' Workspace';
   function syncScope(){
     const project=currentProject(),changed=owner&&(owner.workspace!==activeWorkspace||owner.project!==project);
@@ -63,7 +64,7 @@
   }
   contextToggle.addEventListener('change',()=>{model.contextPreference(activeWorkspace,currentProject(),contextToggle.checked);persist();renderPermissions();status.textContent=contextToggle.checked?'Open sources in '+scopeLabel()+' will be captured when you send.':'Automatic context is off. Attached inputs and earlier request snapshots are kept.';});
   displayToggle.addEventListener('change',()=>{try{const accepted=globalThis.SpatialDisplayRoleBridge?.setDisplayControl?.(displayToggle.checked,displayToggle._context);if(accepted===false)throw Error('The display or context changed. Try the switch again.');status.textContent=displayToggle.checked?'Display control allowed for '+scopeLabel()+'.':'Display control is off.';}catch(error){status.textContent=error.message||'The display permission could not change.';}renderPermissions();});
-  window.addEventListener('spatial-display-role-change',renderPermissions);
+  window.addEventListener('spatial-display-role-change',()=>{renderPermissions();syncVoiceContext();});
   let permissionRefresh=null;
   function refreshPermissionPreview(){
     if(permissionRefresh!==null)return;
@@ -177,8 +178,8 @@
     globalThis.SpatialPanels?.refresh?.();
   }
   document.addEventListener('pointerdown',event=>{if(inputPanel&&!inputPanel.hidden&&inputPanel.contains(event.target))return;if(inputPanel&&!inputPanel.hidden&&!event.target.closest?.('[data-ai-inspect],[data-ai-input]'))closeInput();},true);
-  const layerObserver=new MutationObserver(()=>{if(inputPanel&&!inputPanel.hidden&&quickBlocked())closeInput();});
-  layerObserver.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','aria-hidden','aria-modal','inert']});
+  const layerObserver=new MutationObserver(()=>{if(inputPanel&&!inputPanel.hidden&&quickBlocked())closeInput();if(voice&&(voice.state().active||voice.state().speaking)&&(!conversationVisible()||quickBlocked()))voice.stop('Voice paused. Open the chat to start again.');});
+  layerObserver.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','aria-hidden','aria-modal','inert','data-display-examples']});
 
   const editableDropTarget=target=>Boolean(target?.closest?.('input,textarea,select,[contenteditable="true"]'));
   const insertsText=event=>editableDropTarget(event.target)&&![...event.dataTransfer.types].some(type=>type==='Files'||type===C.MIME);
@@ -262,29 +263,29 @@
     return recipes||earlier?'<details class="ai-examples"><summary>Examples</summary>'+recipes+(recipes?'<p class="ai-example-note">Try these with your selection. Replies are scripted locally; supported file conversions create real copies in the demo.</p>':'')+earlier+'</details>':'';
   }
   function submitRequest(){
-    const request=prompt.value.trim();if(!request){status.textContent='Write a request first.';return;}
-    if(!conversationVisible()||quickBlocked())return;
+    const request=prompt.value.trim();if(!request){status.textContent='Write a request first.';return false;}
+    if(!conversationVisible()||quickBlocked())return false;
     const task=currentDisplayTask();
     if(taskOngoing(task)){
       model.draft(activeWorkspace,prompt.value);persist();
-      if(taskPaused(task)){status.textContent=task.allowed!==true?'Your draft is kept. Turn on Allow display control before answering the task.':'Your draft is kept. Choose Continue before answering the task.';return;}
+      if(taskPaused(task)){status.textContent=task.allowed!==true?'Your draft is kept. Turn on Allow display control before answering the task.':'Your draft is kept. Choose Continue before answering the task.';return false;}
       const question=task.activity.stage==='question'?task.activity.question:null;
-      if(!question){status.textContent='Your draft is kept while Assistant works. Stop the task to start a different request.';return;}
+      if(!question){status.textContent='Your draft is kept while Assistant works. Stop the task to start a different request.';return false;}
       const choice=question.options?.find(option=>[option.id,option.label].some(label=>choiceText(label)===choiceText(request)));
-      if(!choice){status.textContent='Choose one of the displayed options, or type its label. Your draft is kept.';return;}
+      if(!choice){status.textContent='Choose one of the displayed options, or type its label. Your draft is kept.';return false;}
       const workspace=activeWorkspace,chatId=model.session(workspace).id,sentDraft=prompt.value;
-      try{if(!answerTask(choice.id,question.id,task.context.operationId)){status.textContent='This question changed. Choose one of the current options.';return;}}catch(error){status.textContent=error.message||'The answer could not be used. Your draft is kept.';return;}
-      if(activeWorkspace===workspace&&model.session(workspace).id===chatId&&prompt.value===sentDraft){model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();}status.textContent='';return;
+      try{if(!answerTask(choice.id,question.id,task.context.operationId)){status.textContent='This question changed. Choose one of the current options.';return false;}}catch(error){status.textContent=error.message||'The answer could not be used. Your draft is kept.';return false;}
+      if(activeWorkspace===workspace&&model.session(workspace).id===chatId&&prompt.value===sentDraft){model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();}status.textContent='';return true;
     }
-    if(!scopeAvailable){status.textContent='This Workspace holds 50 chats. Return to an existing context to continue.';return;}
+    if(!scopeAvailable){status.textContent='This Workspace holds 50 chats. Return to an existing context to continue.';return false;}
     const session=model.session(activeWorkspace),workingFolder=model.workingFolder(activeWorkspace),project=projectSpaces[session.workingProject],inputs=requestInputs(session);
     const turn=model.exchange(activeWorkspace,request,D.reply(request,{items:inputs,folder:workingFolder,project:project?.name||workspaceLabel(activeWorkspace)+' workspace'}),{sources:inputs});
-    if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return;}
+    if(!turn){status.textContent='This demo chat is full. Start a new chat to continue; your draft is kept.';return false;}
     recordInputs(turn,session.id);
     model.draft(activeWorkspace,'');prompt.value='';persist();render();
     const sources=$('.ai-context-sources',content);if(sources){sources.open=false;sources.hidden=true;}
     followConversation();
-    status.textContent='Reply ready';
+    status.textContent='Reply ready';speakTurn(turn);return true;
   }
   function rememberView(){
     if(!current)return;
@@ -295,7 +296,7 @@
     if(rendering)return;rendering=true;try{renderChat();}finally{rendering=false;}
   }
   function renderChat(){
-    const session=syncScope(),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||!nativeVisible()))closeInput();renderNative(session);renderPermissions();
+    const session=syncScope(),nextKey=activeWorkspace+':'+session.id,switched=current!==nextKey;if(inputPanel&&!inputPanel.hidden&&(inputOwner!==nextKey||quickBlocked()||!nativeVisible()))closeInput();renderNative(session);renderPermissions();syncVoiceContext();
     const chats=model.chats(activeWorkspace),project=projectSpaces[session.workingProject];
     const options=[...new Set([session.workingProject,...session.items.map(item=>item.project),activeProjectName].filter(id=>projectSpaces[id]))];
     const next=JSON.stringify([activeWorkspace,currentProject(),scopeAvailable,activeProjectName,session.id,chats,session.items,session.turns,session.workingProject,options.map(id=>[id,projectSpaces[id].name,projectSpaces[id].root])]);
@@ -343,9 +344,9 @@
     persist();render();openQuick(false);
     status.textContent=previous&&added.project&&previous!==added.project?'Attached from '+(projectSpaces[added.project]?.name||'another project')+'. Working folder stays '+model.workingFolder(activeWorkspace)+'.':'Attached to this request.';return true;
   }
-  prompt.addEventListener('input',()=>{model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderNative(model.session(activeWorkspace));status.textContent='';});
-  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();submitRequest();}if(event.key==='Escape'){event.stopPropagation();closeQuick(true);}});
-  $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();submitRequest();});
+  prompt.addEventListener('input',()=>{if(voice?.state().active)voice.stop('Microphone stopped while you edit.');model.draft(activeWorkspace,prompt.value);send.disabled=!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderNative(model.session(activeWorkspace));status.textContent='';});
+  prompt.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.stopPropagation();voice?.stop('Microphone stopped before sending.');submitRequest();}if(event.key==='Escape'){event.stopPropagation();closeQuick(true);}});
+  $('#aiComposer').addEventListener('submit',event=>{event.preventDefault();voice?.stop('Microphone stopped before sending.');submitRequest();});
   folder.addEventListener('change',()=>{folder.value=model.session(activeWorkspace).workingProject||'';status.textContent='Switch Workspace or Project to use its chat and save location.';});
   attachments.addEventListener('click',event=>{const inspect=event.target.closest('[data-ai-inspect]');if(inspect){inspectInput(model.session(activeWorkspace).items.find(item=>item.id===inspect.dataset.aiInspect),'Attached input');return;}const link=event.target.closest('[data-ai-source]');if(link){event.preventDefault();const item=model.session(activeWorkspace).items.find(item=>item.id===link.dataset.aiSource);if(item?.source.address){if(/^https?:/.test(item.source.address)){const id=createAppInstance('browser');navigateBrowser(id,item.source.address);}else openFileLocation(item.source.address);}return;}const button=event.target.closest('[data-ai-remove]');if(!button)return;model.remove(activeWorkspace,button.dataset.aiRemove);persist();render();});
   transcript.addEventListener('click',async event=>{
@@ -526,12 +527,99 @@
   globalThis.SpatialAIDesktop={render,expand,revealChat,startExample,validateWorkingFolder,setDisplayTask,
     attach(items,{focus=true}={}){if(!scopeAvailable||quickBlocked())return [];const existing=new Set(model.session(activeWorkspace).items.map(i=>i.id));if(existing.size+new Set(items.filter(i=>!existing.has(i.id)).map(i=>i.id)).size>24){status.textContent='Remove unused sources before adding this selection.';return [];}const added=[];for(const item of items){if(add(item))added.push(model.session(activeWorkspace).items.find(entry=>entry.id===item.id));}if(focus)openQuick();return added.filter(Boolean);},
     inspect(item){inspectInput(item,'Attached input');},toggleInputs(){const panel=$('.ai-context-sources',content);panel.open=!panel.open;panel.hidden=!panel.open;return panel.open;},removeInputs(ids){for(const id of ids)model.remove(activeWorkspace,id);persist();render();},current:()=>model.session(activeWorkspace),workingFolder:()=>model.workingFolder(activeWorkspace),automaticInputs,
-    notify(text){status.textContent=text;},
+    notify(text){status.textContent=text;},stopVoice(reason='Microphone stopped.'){voice?.stop(reason);},
     taskActive:()=>taskOngoing(currentDisplayTask()),
     consumeDraft(value,{workspace=activeWorkspace,chatId=model.session(workspace).id}={}){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId||prompt.value!==value)return false;model.draft(workspace,'',chatId);prompt.value='';send.disabled=true;persist();return true;},
-    createTurn(request,response,context={}){const session=model.session(activeWorkspace),turn=model.exchange(activeWorkspace,request,response,context);if(!turn)return null;recordInputs(turn,session.id);model.draft(activeWorkspace,prompt.value);persist();render();status.textContent='';return turn;},
-    updateTurn(workspace,chatId,turnId,response){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId)return null;const turn=model.reply(workspace,turnId,response,chatId);if(turn){persist();render();}return turn;},
+    createTurn(request,response,context={}){const session=model.session(activeWorkspace),turn=model.exchange(activeWorkspace,request,response,context);if(!turn)return null;recordInputs(turn,session.id);model.draft(activeWorkspace,prompt.value);persist();render();status.textContent='';speakTurn(turn);return turn;},
+    updateTurn(workspace,chatId,turnId,response){if(workspace!==activeWorkspace||model.session(workspace).id!==chatId)return null;const turn=model.reply(workspace,turnId,response,chatId);if(turn){persist();render();if(['question','result','review'].includes(turn.presentation))speakTurn(turn);}return turn;},
     setAction(workspace,chatId,turnId,value){const turn=model.action(workspace,turnId,value,chatId);if(turn){persist();render();}return turn;},mode:()=>model.session(activeWorkspace).mode,setMode,snapshot:()=>model.snapshot(),merge(value){model.load(value,{preserveSelection:activeWorkspace});signature='';render();if(document.activeElement!==prompt)prompt.value=model.session(activeWorkspace).draft;send.disabled=!scopeAvailable||!prompt.value.trim()||model.session(activeWorkspace).turns.length>=60;}};
+  // Voice never owns a separate conversation or bypasses the normal request
+  // handlers. Only preferences are saved; microphone activation is tab-local.
+  function voiceContext(){
+    const permission=globalThis.SpatialDisplayRoleBridge?.displayControl?.();
+    return JSON.stringify([activeWorkspace,currentProject(),model.session(activeWorkspace).id,permission?.contextKey||'',desktopPages.current?.(activeWorkspace)??0]);
+  }
+  function voiceDraft(value){
+    prompt.value=value;model.draft(activeWorkspace,value);send.disabled=!scopeAvailable||!value.trim()||model.session(activeWorkspace).turns.length>=60;persist();renderNative(model.session(activeWorkspace));
+  }
+  function speakTurn(turn){
+    if(!voice||!turn||turn.example||turn.action||!conversationVisible()||quickBlocked())return;
+    if(turn.presentation&&!['question','result','review'].includes(turn.presentation))return;
+    voice.speak([turn.title,turn.text].filter(Boolean).join('. '),turn.id+':'+turn.title+':'+turn.text);
+  }
+  function syncVoiceContext(){
+    if(!voice)return;const context=voiceContext();if(context!==voiceContextOwner){voiceContextOwner=context;voiceNotice='';voiceManualBase='';voiceManualText='';}voice.setContext(context);
+    if(voiceWorkspace!==activeWorkspace){
+      voiceWorkspace=activeWorkspace;voiceNotice='';voiceManualBase='';voiceManualText='';
+      const saved=readDesktopStorage('spatial-assistant-voice-v1',{}),preference=saved&&typeof saved==='object'?saved[activeWorkspace]:null;
+      voice.setMode(['manual','wake','continuous'].includes(preference?.mode)?preference.mode:'manual');
+      voice.setReadAloud(preference?.readAloud===true);
+    }
+    renderVoice(voice.state());
+  }
+  function saveVoicePreference(){
+    const saved=readDesktopStorage('spatial-assistant-voice-v1',{}),preferences=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
+    const state=voice.state();preferences[activeWorkspace]={mode:state.mode,readAloud:state.readAloud};
+    try{desktopStorage.setItem('spatial-assistant-voice-v1',JSON.stringify(preferences));}catch{voiceNotice='Voice preferences could not be saved.';}
+    renderVoice(state);
+  }
+  function renderVoice(state){
+    const mic=$('#aiVoiceMic'),mode=$('#aiVoiceMode'),read=$('#aiVoiceReadAloud'),message=$('#aiVoiceStatus'),preview=$('#aiVoiceTranscript');
+    if(!mic||!mode||!read||!message||!preview)return;
+    mic.disabled=!scopeAvailable||!state.supported||state.installing===true||state.mode==='wake'&&!state.wakeSupported;
+    mic.setAttribute('aria-pressed',String(state.active));mic.setAttribute('aria-label',state.active?'Mute voice input':'Start voice input');
+    mic.title=state.active?'Stop listening':!state.supported?'Voice input is unavailable in this browser':state.mode==='wake'&&!state.wakeSupported?'Wake phrase needs on-device speech recognition':'Start '+({manual:'dictation',wake:'wake phrase listening',continuous:'continuous conversation'}[state.mode]||'voice input');
+    const caption=mic.querySelector('span');if(caption)caption.textContent=state.active?'Mute':'Speak';
+    mode.value=state.mode;mode.disabled=state.installing===true;const install=$('#aiVoiceInstallPack');if(install){install.hidden=state.mode!=='wake'||!state.wakeInstallSupported||state.wakePackAvailable===true;install.disabled=state.installing===true;install.textContent=state.installing?'Installing…':'Install English pack';}const wake=mode.querySelector('option[value="wake"]');if(wake){wake.disabled=!state.wakeSupported;wake.textContent=state.wakeSupported?'Wake phrase':'Wake phrase · unavailable';}
+    read.checked=state.readAloud;read.disabled=!state.synthesisSupported;
+    $('#aiVoiceStopSpeech').hidden=!state.speaking;
+    $('#aiVoiceModeHint').textContent=state.mode==='manual'?'Dictate in English, then review and send the message.':state.mode==='wake'?'Say “Hey Assistant”, followed by a request in English. Each request sends after a pause. On-device recognition and an installed English language pack are required. Use Install English pack when available, then press Speak.':'Speak in English without an activation phrase. Each message sends automatically after a pause. Say “Stop listening” to mute.';
+    $('#aiVoiceProcessing').textContent=state.mode==='wake'?'Wake phrase is processed on this device. This browser must support on-device recognition and have the English language pack installed. Assistant replies remain scripted.':'Your browser transcribes speech and may send audio to its online recognition service. Voice activates only when you press Speak. Assistant replies remain scripted.'+(!state.wakeSupported?' Wake phrase is unavailable here because this browser does not support on-device recognition.':'');
+    message.textContent=voiceNotice||(!state.supported?'Voice input is unavailable in this browser. You can still type.':state.status||'');
+    message.hidden=!message.textContent||state.supported&&!state.active&&!state.speaking&&!state.error&&!voiceNotice&&/^(microphone is off|microphone off|ready|voice input is off)[.!]?$/i.test(message.textContent);
+    area.dataset.voiceActive=String(state.active);area.dataset.voiceSpeaking=String(state.speaking);
+    if(state.error&&state.mode!=='manual'&&state.transcript){preview.textContent=state.transcript;preview.hidden=false;}
+    else if(!state.active){preview.hidden=true;preview.textContent='';}
+  }
+  function initializeVoice(){
+    const factory=globalThis.SpatialAssistantVoice;if(!factory?.create)return;
+    voice=factory.create({environment:window,lang:'en-US',getContext:voiceContext,
+      canSend:()=>scopeAvailable&&conversationVisible()&&!quickBlocked(),
+      onState:state=>renderVoice(state),
+      onTranscript(text,{final,mode}){
+        const preview=$('#aiVoiceTranscript');preview.textContent=text;preview.hidden=!text||mode==='manual';
+        if(mode!=='manual')return;
+        const prior=voiceManualBase+(voiceManualBase&&voiceManualText?' ':'')+voiceManualText;
+        if(prompt.value!==prior){voice.stop('Microphone stopped because the draft changed.');return;}
+        voiceManualText=String(text||'');voiceDraft((voiceManualBase+(voiceManualBase&&voiceManualText?' ':'')+voiceManualText).slice(0,4000));
+      },
+      async onSubmit(text){
+        const captured=voiceContext(),workspace=activeWorkspace,chatId=model.session(workspace).id;
+        const isCurrent=()=>captured===voiceContext()&&scopeAvailable&&conversationVisible()&&!quickBlocked();
+        if(!isCurrent()||prompt.value.trim())return false;
+        voiceDraft(String(text||'').slice(0,4000));
+        const handled=await globalThis.SpatialAssistantDesktop?.submitVoiceRequest?.(prompt.value.trim(),{workspace,chatId,isCurrent});
+        if(handled!==null&&handled!==undefined)return handled===true;
+        if(!isCurrent())return false;return submitRequest();
+      }
+    });
+    $('#aiVoiceMic').addEventListener('click',async()=>{
+      syncVoiceContext();voiceNotice='';
+      if(voice.state().active){voice.stop('Microphone muted.',{keepSpeech:true});return;}
+      if(!scopeAvailable||!conversationVisible()||quickBlocked())return;
+      if(voice.state().mode!=='manual'&&prompt.value.trim()){
+        voiceNotice='Send or clear your draft before starting automatic voice input.';renderVoice(voice.state());return;
+      }
+      voiceManualBase=prompt.value;voiceManualText='';await voice.start(voice.state().mode);
+    });
+    $('#aiVoiceMode').addEventListener('change',()=>{voiceNotice='';voice.setMode($('#aiVoiceMode').value);saveVoicePreference();});
+    $('#aiVoiceReadAloud').addEventListener('change',()=>{voiceNotice='';voice.setReadAloud($('#aiVoiceReadAloud').checked);saveVoicePreference();});
+    $('#aiVoiceStopSpeech').addEventListener('click',()=>voice.stopSpeaking());
+    $('#aiVoiceInstallPack')?.addEventListener('click',async()=>{voiceNotice='';await voice.installWakePack?.();});
+    window.addEventListener('pagehide',()=>voice.stop('Voice stopped because the page closed.'));
+    syncVoiceContext();
+  }
+  initializeVoice();
   window.addEventListener('spatial-panels-ready',()=>{renderNative(model.session(activeWorkspace));render();});
   if(typeof updateDesktopPageUi==='function'){const update=updateDesktopPageUi;updateDesktopPageUi=function(...args){const result=update(...args);render();return result;};}
   render();
