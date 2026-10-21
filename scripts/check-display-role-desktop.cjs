@@ -224,7 +224,8 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
   const before=clone(assignments.work.areas);
   c.SpatialDisplayRoleBridge.setRole(2,'side');
   assert.deepEqual(clone(assignments.work.areas),before,'Remote role setup leaves native widget placement to the local display');
-  assert.equal(c.SpatialDisplayRoleBridge.ensureAssistantWidget(1),false,'Main is not a supporting Assistant display');
+  assert.equal(c.SpatialDisplayRoleBridge.ensureAssistantWidget(1),true,'The Main display can explicitly reveal its ordinary Assistant widget');
+  assert.equal(c.SpatialDisplayRoleBridge.state().space.assistant.allowed,false,'Revealing the Main Assistant widget never grants control');
   c.localSlot=2;
   assert.equal(c.SpatialDisplayRoleBridge.ensureAssistantWidget(2),true,'The local supporting display reveals Assistant through the widget API');
   assert.equal(c.isLocalArea('ai'),true);assert.equal(areas.ai.hidden,false);
@@ -372,13 +373,13 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
 
 {
   const {c,created,fileLocations,notes,listeners}=fixture();const B=c.SpatialDisplayRoleBridge;
-  assert.throws(()=>B.runAssistantTask('briefing'),/connected Side space/);
+  assert.throws(()=>B.runAssistantTask('briefing'),/Allow display control/,'Main also requires explicit permission before controlling windows');
   B.setRole(2,'side');c.localSlot=2;assert.throws(()=>B.runAssistantTask('briefing'),/Allow display control/);assert.throws(()=>B.assistantControl('resume'),/Allow display control/);
   B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop={workingFolder:()=>'/Work/Documents'};
   const mainBefore=c.appState.browser;
   let result=B.runAssistantTask('briefing');
   assert.equal(result.status,'done');assert.equal(result.control,'assistant');assert.equal(result.kind,'briefing');
-  assert.deepEqual(clone(result.context),{workspace:'work',setup:'displays:1|2',slot:2,folder:'/Work/Documents',project:null});
+  assert.deepEqual(clone(result.context),{workspace:'work',setup:'displays:1|2',slot:2,role:'side',page:0,folder:'/Work/Documents',project:null});
   assert.deepEqual(created.map(window=>window.kind),['notes','dolphin'],'Briefing opens actual Note Editor and folder windows immediately');
   assert.equal(fileLocations.at(-1).path,'/Work/Documents');assert(notes[created[0].id].text.includes('Editor'));assert(!notes[created[0].id].text.includes('Firefox'),'Briefing only includes windows on the delegated display');
   assert.deepEqual(clone(result.outputs),created.map(window=>window.id));
@@ -456,9 +457,11 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
 
 {
   const {c}=fixture(3),B=c.SpatialDisplayRoleBridge;
-  assert.equal(B.displayControl().available,false,'A normal display cannot receive Assistant control');
+  assert.equal(B.displayControl().available,true,'The Main display can receive Assistant control');
+  assert.equal(B.displayControl().slot,1,'The current display is selected even when other displays exist');assert.equal(B.displayControl().role,'main');
+  assert.equal(B.displayControl(2).role,'extended','An explicit connected Extended display is also available');assert.equal(B.displayControl(9).available,false);
   B.setRole(2,'side');B.setRole(3,'side');
-  const workspace=B.displayControl();assert.equal(workspace.slot,2);assert.equal(workspace.allowed,false);
+  const workspace=B.displayControl();assert.equal(workspace.slot,1);assert.equal(workspace.allowed,false);
   B.setDisplayControl(true,workspace);assert.equal(B.displayControl().allowed,true);
   c.localSlot=3;assert.equal(B.displayControl().slot,3,'A local Side space is the selected target');assert.equal(B.displayControl().allowed,false);
   c.localSlot=1;c.desktopPages.go('work',1);
@@ -472,7 +475,7 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
   B.setDisplayControl(true,project);assert.equal(B.displayControl().allowed,true);
   c.desktopPages.select('work','workspace');assert.equal(B.displayControl().allowed,true,'Returning restores Workspace consent');
   B.setDisplayControl(false,B.displayControl());c.desktopPages.select('work','site');assert.equal(B.displayControl().allowed,true,'Workspace revocation does not revoke Project consent');
-  const captured=B.displayControl();B.setRole(2,'extended');assert.throws(()=>B.setDisplayControl(false,captured),/connected Side space/,'A changed role invalidates captured consent');
+  const captured=B.displayControl(2);B.setRole(2,'extended');assert.throws(()=>B.setDisplayControl(false,captured),/Workspace, Project or display changed/,'A changed role invalidates captured consent');
   B.setRole(2,'side');const setup=B.displayControl();c.roster=c.roster.map(display=>({...display,screenWidth:1920,screenHeight:1080}));
   assert.throws(()=>B.setDisplayControl(false,setup),/Workspace, Project or display changed/,'A new monitor setup rejects old controls');
 }
@@ -480,11 +483,27 @@ for(const viewport of [1440,1100,1099,900,899,600,599,320]){
   const {c}=fixture(),B=c.SpatialDisplayRoleBridge;B.setRole(2,'side');B.setDisplayControl(true,B.displayControl());
   c.projectSpaces.site={name:'Website',root:'/Work/Projects/Website'};c.desktopPages.select('work','site');B.setDisplayControl(true,B.displayControl());
   const stale=clone(c.captureDesktopSyncState()),remote=clone(stale),remoteModel=Roles.create(remote.displayRoles);remoteModel.connect(c.roster);
-  remoteModel.setDisplayControl('work',2,false,{setup:B.state().setupKey,project:null});remote.displayRoles=remoteModel.snapshot();
+  remoteModel.setDisplayControl('work',1,false,{setup:B.state().setupKey,project:null});remote.displayRoles=remoteModel.snapshot();
   c.applyDesktopSyncState(remote);assert.equal(B.displayControl().allowed,true,'A remote Workspace edit cannot change current Project permission');
   c.desktopPages.select('work','workspace');assert.equal(B.displayControl().allowed,false,'The remote Workspace revocation is retained separately');
   c.applyDesktopSyncState(stale);assert.equal(B.displayControl().allowed,false,'A stale Project snapshot cannot resurrect another scope permission');
   c.desktopPages.select('work','site');assert.equal(B.displayControl().allowed,true,'The unrelated Project consent remains intact');
+}
+// Main and Extended use the ordinary current desktop rather than a Side pin.
+for(const [count,slot,expectedRole] of [[1,1,'main'],[2,1,'main'],[2,2,'extended']]){
+  const {c,created,notes,listeners}=fixture(count),B=c.SpatialDisplayRoleBridge;c.localSlot=slot;
+  const descriptor=B.displayControl();assert.equal(descriptor.available,true);assert.equal(descriptor.slot,slot);assert.equal(descriptor.role,expectedRole);assert.equal(descriptor.allowed,false);
+  assert.equal(B.state().page,0);assert.throws(()=>B.runAssistantTask('briefing'),/Allow display control/);
+  const roleMenu=c.contextMenuEntries({kind:'desktop'}).find(entry=>entry.label==='Display role');assert(roleMenu.children.some(entry=>entry.action==='display-assistant-toggle'),'Permission is reachable from every display context menu');
+  c.executeContextAction('display-assistant-toggle');assert.equal(B.displayControl().allowed,true);assert.equal(B.state().role,expectedRole,'Granting control never changes the role');
+  c.SpatialAIDesktop={workingFolder:()=>'/Work/Assistant'};
+  const result=B.runAssistantTask('briefing');assert.equal(result.status,'done');assert.equal(result.context.role,expectedRole);assert.equal(result.context.page,0);assert.equal(created.length,2);
+  assert(notes[result.outputs[0]].text.includes(slot===1?'Firefox':'Editor'),'Briefing includes only windows on the captured display');
+  for(const id of result.outputs){assert(c.isLocalApp(id));assert.equal(c.desktopPages.columnOf('work',id),'workspace');assert.equal(c.desktopPages.pageOf('work',id),0);}
+  assert.deepEqual(clone(B.state().space.windows),[],'Main/Extended output windows do not become Side-space pins');
+  const event={type:'pointerdown',target:{closest:selector=>selector==='[data-app-frame]'?c.frameFor(result.outputs[0]):null}};for(const handler of listeners.pointerdown||[])handler(event);
+  assert.equal(B.state().space.assistant.control,'user','Direct user interaction takes over on every role');B.assistantControl('resume');assert.equal(B.state().space.assistant.control,'assistant');
+  const saved=c.SpatialDisplayRoleDesktop.snapshot(),restored=fixture(count,saved).c;restored.localSlot=slot;assert.equal(restored.SpatialDisplayRoleBridge.displayControl().allowed,true,'Consent survives reload on each role');
 }
 console.log('Display-role integration: native panel bounds and Assistant reveal, saved Side content preservation, stable Side windows, scoped references, Project-independent tiling, Workspace isolation, sync focus, conversion progress, scoped permission API and reconnect recovery passed');
 

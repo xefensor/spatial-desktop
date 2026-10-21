@@ -40,13 +40,14 @@ async function displayChecks(){
   first.events.keydown[0]({key:'ArrowRight',stopPropagation(){blocked=true;}});
   assert.equal(blocked,true,'Radio arrows stay inside the embedded display editor');
   assert.equal(first.querySelector('legend').textContent,'Use Display 2 as');assert.equal(second.querySelector('legend').textContent,'Use Display 1 as');
-  assert.doesNotMatch(first.querySelector('.display-role-options').innerHTML,/value="assistant"|aria-label="Assistant on/);assert.equal((first.querySelector('.display-role-options').innerHTML.match(/type="radio"/g)||[]).length,3);assert.match(first.querySelector('.display-role-options').innerHTML,/aria-label="Side space on Display 2"/);assert.equal(first.querySelector('.display-settings-permission').hidden,true);
+  assert.doesNotMatch(first.querySelector('.display-role-options').innerHTML,/value="assistant"|aria-label="Assistant on/);assert.equal((first.querySelector('.display-role-options').innerHTML.match(/type="radio"/g)||[]).length,3);assert.match(first.querySelector('.display-role-options').innerHTML,/aria-label="Side space on Display 2"/);assert.equal(first.querySelector('.display-settings-permission').hidden,false,'Extended displays expose independent control permission');assert.equal(second.querySelector('.display-settings-permission').hidden,false,'Main displays expose independent control permission');
   assert.match(second.querySelector('.display-role-options').innerHTML,/value="side"[^>]* disabled/,'The Main workspace keeps one user work display');
   h.api.open(2);assert.equal(h.routes[0][0],'displays');assert.equal(h.routes[0][1].slot,2,'Display context-menu links select their source monitor');
   await h.change(first,'side');assert.deepEqual(h.writes,[[2,'side']]);
   assert.equal(first.querySelector('.display-settings-permission').hidden,false);assert.equal(first.querySelector('[data-display-assistant-allowed]').checked,false);
   await h.permission(first,true);assert.deepEqual(h.permissions,[[2,true,'Work']]);assert.equal(first.querySelector('[data-display-assistant-allowed]').checked,true);assert.equal(h.state.displays[1].role,'side','Permission does not change the role');
   assert.equal(second.querySelector('legend').textContent,'Use Display 1 as','An editor cannot take another host’s monitor selection');
+  const staleRoleScope=first.querySelector('[data-display-assistant-allowed]').dataset.displayContext;h.state.displays[1].role='extended';await h.permission(first,false,2,staleRoleScope);assert.equal(h.permissions.length,1,'A stale role control cannot change consent after the display role changes');h.state.displays[1].role='side';
   const options=first.querySelector('.display-role-options'),renders=options.htmlWrites;
   const stalePermissionScope=first.querySelector('[data-display-assistant-allowed]').dataset.displayContext;
   h.state.workspace='Gaming';await h.permission(first,false,2,stalePermissionScope);assert.equal(h.permissions.length,1,'A stale Workspace control cannot change the newly active Workspace');h.state.windowActivity='unrelated';h.api.refresh();
@@ -59,6 +60,9 @@ async function displayChecks(){
   h.api.mount(first,2);first.hidden=true;await h.change(first,'side');await h.permission(first,false);assert.equal(h.permissions.length,1,'A hidden editor cannot change permission');
   assert.equal(h.writes.length,1,'A hidden Displays page cannot apply a stale role action');
   first.isConnected=false;h.api.refresh();
+  const single=displayHarness(),main=single.host();single.state.displays=single.state.displays.slice(0,1);single.api.mount(main,1);
+  assert.equal(main.querySelector('.display-settings-permission').hidden,false);assert.equal(main.querySelector('[data-display-assistant-allowed]').disabled,false);assert.equal(main.querySelector('[data-display-assistant-allowed]').checked,false);
+  await single.permission(main,true,1);assert.deepEqual(single.permissions,[[1,true,'Work']]);assert.equal(main.querySelector('[data-display-assistant-allowed]').checked,true);assert.equal(single.state.displays[0].role,'main','The only Main display can grant control without adding another monitor');
 }
 
 // Small DOM fixture executes the shipped renderer and its delegated handlers.

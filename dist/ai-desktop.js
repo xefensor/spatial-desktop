@@ -54,7 +54,7 @@
     $('#aiScopeLabel').textContent=scopeLabel();contextToggle.checked=enabled;contextToggle.disabled=!scopeAvailable;
     displayToggle.checked=permission?.allowed===true;displayToggle.disabled=!permission?.available||!scopeAvailable;
     displayToggle._context=permission||null;
-    $('#aiDisplayControlHint').textContent=permission?.available?'Display '+permission.slot+' · '+permission.scopeLabel+' · Opens windows through Side space examples.':'Choose a Side space display in Settings → Displays.';
+    $('#aiDisplayControlHint').textContent=permission?.available?'Display '+permission.slot+' · '+(permission.roleLabel||({main:'Main workspace',extended:'Extended workspace',side:'Side space'}[permission.role])||'This display')+' · '+permission.scopeLabel+'. Scripted examples can open and arrange windows here.':'Display control is unavailable while this display is disconnected.';
     const summary=$('#aiAutomaticContext'),list=$('#aiAutomaticSources');summary.hidden=!enabled;
     $('#aiAutomaticSummary').textContent=inputs.length?'Automatic context · '+inputs.length+' open source'+(inputs.length===1?'':'s'):'Automatic context · No open sources';
     const markup=inputs.slice(0,24).map(item=>'<li>'+escapeHtml(item.title)+'<small>'+escapeHtml(C.representation(item))+'</small></li>').join('')+'<li class="ai-context-limit">Captured when you send · Up to 24 inputs including attachments.</li>';
@@ -104,10 +104,15 @@
     help.hidden=!open;$('#aiDemoHelp').setAttribute('aria-expanded',String(open));
     if(open){stopFollowingConversation();conversation.scrollTop=0;}
   });
+  function taskScopeMatches(state,context){
+    if(!state||!context||!['main','extended','side'].includes(state.role)||state.workspaceId!==activeWorkspace||context.workspace!==activeWorkspace)return false;
+    if(Object.hasOwn(context,'project')&&(context.project||null)!==currentProject())return false;
+    if(context.role&&context.role!==state.role||context.setup&&state.setupKey&&context.setup!==state.setupKey||context.slot!=null&&state.localSlot!=null&&Number(context.slot)!==Number(state.localSlot))return false;
+    return state.role==='side'||!Number.isInteger(context.page)||context.page===(desktopPages.current?.(activeWorkspace)??0);
+  }
   function currentDisplayTask(){
     const state=displayTask,task=state?.space?.assistant,context=task?.context;
-    const visibleRole=state?.role==='side';
-    return scopeAvailable&&visibleRole&&state.workspaceId===activeWorkspace&&context?.workspace===activeWorkspace&&(!Object.hasOwn(context,'project')||(context.project||null)===currentProject())&&context.chatId===model.session(activeWorkspace).id?task:null;
+    return scopeAvailable&&taskScopeMatches(state,context)&&context.chatId===model.session(activeWorkspace).id?task:null;
   }
   const taskOngoing=task=>Boolean(task&&taskStages.has(task.activity?.stage));
   const taskPaused=task=>task?.allowed!==true||task?.control==='user'||task?.status==='paused';
@@ -116,7 +121,7 @@
     const task=currentDisplayTask(),question=task?.activity?.stage==='question'?task.activity.question:null;
     if(!conversationVisible()||quickBlocked()||!question||taskPaused(task)||question.id!==questionId||task.context.operationId!==operationId||!question.options?.some(option=>option.id===choiceId))return false;
     const bridge=globalThis.SpatialDisplayRoleBridge;if(!bridge?.answerAssistantExample)return false;
-    if(bridge.state){const fresh=bridge.state(),current=fresh.space?.assistant;if(fresh.role!=='side'||current?.allowed!==true||fresh.workspaceId!==activeWorkspace||current?.context?.chatId!==model.session(activeWorkspace).id||current.context.operationId!==operationId||current.activity?.question?.id!==questionId)return false;}
+    if(bridge.state){const fresh=bridge.state(),current=fresh.space?.assistant;if(!taskScopeMatches(fresh,current?.context)||current?.allowed!==true||current?.context?.chatId!==model.session(activeWorkspace).id||current.context.operationId!==operationId||current.activity?.question?.id!==questionId)return false;}
     const accepted=bridge.answerAssistantExample(choiceId,{questionId,operationId})!==false;if(accepted)followConversation();return accepted;
   }
   function renderDisplayTask(){
@@ -145,7 +150,7 @@
   function setDisplayTask(state){displayTask=state||null;renderDisplayTask();}
   taskPanel.addEventListener('click',event=>{
     const answer=event.target.closest('[data-ai-task-answer]');if(answer){try{if(answerTask(answer.dataset.aiTaskAnswer,answer.dataset.aiTaskQuestion,answer.dataset.aiTaskOperation)){status.textContent='';prompt.focus();}}catch(error){status.textContent=error.message||'Choose one of the displayed options.';}return;}
-    const stop=event.target.closest('[data-ai-task-stop]'),task=currentDisplayTask();if(stop&&conversationVisible()&&!quickBlocked()&&taskOngoing(task)&&stop.dataset.aiTaskOperation===task.context.operationId){try{const bridge=globalThis.SpatialDisplayRoleBridge,fresh=bridge?.state?.(),context=fresh?.space?.assistant?.context;if(!fresh||(fresh.role==='side'&&fresh.workspaceId===activeWorkspace&&context?.chatId===model.session(activeWorkspace).id&&context.operationId===stop.dataset.aiTaskOperation))bridge?.stopAssistantExample?.();}catch(error){status.textContent=error.message||'The task could not stop.';}}
+    const stop=event.target.closest('[data-ai-task-stop]'),task=currentDisplayTask();if(stop&&conversationVisible()&&!quickBlocked()&&taskOngoing(task)&&stop.dataset.aiTaskOperation===task.context.operationId){try{const bridge=globalThis.SpatialDisplayRoleBridge,fresh=bridge?.state?.(),context=fresh?.space?.assistant?.context;if(!fresh||(taskScopeMatches(fresh,context)&&context?.chatId===model.session(activeWorkspace).id&&context.operationId===stop.dataset.aiTaskOperation))bridge?.stopAssistantExample?.();}catch(error){status.textContent=error.message||'The task could not stop.';}}
   });
   const withinAssistant=target=>Boolean(target&&area.contains(target));
   const blockedByDialog=()=>Boolean(document.querySelector?.('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]),#universalSearch.is-open,#packageDialog.is-open,#projectEditorDialog.is-open:not(.is-inline),#desktopContextMenu:not([hidden]),#spatialGuideDialog:not([hidden])'));

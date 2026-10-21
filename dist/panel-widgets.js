@@ -357,6 +357,11 @@
       items.forEach(function (item) {
         if (isSpacer(item.id)) {
           bands.push({kind: 'spacer', section: item.section, items: [item], headerSize: 0, min: 0, extent: 0, grow: 0});
+        } else if (item.id === 'launcher') {
+          // Overview remains a single ordinary control. In a roomy panel it
+          // gets its own label band; compact panels still use the square icon
+          // path above. Keep the saved compact preference intact.
+          bands.push({kind: 'launcher', section: item.section, items: [item], headerSize: 0, min: Math.min(ICON, vertical ? available : crossExtent), extent: vertical ? ICON : 120, grow: 0});
         } else if (item.mode === 'compact') {
           let band = bands[bands.length - 1];
           if (!band || band.kind !== 'icons' || band.section !== item.section) { band = {kind: 'icons', section: item.section, items: []}; bands.push(band); }
@@ -423,7 +428,10 @@
     bands.forEach(function (band, bandIndex) {
       if (anchorFooter && bandIndex === footerStart) cursor = Math.max(cursor, available - footerExtent);
       const extent = Math.max(0, Math.min(band.extent, available - cursor));
-      if (band.kind === 'expanded' || band.kind === 'spacer') {
+      if (band.kind === 'launcher') {
+        const item = band.items[0], height = Math.min(ICON, vertical ? extent : crossExtent);
+        widgets[item.id] = {x: vertical ? 0 : cursor, y: vertical ? cursor : Math.max(0, (crossExtent - height) / 2), width: vertical ? crossExtent : extent, height: height, offset: cursor, extent: extent, mode: 'compact', compactView: 'launcher', section: item.section, headerSize: 0};
+      } else if (band.kind === 'expanded' || band.kind === 'spacer') {
         const item = band.items[0];
         const headerSize = Math.min(band.headerSize, vertical ? extent : crossExtent);
         widgets[item.id] = {x: vertical ? 0 : cursor, y: vertical ? cursor : 0, width: vertical ? crossExtent : extent, height: vertical ? extent : crossExtent, offset: cursor, extent: extent, mode: 'expanded', spacer: band.kind === 'spacer', section: item.section, headerSize: headerSize};

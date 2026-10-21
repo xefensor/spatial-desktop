@@ -26,7 +26,7 @@ function bounded(state,viewport){
       assert.ok(['expanded','compact'].includes(allocation.mode));assert.ok(['main','footer'].includes(allocation.section));
       if(allocation.mode==='compact'){
         assert.equal(allocation.headerSize,0,'Icons never acquire a widget header');
-        if(!allocation.compactView||allocation.compactView==='icon'){assert.equal(allocation.width,allocation.height,'Compact icons are square');assert.ok(allocation.width<=44+epsilon);}else assert.ok(['apps','clock'].includes(allocation.compactView));
+        if(!allocation.compactView||allocation.compactView==='icon'){assert.equal(allocation.width,allocation.height,'Compact icons are square');assert.ok(allocation.width<=44+epsilon);}else assert.ok(['apps','clock','launcher'].includes(allocation.compactView));
       }else{
         assert.ok((rect.vertical?allocation.height-allocation.headerSize:allocation.width)>=M.definition(Object.keys(rect.widgets).find(id=>rect.widgets[id]===allocation)).minSize-epsilon,'Expanded widgets keep readable minimum');
         if(rect.vertical)assert.equal(allocation.width,rect.width);
@@ -107,7 +107,7 @@ for(const height of [768,900]){
   assert.equal(left.widgets.apps.mode,'expanded');assert.equal(left.widgets.clock.mode,'expanded');assert.equal(left.widgets.clock.height-left.widgets.clock.headerSize,56,'Clock keeps its natural expanded size');
   assert.equal(right.widgets.files.mode,'compact');assert.equal(right.widgets.assistant.mode,'compact');
   assert.equal(left.widgets.launcher.x,0);assert.equal(left.widgets.launcher.y,0,'Overview is the top-left entry');assert.ok(left.widgets.apps.y>=left.widgets.launcher.y+44,'Quick launch follows Overview');assert.equal(left.widgets.notifications.y,left.widgets.calendar.y);assert.equal(left.widgets.calendar.y,left.widgets.controls.y,'System icons retain their bottom row');
-  assert.equal(left.widgets.launcher.width,44);assert.equal(left.widgets.launcher.height,44);assert.equal(left.widgets.notifications.x,0);
+  assert.equal(left.widgets.launcher.width,left.width,'Workspace launcher spans its expanded panel');assert.equal(left.widgets.launcher.compactView,'launcher');assert.equal(left.widgets.launcher.height,44);assert.equal(left.widgets.notifications.x,0);
   assert.equal(left.widgets.calendar.x-left.widgets.notifications.x,48);assert.equal(left.widgets.controls.x-left.widgets.calendar.x,48);
   assert.equal(left.widgets.notifications.width,44);assert.equal(left.contentExtent,left.bodyExtent);
   assert.ok(left.widgets.apps.height>left.widgets.clock.height*3,'Apps uses the remaining panel space');
@@ -120,7 +120,7 @@ for(const compactHeaders of [false,true]){
 }
 let icons=M.removePanel(initial,'panel-right');for(const item of content)icons=M.updateWidget(icons,item.id,{mode:'compact',size:0});
 const packed=bounded(icons,options).panels['panel-left'];assert.equal(Object.keys(packed.widgets).length,14);
-const ordered=icons.panels[0].widgets;assert.equal(packed.widgets[ordered[0]].y,packed.widgets[ordered[3]].y);assert.equal(packed.widgets[ordered[4]].y,48);
+const ordered=icons.panels[0].widgets;assert.equal(packed.widgets.launcher.y,0);assert.equal(packed.widgets[ordered[1]].y,packed.widgets[ordered[4]].y,'Ordinary icons retain their packed first row below the Workspace label');assert.equal(packed.widgets[ordered[1]].y,52);assert.equal(packed.widgets[ordered[5]].y,100);
 assert.equal(packed.widgets[ordered[7]].section,'main');assert.equal(packed.widgets[ordered[8]].section,'footer');assert.equal(packed.widgets[ordered[8]].y,packed.bodyExtent-92);assert.equal(packed.contentExtent,packed.bodyExtent);
 const railState=M.updatePanel(icons,'panel-left',{mode:'compact'}),rail=bounded(railState,options).panels['panel-left'];
 assert.equal(rail.width,56);for(const item of Object.values(rail.widgets)){if(item.compactView==='icon'){assert.equal(item.x,6);assert.equal(item.width,44);}else{assert.equal(item.x,0);assert.equal(item.width,56);}}
@@ -128,7 +128,7 @@ assert.equal(rail.contentExtent,rail.bodyExtent);assert.equal(rail.widgets.clock
 assert.deepEqual(railState.widgets,icons.widgets,'Panel compaction preserves every stored widget mode');
 for(const edge of ['top','bottom']){
   const horizontal=M.updatePanel(icons,'panel-left',{edge,size:180});const result=bounded(horizontal,options).panels['panel-left'];
-  let previous=-48,section='main';for(const id of horizontal.panels[0].widgets){const item=result.widgets[id];if(item.section===section)assert.equal(item.x-previous,48);else assert.ok(item.x-previous>=48);previous=item.x;section=item.section;assert.equal(item.width,44);}
+  let previous=null;for(const id of horizontal.panels[0].widgets){const item=result.widgets[id];if(previous){const gap=item.x-previous.x-previous.width;if(item.section===previous.section)assert.equal(gap,previous.compactView==='launcher'?8:4);else assert.ok(gap>=4);}assert.equal(item.width,id==='launcher'?120:44);assert.equal(item.height,44);previous=item;}
 }
 let huge=M.updateWidget(initial,'apps',{size:1600});const fitted=bounded(huge,{...options,height:400,preferredWidget:'apps'});
 assert.equal(fitted.panels['panel-left'].widgets.apps.mode,'expanded');assert.equal(fitted.panels['panel-left'].widgets.clock.mode,'expanded','Oversized preferences do not collapse unrelated readable widgets');

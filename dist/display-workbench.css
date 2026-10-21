@@ -15,7 +15,7 @@ body[data-display-role="side"] :is(.desktop-page-rail,.desktop-folder,#desktopCo
 .assistant-widget .display-assistant-permission>input:checked{background:color-mix(in srgb,var(--display-role-accent) 24%,var(--sd-glass-face-deep));border-color:var(--display-role-accent)}
 .display-assistant-permission>input:checked::after{transform:translateX(13px);background:var(--display-role-accent)}
 .display-assistant-permission>input:disabled{opacity:.5;cursor:wait}
-.display-permission-scope{display:block;margin:0 0 7px 38px;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere}
+.display-permission-scope{display:block;margin:0 0 7px;font-size:11px;line-height:1.5;color:var(--sd-glass-muted);overflow-wrap:anywhere}
 .display-control-heading{display:flex;align-items:center;gap:7px;min-width:0}
 .display-control-heading>strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;font-weight:600;line-height:1.5}
 .assistant-widget .display-control-heading>button.surface-key{flex:none;font-size:11px;min-height:28px;padding:4px 6px}
@@ -29,7 +29,7 @@ body[data-display-role="side"] :is(.desktop-page-rail,.desktop-folder,#desktopCo
 /* Examples use the existing conversation viewport. The live chat stays in its
    Area with its handlers and draft; nothing is moved to another panel. */
 .ai-content[data-display-examples="open"]>.ai-display-controls{flex:1 1 0;gap:8px}
-.ai-content[data-display-examples="open"]>:is(.ai-chat-toolbar,.ai-rename-form,.ai-context-sources,.ai-chat,.ai-composer){display:none!important}
+.ai-content[data-display-examples="open"]>:is(.ai-chat-toolbar,.ai-rename-form,.ai-permissions,.ai-context-sources,.ai-chat,.ai-composer){display:none!important}
 .display-assistant-examples{display:flex;flex:1 1 0;flex-direction:column;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:3px}
 .display-examples-heading{flex:none;margin:0 0 9px}
 .display-examples-heading h2{font-size:16px;font-weight:600;line-height:1.4;margin:10px 0 0}

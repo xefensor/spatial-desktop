@@ -356,6 +356,9 @@ body.panel-desktop-preview .desktop-widget-summary:hover {background:var(--sd-gl
 body.panel-desktop-preview .desktop-widget-summary[aria-expanded="true"] {color:var(--panel-ink);background:var(--sd-glass-hover);box-shadow:inset 0 -2px var(--panel-accent)}
 body.panel-desktop-preview .desktop-widget-summary>svg {width:24px;height:24px;flex:none;pointer-events:none}
 body.panel-desktop-preview .desktop-widget[data-widget-id="launcher"]>.desktop-widget-summary>svg {color:var(--desktop-column-accent,var(--workspace-accent,var(--panel-accent)))}
+body.panel-desktop-preview .desktop-widget[data-workspace-label="true"]>.desktop-widget-summary {box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:0 12px;color:var(--panel-ink)}
+body.panel-desktop-preview .panel-workspace-name {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:13px;font-weight:550;pointer-events:none}
+body.panel-desktop-preview .panel-workspace-name[hidden] {display:none!important}
 body.panel-desktop-preview .widget-icon-badge {position:absolute;top:2px;right:2px;display:grid;place-items:center;min-width:15px;max-width:22px;height:15px;padding:1px 3px;background:var(--panel-ink);color:var(--shell);font-size:10px;font-weight:650;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
 body.panel-desktop-preview .widget-icon-badge:empty,
 body.panel-desktop-preview .widget-icon-badge[hidden] {display:none!important}

@@ -119,12 +119,12 @@
     if(activeWorkspace!==workspace||A.current().id!==chatId||isCurrent&&!isCurrent())throw Error('The Workspace, chat or display control changed. Run the request again in its original space.');
   }
   function conversionCheck(workspace,chatId){
-    const initial=globalThis.SpatialDisplayRoleBridge?.state?.(),helper=initial?.role==='side',delegated=helper&&initial.space?.assistant?.allowed===true;
+    const initial=globalThis.SpatialDisplayRoleBridge?.state?.(),helper=['main','extended','side'].includes(initial?.role),delegated=helper&&initial.space?.assistant?.allowed===true;
     return ()=>{
       chatCheck(workspace,chatId);
       if(!helper)return;
       const current=globalThis.SpatialDisplayRoleBridge?.state?.();
-      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||current.project!==initial.project||delegated&&(current.space?.assistant?.allowed!==true||current.space?.assistant?.control==='user'))throw Error('Conversion stopped because display control changed. Turn on Allow display control and choose Continue before running it again.');
+      if(!current||current.role!==initial.role||current.setupKey!==initial.setupKey||current.localSlot!==initial.localSlot||current.workspaceId!==initial.workspaceId||current.project!==initial.project||initial.role!=='side'&&Number.isInteger(initial.page)&&current.page!==initial.page||delegated&&(current.space?.assistant?.allowed!==true||current.space?.assistant?.control==='user'))throw Error('Conversion stopped because the desktop or display control changed. Run it again in its original space; delegated work also needs Allow display control and Continue.');
     };
   }
   function reportAction(workspace,chatId,turnId,action){

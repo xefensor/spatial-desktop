@@ -1,5 +1,5 @@
-/* Display control lives in the Assistant widget. Side space supplies a
-   scoped display permission; chat, sources and task progress keep one owner. */
+/* Display control lives in the Assistant widget on every display role.
+   Chat, sources and task progress keep one scoped owner. */
 (function(root){
   'use strict';
   const area=document.querySelector('[data-widget-source="assistant"]'),content=area?.querySelector('.ai-content');if(!content)return;
@@ -17,11 +17,12 @@
   content.querySelector('.ai-chat-settings-body')?.append(menu);
   const find=selector=>host.querySelector(selector),bridge=()=>root.SpatialDisplayRoleBridge;
   const context=state=>[state?.setupKey,state?.workspaceId,state?.project||'workspace',state?.localSlot,state?.role].join('|');
-  const available=state=>state?.role==='side';
+  const available=state=>Boolean(state&&['main','extended','side'].includes(state.role));
   const allowed=state=>Boolean(state?.space?.assistant?.allowed);
   function taskState(state){
     const task=state.space?.assistant||{};
-    return task.context&&(task.context.project||null)!==(state.project||null)?{...task,status:task.control==='user'?'paused':'idle',activity:null}:task;
+    const owner=task.context,mismatch=owner&&(owner.workspace!==state.workspaceId||owner.setup!==state.setupKey||Number(owner.slot)!==Number(state.localSlot)||(owner.project||null)!==(state.project||null)||owner.role&&owner.role!==state.role||state.role!=='side'&&Number.isInteger(owner.page)&&owner.page!==state.page);
+    return mismatch?{...task,status:task.control==='user'?'paused':'idle',activity:null}:task;
   }
   let currentKey='',examplesOpen=false,examplesListKey='',selection=null,permissionBusy=false;
   const interactive=()=>{for(let at=content;at;at=at.parentElement||at.parentNode)if(at.hidden||at.inert||at.getAttribute?.('aria-hidden')==='true')return false;return true;};

@@ -35,10 +35,10 @@
     const scope=context?{setup:context.setup,project:context.project||null}:permissionScope();
     return {...model.space(workspace,slot).assistant,allowed:model.permission(workspace,slot,scope).allowed};
   }
-  const displayContextKey=(slot=localDisplaySlot())=>JSON.stringify([connect().signature,activeWorkspace,currentProject()||'workspace',Number(slot)]);
+  const displayContextKey=(slot=localDisplaySlot())=>JSON.stringify([connect().signature,activeWorkspace,currentProject()||'workspace',Number(slot),model.role(Number(slot))]);
   function displayControl(slot){
-    const setup=connect();slot=Number(slot)||(role()==='side'?localDisplaySlot():setup.displays.find(display=>role(display.slot)==='side')?.slot)||null;
-    return {available:Boolean(slot&&role(slot)==='side'&&extendedDesktopActive()),slot,allowed:slot?assistantState(activeWorkspace,slot).allowed:false,workspace:activeWorkspace,project:currentProject(),scopeLabel:scopeLabel(),setupKey:setup.signature,contextKey:displayContextKey(slot)};
+    const setup=connect();slot=Number(slot)||localDisplaySlot();const selected=setup.displays.find(display=>display.slot===slot),selectedRole=selected?model.role(slot):null;
+    return {available:Boolean(selected),slot,role:selectedRole,roleLabel:labels[selectedRole]||'',allowed:selected?assistantState(activeWorkspace,slot).allowed:false,workspace:activeWorkspace,project:currentProject(),scopeLabel:scopeLabel(),setupKey:setup.signature,contextKey:displayContextKey(slot)};
   }
   function setDisplayControl(allowed,captured=displayControl()){
     if(!captured?.available||captured.contextKey!==displayContextKey(captured.slot))throw Error('The Workspace, Project or display changed. Try the control again.');
@@ -120,6 +120,7 @@
     }
     return [...options.values()].slice(0,150);
   }
+  const inLocalSurface=id=>Boolean(isLocalApp(id)&&(!special(role())||pinned(id)===localDisplaySlot()));
   function openReference(reference){
     if(!reference||!['folder','file','link'].includes(reference.kind))throw Error('Choose a file, folder or web link.');
     if(reference.kind==='link'){
@@ -135,12 +136,12 @@
     // action must not create another detached view every time it is pressed.
     if(reference.kind==='file'&&reference.reuse!==false){
       const existing=Object.keys(appInfo).find(id=>{
-        if((appInfo[id].base||id)!=='notes'||appState[id]==='closed'||pinned(id)!==localDisplaySlot()||!isLocalApp(id))return false;
+        if((appInfo[id].base||id)!=='notes'||appState[id]==='closed'||!inLocalSurface(id))return false;
         const note=SpatialAppTools.activeNote(appWindowModel(id));return note?.file?.path===path&&note.file.workspace===activeWorkspace;
       });
       if(existing){root.SpatialNoteFiles?.refresh?.(existing);openApp(existing);return existing;}
     }
-    const reused=reference.reuseId&&appInfo[reference.reuseId]&&(appInfo[reference.reuseId].base||reference.reuseId)==='dolphin'&&appState[reference.reuseId]!=='closed'&&pinned(reference.reuseId)===localDisplaySlot()&&isLocalApp(reference.reuseId)?reference.reuseId:null;
+    const reused=reference.reuseId&&appInfo[reference.reuseId]&&(appInfo[reference.reuseId].base||reference.reuseId)==='dolphin'&&appState[reference.reuseId]!=='closed'&&inLocalSurface(reference.reuseId)?reference.reuseId:null;
     const id=reused||createAppInstance('dolphin');if(!id)throw Error('File Browser could not open.');
     if(reused)openApp(id);
     renderFileLocation(id,directory);
@@ -153,14 +154,14 @@
   }
   function state(){
     const setup=connect(),local=localDisplaySlot();
-    return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,project:currentProject(),scopeLabel:scopeLabel(),contextKey:displayContextKey(local),home:workspaceProfiles[activeWorkspace].home,
+    return {setupKey:setup.signature,mainSlot:model.main(),localSlot:local,role:role(local),workspace:workspaceProfiles[activeWorkspace].label,workspaceId:activeWorkspace,project:currentProject(),page:desktopPages.current(activeWorkspace),scopeLabel:scopeLabel(),contextKey:displayContextKey(local),home:workspaceProfiles[activeWorkspace].home,
       displays:setup.displays.map(display=>({...display,label:'Display '+display.slot,role:role(display.slot),assistantAllowed:assistantState(activeWorkspace,display.slot).allowed,local:display.slot===local})),
       space:{...model.space(activeWorkspace,local),assistant:assistantState()},referenceOptions:special(role(local))?referenceOptions():[],localWindows:Object.keys(appState).filter(id=>appState[id]==='open'&&isLocalApp(id)).map(id=>({id,label:appInfo[id]?.label||id})),
       parkedWindows:model.space(activeWorkspace,local).windows.filter(id=>appState[id]==='minimized'&&pinned(id)===local).map(id=>({id,label:appInfo[id]?.label||id,title:frameFor(id)?.querySelector?.('.app-identity small')?.textContent||appInfo[id]?.label||id}))};
   }
   function ensureAssistantWidget(slot,{workspace=activeWorkspace}={}){
     connect();slot=Number(slot);
-    if(!special(role(slot))||workspace!==activeWorkspace||slot!==localDisplaySlot())return false;
+    if(!model.role(slot)||workspace!==activeWorkspace||slot!==localDisplaySlot())return false;
     return root.SpatialPanels?.showWidget?.('assistant',true)!==false;
   }
   function initializeSideWidgets(slot=localDisplaySlot()){
@@ -340,8 +341,8 @@
     }
     const direct=entries.findIndex(entry=>entry.action==='desktop-settings'),shared=entries.findIndex(entry=>entry.label==='System-wide');
     const choices=extendedDesktopActive()?Object.entries(labels).map(([id,label])=>({action:'display-role:'+id,icon:'i-monitor',label,checked:role()===id,disabled:role()==='main'&&id!=='main',detail:role()==='main'&&id!=='main'?'Choose another display as Main workspace first':''})):[{info:'This is your only display. Add a second demo display in Displays.'}];
-    menuPermissionContext=role()==='side'?displayContextKey():'';
-    if(role()==='side')choices.push({separator:true},{action:'display-assistant-toggle',label:'Allow display control',checked:assistantState().allowed,icon:'i-sparkles',detail:'Applies to '+scopeLabel()+' on this display. Windows and references stay here.'});
+    menuPermissionContext=displayContextKey();
+    choices.push({separator:true},{action:'display-assistant-toggle',label:'Allow display control',checked:assistantState().allowed,icon:'i-sparkles',detail:'Applies to '+scopeLabel()+' on this display. Independent of its role.'});
     choices.push({separator:true},{action:'display-settings',label:'Open Displays',icon:'i-settings'});
     entries.splice(direct>=0?direct:shared>=0?shared:entries.length,0,{label:'Display role',icon:'i-monitor',children:choices});
     return entries;
@@ -351,7 +352,7 @@
     if(action==='desktop-settings'||action==='display-settings'){closeDesktopContextMenu();root.SpatialDisplaySettings.open();return;}
     if(action==='display-assistant-toggle'){
       closeDesktopContextMenu();
-      if(!menuPermissionContext||menuPermissionContext!==displayContextKey()||role()!=='side'){showToast('The Workspace, Project or display changed. Open the menu again.');return;}
+      if(!menuPermissionContext||menuPermissionContext!==displayContextKey()){showToast('The Workspace, Project or display changed. Open the menu again.');return;}
       setAssistantAllowed(localDisplaySlot(),!assistantState().allowed,{contextKey:menuPermissionContext});return;
     }
     if(action.startsWith('display-role:')){closeDesktopContextMenu();setRole(localDisplaySlot(),action.slice(13));return;}
@@ -359,16 +360,16 @@
   };
   function assistantContext(){
     const setup=connect(),slot=localDisplaySlot();
-    if(role(slot)!=='side'||!extendedDesktopActive())throw Error('Assistant can control windows only in a connected Side space.');
+    if(!setup.displays.some(display=>display.slot===slot))throw Error('Choose a connected display before allowing Assistant to work here.');
     if(!assistantState(activeWorkspace,slot).allowed)throw Error('Turn on Allow display control before asking Assistant to work here.');
-    return {workspace:activeWorkspace,project:currentProject(),setup:setup.signature,slot,folder:root.SpatialAIDesktop?.workingFolder?.()||workspaceProfiles[activeWorkspace].home};
+    return {workspace:activeWorkspace,project:currentProject(),setup:setup.signature,slot,role:role(slot),page:desktopPages.current(activeWorkspace),folder:root.SpatialAIDesktop?.workingFolder?.()||workspaceProfiles[activeWorkspace].home};
   }
-  function surfaceContextMatches(context){return context.workspace===activeWorkspace&&(context.project||null)===currentProject()&&context.slot===localDisplaySlot()&&context.setup===connect().signature&&role(context.slot)==='side'&&extendedDesktopActive();}
+  function surfaceContextMatches(context){return context.workspace===activeWorkspace&&(context.project||null)===currentProject()&&context.slot===localDisplaySlot()&&context.setup===connect().signature&&Boolean(model.role(context.slot))&&(!context.role||context.role===role(context.slot))&&(special(role(context.slot))||!Number.isInteger(context.page)||context.page===desktopPages.current(activeWorkspace));}
   function controlContextMatches(context){return surfaceContextMatches(context)&&assistantState(context.workspace,context.slot,context).allowed;}
   function setAssistantAllowed(slot,allowed,captured=null){
-    connect();slot=Number(slot);allowed=allowed===true;
+    const setup=connect();slot=Number(slot);allowed=allowed===true;
     if(captured&&captured.contextKey!==displayContextKey(slot))throw Error('The Workspace, Project or display changed. Try the control again.');
-    if(role(slot)!=='side'||!extendedDesktopActive())throw Error('Choose a connected Side space before allowing Assistant to use it.');
+    if(!setup.displays.some(display=>display.slot===slot))throw Error('Choose a connected display before allowing Assistant to use it.');
     const previous=assistantState(activeWorkspace,slot);
     if(previous.allowed===(allowed===true))return previous;
     model.setDisplayControl(activeWorkspace,slot,allowed,permissionScope());
@@ -414,7 +415,7 @@
     // Only this display's owner can resume its live closure. After a reload its
     // saved log remains useful, but a persisted question is never a live job.
     const current=assistantState();
-    if(role()==='side'&&exampleStages.has(current.activity?.stage)&&current.context?.operationId?.startsWith('assistant-example-')){
+    if(exampleStages.has(current.activity?.stage)&&current.context?.operationId?.startsWith('assistant-example-')){
       model.setAssistant(activeWorkspace,localDisplaySlot(),{status:current.control==='user'?'paused':'idle',result:'Example interrupted by reloading this display. Run it again to continue.',context:{...current.context,operationId:''},activity:{...current.activity,stage:'interrupted',label:'Example interrupted',detail:'This display was reloaded. Saved files and the conversation are kept; choose Run example to start again.',question:null}});persist();queueDesktopStateBroadcast(0);
     }
   }
@@ -493,8 +494,8 @@
             // Starting a new task clears the canvas by parking only windows
             // created by the previous task here. Their files, edits and chats
             // remain available; moved and unrelated windows are untouched.
-            if(previous.context?.workspace===context.workspace&&previous.context?.slot===context.slot)for(const id of previous.outputs||[]){
-              if(appState[id]==='open'&&pinned(id)===context.slot&&isLocalApp(id)&&typeof minimizeApp==='function')minimizeApp(id,true);
+            if(previous.context?.workspace===context.workspace&&previous.context?.slot===context.slot&&(special(context.role)||(previous.context.project||null)===(context.project||null)&&(!previous.context.role||previous.context.role===context.role)&&(!Number.isInteger(previous.context.page)||previous.context.page===context.page)))for(const id of previous.outputs||[]){
+              if(appState[id]==='open'&&inLocalSurface(id)&&typeof minimizeApp==='function')minimizeApp(id,true);
             }
             progress({});return chat;
           }finally{session.startingChat=false;}
@@ -531,7 +532,7 @@
     }finally{rememberExample(session);if(activeExample===session)activeExample=null;}
   }
   function assistantExampleConversionUpdate({workspace,chatId,turnId,action}={}){
-    if(role()!=='side'||workspace!==activeWorkspace||!extendedDesktopActive())return false;
+    if(workspace!==activeWorkspace)return false;
     const current=assistantState(workspace,localDisplaySlot()),context=current.context;
     if(current.kind!=='image'||!context||context.chatId!==chatId||context.turnId!==turnId||!surfaceContextMatches(context))return false;
     if(!['running','complete','failed','cancelled'].includes(action?.status))return false;
@@ -549,7 +550,7 @@
     const folder=root.SpatialAssistantFiles.path(context.folder,workspaceProfiles[context.workspace].home);
     if(!root.SpatialAssistantFiles.allowed(folder,context.workspace,workspaceProfiles,projectSpaces,openProjectNames()))throw Error('Choose a working folder in this Workspace or one of its open Projects.');
     context.folder=folder;
-    const localWindows=Object.keys(appState).filter(id=>appState[id]==='open'&&pinned(id)===context.slot).map(id=>({id,label:appInfo[id]?.label||id}));
+    const localWindows=Object.keys(appState).filter(id=>appState[id]==='open'&&inLocalSurface(id)).map(id=>({id,label:appInfo[id]?.label||id}));
     const task=kind==='briefing'?'Prepare a Workspace briefing':'Show an image for review',outputs=[];
     saveAssistant(context,{status:'working',control:'assistant',kind,task,result:'Working in '+context.folder,context,outputs,activity:null});
     function check(){if(!controlContextMatches(context)||assistantState(context.workspace,context.slot,context).control!=='assistant')throw Error('Assistant stopped because control or the Workspace changed.');}
@@ -583,7 +584,7 @@
   root.SpatialDisplayRoleBridge={state,setRole,setAssistantAllowed,displayControl,setDisplayControl,ensureAssistantWidget,openReference,assistantControl,runAssistantTask,runAssistantExample,answerAssistantExample,stopAssistantExample,assistantExampleConversionUpdate,assistantExamples:()=>root.SpatialDisplayAssistantExamples?.list()||[],openDisplays:slot=>root.SpatialDisplaySettings.open(slot),
     isSideSpace:()=>special(role()),
     windowInCurrentContext(id){return special(role())?pinned(id)===localDisplaySlot():null;},
-    openWindow(id){if(pinned(id)!==localDisplaySlot()||appState[id]==='closed')return false;openApp(id);return true;},
+    openWindow(id){if(!inLocalSurface(id)||appState[id]==='closed')return false;openApp(id);return true;},
     windowContextKey(id){const slot=pinned(id);return slot?activeWorkspace+':display-role:space:'+slot:null;},
     updateSpace(patch){model.updateSpace(activeWorkspace,localDisplaySlot(),patch);persist();notify();queueDesktopStateBroadcast(0);},
     openCompanion(){
@@ -602,10 +603,10 @@
     }
   };
   function takeWindowControl(event){
-    if(role()!=='side'||!assistantState().allowed)return;
+    if(!assistantState().allowed)return;
     const frame=event.target.closest('[data-app-frame]'),id=frame?.dataset?.appFrame;
     const empty=!frame&&event.type==='pointerdown'&&(event.target.matches?.('.workspace-zone')||event.target.closest('.display-workbench-empty')&&!event.target.closest('button,a,input,textarea,select'));
-    if(!empty&&(!id||appState[id]!=='open'||pinned(id)!==localDisplaySlot()||!isLocalApp(id)))return;
+    if(!empty&&(!id||appState[id]!=='open'||!inLocalSurface(id)))return;
     if(assistantState().control!=='user')assistantControl('takeover');
   }
   document.addEventListener('pointerdown',takeWindowControl,true);

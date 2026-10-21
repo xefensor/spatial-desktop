@@ -227,3 +227,13 @@ assert.equal(migrated.permission('work',2,siteScope).allowed,false,'Old Workspac
 assert.equal(migrated.permission('work',2,{setup:'new-monitor-setup',project:null}).allowed,false,'Legacy permission cannot grant another monitor setup');
 console.log('Scoped display control passed: setup/Workspace/Project/display isolation, safe legacy migration, runtime independence and persistence.');
 }
+
+// Permission is independent from role, including the sole Main display.
+for(const [count,number] of [[1,1],[2,1],[2,2]]){
+  const control=Displays.create();control.connect(pair.slice(0,count));const setup=control.setup().signature,role=control.role(number);
+  assert.equal(control.permission('work',number).allowed,false);control.setDisplayControl('work',number,true);
+  assert.equal(control.permission('work',number).allowed,true);assert.equal(control.role(number),role);assert.equal(control.permission('gaming',number).allowed,false);
+  control.setAssistant('work',number,{context:{workspace:'work',setup,slot:number,role,page:2,project:'site',folder:'/Work/Projects/site/Assistant'}});
+  const recovered=Displays.create(control.snapshot());recovered.connect(pair.slice(0,count));assert.equal(recovered.permission('work',number).allowed,true);assert.equal(recovered.space('work',number).assistant.context.role,role);assert.equal(recovered.space('work',number).assistant.context.page,2);
+  if(number===2){control.setRole(2,'side');assert.equal(control.permission('work',2).allowed,true,'Changing a role preserves independent permission');}
+}

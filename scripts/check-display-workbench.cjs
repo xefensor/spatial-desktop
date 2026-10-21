@@ -5,15 +5,15 @@ const css=fs.readFileSync(path.join(__dirname,'../dist/display-workbench.css'),'
 assert.match(css,/body\[data-display-role="side"\][^{]*:is\(\.desktop-page-rail,\.desktop-folder,#desktopContextColumns\)/,'Stable Side space omits the main desktop page navigation');
 assert.doesNotMatch(css,/display-workbench-width|display-workbench-panel|workspace-zone\s*\{[^}]*inset/,'Native panels supply display bounds without special workbench geometry');
 
-function harness(initialAllowed=true){
+function harness(initialAllowed=true,{role='side',count=2}={}){
   const elements=new Map(),listeners={},permissions=[],controls=[],examples=[],folders=[],opened=[],settings=[],chat={taskStates:[],attachments:[],notices:[]};
-  let workspace='work',project=null,localSlot=2,captureItems=[],workingFolder='',blockedFolder=false,currentChat='chat-1';
-  let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}];
-  const model=Roles.create();model.connect(roster);model.setRole(2,'side');model.setAssistantAllowed('work',2,initialAllowed);
+  let workspace='work',project=null,localSlot=role==='main'?1:2,page=0,captureItems=[],workingFolder='',blockedFolder=false,currentChat='chat-1';
+  let roster=[{slot:1,screenWidth:2560,screenHeight:1440},{slot:2,screenWidth:1920,screenHeight:1080}].slice(0,count);
+  const model=Roles.create();model.connect(roster);if(role==='side')model.setRole(2,'side');model.setAssistantAllowed('work',localSlot,initialAllowed);
   const document={activeElement:null};
   function element(){return {hidden:false,inert:false,value:'',textContent:'',dataset:{},events:{},children:[],attributes:{},classList:{contains:()=>false,toggle(){}},focus(){document.activeElement=this;},replaceChildren(...children){this.children=children;},append(...children){this.children.push(...children);for(const child of children)child.parentNode=this;},insertBefore(child){this.children.unshift(child);child.parentNode=this;},querySelectorAll(selector){const all=node=>node.children.flatMap(child=>[child,...all(child)]);return selector==='[data-display-example]'?all(this).filter(child=>child.dataset.displayExample):[];},setAttribute(name,value){this.attributes[name]=value;},addEventListener(type,fn){this.events[type]=fn;},querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);}};}
   const area=element(),content=element();area.dataset.widgetMode='expanded';content.parentNode=area;area.querySelector=()=>content;
-  const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,project,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,space:model.space(workspace,localSlot)});
+  const state=()=>({setupKey:model.setup().signature,workspaceId:workspace,project,page,workspace:workspace==='work'?'Work':'Gaming',localSlot,role:model.role(localSlot),home:'/home/demo/'+workspace,space:model.space(workspace,localSlot)});
   const browser={addEventListener(type,fn){listeners[type]=fn;},SpatialDisplayRoleBridge:{state,
     setAssistantAllowed(slot,allowed){permissions.push({workspace,slot,allowed});const result=model.setAssistantAllowed(workspace,slot,allowed);browser.SpatialDisplayWorkbench.refresh();return result;},
     assistantControl(action){controls.push({workspace,slot:localSlot,action});model.setAssistant(workspace,localSlot,{control:action==='takeover'?'user':'assistant',status:action==='takeover'?'paused':'idle'});browser.SpatialDisplayWorkbench.refresh();},
@@ -30,7 +30,7 @@ function harness(initialAllowed=true){
     permission(allowed){model.setAssistantAllowed(workspace,localSlot,allowed);refresh();},
     selectionDown(){content.events.pointerdown({target:{closest:selector=>selector.includes('.ai-chat-settings>summary')?{}:null}});},capture(items){captureItems=items;},folder(value){workingFolder=value;},blockFolder(value){blockedFolder=value;},
     reveal(detail={}){listeners['spatial-assistant-display-reveal']({detail});},
-    switchWorkspace(value,render=true){workspace=value;if(render)refresh();},switchProject(value,render=true){project=value;if(render)refresh();},role(value,render=true){model.setRole(localSlot,value);if(render)refresh();},moveDisplay(value,render=true){localSlot=value;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'side');if(render)refresh();},chatId(value){currentChat=value;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:value}});}};
+    page(value,render=true){page=value;if(render)refresh();},switchWorkspace(value,render=true){workspace=value;if(render)refresh();},switchProject(value,render=true){project=value;if(render)refresh();},role(value,render=true){model.setRole(localSlot,value);if(render)refresh();},moveDisplay(value,render=true){localSlot=value;if(render)refresh();},changeSetup(render=true){roster=roster.map(display=>({...display,screenWidth:display.screenWidth+100}));model.connect(roster);model.setRole(2,'side');if(render)refresh();},chatId(value){currentChat=value;listeners['spatial-ai-chat-change']({detail:{workspace,chatId:value}});}};
 }
 {
   const h=harness();
@@ -47,7 +47,7 @@ function harness(initialAllowed=true){
   h.permission(false);assert.equal(h.state().space.assistant.allowed,false);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,true);
   const count=h.controls.length;h.action('resume');h.action('takeover');assert.equal(h.controls.length,count,'Permission off cannot resume control');
   h.switchWorkspace('gaming');assert.equal(h.state().space.assistant.allowed,false,'Workspace permission remains independent');h.permission(true);h.switchWorkspace('work');assert.equal(h.state().space.assistant.allowed,false);
-  h.role('extended');assert.equal(h.host.hidden,true);assert.equal(h.menu.hidden,true);assert.equal(h.chat.taskStates.at(-1),null,'Leaving Side role clears the local task adapter');
+  h.role('extended');assert.equal(h.host.hidden,false);assert.equal(h.menu.hidden,false);assert.equal(h.chat.taskStates.at(-1).role,'extended','Extended displays keep the same native control and task adapter');
 }
 for(const initialAllowed of [false,true]){
   const h=harness(initialAllowed),selection=[{id:'selected',title:'Selected text',text:'Review this paragraph',workspace:'work'}];
@@ -86,6 +86,23 @@ for(const transition of ['workspace','project','role','setup','display','hidden'
   h.action('takeover');assert.equal(h.chat.taskStates.at(-1).space.assistant.control,'user');h.action('resume');assert.equal(h.chat.taskStates.at(-1).space.assistant.control,'assistant');
   h.action('examples');h.example('checklist');assert.equal(h.examples.length,0,'A pending question must finish or stop before another example starts');
 }
+// Finished review metadata stays in its original display context. Moving to
+// another desktop must not show its old request in the current toolbar.
+for(const role of ['main','extended']){
+  const h=harness(true,{role,count:role==='main'?1:2}),slot=h.state().localSlot;
+  const owner={workspace:'work',project:null,setup:h.state().setupKey,slot,role,page:0,folder:'/Work/Assistant'};
+  const review={status:'needs-you',context:owner,activity:{stage:'review',label:'Original image review'}};
+  h.model.setAssistant('work',slot,review);h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input');
+  h.page(1);assert.equal(h.elements.get('[data-display-control-status]').textContent,'Ready',role+': another desktop does not inherit a completed image review');
+  assert.equal(h.model.space('work',slot).assistant.status,'needs-you');assert.equal(h.model.space('work',slot).assistant.activity.stage,'review','Toolbar masking preserves the original task');
+  h.page(0);assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input','Returning restores the original context status');
+  for(const different of [{setup:'old-setup'},{slot:slot+1},{role:role==='main'?'extended':'side'},{workspace:'gaming'},{project:'site'}]){
+    h.model.setAssistant('work',slot,{...review,context:{...owner,...different}});h.refresh();assert.equal(h.elements.get('[data-display-control-status]').textContent,'Ready','A mismatched '+Object.keys(different)[0]+' cannot present an old review');
+  }
+}
+{
+  const h=harness(),slot=h.state().localSlot;h.model.setAssistant('work',slot,{status:'needs-you',context:{workspace:'work',setup:h.state().setupKey,slot,role:'side',page:0,folder:'/Work/Assistant'},activity:{stage:'review',label:'Side review'}});h.page(1);assert.equal(h.elements.get('[data-display-control-status]').textContent,'Needs your input','Side space retains its fixed surface across normal desktop navigation');
+}
 // Pinned Side windows may be on another Project/page, while remaining local
 // to this display and Workspace. Their selected text is still an input source.
 {
@@ -102,4 +119,20 @@ for(const transition of ['workspace','project','role','setup','display','hidden'
   vm.createContext(context);vm.runInContext(between('function local(frame)','function scope(frame)')+between('function selectedText()','function selectionSource('),context);
   assert.equal(context.selectedText().text,'HELPER TEXT');local=false;assert.equal(context.selectedText(),null);local=true;pinned=false;assert.equal(context.selectedText(),null);pinned=true;context.appState['notes--1']='closed';assert.equal(context.selectedText(),null);context.appState['notes--1']='open';frame.hidden=true;assert.equal(context.selectedText(),null);
 }
+
+// Display permission is independent of layout role, including one Main screen.
+for(const role of ['main','extended','side']){
+  const h=harness(false,{role,count:role==='main'?1:2}),slot=role==='main'?1:2;
+  assert.equal(h.host.hidden,false,role+': scripted controls and examples are discoverable');
+  assert.equal(h.menu.hidden,false);assert.equal(h.chat.taskStates.at(-1).role,role);
+  assert.equal(h.state().space.assistant.allowed,false,role+': access starts off');
+  h.action('examples');const cards=h.elements.get('[data-display-examples-list]').children;
+  assert.equal(cards[0].children[3].disabled,true);h.example('checklist');assert.equal(h.examples.length,0);
+  h.action('examples-delegate');assert.deepEqual(h.permissions,[{workspace:'work',slot,allowed:true}]);
+  assert.equal(cards[0].children[3].disabled,false);h.example('checklist');assert.deepEqual(h.examples,[{workspace:'work',slot,id:'checklist'}]);
+  h.action('takeover');assert.equal(h.state().space.assistant.control,'user');assert.equal(h.elements.get('[data-display-action="resume"]').hidden,false);
+  h.action('resume');assert.equal(h.state().space.assistant.control,'assistant');
+  h.permission(false);assert.equal(h.state().space.assistant.allowed,false);assert.equal(h.elements.get('[data-display-action="resume"]').hidden,true);
+}
+
 console.log('Native Assistant display controls passed: native widget ownership, no panel/chat portal, scoped permission and status, takeover/resume, original task state, examples, working folder, selections, Workspace privacy, hidden/Compact/inert and stale-context guards.');

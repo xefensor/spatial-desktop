@@ -4,7 +4,7 @@ Panels and live widgets are the desktop's canonical interface. The earlier Areas
 
 ## Normal use
 
-The default left panel is 224 pixels wide and starts with Overview above Quick launch, followed by Apps, a readable Clock and bottom tools for Notifications, Calendar and System controls. General starts with File Browser, Firefox, Music Player and Note Editor in Quick launch. Files and Assistant start in the compact right panel. Overview is its own icon, separate from Apps. Only an untouched earlier default adopts the new width. An unchanged former Overview position moves to the top while other panel and widget preferences stay intact; custom widget orders, Spacers and explicitly moved or hidden Overview remain as saved.
+The default left panel is 224 pixels wide and starts with Overview above Quick launch, followed by Apps, a readable Clock and bottom tools for Notifications, Calendar and System controls. General starts with File Browser, Firefox, Music Player and Note Editor in Quick launch. Files and Assistant start in the compact right panel. Overview is a separate widget above Apps. Its expanded button shows the Overview icon beside the current Workspace name; compact panels keep the icon, with the Workspace in its tooltip and accessible label. The name follows Workspace changes and remains the Workspace name when a Project is selected. Only an untouched earlier default adopts the new width. An unchanged former Overview position moves to the top while other panel and widget preferences stay intact; custom widget orders, Spacers and explicitly moved or hidden Overview remain as saved.
 
 Expanded System controls uses a compact two-by-two grid for Wi-Fi, Bluetooth, Sound and theme, followed by network status and the labeled Devices & session and Settings actions. Files keeps New project beside its folder content without an empty reserved region. Creating or managing a Project opens a separate dialog above the panels, with focus returning to the initiating control when it closes.
 
@@ -32,7 +32,7 @@ The Panels menu also offers **Show** for hidden panels. Unavailable reorder dire
 
 | Widget | Content and scope |
 | --- | --- |
-| Overview | Native Overview/search action and current desktop |
+| Overview | Native Overview/search action, current Workspace name and desktop |
 | Apps | Workspace Quick launch and Parked, shared Background apps |
 | Files | Workspace or Project folders, resources and Stash |
 | Assistant | Workspace/Project chats, automatic-context and display-control switches, attachments and saved outputs |
@@ -54,7 +54,7 @@ Fullscreen temporarily hides panels on a single display. With another connected 
 
 Assistant shows its Workspace and Project beside chat. Each context remembers its last conversation and draft; first entry starts a chat, and returning restores the previous one. Opening another app, switching virtual desktops or changing the widget's appearance keeps that conversation.
 
-**Use workspace context** and **Allow display control** are separate switches beside chat. Both start off in a new context. The first includes readable demo content from open apps and documents in that context when you send, with an automatic-context summary separate from manually attached references. The second grants scripted control only of the selected Side-space display in that Workspace/Project and display setup. Opening or arranging a widget never grants either permission. **Take over** and **Continue** pause and resume a task separately from permission. Changing context interrupts unfinished scripted work and retains its captured inputs and original scope in its chat. Assistant examples remain scripted local demonstrations; native OS control is future work.
+**Use workspace context** and **Allow display control** are separate switches beside chat. Both start off in a new context. The first includes readable demo content from open apps and documents in that context when you send, with an automatic-context summary separate from manually attached references. The second grants scripted control of the current display in that Workspace/Project and display setup. It works with Main workspace, Extended workspace and Side space, including one Main display. Settings → Displays can also change the permission for a selected connected display. Opening or arranging a widget never grants either permission. **Take over** and **Continue** pause and resume a task separately from permission. Changing context interrupts unfinished scripted work and retains its captured inputs and original scope in its chat. On Main or Extended workspace, desktop navigation also interrupts display steps while keeping the chat. Side space keeps its windows in place across desktop navigation. Assistant examples remain scripted local demonstrations; native OS control is future work.
 
 ## Development and checks
 

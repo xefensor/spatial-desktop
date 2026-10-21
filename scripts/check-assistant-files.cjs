@@ -122,11 +122,36 @@ node('aiPrompt').value='Convert selected files to HTML in Converted';
   const cancelled=await boot.SpatialAssistantDesktop.proposeExampleConversion(exampleOptions),cancelCard={dataset:{turn:cancelled.id}};
   events['aiTranscript:click'][0]({target:{closest:selector=>selector==='.ai-file-task'?cancelCard:selector==='[data-task-cancel]'?{}:null}});assert.equal(updates.at(-1).action.status,'cancelled');assert.equal(updates.at(-1).turnId,cancelled.id);
   const reviewOnly=await boot.SpatialAssistantDesktop.proposeExampleConversion({...exampleOptions,assistantOnly:true});assert.equal(reviewOnly.request,'');assert.equal(reviewOnly.assistantOnly,true,'An example conversion review follows its existing request without inventing a repeated user prompt');assert.equal(reviewOnly.action.status,'review');
+  // The same delayed-byte safety applies when Assistant is delegated the
+  // Main or Extended display, without requiring a separate Side space.
+  const beforeRoleTests=helperState;
+  for(const [role,slot] of [['main',1],['extended',2]])for(const interruption of ['revoke','takeover','desktop']){
+    helperState={role,setupKey:'ordinary-setup',localSlot:slot,workspaceId:'work',project:'web',page:0,space:{assistant:{allowed:true,control:'assistant'}}};
+    const turn=await boot.SpatialAssistantDesktop.proposeExampleConversion(exampleOptions),beforeFiles=JSON.stringify(boot.workspaceDownloads.snapshot()),beforeHistory=outputs.length,beforeCleanup=removedKeys.length;
+    releaseWrite=null;boot.SpatialStashFiles.put=(key,blob)=>new Promise(resolve=>{releaseWrite=()=>{blobs.set(key,blob);resolve();};});
+    const operation=clickRun(turn.id);for(let i=0;i<20&&!releaseWrite;i++)await Promise.resolve();assert(releaseWrite,role+' conversion reaches its retained-byte write');
+    if(interruption==='revoke')helperState={...helperState,space:{assistant:{allowed:false,control:'assistant'}}};
+    if(interruption==='takeover')helperState={...helperState,space:{assistant:{allowed:true,control:'user'}}};
+    if(interruption==='desktop')helperState={...helperState,page:1};
+    releaseWrite();await operation;
+    assert.equal(turn.action.status,'failed',role+' '+interruption+' interrupts delegated conversion');assert.equal(updates.at(-1).turnId,turn.id);
+    assert.equal(JSON.stringify(boot.workspaceDownloads.snapshot()),beforeFiles,'Interrupted '+role+' work publishes no file and preserves earlier user edits');assert.equal(outputs.length,beforeHistory,'Interrupted '+role+' work creates no false output history');
+    assert.equal(removedKeys.length,beforeCleanup+1);assert(!blobs.has(removedKeys.at(-1)),'Unpublished '+role+' bytes are removed from storage');assert.equal(turn.sources[0].versionId,'captured-version','Interrupted work keeps its exact source version');
+  }
+  // An explicit Convert action is still usable while automatic display
+  // control is off. Navigating away during its bytes write remains guarded.
+  helperState={role:'main',setupKey:'single-main',localSlot:1,workspaceId:'work',project:'web',page:0,space:{assistant:{allowed:false,control:'user'}}};boot.SpatialStashFiles.put=normalPut;
+  const explicit=await boot.SpatialAssistantDesktop.proposeExampleConversion(exampleOptions);await clickRun(explicit.id);assert.equal(explicit.action.status,'complete','A reviewed conversion does not require automatic Main display control');assert.equal(explicit.action.outputs.length,1);
+  const manual=await boot.SpatialAssistantDesktop.proposeExampleConversion(exampleOptions),manualFiles=JSON.stringify(boot.workspaceDownloads.snapshot()),manualHistory=outputs.length,manualCleanup=removedKeys.length;
+  releaseWrite=null;boot.SpatialStashFiles.put=(key,blob)=>new Promise(resolve=>{releaseWrite=()=>{blobs.set(key,blob);resolve();};});
+  const manualOperation=clickRun(manual.id);for(let i=0;i<20&&!releaseWrite;i++)await Promise.resolve();assert(releaseWrite);helperState={...helperState,page:1};releaseWrite();await manualOperation;
+  assert.equal(manual.action.status,'failed','A normal Main conversion cannot publish into a newly viewed desktop');assert.equal(JSON.stringify(boot.workspaceDownloads.snapshot()),manualFiles);assert.equal(outputs.length,manualHistory);assert.equal(removedKeys.length,manualCleanup+1);assert(!blobs.has(removedKeys.at(-1)));
+  helperState=beforeRoleTests;boot.SpatialStashFiles.put=normalPut;
   boot.SpatialAIDesktop.taskActive=()=>true;const beforeActive=sent.length;node('aiPrompt').value='Convert selected files to HTML';let activeIntercepted=false;await events.submit[0]({target:{id:'aiComposer'},preventDefault(){activeIntercepted=true;},stopImmediatePropagation(){}});assert.equal(sent.length,beforeActive);assert.equal(activeIntercepted,false,'An active question/task retains the shared chat Send path rather than proposing a second conversion');
   boot.SpatialAIDesktop.taskActive=()=>false;const consumed=[];boot.SpatialAIDesktop.consumeDraft=(value,context)=>consumed.push({value,context});
   node('aiPrompt').value='Convert selected files to HTML';
   await events.submit[0]({target:{id:'aiComposer'},preventDefault(){},stopImmediatePropagation(){}});
   assert.equal(sent.at(-1).folder,'/mnt/Web/Assistant');assert.equal(sent.at(-1).action.destination,'/mnt/Web/Assistant/Converted','Implicit conversion outputs use the chat working folder, even with a different File Browser open');
   assert.equal(consumed.length,1);assert.equal(consumed[0].value,'Convert selected files to HTML');assert.equal(consumed[0].context.workspace,'work');assert.equal(consumed[0].context.chatId,session.session('work').id,'Only a deliberately submitted conversion requests consumption of its captured draft');
-  console.log('Assistant example conversion passed: exact bound inputs/folder, existing review and Convert cards, async chat/Workspace/control guards, staged output publication preserving intervening user edits, and exact running/completion/failure/cancel notifications.');
+  console.log('Assistant example conversion passed: exact bound inputs/folder, existing review and Convert cards, async chat/Workspace/control guards, staged output publication preserving intervening user edits, Main/Extended permission, takeover and desktop guards, explicit manual conversion with control off, and exact running/completion/failure/cancel notifications.');
   console.log('Assistant files passed: real text formats, CSV quoting, safe HTML, Workspace paths, copy collisions, persisted action/source versions, production selection and exact multi-file request capture.');})().catch(error=>{console.error(error);process.exitCode=1;});

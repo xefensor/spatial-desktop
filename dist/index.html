@@ -54,7 +54,7 @@
   <script src="demo-super-key.js?v=0d51c763ae38"></script>
   <script src="desktop-markers.js?v=73adb4eef74c"></script>
   <script src="workspace-setup.js?v=76bcea86773e"></script>
-  <script src="spatial-guide.js?v=9c685bd188ef"></script>
+  <script src="spatial-guide.js?v=f5895814ef6c"></script>
   
   <link rel="stylesheet" href="apps-quick-launch.css?v=8c15488a66c5">
   <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
@@ -67,12 +67,12 @@
   <link rel="stylesheet" href="folder-files.css?v=2935a1c834ae">
   <link rel="stylesheet" href="glass-controls.css?v=49ec4213985d">
   <link rel="stylesheet" href="display-settings.css?v=6c01aeea6afe">
-  <link rel="stylesheet" href="display-workbench.css?v=6348230cf69d">
+  <link rel="stylesheet" href="display-workbench.css?v=f713d7320623">
   <link rel="stylesheet" href="display-side-tools.css?v=a609a933a397">
   <link rel="stylesheet" href="display-assistant.css?v=30ebf31c9bf3">
   <link rel="stylesheet" href="widget-popovers.css?v=30ec9c64e133">
   <link rel="stylesheet" href="widget-content.css?v=b2a795aaa0bc">
-  <link rel="stylesheet" href="panel-desktop.css?v=59c6f2c8516d">
+  <link rel="stylesheet" href="panel-desktop.css?v=4b18492936dd">
 </head>
 <body data-theme="oled">
   <script src="desktop-theme.js?v=d91b0dc8bebd"></script>
@@ -277,7 +277,7 @@
         <div class="ai-permissions" role="group" aria-label="Assistant access">
           <small id="aiScopeLabel" class="ai-scope-label">General Workspace</small>
           <label class="ai-permission"><input type="checkbox" role="switch" id="aiUseWorkspaceContext" aria-describedby="aiWorkspaceContextHint"><span>Use workspace context<small id="aiWorkspaceContextHint">Open app text and selected documents in this Workspace or Project.</small></span></label>
-          <label class="ai-permission"><input type="checkbox" role="switch" id="aiAllowDisplayControl" aria-describedby="aiDisplayControlHint"><span>Allow display control<small id="aiDisplayControlHint">Choose a Side space display in Settings → Displays.</small></span></label>
+          <label class="ai-permission"><input type="checkbox" role="switch" id="aiAllowDisplayControl" aria-describedby="aiDisplayControlHint"><span>Allow display control<small id="aiDisplayControlHint">Control this display in the current Workspace or Project, including your Main workspace.</small></span></label>
           <details id="aiAutomaticContext" class="ai-automatic-context" hidden><summary id="aiAutomaticSummary">Automatic context</summary><ul id="aiAutomaticSources"></ul></details>
         </div>
         <details class="ai-context-sources"><summary>Attached sources</summary><div id="aiAttachments" class="ai-attachments" aria-label="Chat attachments"></div></details>
@@ -294,7 +294,7 @@
               <dt><code data-ai-demo-request="webp">Convert selected files to WebP in Images/Web</code></dt><dd>Select or attach saved image files. Review the destination, then choose Convert to create copies.</dd>
             </dl>
             <p>Image descriptions and audio transcription are explanatory placeholders. General questions use a source or context fallback.</p>
-            <p>Side space has three separate guided workflows: a launch checklist, image conversion and text-version comparison. Open Examples there and choose Run example; typing their sample prompts does not start them.</p>
+            <p>Allow display control works on Main workspace, Extended workspace and Side space. Open Examples in Assistant and choose Run example for a launch checklist, image conversion or text-version comparison; typing their sample prompts does not start these workflows.</p>
           </section>
           <p class="ai-empty"><svg aria-hidden="true"><use href="#i-ai"/></svg><span>Turn on workspace context, or drop files and text here.</span></p><div id="aiTranscript" class="ai-transcript" aria-label="Scripted example conversation"></div>
         </div>
@@ -707,7 +707,7 @@
 <script src="apps-quick-launch.js?v=765200e694c6"></script>
 <script src="working-memory-desktop.js?v=5c8707451104"></script>
 <script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
-<script src="ai-desktop.js?v=3ac64dcc64ab"></script>
+<script src="ai-desktop.js?v=01a50d075bcc"></script>
 <script src="overview-desktop.js?v=fe8fc4c0e944"></script>
   <script src="steam-overview.js?v=71bf946de330"></script>
 <script src="all-workspaces.js?v=be1912614455"></script>
@@ -723,18 +723,18 @@
 <script src="scoped-actions.js?v=456a2d990146"></script>
 <script src="temporary-parking.js?v=0df17801747f"></script>
 <script src="temporary-parking-desktop.js?v=2d203cab5432"></script>
-<script src="assistant-desktop.js?v=6be139945a7d"></script>
+<script src="assistant-desktop.js?v=b9458de1028f"></script>
 <script src="desktop-map.js?v=d204b9dd5344"></script>
 <script src="desktop-map-desktop.js?v=0ac465b11826"></script>
 <script src="window-audio.js?v=ed03b6644984"></script>
 <script src="folder-files.js?v=5c25ea25bc6b"></script>
-<script src="display-roles.js?v=5cb0f858d9c9"></script>
-<script src="display-settings.js?v=67ab72e11fce"></script>
+<script src="display-roles.js?v=d6ab2b2e9d8b"></script>
+<script src="display-settings.js?v=511ff2581cdd"></script>
 <script src="display-assistant-examples.js?v=2cb5d469ac8b"></script>
-<script src="display-role-desktop.js?v=374f9a279040"></script>
+<script src="display-role-desktop.js?v=7fcadb12ffee"></script>
 <script src="display-side-tools.js?v=2c3557844248"></script>
 <script src="display-side-legacy.js?v=add0cce1cf52"></script>
-<script src="display-workbench.js?v=4a9048bd00ea"></script>
+<script src="display-workbench.js?v=5900ebbdd877"></script>
 <script src="settings-app-desktop.js?v=e7b4d9b4dc6c"></script>
 <script src="desktop-files.js?v=86b2a850faaa"></script>
 <script src="desktop-clipboard.js?v=aff213447c00"></script>
@@ -742,11 +742,11 @@
 <script src="desktop-accessibility.js?v=23437540e756"></script>
 <script src="desktop-surface-files.js?v=87a921c31279"></script>
 <script>SpatialRetiredApps.installSyncGuards();</script>
-  <script src="panel-widgets.js?v=4d00084a02e7"></script>
+  <script src="panel-widgets.js?v=4125ceca53ab"></script>
   <script src="panel-content.js?v=b826d3dab425"></script>
   <script src="panel-compact.js?v=90982ebdf67c"></script>
   <script src="panel-fit.js?v=ab4a012edc82"></script>
-  <script src="panel-desktop.js?v=1d7bc7f1ef1a"></script>
+  <script src="panel-desktop.js?v=f1f8e7d3a99a"></script>
 </body>
 </html>
 

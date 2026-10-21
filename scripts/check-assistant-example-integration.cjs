@@ -14,8 +14,8 @@ const boundary=shared.indexOf('// Supporting-display tools');
 assert(boundary>0,'The shared display fixture must be available before its test cases');
 const displayFixture=new Function('require','__dirname',shared.slice(0,boundary)+'\nreturn fixture;')(require,__dirname);
 
-function fixture(){
-  const f=displayFixture(),{c}=f,B=c.SpatialDisplayRoleBridge;
+function fixture({role='side',count=2}={}){
+  const f=displayFixture(count),{c}=f,B=c.SpatialDisplayRoleBridge;
   const timers=new Map();let timerId=0;
   c.setTimeout=(run,delay)=>{const id=++timerId;timers.set(id,{run,delay});return id;};
   c.clearTimeout=id=>timers.delete(id);
@@ -59,7 +59,12 @@ function fixture(){
   c.appFileRows=(id,directory)=>c.workspaceDownloads.list(directory).map(file=>[file.name,'Saved file',file.attachment?.kind||'document']);
   c.fetch=async()=>({ok:true,blob:async()=>new Blob(['retained photograph bytes'],{type:'image/jpeg'})});
   c.SpatialAssistantDesktop={proposeExampleConversion:async options=>c.SpatialAIDesktop.createTurn(options.assistantOnly?'':options.request,{title:'Convert WebP',text:'Review',assistantOnly:options.assistantOnly,action:{format:'webp',destination:options.folder,status:'review'}},{sources:options.items,folder:options.folder})};
-  B.setRole(2,'side');B.setAssistantAllowed(2,true);c.localSlot=2;
+  if(role==='side')B.setRole(2,'side');c.localSlot=role==='main'?1:2;B.setAssistantAllowed(c.localSlot,true);
+  // Normal display creation uses the current desktop/Project in production.
+  // The window fixture supplies only display assignment; retain that behavior
+  // here so a normal display example cannot accidentally open a Home window.
+  const create=c.createAppInstance;
+  c.createAppInstance=function(kind){const id=create(kind);if(id&&B.state().role!=='side'){const column=c.desktopPages.column(c.activeWorkspace);c.desktopPages.assign(c.activeWorkspace,id,c.desktopPages.current(c.activeWorkspace),column);c.windowMembership[c.activeWorkspace] ||= {};c.windowMembership[c.activeWorkspace][id]=column==='workspace'?null:column;}return id;};
   return {...f,chats,history,bytes,B,timers,microtasks,advance,until,start,complete};
 }
 
@@ -506,11 +511,80 @@ function savedResult(chat,file,sources){
   }
   {
     const {c,B,start,complete,created}=fixture();
-    c.localSlot=1;await assert.rejects(complete(start('checklist')),/connected Side space/);
+    c.localSlot=1;await assert.rejects(complete(start('checklist')),/Allow display control/,'Main control is available but requires its own explicit permission');
     c.localSlot=2;B.setAssistantAllowed(2,false);await assert.rejects(complete(start('checklist')),/Allow display control/);
     B.setRole(2,'side');B.setAssistantAllowed(2,true);c.SpatialAIDesktop.workingFolder=()=>'/Gaming/private';
     await assert.rejects(complete(start('checklist')),/this Workspace/);
     assert.equal(c.workspaceDownloads.snapshot().files.length,0);assert.equal(created.length,0);
   }
+
+  // The same real workflows run on an ordinary display, including the only
+  // display. Role chooses window placement; explicit consent chooses control.
+  for(const [role,count] of [['main',1],['main',2],['extended',2]])for(const kind of ['checklist','compare','image']){
+    const f=fixture({role,count}),{c,B,chats,bytes,history,boundNotes,assignments,start,complete}=f,slot=c.localSlot;
+    const previous=chats.session('work').id;chats.draft('work','Existing '+role+' draft');
+    const result=await complete(start(kind),kind==='compare'?'full':'simple');
+    assert.equal(B.state().role,role);assert.equal(result.context.role,role);assert.equal(result.context.page,0);
+    assert.equal(result.context.slot,slot);assert.equal(result.context.folder,'/Work/Assistant');
+    assert.equal(chats.session('work',previous).draft,'Existing '+role+' draft','A '+role+' workflow preserves the previous conversation');
+    for(const id of result.outputs){assert.equal(assignments.work.apps[id],slot);assert.equal(c.desktopPages.columnOf('work',id),'workspace');assert.equal(c.desktopPages.pageOf('work',id),0);assert(c.isLocalApp(id),role+': every created result stays on this display');}
+    const files=c.workspaceDownloads.list('/Work/Assistant');
+    if(kind==='checklist'){
+      const input=files.find(file=>file.name==='Example launch brief.md'),output=files.find(file=>file.name==='Example launch checklist.md');
+      assert.equal(output.content,Examples.checklistFromBrief(input.content));savedResult(chats.session('work'),output,[input]);
+      assert(Object.values(boundNotes).some(note=>note.itemId===output.itemId));assert.equal(history.get(output.itemId).relations[0].itemId,input.itemId);
+    }else if(kind==='compare'){
+      const before=files.find(file=>file.name==='Example release notes before.md'),after=files.find(file=>file.name==='Example release notes after.md'),output=files.find(file=>file.name==='Example release comparison.md');
+      assert.equal(output.content,Examples.comparisonText(Examples.compareLines(before.content,after.content)));savedResult(chats.session('work'),output,[before,after]);
+    }else{
+      assert.equal(result.status,'needs-you');assert.equal(files.length,1);assert.equal(bytes.size,1);
+      assert.equal(await bytes.get(files[0].attachment.key).text(),'retained photograph bytes');
+      const turn=chats.session('work').turns.find(turn=>turn.action);assert.equal(turn.sources[0].attachment.key,files[0].attachment.key);
+      assert.equal(B.assistantExampleConversionUpdate({workspace:'work',chatId:result.context.chatId,turnId:result.context.turnId,action:{status:'complete',destination:'/Work/Assistant',outputs:[{path:'/Work/Assistant/photo.webp'}]}}),true,role+': native conversion completion updates this display task');
+      assert.equal(B.state().space.assistant.status,'done');assert.equal(B.state().space.assistant.activity.stage,'complete');
+    }
+    if(count===2){const other=slot===1?2:1;assert.equal(B.state().displays.find(display=>display.slot===other).assistantAllowed,false,'Permission on '+role+' does not grant the other display');}
+  }
+  for(const role of ['main','extended']){
+    const {c,B,chats,assignments,start,complete}=fixture({role,count:role==='main'?1:2}),slot=c.localSlot;
+    c.projectSpaces.site={name:'Site',root:'/Work/Projects/Site'};c.openProjectNames=()=>['site'];
+    c.desktopPages.select('work','site');chats.folder('work','site');
+    await assert.rejects(complete(start('checklist')),/Allow display control/,'Workspace consent cannot grant '+role+' Project consent');
+    B.setAssistantAllowed(slot,true);const result=await complete(start('checklist'),'simple');
+    assert.equal(result.context.project,'site');assert.equal(result.context.folder,'/Work/Projects/Site/Assistant');
+    assert.equal(c.workspaceDownloads.list('/Work/Assistant').length,0);
+    assert.equal(c.workspaceDownloads.list('/Work/Projects/Site/Assistant').length,2);
+    for(const id of result.outputs){assert.equal(assignments.work.apps[id],slot);assert.equal(c.desktopPages.columnOf('work',id),'site');assert.equal(c.desktopPages.pageOf('work',id),0);assert(c.isLocalApp(id));}
+    c.desktopPages.select('work','workspace');assert.equal(B.state().space.assistant.allowed,true,'The independent Workspace permission is retained');
+  }
+  // Ordinary display actions stay on the captured desktop and Project. A late
+  // answer cannot create files on a newly selected desktop or display.
+  for(const role of ['main','extended'])for(const change of ['page','project','role','setup','display']){
+    const {c,B,start,until,advance,created}=fixture({role,count:2}),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'normal-display question');
+    const waiting=clone(B.state().space.assistant),saved=clone(c.workspaceDownloads.snapshot()),windows=created.length;
+    if(change==='page')c.desktopPages.go('work',1);
+    if(change==='project'){c.projectSpaces.site={name:'Site',root:'/Work/Projects/Site'};c.desktopPages.select('work','site');}
+    if(change==='role')B.setRole(2,role==='main'?'main':'side');
+    if(change==='setup')c.roster.push({slot:3,source:'new-display',width:1440,height:900});
+    if(change==='display')c.localSlot=c.localSlot===1?2:1;
+    c.SpatialDisplayRoleDesktop.refresh();
+    assert.throws(()=>B.answerAssistantExample('simple',{questionId:waiting.activity.question.id,operationId:waiting.context.operationId}),/no longer active|current question/);
+    for(let i=0;i<8&&!task.settled;i++)await advance();
+    assert.equal(task.settled,true,role+': '+change+' interrupts the captured runner');assert.deepEqual(clone(c.workspaceDownloads.snapshot()),saved);assert.equal(created.length,windows);
+  }
+  // Clicking an Assistant-owned ordinary window pauses work without revoking
+  // consent, and Continue resumes this exact question rather than replaying it.
+  for(const role of ['main','extended']){
+    const {c,B,listeners,start,until,advance,complete}=fixture({role,count:role==='main'?1:2}),task=start('checklist');
+    await until(()=>Boolean(B.state().space.assistant.activity?.question),'normal-display takeover question');
+    const waiting=clone(B.state().space.assistant),saved=clone(c.workspaceDownloads.snapshot()),frame=c.frameFor(waiting.outputs[0]);
+    const event={type:'pointerdown',target:{closest:selector=>selector==='[data-app-frame]'?frame:null}};
+    for(const handler of listeners.pointerdown||[])handler(event);
+    assert.equal(B.state().space.assistant.control,'user');assert.equal(B.state().space.assistant.allowed,true);assert.equal(B.state().space.assistant.status,'paused');
+    for(let i=0;i<3;i++)await advance();assert.equal(task.settled,false);assert.deepEqual(clone(c.workspaceDownloads.snapshot()),saved);
+    B.assistantControl('resume');await complete(task,'simple');assert.equal(B.state().space.assistant.status,'done');
+  }
+
   console.log('Assistant example integration passed: durable plans/questions, concise saved-file handoffs, exact bound editors, read-only source reuse, captured versions after user edits, selective canvas parking, preserved drafts/collisions, byte retention, pause/stop/context safety, scoped cleanup and partial failures.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
