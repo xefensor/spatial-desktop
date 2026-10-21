@@ -107,7 +107,12 @@ html[data-guide-ai="false"] :is(.assistant-widget,#openAIButton,[data-overview-a
 .ai-permissions{flex:none;min-width:0;font-size:11px;line-height:1.4;border-bottom:1px solid var(--sd-glass-groove);padding-bottom:7px}
 .ai-scope-label{display:block;color:var(--muted);overflow-wrap:anywhere;margin-bottom:5px}
 .ai-permission{display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:pointer;min-width:0}
-.ai-permission>input{flex:none;margin:2px 0 0;accent-color:var(--workspace-accent,var(--blue));width:15px;height:15px}
+.assistant-widget .ai-permission>input[type="checkbox"]{appearance:none;position:relative;box-sizing:border-box;flex:none;margin:2px 0 0;padding:0;min-height:16px;width:30px;height:16px;border:1px solid var(--sd-glass-groove)!important;background:var(--sd-glass-face-deep)!important;box-shadow:inset 0 1px 3px #0002!important;cursor:pointer}
+.ai-permission>input::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;background:var(--muted);transform:translateX(0)}
+.assistant-widget .ai-permission>input:checked{border-color:var(--workspace-accent,var(--blue))!important;background:color-mix(in srgb,var(--workspace-accent,var(--blue)) 25%,var(--sd-glass-face-deep))!important}
+.ai-permission>input:checked::after{transform:translateX(14px);background:var(--workspace-accent,var(--blue))}
+.ai-permission>input:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.ai-permission>input:disabled{cursor:default}
 .ai-permission>span{min-width:0;font-size:12px}.ai-permission small{display:block;color:var(--muted);font-size:10px;margin-top:2px;overflow-wrap:anywhere}
 .ai-permission:has(input:disabled){opacity:.6;cursor:default}
 .ai-automatic-context{font-size:11px;margin-top:3px}.ai-automatic-context>summary{padding:5px 0;cursor:pointer}
