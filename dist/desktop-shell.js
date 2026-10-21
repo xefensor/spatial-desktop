@@ -2625,7 +2625,13 @@ function seedProjectModeWindows(name, modeId) {
 }
 
 function activateProject(name, announce = true) {
-  if (desktopPageAnimating) { setTimeout(() => activateProject(name, announce), 230); return; }
+  if (desktopPageAnimating) {
+    const workspace = activeWorkspace, column = desktopPages.column(workspace);
+    setTimeout(() => {
+      if (activeWorkspace === workspace && desktopPages.column(workspace) === column) activateProject(name, announce);
+    }, 230);
+    return;
+  }
   const project = projectSpaces[name];
   if (!project) return;
   if (openProjectNames().includes(name)) {
@@ -2730,7 +2736,13 @@ function restoreProjectWindows(name, announce = true, seedIfEmpty = false) {
 }
 
 function closeActiveProject() {
-  if (desktopPageAnimating) { setTimeout(closeActiveProject, 230); return; }
+  if (desktopPageAnimating) {
+    const workspace = activeWorkspace, column = desktopPages.column(workspace), project = activeProjectName;
+    setTimeout(() => {
+      if (activeWorkspace === workspace && desktopPages.column(workspace) === column && activeProjectName === project) closeActiveProject();
+    }, 230);
+    return;
+  }
   if (!activeProjectName) return;
   const name = activeProjectName;
   const project = projectSpaces[name];
@@ -2885,7 +2897,13 @@ function deleteProject(projectName) {
   const project = projectSpaces[projectName];
   if (!project) return;
   const label = project.name;
-  if (desktopPageAnimating) { setTimeout(() => deleteProject(projectName), 230); return; }
+  if (desktopPageAnimating) {
+    const workspace = activeWorkspace, column = desktopPages.column(workspace);
+    setTimeout(() => {
+      if (activeWorkspace === workspace && desktopPages.column(workspace) === column && projectSpaces[projectName] === project) deleteProject(projectName);
+    }, 230);
+    return;
+  }
   if (activeProjectName === projectName) closeActiveProject();
   else if (openProjectNames().includes(projectName)) parkProjectWindows(projectName, false);
   Object.entries(windowMembership).forEach(([workspace, membership]) => {
@@ -3647,12 +3665,19 @@ function prepareWorkspaces() {
 }
 
 let packageLastFocus = null;
+let packageDialogEpoch = 0;
+let packageDialogCloseTimer = null;
 function renderPackageComposer() { globalThis.SpatialProjectPackages?.prepare('pack'); }
 
 function openPackageDialog(kind = "project", direction = "pack") {
   if(kind!=="project")return false;
   if(direction==="pack"&&!projectSpaces[activeProjectName]){showToast("Open a Project to pack its folder and linked files.");return false;}
   const dialog = $("#packageDialog");
+  if (packageDialogCloseTimer !== null) {
+    clearTimeout(packageDialogCloseTimer);
+    packageDialogCloseTimer = null;
+  }
+  const epoch = ++packageDialogEpoch;
   packageLastFocus = document.activeElement;
   $("#packageComposer").hidden = direction !== "pack";
   $("#importPreview").hidden = direction !== "import";
@@ -3664,6 +3689,7 @@ function openPackageDialog(kind = "project", direction = "pack") {
   $("#universalSearch").inert = true;
   document.body.classList.add("package-open");
   requestAnimationFrame(() => {
+    if (epoch !== packageDialogEpoch || dialog.hidden || dialog.inert) return;
     dialog.classList.add("is-open");
     $("[data-close-package]", dialog)?.focus({preventScroll:true});
   });
@@ -3671,6 +3697,8 @@ function openPackageDialog(kind = "project", direction = "pack") {
 
 function closePackageDialog() {
   const dialog = $("#packageDialog");
+  const epoch = ++packageDialogEpoch;
+  const workspace = activeWorkspace;
   dialog.classList.remove("is-open");
   dialog.setAttribute("aria-hidden", "true");
   dialog.inert = true;
@@ -3678,10 +3706,18 @@ function closePackageDialog() {
   $(".desktop-shell").inert = overviewOpen;
   $("#universalSearch").inert = !overviewOpen;
   document.body.classList.remove("package-open");
-  setTimeout(() => { if (!dialog.classList.contains("is-open")) dialog.hidden = true; }, 120);
+  if (packageDialogCloseTimer !== null) clearTimeout(packageDialogCloseTimer);
+  packageDialogCloseTimer = setTimeout(() => {
+    packageDialogCloseTimer = null;
+    if (epoch === packageDialogEpoch && dialog.inert && !dialog.classList.contains("is-open")) dialog.hidden = true;
+  }, 120);
   const returnFocus = packageLastFocus;
   packageLastFocus = null;
-  requestAnimationFrame(() => returnFocus?.focus?.({preventScroll:true}));
+  requestAnimationFrame(() => {
+    const projectDialog = $("#projectEditorDialog");
+    if (epoch !== packageDialogEpoch || activeWorkspace !== workspace || (!projectDialog.hidden && !projectDialog.inert)) return;
+    returnFocus?.focus?.({preventScroll:true});
+  });
 }
 
 function preparePackages() {
@@ -6332,7 +6368,13 @@ const originalOpenApp = openApp;
 openApp = function(name, point = null) {
   if (!appInfo[name]) return;
   if (appInfo[name].workspace && appInfo[name].workspace !== activeWorkspace) return;
-  if (desktopPageAnimating) { setTimeout(() => openApp(name, point), 230); return; }
+  if (desktopPageAnimating) {
+    const workspace = activeWorkspace, column = desktopPages.column(workspace), page = desktopPages.current(workspace);
+    setTimeout(() => {
+      if (activeWorkspace === workspace && desktopPages.column(workspace) === column && desktopPages.current(workspace) === page) openApp(name, point);
+    }, 230);
+    return;
+  }
   const targetBond=desktopPages.fullscreenBond(activeWorkspace,name);
   if(targetBond && appState[name] === 'open') {
     changeDesktopPage(targetBond.page,false,targetBond.column,name);

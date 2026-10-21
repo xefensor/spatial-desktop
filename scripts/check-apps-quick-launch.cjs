@@ -159,4 +159,20 @@ const focusDocument=focusWindow.document,retainedFocus=focusDocument.querySelect
 retainedFocus.focus();focusWindow.workspaceProfiles.general.favorites=[['notes'],['browser']];focusWindow.appInfo.browser.label='Renamed profile';focusWindow.SpatialAppsQuickLaunch.refresh();
 assert.equal(focusDocument.activeElement,retainedFocus,'Favorite reordering restores keyboard focus to the actual retained native launcher');
 assert.equal(retainedFocus.querySelector('span').textContent,'Renamed profile');focusDom.window.close();
+// An app requested while a desktop transition runs must not launch in a
+// different context if the user navigates again before the deferred action.
+{
+  function deferredLaunch(){
+    const pending=[],opened=[],pages=Pages.create();pages.go('work',0,'workspace');
+    const ctx={activeWorkspace:'work',desktopPageAnimating:true,desktopPages:pages,appInfo:{browser:{label:'Firefox'}},appState:{browser:'closed'},windowMembership:{},
+      setTimeout:callback=>pending.push(callback),openApp(name){opened.push([ctx.activeWorkspace,pages.column(ctx.activeWorkspace),pages.current(ctx.activeWorkspace),name]);ctx.appState[name]='open';},
+      removeOffPageWindowTiles(){},saveDesktopPages(){},refreshDownloadUi(){},saveIndependentSessions(){},changeDesktopPage(){},createAppInstance(){throw Error('Unexpected instance');}};
+    vm.createContext(ctx);vm.runInContext(shellSource.slice(shellSource.indexOf('const originalOpenApp = openApp;'),shellSource.indexOf('function removeWindowFromSavedProjects(')),ctx);
+    ctx.openApp('browser');assert.equal(pending.length,1);return {ctx,pages,pending,opened};
+  }
+  for(const navigate of [h=>{h.ctx.activeWorkspace='gaming';},h=>h.pages.select('work','other-project'),h=>h.pages.go('work',1)]){
+    const h=deferredLaunch();navigate(h);h.ctx.desktopPageAnimating=false;h.pending.shift()();assert.equal(h.opened.length,0,'A delayed launch cannot follow the user into another Workspace, Project or desktop');
+  }
+  const h=deferredLaunch();h.ctx.desktopPageAnimating=false;h.pending.shift()();assert.deepEqual(h.opened,[['work','workspace',0,'browser']],'The original destination still launches exactly once when its transition settles');
+}
 console.log('Apps quick launch passed: runnable Workspace favorites, stable launchers, independent/parked/singleton launch policies, current-desktop Settings, Guide/modal guards and hidden compatibility metadata without duplicate native task UI or shortcut renumbering.');

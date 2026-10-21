@@ -47,6 +47,27 @@ const newA=a.newChat('general').id,newB=b.newChat('general').id;
 a.load(b.snapshot(),{preserveSelection:'general'});b.load(a.snapshot(),{preserveSelection:'general'});
 assert(a.session('general',newB));assert(b.session('general',newA));assert.equal(a.session('general').id,newA);assert.equal(b.session('general').id,newB);
 const older=a.snapshot();a.draft('general','Latest');a.load(older);assert.equal(a.session('general').draft,'Latest');
+// Side-display progress and typing update different parts of the same chat.
+// Either arrival order must retain both the new turn and the unsent question.
+for(const firstArrival of ['draft','content']){
+  const seed=C.create({},env);seed.exchange('general','Initial request',{text:'Initial reply'});
+  const writer=C.create(seed.snapshot(),env),assistant=C.create(seed.snapshot(),env);
+  const turn=assistant.exchange('general','Assistant progressed',{text:'Keep the new answer'});
+  writer.draft('general','M');writer.draft('general','My unsent question');
+  if(firstArrival==='draft'){assistant.load(writer.snapshot());writer.load(assistant.snapshot());}
+  else{writer.load(assistant.snapshot());assistant.load(writer.snapshot());}
+  for(const copy of [writer,assistant]){
+    assert.equal(copy.session('general').draft,'My unsent question','Typing survives a concurrent reply');
+    assert.equal(copy.session('general').turns.find(item=>item.id===turn.id)?.text,'Keep the new answer','Typing cannot discard concurrent Assistant progress');
+    const reloaded=C.create(copy.snapshot(),env);assert.equal(reloaded.session('general').draft,'My unsent question');assert.equal(reloaded.session('general').turns.length,2);
+  }
+  assistant.add('general',{id:'later-source',text:'Newly attached source'});writer.draft('general','Another question');writer.draft('general','Another unsent question');assistant.load(writer.snapshot());writer.load(assistant.snapshot());
+  assert.equal(writer.session('general').items[0]?.id,'later-source','New inputs also survive later typing on another display');assert.equal(writer.session('general').draft,'Another unsent question');
+  assistant.remove('general','later-source');assistant.rename('general',assistant.session('general').id,'Named on the Assistant display');writer.draft('general','');writer.draft('general','');writer.load(assistant.snapshot());assistant.load(writer.snapshot());
+  for(const copy of [writer,assistant]){assert.equal(copy.session('general').draft,'','An intentional cleared draft remains cleared');assert.equal(copy.session('general').items.length,0,'Removed inputs are not restored by a concurrent draft');assert.equal(copy.session('general').title,'Named on the Assistant display');}
+}
+const legacyMulti=model.snapshot();legacyMulti.version=4;for(const space of Object.values(legacyMulti.sessions))for(const chat of Object.values(space.chats)){delete chat.contentUpdated;delete chat.draftUpdated;}
+const migratedMulti=C.create(legacyMulti,env);assert.equal(migratedMulti.session('general',first).draft,model.session('general',first).draft);assert.deepEqual(migratedMulti.session('general',first).turns,model.session('general',first).turns,'Existing multi-chat histories migrate without changing input snapshots');
 const many=C.create({},env);
 for(let i=0;i<24;i++)many.add('general',{id:'source-'+i,title:'Source '+i,text:'Text '+i});
 const turn=many.exchange('general','Summarize',D.reply('Summarize',{items:many.session('general').items}));
@@ -226,6 +247,29 @@ practical.reply('general',plan.id,{text:'The source is open.',presentation:'plan
   node('#aiChatSelect').value=displayChat;node('#aiChatSelect').listeners.change();assert.equal(node('#aiPrompt').value,'An unsent draft that has not fired input');
   assert.equal(liveContent.parentNode,area,'Leaving display task mode keeps the native widget conversation');
   setCompact(true);openQuick();assert.equal(quick.hidden,false,'Ordinary Compact quick chat remains available');assert.equal(api.current().id,displayChat);assert.equal(node('#aiPrompt').value,'An unsent draft that has not fired input');
+  // Separate drops can both pass the pre-upload limit before either finishes.
+  // Reject the late input before recording history, and release only its bytes.
+  api.startExample({folder:profiles.general.home,title:'Concurrent uploads'});
+  const capacityChat=api.current().id,removedUploads=[],retainedUploads=[],originalPut=boot.SpatialStashFiles.put;
+  let releaseCapacityUpload,captures=0;boot.SpatialItemHistoryDesktop={capture(){captures++;}};
+  api.attach(Array.from({length:23},(_,i)=>({id:'capacity-'+i,title:'Source '+i,text:'Keep this source'})),{focus:false});
+  const dropFile=file=>handlers.drop({target:inputHover.target,preventDefault(){},stopPropagation(){},dataTransfer:{types:['Files'],getData:()=>'',files:[file]}});
+  boot.SpatialStashFiles.put=(key,file)=>{retainedUploads.push({key,name:file.name});return file.name==='waiting.txt'?new Promise(resolve=>{releaseCapacityUpload=resolve;}):Promise.resolve();};
+  boot.SpatialStashFiles.remove=async key=>removedUploads.push(key);
+  const waitingDrop=dropFile({size:10,name:'waiting.txt',type:'text/plain',text:async()=>'Waiting source'});
+  await dropFile({size:10,name:'finished.txt',type:'text/plain',text:async()=>'Finished source'});const beforeRejected=captures;
+  releaseCapacityUpload();await waitingDrop;
+  assert.equal(api.current().items.length,24);assert(api.current().items.some(item=>item.filename==='finished.txt'));assert(!api.current().items.some(item=>item.filename==='waiting.txt'));
+  assert.equal(captures,beforeRejected,'A rejected upload creates no phantom input-history snapshot');assert.equal(node('#aiStatus').textContent,'This conversation holds up to 24 attachments.');
+  assert.deepEqual(removedUploads,[retainedUploads.find(item=>item.name==='waiting.txt').key],'Only the unpublished upload is released');
+  // Capacity can also change while file.text(), rather than storage, is pending.
+  api.removeInputs(api.current().items.map(item=>item.id));api.attach(Array.from({length:23},(_,i)=>({id:'text-capacity-'+i,title:'Source '+i})),{focus:false});
+  let releaseText,startText;const textStarted=new Promise(resolve=>{startText=resolve;});boot.SpatialStashFiles.put=(key,file)=>{retainedUploads.push({key,name:file.name});return Promise.resolve();};
+  const waitingTextDrop=dropFile({size:10,name:'reading.txt',type:'text/plain',text:()=>{startText();return new Promise(resolve=>{releaseText=resolve;});}});await textStarted;
+  api.attach([{id:'final-slot',title:'Keep the final source'}],{focus:false});const beforeTextRejected=captures;api.startExample({folder:profiles.general.home,title:'Other upload conversation'});node('#aiStatus').textContent='Current chat status';
+  releaseText('Late readable source');await waitingTextDrop;
+  assert.equal(api.snapshot().sessions.general.chats[capacityChat].items.length,24);assert.equal(api.current().items.length,0);assert.equal(captures,beforeTextRejected);assert.equal(node('#aiStatus').textContent,'Current chat status','A completed old upload never overwrites another chat’s status');
+  assert(removedUploads.includes(retainedUploads.find(item=>item.name==='reading.txt').key));boot.SpatialStashFiles.put=originalPut;
   while(Object.keys(api.snapshot().sessions.general.chats).length<50)api.startExample({folder:profiles.general.home,title:'Capacity check'});
   node('#aiPrompt').value='Keep this at the chat limit';const full=JSON.stringify(api.snapshot());assert.throws(()=>api.startExample({folder:profiles.general.home}),/50 chats/);assert.equal(JSON.stringify(api.snapshot()),full);assert.equal(node('#aiPrompt').value,'Keep this at the chat limit','A full chat list rejects the example without consuming the current draft');
   console.log('Assistant example chat passed: named fresh conversations, exact Project/Home context, original unsaved drafts and immutable source/turn preservation, native Chat reveal, foreign/stale/dialog rejection and lossless chat capacity.');

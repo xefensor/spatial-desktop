@@ -180,7 +180,25 @@ const companionBoot=boot(ownerBoot.storage,'?guide=display&practice='+ownerBoot.
 assert(companionBoot.api.displayValid);assert(companionBoot.api.displayCompanion);assert.equal(companionBoot.api.syncScope,ownerBoot.api.syncScope);
 const progress=companionBoot.storage['spatial-guide-v1'];companionBoot.api.model.mark('display-linked');companionBoot.api.save();assert.equal(companionBoot.storage['spatial-guide-v1'],progress,'Only the Guide owner saves task progress');
 companionBoot.api.storage.setItem('spatial-workspace-app-states-v1','practice-display');assert.equal(companionBoot.storage['spatial-workspace-app-states-v1'],'real-desktop');
-assert(!boot(ownerBoot.storage,'?guide=display&practice=unrelated').api.displayValid);
+const staleCompanion=boot({...ownerBoot.storage,[G.prefix+'companion-note']:'current practice note'},'?guide=display&practice=unrelated');
+assert(!staleCompanion.api.displayValid);
+assert.equal(staleCompanion.api.storage.getItem('companion-note'),null,'An old companion cannot read the current practice session');
+staleCompanion.api.storage.setItem('companion-note','old companion edit');staleCompanion.api.storage.removeItem('companion-note');
+assert.equal(staleCompanion.storage[G.prefix+'companion-note'],'current practice note','An old companion cannot overwrite or remove the current practice data');
+const connectedCompanion=boot(ownerBoot.storage,'?guide=display&practice='+ownerBoot.api.model.state.sessionId);
+connectedCompanion.api.storage.setItem('companion-note','connected note');
+const ownerProgress=JSON.parse(connectedCompanion.storage[G.key]);
+connectedCompanion.storage[G.key]=JSON.stringify({...ownerProgress,status:'completed'});
+assert(!connectedCompanion.api.displayValid,'A companion expires when its owner leaves practice');
+assert.equal(connectedCompanion.api.storage.getItem('companion-note'),null);
+connectedCompanion.api.storage.setItem('companion-note','late autosave');
+assert.equal(connectedCompanion.storage[G.prefix+'companion-note'],'connected note','Late callbacks from an ended companion cannot overwrite practice data');
+connectedCompanion.storage[G.key]=JSON.stringify({...ownerProgress,sessionId:'another-practice-session'});
+assert(!connectedCompanion.api.displayValid,'Starting another Guide cannot revive an old companion');
+connectedCompanion.api.storage.removeItem('companion-note');assert.equal(connectedCompanion.storage[G.prefix+'companion-note'],'connected note');
+connectedCompanion.storage[G.key]='invalid progress';
+assert(!connectedCompanion.api.displayValid);assert(!connectedCompanion.api.displayValid,'Malformed progress cannot restore a cached companion permission');
+assert(!boot({...ownerBoot.storage,[G.key]:JSON.stringify({...ownerProgress,sessionId:null})},'?guide=display').api.displayValid,'A companion needs an explicit practice session ID');
 console.log('Two-display chapter passed: optional ending, real transfers, same-window return, visible fullscreen Areas, reload and companion storage isolation.');
 
 // Run the adapter's actual polling function for the new desktop tasks.

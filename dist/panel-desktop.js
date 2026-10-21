@@ -330,6 +330,9 @@
     const matchesPointer=pointer=>drag&&(drag.pointerId==null||pointer.pointerId==null||drag.pointerId===pointer.pointerId);
     const move=pointer=>{
       if(!matchesPointer(pointer))return;if(owner()!==drag.workspace||localSlot()!==drag.display||fullDisplay()!==drag.fullscreen){finish(pointer,true);return;}
+      // A release over browser chrome may never reach the document. Returning
+      // without the held button aborts its preview instead of resuming a drag.
+      if(pointer.type==='pointermove'&&typeof pointer.buttons==='number'&&(pointer.buttons&1)===0){finish(pointer,true);return;}
       if(Math.hypot(pointer.clientX-drag.startX,pointer.clientY-drag.startY)<5&&!drag.changed)return;drag.changed=true;
       Object.assign(ghost.style,{left:pointer.clientX+14+'px',top:pointer.clientY+14+'px'});
       if(kind==='widget'){
@@ -387,6 +390,7 @@
 
   root.addEventListener('resize',()=>{drag?.cancel();schedule();fit();});
   root.addEventListener('blur',()=>drag?.cancel());
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)drag?.cancel();});
   root.setInterval(refreshSummaries,1000);
   function isWidgetVisible(id){
     const frame=frames.get(id);return Boolean(frame&&!frame.element.hidden&&!frame.element.closest('.desktop-panel')?.hidden);

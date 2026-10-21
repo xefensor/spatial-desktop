@@ -99,6 +99,35 @@ console.log('Project dialog checks passed: background isolation and focus return
 }
 console.log('Project reopen checks passed: stale close timers and opening frames cannot hide or focus a newer editor.');
 
+// Pack/Import shares the same delayed modal transitions. An old opening,
+// closing timer or focus return must never own a later dialog session.
+{
+  const {JSDOM}=require('jsdom'),dom=new JSDOM('<button id="launch">Import</button><main class="desktop-shell"></main><section id="universalSearch"></section><section id="projectEditorDialog" hidden></section><section id="packageDialog" hidden><div id="packageComposer"></div><div id="importPreview"></div><button data-close-package>Close</button></section>');
+  const d=dom.window.document,dialog=d.querySelector('#packageDialog'),frames=[],timers=new Map(),cancelled=[];
+  let nextTimer=0,focusCalls=0,returned=0;d.querySelector('[data-close-package]').focus=()=>{focusCalls++;};d.querySelector('#launch').focus=()=>{returned++;};
+  const ctx=vm.createContext({$: (selector,root=d)=>root.querySelector(selector),document:d,activeProjectName:'site',activeWorkspace:'general',projectSpaces:{site:{}},showToast(){},SpatialProjectPackages:{prepare(){}},requestAnimationFrame:callback=>frames.push(callback),setTimeout:callback=>{const id=++nextTimer;timers.set(id,callback);return id;},clearTimeout:id=>cancelled.push(id)});
+  vm.runInContext(source.slice(source.indexOf('let packageLastFocus ='),source.indexOf('function preparePackages(')),ctx);
+  d.querySelector('#launch').focus();Object.defineProperty(d,'activeElement',{get:()=>d.querySelector('#launch'),configurable:true});returned=0;
+  ctx.openPackageDialog('project','import');ctx.closePackageDialog();const oldClose=timers.get(1);
+  frames.shift()();assert.equal(dialog.classList.contains('is-open'),false,'A cancelled Package opening must not resurrect its inert dialog');assert.equal(focusCalls,0);
+  ctx.openPackageDialog('project','pack');assert(cancelled.includes(1),'Reopening cancels the previous Package close timer');
+  oldClose();assert.equal(dialog.hidden,false,'A stale Package close callback cannot hide a newly opening dialog');
+  frames.shift()();assert.equal(returned,0,'An old close cannot return focus outside a reopened Package dialog');
+  frames.shift()();assert.equal(dialog.classList.contains('is-open'),true);assert.equal(dialog.inert,false);assert.equal(focusCalls,1);
+  assert.equal(d.querySelector('#packageComposer').hidden,false);assert.equal(d.querySelector('#importPreview').hidden,true);
+  ctx.closePackageDialog();timers.get(2)();frames.shift()();assert.equal(dialog.hidden,true);assert.equal(returned,1,'The current close returns focus normally');
+  assert.equal(d.querySelector('.desktop-shell').inert,false);assert.equal(d.querySelector('#universalSearch').inert,true);
+  for(const next of ['project','workspace']){
+    ctx.activeWorkspace='general';const project=d.querySelector('#projectEditorDialog');project.hidden=true;project.inert=true;
+    ctx.openPackageDialog('project','import');frames.shift()();ctx.closePackageDialog();
+    if(next==='project'){project.hidden=false;project.inert=false;}else ctx.activeWorkspace='school';
+    frames.shift()();assert.equal(returned,1,'A Package focus callback cannot steal focus after opening another '+next);
+    timers.get(nextTimer)();
+  }
+  dom.window.close();
+}
+console.log('Package reopen checks passed: cancelled openings, stale close timers and old focus callbacks cannot affect a later Pack/Import dialog.');
+
 // A Guide lesson raises Create project above the Guide window. Its overlay
 // hides the native pointer, so the Material pointer must remain above it.
 {

@@ -306,3 +306,27 @@ console.log('Open-project header passed: zero/one/multiple projects, all labels,
   browser.close();
 }
 console.log('Project strip geometry passed: native panel CSS, Left/Top/hidden panels, app-control centers, Project/Workspace columns, exact height reservation and closing recovery.');
+
+// Navigation animations queue Project commands. A queued command belongs to
+// the Workspace/column where it was requested, not whatever is active later.
+for(const [name,first,last,args] of [
+  ['activateProject','function activateProject(','function switchProjectMode(',['film',false]],
+  ['closeActiveProject','function closeActiveProject(','function describeProjectResource(',[]],
+  ['deleteProject','function deleteProject(','function renderProjectEditor(',['site']]
+])for(const changed of ['none','workspace','column','project']){
+  let column='site',called=0;const timers=[];
+  const deferred=vm.createContext({activeWorkspace:'work',activeProjectName:'site',desktopPageAnimating:true,desktopPages:{column:()=>column},projectSpaces:{site:{name:'Site'}},setTimeout:fn=>timers.push(fn)});
+  vm.runInContext(slice(first,last),deferred);deferred[name](...args);assert.equal(timers.length,1,name+' waits for the current animation');
+  deferred[name]=(...replayed)=>{called++;assert.deepEqual(replayed,args,'Queued Project command keeps its original arguments');};
+  if(changed==='workspace')deferred.activeWorkspace='school';
+  if(changed==='column')column='film';
+  if(changed==='project'){
+    if(name==='closeActiveProject')deferred.activeProjectName='film';
+    else if(name==='deleteProject')deferred.projectSpaces.site={name:'Replacement project'};
+    else deferred.activeProjectName='film';
+  }
+  deferred.desktopPageAnimating=false;timers.shift()();
+  const valid=changed==='none'||(changed==='project'&&name==='activateProject');
+  assert.equal(called,valid?1:0,name+' does not follow a changed '+changed+' into another context');
+}
+console.log('Deferred Project commands passed: activation, close and removal retain their initiating Workspace/column and cannot close another active or replacement Project.');

@@ -41,11 +41,12 @@
       return {id:clean(turn.id,160)||'turn-'+Math.random().toString(36).slice(2),request:clean(turn.request,4000),title:clean(turn.title,120)||'Demo reply',text:clean(turn.text,12000),folder:address(turn.folder),project:Object.hasOwn(projects(),turn.project)?turn.project:null,workspace,example:turn.example===true,assistantOnly:turn.assistantOnly===true,presentation:['plan','question','result'].includes(turn.presentation)?turn.presentation:'',outputs,sources:(Array.isArray(turn.sources)?turn.sources:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),created:Math.max(0,Number(turn.created)||0),action:A?.action(turn.action)};
     }
     function normalizeChat(input,workspace,id){
+      const contentUpdated=stamp(input.contentUpdated??input.updated),draftUpdated=stamp(input.draftUpdated??input.updated);
       return {id,title:clean(input.title,80).trim()||'Chat',named:input.named===true,
         draft:clean(input.draft,4000),items:(Array.isArray(input.items)?input.items:[]).slice(0,24).map(item=>normalize(item,workspace)).filter(Boolean),
         turns:(Array.isArray(input.turns)?input.turns:[]).slice(-60).map(turn=>normalizeTurn(turn,workspace)).filter(Boolean),
         examplesSeen:input.examplesSeen===true,folderChosen:input.folderChosen===true||Object.hasOwn(projects(),input.workingProject),workingProject:Object.hasOwn(projects(),input.workingProject)?input.workingProject:null,
-        created:stamp(input.created),updated:stamp(input.updated)};
+        created:stamp(input.created),updated:Math.max(stamp(input.updated),contentUpdated,draftUpdated),contentUpdated,draftUpdated};
     }
     function space(workspace){
       if(!Object.hasOwn(profiles(),workspace))throw new Error('Unknown workspace');
@@ -64,7 +65,7 @@
     }
     const scopeFolder=(workspace,id)=>projects()[session(workspace,id)?.workingProject]?.root||profiles()[workspace].home;
     const workingFolder=(workspace,id)=>scopeFolder(workspace,id).replace(/\/+$/,'')+'/Assistant';
-    function changed(chat){chat.updated=tick();}
+    function changed(chat,part='content'){chat.updated=tick();chat[part==='draft'?'draftUpdated':'contentUpdated']=chat.updated;}
     function titleFrom(chat,text){if(!chat.named&&!chat.turns.length)chat.title=clean(text,80).replace(/\s+/g,' ').trim()||chat.title;}
     function load(snapshot,options={}){
       Object.entries(snapshot?.sessions||{}).forEach(([workspace,input])=>{
@@ -74,10 +75,13 @@
         const entries=multi?Object.entries(input.chats).slice(0,50):[['chat-'+workspace,{...input,folderChosen:input.folderChosen??Boolean(input.workingProject||input.items?.length||input.turns?.length),title:input.turns?.[0]?.request||input.items?.[0]?.title||'Previous chat'}]];
         entries.forEach(([id,data])=>{
           if(!/^chat-[\w.-]{1,150}$/.test(id)||!data||typeof data!=='object')return;
-          const updated=stamp(data.updated);clock=Math.max(clock,updated);
-          if(record.chats[id]&&updated<record.chats[id].updated)return;
-          if(record.chats[id]&&existed&&updated===record.chats[id].updated)return;
-          record.chats[id]=normalizeChat(data,workspace,id);
+          const incoming=normalizeChat(data,workspace,id),current=record.chats[id];clock=Math.max(clock,incoming.updated);
+          if(!current||!existed){record.chats[id]=incoming;return;}
+          // A user can type on one display while Assistant updates the same
+          // chat on another. Draft edits do not own the transcript or inputs.
+          const draft=incoming.draftUpdated>current.draftUpdated?incoming:current;
+          const content=incoming.contentUpdated>current.contentUpdated?incoming:current;
+          record.chats[id]={...content,draft:draft.draft,draftUpdated:draft.draftUpdated,updated:Math.max(current.updated,incoming.updated)};
         });
         const selectionUpdated=stamp(multi?input.selectionUpdated:input.updated),modeUpdated=stamp(multi?input.modeUpdated:input.updated);
         clock=Math.max(clock,selectionUpdated,modeUpdated);
@@ -105,11 +109,11 @@
       reply(workspace,turnId,response={},id){const record=session(workspace,id),turn=record?.turns.find(turn=>turn.id===turnId);if(!turn||!response||typeof response!=='object')return null;const normalized=normalizeTurn({...turn,...Object.fromEntries(['title','text','action','presentation','outputs','assistantOnly'].filter(key=>Object.hasOwn(response,key)).map(key=>[key,response[key]]))},workspace);if(!normalized)return null;Object.assign(turn,normalized);changed(record);return turn;},
       action(workspace,turnId,value,chatId){const record=session(workspace,chatId),turn=record?.turns.find(t=>t.id===turnId);if(!turn)return null;turn.action=A?.action(value);changed(record);return turn;},
       examplesSeen(workspace){const record=session(workspace);record.examplesSeen=true;changed(record);},
-      draft(workspace,text,id){const record=session(workspace,id);if(!record)return;record.draft=clean(text,4000);changed(record);},
+      draft(workspace,text,id){const record=session(workspace,id);if(!record)return;record.draft=clean(text,4000);changed(record,'draft');},
       mode(workspace,mode){const record=space(workspace);record.mode=mode==='expanded'?'expanded':'rail';record.modeUpdated=tick();},
       folder(workspace,project,id){const record=session(workspace,id);if(!record)return;record.workingProject=Object.hasOwn(projects(),project)?project:null;record.folderChosen=true;changed(record);},
       scopeFolder,workingFolder,
-      snapshot(){const sessions={};Object.entries(records).forEach(([workspace,record])=>{const chat=session(workspace);sessions[workspace]={...record,draft:chat.draft,items:chat.items,turns:chat.turns,examplesSeen:chat.examplesSeen,workingProject:chat.workingProject,updated:Math.max(record.modeUpdated,record.selectionUpdated,...Object.values(record.chats).map(item=>item.updated))};});return JSON.parse(JSON.stringify({version:4,sessions}));}
+      snapshot(){const sessions={};Object.entries(records).forEach(([workspace,record])=>{const chat=session(workspace);sessions[workspace]={...record,draft:chat.draft,items:chat.items,turns:chat.turns,examplesSeen:chat.examplesSeen,workingProject:chat.workingProject,updated:Math.max(record.modeUpdated,record.selectionUpdated,...Object.values(record.chats).map(item=>item.updated))};});return JSON.parse(JSON.stringify({version:5,sessions}));}
 
     };
   }

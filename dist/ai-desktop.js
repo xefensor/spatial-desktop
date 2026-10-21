@@ -382,7 +382,28 @@
     const raw=event.dataTransfer.getData(C.MIME),source=sourceDrag||{workspace:activeWorkspace};sourceDrag=null;
     if(raw){try{add(JSON.parse(raw));}catch{status.textContent='This attachment could not be read.';}return;}
     const files=[...event.dataTransfer.files];
-    if(files.length){const workspace=activeWorkspace,chatId=model.session(workspace).id;openQuick(false);for(const file of files){if(file.size>25*1024*1024){status.textContent='Files must be smaller than 25 MB.';continue;}if(model.session(workspace,chatId).items.length>=24){status.textContent='This conversation holds up to 24 attachments.';break;}try{const fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);const text=file.type.startsWith('text/')?await file.text():'';model.add(workspace,captureInput({workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text,attachment:{kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',key:fileKey,filename:file.name,mime:file.type,size:file.size},source:{workspace,label:'File upload'}},workspace),chatId);persist();render();if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent='Attached to this request.';}catch{status.textContent='Could not keep this file in this browser.';}}return;}
+    if(files.length){
+      const workspace=activeWorkspace,chatId=model.session(workspace).id;
+      const notifyOwner=message=>{if(activeWorkspace===workspace&&model.session(workspace).id===chatId)status.textContent=message;};
+      openQuick(false);
+      for(const file of files){
+        if(file.size>25*1024*1024){notifyOwner('Files must be smaller than 25 MB.');continue;}
+        if(model.session(workspace,chatId).items.length>=24){notifyOwner('This conversation holds up to 24 attachments.');break;}
+        let fileKey='',attached=false;
+        try{
+          fileKey='stash-upload-'+crypto.randomUUID();await F.put(fileKey,file);
+          const text=file.type.startsWith('text/')?await file.text():'';
+          // Another drop can fill this chat while bytes or text are loading.
+          // Check again before creating history or publishing an attachment.
+          if(model.session(workspace,chatId).items.length>=24){notifyOwner('This conversation holds up to 24 attachments.');break;}
+          attached=Boolean(model.add(workspace,captureInput({workspace,id:fileKey,fileKey,filename:file.name,title:file.name,kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',text,attachment:{kind:file.type.startsWith('image/')?'image':file.type.startsWith('audio/')?'audio':'file',key:fileKey,filename:file.name,mime:file.type,size:file.size},source:{workspace,label:'File upload'}},workspace),chatId));
+          if(!attached){notifyOwner('This conversation holds up to 24 attachments.');break;}
+          persist();render();notifyOwner('Attached to this request.');
+        }catch{notifyOwner('Could not keep this file in this browser.');}
+        finally{if(fileKey&&!attached&&F.remove)await Promise.allSettled([Promise.resolve().then(()=>F.remove(fileKey))]);}
+      }
+      return;
+    }
     const text=event.dataTransfer.getData('text/plain'),url=event.dataTransfer.getData('text/uri-list').split('\n').find(line=>line&&!line.startsWith('#'));
     if(text||url)add({...source,title:url||text.trim().slice(0,80)||'Dropped content',kind:url?'link':'text',text,address:url||''});
   });

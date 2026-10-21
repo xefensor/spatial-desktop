@@ -371,14 +371,31 @@
   try { if (real.getItem('spatial-guide-view-v1') === 'compact') api.view = 'compact'; } catch {}
   api.setView = value => { api.view = value === 'compact' ? 'compact' : 'expanded'; try { real.setItem('spatial-guide-view-v1',api.view); } catch {} };
   api.save = () => { if (api.displayCompanion) return; try { real.setItem(key, JSON.stringify(model.snapshot())); } catch {} };
+  // A companion can outlive its owner, or be reopened from an old URL. Its
+  // storage must stop at that session boundary, just like display messages.
+  let companionProgress, companionValid = false;
+  function companionSessionValid() {
+    if (!api.displayCompanion) return true;
+    try {
+      const progress = real.getItem(key);
+      if (progress !== companionProgress) {
+        companionProgress = progress;
+        companionValid = false;
+        const owner = create(JSON.parse(progress || '{}'));
+        const practice = params.get('practice');
+        companionValid = !!practice && owner.active() && owner.lesson.id === 'two-displays' && practice === owner.state.sessionId;
+      }
+      return companionValid;
+    } catch { return false; }
+  }
   // Keep late layout/autosave callbacks in practice storage while leaving.
   // The normal desktop gets its own facade after the page reloads.
   let practiceSession = model.active() || api.displayCompanion;
   const storageKey = name => { if (model.active()) practiceSession = true; return (practiceSession ? prefix : '') + name; };
   api.storage = {
-    getItem(name) { try { return real.getItem(storageKey(name)); } catch { return null; } },
-    setItem(name, value) { try { real.setItem(storageKey(name), value); } catch {} },
-    removeItem(name) { try { real.removeItem(storageKey(name)); } catch {} }
+    getItem(name) { if (!companionSessionValid()) return null; try { return real.getItem(storageKey(name)); } catch { return null; } },
+    setItem(name, value) { if (!companionSessionValid()) return; try { real.setItem(storageKey(name), value); } catch {} },
+    removeItem(name) { if (!companionSessionValid()) return; try { real.removeItem(storageKey(name)); } catch {} }
   };
   api.clearPractice = () => {
     try { Object.keys(real).filter(name => name.startsWith(prefix)).forEach(name => real.removeItem(name)); } catch {}
@@ -390,7 +407,7 @@
   }
   if (model.active() && !model.state.sessionId && !api.displayCompanion) model.state.sessionId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
   api.syncScope = api.displayCompanion ? 'guide:' + params.get('practice') : model.active() ? 'guide:' + model.state.sessionId : 'desktop';
-  api.displayValid = !api.displayCompanion || (model.active() && model.lesson.id === 'two-displays' && params.get('practice') === model.state.sessionId);
+  Object.defineProperty(api,'displayValid',{enumerable:true,get:companionSessionValid});
   api.finish = (status, choice = "keep") => {
     // A first-run learner keeps their work. Repeat lessons never touch their real session.
     if (['clean','demo'].includes(choice)) root.SpatialWorkspaceSetup.reset(real,choice);
