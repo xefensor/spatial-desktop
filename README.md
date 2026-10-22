@@ -1,44 +1,40 @@
 # Spatial Desktop
 
-**A tactile, project-centred computing environment — work in progress.**
+**A desktop experiment about keeping track of work — and finding your way back to it. Work in progress.**
 
-A browser prototype designed by Xef, exploring Workspaces, Projects, tiled windows and movable panels with live widgets.
+I started Spatial Desktop after watching [Scott Jenson’s talk](https://media.ccc.de/v/kde2026-7-are_we_really_going_to_use_the_same_desktop_ux_forever). My own frustrations with overlapping windows shaped the design: several apps, documents and browser pages quickly become difficult to follow, especially when another task interrupts me.
 
-[Try the desktop](https://xefensor.github.io/spatial-desktop/) · [Desktop Guide](https://xefensor.github.io/spatial-desktop/?guide=start) · [Design philosophy by Xef](https://xefensor.github.io/spatial-desktop/philosophy.html)
+This browser prototype explores how windows, ordinary files, projects and activity history can support the same work together. The question is whether those connections make work easier to follow and resume, while keeping the effort of organizing it low.
 
-![Earlier Spatial Desktop design with tiled apps and four Areas](docs/images/desktop-2026-10-12.jpg)
+[Try the desktop](https://xefensor.github.io/spatial-desktop/) · [Desktop Guide](https://xefensor.github.io/spatial-desktop/?guide=start) · [Read the design notes](https://xefensor.github.io/spatial-desktop/philosophy.html)
 
-*Historical capture from 12 October 2026, before the panel and widget redesign.*
+![Website Launch project with tiled windows, a numbered app hotbar and panels for files and tools](dist/images/design-notes/desktop-project.jpg)
 
-## Try the workflow
+*The current panel and widget design, shown in the Website Launch demo project.*
 
-- **Open and arrange apps.** Windows tile automatically, with numbers in their title bars. Park a window as an app card, or float it when placement matters. Supported apps can open independent instances.
-- **Keep work together.** Projects have a folder, windows and desktop stack. Workspaces separate broader contexts, including their own Home folders and app data. Background services are system-wide.
-- **Arrange your tools.** Panels contain live widgets such as Apps, Files, Assistant, Clock and System controls. Compact and expanded panels keep the same order and actions. Click an icon for temporary content, or use **Keep expanded**. Right-click a panel → **Edit layout** to move widgets, add Spacers and arrange panels. Resize the panel at its border; layouts save per Workspace.
-- **Work with files.** Create a note, save it to a folder and reopen it. Rename, copy, move or recover files from Trash. Clipboard history stays private to each Workspace. Pack a Project as a ZIP that also gathers linked local files.
-- **Ask Assistant.** Turn on **Context** beside chat to include readable demo content from open apps and documents in the current Workspace or Project when you send. You can also highlight text or select files, then use **Ask Assistant**, **F2+A** or drag a source into chat. Try `Summarize this note.`, `Make a checklist from this note.` or `Draft a note from this text.`; provide two readable sources for `Compare these two sources.` **Examples** below the message field lists supported requests and guided **Desktop tasks**. Replies follow fixed local rules. Reviewed conversions create actual browser-local files. The context’s **Assistant** folder is the default working location.
-- **Speak or listen.** The microphone button starts or stops voice input. In **Voice options**, choose **Manual** to dictate into a draft, **Wake phrase** to begin each request with “Hey Assistant”, or **Continuous** to send finished utterances without an activation phrase. **Read replies aloud** works independently. Voice needs browser support; wake activation requires on-device recognition and an available language pack. Where supported, **Install English pack** in Voice options downloads the pack; start the microphone afterward to listen. Manual and Continuous recognition may use the browser’s online service. Listening starts only when you choose it and stops when you change context.
-- **Return to the right conversation.** Each Workspace and Project remembers its active chat, draft and attachments. First entry starts a chat; returning restores your last one. Switching apps or virtual desktops keeps the current conversation.
-- **Find your place.** **F2 / Super** opens Overview and search. In an expanded panel, its button pairs the Overview icon with the current Workspace name; compact panels keep the icon. Its horizontal tabs are **Windows**, **Apps**, **Projects & Files**, **Timeline** and **System**. **Meta+Tab / F2+Tab** opens the desktop map.
-- **Use a display.** **Display control** beside chat grants scripted control of the current display for the current Workspace or Project, including your only **Main workspace** display. On another display, choose **Extended workspace** to follow the current desktop, or **Side space** to keep windows in place. Display role and control permission are independent; all roles use the same panels and widgets. **Context** and **Display control** are independent and start off in a new context. Turning control off pauses work without clearing it; **Take over** and **Continue** separately pause and resume a task. Changing context interrupts unfinished scripted work and keeps its captured inputs in the original chat. On Main or Extended workspace, changing desktops also interrupts display steps while retaining the conversation.
+## What the experiment connects
 
-**System → Devices & session** adds network choice, device pairing, sound, a sample USB transfer and session controls. **Do Not Disturb** quiets alerts while retaining them.
+- **A visible map of open work.** Automatic tiling keeps windows beside each other. Parking gives a window a visible place when it is set aside, sometimes with useful content or controls. Mouse scrolling moves between vertical desktops; edge markers and the desktop map show where applications are. Individual windows have hotbar numbers, including separate instances of the same app.
+- **Projects built around an activity.** A project brings together its folder, resources, windows and column of desktops. It might represent one Jira request or an entire video edit. Materials belong to the activity as a whole and remain ordinary files, available through Files and different apps. Working without a project is supported too.
+- **Several ways back to the same work.** Overview brings together Windows, Apps, Projects & Files, Timeline and System. Timeline places recorded activity beside calendar events, tasks and reminders. Sessions provide a route back through time and context when a filename is hard to remember. Recorded origins, versions and source relationships help explain how saved materials connect.
+- **Separate work and personal environments.** Each Workspace has its own Home folder, app data, browser history, clipboard, notifications and panel layout. Files and windows can be deliberately transferred. Appearance, hardware connections and master sound belong to the computer as a whole; the browser demo does not implement operating-system security isolation.
+- **An Assistant in the shared workspace.** Assistant conversations and the default Assistant working folder follow the current Workspace or Project. Readable context and permission to control a display are separate choices. Scripted examples explore working with files and normal windows while the user watches, pauses or takes over. Voice input offers manual dictation, a wake phrase or continuous requests; reading replies aloud is controlled separately and browser support varies.
 
-The populated demo starts General with Firefox and Personal notes together, with Documents on Desktop 2 and only the left panel visible. School opens its Urban Ecology research project; Work opens Website Launch with its preview and checklist. Gaming keeps the game on Desktop 1 and planning tools on Desktop 2. Other demo Workspaces expose Apps on the left and Files on the right, with Assistant one click away; narrower viewports compact the visible panels to leave room for windows. Clean desktops use the simpler panel layout. New demo sessions and explicit **Explore demo** resets get these scenes. Untouched older General panel defaults upgrade once; custom layouts and app sessions stay as saved.
+These ideas explore spatial, associative and episodic memory: finding work by where it is, what it relates to, or when it happened. The [design notes](https://xefensor.github.io/spatial-desktop/philosophy.html) explain the motivation, examples and open questions in more detail.
 
-Settings opens as a normal app window from System controls or Overview/search. Desktop Guide introduces interactions through short lessons and searchable topics, with optional help for details and examples. Its introduction uses a practice desktop and offers to restore your earlier session when you finish.
+## Try a whole activity
 
-## Useful details
+Start in **Work → Website Launch**. Explore its preview, checklist and source files, park a window, then switch to another project and return. Open **Overview** with **Super / F2** and try reaching the work through its windows, project files and Timeline.
 
-Firefox and Steam show previews when parked; integrated apps can expose live parking controls. Waiting dialogs stay attached to their app. **Hide preview** keeps private content out of previews and the desktop map.
+The populated demo also includes personal planning in General, Urban Ecology in School, a Short Film project and gaming. General starts with only the left panel visible. Panels contain movable widgets and save their arrangement per Workspace; right-click a panel and choose **Edit layout**. The interface uses opaque, rounded ABS app windows and square glass panels.
 
-Left-click **Close** closes the window while needed activity may continue in the background; middle-click force quits that instance. Background apps stay available at the bottom of Apps across Workspaces.
+The [Desktop Guide](https://xefensor.github.io/spatial-desktop/?guide=start) offers practice lessons. The [prototype reference](docs/prototype-reference.md) covers controls, files, Assistant examples, voice, displays and current limitations. [Panels and widgets](docs/panels-and-widgets.md) documents layout behavior.
 
-Fallout demonstrates a Gamescope-style fixed-resolution screen that can tile or fill the display. **Meta+F / F2+F** switches between them; **Meta+D / F2+D** tiles it. Steam adds local chats, guides and notes, with separate data per Workspace.
+## Prototype scope
 
-The interface uses opaque ABS for app content and translucent glass for panels, widgets and menus. Optional explanations live in Details; current scope, important state and action feedback remain visible.
+Applications and system behavior are simulated. Files and saved state live in browser storage. Assistant replies follow local scripted rules; it is not connected to an AI model. Calendars and plans are local. The fullscreen game illustrates a Gamescope-style transition; native Gamescope and desktop integration remain future work.
 
-[Panels and widgets](docs/panels-and-widgets.md) · [Full controls and prototype reference](docs/prototype-reference.md) · [UI and UX notes](docs/ui-ux-review.md)
+The experiment is intended for trying a workflow: gather materials, make something, get interrupted and return later. Feedback on that experience will help decide what belongs in a native prototype.
 
 ## Run locally
 
@@ -52,17 +48,13 @@ Open **http://localhost:8000**. State is saved in browser storage. Use another p
 
 ## Develop
 
-Source lives in `dist/`; checks live in `scripts/`. Pushes to `main` run the [GitHub Pages workflow](.github/workflows/pages.yml) and publish `dist/`.
-
-[Agent instructions](AGENTS.md) record Xef's default workflow: verify requested project changes, commit and push them to GitHub unless he explicitly asks for a preview without publishing.
-
-Install the development-only DOM test dependency first with `npm ci`.
+Source lives in `dist/`; checks live in `scripts/`. Pushes to `main` run the [GitHub Pages workflow](.github/workflows/pages.yml) and publish `dist/`. Install the development-only DOM test dependency with `npm ci`, then run:
 
 ```sh
 for file in dist/*.js; do node --check "$file" || exit 1; done
 for file in scripts/check-*.cjs; do node "$file" || exit 1; done
 ```
 
-[Controls and prototype reference](docs/prototype-reference.md) · [UI notes](docs/ui-ux-review.md) · [Source history](docs/history/README.md)
+[Agent instructions](AGENTS.md) · [UI and UX notes](docs/ui-ux-review.md) · [Historical designs](docs/history/README.md)
 
-This is an interaction prototype with simulated apps, folders and system actions. Assistant replies are scripted; calendars and plans are local. Native OS integration remains future work. Reference media retain their individual [credits and licences](dist/images/philosophy/credits.json).
+Demo captures: [sources](dist/images/design-notes/credits.json). Reference media retain their individual [credits and licences](dist/images/philosophy/credits.json).
