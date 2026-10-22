@@ -123,6 +123,31 @@
   // A shared time map anchors both lanes precisely. Busy moments expand to
   // keep actions readable; calendar blocks span the same start/end positions.
   function dayKey(time){const d=new Date(time);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+  // Prefer recorded identity over a display name. A path can bridge an older
+  // file event to its canonical item only when that path has one known owner.
+  function sessionMaterials(events){
+    const ordered=events.slice().sort((a,b)=>a.time-b.time||a.id.localeCompare(b.id)),aliases=new Map(),materials=new Map();
+    const location=e=>e.address?'url:'+e.address:e.path?(e.type==='file.folder'||e.type==='assistant.output'&&!e.itemId?'folder:':'path:')+e.path:'';
+    for(const e of ordered)if(e.itemId&&location(e)){const key=e.workspace+':'+location(e);if(!aliases.has(key))aliases.set(key,new Set());aliases.get(key).add(e.itemId);}
+    const detailedApps=new Set(ordered.filter(e=>e.itemId||location(e)).map(e=>e.workspace+':'+e.app).filter(key=>!key.endsWith(':')));
+    for(const e of ordered){
+      const loc=location(e),owners=aliases.get(e.workspace+':'+loc),itemId=e.itemId||(owners?.size===1?[...owners][0]:''),windowEvent=e.type.startsWith('app.');
+      if(!itemId&&!loc&&(!windowEvent||detailedApps.has(e.workspace+':'+e.app)))continue;
+      const kind=itemId?'item':e.address?'page':e.type==='file.folder'||e.type==='assistant.output'?'folder':loc?'file':'window';
+      const key=e.workspace+':'+(itemId?'item:'+itemId:loc||'window:'+(e.app||e.base||e.id));
+      let material=materials.get(key);
+      if(!material){material={key,kind,itemId,title:e.title||(e.path||'').split('/').at(-1)||e.address||'Window',path:e.path||'',address:e.address||'',event:e,openEvent:e,output:false,sourceIds:[]};materials.set(key,material);}
+      // Assistant request titles describe the request, not the input file.
+      if(!e.type.startsWith('assistant.'))material.title=e.title||material.title;
+      material.path=e.path||material.path;material.address=e.address||material.address;material.event=e;
+      if(!e.type.startsWith('assistant.')||!material.openEvent)material.openEvent=e;
+      if(e.type==='assistant.output'){material.output=true;material.sourceIds=[...new Set([...material.sourceIds,...(e.sourceIds||[])])];}
+    }
+    return [...materials.values()].sort((a,b)=>Number(b.output)-Number(a.output)||b.event.time-a.event.time||a.key.localeCompare(b.key));
+  }
+  // Fixed, clamped card sections match timeline-sessions.css. Both lanes use
+  // the same reservation so expanding a summary never moves calendar times.
+  function sessionHeight(session,open=false,eventsOpen=false){return open?316+Math.min(Math.max(1,sessionMaterials(session.events).length),3)*116+(eventsOpen?Math.min(session.events.length*76,304)+12:0):184;}
   // Sessions are a deterministic presentation of observed events, not inferred
   // tasks. Context changes and day boundaries always start a fresh session.
   function workSessions(events,{gap=12*60000}={}){
@@ -161,7 +186,7 @@
       activity(workspace){return [...notes.values()].filter(note=>note.workspace===workspace&&note.text.trim()).flatMap(note=>note.events.map(event=>({...event})));},
       snapshot(){return Object.fromEntries([...notes].map(([id,note])=>[id,{...note,events:note.events.map(event=>({...event}))}]));}};
   }
-  function lanes(activity,planned,{now=Date.now(),day=dayKey(now),includeNow=false,groupActivity=false,expandedSessions=[],...filter}={}){
+  function lanes(activity,planned,{now=Date.now(),day=dayKey(now),includeNow=false,groupActivity=false,expandedSessions=[],expandedEventSessions=[],...filter}={}){
     const midnight=new Date(day+'T00:00:00').getTime(),next=new Date(day+'T00:00:00');next.setDate(next.getDate()+1);const finish=next.getTime(),quarter=15*60000;
     const rows=[...activity,...planned].filter(e=>matches(e,filter)).map(e=>e.planned&&e.done&&e.doneTime?{...e,dueTime:e.time,time:e.doneTime}:e);
     const days=[...new Set([day,...rows.flatMap(e=>[dayKey(e.time),...(e.endTime?[dayKey(e.endTime-1)]:[])])])].sort();
@@ -186,8 +211,8 @@
     const start=midnight+Math.floor(((anchor?Math.min(first,now):first)-midnight)/3600000)*3600000;
     const end=Math.min(finish,Math.max(start+3600000,midnight+Math.ceil(((anchor?Math.max(last,now+quarter):last)-midnight)/3600000)*3600000));
     const tickTimes=Array.from({length:Math.round((end-start)/quarter)+1},(_,i)=>start+i*quarter);
-    const reservations=new Map(),sessionHeight=session=>session.total>1?(expandedSessions.includes(session.id)?250+session.events.length*76:112):66;
-    if(groupActivity){for(const session of sessionRows.values())reservations.set(session.time,(reservations.get(session.time)||0)+sessionHeight(session));}
+    const reservations=new Map(),heightFor=session=>sessionHeight(session,expandedSessions.includes(session.id),expandedEventSessions.includes(session.id));
+    if(groupActivity){for(const session of sessionRows.values())reservations.set(session.time,(reservations.get(session.time)||0)+heightFor(session));}
     else for(const [time,events] of groups)reservations.set(time,events.length*58+8);
     const knots=[...new Set([start,end,...tickTimes,...groups.keys(),...visible.filter(e=>e.planned).flatMap(e=>[Math.max(start,e.time),Math.min(end,e.endTime||e.time+pointSpan)])])].sort((a,b)=>a-b);
     const positions=[0];for(let i=1;i<knots.length;i++)positions.push(positions[i-1]+Math.max((knots[i]-knots[i-1])/60000*scale,reservations.get(knots[i-1])||0));
@@ -196,7 +221,7 @@
     // Pack overlapping plans into parallel columns without moving their times.
     let cluster=[],clusterEnd=0;const pack=()=>{const ends=[];for(const e of cluster){let col=ends.findIndex(end=>end<=e.start);if(col<0)col=ends.length;ends[col]=e.finish;e.column=col;}cluster.forEach(e=>e.columns=ends.length);};
     for(const e of calendar){if(cluster.length&&e.start>=clusterEnd){pack();cluster=[];clusterEnd=0;}cluster.push(e);clusterEnd=Math.max(clusterEnd,e.finish);}pack();
-    const offsets=new Map(),activityRows=groupActivity?[...sessionRows.values()].map(session=>{const offset=offsets.get(session.time)||0;offsets.set(session.time,offset+sessionHeight(session));return {events:session.events,session:session.total>1?session:null,top:y(session.time)+offset};}):[...groups].map(([time,events])=>({events,top:y(time)}));
+    const offsets=new Map(),activityRows=groupActivity?[...sessionRows.values()].map(session=>{const offset=offsets.get(session.time)||0;offsets.set(session.time,offset+heightFor(session));return {events:session.events,session,top:y(session.time)+offset};}):[...groups].map(([time,events])=>({events,top:y(time)}));
     return {day,days,start,end,scale,height:y(end),ticks:tickTimes.map(time=>({time,top:y(time)})),
       activity:activityRows,
       plans:calendar.map(e=>({...e,top:y(e.start),height:y(e.finish)-y(e.start)})),nowTop:y(now)};
@@ -226,5 +251,5 @@
     add('gaming','headset','reminder.due','Charge the headset',0,19,45);
     return events;
   }
-  return {create,normalize,matches,limit,sections,neighbour,demoExamples,createPlanner,view,dayKey,workSessions,createSessionNotes,lanes,demoPlans};
+  return {create,normalize,matches,limit,sections,neighbour,demoExamples,createPlanner,view,dayKey,sessionMaterials,sessionHeight,workSessions,createSessionNotes,lanes,demoPlans};
 });

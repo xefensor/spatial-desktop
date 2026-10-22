@@ -38,7 +38,7 @@ Panels and widgets have no headers or panel footers. Widget movement is availabl
 
 Workspaces separate Home folders, app sessions, browser history, multimedia, clipboard history, notifications and panel layouts. Projects own a folder, resources, windows and desktop column. Downloads follow the Workspace unless a Project opts into its own Downloads folder.
 
-Files exposes folders, Project management and Stash. Create, import, rename, copy, move, trash and recover files. Stash retains text, files and source references within the active context. Notes can bind to browser-local files and reopen with their content intact.
+Files exposes folders and Project management. Create, import, rename, copy, move, trash and recover ordinary files. Saved materials and source references stay in the active context’s folders. Notes can bind to browser-local files and reopen with their content intact.
 
 Project ZIP packing gathers the Project folder and linked local resources, deduplicates repeated sources and resolves name collisions. Web links stay links. Import reviews the Project without modifying originals. Browser-local files and simulated paths are not native filesystem access.
 
@@ -49,6 +49,16 @@ Project ZIP packing gathers the Project folder and linked local resources, dedup
 System groups current desktop requests, Project plans, Workspace content and shared controls. Notification history and other Workspace unread badges retain their scopes. Previews require an explicit action and do not switch Workspace automatically. Do Not Disturb quiets delivery while retaining notifications.
 
 Settings is a regular app, available through Overview/search and the labeled Settings action in System controls. Explicit custom Settings favorites remain supported. **Panels & widgets** describes the current arrangement controls. Preferences retain their System, Workspace or Project scope.
+
+## Timeline
+
+Timeline aligns recorded desktop activity with calendar events, tasks and reminders on one shared time map. Sessions group nearby events within the same Workspace and Project; explicit context changes, day boundaries and longer pauses start new sessions. Example activity remains labelled and separate from real activity.
+
+A closed session card previews its saved note, several materials and recorded outputs. Opening it shows materials first: repeated visits to the same page and repeated actions on a file collapse into one row with its latest recorded activity. Canonical file identity takes precedence; a path joins a known item only when that path has one unambiguous owner in the session. Different folders, distinct window instances and Workspace boundaries stay separate. Output folders are labelled as folders. Source relationships appear only when recorded and accessible in the current Workspace.
+
+Materials reopen through their file, page, window or retained item history. Notes save locally with the session’s original events. **Show chronology** reveals the exact event list separately. Both material and event lists scroll within the expanded card, and expanding a card keeps calendar timestamps aligned. **Sessions / Events** switches between grouped and individual activity.
+
+Search currently uses recorded event metadata. Searching session notes and file contents is a later improvement. Timeline reopens related materials; it does not restore a historical computer state or infer topics automatically.
 
 ## Assistant and displays
 
@@ -84,7 +94,7 @@ Voice input uses the browser’s speech-recognition support and is unavailable w
 
 ## Desktop Guide
 
-Open Desktop Guide through search or the README's direct link. It teaches controls, Apps, tiling, floating, Overview, maximize/fullscreen, parking, desktops, Files/Stash, Assistant, Projects, Workspaces, panel arrangement and displays. Practice uses isolated state; finishing offers a clean desktop or demo content. Skipping and reopening preserve progress.
+Open Desktop Guide through search or the README's direct link. It teaches controls, Apps, tiling, floating, Overview, maximize/fullscreen, parking, desktops, Files, Assistant, Projects, Workspaces, panel arrangement and displays. Practice uses isolated state; finishing offers a clean desktop or demo content. Skipping and reopening preserve progress.
 
 Guide targets real widgets, context menus, the edit toolbar and app controls. Temporary gates do not rewrite saved layouts. Arrangement instructions begin with a right-click on a panel.
 

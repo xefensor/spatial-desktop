@@ -412,3 +412,38 @@ for(const corrupt of ['null','[]','42','"apps"','{']){
   restored=reloadSections({legacy:corrupt});assert.equal(restored.active(),'windows','Invalid old preference maps cannot break migration: '+corrupt);
 }
 console.log('Overview preferences passed: Windows default, versioned Apps migration, per-Workspace choices, provider retention and invalid storage recovery.');
+
+// Exercise the actual material-summary renderer and delegated controls.
+context.activeWorkspace='general';context.column='site';
+const summaryTimeline=context.SpatialTimelineDesktop;
+let summaryClock=Date.now();context.Date=class extends Date{static now(){return summaryClock+=1000;}};
+const clickTimeline=dataset=>make('#timelineEntries').listeners.click({target:{closest:selector=>selector.includes('session-events')?dataset.timelineSessionEvents?{dataset}:null:selector==='[data-timeline-session]'?dataset.timelineSession?{dataset}:null:selector==='[data-timeline-item]'?dataset.timelineItem?{dataset}:null:selector==='[data-timeline-folder]'?dataset.timelineFolder?{dataset}:null:dataset.timelineOpen?{dataset}:null}});
+context.SpatialItemHistoryDesktop={get:id=>id==='canonical-note'?{title:'Launch note',relations:[]}:null,open:(id,options)=>calls.push(['item',id,options])};
+summaryTimeline.record('file.open',{app:'dolphin',title:'Launch note',path:'/projects/site/launch.md',itemId:'canonical-note'});
+summaryTimeline.record('assistant.use',{title:'Read the note',path:'/projects/site/launch.md',itemId:'canonical-note',chatId:'chat',turnId:'one',sourceIds:['canonical-note']});
+summaryTimeline.render();
+let rendered=make('#timelineEntries').innerHTML;
+const sessionId=T.workSessions(summaryTimeline.snapshot().activity).find(s=>s.events.some(e=>e.itemId==='canonical-note')).id;
+clickTimeline({timelineSession:sessionId});
+rendered=make('#timelineEntries').innerHTML;
+assert(rendered.includes('Session materials')&&rendered.includes('Latest recorded activity'));
+assert(!rendered.includes('aria-label="Exact session events"'),'Chronology is secondary and starts collapsed');
+assert.equal((rendered.match(/data-timeline-item="canonical-note"/g)||[]).length,1,'The same file used in Assistant is presented once');
+assert(rendered.includes('Used in Assistant'),'Latest activity remains visible on the deduplicated material');
+const id=summaryTimeline.snapshot().activity.find(e=>e.itemId==='canonical-note'&&e.type==='assistant.use').id;
+clickTimeline({timelineItem:'canonical-note',timelineItemEvent:id});
+assert(calls.some(call=>call[0]==='item'&&call[1]==='canonical-note'),'A material opens item history even when its latest action was an Assistant chat');
+const beforeForeign=calls.length;clickTimeline({timelineItem:'outside-workspace',timelineItemEvent:id});assert.equal(calls.length,beforeForeign,'Inaccessible canonical items cannot be opened through a summary');
+make('#timelineEntries').listeners.input({target:{closest:()=>({dataset:{timelineSessionNote:sessionId},value:'Continue <here> & review.'})}});
+clickTimeline({timelineSession:sessionId});
+assert(make('#timelineEntries').innerHTML.includes('Continue &lt;here&gt; &amp; review.'),'A saved note is visible and escaped on the closed card');
+clickTimeline({timelineSession:sessionId});clickTimeline({timelineSessionEvents:sessionId});
+assert(make('#timelineEntries').innerHTML.includes('aria-label="Exact session events"'),'The separate disclosure retains the full chronological event view');
+assert(Object.values(JSON.parse(data.get('spatial-timeline-session-notes-v1'))).some(n=>n.text==='Continue <here> & review.'),'Existing note persistence is preserved');
+console.log('Timeline summary UI passed: collapsed notes, deduplicated materials, latest activity, item actions, Workspace privacy and secondary chronology.');
+
+summaryTimeline.record('assistant.output',{title:'Converted file',path:'/projects/site/Assistant',chatId:'chat',turnId:'conversion'});
+const folderEvent=summaryTimeline.snapshot().activity.find(e=>e.turnId==='conversion');
+clickTimeline({timelineFolder:folderEvent.id});pending.splice(0).forEach(fn=>fn());
+assert(calls.some(call=>call[0]==='folder'&&call[2]==='/projects/site/Assistant'),'A recorded output folder opens Files instead of only its chat');
+console.log('Timeline output folder navigation passed.');

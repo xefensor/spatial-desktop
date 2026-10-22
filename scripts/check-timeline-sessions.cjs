@@ -67,3 +67,28 @@ assistantModel.add(event('second-turn',at(14)+1000,{type:'assistant.use',chatId:
 assert.equal(assistantModel.list('work').length,2,'Distinct Assistant turns never coalesce into one event');
 assert.deepEqual(T.create(assistantModel.snapshot()).list('work')[0].sourceIds,['chart']);
 console.log('Timeline sessions passed: explicit context grouping, exact events, plan separation, filter stability, shared geometry, Workspace privacy, retained annotations and Assistant lineage IDs.');
+
+// Material summaries preserve identity and exact history without guessing topics.
+const summary=T.sessionMaterials(sessions[0].events);
+assert.equal(summary.length,2,'A file path bridges to its one canonical item, rather than producing a duplicate');
+const chart=summary.find(row=>row.itemId==='canonical-chart');
+assert.equal(chart.event.id,'used','The material shows its latest recorded activity');
+assert.equal(chart.title,'Chart','Assistant request wording does not replace an input file title');
+assert.equal(chart.output,false);assert.deepEqual(chart.sourceIds,[],'Co-used inputs are not labelled as derived from each other');
+assert.equal(summary[0].itemId,'summary');assert(summary[0].output,'Recorded outputs are surfaced first');
+assert.equal(T.sessionMaterials([event('one',at(10),{itemId:'old'}),event('two',at(10,1),{itemId:'new'}),event('unknown',at(10,2))]).length,3,'An ambiguous reused path never merges distinct canonical files');
+assert.equal(T.sessionMaterials([event('one',at(10)),event('two',at(10,1),{path:'/elsewhere/chart.svg'})]).length,2,'Identical filenames in different folders stay separate');
+assert.equal(T.sessionMaterials([event('one',at(10)),event('two',at(10,1),{workspace:'personal'})]).length,2,'Identity never crosses Workspace ownership');
+const pages=T.sessionMaterials([event('one',at(10),{type:'browser.visit',path:'',address:'https://example.com/a'}),event('two',at(10,1),{type:'browser.visit',path:'',address:'https://example.com/a'}),event('three',at(10,2),{type:'browser.visit',path:'',address:'https://example.com/b'})]);
+assert.equal(pages.length,2,'Repeated visits collapse by exact address, not by page title');
+assert.equal(T.sessionMaterials([event('one',at(10),{type:'app.open',path:'',app:'notes--one'}),event('two',at(10,1),{type:'app.park',path:'',app:'notes--one'}),event('three',at(10,2),{type:'app.open',path:'',app:'notes--two'})]).length,2,'Separate unsaved window instances remain distinct');
+assert.equal(T.sessionMaterials([event('one',at(10),{type:'app.open',path:'',app:'files'}),event('two',at(10,1),{app:'files'})]).length,1,'A file-bearing window does not add a redundant generic material');
+const outputFolder=T.sessionMaterials([event('out',at(10),{type:'assistant.output',path:'/output',sourceIds:['input']}),event('folder',at(10,1),{type:'file.folder',path:'/output'})]);
+assert.equal(outputFolder.length,1);assert.equal(outputFolder[0].kind,'folder');assert.deepEqual(outputFolder[0].sourceIds,['input']);assert(outputFolder[0].output);
+assert.equal(sessions[0].events.length,5,'Summarizing never rewrites the exact event list');
+const chronology=T.lanes(activity.filter(event=>event.workspace==='work'&&!event.planned),[plan],{day,groupActivity:true,expandedSessions:[group.session.id],expandedEventSessions:[group.session.id]});
+assert(chronology.height>expanded.height,'Exact chronology has its own additional height reservation');
+assert.equal(chronology.plans[0].top+chronology.plans[0].height,chronology.ticks.find(tick=>tick.time===at(10,15)).top,'Chronology expansion preserves both lanes’ calendar time alignment');
+const many={events:Array.from({length:100},(_,i)=>event('m'+i,at(10)+i*1000,{path:'/file/'+i}))};
+assert.equal(T.sessionHeight(many,true,true),316+348+316,'Long materials and chronology lists scroll inside bounded sections');
+console.log('Timeline material summaries passed: canonical/path identity, ambiguous paths, Workspace isolation, repeated pages, window instances, latest activity, explicit outputs and bounded shared geometry.');

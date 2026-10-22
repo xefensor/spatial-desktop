@@ -12,7 +12,7 @@
   const model=SpatialTimeline.create(read(historyKey));
   const plannerKey='spatial-workspace-planner-v1',planner=SpatialTimeline.createPlanner(read(plannerKey));
   const sessionNotesKey='spatial-timeline-session-notes-v1',sessionNotes=SpatialTimeline.createSessionNotes(read(sessionNotesKey)),groupingKey='spatial-timeline-grouping-v1';
-  const expandedSessions=new Set();let groupActivity=read(groupingKey).mode!=='events';
+  const expandedSessions=new Set(),expandedSessionEvents=new Set();let groupActivity=read(groupingKey).mode!=='events';
   let preferred=preferences(),active='windows',panelOrder='',scrollTimer=0,wheelTimer=0,wheelTotal=0,wheelLast=0,wheelLocked=false,scrolling=false,recordingSuspended=0,trackWidth=0,selection=0,formWorkspace=activeWorkspace;
   const reduced=()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const limited=()=>globalThis.SpatialGuide?.model.active()&&!SpatialGuide.model.allows('all');
@@ -175,13 +175,13 @@
       page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||'',stashId:data.stashId||'',itemId:data.itemId||'',itemVersion:data.itemVersion||'',outputId:data.outputId||'',chatId:data.chatId||'',turnId:data.turnId||'',sourceIds:data.sourceIds||[],detail:data.detail||''});
     if(event){save();if($('#universalSearch').classList.contains('is-open'))renderTimeline();}
   }
-  const descriptions={'stash.save':'Saved to Stash','assistant.use':'Used in Assistant','assistant.output':'Saved Assistant output','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
+  const descriptions={'stash.save':'Saved file','assistant.use':'Used in Assistant','assistant.output':'Saved Assistant output','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
   function actionFor(event){
     if(event.type==='session'||event.type==='workspace')return '';
     if(event.type.startsWith('assistant.')&&event.chatId)return 'Open chat';
     if(event.itemId)return 'View item';
     if(event.project&&!projectSpaces[event.project])return '';
-    if(event.type==='stash.save')return 'Open Stash';
+    if(event.type==='stash.save')return 'Open file';
     if(event.type.startsWith('file.'))return 'Open';
     if(event.type==='browser.visit')return 'Open';
     if(event.type.startsWith('project.')||event.type==='desktop.switch')return 'Go to';
@@ -199,7 +199,7 @@
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const now=Date.now(),today=SpatialTimeline.dayKey(now);
     if(timelineDayWorkspace!==activeWorkspace){timelineDayWorkspace=activeWorkspace;timelineDay=today;}
-    const view=SpatialTimeline.lanes(timelineActivity(),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value,groupActivity,expandedSessions:[...expandedSessions]});
+    const view=SpatialTimeline.lanes(timelineActivity(),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value,groupActivity,expandedSessions:[...expandedSessions],expandedEventSessions:[...expandedSessionEvents]});
     const groupingButton=$('#timelineGrouping');if(groupingButton){groupingButton.textContent=groupActivity?'Sessions':'Events';groupingButton.setAttribute('aria-pressed',String(groupActivity));groupingButton.setAttribute('aria-label',groupActivity?'Sessions shown. Show individual events':'Individual events shown. Group into sessions');}
     $('#timelineDay').innerHTML=view.days.map(day=>'<option value="'+day+'"'+(day===timelineDay?' selected':'')+'>'+escapeHtml(day===today?'Today':new Date(day+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</option>').join('');
     $('#timelineDay').value=timelineDay;
@@ -220,10 +220,27 @@
     }
     const ticks=view.ticks.map(t=>'<div class="timeline-time-rule" style="top:'+t.top+'px"><time>'+escapeHtml(clock(t.time))+'</time></div>').join('');
     function eventCards(events){return events.map(e=>'<article class="timeline-entry" role="listitem" title="'+escapeHtml([descriptions[e.type],e.path||e.address].filter(Boolean).join(' · '))+'">'+card(e)+'</article>').join('');}
+    function materialInfo(material){
+      const item=material.itemId?globalThis.SpatialItemHistoryDesktop?.get(material.itemId):null;
+      const title=item?.title||material.title;
+      const ids=[...new Set([...material.sourceIds,...(item?.relations||[]).filter(r=>['derivedFrom','copiedFrom','quotation'].includes(r.relation)).map(r=>r.itemId)])].filter(id=>id!==material.itemId);
+      const sources=ids.map(id=>({id,item:globalThis.SpatialItemHistoryDesktop?.get(id)}));
+      return {title,item,sources};
+    }
+    function materialCard(material){
+      const {title,item,sources}=materialInfo(material),event=material.event,openEvent=material.openEvent;
+      const action=material.output&&material.kind==='folder'?'<button class="timeline-material-action" data-timeline-folder="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml('Open output folder '+material.path)+'">Open folder'+icon('i-right')+'</button>':item?'<button class="timeline-material-action" data-timeline-item="'+escapeHtml(material.itemId)+'" data-timeline-item-event="'+escapeHtml(event.id)+'" aria-label="'+escapeHtml('View item '+title)+'">View item'+icon('i-right')+'</button>':actionFor(openEvent)?'<button class="timeline-material-action" data-timeline-open="'+escapeHtml(openEvent.id)+'" aria-label="'+escapeHtml(actionFor(openEvent)+' '+title)+'">'+escapeHtml(actionFor(openEvent))+icon('i-right')+'</button>':'';
+      const location=material.path||material.address||'Open window';
+      const sourcesText=sources.length?'Sources: '+sources.map(source=>source.item?.title||'Unavailable in this Workspace').join(' · '):'';
+      return '<article class="timeline-material" role="listitem"><div class="timeline-material-heading"><b title="'+escapeHtml(title)+'">'+escapeHtml(title)+'</b>'+(material.output?'<span class="timeline-output-label">'+(material.kind==='folder'?'Output folder':'Output')+'</span>':'')+'</div><p class="timeline-material-location" title="'+escapeHtml(location)+'">'+escapeHtml(location)+'</p><p class="timeline-material-latest">'+escapeHtml(descriptions[event.type]||event.type)+' · <time datetime="'+new Date(event.time).toISOString()+'">'+escapeHtml(clock(event.time))+'</time></p><div class="timeline-material-footer"><small title="'+escapeHtml(sourcesText)+'">'+escapeHtml(sourcesText||(material.kind==='window'?'Window activity':material.kind==='folder'?'Folder':'') )+'</small>'+action+'</div></article>';
+    }
     function sessionCard(session){
-      const open=expandedSessions.has(session.id),note=sessionNotes.get(session.id,activeWorkspace),label=session.projectName?'Worked on '+session.projectName:'Desktop activity';
-      const counts=[session.materials?session.materials+' material'+(session.materials===1?'':'s'):'',session.outputs?session.outputs+' output'+(session.outputs===1?'':'s'):'',session.total+' event'+(session.total===1?'':'s')].filter(Boolean).join(' · '),matched=session.matched!==session.total?' · '+session.matched+' matching':'';
-      return '<section class="timeline-work-session'+(open?' is-expanded':'')+'" data-session-card="'+escapeHtml(session.id)+'"><button class="timeline-session-toggle" data-timeline-session="'+escapeHtml(session.id)+'" aria-expanded="'+open+'"><span class="timeline-session-mark">'+icon(session.project?'i-folder':'i-clock')+'</span><span><b>'+escapeHtml(label)+(session.example?'<span class="timeline-example-label">Example</span>':'')+'</b><span><time>'+escapeHtml(clock(session.time))+'–'+escapeHtml(clock(session.endTime))+'</time></span>'+(open?'<span>'+escapeHtml(counts+matched)+'</span>':'')+'<small>'+escapeHtml(open?'Hide details':'Details')+(note?.text?' · Note saved':'')+'</small></span>'+icon('i-down')+'</button>'+(open?'<div class="timeline-session-events" role="list" aria-label="Exact session events">'+eventCards(session.events)+'</div><label class="timeline-session-note">Note about this session<textarea data-timeline-session-note="'+escapeHtml(session.id)+'" maxlength="2000" rows="2" placeholder="What mattered, or where to continue…">'+escapeHtml(note?.text||'')+'</textarea><small>Saved locally with this session’s events.</small></label>':'')+'</section>';
+      const open=expandedSessions.has(session.id),eventsOpen=expandedSessionEvents.has(session.id),note=sessionNotes.get(session.id,activeWorkspace),label=session.projectName?'Worked on '+session.projectName:'Desktop activity';
+      const materials=SpatialTimeline.sessionMaterials(session.events),outputs=materials.filter(m=>m.output);
+      const counts=[materials.length+' material'+(materials.length===1?'':'s'),session.total+' event'+(session.total===1?'':'s')].join(' · '),matched=session.matched!==session.total?' · '+session.matched+' matching':'';
+      const names=rows=>rows.map(m=>materialInfo(m).title).join(' · ');
+      const preview=!open?'<span class="timeline-session-preview-note" title="'+escapeHtml(note?.text||'')+'">'+escapeHtml(note?.text||'No session note')+'</span><span class="timeline-session-preview-materials" title="'+escapeHtml(names(materials))+'">'+escapeHtml(materials.length?names(materials.slice(0,3))+(materials.length>3?' · +'+(materials.length-3)+' more':''):'No files or windows recorded')+'</span>'+(outputs.length?'<span class="timeline-session-preview-outputs" title="'+escapeHtml(names(outputs))+'">'+escapeHtml('Output: '+names(outputs))+'</span>':''):'';
+      return '<section class="timeline-work-session'+(open?' is-expanded':'')+'" data-session-card="'+escapeHtml(session.id)+'"><button class="timeline-session-toggle" data-timeline-session="'+escapeHtml(session.id)+'" aria-expanded="'+open+'"><span class="timeline-session-mark">'+icon(session.project?'i-folder':'i-clock')+'</span><span><b>'+escapeHtml(label)+(session.example?'<span class="timeline-example-label">Example</span>':'')+'</b><span><time>'+escapeHtml(clock(session.time))+'–'+escapeHtml(clock(session.endTime))+'</time> · '+escapeHtml(counts+matched)+'</span>'+preview+'<small>'+escapeHtml(open?'Hide materials':'Show materials')+'</small></span>'+icon('i-down')+'</button>'+(open?'<h5 class="timeline-materials-heading">Materials <small>Latest recorded activity</small></h5><div class="timeline-session-materials" role="list" aria-label="Session materials">'+(materials.length?materials.map(materialCard).join(''):'<p class="timeline-materials-empty">No files or windows recorded. The events below show context changes.</p>')+'</div><label class="timeline-session-note">Note about this session<textarea data-timeline-session-note="'+escapeHtml(session.id)+'" aria-label="'+escapeHtml('Note: '+label+' '+clock(session.time))+'" maxlength="2000" rows="2" placeholder="What mattered, or where to continue…">'+escapeHtml(note?.text||'')+'</textarea><small>Saved locally with this session’s events.</small></label><button class="timeline-events-toggle" data-timeline-session-events="'+escapeHtml(session.id)+'" aria-expanded="'+eventsOpen+'">'+escapeHtml((eventsOpen?'Hide':'Show')+' chronology ('+session.events.length+(session.matched!==session.total?' matching':'')+' events)')+icon('i-down')+'</button>'+(eventsOpen?'<div class="timeline-session-events" role="list" aria-label="Exact session events">'+eventCards(session.events)+'</div>':''):'')+'</section>';
     }
     const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+(group.session?sessionCard(group.session):eventCards(group.events))+'</div>').join('');
     const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" data-timeline-plan="'+escapeHtml(e.id)+'" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
@@ -265,8 +282,10 @@
     if(day){timelineDay=day;renderTimeline();}
   }));
   $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();});
-  function reopen(id){
-    const event=timelineActivity().find(event=>event.id===id);if(!event||!actionFor(event))return;
+  function reopen(id,outputFolder=false){
+    let event=timelineActivity().find(event=>event.id===id);if(!event)return;
+    if(outputFolder){if(event.type!=='assistant.output'||event.itemId||!event.path)return;event={...event,type:'file.folder',base:'dolphin'};}
+    if(!actionFor(event))return;
     if(event.type.startsWith('assistant.')&&event.chatId&&globalThis.SpatialAIDesktop?.revealChat){setUniversalSearchOpen(false);SpatialAIDesktop.revealChat(event.chatId,{turnId:event.turnId});return;}
     if(event.itemId&&globalThis.SpatialItemHistoryDesktop?.open){SpatialItemHistoryDesktop.open(event.itemId,{versionId:event.itemVersion,workspace:event.workspace});return;}
     setUniversalSearchOpen(false);
@@ -299,7 +318,13 @@
     };
     finish();
   }
-  $('#timelineEntries').addEventListener('click',event=>{const toggle=event.target.closest('[data-timeline-session]');if(toggle?.dataset.timelineSession){const id=toggle.dataset.timelineSession;if(expandedSessions.has(id))expandedSessions.delete(id);else expandedSessions.add(id);renderTimeline();return;}const action=event.target.closest('[data-timeline-open]');if(action)reopen(action.dataset.timelineOpen);});
+  $('#timelineEntries').addEventListener('click',event=>{
+    const toggle=event.target.closest('[data-timeline-session]');if(toggle?.dataset.timelineSession){const id=toggle.dataset.timelineSession;if(expandedSessions.has(id))expandedSessions.delete(id);else expandedSessions.add(id);renderTimeline();return;}
+    const chronology=event.target.closest('[data-timeline-session-events]');if(chronology?.dataset.timelineSessionEvents){const id=chronology.dataset.timelineSessionEvents;if(expandedSessionEvents.has(id))expandedSessionEvents.delete(id);else expandedSessionEvents.add(id);renderTimeline();return;}
+    const item=event.target.closest('[data-timeline-item]');if(item?.dataset.timelineItem){const recorded=timelineActivity().find(e=>e.id===item.dataset.timelineItemEvent&&e.workspace===activeWorkspace);if(recorded&&globalThis.SpatialItemHistoryDesktop?.get(item.dataset.timelineItem))SpatialItemHistoryDesktop.open(item.dataset.timelineItem,{workspace:activeWorkspace,versionId:recorded.itemVersion});return;}
+    const folder=event.target.closest('[data-timeline-folder]');if(folder?.dataset.timelineFolder){reopen(folder.dataset.timelineFolder,true);return;}
+    const action=event.target.closest('[data-timeline-open]');if(action?.dataset.timelineOpen)reopen(action.dataset.timelineOpen);
+  });
   $('#timelineEntries').addEventListener('input',event=>{
     const input=event.target.closest('[data-timeline-session-note]');if(!input?.dataset.timelineSessionNote)return;
     const session=SpatialTimeline.workSessions(timelineActivity()).find(session=>session.id===input.dataset.timelineSessionNote);if(!session)return;
