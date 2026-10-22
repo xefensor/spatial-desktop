@@ -58,7 +58,13 @@ A closed session card previews its saved note, several materials and recorded ou
 
 Materials reopen through their file, page, window or retained item history. Notes save locally with the session’s original events. **Show chronology** reveals the exact event list separately. Both material and event lists scroll within the expanded card, and expanding a card keeps calendar timestamps aligned. **Sessions / Events** switches between grouped and individual activity.
 
-Search currently uses recorded event metadata. Searching session notes and file contents is a later improvement. Timeline reopens related materials; it does not restore a historical computer state or infer topics automatically.
+Creating a local file and opening an available saved file records its canonical identity and known version. Bound Note Editor saves join the same file’s history and Timeline after the existing edit coalescing; repeated keystrokes do not create separate activity records. Failed and unchanged saves do not claim a new saved version.
+
+Search checks recorded event metadata, saved session notes and available file text in the current Workspace. Results identify the matching material, show an excerpt explaining the match and name the session and date. **Show session** returns to the surrounding work, including its other materials, outputs and full chronology. Search and type filters preserve the session’s identity and original events. Matching sessions on other recorded days remain reachable through the results and day navigation.
+
+Text matches distinguish a recorded saved version from a file’s current text. A saved-version result opens that exact available version; current-text results open the current file. File identity follows renames, while ambiguous or reused paths do not borrow another file’s content. Text is read from accessible local files or retained item history. For imported readable text files, search examines the first 1 MiB of saved bytes. Images, audio and PDF bytes are not transcribed or OCRed, and a source link alone does not supply the page’s body. Missing file bytes leave recorded metadata available.
+
+Timeline reopens related materials; it does not restore a historical computer state or infer topics automatically. Search does not fetch web pages or index files outside the browser demo.
 
 ## Assistant and displays
 

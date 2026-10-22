@@ -43,5 +43,17 @@
 .timeline-session-events{max-height:316px;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0 9px 12px}
 .timeline-session-events .timeline-entry{height:76px;min-height:76px;box-sizing:border-box;align-content:center}
 .timeline-session-events .timeline-entry p{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.timeline-search-results{flex:none;max-height:235px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--sd-glass-groove);margin:0 0 10px;padding:10px;background:var(--content-surface-raised);scrollbar-width:thin;font-size:11px}
+.timeline-search-results[hidden]{display:none}
+.timeline-search-status{margin:0 0 8px;color:var(--muted)}
+.timeline-search-session+article{border-top:1px solid var(--sd-glass-groove);margin-top:10px;padding-top:10px}
+.timeline-search-session header button{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;font-size:12px;cursor:pointer}
+.timeline-search-session header small{display:block;margin-top:4px;color:var(--workspace-accent,var(--blue));font-size:10px}
+.timeline-search-session ul{list-style:none;margin:8px 0;padding:0}
+.timeline-search-session li{margin:7px 0;padding-left:8px;border-left:2px solid var(--sd-glass-groove)}
+.timeline-search-session li b{display:block;font-size:10px;font-weight:500;color:var(--muted);overflow-wrap:anywhere}
+.timeline-search-session li p{margin:4px 0;font-size:11px;line-height:16px;overflow-wrap:anywhere;white-space:pre-wrap}
+.timeline-match-open{font:inherit;font-size:10px;color:var(--workspace-accent,var(--blue));padding:3px 0;border:0;background:transparent;cursor:pointer}
+.timeline-search-scope{display:block;margin-top:10px;font-size:9px;color:var(--muted)}
 @media(max-width:800px){.timeline-session-toggle{grid-template-columns:minmax(0,1fr) 14px;padding:10px 8px}.timeline-session-mark{display:none}.timeline-session-events{padding-inline:6px}.timeline-session-events .timeline-entry-action{font-size:9px}.timeline-session-note{padding-inline:8px}.timeline-materials-heading small{display:none}}
 @media(prefers-reduced-motion:reduce){.timeline-session-toggle>svg{transition:none}}

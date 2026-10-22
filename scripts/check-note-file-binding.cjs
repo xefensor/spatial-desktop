@@ -10,7 +10,7 @@ const source=fs.readFileSync(path.join(__dirname,'../dist/app-windows.js'),'utf8
 const slice=(first,last)=>source.slice(source.indexOf(first),source.indexOf(last,source.indexOf(first)));
 function environment(saved){
   const files=H.create(saved?.files),models=A.create(saved?.windows),writes=new Map(),timers=new Map(),history=History.create(saved?.history);
-  const fields=new Map(),frames=new Map();let timer=0,fail=false,ordinaryWrites=0;
+  const fields=new Map(),frames=new Map(),timeline=[];let timer=0,fail=false,ordinaryWrites=0;
   function field(selector,id){
     const key=id+selector;if(fields.has(key))return fields.get(key);
     const value={value:'',textContent:'',hidden:false,innerHTML:'',removeAttribute(name){this.removed=name;}};
@@ -25,7 +25,8 @@ function environment(saved){
     frameFor(id){if(!frames.has(id))frames.set(id,{dataset:{appFrame:id}});return frames.get(id);},
     $(selector,frame){return field(selector,frame.dataset.appFrame);},escapeHtml:String,icon:()=>'',prepareControlSemantics(){},
     desktopStorage:{setItem(key,value){if(fail&&key==='spatial-downloads-v1')throw Error('Quota exceeded');writes.set(key,value);}},
-    SpatialItemHistoryDesktop:{capture(item,options){history.upsert(item,options);},persist(){return true;}},
+    SpatialItemHistoryDesktop:{capture(item,options){return history.upsert(item,options);},persist(){return true;}},
+    SpatialTimelineDesktop:{record(type,data){timeline.push({type,...data});}},
     setTimeout(callback){const id=++timer;timers.set(id,callback);return id;},clearTimeout(id){timers.delete(id);},
     persistDownloads(){},refreshDownloadUi(){},persistWorkspaceNote(){ordinaryWrites++;},saveAppWindows(){writes.set('notes',JSON.stringify(models.snapshot()));}
   });
@@ -35,7 +36,7 @@ function environment(saved){
     const frame=c.frameFor(id),target={value:text,closest(){return frame;},matches(selector){return selector.includes('.notes-layout textarea');}};
     c.appWindowInput({target,stopImmediatePropagation(){}});
   }
-  return {c,files,models,writes,timers,history,edit,field,fail(value){fail=value;},ordinaryWrites:()=>ordinaryWrites,
+  return {c,files,models,writes,timers,history,timeline,edit,field,fail(value){fail=value;},ordinaryWrites:()=>ordinaryWrites,
     note:(id='notes--1')=>A.activeNote(c.appWindowModel(id)),snapshot:()=>({files:files.snapshot(),windows:models.snapshot(),history:history.snapshot()})};
 }
 const e=environment();
@@ -54,12 +55,18 @@ assert.equal(e.files.list(saved.directory)[0].content,e.note().text,'Input updat
 assert.equal(JSON.parse(e.writes.get('spatial-downloads-v1')).files[0].content,e.note().text,'The edited file is persisted, not just the window');
 assert.equal(e.files.snapshot().files.length,1,'Editing creates no duplicate output or renamed file');
 assert.equal(e.history.get(saved.itemId).versions.length,1,'Typing does not create a history version per keypress');
+assert.equal(e.timeline.length,0,'Typing does not create Timeline events per keypress');
+assert.equal(e.timers.size,1,'A burst of edits has one pending coalesced save');
 e.c.SpatialNoteFiles.flush('notes--1');
 assert.equal(e.history.get(saved.itemId).versions.length,2);
 assert.equal(e.history.get(saved.itemId).text,e.note().text);
 assert.equal(e.history.get(saved.itemId).origin.app,'assistant','Editing retains the original Assistant provenance');
 assert.deepEqual(Object.keys(e.history.snapshot().records),[saved.itemId],'All edits belong to the original item identity');
+assert.equal(e.timeline.length,1);assert.equal(e.timeline[0].type,'file.save');
+assert.equal(e.timeline[0].itemId,saved.itemId);assert.equal(e.timeline[0].itemVersion,e.history.get(saved.itemId).currentVersion,'The coalesced Timeline save points to the exact captured version');
+assert.equal(e.timeline[0].path,saved.path);assert.equal(e.timeline[0].workspace,'work');assert.equal(e.timeline[0].project,'film');assert.equal(e.timeline[0].app,'notes--1');
 e.c.SpatialNoteFiles.save('notes--1');assert.equal(e.history.get(saved.itemId).versions.length,2,'Saving unchanged text creates no phantom version');
+assert.equal(e.timeline.length,1,'Saving unchanged text creates no phantom Timeline activity');
 
 const reloaded=environment(e.snapshot());reloaded.c.renderNotes('notes--1');
 assert.equal(reloaded.note().file.path,saved.path,'The file binding survives the serialized app session');
@@ -77,8 +84,10 @@ reloaded.fail(true);reloaded.edit('Unsaved draft retained');
 assert.deepEqual(reloaded.files.snapshot(),before,'Storage failure rolls back only this synchronous file update');
 assert.equal(reloaded.note().text,'Unsaved draft retained');assert.equal(reloaded.note().fileDirty,true);assert.match(reloaded.note().fileError,/Saving failed/);
 reloaded.c.SpatialNoteFiles.flush();assert.equal(reloaded.history.get(saved.itemId).versions.length,versions,'An unsaved draft is never recorded as a saved file version');
+assert.equal(reloaded.timeline.length,0,'Failed storage never produces a saved-file Timeline claim');
 reloaded.fail(false);assert.equal(reloaded.c.SpatialNoteFiles.save('notes--1'),true);assert.equal(reloaded.files.list(saved.directory)[0].content,'Unsaved draft retained');
 assert.equal(reloaded.history.get(saved.itemId).text,'Unsaved draft retained');
+assert.equal(reloaded.timeline.length,1);assert.equal(reloaded.timeline[0].itemVersion,reloaded.history.get(saved.itemId).currentVersion);
 
 reloaded.c.activeWorkspace='play';
 reloaded.models.copy('work','notes--1','play','notes--1');reloaded.edit('Attempt from another Workspace');
@@ -97,4 +106,11 @@ assert.equal(replaced.c.SpatialNoteFiles.bind('notes--2',{...binding,path:'/home
 const conflict=environment(e.snapshot());conflict.note().fileDirty=true;conflict.note().text='Draft I was editing';
 conflict.files.update(saved.directory,saved.name,{content:'Newer external edit'});
 assert.equal(conflict.c.SpatialNoteFiles.save('notes--1'),false);assert.match(conflict.note().fileError,/changed elsewhere/);assert.equal(conflict.files.list(saved.directory)[0].content,'Newer external edit','An unsaved draft cannot overwrite a newer saved file');
+const delayed=environment(e.snapshot());delayed.edit('First coalesced edit');delayed.edit('Final coalesced edit');
+assert.equal(delayed.timeline.length,0);assert.equal(delayed.timers.size,1);
+delayed.c.activeWorkspace='play';[...delayed.timers.values()][0]();
+assert.equal(delayed.timeline.length,1,'The deferred typing burst records one saved-file activity');
+assert.equal(delayed.timeline[0].workspace,'work','A delayed save retains its original Workspace after switching elsewhere');
+assert.equal(delayed.timeline[0].project,'film');assert.equal(delayed.timeline[0].itemId,saved.itemId);assert.equal(delayed.timeline[0].itemVersion,delayed.history.get(saved.itemId).currentVersion);
+assert.equal(delayed.timeline[0].page,0);assert.equal(delayed.timeline[0].app,undefined,'A delayed background save never attributes the current Workspace’s editor to its old file');
 console.log('Bound Note files passed: exact saved-file editing and readback, persistent binding, coalesced same-item history, ordinary Notes, native length semantics, transactional quota failure/retry, replacement identity, closed/removed Project and foreign Workspace guards.');

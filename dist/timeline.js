@@ -4,7 +4,7 @@
   else root.SpatialTimeline=factory();
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.folder','browser.visit','stash.save','assistant.use','assistant.output','calendar.event','task.due','task.complete','task.reopen','reminder.due']);
+  const types=new Set(['session','workspace','app.open','app.restore','app.park','app.close','project.open','project.close','project.switch','desktop.switch','file.open','file.save','file.folder','browser.visit','stash.save','assistant.use','assistant.output','calendar.event','task.due','task.complete','task.reopen','reminder.due']);
   const limit=300;
   const text=value=>typeof value==='string'?value.slice(0,1000):'';
   function normalize(event){
@@ -186,21 +186,41 @@
       activity(workspace){return [...notes.values()].filter(note=>note.workspace===workspace&&note.text.trim()).flatMap(note=>note.events.map(event=>({...event})));},
       snapshot(){return Object.fromEntries([...notes].map(([id,note])=>[id,{...note,events:note.events.map(event=>({...event}))}]));}};
   }
+  function searchSessions(events,{type='all',query='',noteFor=()=>'',contentFor=()=>[]}={}){
+    const needle=text(query).trim().toLocaleLowerCase();
+    const snippet=value=>{const body=String(value||'').replace(/\s+/g,' '),at=body.toLocaleLowerCase().indexOf(needle);if(at<0)return '';const start=Math.max(0,at-48),end=Math.min(body.length,at+needle.length+88);return (start?'…':'')+body.slice(start,end)+(end<body.length?'…':'');};
+    return workSessions(events).flatMap(session=>{
+      const eligible=session.events.filter(event=>matches(event,{type})),found=[],ids=new Set(),seen=new Set();
+      if(!eligible.length)return [];
+      if(needle){
+        const note=snippet(noteFor(session));if(note)found.push({kind:'note',text:note,title:'Session note'});
+        for(const event of eligible){
+          if(matches(event,{query:needle})){ids.add(event.id);found.push({kind:'event',text:snippet([event.title,event.projectName,event.path,event.address,event.detail,event.type].join(' ')),title:event.title||event.path||'Recorded activity',eventId:event.id});}
+          for(const doc of contentFor(event)||[]){
+            if(!['saved','current'].includes(doc.kind))continue;
+            const excerpt=snippet(doc.text);if(!excerpt)continue;ids.add(event.id);
+            const key=JSON.stringify([doc.kind,doc.itemId,doc.path,doc.versionId]);if(seen.has(key))continue;seen.add(key);
+            found.push({...doc,text:excerpt,eventId:event.id});
+          }
+        }
+        if(!found.length)return [];
+      }else eligible.forEach(event=>ids.add(event.id));
+      return [{...session,total:session.events.length,matched:ids.size,matchedEventIds:[...ids],matches:found}];
+    });
+  }
   function lanes(activity,planned,{now=Date.now(),day=dayKey(now),includeNow=false,groupActivity=false,expandedSessions=[],expandedEventSessions=[],...filter}={}){
     const midnight=new Date(day+'T00:00:00').getTime(),next=new Date(day+'T00:00:00');next.setDate(next.getDate()+1);const finish=next.getTime(),quarter=15*60000;
-    const rows=[...activity,...planned].filter(e=>matches(e,filter)).map(e=>e.planned&&e.done&&e.doneTime?{...e,dueTime:e.time,time:e.doneTime}:e);
+    const sessions=searchSessions(activity,filter),selected=groupActivity?sessions.flatMap(s=>s.events):sessions.flatMap(s=>s.events.filter(e=>matches(e,{type:filter.type})&&(s.matchedEventIds.includes(e.id)||s.matches.some(m=>m.kind==='note'))));
+    const rows=[...selected,...planned.filter(e=>matches(e,{...filter,query:(filter.query||'').trim()}))].map(e=>e.planned&&e.done&&e.doneTime?{...e,dueTime:e.time,time:e.doneTime}:e);
     const days=[...new Set([day,...rows.flatMap(e=>[dayKey(e.time),...(e.endTime?[dayKey(e.endTime-1)]:[])])])].sort();
     const visible=rows.filter(e=>e.time<finish&&(e.endTime||e.time+1)>midnight).sort((a,b)=>a.time-b.time||a.id.localeCompare(b.id));
     const groups=new Map(),sessionRows=new Map();
     if(groupActivity){
       // Group before applying text/type filters, so a hidden intervening context
       // never merges two unrelated sessions or changes a session's identity.
-      const raw=activity.filter(e=>!e.planned&&e.time>=midnight&&e.time<finish);
-      for(const session of workSessions(raw)){
-        const events=session.events.filter(event=>matches(event,filter));if(!events.length)continue;
-        const filtered={...session,events,matched:events.length,total:session.events.length};
+      for(const session of sessions.filter(s=>s.time>=midnight&&s.time<finish)){
         if(!groups.has(session.time))groups.set(session.time,[]);
-        groups.get(session.time).push(...events);sessionRows.set(session.id,filtered);
+        groups.get(session.time).push(...session.events);sessionRows.set(session.id,session);
       }
     }else for(const e of visible.filter(e=>!e.planned)){if(!groups.has(e.time))groups.set(e.time,[]);groups.get(e.time).push(e);}
     const scale=4;
@@ -251,5 +271,5 @@
     add('gaming','headset','reminder.due','Charge the headset',0,19,45);
     return events;
   }
-  return {create,normalize,matches,limit,sections,neighbour,demoExamples,createPlanner,view,dayKey,sessionMaterials,sessionHeight,workSessions,createSessionNotes,lanes,demoPlans};
+  return {create,normalize,matches,limit,sections,neighbour,demoExamples,createPlanner,view,dayKey,sessionMaterials,sessionHeight,workSessions,createSessionNotes,searchSessions,lanes,demoPlans};
 });

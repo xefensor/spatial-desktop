@@ -103,4 +103,31 @@ function harness(){
   runtime.perform('files','home');assert.deepEqual(visits,['/home/work/Downloads']);assert(controls.every(control=>!control.disabled));assert.equal(field('.address-bar input').disabled,false);assert.equal(field('.address-bar input').readOnly,false);assert.equal(frame.dataset.trashPreviousDirectory,undefined);assert.equal(field('.address-bar input').value,'/home/work/Downloads');
   runtime.showTrash('files');frame.dataset.trashPreviousWorkspace='other';runtime.perform('files','home');assert.equal(visits.at(-1),'/home/work','A stale previous Workspace path never becomes the return destination');
 }
-console.log('Desktop files passed: scoped real text and retained bytes, stable file/directory identities, descendants, atomic conflicts and quota rollback, safe replace/Trash/restore, projection masks, reload/sync metadata, clipboard scope and guarded Undo.');
+{
+  const source=fs.readFileSync(require.resolve('../dist/desktop-files.js'),'utf8'),start=source.indexOf('const previousOpen=openAppFile;'),end=source.indexOf("document.addEventListener('click'",start);
+  const h=harness(),events=[],opened=[],fallback=[],preview={innerHTML:'',hidden:true,querySelector:()=>({isConnected:false})},frame={dataset:{fileLocation:'/work',fileWorkspace:'work'},querySelector:()=>preview};
+  const output=h.model.write('/work/Project/Assistant-output.md','Known Assistant output');
+  const table=h.model.write('/work/Documents/table.csv','one,two\n1,2');
+  const versions=new Map([['retained-item','retained-v1'],[output.itemId,'output-v1'],['photo-item','photo-v1']]);
+  const runtime=vm.createContext({root:{SpatialItemHistoryDesktop:{get:id=>versions.has(id)?{currentVersion:versions.get(id)}:null},SpatialTimelineDesktop:{record:(type,data)=>events.push({type,...data})},SpatialNoteFiles:{open:(id,file)=>opened.push([id,file])}},
+    activeWorkspace:'work',frameFor:()=>frame,files:{read:address=>h.model.read(address),blob:()=>new Promise(()=>{})},
+    appInfo:{notes:{base:'notes'}},appState:{notes:'open'},isLocalApp:()=>true,createAppInstance:()=>{throw Error('The existing Note Editor should be reused');},openApp:id=>opened.push(['app',id]),
+    openAppFile:(id,name)=>{fallback.push([id,name]);return 'fallback';},escapeHtml:String,appActionButton:()=>'',setTimeout(){}});
+  vm.runInContext(source.slice(start,end),runtime);
+  runtime.openAppFile('files','retained.md');
+  assert.equal(events.length,1);assert.equal(events[0].type,'file.open');assert.equal(events[0].itemId,'retained-item');assert.equal(events[0].itemVersion,'retained-v1');assert.equal(events[0].path,'/work/retained.md');assert.equal(events[0].app,'files');
+  assert(opened.some(([id,file])=>id==='notes'&&file.itemId==='retained-item'),'The native saved-note branch records its canonical file before opening its editor');
+  frame.dataset.fileLocation='/work/Project';runtime.openAppFile('files','Assistant-output.md');
+  assert.equal(events.at(-1).itemId,output.itemId);assert.equal(events.at(-1).itemVersion,'output-v1');assert.equal(events.at(-1).project,'project');
+  assert(opened.some(([id,file])=>id==='notes'&&file.itemId===output.itemId&&file.content==='Known Assistant output'),'A recorded Assistant output reopens the same saved file');
+  frame.dataset.fileLocation='/work/Documents';runtime.openAppFile('files','table.csv');
+  assert.equal(events.at(-1).itemId,table.itemId);assert.equal(events.at(-1).itemVersion,'','Files without captured history do not invent a saved version');assert(preview.innerHTML.includes('one,two')&&!preview.hidden,'Native text previews also record the file they actually opened');
+  frame.dataset.fileLocation='/work';runtime.openAppFile('files','photo.png');
+  assert.equal(events.at(-1).itemId,'photo-item');assert.equal(events.at(-1).itemVersion,'photo-v1','The retained-byte preview branch records its exact available item version');
+  const before=events.length;runtime.openAppFile('files','Documents');
+  assert.equal(events.length,before,'Opening a folder does not manufacture a file-open event');
+  frame.dataset.desktopTrash='true';runtime.openAppFile('files','retained.md');assert.equal(events.length,before,'Trash cannot open or record hidden former file contents');
+  delete frame.dataset.desktopTrash;frame.dataset.fileLocation='/play';runtime.openAppFile('files','private.md');assert.equal(events.length,before,'An inaccessible path does not become recorded as an opened current file');
+  assert(fallback.some(([,name])=>name==='Documents')&&fallback.some(([,name])=>name==='private.md'),'Unowned and legacy rows retain the original opening fallback');
+}
+console.log('Desktop files passed: scoped real text and retained bytes, stable file/directory identities, descendants, atomic conflicts and quota rollback, safe replace/Trash/restore, projection masks, reload/sync metadata, clipboard scope, guarded Undo and native file-open Timeline identities.');

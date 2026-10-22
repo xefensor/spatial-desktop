@@ -54,13 +54,13 @@
   <script src="demo-super-key.js?v=0d51c763ae38"></script>
   <script src="desktop-markers.js?v=73adb4eef74c"></script>
   <script src="workspace-setup.js?v=76bcea86773e"></script>
-  <script src="spatial-guide.js?v=95f7b7847193"></script>
+  <script src="spatial-guide.js?v=ab5a2955820a"></script>
   
   <link rel="stylesheet" href="apps-quick-launch.css?v=8c15488a66c5">
   <link rel="stylesheet" href="temporary-parking.css?v=148bf5315976">
   <link rel="stylesheet" href="item-history.css?v=c4441cee9793">
   <link rel="stylesheet" href="assistant-sources.css?v=e94ee18c0807">
-  <link rel="stylesheet" href="timeline-sessions.css?v=3d0e3945d7c4">
+  <link rel="stylesheet" href="timeline-sessions.css?v=1e25725c7881">
   <link rel="stylesheet" href="assistant-desktop.css?v=95d53a53aba4">
   <link rel="stylesheet" href="desktop-map.css?v=0dbe92fab446">
   <link rel="stylesheet" href="window-audio.css?v=951b446f3881">
@@ -502,7 +502,7 @@
 
           <section class="overview-panel overview-timeline-section" data-overview-panel="timeline" aria-labelledby="overviewTimelineTitle">
             <header class="overview-zone-heading"><span class="overview-zone-mark"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><span><span class="eyebrow">WORKSPACE ACTIVITY</span><h3 id="overviewTimelineTitle">Timeline</h3></span><span id="overviewTimelineWorkspace"></span></header>
-            <div class="timeline-toolbar"><div class="timeline-day-navigation"><button class="surface-key timeline-day-step" data-timeline-day-step="-1" aria-label="Previous day with items"><svg><use href="#i-left"/></svg></button><label><span class="sr-only">Day</span><select id="timelineDay" aria-label="Timeline day"></select></label><button class="surface-key timeline-day-step" data-timeline-day-step="1" aria-label="Next day with items"><svg><use href="#i-right"/></svg></button></div><button class="surface-key timeline-jump" id="timelineToday" title="Today · jump to the current time">Now</button><button class="surface-key timeline-jump" id="timelineLatest" title="Jump to the most recent desktop activity on this day">Latest activity</button><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option><option value="stash">Saved items</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Find an activity, event or task…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
+            <div class="timeline-toolbar"><div class="timeline-day-navigation"><button class="surface-key timeline-day-step" data-timeline-day-step="-1" aria-label="Previous day with items"><svg><use href="#i-left"/></svg></button><label><span class="sr-only">Day</span><select id="timelineDay" aria-label="Timeline day"></select></label><button class="surface-key timeline-day-step" data-timeline-day-step="1" aria-label="Next day with items"><svg><use href="#i-right"/></svg></button></div><button class="surface-key timeline-jump" id="timelineToday" title="Today · jump to the current time">Now</button><button class="surface-key timeline-jump" id="timelineLatest" title="Jump to the most recent desktop activity on this day">Latest activity</button><label>Show<select id="timelineType" aria-label="Timeline activity type"><option value="all">Everything</option><option value="planned">Calendar, tasks &amp; reminders</option><option value="calendar">Calendar</option><option value="task">Tasks</option><option value="reminder">Reminders</option><option value="activity">Activity</option><option value="app">Applications</option><option value="project">Projects</option><option value="desktop">Desktops</option><option value="file">Files and folders</option><option value="browser">Web</option><option value="stash">Saved items</option></select></label><label class="timeline-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="timelineQuery" type="search" placeholder="Search activity, notes and file text…" aria-label="Search Timeline"></label><button class="surface-key timeline-add" id="timelineAddToggle" aria-pressed="false" aria-expanded="false" aria-controls="timelinePlanForm"><svg><use href="#i-add"/></svg><span>Add</span></button></div>
             <form id="timelinePlanForm" class="timeline-plan-form" hidden>
               <label>Kind<select id="timelinePlanKind"><option value="task.due">Task</option><option value="calendar.event">Calendar event</option><option value="reminder.due">Reminder</option></select></label>
               <label>Title<input id="timelinePlanTitle" maxlength="160" required placeholder="What’s coming up?"></label>
@@ -512,6 +512,7 @@
               <label class="timeline-plan-notes">Notes<input id="timelinePlanDetail" maxlength="1000" placeholder="Location, preparation or details"></label>
               <div class="timeline-plan-actions"><button class="surface-key" type="button" id="timelinePlanCancel">Cancel</button><button class="surface-key" type="submit">Add to Timeline</button></div>
             </form>
+            <section id="timelineSearchResults" class="timeline-search-results" aria-label="Matching work sessions" hidden></section>
             <div class="timeline-scroll" id="timelineScroll"><div id="timelineEntries" role="list" aria-label="Workspace activity"></div></div>
             <footer class="timeline-caption">Activity and plans share the same time · scroll vertically through the day</footer>
           </section>
@@ -709,14 +710,15 @@
   <script src="app-tools.js?v=c130bf623e76"></script>
   <script src="assistant-files.js?v=703b1a5ed673"></script>
   <script src="project-archive.js?v=e5c3386cfa23"></script>
-  <script src="app-windows.js?v=a339d4ac1a50"></script>
+  <script src="app-windows.js?v=ea2e62505c5e"></script>
 <script src="item-history.js?v=cfe18d7bde7b"></script>
 <script src="item-history-package.js?v=6d23809c9edd"></script>
 <script src="working-memory.js?v=9d828811facb"></script>
 <script src="stash-files.js?v=edf580570c75"></script>
 <script src="ai-context.js?v=bc1af586a16c"></script>
 <script src="ai-demo.js?v=54aff4644012"></script>
-<script src="timeline.js?v=3fb53b981ed6"></script>
+<script src="timeline-search.js?v=457099b2c0a1"></script>
+<script src="timeline.js?v=f36b00122c7c"></script>
 <script src="app-names.js?v=857caddbbd5b"></script>
 <script src="retired-apps.js?v=dcbb79f731ad"></script>
 <script src="desktop-shell.js?v=26a99158f099"></script>
@@ -732,7 +734,7 @@
 <script src="item-history-desktop.js?v=1b7b9edc5edf"></script>
 <script src="assistant-voice.js?v=e8b446834b8c"></script>
 <script src="ai-desktop.js?v=d3e4b104d04a"></script>
-<script src="overview-desktop.js?v=144a26b7f810"></script>
+<script src="overview-desktop.js?v=79d5b0f5f0e5"></script>
   <script src="steam-overview.js?v=71bf946de330"></script>
 <script src="all-workspaces.js?v=be1912614455"></script>
 <script src="workspace-notifications.js?v=b643585e34e6"></script>
@@ -760,7 +762,7 @@
 <script src="display-side-legacy.js?v=add0cce1cf52"></script>
 <script src="display-workbench.js?v=6051b427cc1e"></script>
 <script src="settings-app-desktop.js?v=e7b4d9b4dc6c"></script>
-<script src="desktop-files.js?v=86b2a850faaa"></script>
+<script src="desktop-files.js?v=8a0a1aa7d9c6"></script>
 <script src="desktop-clipboard.js?v=aff213447c00"></script>
 <script src="desktop-system.js?v=a3c12fb8e2dd"></script>
 <script src="desktop-accessibility.js?v=23437540e756"></script>

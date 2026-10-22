@@ -175,7 +175,7 @@
       page:data.page??(app&&appInfo[app]?desktopPages.pageOf(activeWorkspace,app):desktopPages.current(activeWorkspace)),path:data.path||'',address:data.address||'',stashId:data.stashId||'',itemId:data.itemId||'',itemVersion:data.itemVersion||'',outputId:data.outputId||'',chatId:data.chatId||'',turnId:data.turnId||'',sourceIds:data.sourceIds||[],detail:data.detail||''});
     if(event){save();if($('#universalSearch').classList.contains('is-open'))renderTimeline();}
   }
-  const descriptions={'stash.save':'Saved file','assistant.use':'Used in Assistant','assistant.output':'Saved Assistant output','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
+  const descriptions={'stash.save':'Saved file','assistant.use':'Used in Assistant','assistant.output':'Saved Assistant output','session':'Opened the desktop','workspace':'Switched workspace','app.open':'Opened','app.restore':'Unparked','app.park':'Parked','app.close':'Closed','project.open':'Opened project','project.close':'Closed project','project.switch':'Switched project','desktop.switch':'Switched desktop','file.open':'Opened file','file.save':'Saved file','file.folder':'Opened folder','browser.visit':'Visited','calendar.event':'Calendar','task.due':'Task due','task.complete':'Completed task','task.reopen':'Reopened task','reminder.due':'Reminder'};
   function actionFor(event){
     if(event.type==='session'||event.type==='workspace')return '';
     if(event.type.startsWith('assistant.')&&event.chatId)return 'Open chat';
@@ -194,12 +194,37 @@
   // only the activity lane; plans continue to use their real start/end times.
   if(typeof document!=='undefined'&&!document.getElementById('timelineGrouping'))$('.timeline-toolbar',home)?.insertAdjacentHTML('beforeend','<button class="surface-key timeline-grouping" id="timelineGrouping" type="button" aria-pressed="true" title="Group nearby activity in the same Project or Workspace; expand to see every event">Sessions</button>');
   $('#timelineGrouping')?.addEventListener('click',()=>{groupActivity=!groupActivity;try{desktopStorage.setItem(groupingKey,JSON.stringify({mode:groupActivity?'sessions':'events'}));}catch{}renderTimeline();});
-  let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='',timelineView=null;
+  let timelineDayWorkspace='',timelineDay='',timelineRenderedDay='',timelineView=null,contentState=null,searchMatches=[];
+  function timelineContents(events){
+    if(!$('#timelineQuery').value.trim()||!globalThis.SpatialTimelineSearch)return new Map();
+    const workspace=activeWorkspace,files=new Map();
+    for(const event of events){let file;try{file=event.itemId?globalThis.SpatialDesktopFiles?.resolve({itemId:event.itemId,workspace},{workspace}):event.path?globalThis.SpatialDesktopFiles?.read(event.path,{workspace}):null;}catch{}if(file)files.set(file.path,file);}
+    const prepared=SpatialTimelineSearch.prepare(events,{workspace,files:[...files.values()],history:id=>globalThis.SpatialItemHistoryDesktop?.get(id)});
+    if(contentState?.signature!==prepared.signature){
+      const state={signature:prepared.signature,documents:prepared.documents,loading:!!prepared.attachments.length};contentState=state;
+      if(state.loading)SpatialTimelineSearch.load(prepared,key=>globalThis.SpatialStashFiles?.get(key)).then(documents=>{if(contentState!==state)return;state.documents=documents;state.loading=false;if(activeWorkspace===workspace)renderTimeline();});
+    }
+    return contentState.documents;
+  }
   function renderTimeline(){
     $('#overviewTimelineWorkspace').textContent=workspaceProfiles[activeWorkspace]?.label||activeWorkspace;
     const now=Date.now(),today=SpatialTimeline.dayKey(now);
     if(timelineDayWorkspace!==activeWorkspace){timelineDayWorkspace=activeWorkspace;timelineDay=today;}
-    const view=SpatialTimeline.lanes(timelineActivity(),planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,type:$('#timelineType').value,query:$('#timelineQuery').value,groupActivity,expandedSessions:[...expandedSessions],expandedEventSessions:[...expandedSessionEvents]});
+    const activityEvents=timelineActivity(),contents=timelineContents(activityEvents),filter={type:$('#timelineType').value,query:$('#timelineQuery').value.trim(),noteFor:session=>sessionNotes.get(session.id,activeWorkspace)?.text||'',contentFor:event=>contents.get(event.id)||[]};
+    const view=SpatialTimeline.lanes(activityEvents,planner.list(activeWorkspace),{day:timelineDay,now,includeNow:timelineDay===today,...filter,groupActivity,expandedSessions:[...expandedSessions],expandedEventSessions:[...expandedSessionEvents]});
+    const results=$('#timelineSearchResults');searchMatches=[];
+    if(results){
+      results.hidden=!filter.query;
+      if(filter.query){
+        const sessions=SpatialTimeline.searchSessions(activityEvents,filter).reverse(),reason={note:'Session note',event:'Recorded activity',saved:'Saved version text',current:'Current file text'};
+        const plans=planner.list(activeWorkspace,filter).length;
+        results.innerHTML='<p class="timeline-search-status" role="status">'+sessions.length+' matching session'+(sessions.length===1?'':'s')+(plans?' · '+plans+' matching plan'+(plans===1?'':'s'):'')+(contentState?.loading?' · Reading saved text…':'')+'</p><div class="timeline-search-session-list">'+sessions.map(session=>'<article class="timeline-search-session"><header><button type="button" data-timeline-search-session="'+escapeHtml(session.id)+'">'+escapeHtml(session.projectName||'Desktop activity')+(session.example?'<span class="timeline-example-label">Example</span>':'')+'<small>'+escapeHtml(new Date(session.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}))+' · Show session</small></button></header><ul>'+session.matches.map(match=>{
+          const index=searchMatches.push({session,match})-1,canOpen=match.kind==='saved'||match.kind==='current';
+          return '<li><b>'+escapeHtml(reason[match.kind]+(match.kind==='note'?'':': '+match.title)+(match.versionNumber?' · Version '+match.versionNumber:''))+'</b><p>'+escapeHtml(match.text)+'</p>'+(canOpen?'<button type="button" class="timeline-match-open" data-timeline-search-match="'+index+'">'+(match.kind==='saved'?'View saved version':'Open current file')+'</button>':'')+'</li>';
+        }).join('')+'</ul></article>').join('')+'</div><small class="timeline-search-scope">This Workspace · notes and available file text. Imported text: first 1 MB.</small>';
+        prepareControlSemantics(results);
+      }else results.innerHTML='';
+    }
     const groupingButton=$('#timelineGrouping');if(groupingButton){groupingButton.textContent=groupActivity?'Sessions':'Events';groupingButton.setAttribute('aria-pressed',String(groupActivity));groupingButton.setAttribute('aria-label',groupActivity?'Sessions shown. Show individual events':'Individual events shown. Group into sessions');}
     $('#timelineDay').innerHTML=view.days.map(day=>'<option value="'+day+'"'+(day===timelineDay?' selected':'')+'>'+escapeHtml(day===today?'Today':new Date(day+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</option>').join('');
     $('#timelineDay').value=timelineDay;
@@ -237,10 +262,10 @@
     function sessionCard(session){
       const open=expandedSessions.has(session.id),eventsOpen=expandedSessionEvents.has(session.id),note=sessionNotes.get(session.id,activeWorkspace),label=session.projectName?'Worked on '+session.projectName:'Desktop activity';
       const materials=SpatialTimeline.sessionMaterials(session.events),outputs=materials.filter(m=>m.output);
-      const counts=[materials.length+' material'+(materials.length===1?'':'s'),session.total+' event'+(session.total===1?'':'s')].join(' · '),matched=session.matched!==session.total?' · '+session.matched+' matching':'';
+      const counts=[materials.length+' material'+(materials.length===1?'':'s'),session.total+' event'+(session.total===1?'':'s')].join(' · '),matched=session.matches?.some(m=>m.kind==='note')?' · Note matches':session.matched!==session.total?' · '+session.matched+' matching':'';
       const names=rows=>rows.map(m=>materialInfo(m).title).join(' · ');
       const preview=!open?'<span class="timeline-session-preview-note" title="'+escapeHtml(note?.text||'')+'">'+escapeHtml(note?.text||'No session note')+'</span><span class="timeline-session-preview-materials" title="'+escapeHtml(names(materials))+'">'+escapeHtml(materials.length?names(materials.slice(0,3))+(materials.length>3?' · +'+(materials.length-3)+' more':''):'No files or windows recorded')+'</span>'+(outputs.length?'<span class="timeline-session-preview-outputs" title="'+escapeHtml(names(outputs))+'">'+escapeHtml('Output: '+names(outputs))+'</span>':''):'';
-      return '<section class="timeline-work-session'+(open?' is-expanded':'')+'" data-session-card="'+escapeHtml(session.id)+'"><button class="timeline-session-toggle" data-timeline-session="'+escapeHtml(session.id)+'" aria-expanded="'+open+'"><span class="timeline-session-mark">'+icon(session.project?'i-folder':'i-clock')+'</span><span><b>'+escapeHtml(label)+(session.example?'<span class="timeline-example-label">Example</span>':'')+'</b><span><time>'+escapeHtml(clock(session.time))+'–'+escapeHtml(clock(session.endTime))+'</time> · '+escapeHtml(counts+matched)+'</span>'+preview+'<small>'+escapeHtml(open?'Hide materials':'Show materials')+'</small></span>'+icon('i-down')+'</button>'+(open?'<h5 class="timeline-materials-heading">Materials <small>Latest recorded activity</small></h5><div class="timeline-session-materials" role="list" aria-label="Session materials">'+(materials.length?materials.map(materialCard).join(''):'<p class="timeline-materials-empty">No files or windows recorded. The events below show context changes.</p>')+'</div><label class="timeline-session-note">Note about this session<textarea data-timeline-session-note="'+escapeHtml(session.id)+'" aria-label="'+escapeHtml('Note: '+label+' '+clock(session.time))+'" maxlength="2000" rows="2" placeholder="What mattered, or where to continue…">'+escapeHtml(note?.text||'')+'</textarea><small>Saved locally with this session’s events.</small></label><button class="timeline-events-toggle" data-timeline-session-events="'+escapeHtml(session.id)+'" aria-expanded="'+eventsOpen+'">'+escapeHtml((eventsOpen?'Hide':'Show')+' chronology ('+session.events.length+(session.matched!==session.total?' matching':'')+' events)')+icon('i-down')+'</button>'+(eventsOpen?'<div class="timeline-session-events" role="list" aria-label="Exact session events">'+eventCards(session.events)+'</div>':''):'')+'</section>';
+      return '<section class="timeline-work-session'+(open?' is-expanded':'')+'" data-session-card="'+escapeHtml(session.id)+'"><button class="timeline-session-toggle" data-timeline-session="'+escapeHtml(session.id)+'" aria-expanded="'+open+'"><span class="timeline-session-mark">'+icon(session.project?'i-folder':'i-clock')+'</span><span><b>'+escapeHtml(label)+(session.example?'<span class="timeline-example-label">Example</span>':'')+'</b><span><time>'+escapeHtml(clock(session.time))+'–'+escapeHtml(clock(session.endTime))+'</time> · '+escapeHtml(counts+matched)+'</span>'+preview+'<small>'+escapeHtml(open?'Hide materials':'Show materials')+'</small></span>'+icon('i-down')+'</button>'+(open?'<h5 class="timeline-materials-heading">Materials <small>Latest recorded activity</small></h5><div class="timeline-session-materials" role="list" aria-label="Session materials">'+(materials.length?materials.map(materialCard).join(''):'<p class="timeline-materials-empty">No files or windows recorded. The events below show context changes.</p>')+'</div><label class="timeline-session-note">Note about this session<textarea data-timeline-session-note="'+escapeHtml(session.id)+'" aria-label="'+escapeHtml('Note: '+label+' '+clock(session.time))+'" maxlength="2000" rows="2" placeholder="What mattered, or where to continue…">'+escapeHtml(note?.text||'')+'</textarea><small>Saved locally with this session’s events.</small></label><button class="timeline-events-toggle" data-timeline-session-events="'+escapeHtml(session.id)+'" aria-expanded="'+eventsOpen+'">'+escapeHtml((eventsOpen?'Hide':'Show')+' chronology ('+session.events.length+' events)')+icon('i-down')+'</button>'+(eventsOpen?'<div class="timeline-session-events" role="list" aria-label="Exact session events">'+eventCards(session.events)+'</div>':''):'')+'</section>';
     }
     const activity=view.activity.map(group=>'<div class="timeline-activity-burst" style="top:'+group.top+'px">'+(group.session?sessionCard(group.session):eventCards(group.events))+'</div>').join('');
     const plans=view.plans.map(e=>'<article class="timeline-entry timeline-plan-block'+(e.type==='calendar.event'?' is-duration':'')+(e.done?' is-done':'')+'" role="listitem" data-timeline-plan="'+escapeHtml(e.id)+'" aria-label="'+escapeHtml(e.title+' · '+new Date(e.time).toLocaleString()+(e.endTime?' until '+new Date(e.endTime).toLocaleString():''))+'" title="'+escapeHtml(e.title+(e.detail?' · '+e.detail:''))+'" style="top:'+e.top+'px;height:'+e.height+'px;left:calc('+e.column*100/e.columns+'% + 6px);width:calc('+100/e.columns+'% - 12px)">'+card(e,true)+'</article>').join('');
@@ -284,7 +309,7 @@
   $('#timelineDay').addEventListener('change',()=>{timelineDay=$('#timelineDay').value;renderTimeline();});
   function reopen(id,outputFolder=false){
     let event=timelineActivity().find(event=>event.id===id);if(!event)return;
-    if(outputFolder){if(event.type!=='assistant.output'||event.itemId||!event.path)return;event={...event,type:'file.folder',base:'dolphin'};}
+    if(outputFolder){if(!['assistant.output','file.folder'].includes(event.type)||event.itemId||!event.path)return;event={...event,type:'file.folder',base:'dolphin'};}
     if(!actionFor(event))return;
     if(event.type.startsWith('assistant.')&&event.chatId&&globalThis.SpatialAIDesktop?.revealChat){setUniversalSearchOpen(false);SpatialAIDesktop.revealChat(event.chatId,{turnId:event.turnId});return;}
     if(event.itemId&&globalThis.SpatialItemHistoryDesktop?.open){SpatialItemHistoryDesktop.open(event.itemId,{versionId:event.itemVersion,workspace:event.workspace});return;}
@@ -325,6 +350,15 @@
     const folder=event.target.closest('[data-timeline-folder]');if(folder?.dataset.timelineFolder){reopen(folder.dataset.timelineFolder,true);return;}
     const action=event.target.closest('[data-timeline-open]');if(action?.dataset.timelineOpen)reopen(action.dataset.timelineOpen);
   });
+  $('#timelineSearchResults')?.addEventListener('click',event=>{
+    const sessionButton=event.target.closest('[data-timeline-search-session]');
+    if(sessionButton){const session=SpatialTimeline.workSessions(timelineActivity()).find(s=>s.id===sessionButton.dataset.timelineSearchSession);if(!session)return;timelineDay=SpatialTimeline.dayKey(session.time);groupActivity=true;expandedSessions.add(session.id);try{desktopStorage.setItem(groupingKey,JSON.stringify({mode:'sessions'}));}catch{}renderTimeline();const group=timelineView.activity.find(g=>g.session?.id===session.id);if(group)$('#timelineScroll').scrollTop=Math.max(0,group.top-24);$('[data-timeline-session="'+CSS.escape(session.id)+'"]')?.focus({preventScroll:true});return;}
+    const button=event.target.closest('[data-timeline-search-match]'),result=button&&searchMatches[Number(button.dataset.timelineSearchMatch)];if(!result||result.session.workspace!==activeWorkspace)return;
+    const {match}=result;
+    if(match.kind==='saved'||!match.path){if(globalThis.SpatialItemHistoryDesktop?.get(match.itemId))SpatialItemHistoryDesktop.open(match.itemId,{workspace:activeWorkspace,versionId:match.versionId});return;}
+    let file;try{file=globalThis.SpatialDesktopFiles?.read(match.path,{workspace:activeWorkspace});}catch{}if(!file||file.itemId!==match.itemId){renderTimeline();return;}
+    setUniversalSearchOpen(false);const app=createAppInstance('dolphin');if(app){openApp(app);renderFileLocation(app,file.directory);openAppFile(app,file.name);}
+  });
   $('#timelineEntries').addEventListener('input',event=>{
     const input=event.target.closest('[data-timeline-session-note]');if(!input?.dataset.timelineSessionNote)return;
     const session=SpatialTimeline.workSessions(timelineActivity()).find(session=>session.id===input.dataset.timelineSessionNote);if(!session)return;
@@ -352,6 +386,11 @@
   $('#timelineType').addEventListener('change',renderTimeline);$('#timelineQuery').addEventListener('input',renderTimeline);
   window.addEventListener('click',event=>{if(!event.target.closest('[data-timeline-planned]')||limited())return;setUniversalSearchOpen(true);$('#timelineType').value='all';$('#timelineQuery').value='';select('timeline',false);renderTimeline();});
   window.addEventListener('storage',event=>{if(event.key===historyKey){model.merge(read(historyKey));renderTimeline();}if(event.key===plannerKey){planner.merge(read(plannerKey));renderTimeline();}if(event.key===sessionNotesKey){sessionNotes.merge(read(sessionNotesKey));renderTimeline();}});
+  window.addEventListener('spatial-files-change',event=>{
+    const detail=event.detail||{};
+    if(detail.workspace===activeWorkspace&&detail.action==='create')for(const file of detail.items||[]){if(file.kind==='folder'||!file.itemId)continue;const item=globalThis.SpatialItemHistoryDesktop?.get(file.itemId);record('file.save',{workspace:detail.workspace,project:file.project||'',title:file.name,path:file.path,itemId:file.itemId,itemVersion:item?.currentVersion||''});}
+    if($('#timelineQuery').value.trim())renderTimeline();
+  });
   window.setInterval?.(()=>{if($('#universalSearch').classList.contains('is-open')&&active==='timeline'&&$('#timelinePlanForm').hidden&&!(typeof document!=='undefined'&&document.activeElement?.matches('[data-timeline-session-note]')))renderTimeline();else syncAgenda();},60000);
   function registerSection(id,provider){
     if(SpatialTimeline.sections.includes(id)||!panels.has(id)||typeof provider?.available!=='function')return false;

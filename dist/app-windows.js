@@ -264,8 +264,9 @@ function flushBoundNoteHistory(id) {
     if(!file||file.content!==text)continue;
     // A burst of typing is one edit to this same item, rather than a trail of
     // phantom files or one history version for every individual keypress.
-    globalThis.SpatialItemHistoryDesktop?.capture({id:binding.itemId,itemId:binding.itemId,title,text,address:binding.path,workspace:binding.workspace,project:binding.project,source:{workspace:binding.workspace,project:binding.project,app:'notes',label:'Note Editor',address:binding.path}},{workspace:binding.workspace,project:binding.project,force:true,action:'edit',detail:'Edited the saved text file in Note Editor'});
+    const saved=globalThis.SpatialItemHistoryDesktop?.capture({id:binding.itemId,itemId:binding.itemId,title,text,address:binding.path,workspace:binding.workspace,project:binding.project,source:{workspace:binding.workspace,project:binding.project,app:'notes',label:'Note Editor',address:binding.path}},{workspace:binding.workspace,project:binding.project,force:true,action:'edit',detail:'Edited the saved text file in Note Editor'});
     globalThis.SpatialItemHistoryDesktop?.persist();
+    globalThis.SpatialTimelineDesktop?.record('file.save',{workspace:binding.workspace,project:binding.project||'',title,path:file.path||binding.path,itemId:binding.itemId,itemVersion:saved?.currentVersion||'',...(binding.workspace===activeWorkspace?{app:pending.id}:{page:0})});
   }
 }
 function queueBoundNoteHistory(id,context,note,defer) {

@@ -93,8 +93,8 @@ const tabs=T.sections.map(id=>{const n=make('tab:'+id);n.dataset.overviewSection
 const dayButtons=[-1,1].map(direction=>{const n=make('day:'+direction);n.dataset.timelineDayStep=String(direction);return n;});
 const edges=[-1,1].map(direction=>{const n=make('edge:'+direction);n.dataset.overviewStep=String(direction);return n;});
 make('#timelineType').value='all';
-const data=new Map(),pending=[],calls=[];
-const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T,activeWorkspace:'general',desktopSyncApplying:false,desktopPageAnimating:false,
+const data=new Map(),pending=[],calls=[],windowListeners=new Map();
+const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T,SpatialTimelineSearch:require('../dist/timeline-search.js'),CSS:{escape:value=>String(value)},activeWorkspace:'general',desktopSyncApplying:false,desktopPageAnimating:false,
   appInfo:{dolphin:{label:'Files',base:'dolphin'}},appState:{dolphin:'open'},windowMembership:{general:{dolphin:'site'}},
   workspaceProfiles:{general:{label:'General'},work:{label:'Work'}},projectSpaces:{site:{name:'Website',accent:'#22bb66'}},workspaceContent:{},
   desktopPages:{column:()=>context.column||'site',columnOf:()=>context.column||'site',current:()=>1,pageOf:()=>1,last:()=>2},
@@ -104,7 +104,7 @@ const context={SpatialAppNames:require('../dist/app-names.js'),SpatialTimeline:T
   escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   icon:name=>'<svg>'+name+'</svg>',appArt:()=>'<svg>app</svg>',prepareControlSemantics(){},
   requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){resizeCallback=fn;}observe(){}},setTimeout:fn=>{pending.push(fn);return pending.length;},clearTimeout(){},
-  window:{matchMedia:()=>({matches:true}),addEventListener(){},getComputedStyle:node=>({overflowY:node.overflowY||'visible',overflowX:node.overflowX||'visible'})},
+  window:{matchMedia:()=>({matches:true}),addEventListener(type,handler){windowListeners.set(type,handler);},getComputedStyle:node=>({overflowY:node.overflowY||'visible',overflowX:node.overflowX||'visible'})},
   setUniversalSearchOpen:open=>calls.push(['overview',open]),openProjectNames:()=>['site'],filterLauncher:()=>calls.push(['launcher',context.activeWorkspace]),
   activateProject:name=>{context.column=name;calls.push(['activate',name]);},changeDesktopColumn:name=>{context.column=name;calls.push(['column',name]);},
   changeDesktopPage:page=>calls.push(['page',page]),createAppInstance:base=>{calls.push(['instance',base]);return base;},
@@ -446,4 +446,113 @@ summaryTimeline.record('assistant.output',{title:'Converted file',path:'/project
 const folderEvent=summaryTimeline.snapshot().activity.find(e=>e.turnId==='conversion');
 clickTimeline({timelineFolder:folderEvent.id});pending.splice(0).forEach(fn=>fn());
 assert(calls.some(call=>call[0]==='folder'&&call[2]==='/projects/site/Assistant'),'A recorded output folder opens Files instead of only its chat');
+summaryTimeline.record('file.folder',{app:'dolphin',base:'dolphin',title:'Assistant',path:'/projects/site/Assistant'});
+const revisitedFolder=summaryTimeline.snapshot().activity.find(e=>e.type==='file.folder'&&e.path==='/projects/site/Assistant');
+const beforeRevisit=calls.filter(call=>call[0]==='folder'&&call[2]==='/projects/site/Assistant').length;
+summaryTimeline.render();
+assert(make('#timelineEntries').innerHTML.includes('data-timeline-folder="'+revisitedFolder.id+'"'),'The output folder material refers to its latest recorded visit');
+clickTimeline({timelineFolder:revisitedFolder.id});pending.splice(0).forEach(fn=>fn());
+assert.equal(calls.filter(call=>call[0]==='folder'&&call[2]==='/projects/site/Assistant').length,beforeRevisit+1,'A later folder visit does not break the known output folder action');
 console.log('Timeline output folder navigation passed.');
+
+// Use the production content adapter and the real desktop file read/resolve API.
+// There is deliberately no entries() stub: desktop file listings are private.
+const searchFiles=new Map(),fileReads=[],fileResolves=[];
+context.SpatialDesktopFiles={
+  read:(path,{workspace})=>{fileReads.push([path,workspace]);const file=searchFiles.get(path);return file?.workspace===workspace?{...file}:null;},
+  resolve:(binding,{workspace})=>{fileResolves.push([binding.itemId,workspace]);const file=[...searchFiles.values()].find(file=>file.itemId===binding.itemId&&file.workspace===workspace&&binding.workspace===workspace);return file?{...file}:null;}
+};
+const searchRecord={id:'search-source',title:'Current source',relations:[],text:'Current retained text',currentVersion:'v2',versions:[{id:'v1',title:'Original <source>',text:'The <b>hyacinth</b> handoff & review is recorded here.'},{id:'v2',title:'Current source',text:'Current retained text'}]};
+const searchHistory=new Map([['search-source',searchRecord]]);
+context.SpatialItemHistoryDesktop={get:id=>searchHistory.get(id)||null,open:(id,options)=>calls.push(['item',id,options])};
+const sourcePath='/projects/site/renamed-source.md';
+searchFiles.set(sourcePath,{workspace:'general',project:'site',path:sourcePath,directory:'/projects/site',name:'renamed-source.md',itemId:'search-source',kind:'document',content:'Current <i>gentian</i> follow-up & review.',revision:2});
+summaryClock+=20*60000;
+summaryTimeline.record('project.open',{title:'Website',project:'site'});
+summaryTimeline.record('file.open',{app:'dolphin',title:'Original source',path:'/projects/site/old-source.md',itemId:'search-source',itemVersion:'v1'});
+summaryTimeline.record('assistant.use',{title:'Review input',path:'/projects/site/old-source.md',itemId:'search-source',itemVersion:'v1',chatId:'search-chat',turnId:'search-turn'});
+summaryTimeline.record('assistant.output',{title:'Surrounding output',path:'/projects/site/Assistant/search-output.md',itemId:'search-output'});
+const searchSession=T.workSessions(summaryTimeline.snapshot().activity).find(session=>session.events.some(event=>event.itemId==='search-source'));
+make('#timelineQuery').value='hyacinth';make('#timelineQuery').listeners.input();
+let searchHTML=make('#timelineSearchResults').innerHTML;
+assert.equal(make('#timelineSearchResults').hidden,false);
+assert(searchHTML.includes('1 matching session')&&searchHTML.includes('Saved version text: Original &lt;source&gt;'),'The result identifies the matching material and saved-text reason');
+assert(searchHTML.includes('&lt;b&gt;hyacinth&lt;/b&gt; handoff &amp; review'),'Content snippets are escaped before rendering');
+assert(!searchHTML.includes('<b>hyacinth</b>'),'File text cannot become active result markup');
+assert(fileResolves.some(([id,workspace])=>id==='search-source'&&workspace==='general'),'Content search resolves canonical identity through the production file API');
+const clickSearch=dataset=>make('#timelineSearchResults').listeners.click({target:{closest:selector=>selector==='[data-timeline-search-session]'&&dataset.timelineSearchSession||selector==='[data-timeline-search-match]'&&dataset.timelineSearchMatch!==undefined?{dataset}:null}});
+const savedIndex=searchHTML.match(/data-timeline-search-match="(\d+)"/)[1];
+clickSearch({timelineSearchMatch:savedIndex});
+assert(calls.some(call=>call[0]==='item'&&call[1]==='search-source'&&call[2].versionId==='v1'&&call[2].workspace==='general'),'A saved-text result opens the exact matched version rather than the latest edit');
+clickSearch({timelineSearchSession:searchSession.id});
+assert.equal(make('#timelineDay').value,T.dayKey(searchSession.time));
+assert(make('#timelineEntries').innerHTML.includes('data-timeline-session="'+searchSession.id+'" aria-expanded="true"'),'Show session opens the original full session');
+clickTimeline({timelineSessionEvents:searchSession.id});
+const surrounding=make('#timelineEntries').innerHTML;
+assert(surrounding.includes('aria-label="Exact session events"')&&surrounding.includes('Surrounding output'),'Showing the matching session retains nonmatching outputs and its full chronology');
+assert(make('[data-timeline-session="'+searchSession.id+'"]').focused,'Show session returns keyboard focus to its session card');
+
+make('#timelineQuery').value='gentian';make('#timelineQuery').listeners.input();
+searchHTML=make('#timelineSearchResults').innerHTML;
+assert(searchHTML.includes('Current file text: renamed-source.md')&&searchHTML.includes('&lt;i&gt;gentian&lt;/i&gt; follow-up &amp; review'),'Current file matches retain their current name and escape their explanation');
+const currentIndex=searchHTML.match(/data-timeline-search-match="(\d+)"/)[1];
+const beforeCurrent=calls.length;clickSearch({timelineSearchMatch:currentIndex});
+assert(fileReads.some(([path,workspace])=>path===sourcePath&&workspace==='general'));
+assert(calls.slice(beforeCurrent).some(call=>call[0]==='folder'&&call[2]==='/projects/site')&&calls.slice(beforeCurrent).some(call=>call[0]==='file'&&call[2]==='renamed-source.md'),'A current content result follows stable identity to the renamed file and opens it');
+
+make('#timelineQuery').value='';make('#timelineQuery').listeners.input();
+make('#timelineEntries').listeners.input({target:{closest:()=>({dataset:{timelineSessionNote:searchSession.id},value:'Continue the <orbital> handoff & review.'})}});
+make('#timelineQuery').value='orbital';make('#timelineQuery').listeners.input();
+searchHTML=make('#timelineSearchResults').innerHTML;
+assert(searchHTML.includes('<b>Session note</b>')&&searchHTML.includes('Continue the &lt;orbital&gt; handoff &amp; review.'),'A note-only match states its reason and renders saved text safely');
+assert(make('#timelineEntries').innerHTML.includes('Note matches'),'A note-only hit is not labelled as zero matching activity');
+clickSearch({timelineSearchSession:searchSession.id});
+assert(make('#timelineEntries').innerHTML.includes('Surrounding output'),'A note-only result also returns to the full surrounding session');
+const beforeScope=calls.length;context.activeWorkspace='work';clickSearch({timelineSearchMatch:currentIndex});
+assert.equal(calls.length,beforeScope,'A stale content action cannot open material after changing Workspace');
+summaryTimeline.render();
+assert(make('#timelineSearchResults').innerHTML.includes('0 matching sessions'),'Another Workspace cannot search a previous Workspace’s notes or file text');
+context.activeWorkspace='general';make('#timelineQuery').value='';summaryTimeline.render();
+assert(make('#timelineSearchResults').hidden&&make('#timelineSearchResults').innerHTML==='','Clearing search restores the ordinary Timeline and removes stale result actions');
+console.log('Timeline search UI passed: production source adapter, escaped note/content reasons, full-session navigation, saved-version and renamed current-file actions, focus and Workspace isolation.');
+
+const createPath='/projects/site/new-output.md',createdFile={workspace:'general',project:'site',path:createPath,name:'new-output.md',itemId:'new-output',kind:'document'};
+searchHistory.set('new-output',{id:'new-output',title:'new-output.md',currentVersion:'created-v1',versions:[{id:'created-v1',title:'new-output.md',text:'Created file text'}],relations:[]});
+const filesChanged=windowListeners.get('spatial-files-change');
+assert.equal(typeof filesChanged,'function');
+const beforeCreate=summaryTimeline.snapshot().activity.length;
+filesChanged({detail:{workspace:'general',action:'create',items:[{workspace:'general',project:'site',path:'/projects/site/Folder',name:'Folder',itemId:'folder-id',kind:'folder'},createdFile]}});
+const createdEvents=summaryTimeline.snapshot().activity.filter(event=>event.itemId==='new-output');
+assert.equal(summaryTimeline.snapshot().activity.length,beforeCreate+1,'Creating a real file records activity while creating its containing folder does not claim a saved file');
+assert.equal(createdEvents.length,1);assert.equal(createdEvents[0].type,'file.save');assert.equal(createdEvents[0].path,createPath);assert.equal(createdEvents[0].itemVersion,'created-v1');assert.equal(createdEvents[0].project,'site');
+filesChanged({detail:{workspace:'general',action:'save',items:[createdFile]}});
+assert.equal(summaryTimeline.snapshot().activity.filter(event=>event.itemId==='new-output').length,1,'Ordinary autosave notifications cannot produce per-keystroke Timeline saves');
+filesChanged({detail:{workspace:'work',action:'create',items:[{...createdFile,workspace:'work',itemId:'foreign-created'}]}});
+assert(!summaryTimeline.snapshot().activity.some(event=>event.itemId==='foreign-created'),'A foreign Workspace file notification cannot enter the active Timeline');
+clickTimeline({timelineOpen:createdEvents[0].id});
+assert(calls.some(call=>call[0]==='item'&&call[1]==='new-output'&&call[2].versionId==='created-v1'),'A created-file save event reopens the exact captured output version');
+console.log('Timeline file creation passed: real files, canonical version IDs, folder exclusion, autosave coalescing, Workspace ownership and exact output reopening.');
+
+(async()=>{
+  // Finish a pending attachment read while the query is cleared in another
+  // Workspace, then return to the same cache signature and search again.
+  let releaseRead,readCount=0;
+  context.SpatialStashFiles={get:()=>{readCount++;return new Promise(resolve=>{releaseRead=resolve;});}};
+  const attachmentPath='/projects/site/imported.txt';
+  searchFiles.set(attachmentPath,{workspace:'general',project:'site',path:attachmentPath,directory:'/projects/site',name:'imported.txt',itemId:'imported-text',kind:'document',content:null,revision:1,attachment:{key:'imported-text-key',mime:'text/plain'}});
+  summaryClock+=20*60000;
+  summaryTimeline.record('file.open',{app:'dolphin',title:'Imported text',path:attachmentPath,itemId:'imported-text'});
+  make('#timelineQuery').value='violet';make('#timelineQuery').listeners.input();
+  assert(make('#timelineSearchResults').innerHTML.includes('Reading saved text…'),'An asynchronous imported file read has a visible loading status');
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(readCount,1);
+  make('#timelineQuery').value='';summaryTimeline.render();context.activeWorkspace='work';summaryTimeline.render();
+  releaseRead(new Blob(['The violet handoff was captured in imported text.']));
+  await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));
+  context.activeWorkspace='general';make('#timelineQuery').value='violet';summaryTimeline.render();
+  const afterReturn=make('#timelineSearchResults').innerHTML;
+  assert(afterReturn.includes('Current file text: imported.txt')&&afterReturn.includes('violet handoff'),'A read finishing in another Workspace remains searchable when its owning Workspace returns');
+  assert(!afterReturn.includes('Reading saved text…'),'A completed read does not leave its original signature permanently loading');
+  assert.equal(readCount,1,'Returning to the same file state reuses the completed read');
+  console.log('Timeline asynchronous text search passed: cleared-query Workspace transitions cannot strand a completed attachment read.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
