@@ -69,6 +69,55 @@ async function boot(practice=false,chapter=null){
     assert(vm.runInContext("Object.values(projectSpaces).some(project=>project.name==='Guide pointer check'&&project.downloadToProject)",dom.getInternalVMContext()),'The actual form creates the named Project with its selected option');
     assert(w.SpatialGuide.model.state.done.includes('project-created'),'Guide observes actual Project creation');
    }
+   if(chapter==='workspace-separation'){
+    const context=dom.getInternalVMContext(),run=source=>vm.runInContext(source,context),model=w.SpatialGuide.model;
+    // jsdom has no layout. Report rectangles only for connected, available
+    // content so the Guide observes the same visible live Clipboard as a browser.
+    w.HTMLElement.prototype.getClientRects=function(){return this.isConnected&&!this.closest('[hidden],[inert]')?[{left:0,top:0,right:300,bottom:300,width:300,height:300}]:[];};
+    const settled=async(ready,message)=>{const deadline=Date.now()+5000;while(!ready()){if(Date.now()>deadline)throw new Error(message+'; '+JSON.stringify({workspace:run('activeWorkspace'),done:model.state.done,mission:w.SpatialGuide.mission(model)}));await delay(20);}};
+    await settled(()=>model.state.initialized&&model.state.practiceWorkspace&&model.state.workspaceComparison,'Workspace practice did not initialize');
+    const workspace=model.state.practiceWorkspace;
+    assert.notEqual(workspace,'general','Direct chapter practice creates its own Workspace');
+    assert.equal(run('activeWorkspace'),workspace);assert.equal(model.lesson.id,'workspace-separation');assert(!model.ready());
+    const show=()=>d.querySelector('#spatialGuide [data-guide-action="show"]').click();
+    const openKind=kind=>run("Object.keys(appState).find(id=>appState[id]==='open'&&(appInfo[id]?.base||id)==="+JSON.stringify(kind)+")");
+    show();await settled(()=>openKind('notes'),'Show me did not open Note Editor');
+    const noteId=openKind('notes'),note=d.querySelector('[data-app-frame="'+noteId+'"] .notes-layout textarea');
+    assert(note);assert.equal(note.value,'','Guide opens a normal empty editor instead of inserting practice content');
+    const text='My Workspace keeps this note and copied text.';note.value=text;note.dispatchEvent(new w.Event('input',{bubbles:true}));
+    await settled(()=>model.state.done.includes('workspace-note'),'Guide did not observe actual Note Editor input');
+    show();await settled(()=>openKind('browser'),'Show me did not open Firefox');
+    const browserId=openKind('browser'),address=d.querySelector('[data-app-frame="'+browserId+'"] .browser-toolbar input');
+    assert(address);address.value='Mail';address.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+    await settled(()=>model.state.done.includes('workspace-browser'),'Guide did not observe the local Firefox visit');
+    note.focus();note.setSelectionRange(0,text.length);note.dispatchEvent(new w.Event('copy',{bubbles:true,cancelable:true}));
+    assert.equal(w.SpatialDesktopClipboard.list()[0].text,text,'The real copy handler captures selected note text');
+    assert(!model.state.done.includes('workspace-copy'),'Copying alone waits until its Clipboard is shown');
+    show();await settled(()=>model.state.done.includes('workspace-copy'),'Show me did not reveal the actual Workspace Clipboard');
+    const clipboard=d.querySelector('#desktopClipboardWidget'),list=clipboard.querySelector('.desktop-clipboard-list'),label=clipboard.querySelector('.desktop-clipboard-context');
+    const originalClipboard=list.dataset.rendered,originalLabel=label.textContent,comparison=JSON.parse(JSON.stringify(model.state.workspaceComparison));
+    assert(clipboard.textContent.includes(text),'The live Clipboard shows copied note text');
+    assert.equal(comparison.note.id,noteId);assert.equal(comparison.browser.id,browserId);
+    run('setUniversalSearchOpen(true)');d.querySelector('.workspace-tabs [data-workspace="general"]').click();
+    await settled(()=>run('activeWorkspace')==='general'&&!run('desktopPageAnimating'),'The actual Workspace tab did not switch to General');
+    assert.equal(w.SpatialDesktopClipboard.list().length,0,'General has its own empty Clipboard instead of the practice copy');
+    assert(!model.state.done.includes('workspace-compare'),'Switching Workspace alone does not count as inspecting Clipboard');
+    // A stale source node can still be mounted during the deferred Workspace
+    // render. An input event asks the real observer to inspect that stale DOM.
+    list.dataset.rendered=originalClipboard;label.textContent=originalLabel;
+    d.body.dispatchEvent(new w.KeyboardEvent('keyup',{key:'Shift',bubbles:true}));
+    assert(!model.state.done.includes('workspace-compare'),'Stale Clipboard contents from the previous Workspace cannot finish comparison');
+    show();await settled(()=>model.state.done.includes('workspace-compare'),'General Clipboard inspection did not complete comparison');
+    assert(label.textContent.startsWith('General only'));assert(!clipboard.textContent.includes(text),'General does not display the other Workspace’s copied text');
+    run('setUniversalSearchOpen(true)');d.querySelector('.workspace-tabs [data-workspace="'+workspace+'"]').click();
+    await settled(()=>run('activeWorkspace')===workspace&&!run('desktopPageAnimating'),'The original Workspace did not return');
+    show();await settled(()=>model.ready(),'Returning to the live original Clipboard did not complete the round trip');
+    assert.deepEqual(JSON.parse(JSON.stringify(model.state.done)),Array.from(model.lesson.goals));
+    assert.equal(d.querySelector('[data-app-frame="'+noteId+'"] .notes-layout textarea').value,text,'The original note text returns');
+    assert.equal(d.querySelector('[data-app-frame="'+browserId+'"] .browser-toolbar input').value,comparison.browser.address,'The original Firefox page returns');
+    assert.equal(w.SpatialDesktopClipboard.list()[0].id,comparison.clipboard.id,'The original Clipboard entry retains its identity');
+    assert.equal(w.localStorage.getItem('spatial-desktop-clipboard-v1'),null,'Practice Clipboard never writes normal desktop storage');
+   }
   }else{
    const body=d.querySelector('.desktop-panel:not([hidden]) .desktop-panel-body'),state=JSON.stringify(P.state());
    body.dispatchEvent(new w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:20,clientY:100}));
@@ -123,4 +172,4 @@ async function boot(practice=false,chapter=null){
   await delay(40);assert.deepEqual(errors,[],'Widget, Workspace and app actions have no script/event errors');
  }finally{w.close();}
 }
-(async()=>{await boot();await boot(true);await boot(true,'projects');console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, permanently hidden legacy rack, unique Parked cards and canonical shortcut restoration, app controls, Settings, first-run Guide and body-level Guide Project form pointer/Cancel/close/Escape/Create interactions.');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await boot();await boot(true);await boot(true,'projects');await boot(true,'workspace-separation');console.log('Full desktop boot passed: actual page scripts, native widgets, context editing, live popups/drafts, Workspace layout isolation, permanently hidden legacy rack, unique Parked cards and canonical shortcut restoration, app controls, Settings, first-run Guide, body-level Guide Project form interactions and the Workspace note/browser/Clipboard comparison and restoration.');})().catch(error=>{console.error(error);process.exitCode=1;});

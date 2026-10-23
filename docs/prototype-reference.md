@@ -38,7 +38,11 @@ Panels and widgets have no headers or panel footers. Widget movement is availabl
 
 ## Ownership and files
 
-Workspaces separate Home folders, app sessions, browser history, multimedia, clipboard history, notifications and panel layouts. Projects own a folder, resources, windows and desktop column. Downloads follow the Workspace unless a Project opts into its own Downloads folder.
+Each Workspace keeps its own Home folders, windows, app sessions, browser tabs and history, media sessions, clipboard history, notifications, Timeline activity and panel layout. Assistant conversations, drafts and default output folders follow the Workspace or Project. Projects own a folder, resources, windows and desktop column. Downloads follow the Workspace unless a Project opts into its own Downloads folder.
+
+**Background apps are an intentional exception:** needed playback, downloads and game services stay available across Workspaces, with the same shared controls and **Open window here** action. Appearance, hardware connections, master audio and system alerts also belong to the computer as a whole. Changing Workspace does not stop or duplicate a shared Background service.
+
+These are browser-local working environments, not operating-system security boundaries or separate native browser accounts and cookie stores. Deliberate file and window transfers remain possible.
 
 Files exposes folders and Project management. Create, import, rename, copy, move, trash and recover ordinary files. Saved materials and source references stay in the active context’s folders. Notes can bind to browser-local files and reopen with their content intact.
 
@@ -103,6 +107,8 @@ Voice input uses the browser’s speech-recognition support and is unavailable w
 ## Desktop Guide
 
 Open Desktop Guide through search or the README's direct link. It teaches controls, Apps, tiling, floating, Overview, maximize/fullscreen, parking, desktops, Files, Assistant, Projects, Workspaces, panel arrangement and displays. Practice uses isolated state; finishing offers a clean desktop or demo content. Skipping and reopening preserve progress.
+
+The Workspace practice makes separation visible: write a note, visit a local Firefox page and copy text, inspect General’s separate clipboard, then return to find the original note, page and clipboard entry. The help explains the shared Background apps and system controls.
 
 Guide targets real widgets, context menus, the edit toolbar and app controls. Temporary gates do not rewrite saved layouts. Arrangement instructions begin with a right-click on a panel.
 

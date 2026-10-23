@@ -46,6 +46,7 @@
     if(['system','resize-areas','move-areas'].includes(id))ids.push('controls');
     if(['project-stash','projects','project-app','project-navigation','ai-context'].includes(id))ids.push('files');
     if(['ai-context','project-app'].includes(id))ids.push('assistant');
+    if(id==='workspace-separation')ids.push('clipboard');
     return ids;
   }
   function preparePanelLesson(force=false){
@@ -160,6 +161,7 @@
     if (needed.ownWorkspace) {
       if (!workspaceProfiles[model.state.practiceWorkspace]) model.state.practiceWorkspace = createWorkspaceFromEditor('Practice workspace');
       renderWorkspace(model.state.practiceWorkspace,false);
+      if(model.lesson.id==='workspace-separation')changeDesktopPage(0,false,'workspace');
     }
     if (needed.downloads) { openApp('dolphin'); renderFileLocation('dolphin',workspaceProfiles[model.state.practiceWorkspace].home+'/Downloads'); }
     if(['ai-context','project-app'].includes(model.lesson.id)){globalThis.SpatialAIDesktop?.expand(false);}
@@ -175,6 +177,7 @@
     guide.settingUp = true;
     await waitForScene();
     if (action === 'escape' && tileSession().fullscreen) toggleAppFullscreen(tileSession().fullscreen.name);
+    if(action==='workspace-practice')await showWorkspacePractice();
     if (action === 'workspace') {
       if (['folders','return'].includes(model.lesson.id)) {
         if (!workspaceProfiles[model.state.practiceWorkspace]) model.state.practiceWorkspace = createWorkspaceFromEditor('Practice workspace');
@@ -237,6 +240,14 @@
     if(model.lesson.id==='timeline')return !done.includes('timeline-activity')?'[data-panel-action="open-overview"]':!done.includes('timeline-compared')?'#timelineScroll':'#timelineLatest';
     return null;
   }
+  function workspacePracticeTarget(){
+    if(model.lesson.id!=='workspace-separation')return null;
+    const goal=guide.mission(model).goal;
+    if((goal==='workspace-compare'&&activeWorkspace!=='general')||(goal==='workspace-restored'&&activeWorkspace!==model.state.practiceWorkspace))return '.workspace-tabs';
+    if(goal==='workspace-note')return $('[data-app-frame] .notes-layout textarea')?'[data-app-frame] .notes-layout textarea':'[data-panel-action="open-overview"]';
+    if(goal==='workspace-browser')return $('[data-app-frame] .browser-toolbar input')?'[data-app-frame] .browser-toolbar input':'[data-panel-action="open-overview"]';
+    return '[data-widget-id="clipboard"] .desktop-widget-summary,#desktopClipboardWidget';
+  }
   function highlight() {
     clearHighlight();
     if (!model.active() || window.hidden) return;
@@ -244,7 +255,7 @@
     const displayGoal = model.lesson.id === 'two-displays' && model.lesson.goals.find(goal=>!model.state.done.includes(goal));
     const currentGoal=guide.mission(model).goal;
     const missionTarget=({'instance-created':'#appsQuickLaunch [data-quick-launch-app]','empty-visited':'.desktop-page-rail','empty-launched':'#emptyDesktopApps','temporary-enter':'[data-app-frame="game"]','temporary-back':'#overviewWindowGrid [data-virtual-screen-tiled]','temporary-restore':'#overviewWindowGrid [data-virtual-screen-fullscreen]','stash-saved':'#workingMemory [data-memory-action="add"]','stash-inspected':'#workingMemory [data-memory-id] summary','ai-source':'#workingMemory [data-memory-id]','ai-request':'#aiPrompt','ai-kept':'[data-ai-demo-turn]','ai-project-source':'[data-app-frame] .app-badge','app-unpark':'#miniStack','search-launch':'[data-search-open-app]','project-workspace':'.desktop-context-header','project-return':'.desktop-context-header'})[currentGoal];
-    const contextTarget = missionTarget || overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':'.desktop-panel:not([hidden]) .desktop-panel-body'})[model.lesson.id];
+    const contextTarget = missionTarget || workspacePracticeTarget() || overviewPracticeTarget() || ({'timeline-task':!model.state.done.includes('timeline-task-created')?'#timelineAddToggle':'#timelineEntries [data-timeline-complete]','hide-areas':'.desktop-panel:not([hidden]) .desktop-panel-body'})[model.lesson.id];
     const panelTarget=guide.panelTarget(model.lesson.id,displayGoal||currentGoal,panelTargetContext());
     const target = panelTarget || contextTarget || (model.lesson.id === 'two-displays' ? ({'display-linked':'[data-guide-action="open-display"]','display-app-moved':'[data-app-frame] .app-titlebar','display-area-moved':'.desktop-panel:not([hidden]) .desktop-panel-body','display-max-enter':'[data-app-frame] [data-window-action="maximize"]','display-max-exit':'[data-app-frame] [data-window-action="maximize"]','display-full-enter':'[data-app-frame] [data-window-action="maximize"]'})[displayGoal] : model.lesson.target);
     if (target) highlighted = guideTargets(target);
@@ -367,6 +378,45 @@
     if (model.mark(goal)) { guide.save(); lastSignature = ''; }
   }
   function practiceProjectForLesson(){return model.state.practiceProject;}
+  function workspacePracticeScene(){
+    const windows=[];
+    for(const [id,state] of Object.entries(appState)){
+      if(state==='closed'||!appInfo[id]||desktopPages.columnOf(activeWorkspace,id)!=='workspace')continue;
+      const kind=appInfo[id].base||id;
+      if(!['notes','browser'].includes(kind))continue;
+      const value=appWindowModel(id),item={id,kind,state};
+      if(kind==='notes')item.note=SpatialAppTools.activeNote(value)?.text||'';
+      else {const page=SpatialAppTools.current(value.navigation);item.browser={address:page.address||'',title:page.title||'',history:JSON.stringify(value.navigation)};}
+      windows.push(item);
+    }
+    const clipboard=globalThis.SpatialDesktopClipboard?.list()||[],widget=$('#desktopClipboardWidget');
+    // A Workspace switch updates the model before its deferred widget render.
+    // Credit the comparison only after the learner sees the matching contents.
+    const clipboardVisible=visibleTarget(widget)&&$('.desktop-clipboard-list',widget)?.dataset.rendered===JSON.stringify(clipboard)&&$('.desktop-clipboard-context',widget)?.textContent.startsWith(workspaceProfiles[activeWorkspace].label+' only');
+    return {workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),windows,clipboard,clipboardVisible:!!clipboardVisible};
+  }
+  async function showWorkspacePractice(){
+    const goal=guide.mission(model).goal;
+    const owner=goal==='workspace-compare'?'general':model.state.practiceWorkspace;
+    if(!workspaceProfiles[owner])return;
+    if(activeWorkspace!==owner)renderWorkspace(owner,false);
+    await waitForScene();
+    if(desktopPages.column(activeWorkspace)!=='workspace'){changeDesktopPage(0,false,'workspace');await waitForScene();}
+    setUniversalSearchOpen(false);
+    if(['workspace-note','workspace-browser'].includes(goal)){
+      const kind=goal==='workspace-note'?'notes':'browser';
+      const id=Object.keys(appState).find(id=>appState[id]!=='closed'&&(appInfo[id]?.base||id)===kind&&desktopPages.columnOf(activeWorkspace,id)==='workspace');
+      if(id){openApp(id);changeDesktopPage(desktopPages.pageOf(activeWorkspace,id),false,'workspace');}
+      else createAppInstance(kind);
+    }else{
+      if(goal==='workspace-restored')for(const item of [model.state.workspaceComparison?.note,model.state.workspaceComparison?.browser]){
+        if(item&&appInfo[item.id]&&appState[item.id]==='closed')openApp(item.id);
+      }
+      globalThis.SpatialPanels?.showWidget('clipboard');
+      if(!visibleTarget($('#desktopClipboardWidget')))globalThis.SpatialDesktopClipboard?.open();
+    }
+    lastSignature='';check();
+  }
   function showLessonOverview(id){
     if(panelLayoutLessons.includes(id)){
       for(const widget of panelWidgetsForLesson(id))SpatialPanels.showWidget(widget);
@@ -444,6 +494,7 @@
       }
     }
     if (id === 'folders' && activeWorkspace === model.state.practiceWorkspace && open.some(name => (appInfo[name].base || name) === 'dolphin' && SpatialHomeFolders.standard.some(folder => frameFor(name).dataset.fileLocation === workspaceProfiles[activeWorkspace].home + '/' + folder))) mark('workspace-folder');
+    if(id==='workspace-separation'&&!desktopPageAnimating&&!manualWindowInteraction&&guide.observeWorkspace(model,workspacePracticeScene())){guide.save();lastSignature='';}
     if (id === 'return' && activeWorkspace === 'general') mark('general-return');
     currentRecovery = guide.recovery(model,{workspace:activeWorkspace,column:desktopPages.column(activeWorkspace),projectExists:!!projectSpaces[practiceProject] && openProjectNames().includes(practiceProject),open,bounded,full:session.fullscreen?.name,temporaryHere:column==='workspace'&&desktopPages.current(activeWorkspace)===0,temporaryOpen:appState[model.state.temporaryWindow]==='open',parked:Object.keys(states).filter(name=>states[name] === 'minimized')});
     const ready = model.ready(), signature = JSON.stringify([model.state.index, done, ready, session.fullscreen?.name, bounded,currentRecovery,id === 'two-displays' && extendedDesktopActive(),panelState&&[document.body.dataset.panelEditing,!!$('.panel-widget-picker'),!!$('.panel-context-menu'),$('.panel-applet-popup')?.dataset.widgetId||'']]);
@@ -533,6 +584,7 @@
     const chapter = event.target.closest('[data-guide-chapter]')?.dataset.guideChapter;
     if (chapter) start(chapter);
     if (action === 'show') {
+      if(model.lesson.id==='workspace-separation'){await showWorkspacePractice();highlight();return;}
       if (model.lesson.id==='temporary-desktop' && model.state.done.includes('temporary-enter')) showLessonOverview(model.lesson.id);
       if (['apps','overview','tiling','project-app','workspaces','folders','return','hide-areas','overview-navigation','timeline','timeline-task'].includes(model.lesson.id)) { showLessonOverview(model.lesson.id); }
       highlight();

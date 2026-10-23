@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const G=require('../dist/spatial-guide.js'),M=require('../dist/panel-widgets.js');
-const model=id=>G.create({status:'active',version:9,index:G.lessons.findIndex(lesson=>lesson.id===id),done:[]});
+const model=id=>G.create({status:'active',lessonId:id,done:[]});
 const scene=(state,workspace='general',interacting=false)=>({state,workspace,interacting});
 for(const id of ['system','apps','overview','tiling','park','unpark','desktops','project-stash','ai-context','projects','workspaces','folders','temporary-desktop','two-displays'])assert(G.lessons.some(lesson=>lesson.id===id),'Keep full desktop guidance: '+id);
 assert.equal(G.chapters.length,14);assert.equal(G.chapters.find(chapter=>chapter.id==='areas').title,'Panels & widgets');

@@ -20,7 +20,7 @@ while (model.lesson.id !== 'complete') {
 }
 assert(model.allows('projects'));
 model.leave('completed'); assert(model.allows('everything'));
-assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,overview,app-instances,tiling,float,fullscreen,true-fullscreen,park,unpark,desktops,empty-desktop,project-stash,ai-context,projects,project-app,project-navigation,workspaces,folders,return,overview-navigation,timeline,timeline-task,resize-areas,area-rail,move-areas,hide-areas,challenge,temporary-desktop,two-displays,complete');
+assert.equal(G.lessons.map(x=>x.id).join(','), 'welcome,system,apps,overview,app-instances,tiling,float,fullscreen,true-fullscreen,park,unpark,desktops,empty-desktop,project-stash,ai-context,projects,project-app,project-navigation,workspaces,folders,workspace-separation,return,overview-navigation,timeline,timeline-task,resize-areas,area-rail,move-areas,hide-areas,challenge,temporary-desktop,two-displays,complete');
 function boot(entries, query = '') {
   const storage = {...entries};
   Object.defineProperties(storage, {
@@ -211,7 +211,7 @@ const literalReference='Open /home/demo/Assistant/brief.md or https://example.or
 assert.equal(proseContext.guideProseMarkup(literalReference),'<p>Open /home/demo/Assistant/brief.md or https://example.org/brief.html. Keep &lt;draft&gt; &amp; its sources.</p><p>Then return to Chat.</p>');
 
 const checkSource = adapter.slice(adapter.indexOf('  function check()'),adapter.indexOf('  function start('));
-const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observePanelLayout:G.observePanelLayout,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
+const context = vm.createContext({model:at('resize-areas'), guide:{mission:G.mission,observePanelLayout:G.observePanelLayout,observeContext:G.observeContext,observeFullscreen:G.observeFullscreen,observeWindows:G.observeWindows,observeSearch:G.observeSearch,observeWorkspace:G.observeWorkspace,recovery:G.recovery,shouldCompact:G.shouldCompact,save(){}},
   appState:{}, appMaximizedState:{}, tileSession:()=>({}), isLocalApp:()=>true,
   panelState:require('../dist/panel-widgets.js').defaults(),SpatialPanels:{state:()=>context.panelState},preparePanelLesson(){},document:{body:{dataset:{},classList:{contains:()=>context.dragging}}},
   dragging:false, window:{}, currentRecovery:null, lastFullscreen:null, lastSignature:'', manualWindowInteraction:false, frameFor:()=>({dataset:{},classList:{contains:()=>false}}), SpatialHomeFolders:require('../dist/home-folders.js'), $:()=>({dataset:{},classList:{contains:()=>false}}), $$:()=>[], highlight(){}, activeWorkspace:'general',activeProjectName:null,
@@ -576,3 +576,82 @@ console.log('Mission Guide passed: short copy, chapter order, one current action
 // adapter must exist before Guide bootstrap can request fullscreen.
 const bootHtml=fs.readFileSync(require.resolve("../dist/index.html"),"utf8");
 assert(bootHtml.indexOf('src="virtual-screen.js')<bootHtml.indexOf('src="guide-desktop.js'),"Gamescope loads before Guide practice initializes");
+
+
+// Workspaces are compared through the learner's real edited windows and Clipboard.
+{
+  assert.equal(G.create({status:'active',version:9,index:20,done:['general-return']}).lesson.id,'return','Version 9 index progress still names its original lesson after inserting Workspace practice');
+  assert.deepEqual(G.create({status:'active',version:9,index:20,done:['general-return']}).state.done,['general-return']);
+  assert.equal(G.create({status:'active',version:9,index:31}).lesson.id,'complete','Old completed introductions stay complete');
+  const savedNavigation=G.create({status:'active',version:9,lessonId:'overview-navigation',done:['overview-away']});
+  assert.deepEqual(savedNavigation.state.done,['overview-away']);assert.equal(savedNavigation.state.version,10);
+  const practice=at('workspace-separation');practice.state.practiceWorkspace='study';
+  assert.deepEqual(practice.lesson.goals,['workspace-note','workspace-browser','workspace-copy','workspace-compare','workspace-restored']);
+  assert(!at('folders').allows('clipboard'));assert(practice.allows('clipboard'));assert(!practice.allows('timeline'));
+  assert.equal(G.panelFeature('clipboard'),'clipboard');assert(G.prerequisites('workspace-separation').ownWorkspace);
+  const history=(addresses,index=addresses.length-1)=>JSON.stringify({items:addresses.map(address=>({address,title:address})),index});
+  const initial={workspace:'study',column:'workspace',windows:[{id:'notes',kind:'notes',state:'open',note:''},{id:'browser',kind:'browser',state:'open',browser:{address:'Start',title:'Start',history:history(['Start'])}}],clipboard:[],clipboardVisible:false};
+  const copy=value=>JSON.parse(JSON.stringify(value));
+  const observe=scene=>G.observeWorkspace(practice,scene);
+  observe({...initial,workspace:'general'});observe({...initial,workspace:'unrelated'});observe({...initial,column:'my-project'});
+  assert.deepEqual(practice.state.done,[],'Foreign Workspaces and Project columns cannot credit the Workspace exercise');
+  observe(initial);assert.deepEqual(practice.state.done,[],'Preparation and existing windows never perform the exercise');
+  const work=copy(initial);work.windows[0].note='Remember the next guide review.';
+  observe(work);assert(practice.state.done.includes('workspace-note'));assert(!practice.state.done.includes('workspace-browser'));
+  work.windows[1].browser={address:'Mail',title:'Mail',history:history(['Start','Mail'])};
+  observe(work);assert(practice.state.done.includes('workspace-browser'));
+  observe({workspace:'general',column:'workspace',windows:[],clipboard:[],clipboardVisible:true});
+  assert(!practice.state.done.includes('workspace-compare'),'Switching away before inspecting the copied note does not count');
+  work.clipboard=[{id:'copied-note',workspace:'study',kind:'text',text:'next guide'}];
+  observe(work);assert(!practice.state.done.includes('workspace-copy'),'The copied item must actually be visible in Clipboard');
+  work.clipboardVisible=true;
+  observe({...work,clipboard:[{id:'foreign',workspace:'general',kind:'text',text:'next guide'}]});
+  assert(!practice.state.done.includes('workspace-copy'),'A foreign Clipboard item cannot satisfy this Workspace');
+  observe({...work,clipboard:[{id:'unrelated-copy',workspace:'study',kind:'text',text:'Something else'}]});
+  assert(!practice.state.done.includes('workspace-copy'),'The copied text must come from the edited note');
+  observe(work);assert(practice.state.done.includes('workspace-copy'));assert(!practice.ready());
+  const general={workspace:'general',column:'workspace',windows:[],clipboard:[{id:'general-copy',workspace:'general',kind:'text',text:'Personal material'}],clipboardVisible:true};
+  observe({...general,clipboardVisible:false});observe({...general,column:'project'});
+  observe({...general,clipboard:work.clipboard});
+  observe({...general,clipboard:[...general.clipboard,{id:'copied-note',workspace:'general',kind:'text',text:'next guide'}]});
+  assert(!practice.state.done.includes('workspace-compare'),'A hidden Clipboard, wrong column or leaked source record cannot demonstrate separation');
+  observe(general);assert(practice.state.done.includes('workspace-compare'));assert(!practice.ready());
+  const resumed=G.create(practice.snapshot());
+  assert.deepEqual(resumed.state.done,practice.state.done,'The comparison and captured content survive reload');
+  const returns=scene=>G.observeWorkspace(resumed,scene);
+  returns({...work,clipboardVisible:false});assert(!resumed.ready(),'Returning includes opening this Workspace Clipboard');
+  const changed=copy(work);changed.windows[0].note='Unexpectedly replaced';returns(changed);assert(!resumed.ready(),'Returning must retain the captured note');
+  const changedBrowser=copy(work);changedBrowser.windows[1].browser.history=history(['Start','Mail','Mail']);returns(changedBrowser);assert(!resumed.ready(),'The browser session must retain its captured history');
+  returns({...work,windows:work.windows.filter(window=>window.id!=='notes')});assert(!resumed.ready(),'A missing window cannot stand in for restored work');
+  returns({...work,windows:work.windows.map(window=>window.id==='notes'?{...window,state:'closed'}:window)});assert(!resumed.ready(),'A closed window does not count as retained work');
+  returns({...work,clipboard:[{...work.clipboard[0],text:'Different clipboard'}]});assert(!resumed.ready(),'Clipboard identity alone cannot hide changed contents');
+  returns(work);assert(resumed.ready(),'The same note, browser session and Clipboard item return together');
+  assert(resumed.advance());assert.equal(resumed.state.workspaceComparison,undefined,'The next lesson drops the comparison capture');
+
+  const existing=at('workspace-separation');existing.state.practiceWorkspace='study';
+  const old=copy(work);old.clipboardVisible=true;
+  G.observeWorkspace(existing,old);assert.deepEqual(existing.state.done,[],'Existing nonempty notes, visited pages and clipboard records form a baseline, not automatic credit');
+  const edited=copy(old);edited.windows[0].note='A revised guide note.';
+  edited.windows[1].browser={address:'Calendar',title:'Calendar',history:history(['Start','Mail','Calendar'])};
+  edited.clipboard=[{id:'new-copy',workspace:'study',kind:'text',text:'revised guide'}];
+  G.observeWorkspace(existing,edited);assert(existing.state.done.includes('workspace-copy'));
+  edited.windows[0].note='A revised guide note, with final changes.';
+  edited.windows[1].browser={address:'Weather',title:'Weather',history:history(['Start','Mail','Calendar','Weather'])};
+  G.observeWorkspace(existing,edited);G.observeWorkspace(existing,general);G.observeWorkspace(existing,edited);
+  assert(existing.ready(),'Further edits before comparing are captured without changing the learner work');
+  const help=practice.lesson.referenceSections.map(section=>section.title+' '+section.text).join(' ');
+  assert(/Background/.test(help)&&/shared/.test(help),'The lesson explicitly preserves the Background exception');
+  assert(/hardware|master/i.test(help)&&/security|accounts|cookies/.test(help),'The lesson distinguishes machine controls and prototype limits');
+  console.log('Workspace Guide passed: performed note/page/Clipboard steps, scope boundaries, visible comparison, unchanged return, reload, current edits and version 9 progress.');
+}
+
+// A damaged new practice checkpoint cannot crash the Guide or claim a return.
+{
+  const damaged=at('workspace-separation');damaged.state.practiceWorkspace='study';
+  damaged.state.workspaceComparison={workspace:'study',baseline:null};damaged.state.done=['workspace-note'];
+  assert.doesNotThrow(()=>G.observeWorkspace(damaged,{workspace:'study',column:'workspace',windows:[],clipboard:[],clipboardVisible:false}));
+  assert.deepEqual(damaged.state.done,[]);assert(damaged.state.workspaceComparison.baseline);
+  damaged.state.done=['workspace-note','workspace-browser','workspace-copy','workspace-compare'];
+  assert.doesNotThrow(()=>G.observeWorkspace(damaged,{workspace:'general',column:'workspace',windows:[],clipboard:[],clipboardVisible:true}));
+  assert(!damaged.ready(),'Missing captured work never completes a restored session');
+}
