@@ -203,6 +203,62 @@ console.log('Two-display chapter passed: optional ending, real transfers, same-w
 
 // Run the adapter's actual polling function for the new desktop tasks.
 const adapter = fs.readFileSync(require.resolve('../dist/guide-desktop.js'),'utf8');
+// The welcome’s actual click handler exits directly through the real storage
+// finish path; returning users keep their desktop instead of reseeding it.
+(async()=>{
+  const clickSource=adapter.slice(adapter.indexOf("  window.addEventListener('click', async event => {"),adapter.indexOf("  window.addEventListener('input'"));
+  const action=name=>({target:{closest:selector=>selector==='[data-guide-action]'?{dataset:{guideAction:name}}:null}});
+  function entry(entries={},query=''){
+    const session=boot(entries,query),calls={leave:[],render:0,gate:0,exit:[]};
+    const runtime=vm.createContext({model:session.api.model,guide:session.api,
+      window:{addEventListener(_,handler){calls.click=handler;}},
+      leave(status,choice){calls.leave.push([status,choice]);session.api.finish(status,choice);},
+      updateGate(){calls.gate++;},render(){calls.render++;},requestExit(status){calls.exit.push(status);}});
+    vm.runInContext(clickSource,runtime,{filename:'welcome-guide-actions.js'});
+    return {session,calls,runtime};
+  }
+  const first=entry({'spatial-color-theme-v1':'light'});
+  assert.equal(first.session.api.model.state.mode,'first');
+  first.session.api.storage.setItem('spatial-workspace-app-states-v1','temporary-practice');
+  await first.calls.click(action('explore-demo'));
+  assert.deepEqual(first.calls.leave,[['skipped','demo']]);assert.deepEqual(first.calls.exit,[],'Explore goes straight to the demo without an exit chooser');
+  assert.equal(first.session.storage[Setup.presetKey],'demo');assert.equal(first.session.storage['spatial-active-workspace'],'general');
+  assert.equal(first.session.storage['spatial-workspace-app-states-v1'],undefined,'Fresh welcome does not retain the empty practice scene');
+  assert.equal(first.session.storage['spatial-color-theme-v1'],'light','Demo entry retains display preferences');
+  assert(!boot(first.session.storage).api.model.active(),'Reload enters the populated demo rather than starting welcome again');
+  const firstAfter=JSON.stringify(first.session.storage);
+  await first.calls.click(action('explore-demo'));
+  assert.equal(first.calls.leave.length,1,'A stale second welcome click cannot reset the session again');
+  assert.equal(JSON.stringify(first.session.storage),firstAfter);
+
+  const normal={'spatial-active-workspace':'work','spatial-workspace-app-states-v1':'saved-windows','spatial-project-spaces-v2':'saved-projects','spatial-desktop-clipboard-v1':'saved-clipboard','spatial-desktop-preset-v1':'clean','spatial-color-theme-v1':'oled'};
+  const repeat=entry(normal,'?guide=start');
+  assert.equal(repeat.session.api.model.state.mode,'repeat');
+  repeat.session.api.storage.setItem('spatial-workspace-app-states-v1','repeat-practice');
+  await repeat.calls.click(action('explore-demo'));
+  assert.deepEqual(repeat.calls.leave,[['skipped','keep']]);assert.deepEqual(repeat.calls.exit,[]);
+  for(const [key,value]of Object.entries(normal))assert.equal(repeat.session.storage[key],value,'Return to desktop preserves '+key);
+  assert(!boot(repeat.session.storage).api.model.active(),'Returning from welcome resumes the existing normal desktop');
+
+  const learn=entry();await learn.calls.click(action('next'));
+  assert.equal(learn.session.api.model.lesson.id,'system','Learn the controls enters the first real lesson');
+  assert.equal(learn.session.api.model.active(),true);assert.equal(learn.calls.leave.length,0);assert.equal(learn.calls.render,1);assert.equal(learn.calls.gate,1);
+  assert.equal(learn.session.storage[Setup.presetKey],undefined,'Learning does not seed or replace the normal desktop');
+
+  for(const kind of ['other-lesson','exit-choice','inactive','setting-up']){
+    const guarded=entry();
+    if(kind==='other-lesson')guarded.session.api.model.next();
+    if(kind==='exit-choice')guarded.session.api.model.state.exitStatus='skipped';
+    if(kind==='inactive')guarded.session.api.model.leave('completed');
+    if(kind==='setting-up')guarded.session.api.settingUp=true;
+    const before=JSON.stringify(guarded.session.api.model.snapshot());
+    await guarded.calls.click(action('explore-demo'));
+    assert.equal(guarded.calls.leave.length,0,kind+': stale demo action cannot reset a desktop');
+    assert.equal(JSON.stringify(guarded.session.api.model.snapshot()),before,kind+': stale action preserves Guide progress');
+  }
+  console.log('Guide welcome passed: adjacent destinations, first-run demo, preserved returning desktop, direct controls practice and stale-action guards.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
+
 // The reference renderer adds paragraph breaks without losing paths, URLs,
 // punctuation or literal markup from the saved Guide text.
 const proseContext=vm.createContext({escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')});

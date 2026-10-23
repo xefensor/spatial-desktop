@@ -160,3 +160,8 @@ body[data-theme="light"] .guide-target {outline-color:#168347!important}
   .guide-target {outline-color:Highlight!important}
   .guide-progress i {background:Highlight;forced-color-adjust:none}
 }
+
+/* First visit offers the desktop and guided practice at the same level. */
+.guide-welcome-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.guide-welcome-actions .guide-primary {min-width:0;gap:8px;padding:10px 12px}
+@media(max-width:420px){.guide-welcome-actions{grid-template-columns:minmax(0,1fr)}}

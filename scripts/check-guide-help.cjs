@@ -60,6 +60,19 @@ assert.equal(holder.querySelector('[data-guide-help="reference-0"] summary').tex
 assert.equal(holder.querySelector('draft,files'), null);
 assert(holder.textContent.includes('/home/demo/Assistant/brief.md.'));
 
+// Welcome offers both destinations together, including returning users’ desktop.
+for (const [mode,label] of [['first','Explore demo'],['repeat','Return to desktop']]) {
+  model.start(mode); sandbox.guide.settingUp=false; sandbox.render();
+  const actions=content.querySelector('.guide-step-actions');
+  const choices=[...actions.querySelectorAll('button')];
+  assert.deepEqual(choices.map(button=>button.dataset.guideAction),['explore-demo','next'],'Both welcome choices are adjacent primary actions');
+  assert.equal(choices[0].textContent.trim(),label);
+  assert.equal(choices[1].textContent.trim(),'Learn the controls');
+  assert(choices.every(button=>!button.hidden&&!button.disabled),'Both destinations are immediately available');
+  assert.equal(content.querySelector('[data-guide-action="leave"]'),null,'Welcome does not hide its demo path behind Skip introduction');
+  assert.equal(content.querySelector('[data-guide-preset]'),null,'Welcome opens its destination directly, without the later desktop chooser');
+}
+
 // Starting practice changes the model before reload replaces reference help.
 // Run the actual click/start/check path, including its bubbled and queued work,
 // while deliberately keeping the old reference DOM mounted until reload.

@@ -106,6 +106,8 @@ Voice input uses the browser’s speech-recognition support and is unavailable w
 
 ## Desktop Guide
 
+On a first visit, the welcome screen offers **Explore demo**, which opens the populated desktop directly, and **Learn the controls**, which starts the full Guide. Reopening Guide from a saved desktop offers **Return to desktop** and **Learn the controls**; returning preserves the saved layout, files and chats. Active Guide sessions retain their progress.
+
 Open Desktop Guide through search or the README's direct link. It teaches controls, Apps, tiling, floating, Overview, maximize/fullscreen, parking, desktops, Files, Assistant, Projects, Workspaces, panel arrangement and displays. Practice uses isolated state; finishing offers a clean desktop or demo content. Skipping and reopening preserve progress.
 
 The Workspace practice makes separation visible: write a note, visit a local Firefox page and copy text, inspect General’s separate clipboard, then return to find the original note, page and clipboard entry. The help explains the shared Background apps and system controls.

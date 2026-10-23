@@ -24,6 +24,8 @@ These ideas explore spatial, associative and episodic memory: finding work by wh
 
 ## Try a whole activity
 
+On your first visit, choose **Explore demo** to open the populated desktop directly, or **Learn the controls** for guided practice. Reopening Guide from an existing desktop offers **Return to desktop**, keeping your saved layout, files and chats, or **Learn the controls**. An active Guide keeps its progress.
+
 Start in **Work → Website Launch**. Explore its preview, checklist and source files, park a window, then switch to another project and return. Open **Overview** with **Super / F2** and try reaching the work through its windows, project files and Timeline.
 
 The populated demo also includes personal planning in General, Urban Ecology in School, a Short Film project and gaming. General starts with only the left panel visible. Panels contain movable widgets and save their arrangement per Workspace; right-click a panel and choose **Edit layout**. The interface uses opaque, rounded ABS app windows and square glass panels.
