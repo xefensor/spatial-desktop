@@ -1568,7 +1568,7 @@ function miniMarkup(name) {
   const shortcut = slot === null ? "" : slot > 20 ? " · Click · slot " + slot : " · Super+" + (slot > 10 ? "Shift+" : "") + (slot % 10);
   const parked = tileSession().parked[name];
   const detail = escapeHtml(info.detail || "");
-  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back onto the desktop') + ' · Available across these desktops' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button type="button" class="surface-key mini-control" data-mini-options="' + escapeHtml(name) + '" aria-label="' + escapeHtml('Window options for ' + info.label) + '" title="Window options" aria-haspopup="menu" aria-controls="desktopContextMenu"><span aria-hidden="true">⋯</span></button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
+  const header = '<header title="' + escapeHtml(parked?.reason || 'Drag this card back onto the desktop') + ' · Available across these desktops' + shortcut + '"><div>' + hotkey + '<span class="app-badge ' + info.tone + '">' + appArt(name, "app-art-compact") + '</span><span><b>' + info.label + '</b><small>' + detail + '</small></span></div><div class="mini-actions"><button class="surface-key mini-control" data-mini-restore="' + name + '" aria-label="Unpark ' + info.label + '">' + icon("i-max") + '</button><button class="surface-key mini-control" data-mini-close="' + name + '" aria-label="Close ' + info.label + '">' + icon("i-close") + "</button></div></header>";
   if (name === "elisa") {
     return '<article class="mini-card" data-mini-card="' + name + '">' + header + '<div class="mini-music"><div class="mini-art"></div><div class="mini-track"><b>Evening Light</b><small>Northbound · 1:55 / 3:38</small></div><div class="mini-transport"><button class="surface-key mini-control" data-music="prev" aria-label="Previous track" title="Previous track">' + icon("i-prev") + '</button><button class="surface-key mini-control play-toggle" data-music="play" aria-label="' + (musicPlaying ? "Pause" : "Play") + '" title="' + (musicPlaying ? "Pause" : "Play") + '">' + icon(musicPlaying ? "i-pause" : "i-play") + '</button><button class="surface-key mini-control" data-music="next" aria-label="Next track" title="Next track">' + icon("i-next") + '</button><input class="track-range" type="range" min="0" max="218" value="' + musicPosition + '" aria-label="Track position"></div></div></article>';
   }
@@ -1595,14 +1595,6 @@ function renderMiniApps() {
   $("#miniCount").textContent = String(minimized.length);
   $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
-  $$("[data-mini-options]").forEach(button => button.addEventListener("click", event => {
-    event.preventDefault();
-    event.stopPropagation();
-    const name = button.dataset.miniOptions;
-    if (!appInfo[name] || appState[name] !== "minimized") return;
-    const rect = button.getBoundingClientRect();
-    openDesktopContextMenu({ kind: "app", name, title: appInfo[name].label }, rect.left, rect.bottom, true);
-  }));
   $$("[data-mini-card]").forEach(bindMiniDrag);
   bindMusicControls();
   bindMiniWidgets();

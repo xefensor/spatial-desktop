@@ -98,6 +98,17 @@ async function boot(practice=false,chapter=null){
    w.minimizeApp('notes');await delay(20);assertRackHidden('after parking Notes');
    assert.equal(parkedNotes().length,1,'Notes has one actual native Parked card');
    assert.equal(d.querySelectorAll('#miniStack [data-mini-restore="notes"]').length,1,'Only the native card provides the visible Notes restore action');
+   assert.equal(parkedNotes()[0].querySelectorAll('header .mini-actions button').length,2,'Parked headers contain only Unpark and Close');
+   assert.equal(parkedNotes()[0].querySelector('[data-mini-options]'),null,'Window options do not add a three-dot header button');
+   const parkedHeader=parkedNotes()[0].querySelector('header');
+   parkedHeader.dispatchEvent(new w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:180}));
+   assert.equal(d.querySelector('#desktopContextMenu').hidden,false,'Right-click opens the actual parked window menu through the containing panel');
+   assert(d.querySelector('#desktopContextMenu').textContent.includes('Note Editor'),'The menu identifies the parked app');
+   d.body.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+   parkedNotes()[0].querySelector('[data-mini-restore]').focus();
+   d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'F10',shiftKey:true,bubbles:true,cancelable:true}));
+   assert.equal(d.querySelector('#desktopContextMenu').hidden,false,'Keyboard users can open the same window menu with Shift+F10');
+   d.body.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
    const parkedSlot=vm.runInContext("hotbarSlotFor('notes')",dom.getInternalVMContext());assert(parkedSlot>0,'Parked Notes keeps its canonical shortcut slot');
    const parkedShortcut=parkedSlot<=10?String(parkedSlot%10):parkedSlot<=20?'⇧'+parkedSlot%10:String(parkedSlot);
    assert.equal(parkedNotes()[0].querySelector('.mini-hotkey').textContent,parkedShortcut,'Native Parked card displays the canonical hotbar number');

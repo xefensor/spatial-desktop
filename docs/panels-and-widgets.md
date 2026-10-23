@@ -16,7 +16,7 @@ Panels have Expanded, Compact and Hidden presentations. Compact keeps the expand
 
 Individual widgets have Icon and Expanded appearances. A compact panel remembers the widgets' expanded preferences. If space is temporarily insufficient, content can fall back to an icon and recover when space returns. Controls, drafts and models survive these changes.
 
-Spacing contracts before readable content falls back to an icon. Quick launch names wrap onto two lines, and Parked card actions wrap beneath their identity in narrow panels. Changes to favorites keep the existing focused launcher where possible. Compact actions follow the same Guide restrictions and native availability as their expanded controls.
+Spacing contracts before readable content falls back to an icon. Quick launch names wrap onto two lines. Parked cards keep Unpark and Close beside the title; long titles and subtitles truncate instead of pushing controls underneath. Right-click a card for window options, or focus one of its controls and press Shift+F10. New expanded Apps panels start at 280 pixels wide. Only exact, untouched earlier defaults adopt the wider size once; custom layouts and later manual resizing stay as saved. Changes to favorites keep the existing focused launcher where possible. Compact actions follow the same Guide restrictions and native availability as their expanded controls.
 
 Temporary widget content sizes to its live contents within the viewport. Notifications follow their own widget when it moves. Changing Workspace, display or fullscreen ownership dismisses layout menus and cancels unfinished drags; resizing the viewport keeps an open menu reachable without moving focus out of its fields.
 

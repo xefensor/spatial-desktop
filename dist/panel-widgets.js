@@ -63,7 +63,7 @@
     return {
       schema: 6,
       panels: [
-        {id: 'panel-left', label: 'Left panel', edge: 'left', size: 224, share: 1, mode: 'expanded', display: 1, widgets: leftWidgets.slice()},
+        {id: 'panel-left', label: 'Left panel', edge: 'left', size: 280, share: 1, mode: 'expanded', display: 1, widgets: leftWidgets.slice()},
         {id: 'panel-right', label: 'Right panel', edge: 'right', size: 280, share: 1, mode: 'compact', display: 1, widgets: rightWidgets.slice()}
       ],
       widgets: Object.fromEntries(contentCatalog.map(function (item) { return [item.id, {mode: item.defaultMode, size: 0}]; }))
@@ -74,7 +74,7 @@
   // their files alongside the app canvas; clean and user layouts stay lean.
   function demoDefaults(workspace) {
     const state = defaults();
-    state.panels[0].size = 200;
+    state.panels[0].size = 280;
     state.panels[1].size = 248;
     state.panels[1].mode = workspace === 'general' ? 'hidden' : 'expanded';
     return state;
@@ -490,7 +490,9 @@
     // Render-only fallbacks protect the seeded two-window scenes. Any saved
     // customization opts out, and growing the viewport restores both panels.
     // Reserve 64px for desktop rails/tile padding and 848px for the widest pair.
-    const forcedCompact = {left: curated && width < 1180, right: curated && width < 1360, top: false, bottom: false};
+    const leftWidth=Math.max(0,...groups.left.map(panel=>panel.size)),rightWidth=Math.max(0,...groups.right.map(panel=>panel.size));
+    const canvasMinimum=848+64;
+    const forcedCompact = {left: curated && width < leftWidth+(groups.right.length?COMPACT:0)+canvasMinimum, right: curated && width < leftWidth+rightWidth+canvasMinimum, top: false, bottom: false};
     const compactThickness = function (side) { return side === 'left' || side === 'right' ? COMPACT : COMPACT + headerSize; };
     const compactFor = function (panel) { return panel.mode === 'compact' || forcedCompact[panel.edge]; };
     const requested = function (panel) { return compactFor(panel) ? compactThickness(panel.edge) : Math.max(panel.edge === 'left' || panel.edge === 'right' ? 160 : 100, panel.size); };

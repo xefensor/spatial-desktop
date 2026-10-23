@@ -25,10 +25,10 @@ assert.equal(G.panelTarget('two-displays','display-area-moved',{editing:false}),
 assert(arrangement.details.includes('Right-click a panel → Edit layout → Panels'));assert(!/header|footer|Toolbox/.test(arrangement.details));
 {
  const guide=model('resize-areas'),start=M.defaults();G.observePanelLayout(guide,scene(start));assert(!guide.ready());
- G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:280}),'other'));assert(!guide.ready(),'Another Workspace does not finish the task');
- G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:280}),'general',true));assert(!guide.ready(),'Wait until the resize interaction finishes');
+ G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:start.panels[0].size+56}),'other'));assert(!guide.ready(),'Another Workspace does not finish the task');
+ G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:start.panels[0].size+56}),'general',true));assert(!guide.ready(),'Wait until the resize interaction finishes');
  G.observePanelLayout(guide,scene(M.updateWidget(start,'controls',{size:200})));assert(!guide.ready(),'Individual widget sizes are not panel resizing');
- G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:280})));assert(guide.ready(),'Real saved panel size change finishes resize');
+ G.observePanelLayout(guide,scene(M.updatePanel(start,'panel-left',{size:start.panels[0].size+56})));assert(guide.ready(),'Real saved panel size change finishes resize');
 }
 {
  const guide=model('area-rail'),start=M.defaults();G.observePanelLayout(guide,scene(start));assert(!guide.ready());

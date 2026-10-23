@@ -60,27 +60,27 @@ const initial=M.defaults(),before=JSON.stringify(initial);complete(initial);
 // Curated demo panels expose useful files without consuming the central
 // browser/note scene. The clean default and every explicit edit stay separate.
 const demo=M.demoDefaults(),demoSnapshot=JSON.stringify(demo);complete(demo);
-assert.equal(demo.panels[0].size,200);assert.equal(demo.panels[1].size,248);assert.equal(demo.panels[1].mode,'expanded');assert.equal(demo.widgets.files.mode,'expanded');assert.equal(demo.widgets.assistant.mode,'compact');assert(M.isDemoDefault(demo));
-for(const [width,leftCompact,rightCompact]of [[1440,false,false],[1366,false,false],[1360,false,false],[1359,false,true],[1280,false,true],[1180,false,true],[1179,true,true],[1024,true,true],[900,true,true],[420,true,true]]){
+assert.equal(demo.panels[0].size,280);assert.equal(demo.panels[1].size,248);assert.equal(demo.panels[1].mode,'expanded');assert.equal(demo.widgets.files.mode,'expanded');assert.equal(demo.widgets.assistant.mode,'compact');assert(M.isDemoDefault(demo));
+for(const [width,leftCompact,rightCompact]of [[1600,false,false],[1440,false,false],[1439,false,true],[1366,false,true],[1280,false,true],[1248,false,true],[1247,true,true],[1024,true,true],[900,true,true],[420,true,true]]){
   const placed=bounded(demo,{...options,width,demo:true}),left=placed.panels['panel-left'],right=placed.panels['panel-right'];
   assert.equal(left.compact,leftCompact,'Demo left panel mode at '+width);assert.equal(right.compact,rightCompact,'Demo right panel mode at '+width);
   // The two desktop icon rails reserve 24px each; tileBounds adds 8px on
   // either edge. The largest seeded pair needs 440 + 400 + 8 = 848px.
   if(width>=1024)assert(width-placed.insets.left-placed.insets.right-64>=848,'The actual tiled canvas fits the largest seeded pair at '+width);
-  if(width===1280)assert(width-placed.insets.left-placed.insets.right>=1024,'Compact Files leaves room for the seeded pair on a narrow laptop');
+  if(width===1280)assert(width-placed.insets.left-placed.insets.right-64>=848,'Compact Files leaves room for the seeded pair and its rails on a narrow laptop');
   assert.equal(JSON.stringify(demo),demoSnapshot,'Responsive fallback never rewrites the saved demo layout');
 }
 assert.equal(M.layout(demo,{...options,width:1280}).panels['panel-right'].compact,false,'Responsive curation requires the demo context');
 for(const change of [state=>state.panels[0].size=224,state=>state.panels[1].size=300,state=>state.panels[1].mode='compact',state=>state.panels[0].widgets.reverse(),state=>state.widgets.assistant.mode='expanded',state=>state.widgets.files.size=300]){
   const custom=clone(demo);change(custom);const snapshot=JSON.stringify(custom);assert(!M.isDemoDefault(custom),'A deliberate edit opts out of demo adaptation');const placed=bounded(custom,{...options,width:1280,demo:true});assert.equal(placed.panels['panel-right'].compact,custom.panels[1].mode==='compact','Explicit panel preferences win over responsive defaults');assert.equal(JSON.stringify(custom),snapshot);
 }
-assert.equal(M.normalize(demo).panels[1].mode,'expanded');assert.equal(initial.panels[0].size,224);assert.equal(initial.panels[1].mode,'compact','Clean defaults retain their simpler compact Files panel');
+assert.equal(M.normalize(demo).panels[1].mode,'expanded');assert.equal(initial.panels[0].size,280);assert.equal(initial.panels[1].mode,'compact','Clean defaults retain their simpler compact Files panel');
 const generalDemo=M.demoDefaults('general');complete(generalDemo);assert(M.isDemoDefault(generalDemo));
-for(const width of [1440,1280,1024]){
+for(const width of [1440,1280,1192,1191,1024]){
   const placed=bounded(generalDemo,{...options,width,demo:true});
   assert.equal(placed.insets.right,0,'General reserves no space for a right panel at '+width);
   assert(!placed.panels['panel-right'],'General has no right panel or icon rail');
-  assert.equal(placed.panels['panel-left'].compact,width<1180,'General keeps responsive left panel fitting');
+  assert.equal(placed.panels['panel-left'].compact,width<1192,'General keeps responsive left panel fitting');
 }
 for(const workspace of ['school','work','gaming'])assert.deepEqual(M.demoDefaults(workspace),demo,'Other demo Workspaces keep both panels');
 assert.equal(initial.schema,6);assert.deepEqual(initial.panels[0].widgets,['launcher','apps','clock','notifications','calendar','controls']);
@@ -146,7 +146,7 @@ for(const compactHeaders of [false,true]){
 }
 let icons=M.removePanel(initial,'panel-right');for(const item of content)icons=M.updateWidget(icons,item.id,{mode:'compact',size:0});
 const packed=bounded(icons,options).panels['panel-left'];assert.equal(Object.keys(packed.widgets).length,14);
-const ordered=icons.panels[0].widgets;assert.equal(packed.widgets.launcher.y,0);assert.equal(packed.widgets[ordered[1]].y,packed.widgets[ordered[4]].y,'Ordinary icons retain their packed first row below the Workspace label');assert.equal(packed.widgets[ordered[1]].y,52);assert.equal(packed.widgets[ordered[5]].y,100);
+const ordered=icons.panels[0].widgets;assert.equal(packed.widgets.launcher.y,0);assert.equal(packed.widgets[ordered[1]].y,packed.widgets[ordered[4]].y,'Ordinary icons retain their packed first row below the Workspace label');assert.equal(packed.widgets[ordered[1]].y,52);assert.equal(packed.widgets[ordered[5]].y,52,'The wider default fits five ordinary icon controls in the row');assert.equal(packed.widgets[ordered[6]].y,100);
 assert.equal(packed.widgets[ordered[7]].section,'main');assert.equal(packed.widgets[ordered[8]].section,'footer');assert.equal(packed.widgets[ordered[8]].y,packed.bodyExtent-92);assert.equal(packed.contentExtent,packed.bodyExtent);
 const railState=M.updatePanel(icons,'panel-left',{mode:'compact'}),rail=bounded(railState,options).panels['panel-left'];
 assert.equal(rail.width,56);for(const item of Object.values(rail.widgets)){if(item.compactView==='icon'){assert.equal(item.x,6);assert.equal(item.width,44);}else{assert.equal(item.x,0);assert.equal(item.width,56);}}
@@ -261,11 +261,11 @@ assert.equal(editThin.bodyOffset,30);assert.equal(editThin.toolboxSize,28);asser
 assert.equal(JSON.stringify(compactLeft),compactSnapshot,'Edit geometry does not alter the saved layout');
 
 // Normal panels reserve just their small footer; edit controls reserve both.
-assert.equal(initial.panels[0].size,224);assert.equal(initial.panels[1].size,280);assert.equal(initial.panels[1].mode,'compact');
+assert.equal(initial.panels[0].size,280);assert.equal(initial.panels[1].size,280);assert.equal(initial.panels[1].mode,'compact');
 assert.equal(initial.widgets.files.mode,'expanded','Whole-panel restore retains the Files widget state');
-const center=M.layout(initial,{...options,width:1200});assert.equal(1200-center.insets.left-center.insets.right,920);
+const center=M.layout(initial,{...options,width:1200});assert.equal(1200-center.insets.left-center.insets.right,864);
 const restored=M.layout(M.updatePanel(initial,'panel-right',{mode:'expanded'}),options).panels['panel-right'];assert.equal(restored.width,280);assert.equal(restored.widgets.files.mode,'expanded');
-for(const width of [600,699,700]){const result=bounded(initial,{...options,width});assert.equal(result.panels['panel-left'].width,224);assert.equal(result.panels['panel-left'].compact,false,'Actual capacity permits the panel below the old breakpoint');}
+for(const width of [600,636,699,700]){const result=bounded(initial,{...options,width});assert.equal(result.panels['panel-left'].width,Math.min(280,width-300-56),'A smaller viewport preserves the minimum canvas before shrinking panel width');assert.equal(result.panels['panel-left'].compact,false,'Actual capacity permits the panel below the old breakpoint');assert(width-result.insets.left-result.insets.right>=300);}
 for(const headerSize of [0,30])for(const edge of ['left','right','top','bottom']){
   let state=M.updatePanel(initial,'panel-left',{edge,mode:'compact'});const result=bounded(state,{...options,headerSize}),rect=result.panels['panel-left'];
   assert.equal(rect.bodyOffset,headerSize);assert.equal(rect.bodyEnd,0);assert.equal(rect.toolboxSize,28);

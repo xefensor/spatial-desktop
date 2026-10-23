@@ -30,7 +30,9 @@ New seeds and explicit **Explore demo** resets use these scenes. Existing saved 
 
 Right-click a panel → **Edit layout** to move widgets, add Spacers or arrange whole panels. Compact and expanded presentations retain the same grouping and actions. Icons open temporary live content; **Keep expanded** pins it. Panel borders resize panels. Apps keeps Quick launch and Background visible, while only Parked scrolls.
 
-The populated demo starts with a 200-pixel expanded left panel for Overview, Apps, Clock and system icons, and a 248-pixel expanded right panel for Files with compact Assistant. An untouched demo arrangement temporarily compacts the right panel below 1360 pixels and both panels below 1180, restoring them when space returns without saving different modes. Deliberate layout edits opt out. Existing saved layouts are retained. Clean desktops and new custom Workspaces use a 224-pixel expanded left panel and compact right panel.
+The populated demo starts with a 280-pixel expanded left panel for Overview, Apps, Clock and system icons. General shows only this left panel; the other demo Workspaces also show a 248-pixel expanded right panel for Files with compact Assistant. Untouched demo arrangements temporarily compact panels when their preferred widths would crowd the seeded windows, restoring them when room returns without changing saved modes. Deliberate layout edits opt out. Exact, untouched older defaults adopt the wider left panel once; custom layouts and subsequent resizing are preserved. Clean desktops and new custom Workspaces also use a 280-pixel expanded left panel, with a compact right panel.
+
+Parked cards keep Unpark and Close beside the app title. Right-click the card for window options; Shift+F10 opens the same menu from its focused controls. Long names truncate instead of moving the controls below the title.
 
 Panels and widgets have no headers or panel footers. Widget movement is available in edit mode. The former Areas layout, shared-column controls and independent rail engines are retired. Historical lesson identifiers remain only for saved progress compatibility.
 

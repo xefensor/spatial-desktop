@@ -374,9 +374,7 @@
       return;
     }
     setUniversalSearchOpen(true);
-    const section=['timeline','timeline-task'].includes(id)?(id==='timeline'&&!model.state.done.includes('timeline-activity')?'apps':'timeline'):
-      ['overview-navigation','temporary-desktop'].includes(id)?'windows':
-      id==='folders'?'projects':['apps','overview','tiling','project-app'].includes(id)?'apps':null;
+    const section=guide.overviewSection(id,model.state.done);
     if(section)globalThis.SpatialOverviewDesktop?.select(section,false);
     positionGuide();
   }

@@ -149,8 +149,9 @@ for(const changed of [{active:1},{activeColumn:'my-project'},{owners:{game:'my-p
 assert.equal(tiles['work:project-column:plasma:desktop:0:1'].root.axis, 'x');
 assert.deepEqual(require('../dist/spatial-tiling.js').names(tiles['work:project-column:plasma:desktop:0:1'].root), ['browser--demo-site-preview', 'notes--demo-site-checklist']);
 // Every fresh desktop has one focused activity, with the paired materials
-// actually readable at the demo's 1366px panel footprint. Use the production
-// app minima here so changing a window's requirements cannot silently park it.
+// actually readable at common laptop widths and panel-fallback boundaries.
+// Use production demo adaptation and app minima so changing a window's
+// requirements cannot silently park it.
 const SeedTiling=require('../dist/spatial-tiling.js');
 const sizeLiteral=require('node:fs').readFileSync(require.resolve('../dist/desktop-shell.js'),'utf8').match(/const windowUsableSizes = (\{[\s\S]*?\n\});/)[1];
 const appMinima=Function('return ('+sizeLiteral+')')();
@@ -161,14 +162,14 @@ assert.equal(D.workspaceWindows.general.find(w=>w.base==='dolphin').content.fold
 assert.deepEqual(SeedTiling.names(tiles['work:project-column:plasma:desktop:1:1'].root),['terminal--demo-site-server','dolphin--demo-site-files']);
 assert.deepEqual(SeedTiling.names(tiles['gaming:desktop:0:1'].root),['game'],'The game opens alone on its parent desktop');
 assert.deepEqual(SeedTiling.names(tiles['gaming:desktop:1:1'].root),['browser','notes'],'Social planning stays beside the game rather than squeezing it');
-for(const [workspace,example] of Object.entries(D.scenarios))for(const column of example.windows){
+for(const viewportWidth of [1024,1191,1192,1247,1248,1280,1366,1439,1440,1600])for(const [workspace,example] of Object.entries(D.scenarios))for(const column of example.windows){
  for(const page of new Set(column.windows.map(w=>w.page))){
   const open=column.windows.filter(w=>w.page===page&&w.state==='open');assert(open.length<=2,'Demo desktops contain at most two relevant open windows');
   const prefix=column.column==='workspace'?workspace+':desktop:':workspace+':project-column:'+column.column+':desktop:';
-  const panelLayout=Panels.layout(Panels.demoDefaults(workspace),{width:1366,height:900,display:1,displays:1});
-  const tileWidth=1366-panelLayout.insets.left-panelLayout.insets.right-64; // two 24px desktop rails plus 16px tile padding
+  const panelLayout=Panels.layout(Panels.demoDefaults(workspace),{width:viewportWidth,height:900,display:1,displays:1,demo:true});
+  const tileWidth=viewportWidth-panelLayout.insets.left-panelLayout.insets.right-64; // two 24px desktop rails plus 16px tile padding
   const root=tiles[prefix+page+':1'].root,placed=SeedTiling.layout(root,{x:0,y:0,width:tileWidth,height:700}).windows;
-  for(const window of open){const rect=placed.get(window.id),minimum=appMinima[window.base]||{width:400,height:300};assert(rect);assert(rect.width>=minimum.width-1,window.id+' has readable width on a 1366px demo');assert(rect.height>=minimum.height-1,window.id+' has readable height');}
+  for(const window of open){const rect=placed.get(window.id),minimum=appMinima[window.base]||{width:400,height:300};assert(rect);assert(rect.width>=minimum.width-1,window.id+' has readable width on a '+viewportWidth+'px demo');assert(rect.height>=minimum.height-1,window.id+' has readable height');}
  }
 }
 for(const name of ['general','school','work','gaming'])assert.equal(pageState[name].active,0,'Fresh contexts begin on their first desktop');

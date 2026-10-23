@@ -397,11 +397,19 @@
     providers.set(id,provider);labels[id]=provider.label||id;refresh();return true;
   }
   function closeSeparate(){if(separateActive){leaveSeparate();select(active,false);}}
+  function overviewChanged(open){
+    closeSeparate();
+    const guide=globalThis.SpatialGuide;
+    if(open&&guide?.model.active()){
+      const section=guide.overviewSection?.(guide.model.lesson.id,guide.model.state.done);
+      if(section)select(section,false);
+    }
+  }
   function registerSeparateSection(id,provider){
     if(panels.has(id)||separate.has(id)||!provider?.panel||!provider?.button||typeof provider.available!=='function')return false;
     separate.set(id,provider);provider.panel.hidden=true;provider.panel.inert=true;provider.button.hidden=!provider.available();return true;
   }
-  globalThis.SpatialOverviewDesktop={select,refresh,step,registerSection,registerSeparateSection,closeSeparate,overviewChanged:()=>closeSeparate(),active:()=>separateActive||active};
+  globalThis.SpatialOverviewDesktop={select,refresh,step,registerSection,registerSeparateSection,closeSeparate,overviewChanged,active:()=>separateActive||active};
   function addPracticeMeeting(time){
     const guide=globalThis.SpatialGuide;
     if(!guide?.model.active()||guide.model.lesson.id!=='timeline'||!Number.isFinite(time))return null;

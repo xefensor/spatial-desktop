@@ -214,6 +214,28 @@ overview.select('apps',false);overview.step(1);assert.equal(overview.active(),'w
 context.SpatialGuide.model.allows=feature=>feature==='projects';overview.refresh();
 assert.deepEqual(tabs.filter(tab=>!tab.hidden).map(tab=>tab.dataset.overviewSection),['windows','apps','projects'],'Project files appear only once the Guide introduces projects');
 context.SpatialGuide.model.allows=()=>false;
+// Entering Overview follows the current Guide task rather than the learner's
+// earlier default tab. Subsequent tab choices remain available to the exercise.
+const Guide=require('../dist/spatial-guide.js'),ordinaryPreference=data.get('spatial-overview-section-v2');
+context.SpatialGuide={model:Guide.create({status:'active',version:9,lessonId:'apps',done:[]}),overviewSection:Guide.overviewSection};
+overview.select('windows',false);overview.overviewChanged(true);overview.refresh();
+assert.equal(overview.active(),'apps','The first launch lesson opens Apps through the real Overview-open hook');
+overview.select('windows',false);overview.refresh();
+assert.equal(overview.active(),'windows','Refreshing does not switch a manually selected Windows tab back to Apps');
+let openingFrame;context.requestAnimationFrame=fn=>{openingFrame=fn;};overview.refresh();overview.overviewChanged(true);openingFrame();
+assert.equal(overview.active(),'apps','A queued earlier refresh cannot swap the launch tab back to Windows after opening');
+context.requestAnimationFrame=fn=>fn();
+overview.overviewChanged(false);overview.overviewChanged(true);
+assert.equal(overview.active(),'apps','Reopening returns the launch task to its app catalogue');
+assert.equal(data.get('spatial-overview-section-v2'),ordinaryPreference,'An introductory launch task does not save its routing as an ordinary Workspace preference');
+context.SpatialGuide.model=Guide.create({status:'active',version:9,lessonId:'overview-navigation',done:[]});
+overview.overviewChanged(true);assert.equal(overview.active(),'windows','Existing-work practice starts on Windows instead of the launcher');
+overview.select('apps',false);overview.refresh();assert.equal(overview.active(),'apps','The leave-and-return exercise can remain on another tab');
+context.SpatialGuide.model=Guide.create({status:'active',version:9,lessonId:'timeline',done:[]});
+overview.overviewChanged(true);assert.equal(overview.active(),'apps','Timeline practice first opens Apps to create real activity');
+context.SpatialGuide.model.mark('timeline-activity');overview.overviewChanged(true);overview.refresh();
+assert.equal(overview.active(),'timeline','Once activity exists, reopening leads to Timeline');
+context.SpatialGuide={model:{active:()=>true,allows:()=>false,lesson:{id:'overview'}}};
 const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/overview-desktop.js'),'utf8');
 context.desktopPreset='demo';vm.runInContext(source,context);
 assert(!data.has('spatial-timeline-demo-v1'),'Guide practice never seeds demo history');

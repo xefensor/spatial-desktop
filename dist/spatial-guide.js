@@ -358,7 +358,17 @@
     const overlap = rect => targets.reduce((sum,target) => sum + Math.max(0,Math.min(rect.left+width,target.right)-Math.max(rect.left,target.left)) * Math.max(0,Math.min(rect.top+height,target.bottom)-Math.max(rect.top,target.top)),0);
     return candidates.reduce((best,candidate) => overlap(candidate) < overlap(best) ? candidate : best);
   }
-  const api = {chapters, mission, goalHints, lessons, create, observeContext, observeOverviewAction, observeFullscreen, observeTemporaryDesktop, observeWindows, observeToggle, observeSearch, observeDisplays, panelFeature, panelObservation, observePanelLayout, panelTarget, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
+  // Opening Overview and Show me share the same lesson destination. Manual tab
+  // navigation remains available after opening; ordinary refreshes do not reset it.
+  function overviewSection(id,done=[]){
+    if(id==='timeline')return done.includes('timeline-activity')?'timeline':'apps';
+    if(id==='timeline-task')return 'timeline';
+    if(['folders','return','project-stash'].includes(id))return 'projects';
+    if(['apps','overview','tiling','project-app'].includes(id))return 'apps';
+    if(['overview-navigation','temporary-desktop','float','fullscreen','true-fullscreen','park','unpark','workspaces'].includes(id))return 'windows';
+    return null;
+  }
+  const api = {chapters, mission, goalHints, lessons, create, observeContext, observeOverviewAction, observeFullscreen, observeTemporaryDesktop, observeWindows, observeToggle, observeSearch, observeDisplays, panelFeature, panelObservation, observePanelLayout, panelTarget, overviewSection, goalLabels, prerequisites, recovery, shouldCompact, placeGuide, key, prefix};
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
   let real;
   try { real = root.localStorage; } catch {}

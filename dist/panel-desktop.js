@@ -11,6 +11,20 @@
   const owner=()=>typeof activeWorkspace==='string'?activeWorkspace:'general';
   const demoContext=(workspace=owner())=>typeof desktopPreset==='string'&&desktopPreset==='demo'&&!(typeof workspaceProfiles!=='undefined'&&workspaceProfiles[workspace]?.custom);
   const defaultState=()=>demoContext()?M.demoDefaults(owner()):M.defaults();
+  // Enlarge only exact shipped layouts once. Subsequent manual resizing and
+  // every customized layout retain their saved dimensions and presentation.
+  try{
+    const migrationKey='spatial-panel-default-width-v1';
+    if(storage.getItem(migrationKey)!=='1'){
+      let changed=false;
+      for(const [workspace,current]of Object.entries(sessions)){
+        const candidates=[{state:M.defaults(),width:224},...(demoContext(workspace)?[{state:M.demoDefaults(),width:200},{state:M.demoDefaults('general'),width:200}]:[])];
+        for(const candidate of candidates){const previous=clone(candidate.state);previous.panels[0].size=candidate.width;if(JSON.stringify(current)===JSON.stringify(M.normalize(previous))){sessions[workspace]=candidate.state;changed=true;break;}}
+      }
+      if(changed)storage.setItem(key,JSON.stringify(sessions));
+      storage.setItem(migrationKey,'1');
+    }
+  }catch{}
   // Upgrade untouched General layouts once. Later explicit panel changes,
   // custom arrangements and clean desktops keep their saved presentation.
   try{
