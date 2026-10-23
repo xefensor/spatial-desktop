@@ -1,6 +1,6 @@
 # Panels and widgets
 
-Panels and live widgets are the desktop's canonical interface. The earlier Areas layout and its drag, resize and rail engines are retired. Historical captures and Xef's authored philosophy remain records of the earlier design.
+Panels and live widgets are the desktop's canonical interface. The earlier Areas layout and its drag, resize and rail engines are retired.
 
 ## Normal use
 

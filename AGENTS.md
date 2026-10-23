@@ -17,7 +17,7 @@ These instructions apply to the whole repository.
 - Editable website source is in `dist/`; there is no website build step. Run `npm ci` for the development-only DOM test dependency before verification. Automated checks are in `scripts/`.
 - Keep demo labels, names and help text in English. The digital assistant's visible name is **Assistant**. Existing internal `ai` identifiers, filenames and storage keys are compatibility details; a label change must not reset saved chats or Guide progress.
 - Keep prototype limitations explicit: Assistant replies are scripted and local, and native OS integration remains future work.
-- `dist/philosophy.html` is Xef's own unfinished design philosophy. Preserve his authored text unless he asks to edit it. `dist/philosophy-record.html` and dated screenshots/audits preserve earlier designs.
+- `dist/philosophy.html` is Xef's own unfinished design philosophy. Preserve his authored text unless he asks to edit it. The obsolete design-record page and its navigation have been removed; do not restore them. Dated audits and source archives remain repository history.
 - Update current documentation when a change affects documented behaviour. Preserve historical screenshots and their accurate descriptions.
 
 ## Verification

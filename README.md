@@ -55,6 +55,6 @@ for file in dist/*.js; do node --check "$file" || exit 1; done
 for file in scripts/check-*.cjs; do node "$file" || exit 1; done
 ```
 
-[Agent instructions](AGENTS.md) · [UI and UX notes](docs/ui-ux-review.md) · [Historical designs](docs/history/README.md)
+[Agent instructions](AGENTS.md) · [UI and UX notes](docs/ui-ux-review.md)
 
-Demo captures: [sources](dist/images/design-notes/credits.json). Reference media retain their individual [credits and licences](dist/images/philosophy/credits.json).
+Demo captures: [sources](dist/images/design-notes/credits.json). The demo reference photograph retains its [credit](dist/images/philosophy/credits.json).

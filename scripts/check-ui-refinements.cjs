@@ -46,7 +46,7 @@ assert(libraryStart >= 0, 'Apps are a production Overview section');
 assert(html.indexOf('id="overviewWindowGrid"') < libraryStart, 'Windows have a destination before the Apps launcher');
 assert(!source.includes('const miniature = name =>'), 'No decorative desktop previews');
 assert(source.includes('!$("#universalResults").hidden && (event.target === $("#universalSearchInput")'), 'Result navigation leaves category select alone');
-for (const page of ['index.html', 'philosophy.html', 'material-guide.html', 'material-lab.html']) {
+for (const page of ['index.html', 'philosophy.html']) {
   const contents = fs.readFileSync(path.join(__dirname, '../dist', page), 'utf8');
   assert(/<link\b[^>]*href="ui-refinements\.css(?:\?[^"]*)?"/.test(contents), page + ': shared refinements loaded with an optional content version');
   assert(!contents.includes('href="/"'), page + ': project-relative navigation');
@@ -370,7 +370,7 @@ console.log('Theme checks passed: live system changes, manual override, reload, 
   media.matches=false;mediaListeners.change();assert.equal(document.body.dataset.theme,'oled');
   listeners.storage({key:'spatial-color-theme-v1',newValue:'auto'});
   assert.equal(document.body.dataset.theme,'light');assert.equal(span.textContent,'Auto');
-  for(const name of ['philosophy.html','philosophy-record.html']) {
+  for(const name of ['philosophy.html']) {
     const markup=fs.readFileSync(path.join(__dirname,'../dist',name),'utf8');
     assert(markup.indexOf('src="desktop-theme.js')<markup.indexOf('class="skip-link"'),'Shared theme applies before page content');
   }

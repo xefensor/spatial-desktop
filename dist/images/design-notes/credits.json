@@ -3,7 +3,7 @@
   "source": "https://xefensor.github.io/spatial-desktop/",
   "source_commit": "582edc4a016cf7fe20fa863e90192fe512ad94a2",
   "kind": "Actual browser prototype screenshots",
-  "notes": "Application content and Assistant replies are simulated. Timeline entries labelled Example are seeded demonstration data. Historical images remain in images/philosophy.",
+  "notes": "Application content and Assistant replies are simulated. Timeline entries labelled Example are seeded demonstration data.",
   "images": [
     {
       "file": "desktop-project.jpg",

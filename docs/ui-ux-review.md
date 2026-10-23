@@ -11,5 +11,3 @@ Arrangement starts with **right-click panel → Edit layout**. Panels and widget
 The default layout gives Apps the left column, keeps time readable and groups Overview with the lower system icons. Files and Assistant start in a narrow right panel. System controls and popups use glass; app content uses opaque ABS.
 
 Guide and Settings describe current controls. Saved lesson IDs remain compatible. Automated checks cover actions, ownership, live nodes, overflow, displays and Guide targets. Browser appearance is verified separately when browser tooling is available.
-
-The [earlier review](history/ui-ux-areas-2026-10-18.md) and dated screenshots are historical records.

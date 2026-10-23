@@ -1,6 +1,6 @@
 # Prototype reference
 
-This reference describes the panel and widget desktop. See [Panels and widgets](panels-and-widgets.md) for the current layout, compact behavior, controls and ownership. The [earlier reference](history/prototype-reference-areas-2026-10-18.md) preserves historical Area behavior and captures.
+This reference describes the panel and widget desktop. See [Panels and widgets](panels-and-widgets.md) for the current layout, compact behavior, controls and ownership.
 
 ## Desktop and windows
 
@@ -110,4 +110,4 @@ Guide targets real widgets, context menus, the edit toolbar and app controls. Te
 
 App windows use opaque ABS with rounded edges. Panels, Overview, controls and menus use square glass with visible edges. Persistent toggle state stays visible. Content and keyboard focus must remain readable in both themes.
 
-The buildless website lives in `dist/`. Development-only DOM tests use the pinned jsdom dependency. GitHub Pages runs syntax and regression checks before deployment. Asset URLs use content hashes. Earlier captures are historical; Xef's unfinished authored philosophy is preserved.
+The buildless website lives in `dist/`. Development-only DOM tests use the pinned jsdom dependency. GitHub Pages runs syntax and regression checks before deployment. Asset URLs use content hashes. Xef's unfinished authored philosophy is preserved.
