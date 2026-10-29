@@ -1,91 +1,110 @@
 # Spatial Desktop design notes
 
-I started Spatial Desktop after watching [Scott Jenson’s talk](https://media.ccc.de/v/kde2026-7-are_we_really_going_to_use_the_same_desktop_ux_forever). It inspired me to explore how a desktop could support everyday work through spatial, associative, and episodic memory: finding work by where it is, what it relates to, or when it happened.
+I often end up maximizing one window because arranging several beside each other takes too much effort. When I switch tasks, the windows, pages, notes and files I need can become difficult to keep track of.
 
-My own frustrations with managing overlapping windows shaped the design. I wanted to explore how a desktop could keep windows, files, and related materials together when I switch activities or return after an interruption. I also want an integrated Assistant that works alongside me using the same windows and ordinary files.
+I started Spatial Desktop after watching [Scott Jenson’s talk](https://media.ccc.de/v/kde2026-7-are_we_really_going_to_use_the_same_desktop_ux_forever). I want to explore how the desktop could keep those materials connected and help me return after an interruption. An integrated Assistant would work alongside me using the same windows and ordinary files.
 
-The question I want to test is whether these connections make everyday work easier to follow and resume, while keeping the effort of organizing it low.
+The idea draws on spatial, associative and episodic memory: finding work by where it is, what it relates to, or when it happened.
 
 This is a browser prototype for exploring the design. Applications and operating system behavior are simulated, and Assistant responses are scripted. Native desktop integration remains future work.
 
-[Open the demo](https://xefensor.github.io/spatial-desktop/) · [View the project on GitHub](https://github.com/xefensor/spatial-desktop)
+[Open the demo](https://xefensor.github.io/spatial-desktop/) · [Learn the controls](https://xefensor.github.io/spatial-desktop/?guide=start)
 
-# Keeping windows visible
+## How the pieces fit together
 
-When I work on a Jira request, I might have an editor, the request itself, email, Teams, and several other windows open. At seven or ten windows, keeping track of everything becomes a task of its own. I often end up maximizing one window because arranging several beside each other takes too much effort.
+A Workspace is the wider environment, such as Work or General. Inside it, I can use ordinary desktops or open Projects, each with its own column of desktops. Windows sit on those desktops.
 
-Spatial Desktop uses automatic tiling to keep windows visible without constant rearranging. It is designed around mouse use: I can move windows into place and scroll between a vertical stack of desktops. Edge markers show the desktops and the applications open on them. Floating windows provide an exception when a task needs it.
+| Level | What it means here |
+| --- | --- |
+| Workspace | **Work** keeps its files, app sessions and personal context separate from General. |
+| Project | **Website Launch** sits inside Work. It brings together a project folder, resources, windows and its own desktops. |
+| Desktop | **Desktop 1** in Website Launch holds the website preview and launch checklist. Desktop 2 holds the development server and source files. |
 
-Parking gives windows a visible place when I set them aside. A parked window can retain useful content or controls, so a note or music player can remain useful in its smaller form. Parked windows stay available as I move through the desktops of the current project or ordinary workspace column.
+Projects are optional. Work also has its own ordinary desktop column for windows that do not belong to a project. Separating a Workspace from its Projects lets me keep work and personal life apart without separating browser profiles and app data for every small task.
 
-The numbered app hotbar provides direct access to individual windows, including separate instances of the same application. Together, these choices are meant to help me keep a visual map of my work as the number of windows grows.
+### One activity, from starting to returning
 
-# Giving an activity its own place
+The screenshots follow Website Launch. In the populated demo, I can try this sequence:
 
-I personally use one project for each Jira request. Someone editing a video might use a project for the entire video, even though it involves many separate tasks. The size of a project depends on the work.
+1. **Start with the preview and checklist.** Both are on the project’s first desktop; the source files and development server are on the next one.
+2. **Park the checklist.** It stays editable in the Apps panel while the preview gains space. The parked note remains available on the project’s other desktops.
+3. **Switch to Short Film.** That project has its own windows and desktops. Website Launch stays open in its own column, ready to return to.
+4. **Find my way back.** Overview shows the open project and its windows. If I only remember when I worked on it, Timeline offers a route to an earlier session and its related materials.
 
-A project brings together its folder, related resources, windows, and its own column of desktops. I can move between requests while keeping their environments separate. The ordinary workspace also supports working without a project.
+## Keeping windows visible
 
-The materials belong to the activity as a whole. One request might involve code, screenshots, reference pages, notes, and a finished document. I want to reach those materials while working on any of its outputs.
+When I work on a Jira request, I might have an editor, the request itself, email, Teams and several other windows open. At seven or ten windows, keeping track of everything becomes a task of its own.
 
-Ordinary files are the foundation. The Files panel makes project and workspace files accessible, including text notes that can be expanded in the panel. The same files can be used by different applications and by the Assistant. Where the prototype records an item’s origin, versions, or links to other items, those connections help explain how a result was made.
+Automatic tiling removes the need to keep arranging windows beside each other. It still needs a way to handle work that no longer fits comfortably on one screen. Desktops provide more space; parking keeps a window close when I do not need its full size.
 
-# Finding work through Overview
+I use a vertical stack of desktops so moving through them follows the mouse wheel. Scrolling over a desktop indicator or unused panel space moves between desktops; scrolling inside an app keeps its normal purpose. Edge markers show where I am and which apps are on the other desktops. Floating windows remain an option when a task needs manual placement.
 
-Overview brings several ways of finding work into one place. I can locate an open window, launch an application, find a project or file, or look back through Timeline.
+Parking keeps a window useful in a smaller form. In Website Launch, I can edit the checklist in the Apps panel while the preview takes the space it left behind. The checklist follows me through this project’s desktops, but stays with Website Launch when I switch to Short Film. That scope keeps one project’s set-aside windows from following me into another.
 
-These views address different things I might remember. Sometimes I know which application I was using. Sometimes I remember the project or recognize a material. Sometimes I only remember when I was working on it.
+The app hotbar gives each window a number for direct access. Separate instances get separate numbers, so I can reach the particular window I want without first finding its application group. Parking and panels do use screen space; the aim is to earn that space through useful content and quicker access.
 
-For example, I might return to a request through its open windows, through its project files, or through an earlier session in Timeline. Each route provides a different starting point for picking up the work.
+### Why the panels and windows look different
 
-This is the role I want Overview to have: making those routes accessible together, so I can use whichever clue I still have.
+I use opaque ABS plastic with rounded edges for application windows, and square glass surfaces for desktop panels and controls. The different shapes and materials are meant to make the application and the surrounding desktop easier to distinguish. Application colors provide a small identifying cue; lit lines inside toggles show a persistent on state.
 
-# Remembering the work around a file
+Panels contain widgets such as Apps, Files and Assistant, and can be compact or expanded. This lets me trade panel detail for room to work while keeping familiar controls in a consistent place.
 
-I often find my place by reviewing files and leaving myself a simple text note. Timeline adds another way back.
+## Giving an activity its own place
 
-It brings recorded activity together with calendar events, tasks, and reminders. If I remember opening a document before a meeting, the meeting gives me a point from which to explore nearby activity. Past work and future plans share the same time view.
+I personally use one project for each Jira request. Someone editing a video might use a project for the entire video, even though it involves many separate tasks. Its size depends on the work.
 
-The prototype groups recorded activity into sessions using time gaps and changes of project or workspace. Sessions can have notes and links to related files, pages, and other recorded items. This provides a way to reopen the relevant materials; it does not restore a complete historical state of the computer.
+A project gives that activity a place that survives switching to something else. In Website Launch, the preview, checklist and source files belong together even though they open in different applications. Switching to Short Film changes the active project without closing Website Launch. Closing a project is a separate action; the demo saves its simulated window layout for reopening.
 
-The question is how much history helps. A long list of window switches can become another thing to search through. I want Timeline to make it easier to recognize a useful session and reach its materials. Clearer session summaries and less repetition are the next improvements I want to explore.
+Ordinary files are the foundation. The Files panel makes the project folder accessible beside any of its windows, and text files can expand directly in the panel. The same files can be used by different applications and the Assistant. Recorded origins, versions and links can help explain how saved materials relate to each other.
 
-# Separating work and personal life
+The initial launch checklist is a draft kept with its window. I can save it as a file when I want it in the project folder too. Keeping a window open and saving its document are separate actions.
 
-I use the same computer for work and personal things. Their files, accounts, and notifications can easily get mixed together. A personal notification appearing during a work screen share is one obvious example.
+## Finding the work I left open
 
-Workspaces aim to provide a separation similar to different user environments, with quick switching inside the desktop. Each has its own home folder and context for application data, clipboard, and notifications. Documents and downloads should land in the appropriate place by default. Browser data is one example of this broader separation.
+After switching activities, I may remember the project name, recognize a window, or only know which file I need. Overview puts Windows, Apps, Projects & Files, Timeline and System within the same place.
 
-Some things belong to the computer as a whole. The demo shares system appearance, hardware connections, and master sound settings. Its workspace separation is a model of the intended experience, rather than implemented operating system security isolation.
+For Website Launch, the Windows view shows its desktop column beside Short Film and the ordinary Work desktops. I can select the preview directly or find the source-file window on the next desktop. Projects & Files provides another route when I remember a document rather than an open window. Overview should let me use the clue I have without retracing every step.
 
-I also want deliberate movement between environments to remain possible. Taking a music player from a personal workspace into a work workspace can be useful. The boundary should support intentional transfers while keeping everyday activity separate.
+## Remembering the work around a file
 
-# Working alongside an Assistant
+Sometimes I remember opening a document before a meeting, but cannot remember its name. Timeline places recorded work beside calendar events, tasks and reminders so the meeting can become a point to search around.
 
-I want the Assistant to work in the desktop alongside me. It could open a browser, show information, work with files, and use ordinary application windows while I watch and intervene.
+In the Website Launch example, I can look near the staging review for the earlier work session, inspect its related materials and reopen the relevant file or page. This gives the activity around a document a role in finding it again.
 
-While developing Spatial Desktop, for example, I could keep a website preview on another display and explain what I want changed. The Assistant would work on the page and show the result there. The shared environment would make it easier to discuss the work as it changes.
+The prototype groups recorded activity into sessions using time gaps and changes of project or Workspace. Sessions can have notes and links to files, pages and other recorded items. Reopening a material does not restore a complete historical state of the desktop or computer.
 
-Projects and workspaces provide a place for this collaboration. In the demo, each has its own Assistant folder for outputs when no other destination is specified, together with its own conversation context. Results remain ordinary files that I can open and continue working on.
+A long list of window switches could become another thing to manage. I want to test whether recognizable sessions and their materials provide enough context, and what should be recorded or left out. Clearer summaries and less repetition are still open work.
 
-Access to readable context and permission to control a display are separate choices. I want to be able to follow the Assistant’s work, pause it, and take over. These interactions are explored through scripted behavior in the prototype.
+## Separating work and personal life
 
-Voice is another way to participate. The demo explores manual dictation, a wake phrase, and ongoing conversation, with spoken replies controlled separately. I also want to combine conversation with pasted text, code, and attachments without ending the voice session; that is a planned interaction.
+I use the same computer for work and personal things. Their files, accounts and notifications can easily get mixed together. A personal notification appearing during a work screen share is one obvious example.
 
-This could help people who find visual navigation or mouse use difficult, including blind users. That potential needs to be developed and tested with the people who would use it.
+A Workspace separates that wider context. Work and General have their own Home, app sessions, browser history, clipboard, notifications and Timeline. Documents and downloads should land in the appropriate environment by default. Projects organize activities inside that boundary; they do not need a separate personal identity for each task.
 
-# Moving between fullscreen and other work
+Some things belong to the computer as a whole: appearance, hardware connections and master sound. Background apps intentionally remain available across Workspaces. Deliberate transfers should also remain possible, such as taking a music player from a personal Workspace into Work.
 
-Fullscreen applications, especially games, should fit into the same environment. I want to be able to bring a game into a tile, check a note or another application, and return to fullscreen with little disruption.
+The browser demo models this separation with local state. Separate native browser accounts, cookies and operating system security isolation remain future work.
 
-The demo illustrates this transition. Gamescope is the intended direction for exploring it with real games. Whether it behaves reliably across games and display setups needs to be tested in a native prototype.
+## Working alongside an Assistant
 
-# What I want to learn from the experiment
+I want the Assistant to work in the desktop alongside me. While developing Spatial Desktop, for example, I could keep a website preview on another display, explain a change and watch the Assistant work on it through normal windows and files.
 
-Spatial Desktop combines familiar ideas: tiling, virtual desktops, project folders, activity history, and customizable panels. I want to see what changes when they support the same work together.
+The conversation belongs to the current Workspace or Project. Each also has an Assistant working folder for outputs when I have not specified another destination. In Website Launch, this gives the conversation and its results a place beside the preview, notes and source files. Results remain ordinary files I can open and continue working on.
 
-My design uses explicit projects and desktop columns to provide structure. Jenson’s spatial experiment explores a more organic arrangement. That difference raises a useful question: does the structure help people keep their place, and how much effort does maintaining it require?
+Readable context and permission to control a display are separate choices. Sharing a document for discussion should not by itself permit arranging windows. When display control is allowed, I want to see the work, pause it and take over.
 
-The next test is a whole activity: gather materials, make something, get interrupted, and return later. Can someone recognize the work, find its sources, and continue without much explanation? Can they also work comfortably without organizing everything into a project?
+Voice is another way to participate. The demo explores manual dictation, a wake phrase and continuous requests, with spoken replies controlled separately. Combining conversation with pasted text, code and attachments without ending the voice session is a planned interaction. Its potential for people who find visual navigation or mouse use difficult needs testing with those users.
 
-The browser demo lets me explore these questions before building a native desktop prototype. I want feedback on where the connections help, where they get in the way, and what the design still asks people to remember.
+## Moving between fullscreen and other work
+
+Fullscreen applications, especially games, should fit into the same environment. I want to bring a game into a tile, check a note or another application, and return to fullscreen with little disruption.
+
+The demo illustrates this transition. Gamescope is the intended direction for trying it with real games; reliability across games and display setups still needs to be tested in a native prototype.
+
+## What I want to learn
+
+Spatial Desktop combines familiar ideas: tiling, virtual desktops, project folders, activity history and customizable panels. The experiment is whether connecting them around the same activity makes work easier to follow and resume.
+
+My design uses explicit projects and desktop columns to provide structure. Jenson’s spatial experiment explores a more organic arrangement. I want to understand whether my structure earns the effort of maintaining it, including for someone who prefers to work without projects.
+
+The Website Launch sequence is a starting point for feedback: gather materials, work with them, switch away and return. Where did the arrangement help? What still had to be remembered? Which steps added effort? Those questions need real use and a native prototype before I can claim the design improves everyday work.

@@ -102,6 +102,47 @@
 .design-notes-page .guide-sidebar .material-link {font-size:.75rem;line-height:1.7;}
 .design-notes-page .guide-footer {font-size:.78rem;padding-top:22px;}
 .design-notes-page .anchor-alias {display:block;scroll-margin-top:110px;}
+.design-notes-page .context-table {margin:22px 0;overflow:visible;}
+.design-notes-page .context-table table {min-width:0;font-size:.94rem;}
+.design-notes-page .context-table caption {
+  padding:10px 14px;
+  text-align:left;
+  font-size:.82rem;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+.design-notes-page .context-table :is(th,td) {padding:12px 14px;}
+.design-notes-page .context-table th:first-child {min-width:0;width:24%;}
+.design-notes-page .context-table th[scope="row"] {font-weight:650;}
+.design-notes-page .activity-walkthrough {
+  max-width:70ch;
+  padding-left:24px;
+  margin:20px 0 28px;
+}
+.design-notes-page .activity-walkthrough li {padding-left:6px;margin:12px 0;line-height:1.75;}
+.design-notes-page .activity-walkthrough li::marker {color:var(--note-accent);font-weight:700;}
+.design-notes-page .image-link {position:relative;}
+.design-notes-page .screenshot-callout {
+  position:absolute;
+  left:clamp(14px,var(--callout-x),calc(100% - 14px));
+  top:clamp(14px,var(--callout-y),calc(100% - 14px));
+  transform:translate(-50%,-50%);
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
+  border:2px solid #f4fff6;
+  border-radius:50%;
+  background:#173a2d;
+  color:#fff;
+  box-shadow:0 1px 5px #0006;
+  font:700 12px/1 ui-sans-serif,system-ui,sans-serif;
+  pointer-events:none;
+}
+.design-notes-page .figure-key {margin:12px 0;padding-left:24px;}
+.design-notes-page .figure-key li {margin:5px 0;padding-left:3px;}
+.design-notes-page .figure-key li::marker {color:var(--note-accent);font-weight:700;}
+.design-notes-page .figure-key strong {color:var(--text);}
 @media(max-width:1100px) {
   .design-notes-page .guide-layout {grid-template-columns:194px minmax(0,1fr);gap:20px;padding-left:24px;padding-right:24px;}
   .design-notes-page p {font-size:1rem;}
@@ -130,6 +171,8 @@
   .design-notes-page h2 {font-size:1.65rem;}
   .design-notes-page .chapter {padding:30px 0 22px;}
   .design-notes-page .image-credit {line-height:1.6;}
+  .design-notes-page .context-table :is(th,td) {padding:10px 9px;overflow-wrap:anywhere;}
+  .design-notes-page .context-table th:first-child {width:27%;}
 }
 @media(prefers-reduced-motion:reduce) {
   .design-notes-page .image-link {transition:none;}
