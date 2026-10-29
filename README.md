@@ -38,6 +38,17 @@ Applications and system behavior are simulated. Files and saved state live in br
 
 The experiment is intended for trying a workflow: gather materials, make something, get interrupted and return later. Feedback on that experience will help decide what belongs in a native prototype.
 
+## Licensing
+
+Original source code is **GPL-3.0-or-later**. Original documentation and
+identified original artwork are **CC BY-SA 4.0**. Third-party material
+retains its own terms.
+
+See [license scope](LICENSING.md), [GPL terms](LICENSE),
+[content terms](LICENSE-CONTENT) and [third-party credits and exceptions](THIRD_PARTY_NOTICES.md).
+The hosted [Licenses & credits](https://xefensor.github.io/spatial-desktop/licensing.html)
+page also links to the complete source.
+
 ## Run locally
 
 The website needs no build step or runtime packages:

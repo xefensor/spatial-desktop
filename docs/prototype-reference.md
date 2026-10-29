@@ -119,3 +119,9 @@ Guide targets real widgets, context menus, the edit toolbar and app controls. Te
 App windows use opaque ABS with rounded edges. Panels, Overview, controls and menus use square glass with visible edges. Persistent toggle state stays visible. Content and keyboard focus must remain readable in both themes.
 
 The buildless website lives in `dist/`. Development-only DOM tests use the pinned jsdom dependency. GitHub Pages runs syntax and regression checks before deployment. Asset URLs use content hashes. Xef's unfinished authored philosophy is preserved.
+
+The Overview footer and design-note footer link to Licenses & credits.
+Original code is GPL-3.0-or-later; original documentation and identified
+original content are CC-BY-SA-4.0. See the root LICENSING.md and
+THIRD_PARTY_NOTICES.md for the mixed-content scope, asset credits and
+exceptions. Full license texts are also served in dist/licenses/.

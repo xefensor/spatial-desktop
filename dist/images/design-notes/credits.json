@@ -28,7 +28,7 @@
     {
       "file": "timeline-sessions.jpg",
       "alt": "Timeline with work sessions beside a scheduled staging review, using the same time scale.",
-      "caption": "Recorded activity and planned events share a time scale. The entries marked Example are seeded demonstration data, not a record of the author\u2019s day."
+      "caption": "Recorded activity and planned events share a time scale. The entries marked Example are seeded demonstration data, not a record of the author’s day."
     },
     {
       "file": "assistant-context.jpg",
@@ -40,5 +40,7 @@
       "alt": "General workspace with a left panel, a tiled Firefox start page and personal notes.",
       "caption": "General has its own personal browsing and notes, with only the left panel in its default layout. Work uses a separate project environment."
     }
-  ]
+  ],
+  "license": "CC-BY-SA-4.0",
+  "license_scope": "Original contributions to these captures only. Incorporated third-party artwork, branding and other protected material retain their own terms. See licensing.html and the root LICENSING.md and THIRD_PARTY_NOTICES.md."
 }
