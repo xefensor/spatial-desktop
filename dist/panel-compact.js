@@ -97,6 +97,7 @@
           // turn Unpark into a different command in the expanded view either.
           if (restore) { if (!nativeDisabled(restore)) restore.click(); }
           else if (typeof openApp === 'function') openApp(id);
+          root.SpatialShortcutCoach?.windowFocused(id, event);
         } else {
           if (!pinNames().includes(id)) { sync(); return; }
           root.SpatialAppsQuickLaunch?.activate?.(id, Boolean(event.shiftKey));

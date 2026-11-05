@@ -366,7 +366,8 @@ test('Overview transitions refresh native panel projections immediately without 
  const overlay=d.createElement('section');overlay.id='universalSearch';overlay.innerHTML='<input id="universalSearchInput">';overlay.inert=true;d.body.append(overlay);
  try{
   w.$=selector=>d.querySelector(selector);w.universalLastFocus=null;w.currentDisplayProfile='desktop';w.setOverviewView=()=>{};w.filterUniversalSearch=()=>{};
-  const source=fs.readFileSync(path.join(root,'desktop-shell.js'),'utf8'),start=source.indexOf('function setUniversalSearchOpen(open)'),end=source.indexOf('$("#universalSearchInput").addEventListener',start);
+  const source=fs.readFileSync(path.join(root,'desktop-shell.js'),'utf8'),start=source.indexOf('function setUniversalSearchOpen('),end=source.indexOf('$("#universalSearchInput").addEventListener',start);
+  assert(start>=0&&end>start,'Extract the actual Overview transition including optional input context');
   vm.runInContext(source.slice(start,end),context,{filename:'native-overview-transition.js'});
   P.edit(false);for(const workspace of ['work','general']){w.activeWorkspace=workspace;P.reset();P.updatePanel('panel-left',{mode:'compact'});}
   const compactLaunchers=()=>[...widget('apps').querySelectorAll('[data-panel-launch]')],clock=()=>widget('clock').querySelector('.panel-compact-clock'),launcher=()=>widget('launcher').querySelector('.desktop-widget-summary');

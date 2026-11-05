@@ -1,0 +1,15 @@
+/* One passive glass hint. It has no interactive descendants or entrance
+   animation, and never changes the target of the user's next click. */
+.shortcut-learning-hint{position:fixed;z-index:10500;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 14px;max-width:calc(100vw - 32px);width:max-content;padding:12px 17px;border:1px solid var(--glass-edge,var(--line));border-radius:0;background:var(--control-top);color:var(--text);box-shadow:0 6px 24px #0005,inset 0 1px 0 #ffffff15;font:13px/1.4 system-ui;pointer-events:none!important;user-select:none}
+.shortcut-learning-hint[hidden]{display:none!important}
+.shortcut-hint-action{font-weight:600;max-width:min(42ch,80vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shortcut-hint-keys,.shortcut-hint-demo{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.shortcut-hint-demo{color:var(--muted);font-size:11px;gap:8px}
+.shortcut-learning-hint kbd,.shortcut-settings-keys kbd{display:inline-block;min-width:24px;padding:3px 6px;border:1px solid var(--control-edge);border-bottom-width:2px;border-radius:3px;background:var(--app-content-surface);color:var(--text);text-align:center;font:600 12px/1.3 system-ui}
+.shortcut-learning-settings{margin-top:20px}
+.shortcut-learning-settings small{display:block;margin-top:6px;color:var(--muted);font:11px/1.5 system-ui}
+.shortcut-settings-keys{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.settings-app-content input:is([data-shortcut-learning-enabled],[data-shortcut-learning-action]){position:relative;appearance:none;width:16px;height:16px;flex:none;border:1px solid var(--control-edge)!important;background:var(--app-content-surface)!important;box-shadow:inset 0 1px 3px #0003!important}
+.settings-app-content input:is([data-shortcut-learning-enabled],[data-shortcut-learning-action]):checked{background:var(--settings-accent)!important;box-shadow:none!important}
+.settings-app-content input:is([data-shortcut-learning-enabled],[data-shortcut-learning-action]):checked::after{content:"";position:absolute;left:5px;top:2px;width:4px;height:8px;border:solid var(--app-content-surface);border-width:0 2px 2px 0;transform:rotate(45deg)}
+@media(max-width:520px){.shortcut-learning-hint{padding:10px 12px;gap:7px 10px;font-size:12px}.shortcut-learning-hint .shortcut-hint-action{width:100%;text-align:center}}

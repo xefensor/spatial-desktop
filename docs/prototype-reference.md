@@ -56,6 +56,25 @@ System groups current desktop requests, Project plans, Workspace content and sha
 
 Settings is a regular app, available through Overview/search and the labeled Settings action in System controls. Explicit custom Settings favorites remain supported. **Panels & widgets** describes the current arrangement controls. Preferences retain their System, Workspace or Project scope.
 
+### Shortcut learning
+
+**Settings → Shortcuts** controls reminders that appear as you use the desktop. For each supported action, the first five mouse uses stay quiet. The sixth and later mouse uses show the action name and its shortcut at the top centre for about 2.2 seconds. The hint lets clicks pass through and never takes keyboard focus; repeated actions refresh the same surface.
+
+Three successful uses of that action's shortcut stop its reminders and reset its mouse counter. They do not need to be consecutive: using the mouse between them preserves progress. Before reminders begin, a shortcut use clears the mouse counter, so regular mixed use stays quiet. Repeated mouse use can introduce the reminder again after learning.
+
+| Supported action | Shortcut |
+| --- | --- |
+| Open Overview | Super; tap F2 in the browser demo |
+| Open desktop map | Super+Tab; F2+Tab in the demo |
+| Maximize or restore a window | Alt+Enter |
+| Switch to or restore a numbered window | Super+1…9,0 for slots 1–10; add Shift for slots 11–20 |
+
+Hold F2 instead of Super for shortcut combinations in the browser demo. Alt+number, including Shift for the second bank, also switches numbered windows. Window hints use the window's current number; slots beyond 20 have no numbered keyboard binding. Deliberate window switching and restoring count toward learning. Ordinary clicks inside an app and selecting an already-front window do not. Pressing a numbered shortcut on the already-front window currently parks it; that parking action does not count as successful switching practice.
+
+The **Learn shortcuts** toggle pauses all learning. Each action also has its own **Suggest** checkbox, so mouse use can stay your preferred method without recurring hints. **Reset progress** clears practice and individual exclusions while preserving the global toggle. At most two actions teach at once. A week without using an action clears its observation and practice counts, while deliberate exclusions remain saved.
+
+Progress and preferences are local to this browser and shared across its demo Workspaces. Learning uses completed actions inside the prototype; it does not monitor native applications or the host desktop. Guide practice, scripted actions and keyboard activation of ordinary buttons do not count.
+
 ## Timeline
 
 Timeline aligns recorded desktop activity with calendar events, tasks and reminders on one shared time map. Sessions group nearby events within the same Workspace and Project; explicit context changes, day boundaries and longer pauses start new sessions. Example activity remains labelled and separate from real activity.

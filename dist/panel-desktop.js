@@ -217,7 +217,7 @@
     root.dispatchEvent(new CustomEvent('spatial-panel-applet-change',{detail:{id:current.id,open:false}}));
     if(redraw&&!rendering)render();if(restoreFocus){const fallback=current.frame.compactContent.hidden?current.frame.summary:current.frame.compactContent.querySelector('button');(usableFocus(current.anchor)?current.anchor:usableFocus(fallback)?fallback:layoutAnchor())?.focus({preventScroll:true});}
   }
-  function openOverview(){if(editing)return;closeMenu(false);closeApplet(false,false);hideTooltip();document.querySelector('#allAppsToggle')?.click();refreshSummaries();}
+  function openOverview(inputEvent=null){if(editing)return;closeMenu(false);closeApplet(false,false);hideTooltip();const wasOpen=document.querySelector('#universalSearch')?.classList.contains('is-open');document.querySelector('#allAppsToggle')?.click();refreshSummaries();if(!wasOpen&&document.querySelector('#universalSearch')?.classList.contains('is-open'))globalThis.SpatialShortcutCoach?.record('overview',inputEvent);}
   function openApplet(id,anchor){
     if(id==='launcher')return openOverview();
     const frame=frames.get(id);if(editing||!frame||!registry.has(id)||root.SpatialGuide?.panelWidgetAllowed?.(id)===false)return;
@@ -309,7 +309,7 @@
     const target=event.target.closest('[data-panel-action]');if(!target){if(menu&&!menu.contains(event.target))closeMenu(false);return;}const action=target.dataset.panelAction,id=target.dataset.panelId,widget=target.dataset.widgetId;
     if(action==='edit')setEditing(true);else if(action==='done')setEditing(false);else if(action==='close-menu')closeMenu();
     else if(action==='close-applet')closeApplet();
-    else if(action==='open-overview')openOverview();
+    else if(action==='open-overview')openOverview(event);
     else if(action==='pin-widget'){closeApplet(false,false);ensureVisible(widget);(editing?frames.get(widget)?.editCover:layoutAnchor())?.focus({preventScroll:true});}
     else if(action==='help')help(target);else if(action==='widgets')showPicker(target,target.dataset.targetPanel);else if(action==='panels')showPanels(target);
     else if(action==='panel-options')showPanelMenu(id,target);else if(action==='widget-options')showWidgetMenu(widget,target);

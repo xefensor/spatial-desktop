@@ -28,6 +28,8 @@ On your first visit, choose **Explore demo** to open the populated desktop direc
 
 Start in **Work → Website Launch**. Explore its preview, checklist and source files, park a window, then switch to another project and return. Open **Overview** with **Super / F2** and try reaching the work through its windows, project files and Timeline.
 
+Shortcut learning introduces controls as you use them: after five mouse uses of a supported action, the next use shows its shortcut at the top centre. Three successful shortcut uses quiet that reminder again. **Settings → Shortcuts** lets you pause learning, turn off individual suggestions or reset progress. Learning stays local to this browser; Guide practice and scripted actions do not count.
+
 The populated demo also includes personal planning in General, Urban Ecology in School, a Short Film project and gaming. General starts with only the left panel visible. Panels contain movable widgets and save their arrangement per Workspace; right-click a panel and choose **Edit layout**. The interface uses opaque, rounded ABS app windows and square glass panels.
 
 The [Desktop Guide](https://xefensor.github.io/spatial-desktop/?guide=start) offers practice lessons, including writing a note, browsing and copying text in one Workspace, comparing General’s clipboard, and returning to the original session. The [prototype reference](docs/prototype-reference.md) covers controls, files, Assistant examples, voice, displays and current limitations. [Panels and widgets](docs/panels-and-widgets.md) documents layout behavior.

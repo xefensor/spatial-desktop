@@ -121,12 +121,12 @@
   panel.addEventListener('dragstart',event=>{if(event.target.closest('[data-map-window]'))event.preventDefault();});
   window.addEventListener('blur',()=>cancelDrag());
   function blocked(){return document.querySelector('[aria-modal="true"]:not([hidden]):not([aria-hidden="true"]):not(#universalSearch):not(#spatialDesktopMap)')||tileInteraction||manualWindowInteraction||desktopPageAnimating||globalThis.SpatialGuide?.model.active()&&(!SpatialGuide.model.allows('projects')||!SpatialGuide.model.allows('desktops'));}
-  function open(){
+  function open(inputEvent=null){
     if(isOpen()||blocked())return false;
     origin=document.activeElement;owner=activeWorkspace;undoMove=null;panel.querySelector('[data-map-undo]').hidden=true;status('Click a window to return, or drag it to another desktop.');setUniversalSearchOpen(false);closeDesktopContextMenu();
     inert=[...document.body.children].filter(node=>node!==panel&&!['SCRIPT','STYLE','LINK'].includes(node.tagName)).map(node=>[node,node.inert]);inert.forEach(([node])=>node.inert=true);
     panel.hidden=false;panel.inert=false;render(true);focusPage(desktopPages.column(activeWorkspace),desktopPages.current(activeWorkspace));
-    timer=setInterval(()=>render(),1000);return true;
+    timer=setInterval(()=>render(),1000);globalThis.SpatialShortcutCoach?.record('desktop-map',inputEvent);return true;
   }
   function close(restore=true){if(!isOpen())return;cancelDrag();panel.hidden=true;clearInterval(timer);world.replaceChildren();signature='';inert.forEach(([node,value])=>node.inert=value);inert=[];if(restore&&origin?.isConnected&&!origin.closest('[hidden]'))origin.focus({preventScroll:true});}
   function visit(column,page,id,parked=false){
@@ -146,7 +146,7 @@
   });
   window.addEventListener('keydown',event=>{
     const held=event.metaKey||event.getModifierState?.('OS')||globalThis.SpatialDemoSuper?.held();
-    if(event.key==='Tab'&&held&&!event.ctrlKey&&!event.altKey){event.preventDefault();event.stopImmediatePropagation();superKeyAlone=false;if(!event.repeat)isOpen()?close():open();return;}
+    if(event.key==='Tab'&&held&&!event.ctrlKey&&!event.altKey){event.preventDefault();event.stopImmediatePropagation();superKeyAlone=false;if(!event.repeat)isOpen()?close():open(event);return;}
     if(!isOpen())return;
     if(['Meta','OS','F2'].includes(event.key)){superKeyAlone=false;return;}
     if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();return drag?cancelDrag():close();}
@@ -162,7 +162,7 @@
   window.addEventListener('keyup',event=>{if(isOpen()&&['Meta','OS','F2'].includes(event.key)){superKeyAlone=false;event.preventDefault();event.stopImmediatePropagation();}},true);
   const originalNavigationBlocked=desktopNavigationBlocked;desktopNavigationBlocked=function(){return isOpen()||originalNavigationBlocked();};
   panel.addEventListener('wheel',event=>event.stopPropagation());
-  const toggle=document.getElementById('desktopContextToggle');toggle.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();open();},true);toggle.title='Desktop map · Meta+Tab or F2+Tab';toggle.setAttribute('aria-haspopup','dialog');
+  const toggle=document.getElementById('desktopContextToggle');toggle.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();open(event);},true);toggle.title='Desktop map · Meta+Tab or F2+Tab';toggle.setAttribute('aria-haspopup','dialog');
   const button=document.createElement('button');button.type='button';button.className='surface-key';button.textContent='Desktop map';button.title='Meta+Tab or F2+Tab';button.addEventListener('click',open);document.querySelector('.overview-desktop-map > header').append(button);
   new MutationObserver(()=>{if(isOpen())render();}).observe(document.querySelector('.desktop-shell'),{subtree:true,childList:true,attributes:true});
   window.addEventListener('resize',()=>{if(isOpen())render(true);});window.addEventListener('pagehide',()=>close(false));

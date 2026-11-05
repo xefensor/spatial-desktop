@@ -1118,7 +1118,7 @@ function growTileWindow(name, direction) {
   renderTileLayout(name, true, true);
 }
 
-function focusTileWindow(name) {
+function focusTileWindow(name, inputEvent = null) {
   releaseBorrowedApp(name);
   const session = reconcileTileTree(name);
   if (session.focus?.name === name) {
@@ -1151,6 +1151,7 @@ function focusTileWindow(name) {
   saveTileSessions();
   refreshIntentAreas();
   queueDesktopStateBroadcast();
+  globalThis.SpatialShortcutCoach?.record('window-size', inputEvent, {label: frameFor(name).dataset.maximized === 'true' ? 'Maximize window' : 'Restore tiling'});
 }
 
 function intentContextPrefix() {
@@ -1508,7 +1509,7 @@ function syncMaximizeButton(frame) {
   }
 }
 
-function toggleMaximize(name) {
+function toggleMaximize(name, inputEvent = null) {
   const frame = frameFor(name);
   if (!frame || !isLocalApp(name)) return;
   const session = tileSession();
@@ -1519,14 +1520,14 @@ function toggleMaximize(name) {
   if (session.floating[name]) {
     const returnFloating = { ...session.floating[name] };
     splitWindowIntoTile(name);
-    focusTileWindow(name);
+    focusTileWindow(name, inputEvent);
     tileSession().focus.returnFloating = returnFloating;
     saveTileSessions();
     refreshIntentAreas();
     return;
   }
   if (frame.classList.contains("is-tiled") || tileEngine.contains(tileSession().root, name)) {
-    focusTileWindow(name);
+    focusTileWindow(name, inputEvent);
     return;
   }
   if (frame.dataset.maximized === "true") {
@@ -1593,7 +1594,10 @@ function renderMiniApps() {
   applyAppPrimaryColors($("#miniStack"));
   prepareControlSemantics($("#miniStack"));
   $("#miniCount").textContent = String(minimized.length);
-  $$("[data-mini-restore]").forEach(button => button.addEventListener("click", () => openApp(button.dataset.miniRestore)));
+  $$("[data-mini-restore]").forEach(button => button.addEventListener("click", event => {
+    openApp(button.dataset.miniRestore);
+    globalThis.SpatialShortcutCoach?.windowFocused(button.dataset.miniRestore, event);
+  }));
   $$("[data-mini-close]").forEach(button => button.addEventListener("click", () => closeApp(button.dataset.miniClose)));
   $$("[data-mini-card]").forEach(bindMiniDrag);
   bindMusicControls();
@@ -3641,8 +3645,10 @@ function prepareWorkspaces() {
     const button = event.target.closest("[data-overview-open-app]");
     if (button) {
       const name = button.dataset.overviewOpenApp;
+      const changed = !(appState[name] === 'open' && isLocalApp(name) && desktopHasWindowFocus && frontApp === name);
       changeDesktopColumn(desktopPages.columnOf(activeWorkspace, name), false);
       openApp(name); setUniversalSearchOpen(false);
+      if (changed) globalThis.SpatialShortcutCoach?.windowFocused(name, event);
     }
   });
   $("#workspaceFavorites").addEventListener("click", event => {
@@ -3754,7 +3760,7 @@ function prepareWindows(root = document) {
     bindResize(frame);
     frame.addEventListener("pointerdown", () => bringToFront(frame.dataset.appFrame));
     $(".app-titlebar", frame).addEventListener("dblclick", event => {
-      if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame);
+      if (!event.target.closest("button,input,a")) toggleMaximize(frame.dataset.appFrame, event);
     });
     $(".app-titlebar", frame).title = "Left drag: tile · scroll while holding: carry to another desktop · middle drag or Alt+drag: float and borrow panel space · double-click: Maximize";
     frame.addEventListener("auxclick", event => {
@@ -3771,7 +3777,7 @@ function prepareWindows(root = document) {
     event.stopPropagation();
     const name = button.closest("[data-app-frame]").dataset.appFrame;
     if (button.dataset.windowAction === "minimize") minimizeApp(name);
-    if (button.dataset.windowAction === "maximize") toggleMaximize(name);
+    if (button.dataset.windowAction === "maximize") toggleMaximize(name, event);
     if (button.dataset.windowAction === "close") closeApp(name);
   }));
   $$('[data-window-action="maximize"]', root).forEach(button => button.addEventListener("pointerdown", event => {
@@ -3790,8 +3796,8 @@ function prepareWindows(root = document) {
   if (root === document) observer.observe($(".workspace-zone"));
 }
 
-$("#allAppsToggle").addEventListener("click", () => {
-  setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
+$("#allAppsToggle").addEventListener("click", event => {
+  setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"), event);
 });
 
 /* App entries are rebuilt whenever a Workspace changes. Keep one delegated
@@ -3802,7 +3808,12 @@ document.addEventListener("click", event => {
   if (!button) return;
   if (button.closest("#appRack")) {
     if (event.shiftKey) createAppInstance(button.dataset.openApp);
-    else openApp(button.dataset.openApp);
+    else {
+      const name = button.dataset.openApp;
+      const changed = !(appState[name] === 'open' && isLocalApp(name) && desktopHasWindowFocus && frontApp === name);
+      openApp(name);
+      if (changed) globalThis.SpatialShortcutCoach?.windowFocused(name, event);
+    }
   } else launchAppHere(button.dataset.openApp, event.shiftKey);
   if (button.closest("#universalSearch")) setUniversalSearchOpen(false);
 });
@@ -3990,7 +4001,7 @@ function filterUniversalSearch() {
 $("#universalResultFilter").addEventListener('change', filterUniversalSearch);
 $("#universalFilterReset").addEventListener('click', () => { $("#universalResultFilter").value = 'all'; filterUniversalSearch(); $("#universalSearchInput").focus(); });
 
-function setUniversalSearchOpen(open) {
+function setUniversalSearchOpen(open, inputEvent = null) {
   if (open && globalThis.SpatialGuide?.model.active() && !SpatialGuide.model.allows('overview')) return;
   const overlay = $("#universalSearch");
   if (open === overlay.classList.contains("is-open")) return;
@@ -4030,6 +4041,7 @@ function setUniversalSearchOpen(open) {
   }
   globalThis.SpatialSteamOverview?.overviewChanged(open);
   globalThis.SpatialPanels?.render();
+  if (open) globalThis.SpatialShortcutCoach?.record('overview', inputEvent);
 }
 
 $("#universalSearchInput").addEventListener("input", filterUniversalSearch);
@@ -4213,7 +4225,7 @@ function trapDialogFocus(root, event) {
   return false;
 }
 
-function activateHotbarSlot(slot) {
+function activateHotbarSlot(slot, inputEvent = null) {
   const name = workspaceShortcutNames()[slot - 1];
   if (!appInfo[name]) return false;
 
@@ -4233,6 +4245,7 @@ function activateHotbarSlot(slot) {
     window.setTimeout(() => currentButton.classList.remove("is-hotkey-pulse"), 90);
   }
   queueDesktopStateBroadcast();
+  globalThis.SpatialShortcutCoach?.windowFocused(name, inputEvent);
   return true;
 }
 
@@ -4270,7 +4283,7 @@ document.addEventListener("keydown", event => {
     event.preventDefault();
     event.stopPropagation();
     superKeyAlone = false;
-    activateHotbarSlot((Number(hotbarMatch[1]) || 10) + (event.shiftKey ? 10 : 0));
+    activateHotbarSlot((Number(hotbarMatch[1]) || 10) + (event.shiftKey ? 10 : 0), event);
     return;
   }
 
@@ -4292,7 +4305,7 @@ document.addEventListener("keydown", event => {
   if (universalShortcut) {
     event.preventDefault();
     superKeyAlone = false;
-    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
+    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"), event);
     return;
   }
 
@@ -4336,7 +4349,7 @@ document.addEventListener("keyup", event => {
   const isSuper = event.key === "Meta" || event.key === "OS" || (event.key === "F2" && (event.type === "keyup" || globalThis.SpatialDemoSuper?.held()));
   if (isSuper && superKeyAlone) {
     event.preventDefault();
-    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"));
+    setUniversalSearchOpen(!$("#universalSearch").classList.contains("is-open"), event);
   }
   if (isSuper) superKeyAlone = false;
 });
@@ -5008,8 +5021,15 @@ function prepareContextMenus() {
     const item = event.target.closest("[data-context-action]");
     if (!item) return;
     const action = item.dataset.contextAction;
+    const name = contextMenuState?.name;
+    const focusChanged = name && !(appState[name] === 'open' && isLocalApp(name) && desktopHasWindowFocus && frontApp === name);
+    const maximized = name && frameFor(name)?.dataset.maximized === 'true';
+    const overviewOpen = action === 'desktop-overview' && $("#universalSearch")?.classList.contains('is-open');
     executeContextAction(action);
     closeDesktopContextMenu();
+    if (action === 'desktop-overview' && !overviewOpen && $("#universalSearch")?.classList.contains('is-open')) globalThis.SpatialShortcutCoach?.record('overview', event);
+    if (action === 'app-maximize' && name && maximized !== (frameFor(name)?.dataset.maximized === 'true')) globalThis.SpatialShortcutCoach?.record('window-size', event);
+    if (action === 'app-open' && focusChanged) globalThis.SpatialShortcutCoach?.windowFocused(name, event);
   });
   menu.addEventListener("keydown", event => {
     if (globalThis.SpatialContextSubmenus?.key(event)) return;
@@ -5029,7 +5049,7 @@ function prepareContextMenus() {
 document.addEventListener("keydown", event => {
   if (event.altKey && !event.ctrlKey && event.code === "Enter" && frontApp && !event.repeat && !event.target.closest("input,textarea,[contenteditable]") && !$("#universalSearch").classList.contains("is-open") && !$("#packageDialog").classList.contains("is-open") && !$("#projectEditorDialog").classList.contains("is-open")) {
     event.preventDefault();
-    focusTileWindow(frontApp);
+    focusTileWindow(frontApp, event);
     return;
   }
     if (event.key === "Escape" && !menu.hidden) {
